@@ -1,0 +1,48 @@
+{
+  "name": "Pull",
+  "description": "Espalda y bíceps",
+  "exercises": [
+    {
+      "name": "Dominadas",
+      "sets": 4,
+      "reps": "6-10",
+      "muscle": "Espalda"
+    },
+    {
+      "name": "Remo con barra",
+      "sets": 4,
+      "reps": "8-10",
+      "muscle": "Espalda media"
+    },
+    {
+      "name": "Jalón al pecho",
+      "sets": 3,
+      "reps": "10-12",
+      "muscle": "Dorsales"
+    },
+    {
+      "name": "Remo en máquina",
+      "sets": 3,
+      "reps": "10-12",
+      "muscle": "Espalda"
+    },
+    {
+      "name": "Face pulls",
+      "sets": 3,
+      "reps": "15-20",
+      "muscle": "Deltoides posterior"
+    },
+    {
+      "name": "Curl con barra",
+      "sets": 3,
+      "reps": "10-12",
+      "muscle": "Bíceps"
+    },
+    {
+      "name": "Curl martillo",
+      "sets": 3,
+      "reps": "12-15",
+      "muscle": "Bíceps / Braquial"
+    }
+  ]
+}

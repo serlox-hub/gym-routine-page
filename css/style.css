@@ -1,0 +1,149 @@
+:root {
+    --bg-primary: #0d1117;
+    --bg-card: #161b22;
+    --border: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --accent: #58a6ff;
+    --accent-green: #3fb950;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+header {
+    padding: 2rem 1rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+/* Routine Cards */
+.routine-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.routine-header {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.routine-header:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.routine-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.routine-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.routine-toggle {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    transition: transform 0.3s;
+}
+
+.routine-card.expanded .routine-toggle {
+    transform: rotate(180deg);
+}
+
+/* Exercise List */
+.exercise-list {
+    display: none;
+    border-top: 1px solid var(--border);
+}
+
+.routine-card.expanded .exercise-list {
+    display: block;
+}
+
+.exercise-item {
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.exercise-item:last-child {
+    border-bottom: none;
+}
+
+.exercise-name {
+    font-weight: 500;
+}
+
+.exercise-muscle {
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 0.125rem;
+}
+
+.exercise-sets {
+    text-align: right;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+/* Loading & Error States */
+.loading, .error {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+}
+
+.error {
+    color: #f85149;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .routine-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .exercise-item {
+        padding: 0.75rem 1rem;
+    }
+}
