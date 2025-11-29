@@ -1,0 +1,918 @@
+{
+  "nombre": "Rutina Hipertrofia - Brazos/Hombros + Core + Postura",
+  "fecha_creacion": "2025-11-29",
+  "perfil": {
+    "tipo_cuerpo": "Ectomorfo",
+    "experiencia": "+10 años",
+    "sueno_horas": "7-8",
+    "proteina_g_kg": "1.8-2.2",
+    "foco": "60% brazos/hombros, 40% core/postura",
+    "duracion_max_min": 90,
+    "frecuencia_dias": 4
+  },
+  "tempo_info": {
+    "formato": "Concéntrico-Pausa arriba-Excéntrico-Pausa abajo (segundos)",
+    "base_cientifica": {
+      "concentrico": "1-2s - Explosivo pero controlado permite mayor carga (Wilk 2021)",
+      "pausa_contraccion": "0-1s - Squeeze en contracción máxima, más no añade beneficio",
+      "excentrico": "2-3s - Óptimo para hipertrofia, >4s reduce volumen sin beneficio (Lacerda 2019)",
+      "pausa_stretch": "0-1s - 1s en ejercicios donde el stretch es clave (Pedrosa 2023)"
+    },
+    "tempo_estandar_aislamiento": "1-1-2-0",
+    "tempo_ejercicios_stretch": "1-1-3-1",
+    "tempo_compuestos": "1-0-2-0"
+  },
+  "dias": [
+    {
+      "dia": 1,
+      "nombre": "Core + Espalda + Bíceps + Laterales",
+      "duracion_estimada_min": 85,
+      "calentamiento": {
+        "duracion_min": 4,
+        "ejercicios": [
+          {"nombre": "Rotación externa con goma", "reps": "15/lado"},
+          {"nombre": "Pull-aparts con banda", "reps": "15"},
+          {"nombre": "Círculos de brazos (adelante + atrás)", "reps": "10+10"},
+          {"nombre": "Serie de aproximación dominadas (sin peso)", "reps": "5"}
+        ]
+      },
+      "bloques": [
+        {
+          "bloque": "Core",
+          "duracion_min": 7,
+          "ejercicios": [
+            {
+              "nombre": "Rueda Abdominal",
+              "nombre_en": "Ab Wheel Rollout",
+              "musculos": {
+                "principal": "Recto abdominal",
+                "secundarios": ["Oblicuos", "Serrato anterior", "Dorsal ancho", "Erectores espinales"]
+              },
+              "series": 3,
+              "reps": "6-10",
+              "rir": "1-2",
+              "descanso_seg": 60,
+              "tempo": "1-0-3-1",
+              "tempo_razon": "Excéntrico lento (3s) para máxima tensión en anti-extensión. Pausa 1s en stretch.",
+              "notas": "Core tenso todo el movimiento. Evitar colapso lumbar. Máximo estiramiento controlado."
+            },
+            {
+              "nombre": "Bicho Muerto",
+              "nombre_en": "Dead Bug",
+              "musculos": {
+                "principal": "Transverso abdominal",
+                "secundarios": ["Recto abdominal", "Oblicuos", "Psoas ilíaco"]
+              },
+              "series": 2,
+              "reps": "10/lado",
+              "rir": "1",
+              "descanso_seg": 45,
+              "tempo": "2-1-2-0",
+              "tempo_razon": "Movimiento controlado bilateral. Pausa 1s en extensión para activación máxima.",
+              "notas": "Lumbar pegada al suelo siempre. Movimiento lento y controlado."
+            }
+          ]
+        },
+        {
+          "bloque": "Espalda",
+          "duracion_min": 22,
+          "ejercicios": [
+            {
+              "nombre": "Dominadas Lastradas",
+              "nombre_en": "Weighted Pull-Ups",
+              "musculos": {
+                "principal": "Dorsal ancho",
+                "secundarios": ["Bíceps braquial", "Braquial", "Redondo mayor", "Romboides", "Trapecio inferior"]
+              },
+              "agarre": {
+                "tipo": "Prono",
+                "apertura": "Ancho (ligeramente más que hombros)"
+              },
+              "series": 4,
+              "reps": "5-8",
+              "rir": "1-2",
+              "descanso_seg": 150,
+              "tempo": "1-1-3-0",
+              "tempo_razon": "Concéntrico explosivo para máxima carga. Excéntrico 3s para hipertrofia de dorsales. Sin pausa abajo para mantener tensión.",
+              "notas": "Retracción escapular PRIMERO, luego tirar. Squeeze 1s arriba. Estiramiento completo abajo."
+            },
+            {
+              "nombre": "Remo con Mancuerna",
+              "nombre_en": "Dumbbell Row",
+              "musculos": {
+                "principal": "Dorsal ancho",
+                "secundarios": ["Romboides", "Trapecio medio", "Redondo mayor", "Bíceps braquial", "Braquial"]
+              },
+              "agarre": {
+                "tipo": "Neutro",
+                "apertura": "N/A (mancuerna)"
+              },
+              "series": 3,
+              "reps": "8-10",
+              "rir": "1-2",
+              "descanso_seg": 90,
+              "tempo": "1-1-2-0",
+              "tempo_razon": "Tempo estándar compuesto. Squeeze 1s en contracción para activación de dorsales/romboides.",
+              "notas": "Torso estable, evitar rotación. Estiramiento completo abajo."
+            },
+            {
+              "nombre": "Jalón al Pecho",
+              "nombre_en": "Lat Pulldown",
+              "musculos": {
+                "principal": "Dorsal ancho",
+                "secundarios": ["Redondo mayor", "Bíceps braquial", "Braquial", "Romboides"]
+              },
+              "agarre": {
+                "tipo": "Neutro",
+                "apertura": "Cerrado (manos juntas, agarre V o triángulo)"
+              },
+              "series": 2,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "1-1-2-1",
+              "tempo_razon": "Pausa 1s arriba para stretch de dorsales. Squeeze 1s abajo.",
+              "altura_polea": "Alta (máquina de jalones)",
+              "notas": "Sin momentum ni balanceo. Activar dorsales primero."
+            }
+          ]
+        },
+        {
+          "bloque": "Bíceps",
+          "duracion_min": 18,
+          "ejercicios": [
+            {
+              "nombre": "Curl Inclinado con Mancuernas",
+              "nombre_en": "Incline Dumbbell Curl",
+              "musculos": {
+                "principal": "Bíceps braquial (cabeza larga)",
+                "secundarios": ["Bíceps braquial (cabeza corta)", "Braquial", "Braquiorradial"]
+              },
+              "agarre": {
+                "tipo": "Supino",
+                "apertura": "N/A (mancuernas)"
+              },
+              "series": 3,
+              "reps": "8-10",
+              "rir": "1",
+              "descanso_seg": 90,
+              "tempo": "1-1-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - Excéntrico 3s + pausa 1s abajo maximiza estímulo en cabeza larga (Pedrosa 2023).",
+              "notas": "Banco a 45°. MÁXIMO STRETCH abajo es la clave. Sin swing."
+            },
+            {
+              "nombre": "Curl con Barra EZ",
+              "nombre_en": "EZ Bar Curl",
+              "musculos": {
+                "principal": "Bíceps braquial",
+                "secundarios": ["Braquial", "Braquiorradial"]
+              },
+              "agarre": {
+                "tipo": "Supino (semi-supino por curvatura EZ)",
+                "apertura": "Medio (agarre interno de la barra EZ)"
+              },
+              "series": 3,
+              "reps": "8-10",
+              "rir": "1",
+              "descanso_seg": 90,
+              "tempo": "1-1-2-0",
+              "tempo_razon": "Tempo estándar aislamiento. Sin pausa abajo para tensión constante.",
+              "notas": "Codos fijos pegados al cuerpo. No balancear. Contracción completa arriba."
+            },
+            {
+              "nombre": "Curl Martillo Inclinado",
+              "nombre_en": "Incline Hammer Curl",
+              "musculos": {
+                "principal": "Braquial",
+                "secundarios": ["Braquiorradial", "Bíceps braquial"]
+              },
+              "agarre": {
+                "tipo": "Neutro",
+                "apertura": "N/A (mancuernas)"
+              },
+              "series": 2,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "1-1-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - Mismo principio que incline curl. Maximiza braquial.",
+              "notas": "Banco a 45°. Estiramiento completo abajo."
+            }
+          ]
+        },
+        {
+          "bloque": "Hombros/Postura",
+          "duracion_min": 12,
+          "ejercicios": [
+            {
+              "nombre": "Elevación Lateral en Polea (Desde Atrás)",
+              "nombre_en": "Cable Lateral Raise (Behind Body)",
+              "musculos": {
+                "principal": "Deltoides lateral",
+                "secundarios": ["Deltoides anterior", "Trapecio superior"]
+              },
+              "agarre": {
+                "tipo": "Neutro (asa D)",
+                "apertura": "N/A (unilateral)"
+              },
+              "series": 3,
+              "reps": "12-15",
+              "rir": "1",
+              "descanso_seg": 75,
+              "tempo": "1-1-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - Cable desde atrás + excéntrico 3s maximiza tensión en posición baja (Kassiano 2023).",
+              "altura_polea": "Baja (a la altura de la mano con brazo relajado)",
+              "notas": "Cable cruza por DETRÁS del cuerpo. Lean away ligero (inclinar cuerpo alejándose de la polea). Squeeze 1s arriba. Elevar hasta paralelo al suelo."
+            },
+            {
+              "nombre": "Tirón a la Cara",
+              "nombre_en": "Face Pull",
+              "musculos": {
+                "principal": "Deltoides posterior",
+                "secundarios": ["Trapecio medio", "Romboides", "Infraespinoso", "Redondo menor"]
+              },
+              "agarre": {
+                "tipo": "Neutro/Prono (cuerda)",
+                "apertura": "Medio (extremos de la cuerda)"
+              },
+              "series": 3,
+              "reps": "15-20",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "1-2-2-0",
+              "tempo_razon": "Pausa 2s en contracción para activación de rotadores externos y rear delt.",
+              "altura_polea": "Alta (a la altura de la cara o ligeramente superior)",
+              "notas": "Codos ALTOS. Rotación externa al final del movimiento. Crítico para salud del hombro."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dia": 2,
+      "nombre": "Core + Piernas + Glúteos",
+      "duracion_estimada_min": 80,
+      "calentamiento": {
+        "duracion_min": 5,
+        "ejercicios": [
+          {"nombre": "Sentadilla sin peso (profunda)", "reps": "10"},
+          {"nombre": "Balanceos de pierna (adelante-atrás)", "reps": "10/lado"},
+          {"nombre": "Puente de glúteos", "reps": "10"},
+          {"nombre": "Serie de aproximación prensa (50% peso)", "reps": "8"}
+        ]
+      },
+      "bloques": [
+        {
+          "bloque": "Core",
+          "duracion_min": 5,
+          "ejercicios": [
+            {
+              "nombre": "Press Pallof",
+              "nombre_en": "Pallof Press",
+              "musculos": {
+                "principal": "Oblicuos (anti-rotación)",
+                "secundarios": ["Transverso abdominal", "Recto abdominal", "Cuadrado lumbar"]
+              },
+              "agarre": {
+                "tipo": "Neutro (ambas manos juntas)",
+                "apertura": "Cerrado (manos superpuestas en asa D)"
+              },
+              "series": 2,
+              "reps": "10/lado",
+              "rir": "1",
+              "descanso_seg": 45,
+              "tempo": "2-2-2-0",
+              "tempo_razon": "Anti-rotación requiere tiempo bajo tensión. Pausa 2s con brazos extendidos para máxima activación.",
+              "altura_polea": "Media (a la altura del pecho/esternón)",
+              "notas": "Core rígido, resistir rotación. Extensión completa de brazos."
+            },
+            {
+              "nombre": "Perro-Pájaro Lento",
+              "nombre_en": "Bird-Dog Slow",
+              "musculos": {
+                "principal": "Erectores espinales",
+                "secundarios": ["Transverso abdominal", "Glúteo mayor", "Multífidos"]
+              },
+              "series": 2,
+              "reps": "8/lado",
+              "rir": "1",
+              "descanso_seg": 45,
+              "tempo": "3-2-3-0",
+              "tempo_razon": "Ejercicio de estabilidad - tempo lento (3s) mejora control motor y activación profunda.",
+              "notas": "Columna neutral. Pausa 2s en extensión completa."
+            }
+          ]
+        },
+        {
+          "bloque": "Piernas",
+          "duracion_min": 55,
+          "ejercicios": [
+            {
+              "nombre": "Prensa de Piernas Inclinada",
+              "nombre_en": "Leg Press Incline",
+              "musculos": {
+                "principal": "Cuádriceps",
+                "secundarios": ["Glúteo mayor", "Isquiotibiales", "Aductores"]
+              },
+              "series": 4,
+              "reps": "10",
+              "rir": "2",
+              "descanso_seg": 120,
+              "tempo": "1-0-2-0",
+              "tempo_razon": "Compuesto pesado - concéntrico explosivo, excéntrico controlado 2s. Sin pausas para tensión continua.",
+              "notas": "Pies ancho de hombros en CENTRO de plataforma. Puntas ligeramente hacia afuera. Bajar hasta 90° de rodilla mínimo. Lumbar siempre pegada. NO bloquear rodillas arriba."
+            },
+            {
+              "nombre": "Empuje de Cadera",
+              "nombre_en": "Hip Thrust",
+              "musculos": {
+                "principal": "Glúteo mayor",
+                "secundarios": ["Isquiotibiales", "Glúteo medio", "Erectores espinales"]
+              },
+              "series": 4,
+              "reps": "8-10",
+              "rir": "1-2",
+              "descanso_seg": 120,
+              "tempo": "1-2-2-0",
+              "tempo_razon": "Pausa 2s arriba CRÍTICA para activación máxima de glúteos en contracción pico.",
+              "notas": "Espalda alta apoyada en banco. Barra con pad en cadera. Pies ancho de hombros, rodillas a 90° arriba. Empujar con TALONES. Squeeze glúteos 2s arriba. Barbilla al pecho (evita hiperextensión lumbar)."
+            },
+            {
+              "nombre": "Peso Muerto Rumano",
+              "nombre_en": "Romanian Deadlift",
+              "musculos": {
+                "principal": "Isquiotibiales",
+                "secundarios": ["Glúteo mayor", "Erectores espinales", "Aductores"]
+              },
+              "agarre": {
+                "tipo": "Prono (o mixto si muy pesado)",
+                "apertura": "Ancho de hombros"
+              },
+              "series": 3,
+              "reps": "8-12",
+              "rir": "1-2",
+              "descanso_seg": 120,
+              "tempo": "1-0-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - Excéntrico 3s + pausa 1s abajo maximiza estímulo en isquiotibiales.",
+              "notas": "Bisagra de cadera, NO sentadilla. Barra pegada a piernas. Columna neutral SIEMPRE."
+            },
+            {
+              "nombre": "Curl Femoral Tumbado",
+              "nombre_en": "Lying Leg Curl",
+              "musculos": {
+                "principal": "Isquiotibiales",
+                "secundarios": ["Gastrocnemio", "Sartorio"]
+              },
+              "series": 3,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 90,
+              "tempo": "1-1-3-0",
+              "tempo_razon": "Excéntrico 3s clave para isquiotibiales. Sin pausa abajo para tensión constante.",
+              "notas": "Control en excéntrico (clave). Sin momentum. Caderas pegadas al banco."
+            },
+            {
+              "nombre": "Abducción de Cadera",
+              "nombre_en": "Hip Abduction Machine",
+              "musculos": {
+                "principal": "Glúteo medio",
+                "secundarios": ["Glúteo menor", "Tensor de la fascia lata"]
+              },
+              "series": 2,
+              "reps": "15",
+              "rir": "1",
+              "descanso_seg": 45,
+              "tempo": "1-1-2-0",
+              "tempo_razon": "Tempo estándar aislamiento. Squeeze 1s en apertura máxima.",
+              "notas": "Control total. Sin inclinar torso."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dia": 3,
+      "nombre": "Core + Hombros + Pecho + Tríceps",
+      "duracion_estimada_min": 83,
+      "calentamiento": {
+        "duracion_min": 4,
+        "ejercicios": [
+          {"nombre": "Rotación externa con goma", "reps": "15/lado"},
+          {"nombre": "Pull-aparts con banda", "reps": "15"},
+          {"nombre": "Círculos de brazos (adelante + atrás)", "reps": "10+10"},
+          {"nombre": "Serie de aproximación press hombro (50% peso)", "reps": "8"}
+        ]
+      },
+      "bloques": [
+        {
+          "bloque": "Core",
+          "duracion_min": 6,
+          "ejercicios": [
+            {
+              "nombre": "Crunch en Polea",
+              "nombre_en": "Cable Crunch",
+              "musculos": {
+                "principal": "Recto abdominal",
+                "secundarios": ["Oblicuos"]
+              },
+              "agarre": {
+                "tipo": "Neutro (cuerda)",
+                "apertura": "Cerrado (extremos de cuerda a los lados de la cabeza)"
+              },
+              "series": 2,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 45,
+              "tempo": "1-1-2-0",
+              "tempo_razon": "Tempo estándar. Squeeze 1s en contracción máxima.",
+              "altura_polea": "Alta (máxima altura)",
+              "notas": "Flexión desde COSTILLAS, no desde cadera. Control en subida."
+            },
+            {
+              "nombre": "Plancha Lateral",
+              "nombre_en": "Side Plank",
+              "musculos": {
+                "principal": "Oblicuos",
+                "secundarios": ["Cuadrado lumbar", "Glúteo medio", "Transverso abdominal"]
+              },
+              "series": 2,
+              "reps": "30s/lado",
+              "rir": "0",
+              "descanso_seg": 45,
+              "tempo": "isométrico",
+              "tempo_razon": "Ejercicio isométrico - 30s es óptimo para activación sin fatiga excesiva.",
+              "notas": "Hombros apilados. Cadera elevada (no hundida). Core completamente rígido."
+            }
+          ]
+        },
+        {
+          "bloque": "Hombros (PRIORIDAD)",
+          "duracion_min": 20,
+          "ejercicios": [
+            {
+              "nombre": "Press de Hombro con Mancuernas",
+              "nombre_en": "Dumbbell Shoulder Press",
+              "musculos": {
+                "principal": "Deltoides anterior",
+                "secundarios": ["Deltoides lateral", "Tríceps braquial", "Trapecio superior", "Serrato anterior"]
+              },
+              "agarre": {
+                "tipo": "Neutro o Semi-prono",
+                "apertura": "N/A (mancuernas, ancho de hombros)"
+              },
+              "series": 3,
+              "reps": "6-8",
+              "rir": "1-2",
+              "descanso_seg": 120,
+              "tempo": "1-0-2-0",
+              "tempo_razon": "Compuesto pesado - concéntrico explosivo para máxima carga. Excéntrico 2s controlado.",
+              "notas": "Columna neutral (sin arquear). Codos debajo de muñecas. ROM completo."
+            },
+            {
+              "nombre": "Elevación Lateral en Polea 1 Brazo (Desde Atrás)",
+              "nombre_en": "Cable Lateral Raise 1-Arm (Behind Body)",
+              "musculos": {
+                "principal": "Deltoides lateral",
+                "secundarios": ["Deltoides anterior", "Trapecio superior"]
+              },
+              "agarre": {
+                "tipo": "Neutro (asa D)",
+                "apertura": "N/A (unilateral)"
+              },
+              "series": 4,
+              "reps": "12-15",
+              "rir": "1",
+              "descanso_seg": 75,
+              "tempo": "1-1-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - Excéntrico 3s + pausa 1s abajo. Máxima tensión en deltoides lateral.",
+              "altura_polea": "Baja (a la altura de la mano con brazo relajado)",
+              "notas": "Lean away del cable (inclinar cuerpo alejándose). Cable cruza por DETRÁS del cuerpo. Elevar hasta paralelo al suelo. Máxima tensión en stretch."
+            },
+            {
+              "nombre": "Elevaciones en Y (Banco Inclinado)",
+              "nombre_en": "Y-Raises Incline Bench",
+              "musculos": {
+                "principal": "Trapecio inferior",
+                "secundarios": ["Deltoides posterior", "Romboides", "Serrato anterior"]
+              },
+              "agarre": {
+                "tipo": "Neutro (pulgares arriba)",
+                "apertura": "N/A (mancuernas ligeras 2-5kg)"
+              },
+              "series": 2,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "2-2-2-0",
+              "tempo_razon": "Ejercicio postural - tempo lento 2s y pausa 2s para activación de trapecio inferior.",
+              "notas": "Banco a 30-45°. Pecho apoyado, cara hacia abajo. Brazos en forma de Y (45° del cuerpo). Pulgares hacia el techo. Peso MUY ligero - es activación, no fuerza."
+            }
+          ]
+        },
+        {
+          "bloque": "Pecho + Tríceps",
+          "duracion_min": 30,
+          "ejercicios": [
+            {
+              "nombre": "Fondos Lastrados",
+              "nombre_en": "Weighted Dips",
+              "musculos": {
+                "principal": "Pectoral mayor (porción inferior)",
+                "secundarios": ["Tríceps braquial", "Deltoides anterior", "Serrato anterior"]
+              },
+              "agarre": {
+                "tipo": "Neutro (barras paralelas)",
+                "apertura": "Ancho de hombros o ligeramente más"
+              },
+              "series": 3,
+              "reps": "6-10",
+              "rir": "1-2",
+              "descanso_seg": 120,
+              "tempo": "1-0-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH para pecho - Excéntrico 3s + pausa 1s abajo en stretch.",
+              "notas": "Inclinar torso 30° hacia adelante para énfasis en pecho. Bajar hasta sentir stretch en pecho. Codos a 45° del cuerpo. Si molestia en hombro, reducir ROM."
+            },
+            {
+              "nombre": "Press Inclinado con Mancuernas",
+              "nombre_en": "Incline Dumbbell Press",
+              "musculos": {
+                "principal": "Pectoral mayor (porción clavicular)",
+                "secundarios": ["Deltoides anterior", "Tríceps braquial"]
+              },
+              "agarre": {
+                "tipo": "Prono (o neutro)",
+                "apertura": "N/A (mancuernas, ligeramente más ancho que hombros)"
+              },
+              "series": 2,
+              "reps": "8-10",
+              "rir": "1-2",
+              "descanso_seg": 90,
+              "tempo": "1-0-2-1",
+              "tempo_razon": "Pausa 1s abajo para stretch de pecho. Excéntrico 2s controlado.",
+              "notas": "Banco a 30°. Sin arquear lumbar. Stretch en pecho abajo."
+            },
+            {
+              "nombre": "Extensión de Tríceps sobre Cabeza en Polea",
+              "nombre_en": "Overhead Cable Triceps Extension",
+              "musculos": {
+                "principal": "Tríceps braquial (cabeza larga)",
+                "secundarios": ["Tríceps braquial (cabeza lateral)", "Tríceps braquial (cabeza medial)"]
+              },
+              "agarre": {
+                "tipo": "Neutro (cuerda) o Prono (barra recta)",
+                "apertura": "Cerrado (manos juntas)"
+              },
+              "series": 3,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 90,
+              "tempo": "1-1-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - Excéntrico 3s + pausa 1s en stretch. Clave para cabeza larga del tríceps.",
+              "altura_polea": "Baja (cerca del suelo, de espaldas a la máquina)",
+              "notas": "MÁXIMO STRETCH arriba (hombro en flexión). Codos fijos. De espaldas a la polea."
+            },
+            {
+              "nombre": "Extensión de Tríceps en Polea con Cuerda",
+              "nombre_en": "Rope Triceps Pushdown",
+              "musculos": {
+                "principal": "Tríceps braquial (cabeza lateral)",
+                "secundarios": ["Tríceps braquial (cabeza medial)", "Ancóneo"]
+              },
+              "agarre": {
+                "tipo": "Neutro (cuerda)",
+                "apertura": "Cerrado arriba, abierto abajo (separar cuerda)"
+              },
+              "series": 3,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "1-1-2-0",
+              "tempo_razon": "Tempo estándar aislamiento. Sin pausa arriba para tensión constante.",
+              "altura_polea": "Alta (máxima altura)",
+              "notas": "Codos pegados al cuerpo. Separar la cuerda abajo. Squeeze 1s."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dia": 4,
+      "nombre": "Core + Espalda Alta + Brazos + Postura",
+      "duracion_estimada_min": 85,
+      "calentamiento": {
+        "duracion_min": 4,
+        "ejercicios": [
+          {"nombre": "Rotación externa con goma", "reps": "15/lado"},
+          {"nombre": "Pull-aparts con banda", "reps": "15"},
+          {"nombre": "Círculos de brazos (adelante + atrás)", "reps": "10+10"},
+          {"nombre": "Serie de aproximación remo polea (50% peso)", "reps": "8"}
+        ]
+      },
+      "bloques": [
+        {
+          "bloque": "Core",
+          "duracion_min": 7,
+          "ejercicios": [
+            {
+              "nombre": "Hollow Body Hold",
+              "nombre_en": "Hollow Body Hold",
+              "musculos": {
+                "principal": "Recto abdominal",
+                "secundarios": ["Transverso abdominal", "Oblicuos", "Psoas ilíaco", "Cuádriceps"]
+              },
+              "series": 2,
+              "reps": "20-30s",
+              "rir": "0",
+              "descanso_seg": 45,
+              "tempo": "isométrico",
+              "tempo_razon": "Ejercicio isométrico - 20-30s es óptimo para anti-extensión.",
+              "notas": "Lumbar PEGADA al suelo. Hombros elevados. Piernas extendidas."
+            },
+            {
+              "nombre": "Paseo del Granjero",
+              "nombre_en": "Farmer's Walk",
+              "musculos": {
+                "principal": "Core global (anti-flexión lateral)",
+                "secundarios": ["Trapecio superior", "Antebrazos", "Erectores espinales", "Oblicuos", "Glúteo medio"]
+              },
+              "agarre": {
+                "tipo": "Neutro",
+                "apertura": "N/A (mancuernas o farmer handles)"
+              },
+              "series": 2,
+              "reps": "40m",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "continuo",
+              "tempo_razon": "Ejercicio de carga continua - mantener tensión durante todo el recorrido.",
+              "notas": "Peso pesado (40-50% peso corporal por mano). Postura erecta. Hombros hacia atrás y abajo. Mirada al frente. Pasos cortos y rápidos. Core rígido todo el recorrido."
+            }
+          ]
+        },
+        {
+          "bloque": "Espalda Alta + Postura",
+          "duracion_min": 20,
+          "ejercicios": [
+            {
+              "nombre": "Remo Alto en Polea",
+              "nombre_en": "High Cable Row",
+              "musculos": {
+                "principal": "Trapecio medio",
+                "secundarios": ["Romboides", "Deltoides posterior", "Bíceps braquial"]
+              },
+              "agarre": {
+                "tipo": "Prono (cuerda o barra)",
+                "apertura": "Ancho (más que hombros, codos a 90°)"
+              },
+              "series": 4,
+              "reps": "10-12",
+              "rir": "1-2",
+              "descanso_seg": 90,
+              "tempo": "1-1-2-1",
+              "tempo_razon": "Squeeze 1s en contracción para trapecios. Pausa 1s en stretch.",
+              "altura_polea": "Alta (a la altura de la cara)",
+              "notas": "Codos a 90° (altos). Squeeze escapular. Excelente para postura."
+            },
+            {
+              "nombre": "Jalón Estrecho",
+              "nombre_en": "Close Grip Pulldown",
+              "musculos": {
+                "principal": "Dorsal ancho",
+                "secundarios": ["Redondo mayor", "Bíceps braquial", "Braquial", "Romboides"]
+              },
+              "agarre": {
+                "tipo": "Neutro",
+                "apertura": "Cerrado (manos juntas, agarre V o triángulo)"
+              },
+              "series": 3,
+              "reps": "10-12",
+              "rir": "1-2",
+              "descanso_seg": 90,
+              "tempo": "1-1-2-1",
+              "tempo_razon": "Pausa 1s arriba para stretch de dorsales. Squeeze 1s abajo.",
+              "altura_polea": "Alta (máquina de jalones)",
+              "notas": "Sin inclinarse hacia atrás excesivamente. Activar dorsales primero."
+            },
+            {
+              "nombre": "Tirón a la Cara",
+              "nombre_en": "Face Pull",
+              "musculos": {
+                "principal": "Deltoides posterior",
+                "secundarios": ["Trapecio medio", "Romboides", "Infraespinoso", "Redondo menor"]
+              },
+              "agarre": {
+                "tipo": "Neutro/Prono (cuerda)",
+                "apertura": "Medio (extremos de la cuerda)"
+              },
+              "series": 3,
+              "reps": "15-20",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "1-2-2-0",
+              "tempo_razon": "Pausa 2s en contracción CRÍTICA para rotadores externos.",
+              "altura_polea": "Alta (a la altura de la cara o ligeramente superior)",
+              "notas": "Rotación externa al FINAL del movimiento. Codos altos. Crítico para postura."
+            },
+            {
+              "nombre": "Aperturas Inversas en Máquina",
+              "nombre_en": "Reverse Fly Machine",
+              "musculos": {
+                "principal": "Deltoides posterior",
+                "secundarios": ["Trapecio medio", "Romboides"]
+              },
+              "agarre": {
+                "tipo": "Neutro o Prono (según máquina)",
+                "apertura": "Fijo (asas de la máquina)"
+              },
+              "series": 2,
+              "reps": "12-15",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "1-1-3-0",
+              "tempo_razon": "Excéntrico 3s para deltoides posterior. Sin pausa al frente.",
+              "notas": "Foco en deltoides posterior. Squeeze 1s en contracción."
+            }
+          ]
+        },
+        {
+          "bloque": "Brazos",
+          "duracion_min": 28,
+          "ejercicios": [
+            {
+              "nombre": "Curl Bayesiano en Polea",
+              "nombre_en": "Bayesian Cable Curl",
+              "musculos": {
+                "principal": "Bíceps braquial (cabeza larga)",
+                "secundarios": ["Bíceps braquial (cabeza corta)", "Braquial"]
+              },
+              "agarre": {
+                "tipo": "Supino (asa D)",
+                "apertura": "N/A (unilateral)"
+              },
+              "series": 3,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 90,
+              "tempo": "1-1-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - El más importante para cabeza larga. Excéntrico 3s + pausa 1s en stretch máximo.",
+              "altura_polea": "Baja (cerca del suelo, de espaldas a la máquina)",
+              "notas": "Brazo DETRÁS del cuerpo (clave). MÁXIMO STRETCH. De espaldas a la polea."
+            },
+            {
+              "nombre": "Curl Martillo Inclinado",
+              "nombre_en": "Incline Hammer Curl",
+              "musculos": {
+                "principal": "Braquial",
+                "secundarios": ["Braquiorradial", "Bíceps braquial"]
+              },
+              "agarre": {
+                "tipo": "Neutro",
+                "apertura": "N/A (mancuernas)"
+              },
+              "series": 3,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "1-1-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - Mismo principio. Maximiza braquial en estiramiento.",
+              "notas": "Banco a 45°. Estiramiento completo abajo."
+            },
+            {
+              "nombre": "Extensión de Tríceps sobre Cabeza con Cuerda",
+              "nombre_en": "Overhead Triceps Extension (Rope)",
+              "musculos": {
+                "principal": "Tríceps braquial (cabeza larga)",
+                "secundarios": ["Tríceps braquial (cabeza lateral)", "Tríceps braquial (cabeza medial)"]
+              },
+              "agarre": {
+                "tipo": "Neutro (cuerda)",
+                "apertura": "Cerrado (manos juntas)"
+              },
+              "series": 3,
+              "reps": "10-12",
+              "rir": "1",
+              "descanso_seg": 90,
+              "tempo": "1-1-3-1",
+              "tempo_razon": "EJERCICIO EN STRETCH - Clave para cabeza larga del tríceps. Excéntrico 3s + pausa 1s.",
+              "altura_polea": "Baja (cerca del suelo, de espaldas a la máquina)",
+              "notas": "De espaldas a la polea. MÁXIMO STRETCH. Codos fijos."
+            },
+            {
+              "nombre": "Extensión de Tríceps en Polea (Barra V)",
+              "nombre_en": "Triceps Pushdown (V-bar)",
+              "musculos": {
+                "principal": "Tríceps braquial (cabeza lateral)",
+                "secundarios": ["Tríceps braquial (cabeza medial)", "Ancóneo"]
+              },
+              "agarre": {
+                "tipo": "Semi-prono (barra V)",
+                "apertura": "Cerrado (manos en ángulo de la V)"
+              },
+              "series": 2,
+              "reps": "12-15",
+              "rir": "1",
+              "descanso_seg": 60,
+              "tempo": "1-1-2-0",
+              "tempo_razon": "Tempo estándar. Sin pausa arriba para tensión constante.",
+              "altura_polea": "Alta (máxima altura)",
+              "notas": "Trabaja cabeza lateral. Codos fijos. Squeeze 1s abajo."
+            }
+          ]
+        },
+        {
+          "bloque": "Laterales Finisher",
+          "duracion_min": 5,
+          "ejercicios": [
+            {
+              "nombre": "Elevación Lateral en Polea (Bilateral)",
+              "nombre_en": "Cable Lateral Raise (Bilateral)",
+              "musculos": {
+                "principal": "Deltoides lateral",
+                "secundarios": ["Deltoides anterior", "Trapecio superior"]
+              },
+              "agarre": {
+                "tipo": "Neutro (asas D cruzadas)",
+                "apertura": "N/A (bilateral cruzado)"
+              },
+              "series": 3,
+              "reps": "15-20",
+              "rir": "0-1",
+              "descanso_seg": 45,
+              "tempo": "1-0-2-0",
+              "tempo_razon": "Burnout metabólico - tempo fluido sin pausas para acumulación de metabolitos.",
+              "altura_polea": "Baja (ambos cables cruzados por delante del cuerpo)",
+              "notas": "Cables cruzados: mano derecha agarra cable izquierdo y viceversa. Elevar hasta paralelo. Reps continuas al fallo."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "volumen_semanal": {
+    "deltoides_lateral": {"series": 10, "rango_optimo": "10-20", "status": "optimo", "detalle": "D1: 3 + D3: 4 + D4: 3"},
+    "biceps": {"series": 14, "rango_optimo": "10-20", "status": "optimo", "detalle": "D1: 8 (3+3+2) + D4: 6 (3+3)"},
+    "triceps": {"series": 14, "rango_optimo": "10-16", "status": "optimo", "detalle": "D3: 9 (3 fondos + 3+3) + D4: 5 (3+2)"},
+    "rear_delt_postura": {"series": 12, "rango_optimo": "8-12", "status": "optimo", "detalle": "D1: 3 face pull + D3: 2 Y-raises + D4: 3 face pull + 2 reverse fly + 4 remo alto"},
+    "espalda": {"series": 16, "rango_optimo": "10-20", "status": "optimo", "detalle": "D1: 9 (4+3+2) + D4: 7 (4+3)"},
+    "pecho": {"series": 5, "rango_optimo": "6-10", "status": "bajo_intencional", "detalle": "D3: 5 (3 fondos + 2 press inclinado)"},
+    "core": {"series": 15, "rango_optimo": "8-16", "status": "optimo", "detalle": "D1: 5 + D2: 4 + D3: 4 + D4: 4"},
+    "cuadriceps": {"series": 4, "rango_optimo": "mantenimiento", "status": "ok", "detalle": "D2: 4 prensa"},
+    "isquiotibiales": {"series": 6, "rango_optimo": "mantenimiento", "status": "ok", "detalle": "D2: 3 RDL + 3 curl femoral"},
+    "gluteos": {"series": 6, "rango_optimo": "mantenimiento", "status": "ok", "detalle": "D2: 4 hip thrust + 2 abducción"}
+  },
+  "progresion": {
+    "metodo": "Double Progression",
+    "pasos": [
+      "Empieza en el rango bajo de reps (ej: 8 si el rango es 8-10)",
+      "Cada sesión intenta añadir 1 rep manteniendo RIR",
+      "Cuando llegues al rango alto en TODAS las series, sube peso 2.5-5%",
+      "Vuelve al rango bajo con el nuevo peso"
+    ],
+    "deload": {
+      "frecuencia": "Cada 6-8 semanas",
+      "reduccion_volumen": "40-50%",
+      "mantener_intensidad": true
+    }
+  },
+  "calentamiento_upper": {
+    "aplicar_en_dias": [1, 3, 4],
+    "ejercicios": [
+      {"nombre": "Rotación externa con goma", "series": 2, "reps": "15/lado"},
+      {"nombre": "Pull-aparts con banda", "series": 2, "reps": "15"},
+      {"nombre": "Dislocaciones con banda (opcional)", "reps": "10"},
+      {"nombre": "Series de aproximación del primer ejercicio", "intensidad": ["50%", "70%"]}
+    ]
+  },
+  "referencias_cientificas": [
+    {
+      "autor": "Schoenfeld et al.",
+      "año": 2015,
+      "hallazgo": "Duración de rep 0.5-8s produce hipertrofia similar. Lo importante es tensión mecánica."
+    },
+    {
+      "autor": "Pedrosa et al.",
+      "año": 2023,
+      "hallazgo": "Ejercicios en posición de stretch producen +20% hipertrofia. Excéntricos 2-3s maximizan este efecto."
+    },
+    {
+      "autor": "Lacerda et al.",
+      "año": 2019,
+      "hallazgo": "Excéntricos 2-4s óptimos. >4s reduce volumen sin beneficio adicional."
+    },
+    {
+      "autor": "Wilk et al.",
+      "año": 2021,
+      "hallazgo": "Concéntricos explosivos (1-2s) permiten mayor carga. Pausas >2s no añaden beneficio."
+    },
+    {
+      "autor": "Kassiano et al.",
+      "año": 2023,
+      "hallazgo": "Cables superiores a mancuernas para laterales por mejor curva de resistencia en stretch."
+    },
+    {
+      "autor": "Schoenfeld et al.",
+      "año": 2016,
+      "hallazgo": "Descansos 2-3min para compuestos, 90-120s para aislamiento optimizan hipertrofia."
+    }
+  ]
+}
