@@ -4,7 +4,7 @@ import SetRow from './SetRow.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 
 function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }) {
-  const { id, exercise, series, reps, rir, tempo, tempo_razon, notas, measurement_type } = routineExercise
+  const { id, exercise, series, reps, rir, tempo, tempo_razon, notas, measurement_type, descanso_seg } = routineExercise
   const [showNotes, setShowNotes] = useState(false)
 
   // Determinar tipo de medición: override en routine_exercise > default del ejercicio > weight_reps
@@ -97,6 +97,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }
             exerciseId={exercise.id}
             measurementType={measurementType}
             defaultWeightUnit={defaultWeightUnit}
+            descansoSeg={descanso_seg}
             onComplete={onCompleteSet}
             onUncomplete={onUncompleteSet}
             canRemove={setsCount > 0}

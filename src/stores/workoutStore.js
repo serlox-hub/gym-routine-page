@@ -12,6 +12,11 @@ const useWorkoutStore = create(
       // Completed sets during this session (before saving to DB)
       completedSets: {},
 
+      // Rest timer state
+      restTimerActive: false,
+      restTimeRemaining: 0,
+      restTimeInitial: 0,
+
       // Start a new workout session
       startSession: (sessionId, routineDayId) => set({
         sessionId,
@@ -73,6 +78,29 @@ const useWorkoutStore = create(
         const state = get()
         return !!state.sessionId
       },
+
+      // Rest timer actions
+      startRestTimer: (seconds) => set({
+        restTimerActive: true,
+        restTimeRemaining: seconds,
+        restTimeInitial: seconds,
+      }),
+
+      tickTimer: () => set(state => {
+        if (state.restTimeRemaining <= 1) {
+          return { restTimeRemaining: 0, restTimerActive: false }
+        }
+        return { restTimeRemaining: state.restTimeRemaining - 1 }
+      }),
+
+      skipRest: () => set({
+        restTimerActive: false,
+        restTimeRemaining: 0,
+      }),
+
+      adjustRestTime: (delta) => set(state => ({
+        restTimeRemaining: Math.max(0, state.restTimeRemaining + delta),
+      })),
     }),
     {
       name: 'workout-session',

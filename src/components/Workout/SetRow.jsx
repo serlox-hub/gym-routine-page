@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import useWorkoutStore from '../../stores/workoutStore.js'
+import ExecutionTimer from './ExecutionTimer.jsx'
 
-function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'weight_reps', defaultWeightUnit = 'kg', onComplete, onUncomplete, canRemove = false, onRemove }) {
+function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'weight_reps', defaultWeightUnit = 'kg', descansoSeg, onComplete, onUncomplete, canRemove = false, onRemove }) {
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(routineExerciseId, setNumber))
   const setData = useWorkoutStore(state => state.getSetData(routineExerciseId, setNumber))
 
@@ -53,7 +54,7 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
         break
     }
 
-    onComplete(data)
+    onComplete(data, descansoSeg)
   }
 
   const isValid = () => {
@@ -150,35 +151,41 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
 
       case 'time':
         return (
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              value={time}
-              onChange={handleNumberChange(setTime)}
-              disabled={isCompleted}
-              className="w-20 px-2 py-1 rounded text-center text-sm"
-              style={inputStyle}
-            />
-            <span className="text-xs text-muted">seg</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={time}
+                onChange={handleNumberChange(setTime)}
+                disabled={isCompleted}
+                className="w-16 px-2 py-1 rounded text-center text-sm"
+                style={inputStyle}
+              />
+              <span className="text-xs text-muted">seg</span>
+            </div>
+            {!isCompleted && <ExecutionTimer seconds={time} />}
           </div>
         )
 
       case 'time_per_side':
         return (
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              value={time}
-              onChange={handleNumberChange(setTime)}
-              disabled={isCompleted}
-              className="w-20 px-2 py-1 rounded text-center text-sm"
-              style={inputStyle}
-            />
-            <span className="text-xs text-muted">seg/lado</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={time}
+                onChange={handleNumberChange(setTime)}
+                disabled={isCompleted}
+                className="w-16 px-2 py-1 rounded text-center text-sm"
+                style={inputStyle}
+              />
+              <span className="text-xs text-muted">seg/lado</span>
+            </div>
+            {!isCompleted && <ExecutionTimer seconds={time} />}
           </div>
         )
 

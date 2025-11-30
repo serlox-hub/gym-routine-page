@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useRoutineDay, useRoutineBlocks } from '../hooks/useRoutines.js'
 import { useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../components/ui/index.js'
-import { WorkoutExerciseCard } from '../components/Workout/index.js'
+import { WorkoutExerciseCard, RestTimer } from '../components/Workout/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 function WorkoutSession() {
@@ -11,6 +11,7 @@ function WorkoutSession() {
   const navigate = useNavigate()
 
   const sessionId = useWorkoutStore(state => state.sessionId)
+  const startRestTimer = useWorkoutStore(state => state.startRestTimer)
 
   const { data: day, isLoading: loadingDay, error: dayError } = useRoutineDay(dayId)
   const { data: blocks, isLoading: loadingBlocks, error: blocksError } = useRoutineBlocks(dayId)
@@ -33,8 +34,14 @@ function WorkoutSession() {
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
-  const handleCompleteSet = (setData) => {
-    completeSetMutation.mutate(setData)
+  const handleCompleteSet = (setData, descansoSeg) => {
+    completeSetMutation.mutate(setData, {
+      onSuccess: () => {
+        if (descansoSeg && descansoSeg > 0) {
+          startRestTimer(descansoSeg)
+        }
+      }
+    })
   }
 
   const handleUncompleteSet = (setData) => {
@@ -157,6 +164,8 @@ function WorkoutSession() {
         onConfirm={handleAbandonWorkout}
         onCancel={() => setShowCancelModal(false)}
       />
+
+      <RestTimer />
     </div>
   )
 }
