@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import ExecutionTimer from './ExecutionTimer.jsx'
 
-function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'weight_reps', defaultWeightUnit = 'kg', descansoSeg, onComplete, onUncomplete, canRemove = false, onRemove }) {
+function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'weight_reps', defaultWeightUnit = 'kg', descansoSeg, previousSet, onComplete, onUncomplete, canRemove = false, onRemove }) {
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(routineExerciseId, setNumber))
   const setData = useWorkoutStore(state => state.getSetData(routineExerciseId, setNumber))
 
@@ -11,8 +11,15 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
   const [time, setTime] = useState(setData?.timeSeconds ?? 0)
   const [distance, setDistance] = useState(setData?.distanceMeters ?? 0)
 
-  // Sincronizar estado local cuando cambia setData (para cuando se desmarca)
-  // No reseteamos a 0, mantenemos el último valor ingresado
+  // Cargar valores de sesión anterior cuando lleguen
+  useEffect(() => {
+    if (previousSet && !setData) {
+      if (previousSet.weight) setWeight(previousSet.weight)
+      if (previousSet.reps) setReps(previousSet.reps)
+      if (previousSet.timeSeconds) setTime(previousSet.timeSeconds)
+      if (previousSet.distanceMeters) setDistance(previousSet.distanceMeters)
+    }
+  }, [previousSet, setData])
 
   const handleNumberChange = (setter) => (e) => {
     const value = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value))

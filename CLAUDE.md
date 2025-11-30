@@ -130,9 +130,9 @@ Main tables:
 - [x] Fase 3: Visualización de Rutinas
 - [x] Fase 4: Sesión de Entrenamiento (iniciar, registrar series, finalizar/cancelar, diferentes tipos de medición)
 - [x] Fase 5: Timer de Descanso (auto-inicia al completar serie, countdown, alertas sonoras/vibración, ExecutionTimer para ejercicios de tiempo)
+- [x] Fase 6: Referencia Sesión Anterior (muestra última sesión, pre-rellena inputs con valores anteriores, ajusta número de series)
 
 ### Pending
-- [ ] Fase 6: Referencia Sesión Anterior
 - [ ] Fase 7: Notas por Serie
 - [ ] Fase 8: Histórico
 - [ ] Fase 9: Gráficos de Progresión

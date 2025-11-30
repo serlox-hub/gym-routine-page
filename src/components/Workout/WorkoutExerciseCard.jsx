@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Card, Badge } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
+import PreviousWorkout from './PreviousWorkout.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
+import { usePreviousWorkout } from '../../hooks/usePreviousWorkout.js'
 
 function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }) {
   const { id, exercise, series, reps, rir, tempo, tempo_razon, notas, measurement_type, descanso_seg } = routineExercise
@@ -14,7 +16,15 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }
   const defaultWeightUnit = exercise.equipment?.default_weight_unit || 'kg'
 
   const completedSets = useWorkoutStore(state => state.completedSets)
+  const { data: previousWorkout } = usePreviousWorkout(exercise.id)
   const [setsCount, setSetsCount] = useState(series)
+
+  // Actualizar cuando lleguen los datos de la sesión anterior
+  useEffect(() => {
+    if (previousWorkout?.sets?.length) {
+      setSetsCount(previousWorkout.sets.length)
+    }
+  }, [previousWorkout])
 
   const completedCount = useMemo(() => {
     return Object.values(completedSets)
@@ -88,22 +98,30 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }
         </div>
       )}
 
+      <div className="mb-3">
+        <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} />
+      </div>
+
       <div className="space-y-2">
-        {Array.from({ length: setsCount }, (_, i) => (
-          <SetRow
-            key={i + 1}
-            setNumber={i + 1}
-            routineExerciseId={id}
-            exerciseId={exercise.id}
-            measurementType={measurementType}
-            defaultWeightUnit={defaultWeightUnit}
-            descansoSeg={descanso_seg}
-            onComplete={onCompleteSet}
-            onUncomplete={onUncompleteSet}
-            canRemove={setsCount > 0}
-            onRemove={removeSet}
-          />
-        ))}
+        {Array.from({ length: setsCount }, (_, i) => {
+          const previousSet = previousWorkout?.sets?.find(s => s.setNumber === i + 1)
+          return (
+            <SetRow
+              key={i + 1}
+              setNumber={i + 1}
+              routineExerciseId={id}
+              exerciseId={exercise.id}
+              measurementType={measurementType}
+              defaultWeightUnit={defaultWeightUnit}
+              descansoSeg={descanso_seg}
+              previousSet={previousSet}
+              onComplete={onCompleteSet}
+              onUncomplete={onUncompleteSet}
+              canRemove={setsCount > 0}
+              onRemove={removeSet}
+            />
+          )
+        })}
       </div>
 
       <button
