@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useRoutineDay, useRoutineBlocks } from '../hooks/useRoutines.js'
 import { useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../components/ui/index.js'
-import { WorkoutExerciseCard, RestTimer } from '../components/Workout/index.js'
+import { WorkoutExerciseCard, RestTimer, AddExerciseModal } from '../components/Workout/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 function WorkoutSession() {
@@ -12,11 +13,19 @@ function WorkoutSession() {
 
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
+  const exerciseOrder = useWorkoutStore(state => state.exerciseOrder)
+  const extraExercises = useWorkoutStore(state => state.extraExercises)
+  const initializeExerciseOrder = useWorkoutStore(state => state.initializeExerciseOrder)
+  const moveExercise = useWorkoutStore(state => state.moveExercise)
+  const addExtraExercise = useWorkoutStore(state => state.addExtraExercise)
+  const removeExtraExercise = useWorkoutStore(state => state.removeExtraExercise)
 
   const { data: day, isLoading: loadingDay, error: dayError } = useRoutineDay(dayId)
   const { data: blocks, isLoading: loadingBlocks, error: blocksError } = useRoutineBlocks(dayId)
 
   const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showAddExercise, setShowAddExercise] = useState(false)
+  const [isReordering, setIsReordering] = useState(false)
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -25,6 +34,52 @@ function WorkoutSession() {
 
   const isLoading = loadingDay || loadingBlocks
   const error = dayError || blocksError
+
+  // Initialize exercise order when blocks load
+  useEffect(() => {
+    if (blocks && blocks.length > 0) {
+      initializeExerciseOrder(blocks)
+    }
+  }, [blocks, initializeExerciseOrder])
+
+  // Build ordered exercise list
+  const orderedExercises = useMemo(() => {
+    if (!blocks) return []
+
+    // Create a map of routine exercises by id
+    const routineExerciseMap = new Map()
+    blocks.forEach(block => {
+      block.routine_exercises.forEach(re => {
+        routineExerciseMap.set(re.id, { ...re, blockName: block.nombre })
+      })
+    })
+
+    // If no custom order yet, use default from blocks
+    if (exerciseOrder.length === 0) {
+      const defaultList = []
+      blocks.forEach(block => {
+        block.routine_exercises.forEach(re => {
+          defaultList.push({
+            ...re,
+            blockName: block.nombre,
+            type: 'routine',
+          })
+        })
+      })
+      return defaultList
+    }
+
+    // Build ordered list
+    return exerciseOrder.map(item => {
+      if (item.type === 'routine') {
+        const re = routineExerciseMap.get(item.id)
+        return re ? { ...re, type: 'routine' } : null
+      } else {
+        const extra = extraExercises.find(e => e.id === item.id)
+        return extra ? { ...extra, type: 'extra' } : null
+      }
+    }).filter(Boolean)
+  }, [blocks, exerciseOrder, extraExercises])
 
   if (!sessionId) {
     navigate(`/routine/${routineId}/day/${dayId}`)
@@ -68,6 +123,10 @@ function WorkoutSession() {
     })
   }
 
+  const handleAddExercise = (exercise, config) => {
+    addExtraExercise(exercise, config)
+  }
+
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
       <header className="mb-6">
@@ -81,52 +140,81 @@ function WorkoutSession() {
             </span>
             <h1 className="text-xl font-bold">{day?.nombre}</h1>
           </div>
-          {day?.duracion_estimada_min && (
-            <span className="text-sm text-muted">
-              ~{day.duracion_estimada_min} min
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsReordering(!isReordering)}
+              className="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: isReordering ? 'rgba(88, 166, 255, 0.15)' : '#21262d',
+                color: isReordering ? '#58a6ff' : '#8b949e',
+              }}
+            >
+              {isReordering ? 'Listo' : 'Reordenar'}
+            </button>
+            <button
+              onClick={() => setShowAddExercise(true)}
+              className="p-1.5 rounded hover:opacity-80"
+              style={{ backgroundColor: '#21262d' }}
+              title="Añadir ejercicio"
+            >
+              <Plus size={18} style={{ color: '#8b949e' }} />
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="space-y-6">
-        {blocks?.map(block => (
-          <section key={block.id} className="space-y-3">
-            <div
-              className="flex items-center justify-between px-3 py-2 rounded border-l-4"
-              style={{
-                backgroundColor: '#21262d',
-                borderLeftColor: '#a371f7'
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <h3
-                  className="text-sm font-semibold uppercase tracking-wide"
-                  style={{ color: '#a371f7' }}
+      <main className="space-y-3">
+        {orderedExercises.map((routineExercise, index) => (
+          <div key={routineExercise.id} className="relative">
+            {isReordering && (
+              <div
+                className="absolute -left-10 top-1/2 -translate-y-1/2 flex flex-col gap-1 z-10"
+              >
+                <button
+                  onClick={() => moveExercise(index, 'up')}
+                  disabled={index === 0}
+                  className="p-1 rounded hover:opacity-80 disabled:opacity-30"
+                  style={{ backgroundColor: '#21262d' }}
                 >
-                  {block.nombre}
-                </h3>
-                <span className="text-xs text-muted">
-                  ({block.routine_exercises.length})
-                </span>
+                  <ChevronUp size={16} style={{ color: '#8b949e' }} />
+                </button>
+                <button
+                  onClick={() => moveExercise(index, 'down')}
+                  disabled={index === orderedExercises.length - 1}
+                  className="p-1 rounded hover:opacity-80 disabled:opacity-30"
+                  style={{ backgroundColor: '#21262d' }}
+                >
+                  <ChevronDown size={16} style={{ color: '#8b949e' }} />
+                </button>
               </div>
-              {block.duracion_min && (
-                <span className="text-xs text-muted">
-                  ~{block.duracion_min} min
-                </span>
+            )}
+
+            {routineExercise.type === 'extra' && isReordering && (
+              <button
+                onClick={() => removeExtraExercise(routineExercise.id)}
+                className="absolute -right-2 -top-2 p-1.5 rounded-full z-10 hover:opacity-80"
+                style={{ backgroundColor: '#f85149' }}
+              >
+                <Trash2 size={12} style={{ color: '#ffffff' }} />
+              </button>
+            )}
+
+            <div className={isReordering ? 'ml-8' : ''}>
+              {routineExercise.type === 'extra' && (
+                <div
+                  className="text-xs font-medium px-2 py-0.5 rounded inline-block mb-1"
+                  style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: '#a371f7' }}
+                >
+                  Añadido
+                </div>
               )}
+              <WorkoutExerciseCard
+                routineExercise={routineExercise}
+                onCompleteSet={handleCompleteSet}
+                onUncompleteSet={handleUncompleteSet}
+              />
             </div>
-            <div className="space-y-3">
-              {block.routine_exercises.map(routineExercise => (
-                <WorkoutExerciseCard
-                  key={routineExercise.id}
-                  routineExercise={routineExercise}
-                  onCompleteSet={handleCompleteSet}
-                  onUncompleteSet={handleUncompleteSet}
-                />
-              ))}
-            </div>
-          </section>
+          </div>
         ))}
       </main>
 
@@ -163,6 +251,12 @@ function WorkoutSession() {
         cancelText="Continuar"
         onConfirm={handleAbandonWorkout}
         onCancel={() => setShowCancelModal(false)}
+      />
+
+      <AddExerciseModal
+        isOpen={showAddExercise}
+        onClose={() => setShowAddExercise(false)}
+        onAdd={handleAddExercise}
       />
 
       <RestTimer />

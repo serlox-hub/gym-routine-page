@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { History } from 'lucide-react'
+import { History, Dumbbell } from 'lucide-react'
 import { useRoutines } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
 
@@ -15,14 +15,24 @@ function Home() {
       <header className="mb-6 border-b border-border pb-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Mis Rutinas</h1>
-          <button
-            onClick={() => navigate('/history')}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-          >
-            <History size={16} />
-            Histórico
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/exercises/new')}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+            >
+              <Dumbbell size={16} />
+              Ejercicio
+            </button>
+            <button
+              onClick={() => navigate('/history')}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+            >
+              <History size={16} />
+              Histórico
+            </button>
+          </div>
         </div>
       </header>
       <main>
