@@ -27,14 +27,42 @@ export function useWorkoutHistory() {
           sets:completed_sets (
             id,
             weight,
-            reps_completed
+            reps_completed,
+            exercise:exercises (
+              id,
+              exercise_muscles (
+                es_principal,
+                muscle:muscles (
+                  id,
+                  muscle_group:muscle_groups (
+                    id,
+                    nombre
+                  )
+                )
+              )
+            )
           )
         `)
         .eq('status', 'completed')
         .order('started_at', { ascending: false })
 
       if (error) throw error
-      return data
+
+      // Extraer grupos musculares únicos de cada sesión
+      return data.map(session => {
+        const muscleGroupsSet = new Set()
+        session.sets?.forEach(set => {
+          set.exercise?.exercise_muscles?.forEach(em => {
+            if (em.es_principal && em.muscle?.muscle_group?.nombre) {
+              muscleGroupsSet.add(em.muscle.muscle_group.nombre)
+            }
+          })
+        })
+        return {
+          ...session,
+          muscleGroups: Array.from(muscleGroupsSet),
+        }
+      })
     },
   })
 }

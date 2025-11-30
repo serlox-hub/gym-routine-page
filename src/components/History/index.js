@@ -1,2 +1,1 @@
-export { default as SessionTonnageChart } from './SessionTonnageChart.jsx'
-export { default as FrequencyCalendar } from './FrequencyCalendar.jsx'
+export { default as MonthlyCalendar } from './MonthlyCalendar.jsx'
