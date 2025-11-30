@@ -1,0 +1,416 @@
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ChevronLeft, Save, X } from 'lucide-react'
+import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
+import {
+  useExercise,
+  useMuscles,
+  useEquipment,
+  useGripTypes,
+  useGripWidths,
+  useUpdateExercise,
+} from '../hooks/useExercises.js'
+
+const MEASUREMENT_TYPES = [
+  { value: 'weight_reps', label: 'Peso × Reps' },
+  { value: 'reps_only', label: 'Solo reps' },
+  { value: 'reps_per_side', label: 'Reps por lado' },
+  { value: 'time', label: 'Tiempo' },
+  { value: 'time_per_side', label: 'Tiempo por lado' },
+  { value: 'distance', label: 'Distancia' },
+]
+
+const ALTURA_POLEA_OPTIONS = ['Alta', 'Media', 'Baja']
+
+const selectStyle = {
+  backgroundColor: '#21262d',
+  border: '1px solid #30363d',
+  color: '#e6edf3',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 12px center',
+  paddingRight: '40px',
+}
+
+function EditExercise() {
+  const { exerciseId } = useParams()
+  const navigate = useNavigate()
+
+  const { data: exercise, isLoading: loadingExercise } = useExercise(exerciseId)
+  const { data: muscles, isLoading: loadingMuscles } = useMuscles()
+  const { data: equipment, isLoading: loadingEquipment } = useEquipment()
+  const { data: gripTypes, isLoading: loadingGripTypes } = useGripTypes()
+  const { data: gripWidths, isLoading: loadingGripWidths } = useGripWidths()
+  const updateExercise = useUpdateExercise()
+
+  const [form, setForm] = useState({
+    nombre: '',
+    equipment_id: '',
+    grip_type_id: '',
+    grip_width_id: '',
+    altura_polea: '',
+    measurement_type: 'weight_reps',
+    instrucciones: '',
+  })
+
+  const [selectedMuscles, setSelectedMuscles] = useState([])
+  const [error, setError] = useState(null)
+
+  // Populate form when exercise loads
+  useEffect(() => {
+    if (exercise) {
+      setForm({
+        nombre: exercise.nombre || '',
+        equipment_id: exercise.equipment_id || '',
+        grip_type_id: exercise.grip_type_id || '',
+        grip_width_id: exercise.grip_width_id || '',
+        altura_polea: exercise.altura_polea || '',
+        measurement_type: exercise.measurement_type || 'weight_reps',
+        instrucciones: exercise.instrucciones || '',
+      })
+
+      if (exercise.exercise_muscles) {
+        setSelectedMuscles(
+          exercise.exercise_muscles.map(em => ({
+            muscle_id: em.muscle_id,
+            nombre: em.muscle?.nombre || '',
+            es_principal: em.es_principal,
+          }))
+        )
+      }
+    }
+  }, [exercise])
+
+  const isLoading = loadingExercise || loadingMuscles || loadingEquipment || loadingGripTypes || loadingGripWidths
+
+  if (isLoading) return <LoadingSpinner />
+
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  const addMuscle = (muscleId, esPrincipal = false) => {
+    if (!muscleId) return
+    const exists = selectedMuscles.find(m => m.muscle_id === parseInt(muscleId))
+    if (exists) return
+
+    const muscle = muscles.find(m => m.id === parseInt(muscleId))
+    setSelectedMuscles(prev => [
+      ...prev,
+      {
+        muscle_id: parseInt(muscleId),
+        nombre: muscle.nombre,
+        es_principal: esPrincipal,
+      },
+    ])
+  }
+
+  const removeMuscle = (muscleId) => {
+    setSelectedMuscles(prev => prev.filter(m => m.muscle_id !== muscleId))
+  }
+
+  const togglePrincipal = (muscleId) => {
+    setSelectedMuscles(prev =>
+      prev.map(m =>
+        m.muscle_id === muscleId ? { ...m, es_principal: !m.es_principal } : m
+      )
+    )
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!form.nombre.trim()) {
+      setError('El nombre es obligatorio')
+      return
+    }
+
+    if (selectedMuscles.length === 0) {
+      setError('Selecciona al menos un músculo')
+      return
+    }
+
+    try {
+      await updateExercise.mutateAsync({
+        exerciseId: parseInt(exerciseId),
+        exercise: {
+          ...form,
+          equipment_id: form.equipment_id || null,
+          grip_type_id: form.grip_type_id || null,
+          grip_width_id: form.grip_width_id || null,
+        },
+        muscles: selectedMuscles.map(m => ({
+          muscle_id: m.muscle_id,
+          es_principal: m.es_principal,
+        })),
+      })
+      navigate('/exercises')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  // Agrupar músculos por grupo
+  const musclesByGroup = muscles?.reduce((acc, muscle) => {
+    const groupName = muscle.muscle_group?.nombre || 'Otros'
+    if (!acc[groupName]) acc[groupName] = []
+    acc[groupName].push(muscle)
+    return acc
+  }, {})
+
+  // Verificar si el equipo seleccionado es polea
+  const selectedEquipment = equipment?.find(e => e.id === parseInt(form.equipment_id))
+  const isPolea = selectedEquipment?.equipment_type?.nombre === 'Polea'
+
+  return (
+    <div className="p-4 max-w-2xl mx-auto pb-24">
+      <header className="mb-6">
+        <button
+          onClick={() => navigate('/exercises')}
+          className="flex items-center gap-1 text-sm mb-4 hover:opacity-80"
+          style={{ color: '#58a6ff' }}
+        >
+          <ChevronLeft size={16} />
+          Volver
+        </button>
+        <h1 className="text-2xl font-bold">Editar ejercicio</h1>
+      </header>
+
+      {error && <ErrorMessage message={error} className="mb-4" />}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Nombre */}
+        <Card className="p-4">
+          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            Nombre *
+          </label>
+          <input
+            type="text"
+            value={form.nombre}
+            onChange={(e) => handleChange('nombre', e.target.value)}
+            placeholder="Ej: Press banca"
+            className="w-full p-3 rounded-lg text-base"
+            style={{
+              backgroundColor: '#21262d',
+              border: '1px solid #30363d',
+              color: '#e6edf3',
+            }}
+          />
+        </Card>
+
+        {/* Tipo de medición */}
+        <Card className="p-4">
+          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            Tipo de medición
+          </label>
+          <select
+            value={form.measurement_type}
+            onChange={(e) => handleChange('measurement_type', e.target.value)}
+            className="w-full p-3 rounded-lg text-base appearance-none"
+            style={selectStyle}
+          >
+            {MEASUREMENT_TYPES.map(type => (
+              <option key={type.value} value={type.value}>{type.label}</option>
+            ))}
+          </select>
+        </Card>
+
+        {/* Equipamiento */}
+        <Card className="p-4">
+          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            Equipamiento
+          </label>
+          <select
+            value={form.equipment_id}
+            onChange={(e) => handleChange('equipment_id', e.target.value)}
+            className="w-full p-3 rounded-lg text-base appearance-none"
+            style={selectStyle}
+          >
+            <option value="">Sin equipamiento</option>
+            {equipment?.map(eq => (
+              <option key={eq.id} value={eq.id}>{eq.nombre}</option>
+            ))}
+          </select>
+        </Card>
+
+        {/* Altura polea (solo si es polea) */}
+        {isPolea && (
+          <Card className="p-4">
+            <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+              Altura de la polea
+            </label>
+            <div className="flex gap-2">
+              {ALTURA_POLEA_OPTIONS.map(altura => (
+                <button
+                  key={altura}
+                  type="button"
+                  onClick={() => handleChange('altura_polea', altura)}
+                  className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: form.altura_polea === altura ? 'rgba(88, 166, 255, 0.15)' : '#21262d',
+                    color: form.altura_polea === altura ? '#58a6ff' : '#8b949e',
+                    border: '1px solid #30363d',
+                  }}
+                >
+                  {altura}
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Tipo de agarre */}
+        <Card className="p-4">
+          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            Tipo de agarre
+          </label>
+          <select
+            value={form.grip_type_id}
+            onChange={(e) => handleChange('grip_type_id', e.target.value)}
+            className="w-full p-3 rounded-lg text-base appearance-none"
+            style={selectStyle}
+          >
+            <option value="">N/A</option>
+            {gripTypes?.map(gt => (
+              <option key={gt.id} value={gt.id}>{gt.nombre}</option>
+            ))}
+          </select>
+        </Card>
+
+        {/* Apertura de agarre */}
+        <Card className="p-4">
+          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            Apertura de agarre
+          </label>
+          <select
+            value={form.grip_width_id}
+            onChange={(e) => handleChange('grip_width_id', e.target.value)}
+            className="w-full p-3 rounded-lg text-base appearance-none"
+            style={selectStyle}
+          >
+            <option value="">N/A</option>
+            {gripWidths?.map(gw => (
+              <option key={gw.id} value={gw.id}>{gw.nombre}</option>
+            ))}
+          </select>
+        </Card>
+
+        {/* Músculos */}
+        <Card className="p-4">
+          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            Músculos trabajados *
+          </label>
+
+          {/* Músculos seleccionados */}
+          {selectedMuscles.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedMuscles.map(m => (
+                <div
+                  key={m.muscle_id}
+                  className="flex items-center gap-1 px-2 py-1 rounded text-sm"
+                  style={{
+                    backgroundColor: m.es_principal ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
+                    color: m.es_principal ? '#3fb950' : '#58a6ff',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => togglePrincipal(m.muscle_id)}
+                    className="hover:opacity-80"
+                    title={m.es_principal ? 'Marcar como secundario' : 'Marcar como principal'}
+                  >
+                    {m.nombre}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeMuscle(m.muscle_id)}
+                    className="hover:opacity-80"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="text-xs mb-2" style={{ color: '#8b949e' }}>
+            Toca un músculo seleccionado para alternar principal/secundario
+          </p>
+
+          {/* Selector de músculos agrupados */}
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {musclesByGroup && Object.entries(musclesByGroup).map(([group, groupMuscles]) => (
+              <div key={group}>
+                <p className="text-xs font-medium mb-1" style={{ color: '#8b949e' }}>{group}</p>
+                <div className="flex flex-wrap gap-1">
+                  {groupMuscles.map(muscle => {
+                    const isSelected = selectedMuscles.some(m => m.muscle_id === muscle.id)
+                    return (
+                      <button
+                        key={muscle.id}
+                        type="button"
+                        onClick={() => !isSelected && addMuscle(muscle.id, false)}
+                        disabled={isSelected}
+                        className="px-2 py-1 rounded text-xs transition-colors"
+                        style={{
+                          backgroundColor: isSelected ? '#30363d' : '#21262d',
+                          color: isSelected ? '#8b949e' : '#e6edf3',
+                          opacity: isSelected ? 0.5 : 1,
+                        }}
+                      >
+                        {muscle.nombre}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Instrucciones */}
+        <Card className="p-4">
+          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            Instrucciones
+          </label>
+          <textarea
+            value={form.instrucciones}
+            onChange={(e) => handleChange('instrucciones', e.target.value)}
+            placeholder="Notas sobre la ejecución del ejercicio..."
+            rows={3}
+            className="w-full p-3 rounded-lg text-base resize-none"
+            style={{
+              backgroundColor: '#21262d',
+              border: '1px solid #30363d',
+              color: '#e6edf3',
+            }}
+          />
+        </Card>
+
+        {/* Botón guardar */}
+        <button
+          type="submit"
+          disabled={updateExercise.isPending}
+          className="w-full py-4 rounded-lg font-medium text-lg transition-colors flex items-center justify-center gap-2"
+          style={{
+            backgroundColor: '#238636',
+            color: '#ffffff',
+            opacity: updateExercise.isPending ? 0.7 : 1,
+          }}
+        >
+          {updateExercise.isPending ? (
+            'Guardando...'
+          ) : (
+            <>
+              <Save size={20} />
+              Guardar cambios
+            </>
+          )}
+        </button>
+      </form>
+    </div>
+  )
+}
+
+export default EditExercise

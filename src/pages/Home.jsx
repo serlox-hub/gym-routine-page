@@ -17,12 +17,12 @@ function Home() {
           <h1 className="text-2xl font-bold">Mis Rutinas</h1>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate('/exercises/new')}
+              onClick={() => navigate('/exercises')}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
               style={{ backgroundColor: '#21262d', color: '#8b949e' }}
             >
               <Dumbbell size={16} />
-              Ejercicio
+              Ejercicios
             </button>
             <button
               onClick={() => navigate('/history')}
