@@ -1,13 +1,16 @@
 import { useMemo, useState, useEffect } from 'react'
+import { History } from 'lucide-react'
 import { Card, Badge } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
 import PreviousWorkout from './PreviousWorkout.jsx'
+import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout } from '../../hooks/usePreviousWorkout.js'
 
 function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }) {
   const { id, exercise, series, reps, rir, tempo, tempo_razon, notas, measurement_type, descanso_seg } = routineExercise
   const [showNotes, setShowNotes] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
 
   // Determinar tipo de medición: override en routine_exercise > default del ejercicio > weight_reps
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
@@ -52,6 +55,14 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowHistory(true)}
+            className="p-1.5 rounded hover:opacity-80"
+            style={{ backgroundColor: '#21262d' }}
+            title="Ver histórico"
+          >
+            <History size={14} style={{ color: '#8b949e' }} />
+          </button>
           <span
             className="text-sm font-medium px-2 py-0.5 rounded"
             style={{
@@ -134,6 +145,13 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }
       >
         + Añadir serie
       </button>
+
+      <ExerciseHistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        exerciseId={exercise.id}
+        exerciseName={exercise.nombre}
+      />
     </Card>
   )
 }

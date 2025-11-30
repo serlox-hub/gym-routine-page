@@ -9,6 +9,9 @@ export const QUERY_KEYS = {
   WORKOUT_SESSION: 'workout-session',
   COMPLETED_SETS: 'completed-sets',
   PREVIOUS_WORKOUT: 'previous-workout',
+  WORKOUT_HISTORY: 'workout-history',
+  SESSION_DETAIL: 'session-detail',
+  EXERCISE_HISTORY: 'exercise-history',
 }
 
 // Timer

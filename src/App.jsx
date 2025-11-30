@@ -3,6 +3,8 @@ import Home from './pages/Home.jsx'
 import RoutineDetail from './pages/RoutineDetail.jsx'
 import DayDetail from './pages/DayDetail.jsx'
 import WorkoutSession from './pages/WorkoutSession.jsx'
+import History from './pages/History.jsx'
+import SessionDetail from './pages/SessionDetail.jsx'
 
 function App() {
   return (
@@ -13,6 +15,8 @@ function App() {
           <Route path="/routine/:routineId" element={<RoutineDetail />} />
           <Route path="/routine/:routineId/day/:dayId" element={<DayDetail />} />
           <Route path="/routine/:routineId/day/:dayId/workout" element={<WorkoutSession />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/history/:sessionId" element={<SessionDetail />} />
         </Routes>
       </div>
     </BrowserRouter>

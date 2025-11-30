@@ -137,18 +137,10 @@ export function useAbandonSession() {
 
   return useMutation({
     mutationFn: async () => {
-      // Eliminar series completadas de esta sesión
-      const { error: setsError } = await supabase
-        .from('completed_sets')
-        .delete()
-        .eq('session_id', sessionId)
-
-      if (setsError) throw setsError
-
-      // Marcar sesión como abandonada
+      // Eliminar la sesión (las series se eliminan en cascada por FK)
       const { error } = await supabase
         .from('workout_sessions')
-        .update({ status: 'abandoned' })
+        .delete()
         .eq('id', sessionId)
 
       if (error) throw error
