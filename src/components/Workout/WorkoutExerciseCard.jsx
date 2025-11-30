@@ -151,6 +151,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }
         onClose={() => setShowHistory(false)}
         exerciseId={exercise.id}
         exerciseName={exercise.nombre}
+        measurementType={measurementType}
       />
     </Card>
   )

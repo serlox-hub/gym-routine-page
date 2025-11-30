@@ -3,6 +3,7 @@ import { X, FileText } from 'lucide-react'
 import { useExerciseHistory } from '../../hooks/useExerciseHistory.js'
 import { LoadingSpinner } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
+import ExerciseProgressChart from './ExerciseProgressChart.jsx'
 
 const RIR_LABELS = {
   [-1]: 'F',
@@ -12,7 +13,7 @@ const RIR_LABELS = {
   3: '3+',
 }
 
-function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName }) {
+function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = 'weight_reps' }) {
   const { data: sessions, isLoading } = useExerciseHistory(exerciseId)
   const [selectedSet, setSelectedSet] = useState(null)
 
@@ -84,6 +85,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName }) {
             </p>
           ) : (
             <div className="space-y-4">
+              <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
               {sessions.map(session => (
                 <div
                   key={session.sessionId}

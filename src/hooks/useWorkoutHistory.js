@@ -23,6 +23,11 @@ export function useWorkoutHistory() {
               id,
               nombre
             )
+          ),
+          sets:completed_sets (
+            id,
+            weight,
+            reps_completed
           )
         `)
         .eq('status', 'completed')

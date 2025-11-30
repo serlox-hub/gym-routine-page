@@ -1,7 +1,13 @@
+import { useState } from 'react'
+import { History } from 'lucide-react'
 import { Card, Badge } from '../ui/index.js'
+import { ExerciseHistoryModal } from '../Workout/index.js'
 
 function ExerciseCard({ routineExercise, onClick }) {
-  const { exercise, series, reps, rir, descanso_seg, tempo, notas } = routineExercise
+  const { exercise, series, reps, rir, descanso_seg, tempo, notas, measurement_type } = routineExercise
+  const [showHistory, setShowHistory] = useState(false)
+
+  const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
 
   const equipmentInfo = buildEquipmentInfo(exercise)
 
@@ -14,10 +20,23 @@ function ExerciseCard({ routineExercise, onClick }) {
             <p className="text-sm text-secondary truncate">{equipmentInfo}</p>
           )}
         </div>
-        <div className="flex items-baseline gap-2 flex-shrink-0">
-          <span className="text-xl font-bold text-accent">{series}</span>
-          <span className="text-secondary">×</span>
-          <span className="text-lg font-medium">{reps}</span>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowHistory(true)
+            }}
+            className="p-1.5 rounded hover:opacity-80"
+            style={{ backgroundColor: '#21262d' }}
+            title="Ver histórico"
+          >
+            <History size={14} style={{ color: '#8b949e' }} />
+          </button>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-bold text-accent">{series}</span>
+            <span className="text-secondary">×</span>
+            <span className="text-lg font-medium">{reps}</span>
+          </div>
         </div>
       </div>
 
@@ -32,6 +51,14 @@ function ExerciseCard({ routineExercise, onClick }) {
       {notas && (
         <p className="mt-2 text-xs text-secondary bg-surface-block rounded p-2">{notas}</p>
       )}
+
+      <ExerciseHistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        exerciseId={exercise.id}
+        exerciseName={exercise.nombre}
+        measurementType={measurementType}
+      />
     </Card>
   )
 }

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Clock, Calendar } from 'lucide-react'
 import { useWorkoutHistory } from '../hooks/useWorkoutHistory.js'
 import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
+import { SessionTonnageChart, FrequencyCalendar } from '../components/History/index.js'
 import { SENSATION_LABELS } from '../lib/constants.js'
 
 function History() {
@@ -60,6 +61,8 @@ function History() {
           </div>
         ) : (
           <div className="space-y-6">
+            <FrequencyCalendar sessions={sessions} />
+            <SessionTonnageChart sessions={sessions} />
             {Object.entries(groupedSessions).map(([date, daySessions]) => (
               <div key={date}>
                 <h2
