@@ -4,7 +4,7 @@ import Home from './pages/Home.jsx'
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-zinc-900 text-zinc-100">
+      <div className="min-h-screen bg-surface text-primary">
         <Routes>
           <Route path="/" element={<Home />} />
         </Routes>
