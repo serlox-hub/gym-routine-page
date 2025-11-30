@@ -26,7 +26,7 @@ export function useExerciseProgress(exerciseId, weeks = 12) {
       const { data, error } = await supabase
         .from('completed_sets')
         .select(`
-          weight_kg,
+          weight,
           reps_completed,
           performed_at,
           workout_sessions!inner (status)
@@ -58,8 +58,8 @@ export function useExerciseProgress(exerciseId, weeks = 12) {
         }
 
         const w = weeklyData[weekStart]
-        w.maxWeight = Math.max(w.maxWeight, set.weight_kg || 0)
-        w.totalVolume += (set.weight_kg || 0) * (set.reps_completed || 0)
+        w.maxWeight = Math.max(w.maxWeight, set.weight || 0)
+        w.totalVolume += (set.weight || 0) * (set.reps_completed || 0)
         w.totalSets += 1
         w.repsSum += set.reps_completed || 0
       })
@@ -87,7 +87,7 @@ export function useWeeklyVolume(weeks = 12) {
       const { data, error } = await supabase
         .from('completed_sets')
         .select(`
-          weight_kg,
+          weight,
           reps_completed,
           performed_at,
           workout_sessions!inner (status)
@@ -116,7 +116,7 @@ export function useWeeklyVolume(weeks = 12) {
         }
 
         const w = weeklyData[weekStart]
-        w.totalVolume += (set.weight_kg || 0) * (set.reps_completed || 0)
+        w.totalVolume += (set.weight || 0) * (set.reps_completed || 0)
         w.totalSets += 1
       })
 

@@ -1,14 +1,21 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useRoutineDay, useRoutineBlocks } from '../hooks/useRoutines.js'
-import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
+import { useStartSession } from '../hooks/useWorkout.js'
+import { LoadingSpinner, ErrorMessage, Button } from '../components/ui/index.js'
 import { BlockSection } from '../components/Routine/index.js'
+import useWorkoutStore from '../stores/workoutStore.js'
 
 function DayDetail() {
   const { routineId, dayId } = useParams()
   const navigate = useNavigate()
 
+  const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
+  const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
+
   const { data: day, isLoading: loadingDay, error: dayError } = useRoutineDay(dayId)
   const { data: blocks, isLoading: loadingBlocks, error: blocksError } = useRoutineBlocks(dayId)
+
+  const startSessionMutation = useStartSession()
 
   const isLoading = loadingDay || loadingBlocks
   const error = dayError || blocksError
@@ -16,8 +23,22 @@ function DayDetail() {
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
+  const handleStartWorkout = () => {
+    startSessionMutation.mutate(parseInt(dayId), {
+      onSuccess: () => {
+        navigate(`/routine/${routineId}/day/${dayId}/workout`)
+      }
+    })
+  }
+
+  const handleContinueWorkout = () => {
+    navigate(`/routine/${routineId}/day/${dayId}/workout`)
+  }
+
+  const isThisDayActive = hasActiveSession && activeRoutineDayId === parseInt(dayId)
+
   return (
-    <div className="p-4 max-w-2xl mx-auto">
+    <div className="p-4 max-w-2xl mx-auto pb-24">
       <header className="mb-6">
         <button
           onClick={() => navigate(`/routine/${routineId}`)}
@@ -52,6 +73,34 @@ function DayDetail() {
           ))
         )}
       </main>
+
+      <div
+        className="fixed bottom-0 left-0 right-0 p-4"
+        style={{ backgroundColor: '#0d1117', borderTop: '1px solid #30363d' }}
+      >
+        <div className="max-w-2xl mx-auto">
+          {isThisDayActive ? (
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full"
+              onClick={handleContinueWorkout}
+            >
+              Continuar Entrenamiento
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full"
+              onClick={handleStartWorkout}
+              disabled={startSessionMutation.isPending || (hasActiveSession && !isThisDayActive)}
+            >
+              {startSessionMutation.isPending ? 'Iniciando...' : 'Iniciar Entrenamiento'}
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

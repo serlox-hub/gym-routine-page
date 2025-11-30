@@ -157,7 +157,7 @@ CREATE TABLE completed_sets (
     routine_exercise_id INT REFERENCES routine_exercises(id),
     exercise_id INT REFERENCES exercises(id),  -- referencia directa para queries
     set_number SMALLINT NOT NULL,
-    weight_kg DECIMAL(6,2),
+    weight DECIMAL(6,2),
     reps_completed SMALLINT,
     rir_actual SMALLINT,
     completed BOOLEAN DEFAULT FALSE,

@@ -23,7 +23,7 @@ export function usePreviousWorkout(exerciseId) {
         .from('completed_sets')
         .select(`
           set_number,
-          weight_kg,
+          weight,
           reps_completed,
           rir_actual,
           notas,
@@ -52,7 +52,7 @@ export function usePreviousWorkout(exerciseId) {
         date: lastSessionDate,
         sets: lastSessionSets.map(set => ({
           setNumber: set.set_number,
-          weight: set.weight_kg,
+          weight: set.weight,
           reps: set.reps_completed,
           rir: set.rir_actual,
           notes: set.notas
@@ -240,7 +240,7 @@ export function usePreviousWorkoutHistory(exerciseId, limit = 5) {
         .from('completed_sets')
         .select(`
           set_number,
-          weight_kg,
+          weight,
           reps_completed,
           workout_sessions!inner (
             id,
@@ -268,7 +268,7 @@ export function usePreviousWorkoutHistory(exerciseId, limit = 5) {
         }
         sessions[sessionId].sets.push({
           setNumber: set.set_number,
-          weight: set.weight_kg,
+          weight: set.weight,
           reps: set.reps_completed
         })
       })

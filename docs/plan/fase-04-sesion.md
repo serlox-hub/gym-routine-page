@@ -76,7 +76,7 @@ export const useWorkoutStore = create((set, get) => ({
       routine_exercise_id: routineExerciseId,
       exercise_id: exerciseId,
       set_number: setData.setNumber,
-      weight_kg: setData.weight,
+      weight: setData.weight,
       reps_completed: setData.reps,
       rir_actual: setData.rir,
       completed: true,

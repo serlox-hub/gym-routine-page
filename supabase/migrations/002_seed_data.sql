@@ -95,32 +95,33 @@ INSERT INTO equipment_types (nombre) VALUES
 -- EQUIPAMIENTO ESPECÍFICO
 -- ============================================
 
-INSERT INTO equipment (nombre, equipment_type_id) VALUES
-    -- Barras (id 1-4)
-    ('Barra olímpica', 1),
-    ('Barra recta corta', 1),
-    ('Barra EZ', 1),
-    ('Barra hexagonal', 1),
+INSERT INTO equipment (nombre, equipment_type_id, default_weight_unit) VALUES
+    -- Barras (id 1-4) - kg por defecto
+    ('Barra olímpica', 1, 'kg'),
+    ('Barra recta corta', 1, 'kg'),
+    ('Barra EZ', 1, 'kg'),
+    ('Barra hexagonal', 1, 'kg'),
 
-    -- Mancuernas (id 5)
-    ('Mancuernas', 2),
+    -- Mancuernas (id 5) - kg por defecto
+    ('Mancuernas', 2, 'kg'),
 
-    -- Poleas (id 6-7)
-    ('Polea', 3),
-    ('Cable cruzado', 3),
+    -- Poleas (id 6-7) - lb por defecto (máquinas de gym)
+    ('Polea', 3, 'lb'),
+    ('Cable cruzado', 3, 'lb'),
 
-    -- Máquina (id 8)
-    ('Máquina', 4),
+    -- Máquinas (id 8-9)
+    ('Máquina', 4, 'lb'),
+    ('Máquina de discos', 4, 'kg'),
 
-    -- Peso corporal (id 9-11)
-    ('Barra de dominadas', 5),
-    ('Paralelas', 5),
-    ('Suelo', 5),
+    -- Peso corporal (id 10-12) - kg (peso adicional como cinturón)
+    ('Barra de dominadas', 5, 'kg'),
+    ('Paralelas', 5, 'kg'),
+    ('Suelo', 5, 'kg'),
 
-    -- Otros (id 12-14)
-    ('Banda de resistencia', 6),
-    ('Rueda abdominal', 8),
-    ('Banco', 9);
+    -- Otros (id 13-15)
+    ('Banda de resistencia', 6, 'kg'),
+    ('Rueda abdominal', 8, 'kg'),
+    ('Banco', 9, 'kg');
 
 -- ============================================
 -- TIPOS DE AGARRE

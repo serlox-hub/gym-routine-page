@@ -84,7 +84,7 @@ export function useSessionDetail(sessionId) {
 
       // Calcular estadísticas
       const totalVolume = sets.reduce((acc, set) =>
-        acc + (set.weight_kg || 0) * (set.reps_completed || 0), 0
+        acc + (set.weight || 0) * (set.reps_completed || 0), 0
       )
       const totalSets = sets.filter(s => s.completed).length
       const exercises = [...new Set(sets.map(s => s.exercises.nombre))]
@@ -372,7 +372,7 @@ export function SessionDetail({ sessionId, onClose }) {
                   key={i}
                   className="bg-bg-secondary px-3 py-1 rounded text-sm"
                 >
-                  {set.weight_kg}kg × {set.reps_completed}
+                  {set.weight}kg × {set.reps_completed}
                   {set.rir_actual !== null && (
                     <span className="text-accent-purple ml-1">
                       R{set.rir_actual}

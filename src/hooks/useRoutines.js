@@ -80,7 +80,8 @@ export function useRoutineBlocks(dayId) {
             exercise:exercises (
               id,
               nombre,
-              equipment:equipment(nombre),
+              measurement_type,
+              equipment:equipment(nombre, default_weight_unit),
               grip_type:grip_types(nombre),
               grip_width:grip_widths(nombre),
               altura_polea

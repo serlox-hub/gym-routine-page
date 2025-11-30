@@ -1,4 +1,406 @@
 -- ============================================
+-- SCRIPT DE RESET COMPLETO
+-- Ejecutar en Supabase SQL Editor para resetear la BD
+-- ============================================
+
+-- Eliminar todas las tablas en orden (por dependencias)
+DROP TABLE IF EXISTS completed_sets CASCADE;
+DROP TABLE IF EXISTS workout_sessions CASCADE;
+DROP TABLE IF EXISTS routine_exercises CASCADE;
+DROP TABLE IF EXISTS routine_blocks CASCADE;
+DROP TABLE IF EXISTS routine_days CASCADE;
+DROP TABLE IF EXISTS routines CASCADE;
+DROP TABLE IF EXISTS exercise_muscles CASCADE;
+DROP TABLE IF EXISTS exercises CASCADE;
+DROP TABLE IF EXISTS grip_widths CASCADE;
+DROP TABLE IF EXISTS grip_types CASCADE;
+DROP TABLE IF EXISTS equipment CASCADE;
+DROP TABLE IF EXISTS equipment_types CASCADE;
+DROP TABLE IF EXISTS muscles CASCADE;
+DROP TABLE IF EXISTS muscle_groups CASCADE;
+
+-- Eliminar tipos enum
+DROP TYPE IF EXISTS measurement_type CASCADE;
+DROP TYPE IF EXISTS weight_unit CASCADE;
+DROP TYPE IF EXISTS session_status CASCADE;
+
+-- Ahora ejecuta en orden:
+-- 1. 001_create_tables.sql
+-- 2. 002_seed_data.sql
+-- 3. 003_seed_exercises_routine.sql
+-- ============================================
+-- FASE 1: Modelo de Datos para Gym Tracker
+-- Ejecutar en Supabase SQL Editor
+-- ============================================
+
+-- ============================================
+-- TIPOS ENUM
+-- ============================================
+
+CREATE TYPE measurement_type AS ENUM (
+    'weight_reps',      -- Peso × Repeticiones (ej: 50kg × 10)
+    'reps_only',        -- Solo repeticiones (ej: dominadas sin peso)
+    'reps_per_side',    -- Repeticiones por lado (ej: 10/lado)
+    'time',             -- Tiempo (ej: 30 seg)
+    'time_per_side',    -- Tiempo por lado (ej: 30 seg/lado)
+    'distance'          -- Distancia con peso opcional (ej: 40m)
+);
+
+CREATE TYPE weight_unit AS ENUM ('kg', 'lb');
+
+CREATE TYPE session_status AS ENUM ('in_progress', 'completed', 'abandoned');
+
+-- ============================================
+-- TABLAS DE CATÁLOGOS (datos maestros)
+-- ============================================
+
+-- Grupos musculares
+CREATE TABLE muscle_groups (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL UNIQUE,
+    categoria TEXT
+);
+
+-- Músculos específicos
+CREATE TABLE muscles (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL UNIQUE,
+    muscle_group_id INT REFERENCES muscle_groups(id),
+    nombre_corto TEXT
+);
+
+-- Tipos de equipamiento
+CREATE TABLE equipment_types (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL UNIQUE
+);
+
+-- Equipamiento específico
+CREATE TABLE equipment (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    equipment_type_id INT REFERENCES equipment_types(id),
+    default_weight_unit weight_unit DEFAULT 'lb', -- Unidad por defecto (barras/mancuernas = kg, máquinas/poleas = lb)
+    UNIQUE(nombre, equipment_type_id)
+);
+
+-- Tipos de agarre
+CREATE TABLE grip_types (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL UNIQUE
+);
+
+-- Aperturas de agarre
+CREATE TABLE grip_widths (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL UNIQUE
+);
+
+-- ============================================
+-- TABLAS DE EJERCICIOS
+-- ============================================
+
+-- Catálogo de ejercicios
+CREATE TABLE exercises (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    equipment_id INT REFERENCES equipment(id),
+    grip_type_id INT REFERENCES grip_types(id),
+    grip_width_id INT REFERENCES grip_widths(id),
+    altura_polea TEXT,
+    instrucciones TEXT,
+    measurement_type measurement_type DEFAULT 'weight_reps',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Músculos trabajados por ejercicio (N:M)
+CREATE TABLE exercise_muscles (
+    exercise_id INT REFERENCES exercises(id) ON DELETE CASCADE,
+    muscle_id INT REFERENCES muscles(id),
+    es_principal BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (exercise_id, muscle_id)
+);
+
+-- ============================================
+-- TABLAS DE RUTINAS
+-- ============================================
+
+-- Rutinas
+CREATE TABLE routines (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    descripcion TEXT,
+    objetivo TEXT,
+    frecuencia_dias INT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Días de la rutina
+CREATE TABLE routine_days (
+    id SERIAL PRIMARY KEY,
+    routine_id INT REFERENCES routines(id) ON DELETE CASCADE,
+    dia_numero SMALLINT NOT NULL,
+    nombre TEXT NOT NULL,
+    duracion_estimada_min INT,
+    orden SMALLINT,
+    UNIQUE(routine_id, dia_numero)
+);
+
+-- Bloques dentro de cada día
+CREATE TABLE routine_blocks (
+    id SERIAL PRIMARY KEY,
+    routine_day_id INT REFERENCES routine_days(id) ON DELETE CASCADE,
+    nombre TEXT NOT NULL,
+    orden SMALLINT NOT NULL,
+    duracion_min INT
+);
+
+-- Ejercicios dentro de cada bloque
+CREATE TABLE routine_exercises (
+    id SERIAL PRIMARY KEY,
+    routine_block_id INT REFERENCES routine_blocks(id) ON DELETE CASCADE,
+    exercise_id INT REFERENCES exercises(id),
+    orden SMALLINT NOT NULL,
+    series SMALLINT NOT NULL,
+    reps TEXT NOT NULL,
+    rir SMALLINT,
+    descanso_seg INT,
+    tempo TEXT,
+    tempo_razon TEXT,
+    notas TEXT,
+    es_calentamiento BOOLEAN DEFAULT FALSE,
+    measurement_type measurement_type -- Override del tipo de medición (opcional)
+);
+
+-- ============================================
+-- TABLAS DE SESIONES (tracking)
+-- ============================================
+
+-- Sesiones de entrenamiento
+CREATE TABLE workout_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    routine_day_id INT REFERENCES routine_days(id),
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    duration_minutes SMALLINT,
+    status session_status DEFAULT 'in_progress',
+    notas TEXT,
+    sensacion_general SMALLINT CHECK (sensacion_general BETWEEN 1 AND 5)
+);
+
+-- Series completadas
+CREATE TABLE completed_sets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES workout_sessions(id) ON DELETE CASCADE,
+    routine_exercise_id INT REFERENCES routine_exercises(id),
+    exercise_id INT REFERENCES exercises(id),
+    set_number SMALLINT NOT NULL,
+    weight DECIMAL(6,2),
+    weight_unit weight_unit DEFAULT 'kg',
+    reps_completed SMALLINT,
+    time_seconds INT, -- Para ejercicios isométricos/tiempo
+    distance_meters DECIMAL(6,2), -- Para ejercicios de distancia
+    rir_actual SMALLINT,
+    completed BOOLEAN DEFAULT FALSE,
+    notas TEXT,
+    performed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- ÍNDICES PARA PERFORMANCE
+-- ============================================
+
+CREATE INDEX idx_completed_sets_exercise ON completed_sets(exercise_id, performed_at DESC);
+CREATE INDEX idx_completed_sets_session ON completed_sets(session_id);
+CREATE INDEX idx_sessions_date ON workout_sessions(started_at DESC);
+CREATE INDEX idx_sessions_routine_day ON workout_sessions(routine_day_id, started_at DESC);
+CREATE INDEX idx_routine_exercises_block ON routine_exercises(routine_block_id);
+CREATE INDEX idx_routine_blocks_day ON routine_blocks(routine_day_id);
+CREATE INDEX idx_exercise_muscles_exercise ON exercise_muscles(exercise_id);
+
+-- ============================================
+-- ROW LEVEL SECURITY (deshabilitado por ahora - single user)
+-- ============================================
+
+-- Por ahora permitimos acceso público ya que es single-user
+-- Cuando añadas auth, habilita RLS y crea políticas
+
+ALTER TABLE muscle_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE muscles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE equipment_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grip_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grip_widths ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exercises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exercise_muscles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE routines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE routine_days ENABLE ROW LEVEL SECURITY;
+ALTER TABLE routine_blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE routine_exercises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workout_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE completed_sets ENABLE ROW LEVEL SECURITY;
+
+-- Políticas públicas para single-user (permitir todo con anon key)
+CREATE POLICY "Allow all for anon" ON muscle_groups FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON muscles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON equipment_types FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON equipment FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON grip_types FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON grip_widths FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON exercises FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON exercise_muscles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON routines FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON routine_days FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON routine_blocks FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON routine_exercises FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON workout_sessions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON completed_sets FOR ALL USING (true) WITH CHECK (true);
+-- ============================================
+-- FASE 1: Datos iniciales (seed)
+-- Ejecutar DESPUÉS de 001_create_tables.sql
+-- ============================================
+
+-- ============================================
+-- GRUPOS MUSCULARES
+-- ============================================
+
+INSERT INTO muscle_groups (nombre, categoria) VALUES
+    ('Core', 'Core'),
+    ('Espalda', 'Superior'),
+    ('Pecho', 'Superior'),
+    ('Hombros', 'Superior'),
+    ('Bíceps', 'Superior'),
+    ('Tríceps', 'Superior'),
+    ('Antebrazo', 'Superior'),
+    ('Cuádriceps', 'Inferior'),
+    ('Isquiotibiales', 'Inferior'),
+    ('Glúteos', 'Inferior'),
+    ('Pantorrillas', 'Inferior');
+
+-- ============================================
+-- MÚSCULOS ESPECÍFICOS
+-- ============================================
+
+INSERT INTO muscles (nombre, muscle_group_id, nombre_corto) VALUES
+    -- Core
+    ('Recto abdominal', 1, 'Abdominales'),
+    ('Transverso abdominal', 1, 'Transverso'),
+    ('Oblicuos', 1, 'Oblicuos'),
+    ('Serrato anterior', 1, 'Serrato'),
+    ('Erectores espinales', 1, 'Erectores'),
+    ('Psoas ilíaco', 1, 'Psoas'),
+
+    -- Espalda
+    ('Dorsal ancho', 2, 'Dorsales'),
+    ('Trapecio inferior', 2, 'Trapecio inf'),
+    ('Trapecio medio', 2, 'Trapecio med'),
+    ('Trapecio superior', 2, 'Trapecio sup'),
+    ('Romboides', 2, 'Romboides'),
+    ('Redondo mayor', 2, 'Redondo may'),
+    ('Redondo menor', 2, 'Redondo men'),
+    ('Infraespinoso', 2, 'Infraespinoso'),
+
+    -- Pecho
+    ('Pectoral mayor (porción clavicular)', 3, 'Pecho sup'),
+    ('Pectoral mayor (porción esternal)', 3, 'Pecho med'),
+    ('Pectoral mayor (porción abdominal)', 3, 'Pecho inf'),
+    ('Pectoral menor', 3, 'Pec menor'),
+
+    -- Hombros
+    ('Deltoides anterior', 4, 'Delt ant'),
+    ('Deltoides lateral', 4, 'Delt lat'),
+    ('Deltoides posterior', 4, 'Delt post'),
+
+    -- Bíceps
+    ('Bíceps braquial (cabeza larga)', 5, 'Bíceps largo'),
+    ('Bíceps braquial (cabeza corta)', 5, 'Bíceps corto'),
+    ('Bíceps braquial', 5, 'Bíceps'),
+    ('Braquial', 5, 'Braquial'),
+    ('Braquiorradial', 7, 'Braquiorradial'),
+
+    -- Tríceps
+    ('Tríceps (cabeza larga)', 6, 'Tríceps largo'),
+    ('Tríceps (cabeza lateral)', 6, 'Tríceps lat'),
+    ('Tríceps (cabeza medial)', 6, 'Tríceps med'),
+    ('Tríceps braquial', 6, 'Tríceps'),
+
+    -- Piernas
+    ('Cuádriceps', 8, 'Cuádriceps'),
+    ('Recto femoral', 8, 'Recto fem'),
+    ('Vasto lateral', 8, 'Vasto lat'),
+    ('Isquiotibiales', 9, 'Isquios'),
+    ('Glúteo mayor', 10, 'Glúteo'),
+    ('Gemelos', 11, 'Gemelos'),
+    ('Sóleo', 11, 'Sóleo');
+
+-- ============================================
+-- TIPOS DE EQUIPAMIENTO
+-- ============================================
+
+INSERT INTO equipment_types (nombre) VALUES
+    ('Barra'),
+    ('Mancuernas'),
+    ('Polea'),
+    ('Máquina'),
+    ('Peso corporal'),
+    ('Banda elástica'),
+    ('Kettlebell'),
+    ('Rueda abdominal'),
+    ('Banco');
+
+-- ============================================
+-- EQUIPAMIENTO ESPECÍFICO
+-- ============================================
+
+INSERT INTO equipment (nombre, equipment_type_id, default_weight_unit) VALUES
+    -- Barras (id 1-4) - kg por defecto
+    ('Barra olímpica', 1, 'kg'),
+    ('Barra recta corta', 1, 'kg'),
+    ('Barra EZ', 1, 'kg'),
+    ('Barra hexagonal', 1, 'kg'),
+
+    -- Mancuernas (id 5) - kg por defecto
+    ('Mancuernas', 2, 'kg'),
+
+    -- Poleas (id 6-7) - lb por defecto (máquinas de gym)
+    ('Polea', 3, 'lb'),
+    ('Cable cruzado', 3, 'lb'),
+
+    -- Máquina (id 8) - lb por defecto
+    ('Máquina', 4, 'lb'),
+
+    -- Peso corporal (id 9-11) - kg (peso adicional como cinturón)
+    ('Barra de dominadas', 5, 'kg'),
+    ('Paralelas', 5, 'kg'),
+    ('Suelo', 5, 'kg'),
+
+    -- Otros (id 12-14)
+    ('Banda de resistencia', 6, 'kg'),
+    ('Rueda abdominal', 8, 'kg'),
+    ('Banco', 9, 'kg');
+
+-- ============================================
+-- TIPOS DE AGARRE
+-- ============================================
+
+INSERT INTO grip_types (nombre) VALUES
+    ('Prono'),
+    ('Supino'),
+    ('Neutro'),
+    ('Mixto'),
+    ('Semi-supino'),
+    ('Falso (thumbless)');
+
+-- ============================================
+-- APERTURAS DE AGARRE
+-- ============================================
+
+INSERT INTO grip_widths (nombre) VALUES
+    ('Cerrado'),
+    ('Medio'),
+    ('Ancho'),
+    ('N/A');
+-- ============================================
 -- FASE 1: Ejercicios y Rutina de Hipertrofia
 -- Ejecutar DESPUÉS de 002_seed_data.sql
 -- ============================================
@@ -9,59 +411,59 @@
 
 -- Core
 INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea, measurement_type) VALUES
-    ('Rueda Abdominal', 14, NULL, NULL, NULL, 'reps_only'),
-    ('Bicho Muerto', 12, NULL, NULL, NULL, 'reps_per_side'),
+    ('Rueda Abdominal', 13, NULL, NULL, NULL, 'weight_reps'),
+    ('Bicho Muerto', 11, NULL, NULL, NULL, 'reps_per_side'),
     ('Press Pallof', 6, 3, 1, 'Media', 'reps_per_side'),
-    ('Perro-Pájaro Lento', 12, NULL, NULL, NULL, 'reps_per_side'),
+    ('Perro-Pájaro Lento', 11, NULL, NULL, NULL, 'reps_per_side'),
     ('Crunch en Polea', 6, 3, 1, 'Alta', 'weight_reps'),
-    ('Plancha Lateral', 12, NULL, NULL, NULL, 'time_per_side'),
-    ('Hollow Body Hold', 12, NULL, NULL, NULL, 'time'),
+    ('Plancha Lateral', 11, NULL, NULL, NULL, 'time_per_side'),
+    ('Hollow Body Hold', 11, NULL, NULL, NULL, 'time'),
     ('Paseo del Granjero', 5, 3, 4, NULL, 'distance');
 
 -- Espalda
-INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea, measurement_type) VALUES
-    ('Dominadas Lastradas', 10, 1, 3, NULL, 'weight_reps'),
-    ('Remo con Mancuerna', 5, 3, 4, NULL, 'weight_reps'),
-    ('Jalón al Pecho', 8, 3, 1, 'Alta', 'weight_reps'),
-    ('Remo Alto en Polea', 6, 1, 3, 'Alta', 'weight_reps'),
-    ('Jalón Estrecho', 8, 3, 1, 'Alta', 'weight_reps');
+INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea) VALUES
+    ('Dominadas Lastradas', 9, 1, 3, NULL),
+    ('Remo con Mancuerna', 5, 3, 4, NULL),
+    ('Jalón al Pecho', 8, 3, 1, 'Alta'),
+    ('Remo Alto en Polea', 6, 1, 3, 'Alta'),
+    ('Jalón Estrecho', 8, 3, 1, 'Alta');
 
 -- Bíceps
-INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea, measurement_type) VALUES
-    ('Curl Inclinado con Mancuernas', 5, 2, 4, NULL, 'weight_reps'),
-    ('Curl con Barra EZ', 3, 5, 2, NULL, 'weight_reps'),
-    ('Curl Martillo Inclinado', 5, 3, 4, NULL, 'weight_reps'),
-    ('Curl Bayesiano en Polea', 6, 2, 4, 'Baja', 'weight_reps');
+INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea) VALUES
+    ('Curl Inclinado con Mancuernas', 5, 2, 4, NULL),
+    ('Curl con Barra EZ', 3, 5, 2, NULL),
+    ('Curl Martillo Inclinado', 5, 3, 4, NULL),
+    ('Curl Bayesiano en Polea', 6, 2, 4, 'Baja');
 
 -- Hombros
-INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea, measurement_type) VALUES
-    ('Elevación Lateral en Polea (Desde Atrás)', 6, 3, 4, 'Baja', 'weight_reps'),
-    ('Tirón a la Cara', 6, 3, 2, 'Alta', 'weight_reps'),
-    ('Press de Hombro con Mancuernas', 5, 3, 4, NULL, 'weight_reps'),
-    ('Elevación Lateral en Polea 1 Brazo (Desde Atrás)', 6, 3, 4, 'Baja', 'weight_reps'),
-    ('Elevaciones en Y (Banco Inclinado)', 5, 3, 4, NULL, 'weight_reps'),
-    ('Aperturas Inversas en Máquina', 8, 3, 4, NULL, 'weight_reps'),
-    ('Elevación Lateral en Polea (Bilateral)', 6, 3, 4, 'Baja', 'weight_reps');
+INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea) VALUES
+    ('Elevación Lateral en Polea (Desde Atrás)', 6, 3, 4, 'Baja'),
+    ('Tirón a la Cara', 6, 3, 2, 'Alta'),
+    ('Press de Hombro con Mancuernas', 5, 3, 4, NULL),
+    ('Elevación Lateral en Polea 1 Brazo (Desde Atrás)', 6, 3, 4, 'Baja'),
+    ('Elevaciones en Y (Banco Inclinado)', 5, 3, 4, NULL),
+    ('Aperturas Inversas en Máquina', 8, 3, 4, NULL),
+    ('Elevación Lateral en Polea (Bilateral)', 6, 3, 4, 'Baja');
 
 -- Pecho
-INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea, measurement_type) VALUES
-    ('Fondos Lastrados', 11, 3, 3, NULL, 'weight_reps'),
-    ('Press Inclinado con Mancuernas', 5, 1, 4, NULL, 'weight_reps');
+INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea) VALUES
+    ('Fondos Lastrados', 10, 3, 3, NULL),
+    ('Press Inclinado con Mancuernas', 5, 1, 4, NULL);
 
 -- Tríceps
-INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea, measurement_type) VALUES
-    ('Extensión de Tríceps sobre Cabeza en Polea', 6, 3, 1, 'Baja', 'weight_reps'),
-    ('Extensión de Tríceps en Polea con Cuerda', 6, 3, 1, 'Alta', 'weight_reps'),
-    ('Extensión de Tríceps sobre Cabeza con Cuerda', 6, 3, 1, 'Baja', 'weight_reps'),
-    ('Extensión de Tríceps en Polea (Barra V)', 6, 5, 1, 'Alta', 'weight_reps');
+INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea) VALUES
+    ('Extensión de Tríceps sobre Cabeza en Polea', 6, 3, 1, 'Baja'),
+    ('Extensión de Tríceps en Polea con Cuerda', 6, 3, 1, 'Alta'),
+    ('Extensión de Tríceps sobre Cabeza con Cuerda', 6, 3, 1, 'Baja'),
+    ('Extensión de Tríceps en Polea (Barra V)', 6, 5, 1, 'Alta');
 
 -- Piernas
-INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea, measurement_type) VALUES
-    ('Prensa de Piernas Inclinada', 9, NULL, NULL, NULL, 'weight_reps'),
-    ('Empuje de Cadera', 9, NULL, NULL, NULL, 'weight_reps'),
-    ('Peso Muerto Rumano', 1, 1, 2, NULL, 'weight_reps'),
-    ('Curl Femoral Tumbado', 8, NULL, NULL, NULL, 'weight_reps'),
-    ('Abducción de Cadera', 8, NULL, NULL, NULL, 'weight_reps');
+INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea) VALUES
+    ('Prensa de Piernas Inclinada', 8, NULL, NULL, NULL),
+    ('Empuje de Cadera', 1, NULL, NULL, NULL),
+    ('Peso Muerto Rumano', 1, 1, 2, NULL),
+    ('Curl Femoral Tumbado', 8, NULL, NULL, NULL),
+    ('Abducción de Cadera', 8, NULL, NULL, NULL);
 
 -- ============================================
 -- MÚSCULOS POR EJERCICIO (principales y secundarios)

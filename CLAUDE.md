@@ -121,3 +121,18 @@ Main tables:
 - No console.log in committed code (use proper error handling)
 - No hardcoded colors - use design tokens
 - No magic numbers - use constants
+
+## Development Progress
+
+### Completed
+- [x] Fase 1: Setup Supabase + Modelo de Datos
+- [x] Fase 2: Setup React + Conexión Supabase
+- [x] Fase 3: Visualización de Rutinas
+- [x] Fase 4: Sesión de Entrenamiento (iniciar, registrar series, finalizar/cancelar, diferentes tipos de medición)
+
+### Pending
+- [ ] Fase 5: Timer de Descanso
+- [ ] Fase 6: Referencia Sesión Anterior
+- [ ] Fase 7: Notas por Serie
+- [ ] Fase 8: Histórico
+- [ ] Fase 9: Gráficos de Progresión

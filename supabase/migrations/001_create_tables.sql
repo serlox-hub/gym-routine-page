@@ -4,6 +4,23 @@
 -- ============================================
 
 -- ============================================
+-- TIPOS ENUM
+-- ============================================
+
+CREATE TYPE measurement_type AS ENUM (
+    'weight_reps',      -- Peso × Repeticiones (ej: 50kg × 10)
+    'reps_only',        -- Solo repeticiones (ej: dominadas sin peso)
+    'reps_per_side',    -- Repeticiones por lado (ej: 10/lado)
+    'time',             -- Tiempo (ej: 30 seg)
+    'time_per_side',    -- Tiempo por lado (ej: 30 seg/lado)
+    'distance'          -- Distancia con peso opcional (ej: 40m)
+);
+
+CREATE TYPE weight_unit AS ENUM ('kg', 'lb');
+
+CREATE TYPE session_status AS ENUM ('in_progress', 'completed', 'abandoned');
+
+-- ============================================
 -- TABLAS DE CATÁLOGOS (datos maestros)
 -- ============================================
 
@@ -33,6 +50,7 @@ CREATE TABLE equipment (
     id SERIAL PRIMARY KEY,
     nombre TEXT NOT NULL,
     equipment_type_id INT REFERENCES equipment_types(id),
+    default_weight_unit weight_unit DEFAULT 'lb', -- Unidad por defecto (barras/mancuernas = kg, máquinas/poleas = lb)
     UNIQUE(nombre, equipment_type_id)
 );
 
@@ -61,6 +79,7 @@ CREATE TABLE exercises (
     grip_width_id INT REFERENCES grip_widths(id),
     altura_polea TEXT,
     instrucciones TEXT,
+    measurement_type measurement_type DEFAULT 'weight_reps',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -119,7 +138,8 @@ CREATE TABLE routine_exercises (
     tempo TEXT,
     tempo_razon TEXT,
     notas TEXT,
-    es_calentamiento BOOLEAN DEFAULT FALSE
+    es_calentamiento BOOLEAN DEFAULT FALSE,
+    measurement_type measurement_type -- Override del tipo de medición (opcional)
 );
 
 -- ============================================
@@ -133,7 +153,7 @@ CREATE TABLE workout_sessions (
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
     duration_minutes SMALLINT,
-    status TEXT DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'abandoned')),
+    status session_status DEFAULT 'in_progress',
     notas TEXT,
     sensacion_general SMALLINT CHECK (sensacion_general BETWEEN 1 AND 5)
 );
@@ -145,8 +165,11 @@ CREATE TABLE completed_sets (
     routine_exercise_id INT REFERENCES routine_exercises(id),
     exercise_id INT REFERENCES exercises(id),
     set_number SMALLINT NOT NULL,
-    weight_kg DECIMAL(6,2),
+    weight DECIMAL(6,2),
+    weight_unit weight_unit DEFAULT 'kg',
     reps_completed SMALLINT,
+    time_seconds INT, -- Para ejercicios isométricos/tiempo
+    distance_meters DECIMAL(6,2), -- Para ejercicios de distancia
     rir_actual SMALLINT,
     completed BOOLEAN DEFAULT FALSE,
     notas TEXT,
