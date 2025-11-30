@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
+import { FileText } from 'lucide-react'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import ExecutionTimer from './ExecutionTimer.jsx'
+import SetCompleteModal from './SetCompleteModal.jsx'
+import SetNotesView from './SetNotesView.jsx'
 
 function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'weight_reps', defaultWeightUnit = 'kg', descansoSeg, previousSet, onComplete, onUncomplete, canRemove = false, onRemove }) {
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(routineExerciseId, setNumber))
@@ -10,6 +13,8 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
   const [reps, setReps] = useState(setData?.repsCompleted ?? 0)
   const [time, setTime] = useState(setData?.timeSeconds ?? 0)
   const [distance, setDistance] = useState(setData?.distanceMeters ?? 0)
+  const [showCompleteModal, setShowCompleteModal] = useState(false)
+  const [showNotesView, setShowNotesView] = useState(false)
 
   // Cargar valores de sesión anterior cuando lleguen
   useEffect(() => {
@@ -26,34 +31,39 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
     setter(value)
   }
 
-  const handleComplete = () => {
+  const handleCheckClick = () => {
+    if (isCompleted) {
+      onUncomplete({ routineExerciseId, setNumber })
+    } else if (isValid()) {
+      setShowCompleteModal(true)
+    }
+  }
+
+  const handleCompleteSet = (rir, notas) => {
     const data = {
       routineExerciseId,
       exerciseId,
       setNumber,
+      rirActual: rir,
+      notas,
     }
 
     switch (measurementType) {
       case 'weight_reps':
-        if (!weight || !reps) return
         data.weight = parseFloat(weight)
         data.weightUnit = defaultWeightUnit
         data.repsCompleted = parseInt(reps)
         break
       case 'reps_only':
       case 'reps_per_side':
-        if (!reps) return
         data.repsCompleted = parseInt(reps)
         break
       case 'time':
       case 'time_per_side':
-        if (!time) return
         data.timeSeconds = parseInt(time)
         break
       case 'distance':
-        if (!distance) return
         data.distanceMeters = parseFloat(distance)
-        // Farmer's walk también puede tener peso
         if (weight) {
           data.weight = parseFloat(weight)
           data.weightUnit = defaultWeightUnit
@@ -62,6 +72,7 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
     }
 
     onComplete(data, descansoSeg)
+    setShowCompleteModal(false)
   }
 
   const isValid = () => {
@@ -234,6 +245,10 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
     }
   }
 
+  // Determinar qué info tiene la serie completada
+  const hasRir = setData?.rirActual !== null && setData?.rirActual !== undefined
+  const hasTextNote = !!setData?.notas
+
   return (
     <div
       className="flex items-center gap-3 py-2 px-3 rounded"
@@ -256,8 +271,24 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
         {renderInputs()}
       </div>
 
+      {isCompleted && (hasRir || hasTextNote) && (
+        <button
+          onClick={() => setShowNotesView(true)}
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:opacity-80"
+          style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)' }}
+          title="Ver notas"
+        >
+          {hasRir && (
+            <span className="text-xs font-bold" style={{ color: '#a371f7' }}>
+              {setData.rirActual === -1 ? 'F' : setData.rirActual}
+            </span>
+          )}
+          {hasTextNote && <FileText size={12} style={{ color: '#a371f7' }} />}
+        </button>
+      )}
+
       <button
-        onClick={isCompleted ? () => onUncomplete({ routineExerciseId, setNumber }) : handleComplete}
+        onClick={handleCheckClick}
         disabled={!isCompleted && !isValid()}
         className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
         style={{
@@ -270,6 +301,20 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
       >
         {isCompleted ? '✕' : '✓'}
       </button>
+
+      <SetCompleteModal
+        isOpen={showCompleteModal}
+        onClose={() => setShowCompleteModal(false)}
+        onComplete={handleCompleteSet}
+        descansoSeg={descansoSeg}
+      />
+
+      <SetNotesView
+        isOpen={showNotesView}
+        onClose={() => setShowNotesView(false)}
+        rir={setData?.rirActual}
+        notas={setData?.notas}
+      />
 
       {canRemove && !isCompleted && onRemove && (
         <button
