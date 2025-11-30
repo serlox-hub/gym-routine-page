@@ -7,38 +7,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Backgrounds
-        surface: {
-          DEFAULT: '#18181b', // zinc-900
-          alt: '#27272a',     // zinc-800
-          hover: '#3f3f46',   // zinc-700
-        },
+        // Backgrounds (GitHub dark theme)
+        'surface': '#0d1117',
+        'surface-card': '#161b22',
+        'surface-alt': '#1c2128',
+        'surface-block': '#21262d',
+        'surface-hover': 'rgba(255, 255, 255, 0.05)',
         // Text
-        primary: '#fafafa',   // zinc-50
-        secondary: '#a1a1aa', // zinc-400
-        muted: '#71717a',     // zinc-500
-        // Semantic
-        accent: {
-          DEFAULT: '#3b82f6', // blue-500
-          hover: '#2563eb',   // blue-600
-        },
-        success: {
-          DEFAULT: '#22c55e', // green-500
-          hover: '#16a34a',   // green-600
-        },
-        warning: {
-          DEFAULT: '#f59e0b', // amber-500
-          hover: '#d97706',   // amber-600
-        },
-        danger: {
-          DEFAULT: '#ef4444', // red-500
-          hover: '#dc2626',   // red-600
-        },
+        'primary': '#e6edf3',
+        'secondary': '#8b949e',
+        'muted': '#6e7681',
+        // Semantic colors
+        'accent': '#58a6ff',
+        'accent-hover': '#79b8ff',
+        'purple': '#a371f7',
+        'purple-bg': 'rgba(163, 113, 247, 0.15)',
+        'success': '#3fb950',
+        'success-bg': 'rgba(63, 185, 80, 0.15)',
+        'warning': '#d29922',
+        'warning-bg': 'rgba(210, 153, 34, 0.15)',
+        'danger': '#f85149',
+        'danger-bg': 'rgba(248, 81, 73, 0.1)',
         // Borders
-        border: {
-          DEFAULT: '#3f3f46', // zinc-700
-          light: '#52525b',   // zinc-600
-        },
+        'border': '#30363d',
       },
       spacing: {
         'safe-bottom': 'env(safe-area-inset-bottom)',
