@@ -4,6 +4,7 @@ import { useExerciseHistory } from '../../hooks/useExerciseHistory.js'
 import { LoadingSpinner } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'
+import { colors, modalOverlayStyle, modalContentStyle, buttonSecondaryStyle } from '../../lib/styles.js'
 
 const RIR_LABELS = {
   [-1]: 'F',
@@ -47,21 +48,21 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+      style={modalOverlayStyle}
       onClick={onClose}
     >
       <div
         className="w-full max-w-lg rounded-t-2xl max-h-[80vh] flex flex-col"
-        style={{ backgroundColor: '#161b22' }}
+        style={modalContentStyle}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div
           className="p-4 flex justify-between items-center shrink-0"
-          style={{ borderBottom: '1px solid #30363d' }}
+          style={{ borderBottom: `1px solid ${colors.border}` }}
         >
           <div>
-            <h3 className="font-bold" style={{ color: '#e6edf3' }}>
+            <h3 className="font-bold" style={{ color: colors.textPrimary }}>
               Histórico
             </h3>
             <p className="text-sm text-secondary">{exerciseName}</p>
@@ -69,9 +70,9 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:opacity-80"
-            style={{ backgroundColor: '#21262d' }}
+            style={buttonSecondaryStyle}
           >
-            <X size={20} style={{ color: '#8b949e' }} />
+            <X size={20} style={{ color: colors.textSecondary }} />
           </button>
         </div>
 
@@ -90,7 +91,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
                 <div
                   key={session.sessionId}
                   className="p-3 rounded-lg"
-                  style={{ backgroundColor: '#21262d' }}
+                  style={{ backgroundColor: colors.bgTertiary }}
                 >
                   <div className="text-xs text-secondary mb-2">
                     {formatDate(session.date)}
@@ -103,7 +104,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
                       >
                         <span
                           className="w-5 h-5 flex items-center justify-center rounded text-xs font-bold"
-                          style={{ backgroundColor: '#30363d', color: '#8b949e' }}
+                          style={{ backgroundColor: colors.border, color: colors.textSecondary }}
                         >
                           {set.set_number}
                         </span>
@@ -111,7 +112,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
                         {set.rir_actual !== null && (
                           <span
                             className="text-xs font-bold px-1 rounded"
-                            style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: '#a371f7' }}
+                            style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: colors.purple }}
                           >
                             {RIR_LABELS[set.rir_actual] ?? set.rir_actual}
                           </span>
@@ -121,7 +122,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
                             onClick={() => setSelectedSet(set)}
                             className="p-0.5 rounded hover:opacity-80"
                           >
-                            <FileText size={12} style={{ color: '#a371f7' }} />
+                            <FileText size={12} style={{ color: colors.purple }} />
                           </button>
                         )}
                       </div>

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { X, Search } from 'lucide-react'
 import { useExercises } from '../../hooks/useExercises.js'
 import { LoadingSpinner } from '../ui/index.js'
+import { colors, inputStyle, modalOverlayStyle, modalContentStyle, buttonSecondaryStyle } from '../../lib/styles.js'
 
 function AddExerciseModal({ isOpen, onClose, onAdd }) {
   const { data: exercises, isLoading } = useExercises()
@@ -43,28 +44,28 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+      style={modalOverlayStyle}
       onClick={handleClose}
     >
       <div
         className="w-full max-w-lg rounded-t-2xl max-h-[85vh] flex flex-col"
-        style={{ backgroundColor: '#161b22' }}
+        style={modalContentStyle}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div
           className="p-4 flex justify-between items-center shrink-0"
-          style={{ borderBottom: '1px solid #30363d' }}
+          style={{ borderBottom: `1px solid ${colors.border}` }}
         >
-          <h3 className="font-bold" style={{ color: '#e6edf3' }}>
+          <h3 className="font-bold" style={{ color: colors.textPrimary }}>
             {selectedExercise ? 'Configurar ejercicio' : 'Añadir ejercicio'}
           </h3>
           <button
             onClick={handleClose}
             className="p-2 rounded-lg hover:opacity-80"
-            style={{ backgroundColor: '#21262d' }}
+            style={buttonSecondaryStyle}
           >
-            <X size={20} style={{ color: '#8b949e' }} />
+            <X size={20} style={{ color: colors.textSecondary }} />
           </button>
         </div>
 
@@ -77,13 +78,13 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
             <div className="space-y-4">
               <div
                 className="p-3 rounded-lg"
-                style={{ backgroundColor: '#21262d' }}
+                style={{ backgroundColor: colors.bgTertiary }}
               >
-                <p className="font-medium" style={{ color: '#e6edf3' }}>
+                <p className="font-medium" style={{ color: colors.textPrimary }}>
                   {selectedExercise.nombre}
                 </p>
                 {selectedExercise.equipment?.nombre && (
-                  <p className="text-sm" style={{ color: '#8b949e' }}>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
                     {selectedExercise.equipment.nombre}
                   </p>
                 )}
@@ -91,7 +92,7 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm mb-1" style={{ color: '#8b949e' }}>
+                  <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
                     Series
                   </label>
                   <input
@@ -101,15 +102,11 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
                     min="1"
                     max="10"
                     className="w-full p-3 rounded-lg text-center text-lg font-medium"
-                    style={{
-                      backgroundColor: '#21262d',
-                      border: '1px solid #30363d',
-                      color: '#e6edf3',
-                    }}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1" style={{ color: '#8b949e' }}>
+                  <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
                     Reps
                   </label>
                   <input
@@ -118,15 +115,11 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
                     onChange={(e) => setConfig(c => ({ ...c, reps: e.target.value }))}
                     placeholder="10"
                     className="w-full p-3 rounded-lg text-center text-lg font-medium"
-                    style={{
-                      backgroundColor: '#21262d',
-                      border: '1px solid #30363d',
-                      color: '#e6edf3',
-                    }}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1" style={{ color: '#8b949e' }}>
+                  <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
                     RIR
                   </label>
                   <input
@@ -136,15 +129,11 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
                     min="0"
                     max="5"
                     className="w-full p-3 rounded-lg text-center text-lg font-medium"
-                    style={{
-                      backgroundColor: '#21262d',
-                      border: '1px solid #30363d',
-                      color: '#e6edf3',
-                    }}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1" style={{ color: '#8b949e' }}>
+                  <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
                     Descanso (s)
                   </label>
                   <input
@@ -155,11 +144,7 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
                     min="30"
                     max="300"
                     className="w-full p-3 rounded-lg text-center text-lg font-medium"
-                    style={{
-                      backgroundColor: '#21262d',
-                      border: '1px solid #30363d',
-                      color: '#e6edf3',
-                    }}
+                    style={inputStyle}
                   />
                 </div>
               </div>
@@ -168,14 +153,14 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
                 <button
                   onClick={() => setSelectedExercise(null)}
                   className="flex-1 py-3 rounded-lg font-medium"
-                  style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+                  style={buttonSecondaryStyle}
                 >
                   Atrás
                 </button>
                 <button
                   onClick={handleAdd}
                   className="flex-1 py-3 rounded-lg font-medium"
-                  style={{ backgroundColor: '#238636', color: '#ffffff' }}
+                  style={{ backgroundColor: colors.success, color: '#ffffff' }}
                 >
                   Añadir
                 </button>
@@ -189,7 +174,7 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
                 <Search
                   size={18}
                   className="absolute left-3 top-1/2 -translate-y-1/2"
-                  style={{ color: '#8b949e' }}
+                  style={{ color: colors.textSecondary }}
                 />
                 <input
                   type="text"
@@ -197,11 +182,7 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar ejercicio..."
                   className="w-full pl-10 pr-4 py-3 rounded-lg"
-                  style={{
-                    backgroundColor: '#21262d',
-                    border: '1px solid #30363d',
-                    color: '#e6edf3',
-                  }}
+                  style={inputStyle}
                   autoFocus
                 />
               </div>
@@ -209,7 +190,7 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
               {/* Exercise list */}
               <div className="space-y-1 max-h-80 overflow-y-auto">
                 {filteredExercises.length === 0 ? (
-                  <p className="text-center py-4" style={{ color: '#8b949e' }}>
+                  <p className="text-center py-4" style={{ color: colors.textSecondary }}>
                     No se encontraron ejercicios
                   </p>
                 ) : (
@@ -218,13 +199,13 @@ function AddExerciseModal({ isOpen, onClose, onAdd }) {
                       key={exercise.id}
                       onClick={() => setSelectedExercise(exercise)}
                       className="w-full text-left p-3 rounded-lg hover:opacity-80 transition-colors"
-                      style={{ backgroundColor: '#21262d' }}
+                      style={{ backgroundColor: colors.bgTertiary }}
                     >
-                      <p className="font-medium" style={{ color: '#e6edf3' }}>
+                      <p className="font-medium" style={{ color: colors.textPrimary }}>
                         {exercise.nombre}
                       </p>
                       {exercise.equipment?.nombre && (
-                        <p className="text-sm" style={{ color: '#8b949e' }}>
+                        <p className="text-sm" style={{ color: colors.textSecondary }}>
                           {exercise.equipment.nombre}
                         </p>
                       )}

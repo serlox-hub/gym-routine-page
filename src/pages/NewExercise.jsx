@@ -9,6 +9,7 @@ import {
   useGripWidths,
   useCreateExercise,
 } from '../hooks/useExercises.js'
+import { colors, inputStyle, selectStyle } from '../lib/styles.js'
 
 const MEASUREMENT_TYPES = [
   { value: 'weight_reps', label: 'Peso × Reps' },
@@ -130,7 +131,7 @@ function NewExercise() {
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-1 text-sm mb-4 hover:opacity-80"
-          style={{ color: '#58a6ff' }}
+          style={{ color: colors.accent }}
         >
           <ChevronLeft size={16} />
           Volver
@@ -143,7 +144,7 @@ function NewExercise() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Nombre */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Nombre *
           </label>
           <input
@@ -152,32 +153,20 @@ function NewExercise() {
             onChange={(e) => handleChange('nombre', e.target.value)}
             placeholder="Ej: Press banca"
             className="w-full p-3 rounded-lg text-base"
-            style={{
-              backgroundColor: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
-            }}
+            style={inputStyle}
           />
         </Card>
 
         {/* Tipo de medición */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Tipo de medición
           </label>
           <select
             value={form.measurement_type}
             onChange={(e) => handleChange('measurement_type', e.target.value)}
             className="w-full p-3 rounded-lg text-base appearance-none"
-            style={{
-              backgroundColor: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 12px center',
-              paddingRight: '40px',
-            }}
+            style={selectStyle}
           >
             {MEASUREMENT_TYPES.map(type => (
               <option key={type.value} value={type.value}>{type.label}</option>
@@ -187,22 +176,14 @@ function NewExercise() {
 
         {/* Equipamiento */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Equipamiento
           </label>
           <select
             value={form.equipment_id}
             onChange={(e) => handleChange('equipment_id', e.target.value)}
             className="w-full p-3 rounded-lg text-base appearance-none"
-            style={{
-              backgroundColor: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 12px center',
-              paddingRight: '40px',
-            }}
+            style={selectStyle}
           >
             <option value="">Sin equipamiento</option>
             {equipment?.map(eq => (
@@ -214,7 +195,7 @@ function NewExercise() {
         {/* Altura polea (solo si es polea) */}
         {isPolea && (
           <Card className="p-4">
-            <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
               Altura de la polea
             </label>
             <div className="flex gap-2">
@@ -225,9 +206,9 @@ function NewExercise() {
                   onClick={() => handleChange('altura_polea', altura)}
                   className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
                   style={{
-                    backgroundColor: form.altura_polea === altura ? 'rgba(88, 166, 255, 0.15)' : '#21262d',
-                    color: form.altura_polea === altura ? '#58a6ff' : '#8b949e',
-                    border: '1px solid #30363d',
+                    backgroundColor: form.altura_polea === altura ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+                    color: form.altura_polea === altura ? colors.accent : colors.textSecondary,
+                    border: `1px solid ${colors.border}`,
                   }}
                 >
                   {altura}
@@ -239,22 +220,14 @@ function NewExercise() {
 
         {/* Tipo de agarre */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Tipo de agarre
           </label>
           <select
             value={form.grip_type_id}
             onChange={(e) => handleChange('grip_type_id', e.target.value)}
             className="w-full p-3 rounded-lg text-base appearance-none"
-            style={{
-              backgroundColor: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 12px center',
-              paddingRight: '40px',
-            }}
+            style={selectStyle}
           >
             <option value="">N/A</option>
             {gripTypes?.map(gt => (
@@ -265,22 +238,14 @@ function NewExercise() {
 
         {/* Apertura de agarre */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Apertura de agarre
           </label>
           <select
             value={form.grip_width_id}
             onChange={(e) => handleChange('grip_width_id', e.target.value)}
             className="w-full p-3 rounded-lg text-base appearance-none"
-            style={{
-              backgroundColor: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 12px center',
-              paddingRight: '40px',
-            }}
+            style={selectStyle}
           >
             <option value="">N/A</option>
             {gripWidths?.map(gw => (
@@ -291,7 +256,7 @@ function NewExercise() {
 
         {/* Músculos */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Músculos trabajados *
           </label>
 
@@ -304,7 +269,7 @@ function NewExercise() {
                   className="flex items-center gap-1 px-2 py-1 rounded text-sm"
                   style={{
                     backgroundColor: m.es_principal ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
-                    color: m.es_principal ? '#3fb950' : '#58a6ff',
+                    color: m.es_principal ? colors.success : colors.accent,
                   }}
                 >
                   <button
@@ -327,7 +292,7 @@ function NewExercise() {
             </div>
           )}
 
-          <p className="text-xs mb-2" style={{ color: '#8b949e' }}>
+          <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
             Toca un músculo seleccionado para alternar principal/secundario
           </p>
 
@@ -335,7 +300,7 @@ function NewExercise() {
           <div className="space-y-3 max-h-60 overflow-y-auto">
             {musclesByGroup && Object.entries(musclesByGroup).map(([group, groupMuscles]) => (
               <div key={group}>
-                <p className="text-xs font-medium mb-1" style={{ color: '#8b949e' }}>{group}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>{group}</p>
                 <div className="flex flex-wrap gap-1">
                   {groupMuscles.map(muscle => {
                     const isSelected = selectedMuscles.some(m => m.muscle_id === muscle.id)
@@ -347,8 +312,8 @@ function NewExercise() {
                         disabled={isSelected}
                         className="px-2 py-1 rounded text-xs transition-colors"
                         style={{
-                          backgroundColor: isSelected ? '#30363d' : '#21262d',
-                          color: isSelected ? '#8b949e' : '#e6edf3',
+                          backgroundColor: isSelected ? colors.border : colors.bgTertiary,
+                          color: isSelected ? colors.textSecondary : colors.textPrimary,
                           opacity: isSelected ? 0.5 : 1,
                         }}
                       >
@@ -364,7 +329,7 @@ function NewExercise() {
 
         {/* Instrucciones */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Instrucciones
           </label>
           <textarea
@@ -373,11 +338,7 @@ function NewExercise() {
             placeholder="Notas sobre la ejecución del ejercicio..."
             rows={3}
             className="w-full p-3 rounded-lg text-base resize-none"
-            style={{
-              backgroundColor: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
-            }}
+            style={inputStyle}
           />
         </Card>
 
@@ -387,7 +348,7 @@ function NewExercise() {
           disabled={createExercise.isPending}
           className="w-full py-4 rounded-lg font-medium text-lg transition-colors flex items-center justify-center gap-2"
           style={{
-            backgroundColor: '#238636',
+            backgroundColor: colors.success,
             color: '#ffffff',
             opacity: createExercise.isPending ? 0.7 : 1,
           }}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Check } from 'lucide-react'
+import { colors, inputStyle, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
 
 const RIR_OPTIONS = [
   { value: -1, label: 'F', description: 'Fallo' },
@@ -37,26 +38,26 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+      style={modalOverlayStyle}
       onClick={handleClose}
     >
       <div
         className="w-full max-w-lg rounded-t-2xl"
-        style={{ backgroundColor: '#161b22' }}
+        style={modalContentStyle}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div
           className="p-4 flex justify-between items-center"
-          style={{ borderBottom: '1px solid #30363d' }}
+          style={{ borderBottom: `1px solid ${colors.border}` }}
         >
-          <h3 className="text-lg font-bold" style={{ color: '#e6edf3' }}>
+          <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
             Completar serie
           </h3>
           <button
             onClick={handleClose}
             className="text-xl"
-            style={{ color: '#8b949e' }}
+            style={{ color: colors.textSecondary }}
           >
             ✕
           </button>
@@ -65,7 +66,7 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg }) {
         <div className="p-4 space-y-5">
           {/* RIR */}
           <div>
-            <label className="block text-sm mb-3" style={{ color: '#8b949e' }}>
+            <label className="block text-sm mb-3" style={{ color: colors.textSecondary }}>
               RIR (opcional)
             </label>
             <div className="grid grid-cols-5 gap-2">
@@ -75,8 +76,8 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg }) {
                   onClick={() => setRir(rir === option.value ? null : option.value)}
                   className="p-2 rounded-lg text-center transition-colors"
                   style={{
-                    backgroundColor: rir === option.value ? '#a371f7' : '#21262d',
-                    color: rir === option.value ? '#0d1117' : '#e6edf3',
+                    backgroundColor: rir === option.value ? colors.purple : colors.bgTertiary,
+                    color: rir === option.value ? colors.bgPrimary : colors.textPrimary,
                   }}
                 >
                   <div className="text-lg font-bold">{option.label}</div>
@@ -88,7 +89,7 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg }) {
 
           {/* Nota */}
           <div>
-            <label className="block text-sm mb-2" style={{ color: '#8b949e' }}>
+            <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>
               Nota (opcional)
             </label>
             <textarea
@@ -96,11 +97,7 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg }) {
               onChange={(e) => setNote(e.target.value)}
               placeholder="Ej: Buen pump, molestia en codo..."
               className="w-full rounded-lg p-3 text-sm resize-none h-16"
-              style={{
-                backgroundColor: '#21262d',
-                border: '1px solid #30363d',
-                color: '#e6edf3',
-              }}
+              style={inputStyle}
             />
           </div>
 
@@ -108,21 +105,21 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg }) {
           {descansoSeg > 0 && (
             <div
               className="text-center py-2 rounded-lg"
-              style={{ backgroundColor: '#21262d' }}
+              style={{ backgroundColor: colors.bgTertiary }}
             >
-              <span className="text-sm" style={{ color: '#8b949e' }}>
-                Descanso: <span style={{ color: '#58a6ff' }}>{formatTime(descansoSeg)}</span>
+              <span className="text-sm" style={{ color: colors.textSecondary }}>
+                Descanso: <span style={{ color: colors.accent }}>{formatTime(descansoSeg)}</span>
               </span>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-4" style={{ borderTop: '1px solid #30363d' }}>
+        <div className="p-4" style={{ borderTop: `1px solid ${colors.border}` }}>
           <button
             onClick={handleComplete}
             className="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#238636', color: '#ffffff' }}
+            style={{ backgroundColor: colors.success, color: '#ffffff' }}
           >
             <Check size={20} />
             Completar

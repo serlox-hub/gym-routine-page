@@ -10,6 +10,7 @@ import {
   useGripWidths,
   useUpdateExercise,
 } from '../hooks/useExercises.js'
+import { colors, inputStyle, selectStyle } from '../lib/styles.js'
 
 const MEASUREMENT_TYPES = [
   { value: 'weight_reps', label: 'Peso × Reps' },
@@ -21,16 +22,6 @@ const MEASUREMENT_TYPES = [
 ]
 
 const ALTURA_POLEA_OPTIONS = ['Alta', 'Media', 'Baja']
-
-const selectStyle = {
-  backgroundColor: '#21262d',
-  border: '1px solid #30363d',
-  color: '#e6edf3',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 12px center',
-  paddingRight: '40px',
-}
 
 function EditExercise() {
   const { exerciseId } = useParams()
@@ -169,7 +160,7 @@ function EditExercise() {
         <button
           onClick={() => navigate('/exercises')}
           className="flex items-center gap-1 text-sm mb-4 hover:opacity-80"
-          style={{ color: '#58a6ff' }}
+          style={{ color: colors.accent }}
         >
           <ChevronLeft size={16} />
           Volver
@@ -182,7 +173,7 @@ function EditExercise() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Nombre */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Nombre *
           </label>
           <input
@@ -191,17 +182,13 @@ function EditExercise() {
             onChange={(e) => handleChange('nombre', e.target.value)}
             placeholder="Ej: Press banca"
             className="w-full p-3 rounded-lg text-base"
-            style={{
-              backgroundColor: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
-            }}
+            style={inputStyle}
           />
         </Card>
 
         {/* Tipo de medición */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Tipo de medición
           </label>
           <select
@@ -218,7 +205,7 @@ function EditExercise() {
 
         {/* Equipamiento */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Equipamiento
           </label>
           <select
@@ -237,7 +224,7 @@ function EditExercise() {
         {/* Altura polea (solo si es polea) */}
         {isPolea && (
           <Card className="p-4">
-            <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+            <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
               Altura de la polea
             </label>
             <div className="flex gap-2">
@@ -248,9 +235,9 @@ function EditExercise() {
                   onClick={() => handleChange('altura_polea', altura)}
                   className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
                   style={{
-                    backgroundColor: form.altura_polea === altura ? 'rgba(88, 166, 255, 0.15)' : '#21262d',
-                    color: form.altura_polea === altura ? '#58a6ff' : '#8b949e',
-                    border: '1px solid #30363d',
+                    backgroundColor: form.altura_polea === altura ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+                    color: form.altura_polea === altura ? colors.accent : colors.textSecondary,
+                    border: `1px solid ${colors.border}`,
                   }}
                 >
                   {altura}
@@ -262,7 +249,7 @@ function EditExercise() {
 
         {/* Tipo de agarre */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Tipo de agarre
           </label>
           <select
@@ -280,7 +267,7 @@ function EditExercise() {
 
         {/* Apertura de agarre */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Apertura de agarre
           </label>
           <select
@@ -298,7 +285,7 @@ function EditExercise() {
 
         {/* Músculos */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Músculos trabajados *
           </label>
 
@@ -311,7 +298,7 @@ function EditExercise() {
                   className="flex items-center gap-1 px-2 py-1 rounded text-sm"
                   style={{
                     backgroundColor: m.es_principal ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
-                    color: m.es_principal ? '#3fb950' : '#58a6ff',
+                    color: m.es_principal ? colors.success : colors.accent,
                   }}
                 >
                   <button
@@ -334,7 +321,7 @@ function EditExercise() {
             </div>
           )}
 
-          <p className="text-xs mb-2" style={{ color: '#8b949e' }}>
+          <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
             Toca un músculo seleccionado para alternar principal/secundario
           </p>
 
@@ -342,7 +329,7 @@ function EditExercise() {
           <div className="space-y-3 max-h-60 overflow-y-auto">
             {musclesByGroup && Object.entries(musclesByGroup).map(([group, groupMuscles]) => (
               <div key={group}>
-                <p className="text-xs font-medium mb-1" style={{ color: '#8b949e' }}>{group}</p>
+                <p className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>{group}</p>
                 <div className="flex flex-wrap gap-1">
                   {groupMuscles.map(muscle => {
                     const isSelected = selectedMuscles.some(m => m.muscle_id === muscle.id)
@@ -354,8 +341,8 @@ function EditExercise() {
                         disabled={isSelected}
                         className="px-2 py-1 rounded text-xs transition-colors"
                         style={{
-                          backgroundColor: isSelected ? '#30363d' : '#21262d',
-                          color: isSelected ? '#8b949e' : '#e6edf3',
+                          backgroundColor: isSelected ? colors.border : colors.bgTertiary,
+                          color: isSelected ? colors.textSecondary : colors.textPrimary,
                           opacity: isSelected ? 0.5 : 1,
                         }}
                       >
@@ -371,7 +358,7 @@ function EditExercise() {
 
         {/* Instrucciones */}
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#e6edf3' }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             Instrucciones
           </label>
           <textarea
@@ -380,11 +367,7 @@ function EditExercise() {
             placeholder="Notas sobre la ejecución del ejercicio..."
             rows={3}
             className="w-full p-3 rounded-lg text-base resize-none"
-            style={{
-              backgroundColor: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
-            }}
+            style={inputStyle}
           />
         </Card>
 
@@ -394,7 +377,7 @@ function EditExercise() {
           disabled={updateExercise.isPending}
           className="w-full py-4 rounded-lg font-medium text-lg transition-colors flex items-center justify-center gap-2"
           style={{
-            backgroundColor: '#238636',
+            backgroundColor: colors.success,
             color: '#ffffff',
             opacity: updateExercise.isPending ? 0.7 : 1,
           }}
