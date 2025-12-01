@@ -6,8 +6,9 @@ import PreviousWorkout from './PreviousWorkout.jsx'
 import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout } from '../../hooks/usePreviousWorkout.js'
+import { colors } from '../../lib/styles.js'
 
-function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }) {
+function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, isWarmup = false }) {
   const { id, exercise, series, reps, rir, tempo, tempo_razon, notas, measurement_type, descanso_seg } = routineExercise
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -45,6 +46,18 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }
 
   const equipmentInfo = buildEquipmentInfo(exercise)
 
+  // Simplified warmup card
+  if (isWarmup) {
+    return (
+      <WarmupExerciseCard
+        exercise={exercise}
+        reps={reps}
+        notas={notas}
+        equipmentInfo={equipmentInfo}
+      />
+    )
+  }
+
   return (
     <Card className="p-4">
       <div className="flex justify-between items-start gap-2 mb-3">
@@ -58,16 +71,16 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet }
           <button
             onClick={() => setShowHistory(true)}
             className="p-1.5 rounded hover:opacity-80"
-            style={{ backgroundColor: '#21262d' }}
+            style={{ backgroundColor: colors.bgTertiary }}
             title="Ver histórico"
           >
-            <History size={14} style={{ color: '#8b949e' }} />
+            <History size={14} style={{ color: colors.textSecondary }} />
           </button>
           <span
             className="text-sm font-medium px-2 py-0.5 rounded"
             style={{
               backgroundColor: completedCount === setsCount ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
-              color: completedCount === setsCount ? '#3fb950' : '#58a6ff',
+              color: completedCount === setsCount ? colors.success : colors.accent,
             }}
           >
             {completedCount}/{setsCount}
@@ -165,6 +178,34 @@ function buildEquipmentInfo(exercise) {
   }
   if (exercise.altura_polea) parts.push(`Polea ${exercise.altura_polea}`)
   return parts.join(' · ')
+}
+
+// Simplified card for warmup exercises (read-only list)
+function WarmupExerciseCard({ exercise, reps, notas, equipmentInfo }) {
+  return (
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg"
+      style={{
+        backgroundColor: colors.bgSecondary,
+        border: `1px solid ${colors.border}`,
+      }}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm" style={{ color: colors.textPrimary }}>
+          {exercise.nombre}
+        </p>
+        <p className="text-xs" style={{ color: colors.textSecondary }}>
+          {reps}
+          {equipmentInfo && ` · ${equipmentInfo}`}
+        </p>
+        {notas && (
+          <p className="text-xs mt-1" style={{ color: colors.warning }}>
+            {notas}
+          </p>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export default WorkoutExerciseCard

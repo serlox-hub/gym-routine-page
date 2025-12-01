@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { ChevronUp, ChevronDown, Plus, Trash2, Flame } from 'lucide-react'
 import { useRoutineDay, useRoutineBlocks } from '../hooks/useRoutines.js'
 import { useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../components/ui/index.js'
 import { WorkoutExerciseCard, RestTimer, AddExerciseModal } from '../components/Workout/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
+import { colors } from '../lib/styles.js'
 
 function WorkoutSession() {
   const { routineId, dayId } = useParams()
@@ -42,43 +43,58 @@ function WorkoutSession() {
     }
   }, [blocks, initializeExerciseOrder])
 
-  // Build ordered exercise list
-  const orderedExercises = useMemo(() => {
-    if (!blocks) return []
+  // Build ordered exercise list grouped by block
+  const { exercisesByBlock, flatExercises } = useMemo(() => {
+    if (!blocks) return { exercisesByBlock: [], flatExercises: [] }
 
     // Create a map of routine exercises by id
     const routineExerciseMap = new Map()
     blocks.forEach(block => {
       block.routine_exercises.forEach(re => {
-        routineExerciseMap.set(re.id, { ...re, blockName: block.nombre })
+        routineExerciseMap.set(re.id, {
+          ...re,
+          blockName: block.nombre,
+          blockOrder: block.orden,
+          isWarmup: block.nombre.toLowerCase() === 'calentamiento'
+        })
       })
     })
 
-    // If no custom order yet, use default from blocks
+    // Always build grouped view from blocks
+    const grouped = blocks.map(block => ({
+      blockName: block.nombre,
+      blockOrder: block.orden,
+      isWarmup: block.nombre.toLowerCase() === 'calentamiento',
+      duracionMin: block.duracion_min,
+      exercises: block.routine_exercises.map(re => ({
+        ...re,
+        blockName: block.nombre,
+        isWarmup: block.nombre.toLowerCase() === 'calentamiento',
+        type: 'routine',
+      }))
+    }))
+
+    // Build flat list for reordering mode
+    let flat = []
     if (exerciseOrder.length === 0) {
-      const defaultList = []
-      blocks.forEach(block => {
-        block.routine_exercises.forEach(re => {
-          defaultList.push({
-            ...re,
-            blockName: block.nombre,
-            type: 'routine',
-          })
-        })
+      // Default order from blocks
+      grouped.forEach(group => {
+        group.exercises.forEach(ex => flat.push(ex))
       })
-      return defaultList
+    } else {
+      // Custom order
+      flat = exerciseOrder.map(item => {
+        if (item.type === 'routine') {
+          const re = routineExerciseMap.get(item.id)
+          return re ? { ...re, type: 'routine' } : null
+        } else {
+          const extra = extraExercises.find(e => e.id === item.id)
+          return extra ? { ...extra, type: 'extra', blockName: 'Añadido' } : null
+        }
+      }).filter(Boolean)
     }
 
-    // Build ordered list
-    return exerciseOrder.map(item => {
-      if (item.type === 'routine') {
-        const re = routineExerciseMap.get(item.id)
-        return re ? { ...re, type: 'routine' } : null
-      } else {
-        const extra = extraExercises.find(e => e.id === item.id)
-        return extra ? { ...extra, type: 'extra' } : null
-      }
-    }).filter(Boolean)
+    return { exercisesByBlock: grouped, flatExercises: flat }
   }, [blocks, exerciseOrder, extraExercises])
 
   if (!sessionId) {
@@ -163,59 +179,103 @@ function WorkoutSession() {
         </div>
       </header>
 
-      <main className="space-y-3">
-        {orderedExercises.map((routineExercise, index) => (
-          <div key={routineExercise.id} className="relative">
-            {isReordering && (
-              <div
-                className="absolute -left-10 top-1/2 -translate-y-1/2 flex flex-col gap-1 z-10"
-              >
-                <button
-                  onClick={() => moveExercise(index, 'up')}
-                  disabled={index === 0}
-                  className="p-1 rounded hover:opacity-80 disabled:opacity-30"
-                  style={{ backgroundColor: '#21262d' }}
-                >
-                  <ChevronUp size={16} style={{ color: '#8b949e' }} />
-                </button>
-                <button
-                  onClick={() => moveExercise(index, 'down')}
-                  disabled={index === orderedExercises.length - 1}
-                  className="p-1 rounded hover:opacity-80 disabled:opacity-30"
-                  style={{ backgroundColor: '#21262d' }}
-                >
-                  <ChevronDown size={16} style={{ color: '#8b949e' }} />
-                </button>
-              </div>
-            )}
-
-            {routineExercise.type === 'extra' && isReordering && (
-              <button
-                onClick={() => removeExtraExercise(routineExercise.id)}
-                className="absolute -right-2 -top-2 p-1.5 rounded-full z-10 hover:opacity-80"
-                style={{ backgroundColor: '#f85149' }}
-              >
-                <Trash2 size={12} style={{ color: '#ffffff' }} />
-              </button>
-            )}
-
-            <div className={isReordering ? 'ml-8' : ''}>
-              {routineExercise.type === 'extra' && (
-                <div
-                  className="text-xs font-medium px-2 py-0.5 rounded inline-block mb-1"
-                  style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: '#a371f7' }}
-                >
-                  Añadido
+      <main className="space-y-4">
+        {isReordering ? (
+          // Flat list when reordering
+          <div className="space-y-3">
+            {flatExercises.map((routineExercise, index) => (
+              <div key={routineExercise.id} className="relative">
+                <div className="absolute -left-10 top-1/2 -translate-y-1/2 flex flex-col gap-1 z-10">
+                  <button
+                    onClick={() => moveExercise(index, 'up')}
+                    disabled={index === 0}
+                    className="p-1 rounded hover:opacity-80 disabled:opacity-30"
+                    style={{ backgroundColor: colors.bgTertiary }}
+                  >
+                    <ChevronUp size={16} style={{ color: colors.textSecondary }} />
+                  </button>
+                  <button
+                    onClick={() => moveExercise(index, 'down')}
+                    disabled={index === flatExercises.length - 1}
+                    className="p-1 rounded hover:opacity-80 disabled:opacity-30"
+                    style={{ backgroundColor: colors.bgTertiary }}
+                  >
+                    <ChevronDown size={16} style={{ color: colors.textSecondary }} />
+                  </button>
                 </div>
-              )}
-              <WorkoutExerciseCard
-                routineExercise={routineExercise}
-                onCompleteSet={handleCompleteSet}
-                onUncompleteSet={handleUncompleteSet}
-              />
-            </div>
+
+                {routineExercise.type === 'extra' && (
+                  <button
+                    onClick={() => removeExtraExercise(routineExercise.id)}
+                    className="absolute -right-2 -top-2 p-1.5 rounded-full z-10 hover:opacity-80"
+                    style={{ backgroundColor: colors.danger }}
+                  >
+                    <Trash2 size={12} style={{ color: '#ffffff' }} />
+                  </button>
+                )}
+
+                <div className="ml-8">
+                  {routineExercise.type === 'extra' && (
+                    <div
+                      className="text-xs font-medium px-2 py-0.5 rounded inline-block mb-1"
+                      style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: colors.purple }}
+                    >
+                      Añadido
+                    </div>
+                  )}
+                  <WorkoutExerciseCard
+                    routineExercise={routineExercise}
+                    onCompleteSet={handleCompleteSet}
+                    onUncompleteSet={handleUncompleteSet}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        ) : (
+          // Grouped by block
+          exercisesByBlock.map((block) => (
+            <section key={block.blockName} className="space-y-3">
+              {/* Block header */}
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border-l-4"
+                style={{
+                  backgroundColor: colors.bgTertiary,
+                  borderLeftColor: block.isWarmup ? colors.warning : colors.purple,
+                }}
+              >
+                {block.isWarmup && <Flame size={16} style={{ color: colors.warning }} />}
+                <h3
+                  className="text-sm font-semibold uppercase tracking-wide"
+                  style={{ color: block.isWarmup ? colors.warning : colors.purple }}
+                >
+                  {block.blockName}
+                </h3>
+                <span className="text-xs" style={{ color: colors.textSecondary }}>
+                  ({block.exercises.length})
+                </span>
+                {block.duracionMin && (
+                  <span className="text-xs ml-auto" style={{ color: colors.textSecondary }}>
+                    ~{block.duracionMin} min
+                  </span>
+                )}
+              </div>
+
+              {/* Block exercises */}
+              <div className="space-y-2">
+                {block.exercises.map((routineExercise) => (
+                  <WorkoutExerciseCard
+                    key={routineExercise.id}
+                    routineExercise={routineExercise}
+                    onCompleteSet={handleCompleteSet}
+                    onUncompleteSet={handleUncompleteSet}
+                    isWarmup={block.isWarmup}
+                  />
+                ))}
+              </div>
+            </section>
+          ))
+        )}
       </main>
 
       <div
