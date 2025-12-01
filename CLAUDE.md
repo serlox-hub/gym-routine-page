@@ -128,11 +128,27 @@ Main tables:
 - [x] Fase 1: Setup Supabase + Modelo de Datos
 - [x] Fase 2: Setup React + Conexión Supabase
 - [x] Fase 3: Visualización de Rutinas
-- [x] Fase 4: Sesión de Entrenamiento (iniciar, registrar series, finalizar/cancelar, diferentes tipos de medición)
-- [x] Fase 5: Timer de Descanso (auto-inicia al completar serie, countdown, alertas sonoras/vibración, ExecutionTimer para ejercicios de tiempo)
-- [x] Fase 6: Referencia Sesión Anterior (muestra última sesión, pre-rellena inputs con valores anteriores, ajusta número de series)
+- [x] Fase 4: Sesión de Entrenamiento
+- [x] Fase 5: Timer de Descanso
+- [x] Fase 6: Referencia Sesión Anterior
+- [x] Fase 7: Notas por Serie (RIR + notas opcionales al completar serie)
+- [x] Fase 8: Histórico (calendario mensual con grupos musculares)
+- [x] Fase 9: Gráficos de Progresión (peso máx, volumen, 1RM estimado)
+- [x] CRUD de Ejercicios (crear, editar, eliminar)
+- [x] Reordenación y ejercicios extra en sesión
 
-### Pending
-- [ ] Fase 7: Notas por Serie
-- [ ] Fase 8: Histórico
-- [ ] Fase 9: Gráficos de Progresión
+## Known Issues / TODO
+
+### Alta prioridad
+- [ ] **Ejercicios extra no se guardan en BD**: Las series de ejercicios añadidos durante sesión solo se guardan en estado local (workoutStore), se pierden al finalizar. Necesita guardar en `completed_sets` con `routine_exercise_id = null`.
+- [ ] **Validación de env vars**: En `src/lib/supabase.js`, si las variables de entorno no existen, `createClient` falla silenciosamente. Añadir validación.
+
+### Media prioridad
+- [ ] **Eliminación de ejercicios puede fallar por FK**: Si el ejercicio está en `routine_exercises`, el DELETE falla. Mostrar error descriptivo o verificar dependencias antes de eliminar.
+- [ ] **Race condition en timer**: El timer usa `setInterval` en el componente. Si hay múltiples renders, podría haber intervalos duplicados. Considerar usar `useRef` para el interval ID.
+- [ ] **Estilos inline repetidos**: Muchos componentes repiten `style={{ backgroundColor: '#21262d' }}`. Extraer a clases de Tailwind o constantes de estilo.
+
+### Baja prioridad (para producción)
+- [ ] **Habilitar RLS en Supabase**: Actualmente deshabilitado (single-user). Necesario para modo multi-usuario.
+- [ ] **Añadir tests**: No hay tests unitarios ni de integración.
+- [ ] **Reducir bundle size**: 835KB minified. Considerar code-splitting con `React.lazy()`.

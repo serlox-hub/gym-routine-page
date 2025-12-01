@@ -35,11 +35,14 @@ export function useCompleteSet() {
 
   return useMutation({
     mutationFn: async ({ routineExerciseId, exerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notas }) => {
+      // Para ejercicios extra (id empieza con "extra-"), routine_exercise_id es null
+      const isExtraExercise = typeof routineExerciseId === 'string' && routineExerciseId.startsWith('extra-')
+
       const { data, error } = await supabase
         .from('completed_sets')
         .insert({
           session_id: sessionId,
-          routine_exercise_id: routineExerciseId,
+          routine_exercise_id: isExtraExercise ? null : routineExerciseId,
           exercise_id: exerciseId,
           set_number: setNumber,
           weight,
@@ -55,7 +58,7 @@ export function useCompleteSet() {
         .single()
 
       if (error) throw error
-      return data
+      return { ...data, localExerciseId: routineExerciseId }
     },
     onSuccess: (data, variables) => {
       completeSet(variables.routineExerciseId, variables.setNumber, {
@@ -66,6 +69,7 @@ export function useCompleteSet() {
         distanceMeters: variables.distanceMeters,
         rirActual: variables.rirActual,
         notas: variables.notas,
+        dbId: data.id,
       })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
     },
@@ -76,17 +80,33 @@ export function useUncompleteSet() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const uncompleteSet = useWorkoutStore(state => state.uncompleteSet)
+  const getSetData = useWorkoutStore(state => state.getSetData)
 
   return useMutation({
     mutationFn: async ({ routineExerciseId, setNumber }) => {
-      const { error } = await supabase
-        .from('completed_sets')
-        .delete()
-        .eq('session_id', sessionId)
-        .eq('routine_exercise_id', routineExerciseId)
-        .eq('set_number', setNumber)
+      const isExtraExercise = typeof routineExerciseId === 'string' && routineExerciseId.startsWith('extra-')
 
-      if (error) throw error
+      if (isExtraExercise) {
+        // Para ejercicios extra, usar el dbId guardado en el store
+        const setData = getSetData(routineExerciseId, setNumber)
+        if (setData?.dbId) {
+          const { error } = await supabase
+            .from('completed_sets')
+            .delete()
+            .eq('id', setData.dbId)
+
+          if (error) throw error
+        }
+      } else {
+        const { error } = await supabase
+          .from('completed_sets')
+          .delete()
+          .eq('session_id', sessionId)
+          .eq('routine_exercise_id', routineExerciseId)
+          .eq('set_number', setNumber)
+
+        if (error) throw error
+      }
     },
     onSuccess: (_, variables) => {
       uncompleteSet(variables.routineExerciseId, variables.setNumber)
