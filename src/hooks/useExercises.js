@@ -245,6 +245,19 @@ export function useDeleteExercise() {
 
   return useMutation({
     mutationFn: async (exerciseId) => {
+      // Verificar si el ejercicio está en alguna rutina
+      const { data: usedInRoutines, error: checkError } = await supabase
+        .from('routine_exercises')
+        .select('id')
+        .eq('exercise_id', exerciseId)
+        .limit(1)
+
+      if (checkError) throw checkError
+
+      if (usedInRoutines && usedInRoutines.length > 0) {
+        throw new Error('Este ejercicio está siendo usado en una rutina. Elimínalo de la rutina primero.')
+      }
+
       const { error } = await supabase
         .from('exercises')
         .delete()
