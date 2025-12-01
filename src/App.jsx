@@ -11,7 +11,7 @@ import EditExercise from './pages/EditExercise.jsx'
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <div className="min-h-screen bg-surface text-primary">
         <Routes>
           <Route path="/" element={<Home />} />
