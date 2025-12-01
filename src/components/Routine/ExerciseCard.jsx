@@ -2,14 +2,42 @@ import { useState } from 'react'
 import { History } from 'lucide-react'
 import { Card, Badge } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
+import { colors } from '../../lib/styles.js'
 
-function ExerciseCard({ routineExercise, onClick }) {
+function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
   const { exercise, series, reps, rir, descanso_seg, tempo, notas, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
-
   const equipmentInfo = buildEquipmentInfo(exercise)
+
+  // Simplified warmup card
+  if (isWarmup) {
+    return (
+      <div
+        className="flex items-center gap-3 p-3 rounded-lg"
+        style={{
+          backgroundColor: colors.bgSecondary,
+          border: `1px solid ${colors.border}`,
+        }}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm" style={{ color: colors.textPrimary }}>
+            {exercise.nombre}
+          </p>
+          <p className="text-xs" style={{ color: colors.textSecondary }}>
+            {reps}
+            {equipmentInfo && ` · ${equipmentInfo}`}
+          </p>
+          {notas && (
+            <p className="text-xs mt-1" style={{ color: colors.warning }}>
+              {notas}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Card className="p-3" onClick={onClick}>
