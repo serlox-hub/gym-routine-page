@@ -12,9 +12,14 @@ export function useRestTimer() {
   const intervalRef = useRef(null)
   const audioContextRef = useRef(null)
 
-  // Timer interval
+  // Timer interval - solo depende de restTimerActive para evitar múltiples intervalos
   useEffect(() => {
-    if (restTimerActive && restTimeRemaining > 0) {
+    if (restTimerActive) {
+      // Limpiar cualquier intervalo previo antes de crear uno nuevo
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+
       intervalRef.current = setInterval(() => {
         tickTimer()
       }, 1000)
@@ -23,6 +28,7 @@ export function useRestTimer() {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
+        intervalRef.current = null
       }
     }
   }, [restTimerActive, tickTimer])
