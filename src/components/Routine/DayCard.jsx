@@ -17,7 +17,7 @@ function DayCard({ day, routineId }) {
           <h3 className="font-medium">{nombre}</h3>
         </div>
         {duracion_estimada_min && (
-          <span className="text-sm text-muted">{duracion_estimada_min} min</span>
+          <span className="text-sm text-muted whitespace-nowrap">{duracion_estimada_min} min</span>
         )}
       </div>
     </Card>
