@@ -60,7 +60,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
 
   return (
     <Card className="p-4">
-      <div className="flex justify-between items-start gap-2 mb-3">
+      <div className="flex justify-between items-start gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="font-medium">{exercise.nombre}</h4>
           {equipmentInfo && (
@@ -88,7 +88,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-3">
+      <div className="my-3 pt-3 border-t border-border flex flex-wrap items-center gap-2">
         <Badge variant="accent">{series}×{reps}</Badge>
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
