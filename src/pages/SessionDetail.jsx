@@ -1,21 +1,16 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Clock, Calendar, FileText } from 'lucide-react'
+import { ChevronLeft, Clock, Calendar } from 'lucide-react'
 import { useSessionDetail } from '../hooks/useWorkoutHistory.js'
-import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, NotesBadge } from '../components/ui/index.js'
+import SetNotesView from '../components/Workout/SetNotesView.jsx'
 import { SENSATION_LABELS } from '../lib/constants.js'
-
-const RIR_LABELS = {
-  [-1]: 'F',
-  0: '0',
-  1: '1',
-  2: '2',
-  3: '3+',
-}
 
 function SessionDetail() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
+  const [selectedSet, setSelectedSet] = useState(null)
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
@@ -144,27 +139,24 @@ function SessionDetail() {
                   <div className="flex-1 text-sm">
                     {formatSetValue(set)}
                   </div>
-                  {(set.rir_actual !== null || set.notas) && (
-                    <div className="flex items-center gap-1">
-                      {set.rir_actual !== null && (
-                        <span
-                          className="text-xs font-bold px-1.5 py-0.5 rounded"
-                          style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: '#a371f7' }}
-                        >
-                          {RIR_LABELS[set.rir_actual] ?? set.rir_actual}
-                        </span>
-                      )}
-                      {set.notas && (
-                        <FileText size={12} style={{ color: '#a371f7' }} />
-                      )}
-                    </div>
-                  )}
+                  <NotesBadge
+                    rir={set.rir_actual}
+                    hasNotes={!!set.notas}
+                    onClick={set.notas ? () => setSelectedSet(set) : null}
+                  />
                 </div>
               ))}
             </div>
           </Card>
         ))}
       </div>
+
+      <SetNotesView
+        isOpen={!!selectedSet}
+        onClose={() => setSelectedSet(null)}
+        rir={selectedSet?.rir_actual}
+        notas={selectedSet?.notas}
+      />
     </div>
   )
 }

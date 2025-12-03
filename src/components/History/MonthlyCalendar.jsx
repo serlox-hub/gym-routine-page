@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -15,8 +15,7 @@ const MUSCLE_GROUP_COLORS = {
   'Antebrazos': '#8b949e',
 }
 
-function MonthlyCalendar({ sessions, onDayClick }) {
-  const [currentDate, setCurrentDate] = useState(new Date())
+function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
 
   const calendarData = useMemo(() => {
     const year = currentDate.getFullYear()
@@ -77,15 +76,15 @@ function MonthlyCalendar({ sessions, onDayClick }) {
   const monthName = currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
 
   const goToPrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
+    onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
   }
 
   const goToNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
+    onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
   }
 
   const goToToday = () => {
-    setCurrentDate(new Date())
+    onDateChange(new Date())
   }
 
   return (

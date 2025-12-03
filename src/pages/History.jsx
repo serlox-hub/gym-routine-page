@@ -1,12 +1,14 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Calendar } from 'lucide-react'
 import { useWorkoutHistory } from '../hooks/useWorkoutHistory.js'
 import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
-import { MonthlyCalendar } from '../components/History/index.js'
+import { MonthlyCalendar, DurationChart } from '../components/History/index.js'
 
 function History() {
   const navigate = useNavigate()
   const { data: sessions, isLoading, error } = useWorkoutHistory()
+  const [currentDate, setCurrentDate] = useState(new Date())
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
@@ -44,7 +46,15 @@ function History() {
             <p className="text-secondary">No hay sesiones registradas</p>
           </div>
         ) : (
-          <MonthlyCalendar sessions={sessions} onDayClick={handleDayClick} />
+          <>
+            <MonthlyCalendar
+              sessions={sessions}
+              onDayClick={handleDayClick}
+              currentDate={currentDate}
+              onDateChange={setCurrentDate}
+            />
+            <DurationChart sessions={sessions} currentDate={currentDate} />
+          </>
         )}
       </main>
     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { FileText } from 'lucide-react'
 import useWorkoutStore from '../../stores/workoutStore.js'
+import { NotesBadge } from '../ui/index.js'
 import ExecutionTimer from './ExecutionTimer.jsx'
 import SetCompleteModal from './SetCompleteModal.jsx'
 import SetNotesView from './SetNotesView.jsx'
@@ -9,10 +9,10 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(routineExerciseId, setNumber))
   const setData = useWorkoutStore(state => state.getSetData(routineExerciseId, setNumber))
 
-  const [weight, setWeight] = useState(setData?.weight ?? 0)
-  const [reps, setReps] = useState(setData?.repsCompleted ?? 0)
-  const [time, setTime] = useState(setData?.timeSeconds ?? 0)
-  const [distance, setDistance] = useState(setData?.distanceMeters ?? 0)
+  const [weight, setWeight] = useState(setData?.weight ?? '')
+  const [reps, setReps] = useState(setData?.repsCompleted ?? '')
+  const [time, setTime] = useState(setData?.timeSeconds ?? '')
+  const [distance, setDistance] = useState(setData?.distanceMeters ?? '')
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [showNotesView, setShowNotesView] = useState(false)
 
@@ -27,8 +27,15 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
   }, [previousSet, setData])
 
   const handleNumberChange = (setter) => (e) => {
-    const value = e.target.value === '' ? 0 : Math.max(0, Number(e.target.value))
-    setter(value)
+    const raw = e.target.value
+    if (raw === '') {
+      setter('')
+      return
+    }
+    const num = Number(raw)
+    if (!isNaN(num) && num >= 0) {
+      setter(raw)
+    }
   }
 
   const handleCheckClick = () => {
@@ -78,15 +85,15 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
   const isValid = () => {
     switch (measurementType) {
       case 'weight_reps':
-        return weight && reps
+        return weight !== '' && reps !== ''
       case 'reps_only':
       case 'reps_per_side':
-        return !!reps
+        return reps !== ''
       case 'time':
       case 'time_per_side':
-        return !!time
+        return time !== ''
       case 'distance':
-        return !!distance
+        return distance !== ''
       default:
         return false
     }
@@ -245,8 +252,6 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
     }
   }
 
-  // Determinar qué info tiene la serie completada
-  const hasRir = setData?.rirActual !== null && setData?.rirActual !== undefined
   const hasTextNote = !!setData?.notas
 
   return (
@@ -271,20 +276,12 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
         {renderInputs()}
       </div>
 
-      {isCompleted && (hasRir || hasTextNote) && (
-        <button
-          onClick={() => setShowNotesView(true)}
-          className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:opacity-80"
-          style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)' }}
-          title="Ver notas"
-        >
-          {hasRir && (
-            <span className="text-xs font-bold" style={{ color: '#a371f7' }}>
-              {setData.rirActual === -1 ? 'F' : setData.rirActual}
-            </span>
-          )}
-          {hasTextNote && <FileText size={12} style={{ color: '#a371f7' }} />}
-        </button>
+      {isCompleted && (
+        <NotesBadge
+          rir={setData?.rirActual}
+          hasNotes={hasTextNote}
+          onClick={hasTextNote ? () => setShowNotesView(true) : null}
+        />
       )}
 
       <button
