@@ -1,11 +1,18 @@
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell } from 'lucide-react'
+import { History, Dumbbell, LogOut } from 'lucide-react'
 import { useRoutines } from '../hooks/useRoutines.js'
+import { useAuth } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
 
 function Home() {
   const navigate = useNavigate()
   const { data: routines, isLoading, error } = useRoutines()
+  const { logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
@@ -31,6 +38,14 @@ function Home() {
             >
               <History size={16} />
               Histórico
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+              title="Cerrar sesión"
+            >
+              <LogOut size={16} />
             </button>
           </div>
         </div>

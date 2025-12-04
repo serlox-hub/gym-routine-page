@@ -2,10 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
+import { useUserId } from './useAuth.js'
 
 export function useStartSession() {
   const queryClient = useQueryClient()
   const startSession = useWorkoutStore(state => state.startSession)
+  const userId = useUserId()
 
   return useMutation({
     mutationFn: async (routineDayId) => {
@@ -14,6 +16,7 @@ export function useStartSession() {
         .insert({
           routine_day_id: routineDayId,
           status: 'in_progress',
+          user_id: userId,
         })
         .select()
         .single()

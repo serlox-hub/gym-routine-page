@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
+import { useUserId } from './useAuth.js'
 
 export function useExercises() {
   return useQuery({
@@ -147,6 +148,7 @@ export function useExercise(exerciseId) {
 
 export function useCreateExercise() {
   const queryClient = useQueryClient()
+  const userId = useUserId()
 
   return useMutation({
     mutationFn: async ({ exercise, muscles }) => {
@@ -160,6 +162,7 @@ export function useCreateExercise() {
           altura_polea: exercise.altura_polea || null,
           instrucciones: exercise.instrucciones || null,
           measurement_type: exercise.measurement_type || 'weight_reps',
+          user_id: userId,
         })
         .select()
         .single()
