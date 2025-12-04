@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell, LogOut } from 'lucide-react'
+import { History, Dumbbell, LogOut, Plus } from 'lucide-react'
 import { useRoutines } from '../hooks/useRoutines.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
@@ -51,31 +51,38 @@ function Home() {
         </div>
       </header>
       <main>
-        {routines?.length === 0 ? (
-          <p className="text-secondary">No hay rutinas disponibles</p>
-        ) : (
-          <ul className="space-y-2">
-            {routines?.map(routine => (
-              <li key={routine.id}>
-                <Card
-                  className="p-4"
-                  onClick={() => navigate(`/routine/${routine.id}`)}
-                >
-                  <h2 className="font-semibold text-accent">{routine.nombre}</h2>
-                  {routine.descripcion && (
-                    <p className="text-sm text-secondary mt-1">{routine.descripcion}</p>
-                  )}
-                  {routine.objetivo && (
-                    <p className="text-sm mt-2">
-                      <span style={{ color: '#3fb950' }}>Objetivo:</span>{' '}
-                      <span className="text-secondary">{routine.objetivo}</span>
-                    </p>
-                  )}
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ul className="space-y-2">
+          {routines?.map(routine => (
+            <li key={routine.id}>
+              <Card
+                className="p-4"
+                onClick={() => navigate(`/routine/${routine.id}`)}
+              >
+                <h2 className="font-semibold text-accent">{routine.nombre}</h2>
+                {routine.descripcion && (
+                  <p className="text-sm text-secondary mt-1">{routine.descripcion}</p>
+                )}
+                {routine.objetivo && (
+                  <p className="text-sm mt-2">
+                    <span style={{ color: '#3fb950' }}>Objetivo:</span>{' '}
+                    <span className="text-secondary">{routine.objetivo}</span>
+                  </p>
+                )}
+              </Card>
+            </li>
+          ))}
+          <li>
+            <Card
+              className="p-4 border-dashed"
+              onClick={() => navigate('/routines/new')}
+            >
+              <div className="flex items-center gap-2 justify-center" style={{ color: '#8b949e' }}>
+                <Plus size={20} />
+                <span>Nueva rutina</span>
+              </div>
+            </Card>
+          </li>
+        </ul>
       </main>
     </div>
   )

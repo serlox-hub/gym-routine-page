@@ -27,6 +27,34 @@ export function useExercises() {
   })
 }
 
+export function useExercisesWithMuscles() {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISES, 'with-muscles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select(`
+          id,
+          nombre,
+          measurement_type,
+          equipment:equipment(id, nombre),
+          exercise_muscles(
+            es_principal,
+            muscle:muscles(
+              id,
+              nombre,
+              muscle_group:muscle_groups(id, nombre)
+            )
+          )
+        `)
+        .order('nombre')
+
+      if (error) throw error
+      return data
+    },
+  })
+}
+
 export function useMuscleGroups() {
   return useQuery({
     queryKey: ['muscle-groups'],

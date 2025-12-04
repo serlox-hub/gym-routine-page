@@ -9,6 +9,7 @@ import SessionDetail from './pages/SessionDetail.jsx'
 import Exercises from './pages/Exercises.jsx'
 import NewExercise from './pages/NewExercise.jsx'
 import EditExercise from './pages/EditExercise.jsx'
+import NewRoutine from './pages/NewRoutine.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 
@@ -23,6 +24,7 @@ function App() {
 
           {/* Protected routes */}
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+          <Route path="/routines/new" element={<PrivateRoute><NewRoutine /></PrivateRoute>} />
           <Route path="/routine/:routineId" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
           <Route path="/routine/:routineId/day/:dayId" element={<PrivateRoute><DayDetail /></PrivateRoute>} />
           <Route path="/routine/:routineId/day/:dayId/workout" element={<PrivateRoute><WorkoutSession /></PrivateRoute>} />
