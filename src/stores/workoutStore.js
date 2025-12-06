@@ -11,6 +11,8 @@ const useWorkoutStore = create(
 
       // Completed sets during this session (before saving to DB)
       completedSets: {},
+      // Cached set data (for re-checking after uncomplete)
+      cachedSetData: {},
 
       // Custom exercise order and added exercises
       exerciseOrder: [], // Array of { id, type: 'routine' | 'extra' }
@@ -27,6 +29,7 @@ const useWorkoutStore = create(
         routineDayId,
         startedAt: new Date().toISOString(),
         completedSets: {},
+        cachedSetData: {},
         exerciseOrder: [],
         extraExercises: [],
       }),
@@ -37,29 +40,44 @@ const useWorkoutStore = create(
         routineDayId: null,
         startedAt: null,
         completedSets: {},
+        cachedSetData: {},
         exerciseOrder: [],
         extraExercises: [],
       }),
 
       // Mark a set as completed
-      completeSet: (routineExerciseId, setNumber, data) => set(state => ({
-        completedSets: {
-          ...state.completedSets,
-          [`${routineExerciseId}-${setNumber}`]: {
-            routineExerciseId,
-            setNumber,
-            ...data,
-            completedAt: new Date().toISOString(),
-          }
+      completeSet: (routineExerciseId, setNumber, data) => set(state => {
+        const key = `${routineExerciseId}-${setNumber}`
+        const setData = {
+          routineExerciseId,
+          setNumber,
+          ...data,
+          completedAt: new Date().toISOString(),
         }
-      })),
+        return {
+          completedSets: {
+            ...state.completedSets,
+            [key]: setData,
+          },
+          cachedSetData: {
+            ...state.cachedSetData,
+            [key]: setData,
+          },
+        }
+      }),
 
-      // Uncheck a completed set
+      // Uncheck a completed set (keeps data in cache for re-checking)
       uncompleteSet: (routineExerciseId, setNumber) => set(state => {
         const newCompletedSets = { ...state.completedSets }
         delete newCompletedSets[`${routineExerciseId}-${setNumber}`]
         return { completedSets: newCompletedSets }
       }),
+
+      // Get cached data for a set (even if uncompleted)
+      getCachedSetData: (routineExerciseId, setNumber) => {
+        const state = get()
+        return state.cachedSetData[`${routineExerciseId}-${setNumber}`]
+      },
 
       // Get completed sets for an exercise
       getSetsForExercise: (routineExerciseId) => {

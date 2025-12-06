@@ -20,6 +20,7 @@ function SetRow({
 }) {
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(routineExerciseId, setNumber))
   const setData = useWorkoutStore(state => state.getSetData(routineExerciseId, setNumber))
+  const cachedData = useWorkoutStore(state => state.getCachedSetData(routineExerciseId, setNumber))
 
   const [weight, setWeight] = useState(setData?.weight ?? '')
   const [reps, setReps] = useState(setData?.repsCompleted ?? '')
@@ -161,6 +162,8 @@ function SetRow({
         onClose={() => setShowCompleteModal(false)}
         onComplete={handleCompleteSet}
         descansoSeg={descansoSeg}
+        initialRir={cachedData?.rirActual}
+        initialNote={cachedData?.notes}
       />
 
       <SetNotesView

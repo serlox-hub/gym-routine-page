@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { colors, inputStyle, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
 
@@ -10,9 +10,17 @@ const RIR_OPTIONS = [
   { value: 3, label: '3+', description: 'Cómodo' },
 ]
 
-function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg }) {
+function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir, initialNote }) {
   const [rir, setRir] = useState(null)
   const [note, setNote] = useState('')
+
+  // Cargar valores iniciales cuando se abre el modal
+  useEffect(() => {
+    if (isOpen) {
+      setRir(initialRir ?? null)
+      setNote(initialNote ?? '')
+    }
+  }, [isOpen, initialRir, initialNote])
 
   const handleComplete = () => {
     onComplete(rir, note.trim() || null)
