@@ -47,7 +47,7 @@ export function useCompleteSet() {
 
       const { data, error } = await supabase
         .from('completed_sets')
-        .insert({
+        .upsert({
           session_id: sessionId,
           routine_exercise_id: isExtraExercise ? null : routineExerciseId,
           exercise_id: exerciseId,
@@ -60,6 +60,8 @@ export function useCompleteSet() {
           rir_actual: rirActual,
           notes,
           completed: true,
+        }, {
+          onConflict: 'session_id,exercise_id,set_number,routine_exercise_id',
         })
         .select()
         .single()
