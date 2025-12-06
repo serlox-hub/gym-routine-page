@@ -9,15 +9,11 @@ function NewExercise() {
   const createExercise = useCreateExercise()
 
   const handleSubmit = async (exerciseData, muscleGroupId) => {
-    try {
-      await createExercise.mutateAsync({
-        exercise: exerciseData,
-        muscleGroupId,
-      })
-      navigate(-1)
-    } catch (err) {
-      throw err
-    }
+    await createExercise.mutateAsync({
+      exercise: exerciseData,
+      muscleGroupId,
+    })
+    navigate(-1)
   }
 
   return (

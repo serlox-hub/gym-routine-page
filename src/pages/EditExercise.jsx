@@ -15,16 +15,12 @@ function EditExercise() {
   if (isLoading) return <LoadingSpinner />
 
   const handleSubmit = async (exerciseData, muscleGroupId) => {
-    try {
-      await updateExercise.mutateAsync({
-        exerciseId: parseInt(exerciseId),
-        exercise: exerciseData,
-        muscleGroupId,
-      })
-      navigate('/exercises')
-    } catch (err) {
-      throw err
-    }
+    await updateExercise.mutateAsync({
+      exerciseId: parseInt(exerciseId),
+      exercise: exerciseData,
+      muscleGroupId,
+    })
+    navigate('/exercises')
   }
 
   return (

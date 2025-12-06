@@ -318,7 +318,7 @@ export function useAddExerciseToDay() {
       const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
 
       // Primero buscar o crear el bloque correspondiente
-      let { data: existingBlock, error: blockFetchError } = await supabase
+      const { data: existingBlock, error: blockFetchError } = await supabase
         .from('routine_blocks')
         .select('id, sort_order')
         .eq('routine_day_id', dayId)
