@@ -16,8 +16,8 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
   // Determinar tipo de medición: override en routine_exercise > default del ejercicio > weight_reps
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
 
-  // Unidad de peso por defecto (kg)
-  const defaultWeightUnit = 'kg'
+  // Unidad de peso del ejercicio
+  const weightUnit = exercise.weight_unit || 'kg'
 
   const completedSets = useWorkoutStore(state => state.completedSets)
   const { data: previousWorkout } = usePreviousWorkout(exercise.id)
@@ -147,7 +147,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
               routineExerciseId={id}
               exerciseId={exercise.id}
               measurementType={measurementType}
-              defaultWeightUnit={defaultWeightUnit}
+              weightUnit={weightUnit}
               descansoSeg={rest_seconds}
               previousSet={previousSet}
               onComplete={onCompleteSet}

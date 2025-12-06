@@ -9,7 +9,7 @@ export function useExercises() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, measurement_type, instructions')
+        .select('id, name, measurement_type, instructions, weight_unit')
         .order('name')
 
       if (error) throw error
@@ -28,6 +28,7 @@ export function useExercisesWithMuscleGroup() {
           id,
           name,
           measurement_type,
+          weight_unit,
           muscle_group_id,
           muscle_group:muscle_groups(id, name)
         `)
@@ -64,6 +65,7 @@ export function useExercise(exerciseId) {
           id,
           name,
           measurement_type,
+          weight_unit,
           instructions,
           muscle_group_id,
           muscle_group:muscle_groups(id, name)
@@ -90,6 +92,7 @@ export function useCreateExercise() {
           name: exercise.name,
           instructions: exercise.instructions || null,
           measurement_type: exercise.measurement_type || 'weight_reps',
+          weight_unit: exercise.weight_unit || 'kg',
           muscle_group_id: muscleGroupId || null,
           user_id: userId,
         })
@@ -117,6 +120,7 @@ export function useUpdateExercise() {
           name: exercise.name,
           instructions: exercise.instructions || null,
           measurement_type: exercise.measurement_type || 'weight_reps',
+          weight_unit: exercise.weight_unit || 'kg',
           muscle_group_id: muscleGroupId || null,
         })
         .eq('id', exerciseId)

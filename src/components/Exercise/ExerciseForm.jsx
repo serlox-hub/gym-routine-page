@@ -12,9 +12,18 @@ const MEASUREMENT_TYPES = [
   { value: 'distance', label: 'Distancia' },
 ]
 
+const WEIGHT_UNITS = [
+  { value: 'kg', label: 'Kilogramos (kg)' },
+  { value: 'lb', label: 'Libras (lb)' },
+]
+
+// Tipos que usan peso
+const USES_WEIGHT = ['weight_reps', 'distance']
+
 const DEFAULT_FORM = {
   name: '',
   measurement_type: 'weight_reps',
+  weight_unit: 'kg',
   instructions: '',
 }
 
@@ -50,11 +59,14 @@ function ExerciseForm({
       setForm({
         name: initialData.name || '',
         measurement_type: initialData.measurement_type || 'weight_reps',
+        weight_unit: initialData.weight_unit || 'kg',
         instructions: initialData.instructions || '',
       })
       setSelectedMuscleGroupId(initialData.muscle_group_id || null)
     }
   }, [initialData])
+
+  const usesWeight = USES_WEIGHT.includes(form.measurement_type)
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -135,6 +147,35 @@ function ExerciseForm({
           ))}
         </select>
       </Wrapper>
+
+      {/* Unidad de peso (solo si usa peso) */}
+      {usesWeight && (
+        <Wrapper className={compact ? '' : 'p-4'}>
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
+            Unidad de peso
+          </label>
+          <div className="flex gap-2">
+            {WEIGHT_UNITS.map(unit => {
+              const isSelected = form.weight_unit === unit.value
+              return (
+                <button
+                  key={unit.value}
+                  type="button"
+                  onClick={() => handleChange('weight_unit', unit.value)}
+                  className="flex-1 py-2 px-3 rounded-lg text-sm transition-colors"
+                  style={{
+                    backgroundColor: isSelected ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+                    color: isSelected ? colors.accent : colors.textPrimary,
+                    border: isSelected ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
+                  }}
+                >
+                  {unit.label}
+                </button>
+              )
+            })}
+          </div>
+        </Wrapper>
+      )}
 
       {/* Grupo muscular */}
       <Wrapper className={compact ? '' : 'p-4'}>

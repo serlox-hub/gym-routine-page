@@ -10,7 +10,7 @@ function SetRow({
   routineExerciseId,
   exerciseId,
   measurementType = 'weight_reps',
-  defaultWeightUnit = 'kg',
+  weightUnit = 'kg',
   descansoSeg,
   previousSet,
   onComplete,
@@ -64,7 +64,7 @@ function SetRow({
     switch (measurementType) {
       case 'weight_reps':
         data.weight = parseFloat(weight)
-        data.weightUnit = defaultWeightUnit
+        data.weightUnit = weightUnit
         data.repsCompleted = parseInt(reps)
         break
       case 'reps_only':
@@ -79,7 +79,7 @@ function SetRow({
         data.distanceMeters = parseFloat(distance)
         if (weight) {
           data.weight = parseFloat(weight)
-          data.weightUnit = defaultWeightUnit
+          data.weightUnit = weightUnit
         }
         break
     }
@@ -93,7 +93,7 @@ function SetRow({
 
     switch (measurementType) {
       case 'weight_reps':
-        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={defaultWeightUnit} {...props} />
+        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} {...props} />
       case 'reps_only':
         return <RepsOnlyInputs reps={reps} setReps={setReps} {...props} />
       case 'reps_per_side':
@@ -103,7 +103,7 @@ function SetRow({
       case 'time_per_side':
         return <TimeInputs time={time} setTime={setTime} label="seg/lado" {...props} />
       case 'distance':
-        return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={defaultWeightUnit} {...props} />
+        return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={weightUnit} {...props} />
       default:
         return null
     }

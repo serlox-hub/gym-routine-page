@@ -82,6 +82,7 @@ export function useRoutineBlocks(dayId) {
               id,
               name,
               measurement_type,
+              weight_unit,
               instructions
             )
           )
