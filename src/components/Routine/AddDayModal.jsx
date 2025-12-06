@@ -15,7 +15,6 @@ function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
     if (!form.nombre.trim()) return
 
     onSubmit({
-      dia_numero: nextDayNumber,
       nombre: form.nombre.trim(),
       duracion_estimada_min: form.duracion_estimada_min ? parseInt(form.duracion_estimada_min) : null,
       orden: nextDayNumber,

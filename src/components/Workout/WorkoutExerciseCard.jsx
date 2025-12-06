@@ -16,8 +16,8 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
   // Determinar tipo de medición: override en routine_exercise > default del ejercicio > weight_reps
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
 
-  // Unidad de peso por defecto del equipamiento
-  const defaultWeightUnit = exercise.equipment?.default_weight_unit || 'kg'
+  // Unidad de peso por defecto (kg)
+  const defaultWeightUnit = 'kg'
 
   const completedSets = useWorkoutStore(state => state.completedSets)
   const { data: previousWorkout } = usePreviousWorkout(exercise.id)
@@ -44,8 +44,6 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
     }
   }
 
-  const equipmentInfo = buildEquipmentInfo(exercise)
-
   // Simplified warmup card
   if (isWarmup) {
     return (
@@ -53,7 +51,6 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         exercise={exercise}
         reps={reps}
         notas={notas}
-        equipmentInfo={equipmentInfo}
       />
     )
   }
@@ -63,9 +60,6 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
       <div className="flex justify-between items-start gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="font-medium">{exercise.nombre}</h4>
-          {equipmentInfo && (
-            <p className="text-sm text-secondary">{equipmentInfo}</p>
-          )}
         </div>
         <div className="flex items-center gap-1.5">
           <button
@@ -187,18 +181,8 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
   )
 }
 
-function buildEquipmentInfo(exercise) {
-  const parts = []
-  if (exercise.equipment?.nombre) parts.push(exercise.equipment.nombre)
-  if (exercise.grip_type?.nombre && exercise.grip_type.nombre !== 'N/A') {
-    parts.push(exercise.grip_type.nombre)
-  }
-  if (exercise.altura_polea) parts.push(`Polea ${exercise.altura_polea}`)
-  return parts.join(' · ')
-}
-
 // Simplified card for warmup exercises (read-only list)
-function WarmupExerciseCard({ exercise, reps, notas, equipmentInfo }) {
+function WarmupExerciseCard({ exercise, reps, notas }) {
   return (
     <div
       className="flex items-center gap-3 p-3 rounded-lg"
@@ -213,7 +197,6 @@ function WarmupExerciseCard({ exercise, reps, notas, equipmentInfo }) {
         </p>
         <p className="text-xs" style={{ color: colors.textSecondary }}>
           {reps}
-          {equipmentInfo && ` · ${equipmentInfo}`}
         </p>
         {notas && (
           <p className="text-xs mt-1" style={{ color: colors.warning }}>

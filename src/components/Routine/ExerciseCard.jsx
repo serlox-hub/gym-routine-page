@@ -2,14 +2,12 @@ import { useState } from 'react'
 import { History } from 'lucide-react'
 import { Card, Badge } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
-import { colors } from '../../lib/styles.js'
 
 function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
   const { exercise, series, reps, rir, descanso_seg, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
-  const equipmentInfo = buildEquipmentInfo(exercise)
 
   // Simplified warmup card
   if (isWarmup) {
@@ -17,17 +15,16 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
       <div
         className="flex items-center gap-3 p-3 rounded-lg"
         style={{
-          backgroundColor: colors.bgSecondary,
-          border: `1px solid ${colors.border}`,
+          backgroundColor: '#161b22',
+          border: '1px solid #30363d',
         }}
       >
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm" style={{ color: colors.textPrimary }}>
+          <p className="font-medium text-sm" style={{ color: '#e6edf3' }}>
             {exercise.nombre}
           </p>
-          <p className="text-xs" style={{ color: colors.textSecondary }}>
+          <p className="text-xs" style={{ color: '#8b949e' }}>
             {reps}
-            {equipmentInfo && ` · ${equipmentInfo}`}
           </p>
         </div>
       </div>
@@ -39,9 +36,6 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
       <div className="flex justify-between items-start gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="font-medium truncate">{exercise.nombre}</h4>
-          {equipmentInfo && (
-            <p className="text-sm text-secondary truncate">{equipmentInfo}</p>
-          )}
         </div>
         <button
           onClick={(e) => {
@@ -72,25 +66,6 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
       />
     </Card>
   )
-}
-
-function buildEquipmentInfo(exercise) {
-  const parts = []
-
-  if (exercise.equipment?.nombre) {
-    parts.push(exercise.equipment.nombre)
-  }
-  if (exercise.grip_type?.nombre && exercise.grip_type.nombre !== 'N/A') {
-    parts.push(exercise.grip_type.nombre)
-  }
-  if (exercise.grip_width?.nombre && exercise.grip_width.nombre !== 'N/A') {
-    parts.push(exercise.grip_width.nombre)
-  }
-  if (exercise.altura_polea) {
-    parts.push(`Polea ${exercise.altura_polea}`)
-  }
-
-  return parts.join(' · ')
 }
 
 export default ExerciseCard

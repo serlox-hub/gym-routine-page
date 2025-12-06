@@ -18,8 +18,7 @@ function Exercises() {
 
     const searchLower = search.toLowerCase()
     return exercises.filter(e =>
-      e.nombre.toLowerCase().includes(searchLower) ||
-      e.equipment?.nombre?.toLowerCase().includes(searchLower)
+      e.nombre.toLowerCase().includes(searchLower)
     )
   }, [exercises, search])
 
@@ -97,37 +96,6 @@ function Exercises() {
                   <h3 className="font-medium" style={{ color: '#e6edf3' }}>
                     {exercise.nombre}
                   </h3>
-                  {exercise.equipment?.nombre && (
-                    <p className="text-sm text-secondary">
-                      {exercise.equipment.nombre}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {exercise.grip_type?.nombre && exercise.grip_type.nombre !== 'N/A' && (
-                      <span
-                        className="text-xs px-2 py-0.5 rounded"
-                        style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-                      >
-                        {exercise.grip_type.nombre}
-                      </span>
-                    )}
-                    {exercise.grip_width?.nombre && exercise.grip_width.nombre !== 'N/A' && (
-                      <span
-                        className="text-xs px-2 py-0.5 rounded"
-                        style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-                      >
-                        {exercise.grip_width.nombre}
-                      </span>
-                    )}
-                    {exercise.altura_polea && (
-                      <span
-                        className="text-xs px-2 py-0.5 rounded"
-                        style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-                      >
-                        Polea {exercise.altura_polea}
-                      </span>
-                    )}
-                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <button

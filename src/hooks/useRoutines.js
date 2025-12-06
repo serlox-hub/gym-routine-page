@@ -41,7 +41,7 @@ export function useRoutineDays(routineId) {
         .from('routine_days')
         .select('*')
         .eq('routine_id', routineId)
-        .order('dia_numero')
+        .order('orden')
       if (error) throw error
       return data
     },
@@ -82,11 +82,7 @@ export function useRoutineBlocks(dayId) {
               id,
               nombre,
               measurement_type,
-              instrucciones,
-              equipment:equipment(nombre, default_weight_unit),
-              grip_type:grip_types(nombre),
-              grip_width:grip_widths(nombre),
-              altura_polea
+              instrucciones
             )
           )
         `)
@@ -122,7 +118,6 @@ export function useCreateRoutine() {
           nombre: routine.nombre,
           descripcion: routine.descripcion || null,
           objetivo: routine.objetivo || null,
-          frecuencia_dias: routine.frecuencia_dias || null,
           user_id: userId,
         })
         .select()
@@ -146,10 +141,9 @@ export function useCreateRoutineDay() {
         .from('routine_days')
         .insert({
           routine_id: routineId,
-          dia_numero: day.dia_numero,
           nombre: day.nombre,
           duracion_estimada_min: day.duracion_estimada_min || null,
-          orden: day.orden || day.dia_numero,
+          orden: day.orden,
         })
         .select()
         .single()
@@ -244,20 +238,11 @@ export function useReorderRoutineDays() {
 
   return useMutation({
     mutationFn: async ({ routineId, days }) => {
-      // Primero poner dia_numero negativos temporales secuencialmente
+      // Actualizar el orden de cada día
       for (let i = 0; i < days.length; i++) {
         const { error } = await supabase
           .from('routine_days')
-          .update({ dia_numero: -(i + 1000) }) // Usar números muy negativos para evitar colisiones
-          .eq('id', days[i].id)
-        if (error) throw error
-      }
-
-      // Luego poner los valores definitivos secuencialmente
-      for (let i = 0; i < days.length; i++) {
-        const { error } = await supabase
-          .from('routine_days')
-          .update({ orden: i + 1, dia_numero: i + 1 })
+          .update({ orden: i + 1 })
           .eq('id', days[i].id)
         if (error) throw error
       }
@@ -392,7 +377,6 @@ export function useAddExerciseToDay() {
           series: series || 3,
           reps: reps || '8-12',
           orden: nextExerciseOrder,
-          es_calentamiento: esCalentamiento,
           notas: notas || null,
           tempo: tempo || null,
           tempo_razon: tempo_razon || null,

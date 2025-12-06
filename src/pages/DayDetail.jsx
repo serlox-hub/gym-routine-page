@@ -52,7 +52,7 @@ function DayDetail() {
               className="text-sm font-medium px-2 py-0.5 rounded"
               style={{ backgroundColor: 'rgba(88, 166, 255, 0.15)', color: '#58a6ff' }}
             >
-              Día {day.dia_numero}
+              Día {day.orden}
             </span>
             <h1 className="text-xl font-bold">{day.nombre}</h1>
           </div>

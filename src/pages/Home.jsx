@@ -1,17 +1,41 @@
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell, LogOut, Plus } from 'lucide-react'
+import { History, Dumbbell, LogOut, Plus, Upload } from 'lucide-react'
 import { useRoutines } from '../hooks/useRoutines.js'
-import { useAuth } from '../hooks/useAuth.js'
+import { useAuth, useUserId } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
+import { importRoutine, readJsonFile } from '../lib/routineIO.js'
+import { useQueryClient } from '@tanstack/react-query'
+import { QUERY_KEYS } from '../lib/constants.js'
 
 function Home() {
   const navigate = useNavigate()
   const { data: routines, isLoading, error } = useRoutines()
   const { logout } = useAuth()
+  const userId = useUserId()
+  const queryClient = useQueryClient()
+  const fileInputRef = useRef(null)
 
   const handleLogout = async () => {
     await logout()
     navigate('/login')
+  }
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const data = await readJsonFile(file)
+      const newRoutine = await importRoutine(data, userId)
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      navigate(`/routine/${newRoutine.id}`)
+    } catch (err) {
+      console.error('Error importando rutina:', err)
+      alert('Error al importar la rutina')
+    }
+
+    e.target.value = ''
   }
 
   if (isLoading) return <LoadingSpinner />
@@ -81,6 +105,24 @@ function Home() {
                 <span>Nueva rutina</span>
               </div>
             </Card>
+          </li>
+          <li>
+            <Card
+              className="p-4 border-dashed"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="flex items-center gap-2 justify-center" style={{ color: '#8b949e' }}>
+                <Upload size={20} />
+                <span>Importar rutina</span>
+              </div>
+            </Card>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
           </li>
         </ul>
       </main>

@@ -28,11 +28,6 @@ function ExerciseConfigForm({
         <div className="font-medium" style={{ color: colors.textPrimary }}>
           {exercise.nombre}
         </div>
-        {exercise.equipment && (
-          <div className="text-sm" style={{ color: colors.textSecondary }}>
-            {exercise.equipment.nombre}
-          </div>
-        )}
       </div>
 
       {/* Campos obligatorios */}

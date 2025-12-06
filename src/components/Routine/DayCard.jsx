@@ -9,7 +9,7 @@ import DayEditForm from './DayEditForm.jsx'
 
 function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
   const navigate = useNavigate()
-  const { id, dia_numero, nombre, duracion_estimada_min } = day
+  const { id, orden, nombre, duracion_estimada_min } = day
   const { data: blocks } = useRoutineBlocks(isEditing ? id : null)
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
@@ -94,7 +94,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
     <Card className={`p-4 ${isEditing ? 'cursor-default' : ''}`} onClick={handleClick}>
       {isEditing && editingDay ? (
         <DayEditForm
-          dayNumber={dia_numero}
+          dayNumber={orden}
           form={dayForm}
           setForm={setDayForm}
           onSave={handleSaveDay}
@@ -102,7 +102,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
       ) : (
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <span className="text-accent font-semibold shrink-0">{dia_numero}</span>
+            <span className="text-accent font-semibold shrink-0">{orden}</span>
             <h3 className="font-medium truncate">{nombre}</h3>
           </div>
           <div className="flex items-center gap-1 shrink-0">

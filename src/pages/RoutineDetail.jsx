@@ -32,7 +32,7 @@ function RoutineDetail() {
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
-  const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.dia_numero), 0) || 0
+  const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.orden), 0) || 0
   const nextDayNumber = maxDayNumber + 1
 
   const handleAddDay = async (day) => {

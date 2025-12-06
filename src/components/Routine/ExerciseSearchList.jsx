@@ -84,11 +84,6 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect }) {
               style={{ color: colors.textPrimary }}
             >
               <div className="font-medium">{exercise.nombre}</div>
-              {exercise.equipment && (
-                <div className="text-sm" style={{ color: colors.textSecondary }}>
-                  {exercise.equipment.nombre}
-                </div>
-              )}
             </button>
           ))
         )}
