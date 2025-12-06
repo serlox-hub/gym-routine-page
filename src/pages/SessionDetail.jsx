@@ -5,6 +5,8 @@ import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal } from '../components/ui/index.js'
 import SetNotesView from '../components/Workout/SetNotesView.jsx'
 import { SENSATION_LABELS } from '../lib/constants.js'
+import { formatFullDate, formatTime } from '../lib/dateUtils.js'
+import { formatSetValue } from '../lib/setUtils.js'
 
 function SessionDetail() {
   const { sessionId } = useParams()
@@ -17,41 +19,6 @@ function SessionDetail() {
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
   if (!session) return <ErrorMessage message="Sesión no encontrada" className="m-4" />
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
-  }
-
-  const formatTime = (dateStr) => {
-    const date = new Date(dateStr)
-    return date.toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
-
-  const formatSetValue = (set) => {
-    const parts = []
-    if (set.weight) {
-      parts.push(`${set.weight}${set.weight_unit}`)
-    }
-    if (set.reps_completed) {
-      parts.push(`${set.reps_completed} reps`)
-    }
-    if (set.time_seconds) {
-      parts.push(`${set.time_seconds}s`)
-    }
-    if (set.distance_meters) {
-      parts.push(`${set.distance_meters}m`)
-    }
-    return parts.join(' × ')
-  }
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
@@ -92,7 +59,7 @@ function SessionDetail() {
             <Calendar size={16} style={{ color: '#8b949e' }} />
             <div>
               <div className="text-xs text-secondary">Fecha</div>
-              <div className="text-sm capitalize">{formatDate(session.started_at)}</div>
+              <div className="text-sm capitalize">{formatFullDate(session.started_at)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">

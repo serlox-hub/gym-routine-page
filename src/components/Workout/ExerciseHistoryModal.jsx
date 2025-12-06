@@ -5,6 +5,8 @@ import { LoadingSpinner } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'
 import { colors, modalOverlayStyle, modalContentStyle, buttonSecondaryStyle } from '../../lib/styles.js'
+import { formatShortDate } from '../../lib/dateUtils.js'
+import { formatSetValue } from '../../lib/setUtils.js'
 
 const RIR_LABELS = {
   [-1]: 'F',
@@ -19,31 +21,6 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
   const [selectedSet, setSelectedSet] = useState(null)
 
   if (!isOpen) return null
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-    })
-  }
-
-  const formatSetValue = (set) => {
-    const parts = []
-    if (set.weight) {
-      parts.push(`${set.weight}${set.weight_unit}`)
-    }
-    if (set.reps_completed) {
-      parts.push(`${set.reps_completed}`)
-    }
-    if (set.time_seconds) {
-      parts.push(`${set.time_seconds}s`)
-    }
-    if (set.distance_meters) {
-      parts.push(`${set.distance_meters}m`)
-    }
-    return parts.join(' × ')
-  }
 
   return (
     <div
@@ -94,7 +71,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
                   style={{ backgroundColor: colors.bgTertiary }}
                 >
                   <div className="text-xs text-secondary mb-2">
-                    {formatDate(session.date)}
+                    {formatShortDate(session.date)}
                   </div>
                   <div className="space-y-1">
                     {session.sets.map(set => (

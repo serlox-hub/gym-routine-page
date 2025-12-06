@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { NotesBadge } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
+import { formatRelativeDate } from '../../lib/dateUtils.js'
+import { formatSetValueByType } from '../../lib/setUtils.js'
 
 function PreviousWorkout({ exerciseId, measurementType = 'weight_reps' }) {
   const { data: previous, isLoading } = usePreviousWorkout(exerciseId)
@@ -30,39 +32,6 @@ function PreviousWorkout({ exerciseId, measurementType = 'weight_reps' }) {
     )
   }
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 0) return 'Hoy'
-    if (diffDays === 1) return 'Ayer'
-    if (diffDays < 7) return `Hace ${diffDays} días`
-    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} sem`
-    return `Hace ${Math.floor(diffDays / 30)} mes`
-  }
-
-  const renderSetValue = (set) => {
-    switch (measurementType) {
-      case 'weight_reps':
-        return `${set.weight}${set.weightUnit} × ${set.reps}`
-      case 'reps_only':
-        return `${set.reps} reps`
-      case 'reps_per_side':
-        return `${set.reps} reps/lado`
-      case 'time':
-        return `${set.timeSeconds}s`
-      case 'time_per_side':
-        return `${set.timeSeconds}s/lado`
-      case 'distance':
-        return set.weight
-          ? `${set.weight}${set.weightUnit} × ${set.distanceMeters}m`
-          : `${set.distanceMeters}m`
-      default:
-        return set.weight ? `${set.weight}${set.weightUnit} × ${set.reps}` : `${set.reps}`
-    }
-  }
-
   return (
     <div
       className="rounded-lg p-2"
@@ -73,7 +42,7 @@ function PreviousWorkout({ exerciseId, measurementType = 'weight_reps' }) {
           Última vez
         </span>
         <span className="text-xs" style={{ color: '#6e7681' }}>
-          {formatDate(previous.date)}
+          {formatRelativeDate(previous.date)}
         </span>
       </div>
 
@@ -98,7 +67,7 @@ function PreviousWorkout({ exerciseId, measurementType = 'weight_reps' }) {
                 />
               </div>
               <div className="text-sm font-medium text-center" style={{ color: '#e6edf3' }}>
-                {renderSetValue(set)}
+                {formatSetValueByType(set, measurementType)}
               </div>
             </div>
           )

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
 
 function ExecutionTimer({ seconds }) {
   const [isRunning, setIsRunning] = useState(false)
@@ -81,12 +82,6 @@ function ExecutionTimer({ seconds }) {
     setRemaining(seconds)
   }
 
-  const formatTime = (secs) => {
-    const mins = Math.floor(secs / 60)
-    const s = secs % 60
-    return `${mins}:${s.toString().padStart(2, '0')}`
-  }
-
   const progress = seconds > 0 ? ((seconds - remaining) / seconds) * 100 : 0
   const isCritical = remaining <= 3 && remaining > 0
   const isDone = remaining === 0 && !isRunning
@@ -113,7 +108,7 @@ function ExecutionTimer({ seconds }) {
         className={`font-mono font-bold ${isCritical || isDone ? 'animate-pulse' : ''}`}
         style={{ color: isDone ? '#3fb950' : isCritical ? '#f85149' : '#e6edf3' }}
       >
-        {formatTime(remaining)}
+        {formatSecondsToMMSS(remaining)}
       </span>
 
       <div

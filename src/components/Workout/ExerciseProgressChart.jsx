@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { transformSessionsToChartData } from '../../lib/workoutCalculations.js'
 
 const TABS = {
   WEIGHT: 'weight',
@@ -15,69 +16,14 @@ const TABS = {
   E1RM: 'e1rm',
 }
 
-// Fórmula Epley para estimar 1RM
-function calculateE1RM(weight, reps) {
-  if (!weight || !reps || reps <= 0) return 0
-  if (reps === 1) return weight
-  return Math.round(weight * (1 + reps / 30))
-}
-
 function ExerciseProgressChart({ sessions, measurementType }) {
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
   const showVolumeTabs = measurementType === 'weight_reps'
 
-  const chartData = useMemo(() => {
-    if (!sessions || sessions.length === 0) return []
-
-    const sortedSessions = [...sessions].reverse()
-
-    return sortedSessions.map(session => {
-      const date = new Date(session.date)
-      const dateLabel = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-
-      let bestValue = 0
-      let unit = ''
-
-      session.sets.forEach(set => {
-        if (measurementType === 'weight_reps' || measurementType === 'distance') {
-          if (set.weight && set.weight > bestValue) {
-            bestValue = set.weight
-            unit = set.weight_unit
-          }
-        } else if (measurementType === 'time' || measurementType === 'time_per_side') {
-          if (set.time_seconds && set.time_seconds > bestValue) {
-            bestValue = set.time_seconds
-            unit = 's'
-          }
-        } else {
-          if (set.reps_completed && set.reps_completed > bestValue) {
-            bestValue = set.reps_completed
-            unit = 'reps'
-          }
-        }
-      })
-
-      let totalVolume = 0
-      let bestE1RM = 0
-      session.sets.forEach(set => {
-        if (set.weight && set.reps_completed) {
-          totalVolume += set.weight * set.reps_completed
-          const e1rm = calculateE1RM(set.weight, set.reps_completed)
-          if (e1rm > bestE1RM) {
-            bestE1RM = e1rm
-          }
-        }
-      })
-
-      return {
-        date: dateLabel,
-        best: bestValue,
-        volume: Math.round(totalVolume),
-        e1rm: bestE1RM,
-        unit,
-      }
-    })
-  }, [sessions, measurementType])
+  const chartData = useMemo(
+    () => transformSessionsToChartData(sessions, measurementType),
+    [sessions, measurementType]
+  )
 
   if (chartData.length < 2) {
     return null
