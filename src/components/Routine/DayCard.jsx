@@ -4,6 +4,7 @@ import { Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react'
 import { Card, ConfirmModal } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { colors } from '../../lib/styles.js'
+import { moveItemById } from '../../lib/arrayUtils.js'
 import ExerciseRow from './ExerciseRow.jsx'
 import DayEditForm from './DayEditForm.jsx'
 
@@ -31,17 +32,10 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
   }
 
   const handleMoveExercise = (exerciseId, direction) => {
-    const currentIndex = allExercises.findIndex(e => e.id === exerciseId)
-    if (currentIndex === -1) return
-
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    if (newIndex < 0 || newIndex >= allExercises.length) return
-
-    const newExercises = [...allExercises]
-    const [removed] = newExercises.splice(currentIndex, 1)
-    newExercises.splice(newIndex, 0, removed)
-
-    reorderExercises.mutate({ dayId: id, exercises: newExercises })
+    const newExercises = moveItemById(allExercises, exerciseId, direction)
+    if (newExercises) {
+      reorderExercises.mutate({ dayId: id, exercises: newExercises })
+    }
   }
 
   const handleDeleteExercise = () => {

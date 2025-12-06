@@ -6,6 +6,7 @@ import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../component
 import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList, FlatExerciseList } from '../components/Workout/index.js'
 import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
+import { transformWorkoutSessionData } from '../lib/workoutTransforms.js'
 
 function WorkoutSession() {
   const { routineId, dayId } = useParams()
@@ -41,65 +42,10 @@ function WorkoutSession() {
     }
   }, [blocks, initializeExerciseOrder])
 
-  const { exercisesByBlock, flatExercises, hasCustomOrder } = useMemo(() => {
-    if (!blocks) return { exercisesByBlock: [], flatExercises: [], hasCustomOrder: false }
-
-    const routineExerciseMap = new Map()
-    blocks.forEach(block => {
-      block.routine_exercises.forEach(re => {
-        routineExerciseMap.set(re.id, {
-          ...re,
-          blockName: block.name,
-          blockOrder: block.sort_order,
-          isWarmup: block.name.toLowerCase() === 'calentamiento'
-        })
-      })
-    })
-
-    const grouped = blocks.map(block => ({
-      blockName: block.name,
-      blockOrder: block.sort_order,
-      isWarmup: block.name.toLowerCase() === 'calentamiento',
-      durationMin: block.duration_min,
-      exercises: block.routine_exercises.map(re => ({
-        ...re,
-        blockName: block.name,
-        isWarmup: block.name.toLowerCase() === 'calentamiento',
-        type: 'routine',
-      }))
-    }))
-
-    // Build default order from blocks
-    const defaultOrder = []
-    grouped.forEach(group => {
-      group.exercises.forEach(ex => defaultOrder.push(ex))
-    })
-
-    let flat = []
-    let customOrder = false
-
-    if (exerciseOrder.length === 0) {
-      flat = defaultOrder
-    } else {
-      flat = exerciseOrder.map(item => {
-        if (item.type === 'routine') {
-          const re = routineExerciseMap.get(item.id)
-          return re ? { ...re, type: 'routine' } : null
-        } else {
-          const extra = extraExercises.find(e => e.id === item.id)
-          return extra ? { ...extra, type: 'extra', blockName: 'Añadido' } : null
-        }
-      }).filter(Boolean)
-
-      // Check if order differs from default or has extra exercises
-      const hasExtras = extraExercises.length > 0
-      const orderChanged = flat.length !== defaultOrder.length ||
-        flat.some((ex, i) => defaultOrder[i]?.id !== ex.id)
-      customOrder = hasExtras || orderChanged
-    }
-
-    return { exercisesByBlock: grouped, flatExercises: flat, hasCustomOrder: customOrder }
-  }, [blocks, exerciseOrder, extraExercises])
+  const { exercisesByBlock, flatExercises, hasCustomOrder } = useMemo(
+    () => transformWorkoutSessionData(blocks, exerciseOrder, extraExercises),
+    [blocks, exerciseOrder, extraExercises]
+  )
 
   useEffect(() => {
     if (!sessionId) {

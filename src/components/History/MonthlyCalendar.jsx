@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { generateCalendarDays, getMonthName, getPreviousMonth, getNextMonth } from '../../lib/calendarUtils.js'
 
 const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
@@ -16,76 +17,16 @@ const MUSCLE_GROUP_COLORS = {
 }
 
 function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
+  const calendarData = useMemo(
+    () => generateCalendarDays(currentDate, sessions),
+    [currentDate, sessions]
+  )
 
-  const calendarData = useMemo(() => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
+  const monthName = getMonthName(currentDate)
 
-    // Primer día del mes
-    const firstDay = new Date(year, month, 1)
-    // Último día del mes
-    const lastDay = new Date(year, month + 1, 0)
-
-    // Ajustar para que lunes sea 0
-    let startDayOfWeek = firstDay.getDay() - 1
-    if (startDayOfWeek < 0) startDayOfWeek = 6
-
-    // Crear mapa de sesiones por fecha
-    const sessionsByDate = new Map()
-    sessions?.forEach(session => {
-      const dateKey = new Date(session.started_at).toDateString()
-      if (!sessionsByDate.has(dateKey)) {
-        sessionsByDate.set(dateKey, [])
-      }
-      sessionsByDate.get(dateKey).push(session)
-    })
-
-    // Generar días del calendario
-    const days = []
-
-    // Días vacíos al inicio
-    for (let i = 0; i < startDayOfWeek; i++) {
-      days.push(null)
-    }
-
-    // Días del mes
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      const date = new Date(year, month, day)
-      const dateKey = date.toDateString()
-      const daySessions = sessionsByDate.get(dateKey) || []
-
-      // Extraer grupos musculares únicos del día
-      const muscleGroups = new Set()
-      daySessions.forEach(session => {
-        session.muscleGroups?.forEach(mg => muscleGroups.add(mg))
-      })
-
-      days.push({
-        day,
-        date,
-        dateKey,
-        sessions: daySessions,
-        muscleGroups: Array.from(muscleGroups),
-        isToday: dateKey === new Date().toDateString(),
-      })
-    }
-
-    return days
-  }, [currentDate, sessions])
-
-  const monthName = currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-
-  const goToPrevMonth = () => {
-    onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
-  }
-
-  const goToNextMonth = () => {
-    onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
-  }
-
-  const goToToday = () => {
-    onDateChange(new Date())
-  }
+  const goToPrevMonth = () => onDateChange(getPreviousMonth(currentDate))
+  const goToNextMonth = () => onDateChange(getNextMonth(currentDate))
+  const goToToday = () => onDateChange(new Date())
 
   return (
     <div className="rounded-lg p-4" style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}>
