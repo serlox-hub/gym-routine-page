@@ -133,3 +133,56 @@ export function countCompletedSets(completedSetsMap, routineExerciseId) {
     .filter(set => set.routineExerciseId === routineExerciseId)
     .length
 }
+
+/**
+ * Filtra sesiones por mes y año
+ * @param {Array} sessions - Array de sesiones
+ * @param {number} year - Año a filtrar
+ * @param {number} month - Mes a filtrar (0-11)
+ * @returns {Array} Sesiones filtradas
+ */
+export function filterSessionsByMonth(sessions, year, month) {
+  if (!sessions) return []
+  return sessions.filter(session => {
+    const sessionDate = new Date(session.started_at)
+    return sessionDate.getFullYear() === year && sessionDate.getMonth() === month
+  })
+}
+
+/**
+ * Transforma sesiones a datos para gráfico de duración
+ * @param {Array} sessions - Array de sesiones
+ * @param {Date} currentDate - Fecha actual para filtrar por mes
+ * @returns {Array} Datos formateados para el gráfico
+ */
+export function transformSessionsToDurationChartData(sessions, currentDate) {
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+
+  const monthSessions = filterSessionsByMonth(sessions, year, month)
+
+  return monthSessions
+    .filter(session => session.duration_minutes)
+    .sort((a, b) => new Date(a.started_at) - new Date(b.started_at))
+    .map(session => {
+      const date = new Date(session.started_at)
+      return {
+        date: date.getDate(),
+        duration: session.duration_minutes,
+        dayName: session.routine_day?.name || 'Sesión',
+        fullDate: date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
+      }
+    })
+}
+
+/**
+ * Calcula el promedio de duración de sesiones
+ * @param {Array} chartData - Datos del gráfico con propiedad duration
+ * @returns {number} Promedio redondeado
+ */
+export function calculateAverageDuration(chartData) {
+  if (!chartData || chartData.length === 0) return 0
+  return Math.round(
+    chartData.reduce((sum, d) => sum + d.duration, 0) / chartData.length
+  )
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { colors, inputStyle, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
+import { formatRestTimeDisplay } from '../../lib/timeUtils.js'
 
 const RIR_OPTIONS = [
   { value: -1, label: 'F', description: 'Fallo' },
@@ -35,13 +36,6 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
   }
 
   if (!isOpen) return null
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    if (mins === 0) return `${secs}s`
-    return secs === 0 ? `${mins}min` : `${mins}:${secs.toString().padStart(2, '0')}`
-  }
 
   return (
     <div
@@ -116,7 +110,7 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
               style={{ backgroundColor: colors.bgTertiary }}
             >
               <span className="text-sm" style={{ color: colors.textSecondary }}>
-                Descanso: <span style={{ color: colors.accent }}>{formatTime(descansoSeg)}</span>
+                Descanso: <span style={{ color: colors.accent }}>{formatRestTimeDisplay(descansoSeg)}</span>
               </span>
             </div>
           )}

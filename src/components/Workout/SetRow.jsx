@@ -4,6 +4,7 @@ import { NotesBadge } from '../ui/index.js'
 import SetCompleteModal from './SetCompleteModal.jsx'
 import SetNotesView from './SetNotesView.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, DistanceInputs } from './SetInputs.jsx'
+import { isSetDataValid } from '../../lib/setUtils.js'
 
 function SetRow({
   setNumber,
@@ -39,17 +40,7 @@ function SetRow({
     }
   }, [previousSet, setData])
 
-  const isValid = () => {
-    switch (measurementType) {
-      case 'weight_reps': return weight !== '' && reps !== ''
-      case 'reps_only':
-      case 'reps_per_side': return reps !== ''
-      case 'time':
-      case 'time_per_side': return time !== ''
-      case 'distance': return distance !== ''
-      default: return false
-    }
-  }
+  const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance })
 
   const handleCheckClick = () => {
     if (isCompleted) {

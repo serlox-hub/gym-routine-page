@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Minimize2, Maximize2 } from 'lucide-react'
 import { useRestTimer } from '../../hooks/useWorkout.js'
+import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
 
 function RestTimer() {
   const { isActive, timeRemaining, progress, skip, addTime } = useRestTimer()
@@ -8,13 +9,9 @@ function RestTimer() {
 
   if (!isActive) return null
 
-  const minutes = Math.floor(timeRemaining / 60)
-  const seconds = timeRemaining % 60
-  const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`
-
+  const timeDisplay = formatSecondsToMMSS(timeRemaining)
   const isWarning = timeRemaining <= 10 && timeRemaining > 3
   const isCritical = timeRemaining <= 3
-
   const timerColor = isCritical ? '#f85149' : isWarning ? '#d29922' : '#3fb950'
 
   if (minimized) {

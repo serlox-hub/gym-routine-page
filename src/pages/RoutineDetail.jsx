@@ -4,6 +4,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useRoutine, useRoutineDays, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
 import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader } from '../components/Routine/index.js'
+import { moveItemById } from '../lib/arrayUtils.js'
 
 function RoutineDetail() {
   const { routineId } = useParams()
@@ -122,15 +123,8 @@ function RoutineDetail() {
   const handleMoveDay = async (dayId, direction) => {
     if (!days) return
 
-    const currentIndex = days.findIndex(d => d.id === dayId)
-    if (currentIndex === -1) return
-
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    if (newIndex < 0 || newIndex >= days.length) return
-
-    const newDays = [...days]
-    const [removed] = newDays.splice(currentIndex, 1)
-    newDays.splice(newIndex, 0, removed)
+    const newDays = moveItemById(days, dayId, direction)
+    if (!newDays) return
 
     try {
       await reorderDays.mutateAsync({ routineId, days: newDays })

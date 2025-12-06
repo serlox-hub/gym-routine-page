@@ -1,39 +1,18 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { transformSessionsToDurationChartData, calculateAverageDuration } from '../../lib/workoutCalculations.js'
 
 function DurationChart({ sessions, currentDate }) {
   const chartData = useMemo(() => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
-
-    // Filtrar sesiones del mes actual
-    const monthSessions = sessions?.filter(session => {
-      const sessionDate = new Date(session.started_at)
-      return sessionDate.getFullYear() === year && sessionDate.getMonth() === month
-    }) || []
-
-    // Ordenar por fecha y crear datos para el gráfico
-    return monthSessions
-      .filter(session => session.duration_minutes)
-      .sort((a, b) => new Date(a.started_at) - new Date(b.started_at))
-      .map(session => {
-        const date = new Date(session.started_at)
-        return {
-          date: date.getDate(),
-          duration: session.duration_minutes,
-          dayName: session.routine_day?.name || 'Sesión',
-          fullDate: date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
-        }
-      })
+    if (!sessions) return []
+    return transformSessionsToDurationChartData(sessions, currentDate)
   }, [sessions, currentDate])
 
   if (chartData.length === 0) {
     return null
   }
 
-  const avgDuration = Math.round(
-    chartData.reduce((sum, d) => sum + d.duration, 0) / chartData.length
-  )
+  const avgDuration = calculateAverageDuration(chartData)
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
