@@ -20,29 +20,39 @@ function RestTimer() {
   if (minimized) {
     return (
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 p-3"
-        style={{ backgroundColor: '#161b22', borderTop: '1px solid #30363d' }}
+        className="fixed top-0 left-0 right-0 z-50 p-3"
+        style={{ backgroundColor: '#161b22', borderBottom: '1px solid #30363d' }}
       >
-        <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <div className="flex items-center gap-3">
-            <span
-              className={`text-2xl font-bold font-mono ${isCritical ? 'animate-pulse' : ''}`}
-              style={{ color: timerColor }}
-            >
-              {timeDisplay}
-            </span>
-            <div
-              className="w-24 h-1.5 rounded-full overflow-hidden"
-              style={{ backgroundColor: '#21262d' }}
-            >
+        <div className="flex flex-col gap-2 max-w-2xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              <span
+                className={`text-2xl font-bold font-mono ${isCritical ? 'animate-pulse' : ''}`}
+                style={{ color: timerColor }}
+              >
+                {timeDisplay}
+              </span>
               <div
-                className="h-full transition-all duration-1000"
-                style={{ width: `${progress}%`, backgroundColor: timerColor }}
-              />
+                className="flex-1 h-1.5 rounded-full overflow-hidden"
+                style={{ backgroundColor: '#21262d' }}
+              >
+                <div
+                  className="h-full transition-all duration-1000"
+                  style={{ width: `${progress}%`, backgroundColor: timerColor }}
+                />
+              </div>
             </div>
+            <button
+              onClick={() => setMinimized(false)}
+              className="p-1.5 rounded ml-3"
+              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+              title="Expandir"
+            >
+              <Maximize2 size={18} />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             <button
               onClick={() => addTime(-30)}
               className="px-3 py-1.5 rounded text-sm font-medium"
@@ -63,14 +73,6 @@ function RestTimer() {
               style={{ backgroundColor: '#21262d', color: '#8b949e' }}
             >
               +30s
-            </button>
-            <button
-              onClick={() => setMinimized(false)}
-              className="p-1.5 rounded ml-1"
-              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-              title="Expandir"
-            >
-              <Maximize2 size={18} />
             </button>
           </div>
         </div>
