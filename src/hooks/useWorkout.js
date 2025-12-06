@@ -41,7 +41,7 @@ export function useCompleteSet() {
   const completeSet = useWorkoutStore(state => state.completeSet)
 
   return useMutation({
-    mutationFn: async ({ routineExerciseId, exerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notas }) => {
+    mutationFn: async ({ routineExerciseId, exerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notes }) => {
       // Para ejercicios extra (id empieza con "extra-"), routine_exercise_id es null
       const isExtraExercise = typeof routineExerciseId === 'string' && routineExerciseId.startsWith('extra-')
 
@@ -58,7 +58,7 @@ export function useCompleteSet() {
           time_seconds: timeSeconds,
           distance_meters: distanceMeters,
           rir_actual: rirActual,
-          notas,
+          notes,
           completed: true,
         })
         .select()
@@ -75,7 +75,7 @@ export function useCompleteSet() {
         timeSeconds: variables.timeSeconds,
         distanceMeters: variables.distanceMeters,
         rirActual: variables.rirActual,
-        notas: variables.notas,
+        notes: variables.notes,
         dbId: data.id,
       })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
@@ -129,7 +129,7 @@ export function useEndSession() {
   const endSession = useWorkoutStore(state => state.endSession)
 
   return useMutation({
-    mutationFn: async ({ sensacionGeneral, notas }) => {
+    mutationFn: async ({ overallFeeling, notes }) => {
       const completedAt = new Date()
       const startedAtDate = new Date(startedAt)
       const durationMinutes = Math.round((completedAt - startedAtDate) / 60000)
@@ -140,8 +140,8 @@ export function useEndSession() {
           completed_at: completedAt.toISOString(),
           duration_minutes: durationMinutes,
           status: 'completed',
-          sensacion_general: sensacionGeneral,
-          notas,
+          overall_feeling: overallFeeling,
+          notes,
         })
         .eq('id', sessionId)
         .select()
@@ -218,14 +218,14 @@ export function useWorkoutHistory() {
           completed_at,
           duration_minutes,
           status,
-          sensacion_general,
-          notas,
+          overall_feeling,
+          notes,
           routine_day:routine_days (
             id,
-            nombre,
+            name,
             routine:routines (
               id,
-              nombre
+              name
             )
           ),
           sets:completed_sets (
@@ -236,7 +236,7 @@ export function useWorkoutHistory() {
               id,
               muscle_group:muscle_groups (
                 id,
-                nombre
+                name
               )
             )
           )
@@ -250,8 +250,8 @@ export function useWorkoutHistory() {
       return data.map(session => {
         const muscleGroupsSet = new Set()
         session.sets?.forEach(set => {
-          if (set.exercise?.muscle_group?.nombre) {
-            muscleGroupsSet.add(set.exercise.muscle_group.nombre)
+          if (set.exercise?.muscle_group?.name) {
+            muscleGroupsSet.add(set.exercise.muscle_group.name)
           }
         })
         return {
@@ -276,14 +276,14 @@ export function useSessionDetail(sessionId) {
           completed_at,
           duration_minutes,
           status,
-          sensacion_general,
-          notas,
+          overall_feeling,
+          notes,
           routine_day:routine_days (
             id,
-            nombre,
+            name,
             routine:routines (
               id,
-              nombre
+              name
             )
           )
         `)
@@ -304,11 +304,11 @@ export function useSessionDetail(sessionId) {
           time_seconds,
           distance_meters,
           rir_actual,
-          notas,
+          notes,
           performed_at,
           exercise:exercises (
             id,
-            nombre
+            name
           )
         `)
         .eq('session_id', sessionId)
@@ -357,7 +357,7 @@ export function useExerciseHistory(exerciseId) {
           time_seconds,
           distance_meters,
           rir_actual,
-          notas,
+          notes,
           performed_at,
           session:workout_sessions!inner (
             id,
@@ -412,7 +412,7 @@ export function usePreviousWorkout(exerciseId) {
           time_seconds,
           distance_meters,
           rir_actual,
-          notas,
+          notes,
           performed_at,
           workout_sessions!inner (
             id,
@@ -445,7 +445,7 @@ export function usePreviousWorkout(exerciseId) {
             timeSeconds: set.time_seconds,
             distanceMeters: set.distance_meters,
             rir: set.rir_actual,
-            notes: set.notas
+            notes: set.notes
           }))
           .sort((a, b) => a.setNumber - b.setNumber)
       }

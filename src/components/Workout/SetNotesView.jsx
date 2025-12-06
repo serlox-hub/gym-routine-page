@@ -6,7 +6,7 @@ const RIR_LABELS = {
   3: { label: '3+', description: 'Cómodo' },
 }
 
-function SetNotesView({ isOpen, onClose, rir, notas }) {
+function SetNotesView({ isOpen, onClose, rir, notes }) {
   if (!isOpen) return null
 
   const rirInfo = rir !== null && rir !== undefined ? RIR_LABELS[rir] : null
@@ -58,7 +58,7 @@ function SetNotesView({ isOpen, onClose, rir, notas }) {
             </div>
           )}
 
-          {notas && (
+          {notes && (
             <div
               className="p-3 rounded-lg"
               style={{ backgroundColor: '#21262d' }}
@@ -67,7 +67,7 @@ function SetNotesView({ isOpen, onClose, rir, notas }) {
                 Nota
               </div>
               <div className="text-sm" style={{ color: '#e6edf3' }}>
-                {notas}
+                {notes}
               </div>
             </div>
           )}

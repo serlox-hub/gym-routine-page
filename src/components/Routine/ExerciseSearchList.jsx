@@ -13,7 +13,7 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect }) {
     if (!exercises) return []
 
     return exercises.filter(ex => {
-      const matchesSearch = ex.nombre.toLowerCase().includes(search.toLowerCase())
+      const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase())
       if (!selectedMuscleGroup) return matchesSearch
       return matchesSearch && ex.muscle_group_id === selectedMuscleGroup
     })
@@ -61,7 +61,7 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect }) {
               border: `1px solid ${selectedMuscleGroup === group.id ? colors.accent : colors.border}`,
             }}
           >
-            {group.nombre}
+            {group.name}
           </button>
         ))}
       </div>
@@ -83,7 +83,7 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect }) {
               className="w-full text-left p-3 rounded-lg transition-colors hover:bg-surface-alt"
               style={{ color: colors.textPrimary }}
             >
-              <div className="font-medium">{exercise.nombre}</div>
+              <div className="font-medium">{exercise.name}</div>
             </button>
           ))
         )}

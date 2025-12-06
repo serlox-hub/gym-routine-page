@@ -58,8 +58,8 @@ function SetRow({
     }
   }
 
-  const handleCompleteSet = (rir, notas) => {
-    const data = { routineExerciseId, exerciseId, setNumber, rirActual: rir, notas }
+  const handleCompleteSet = (rir, notes) => {
+    const data = { routineExerciseId, exerciseId, setNumber, rirActual: rir, notes }
 
     switch (measurementType) {
       case 'weight_reps':
@@ -109,7 +109,7 @@ function SetRow({
     }
   }
 
-  const hasTextNote = !!setData?.notas
+  const hasTextNote = !!setData?.notes
 
   return (
     <div
@@ -167,7 +167,7 @@ function SetRow({
         isOpen={showNotesView}
         onClose={() => setShowNotesView(false)}
         rir={setData?.rirActual}
-        notas={setData?.notas}
+        notes={setData?.notes}
       />
 
       {canRemove && !isCompleted && onRemove && (

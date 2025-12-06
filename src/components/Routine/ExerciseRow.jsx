@@ -20,7 +20,7 @@ function ExerciseRow({
       <div className="flex-1 min-w-0">
         <div>
           <span className="text-sm" style={{ color: colors.textPrimary }}>
-            {exercise?.nombre}
+            {exercise?.name}
           </span>
           <span className="text-sm ml-2" style={{ color: colors.textSecondary }}>
             {routineExercise.series}×{routineExercise.reps}

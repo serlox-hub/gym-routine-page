@@ -7,8 +7,8 @@ function DayEditForm({ dayNumber, form, setForm, onSave }) {
         <span className="text-accent font-semibold shrink-0">{dayNumber}</span>
         <input
           type="text"
-          value={form.nombre}
-          onChange={(e) => setForm(prev => ({ ...prev, nombre: e.target.value }))}
+          value={form.name}
+          onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
           className="flex-1 font-medium p-1 rounded min-w-0"
           style={inputStyle}
           placeholder="Nombre del día"
@@ -21,8 +21,8 @@ function DayEditForm({ dayNumber, form, setForm, onSave }) {
         </label>
         <input
           type="number"
-          value={form.duracion}
-          onChange={(e) => setForm(prev => ({ ...prev, duracion: e.target.value }))}
+          value={form.duration}
+          onChange={(e) => setForm(prev => ({ ...prev, duration: e.target.value }))}
           className="w-16 p-1 rounded text-sm text-center"
           style={inputStyle}
           placeholder="--"

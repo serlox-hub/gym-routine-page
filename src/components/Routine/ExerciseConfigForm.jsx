@@ -26,7 +26,7 @@ function ExerciseConfigForm({
         style={{ backgroundColor: 'rgba(88, 166, 255, 0.1)' }}
       >
         <div className="font-medium" style={{ color: colors.textPrimary }}>
-          {exercise.nombre}
+          {exercise.name}
         </div>
       </div>
 
@@ -82,8 +82,8 @@ function ExerciseConfigForm({
                 type="number"
                 min="30"
                 step="15"
-                value={form.descanso_seg}
-                onChange={(e) => setForm(prev => ({ ...prev, descanso_seg: e.target.value }))}
+                value={form.rest_seconds}
+                onChange={(e) => setForm(prev => ({ ...prev, rest_seconds: e.target.value }))}
                 placeholder="90"
                 className="w-full p-3 rounded-lg text-base"
                 style={inputStyle}
@@ -141,8 +141,8 @@ function ExerciseConfigForm({
           </label>
           <input
             type="text"
-            value={form.notas}
-            onChange={(e) => setForm(prev => ({ ...prev, notas: e.target.value }))}
+            value={form.notes}
+            onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
             placeholder={isSessionMode ? "Notas para este ejercicio..." : "Notas específicas para esta rutina..."}
             className="w-full p-3 rounded-lg text-base"
             style={inputStyle}

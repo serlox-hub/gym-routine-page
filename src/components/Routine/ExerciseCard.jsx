@@ -4,7 +4,7 @@ import { Card, Badge } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 
 function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
-  const { exercise, series, reps, rir, descanso_seg, tempo, measurement_type } = routineExercise
+  const { exercise, series, reps, rir, rest_seconds, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
@@ -21,7 +21,7 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
       >
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm" style={{ color: '#e6edf3' }}>
-            {exercise.nombre}
+            {exercise.name}
           </p>
           <p className="text-xs" style={{ color: '#8b949e' }}>
             {reps}
@@ -35,7 +35,7 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
     <Card className="p-3" onClick={onClick}>
       <div className="flex justify-between items-start gap-2">
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium truncate">{exercise.nombre}</h4>
+          <h4 className="font-medium truncate">{exercise.name}</h4>
         </div>
         <button
           onClick={(e) => {
@@ -53,7 +53,7 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
       <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-2">
         <Badge variant="accent">{series}×{reps}</Badge>
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
-        {descanso_seg && <Badge variant="warning">{descanso_seg}s</Badge>}
+        {rest_seconds && <Badge variant="warning">{rest_seconds}s</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
       </div>
 
@@ -61,7 +61,7 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
         exerciseId={exercise.id}
-        exerciseName={exercise.nombre}
+        exerciseName={exercise.name}
         measurementType={measurementType}
       />
     </Card>

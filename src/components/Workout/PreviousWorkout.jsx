@@ -109,7 +109,7 @@ function PreviousWorkout({ exerciseId, measurementType = 'weight_reps' }) {
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
         rir={selectedSet?.rir}
-        notas={selectedSet?.notes}
+        notes={selectedSet?.notes}
       />
     </div>
   )

@@ -9,7 +9,7 @@ import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 
 function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove }) {
-  const { id, exercise, series, reps, rir, tempo, tempo_razon, notas, measurement_type, descanso_seg } = routineExercise
+  const { id, exercise, series, reps, rir, tempo, tempo_razon, notes, measurement_type, rest_seconds } = routineExercise
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
 
@@ -50,7 +50,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
       <WarmupExerciseCard
         exercise={exercise}
         reps={reps}
-        notas={notas}
+        notes={notes}
       />
     )
   }
@@ -59,7 +59,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
     <Card className="p-4">
       <div className="flex justify-between items-start gap-2">
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium">{exercise.nombre}</h4>
+          <h4 className="font-medium">{exercise.name}</h4>
         </div>
         <div className="flex items-center gap-1.5">
           <button
@@ -96,7 +96,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         <Badge variant="accent">{series}×{reps}</Badge>
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
-        {(exercise.instrucciones || notas || tempo_razon) && (
+        {(exercise.instructions || notes || tempo_razon) && (
           <button
             onClick={() => setShowNotes(!showNotes)}
             className="text-xs px-2 py-1 rounded transition-colors"
@@ -110,14 +110,14 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         )}
       </div>
 
-      {showNotes && (exercise.instrucciones || notas || tempo_razon) && (
+      {showNotes && (exercise.instructions || notes || tempo_razon) && (
         <div
           className="mb-3 p-3 rounded text-sm space-y-2"
           style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
         >
-          {exercise.instrucciones && (
+          {exercise.instructions && (
             <p style={{ color: '#e6edf3' }}>
-              <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instrucciones}
+              <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
             </p>
           )}
           {tempo_razon && (
@@ -125,9 +125,9 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
               <span style={{ color: '#a371f7' }}>Tempo:</span> {tempo_razon}
             </p>
           )}
-          {notas && (
+          {notes && (
             <p style={{ color: '#e6edf3' }}>
-              <span style={{ color: colors.warning }}>Nota:</span> {notas}
+              <span style={{ color: colors.warning }}>Nota:</span> {notes}
             </p>
           )}
         </div>
@@ -148,7 +148,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
               exerciseId={exercise.id}
               measurementType={measurementType}
               defaultWeightUnit={defaultWeightUnit}
-              descansoSeg={descanso_seg}
+              descansoSeg={rest_seconds}
               previousSet={previousSet}
               onComplete={onCompleteSet}
               onUncomplete={onUncompleteSet}
@@ -174,7 +174,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
         exerciseId={exercise.id}
-        exerciseName={exercise.nombre}
+        exerciseName={exercise.name}
         measurementType={measurementType}
       />
     </Card>
@@ -182,7 +182,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
 }
 
 // Simplified card for warmup exercises (read-only list)
-function WarmupExerciseCard({ exercise, reps, notas }) {
+function WarmupExerciseCard({ exercise, reps, notes }) {
   return (
     <div
       className="flex items-center gap-3 p-3 rounded-lg"
@@ -193,14 +193,14 @@ function WarmupExerciseCard({ exercise, reps, notas }) {
     >
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm" style={{ color: colors.textPrimary }}>
-          {exercise.nombre}
+          {exercise.name}
         </p>
         <p className="text-xs" style={{ color: colors.textSecondary }}>
           {reps}
         </p>
-        {notas && (
+        {notes && (
           <p className="text-xs mt-1" style={{ color: colors.warning }}>
-            {notas}
+            {notes}
           </p>
         )}
       </div>

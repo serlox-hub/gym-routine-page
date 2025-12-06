@@ -49,22 +49,22 @@ function WorkoutSession() {
       block.routine_exercises.forEach(re => {
         routineExerciseMap.set(re.id, {
           ...re,
-          blockName: block.nombre,
-          blockOrder: block.orden,
-          isWarmup: block.nombre.toLowerCase() === 'calentamiento'
+          blockName: block.name,
+          blockOrder: block.sort_order,
+          isWarmup: block.name.toLowerCase() === 'calentamiento'
         })
       })
     })
 
     const grouped = blocks.map(block => ({
-      blockName: block.nombre,
-      blockOrder: block.orden,
-      isWarmup: block.nombre.toLowerCase() === 'calentamiento',
-      duracionMin: block.duracion_min,
+      blockName: block.name,
+      blockOrder: block.sort_order,
+      isWarmup: block.name.toLowerCase() === 'calentamiento',
+      durationMin: block.duration_min,
       exercises: block.routine_exercises.map(re => ({
         ...re,
-        blockName: block.nombre,
-        isWarmup: block.nombre.toLowerCase() === 'calentamiento',
+        blockName: block.name,
+        isWarmup: block.name.toLowerCase() === 'calentamiento',
         type: 'routine',
       }))
     }))
@@ -125,7 +125,7 @@ function WorkoutSession() {
 
   const handleEndWorkout = () => {
     endSessionMutation.mutate(
-      { sensacionGeneral: null, notas: null },
+      { overallFeeling: null, notes: null },
       { onSuccess: () => navigate(`/routine/${routineId}`) }
     )
   }
@@ -142,8 +142,8 @@ function WorkoutSession() {
       series: data.series,
       reps: data.reps,
       rir: data.rir,
-      descanso_seg: data.descanso_seg,
-      notas: data.notas,
+      rest_seconds: data.rest_seconds,
+      notes: data.notes,
       tempo: data.tempo,
       tempo_razon: data.tempo_razon,
     })
@@ -153,7 +153,7 @@ function WorkoutSession() {
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
       <SessionHeader
-        dayName={day?.nombre}
+        dayName={day?.name}
         isReordering={isReordering}
         onToggleReorder={() => setIsReordering(!isReordering)}
         onAddExercise={() => setShowAddExercise(true)}

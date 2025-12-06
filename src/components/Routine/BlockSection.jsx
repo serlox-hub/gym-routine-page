@@ -3,8 +3,8 @@ import ExerciseCard from './ExerciseCard.jsx'
 import { colors } from '../../lib/styles.js'
 
 function BlockSection({ block }) {
-  const { nombre, duracion_min, routine_exercises } = block
-  const isWarmup = nombre.toLowerCase() === 'calentamiento'
+  const { name, duration_min, routine_exercises } = block
+  const isWarmup = name.toLowerCase() === 'calentamiento'
 
   return (
     <section className="space-y-3">
@@ -20,14 +20,14 @@ function BlockSection({ block }) {
           className="text-sm font-semibold uppercase tracking-wide"
           style={{ color: isWarmup ? colors.warning : colors.purple }}
         >
-          {nombre}
+          {name}
         </h3>
         <span className="text-xs" style={{ color: colors.textSecondary }}>
           ({routine_exercises.length})
         </span>
-        {duracion_min && (
+        {duration_min && (
           <span className="text-xs ml-auto" style={{ color: colors.textSecondary }}>
-            ~{duracion_min} min
+            ~{duration_min} min
           </span>
         )}
       </div>

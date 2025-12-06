@@ -8,7 +8,7 @@ export async function exportRoutine(routineId) {
   // Obtener rutina base
   const { data: routine, error: routineError } = await supabase
     .from('routines')
-    .select('nombre, descripcion, objetivo')
+    .select('name, description, goal')
     .eq('id', routineId)
     .single()
 
@@ -17,9 +17,9 @@ export async function exportRoutine(routineId) {
   // Obtener días
   const { data: days, error: daysError } = await supabase
     .from('routine_days')
-    .select('nombre, duracion_estimada_min, orden')
+    .select('name, estimated_duration_min, sort_order')
     .eq('routine_id', routineId)
-    .order('orden')
+    .order('sort_order')
 
   if (daysError) throw daysError
 
@@ -33,58 +33,58 @@ export async function exportRoutine(routineId) {
         .from('routine_days')
         .select('id')
         .eq('routine_id', routineId)
-        .eq('orden', day.orden)
+        .eq('sort_order', day.sort_order)
         .single()
 
       const { data: blocks, error: blocksError } = await supabase
         .from('routine_blocks')
         .select(`
-          nombre,
-          orden,
-          duracion_min,
+          name,
+          sort_order,
+          duration_min,
           routine_exercises (
             series,
             reps,
             rir,
-            descanso_seg,
+            rest_seconds,
             tempo,
             tempo_razon,
-            notas,
-            orden,
+            notes,
+            sort_order,
             exercise:exercises (
               id,
-              nombre,
+              name,
               measurement_type,
-              instrucciones,
-              muscle_group:muscle_groups(nombre)
+              instructions,
+              muscle_group:muscle_groups(name)
             )
           )
         `)
         .eq('routine_day_id', dayData.id)
-        .order('orden')
+        .order('sort_order')
 
       if (blocksError) throw blocksError
 
       return {
         ...day,
         blocks: blocks.map(block => ({
-          nombre: block.nombre,
-          orden: block.orden,
-          duracion_min: block.duracion_min,
+          name: block.name,
+          sort_order: block.sort_order,
+          duration_min: block.duration_min,
           exercises: block.routine_exercises
-            .sort((a, b) => a.orden - b.orden)
+            .sort((a, b) => a.sort_order - b.sort_order)
             .map(re => {
               // Recopilar IDs de ejercicios
               exerciseIds.add(re.exercise.id)
               return {
-                ejercicio_nombre: re.exercise.nombre,
+                exercise_name: re.exercise.name,
                 series: re.series,
                 reps: re.reps,
                 rir: re.rir,
-                descanso_seg: re.descanso_seg,
+                rest_seconds: re.rest_seconds,
                 tempo: re.tempo,
                 tempo_razon: re.tempo_razon,
-                notas: re.notas,
+                notes: re.notes,
               }
             })
         }))
@@ -96,23 +96,23 @@ export async function exportRoutine(routineId) {
   const { data: exercises, error: exercisesError } = await supabase
     .from('exercises')
     .select(`
-      nombre,
+      name,
       measurement_type,
-      instrucciones,
-      muscle_group:muscle_groups(nombre)
+      instructions,
+      muscle_group:muscle_groups(name)
     `)
     .in('id', Array.from(exerciseIds))
 
   if (exercisesError) throw exercisesError
 
   const exportData = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     exercises: exercises.map(ex => ({
-      nombre: ex.nombre,
+      name: ex.name,
       measurement_type: ex.measurement_type,
-      instrucciones: ex.instrucciones,
-      muscle_group_nombre: ex.muscle_group?.nombre,
+      instructions: ex.instructions,
+      muscle_group_name: ex.muscle_group?.name,
     })),
     routine: {
       ...routine,
@@ -153,29 +153,28 @@ export async function importRoutine(jsonData, userId) {
 
   const { routine, exercises: exportedExercises } = data
 
-  // Mapa de nombre de ejercicio -> id
+  // Mapa nombre ejercicio -> id
   const exerciseMap = new Map()
 
   // Crear ejercicios que no existan (solo si el export incluye definiciones)
   if (exportedExercises && exportedExercises.length > 0) {
     for (const ex of exportedExercises) {
-      // Buscar si ya existe
       const { data: existing } = await supabase
         .from('exercises')
         .select('id')
-        .eq('nombre', ex.nombre)
+        .eq('name', ex.name)
         .single()
 
       if (existing) {
-        exerciseMap.set(ex.nombre, existing.id)
+        exerciseMap.set(ex.name, existing.id)
       } else {
         // Buscar muscle_group_id por nombre
         let muscleGroupId = null
-        if (ex.muscle_group_nombre) {
+        if (ex.muscle_group_name) {
           const { data: mg } = await supabase
             .from('muscle_groups')
             .select('id')
-            .eq('nombre', ex.muscle_group_nombre)
+            .eq('name', ex.muscle_group_name)
             .single()
           muscleGroupId = mg?.id
         }
@@ -184,9 +183,9 @@ export async function importRoutine(jsonData, userId) {
         const { data: newExercise, error: exError } = await supabase
           .from('exercises')
           .insert({
-            nombre: ex.nombre,
+            name: ex.name,
             measurement_type: ex.measurement_type || 'weight_reps',
-            instrucciones: ex.instrucciones,
+            instructions: ex.instructions,
             muscle_group_id: muscleGroupId,
             user_id: userId,
           })
@@ -194,7 +193,7 @@ export async function importRoutine(jsonData, userId) {
           .single()
 
         if (exError) throw exError
-        exerciseMap.set(ex.nombre, newExercise.id)
+        exerciseMap.set(ex.name, newExercise.id)
       }
     }
   }
@@ -203,9 +202,9 @@ export async function importRoutine(jsonData, userId) {
   const { data: newRoutine, error: routineError } = await supabase
     .from('routines')
     .insert({
-      nombre: routine.nombre + ' (importada)',
-      descripcion: routine.descripcion,
-      objetivo: routine.objetivo,
+      name: routine.name + ' (importada)',
+      description: routine.description,
+      goal: routine.goal,
       user_id: userId,
     })
     .select()
@@ -215,14 +214,13 @@ export async function importRoutine(jsonData, userId) {
 
   // Crear días, bloques y ejercicios
   for (const day of routine.days) {
-    // Crear día
     const { data: newDay, error: dayError } = await supabase
       .from('routine_days')
       .insert({
         routine_id: newRoutine.id,
-        nombre: day.nombre,
-        duracion_estimada_min: day.duracion_estimada_min,
-        orden: day.orden,
+        name: day.name,
+        estimated_duration_min: day.estimated_duration_min,
+        sort_order: day.sort_order,
       })
       .select()
       .single()
@@ -235,9 +233,9 @@ export async function importRoutine(jsonData, userId) {
         .from('routine_blocks')
         .insert({
           routine_day_id: newDay.id,
-          nombre: block.nombre,
-          orden: block.orden,
-          duracion_min: block.duracion_min,
+          name: block.name,
+          sort_order: block.sort_order,
+          duration_min: block.duration_min,
         })
         .select()
         .single()
@@ -249,13 +247,13 @@ export async function importRoutine(jsonData, userId) {
         const ex = block.exercises[i]
 
         // Buscar ejercicio: primero en el mapa, luego en BD
-        let exerciseId = exerciseMap.get(ex.ejercicio_nombre)
+        let exerciseId = exerciseMap.get(ex.exercise_name)
 
         if (!exerciseId) {
           const { data: exercise } = await supabase
             .from('exercises')
             .select('id')
-            .eq('nombre', ex.ejercicio_nombre)
+            .eq('name', ex.exercise_name)
             .single()
           exerciseId = exercise?.id
         }
@@ -269,11 +267,11 @@ export async function importRoutine(jsonData, userId) {
               series: ex.series,
               reps: ex.reps,
               rir: ex.rir,
-              descanso_seg: ex.descanso_seg,
+              rest_seconds: ex.rest_seconds,
               tempo: ex.tempo,
               tempo_razon: ex.tempo_razon,
-              notas: ex.notas,
-              orden: i + 1,
+              notes: ex.notes,
+              sort_order: i + 1,
             })
         }
       }

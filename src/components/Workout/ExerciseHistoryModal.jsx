@@ -117,7 +117,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
                             {RIR_LABELS[set.rir_actual] ?? set.rir_actual}
                           </span>
                         )}
-                        {set.notas && (
+                        {set.notes && (
                           <button
                             onClick={() => setSelectedSet(set)}
                             className="p-0.5 rounded hover:opacity-80"
@@ -138,7 +138,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
           isOpen={!!selectedSet}
           onClose={() => setSelectedSet(null)}
           rir={selectedSet?.rir_actual}
-          notas={selectedSet?.notas}
+          notes={selectedSet?.notes}
         />
       </div>
     </div>

@@ -32,7 +32,7 @@ function RoutineDetail() {
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
-  const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.orden), 0) || 0
+  const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
   const nextDayNumber = maxDayNumber + 1
 
   const handleAddDay = async (day) => {
@@ -65,14 +65,14 @@ function RoutineDetail() {
     setShowAddExercise(true)
   }
 
-  const handleAddExercise = async ({ exerciseId, series, reps, notas, tempo, tempo_razon }) => {
+  const handleAddExercise = async ({ exerciseId, series, reps, notes, tempo, tempo_razon }) => {
     try {
       await addExercise.mutateAsync({
         dayId: selectedDayId,
         exerciseId,
         series,
         reps,
-        notas,
+        notes,
         tempo,
         tempo_razon,
         esCalentamiento: isAddingWarmup,
@@ -91,12 +91,12 @@ function RoutineDetail() {
     setShowEditExercise(true)
   }
 
-  const handleEditExercise = async ({ exerciseId, series, reps, notas, tempo, tempo_razon }) => {
+  const handleEditExercise = async ({ exerciseId, series, reps, notes, tempo, tempo_razon }) => {
     try {
       await updateExercise.mutateAsync({
         exerciseId,
         dayId: selectedDayId,
-        data: { series, reps, notas, tempo, tempo_razon }
+        data: { series, reps, notes, tempo, tempo_razon }
       })
       setShowEditExercise(false)
       setSelectedExercise(null)
@@ -202,7 +202,7 @@ function RoutineDetail() {
       <ConfirmModal
         isOpen={showDeleteConfirm}
         title="Eliminar rutina"
-        message={`¿Seguro que quieres eliminar "${routine.nombre}"? Se eliminarán todos los días y ejercicios asociados.`}
+        message={`¿Seguro que quieres eliminar "${routine.name}"? Se eliminarán todos los días y ejercicios asociados.`}
         confirmText="Eliminar"
         onConfirm={handleDeleteRoutine}
         onCancel={() => setShowDeleteConfirm(false)}

@@ -41,7 +41,7 @@ export function useRoutineDays(routineId) {
         .from('routine_days')
         .select('*')
         .eq('routine_id', routineId)
-        .order('orden')
+        .order('sort_order')
       if (error) throw error
       return data
     },
@@ -57,7 +57,7 @@ export function useRoutineDay(dayId) {
         .from('routine_days')
         .select(`
           *,
-          routine:routines(nombre)
+          routine:routines(name)
         `)
         .eq('id', dayId)
         .single()
@@ -80,26 +80,26 @@ export function useRoutineBlocks(dayId) {
             *,
             exercise:exercises (
               id,
-              nombre,
+              name,
               measurement_type,
-              instrucciones
+              instructions
             )
           )
         `)
         .eq('routine_day_id', dayId)
-        .order('orden')
+        .order('sort_order')
       if (error) throw error
 
-      // Ordenar bloques: Calentamiento siempre primero, luego por orden
+      // Ordenar bloques: Calentamiento siempre primero, luego por sort_order
       const sortedBlocks = data.sort((a, b) => {
-        if (a.nombre === 'Calentamiento') return -1
-        if (b.nombre === 'Calentamiento') return 1
-        return a.orden - b.orden
+        if (a.name === 'Calentamiento') return -1
+        if (b.name === 'Calentamiento') return 1
+        return a.sort_order - b.sort_order
       })
 
       return sortedBlocks.map(block => ({
         ...block,
-        routine_exercises: block.routine_exercises.sort((a, b) => a.orden - b.orden)
+        routine_exercises: block.routine_exercises.sort((a, b) => a.sort_order - b.sort_order)
       }))
     },
     enabled: !!dayId
@@ -115,9 +115,9 @@ export function useCreateRoutine() {
       const { data, error } = await supabase
         .from('routines')
         .insert({
-          nombre: routine.nombre,
-          descripcion: routine.descripcion || null,
-          objetivo: routine.objetivo || null,
+          name: routine.name,
+          description: routine.description || null,
+          goal: routine.goal || null,
           user_id: userId,
         })
         .select()
@@ -141,9 +141,9 @@ export function useCreateRoutineDay() {
         .from('routine_days')
         .insert({
           routine_id: routineId,
-          nombre: day.nombre,
-          duracion_estimada_min: day.duracion_estimada_min || null,
-          orden: day.orden,
+          name: day.name,
+          estimated_duration_min: day.estimated_duration_min || null,
+          sort_order: day.sort_order,
         })
         .select()
         .single()
@@ -242,7 +242,7 @@ export function useReorderRoutineDays() {
       for (let i = 0; i < days.length; i++) {
         const { error } = await supabase
           .from('routine_days')
-          .update({ orden: i + 1 })
+          .update({ sort_order: i + 1 })
           .eq('id', days[i].id)
         if (error) throw error
       }
@@ -298,7 +298,7 @@ export function useReorderRoutineExercises() {
       for (let i = 0; i < exercises.length; i++) {
         const { error } = await supabase
           .from('routine_exercises')
-          .update({ orden: i + 1 })
+          .update({ sort_order: i + 1 })
           .eq('id', exercises[i].id)
         if (error) throw error
       }
@@ -313,15 +313,15 @@ export function useAddExerciseToDay() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ dayId, exerciseId, series, reps, notas, tempo, tempo_razon, esCalentamiento = false }) => {
+    mutationFn: async ({ dayId, exerciseId, series, reps, notes, tempo, tempo_razon, esCalentamiento = false }) => {
       const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
 
       // Primero buscar o crear el bloque correspondiente
       let { data: existingBlock, error: blockFetchError } = await supabase
         .from('routine_blocks')
-        .select('id, orden')
+        .select('id, sort_order')
         .eq('routine_day_id', dayId)
-        .eq('nombre', blockName)
+        .eq('name', blockName)
         .single()
 
       if (blockFetchError && blockFetchError.code !== 'PGRST116') {
@@ -330,24 +330,24 @@ export function useAddExerciseToDay() {
 
       let blockId
       if (!existingBlock) {
-        // Para calentamiento, orden 1. Para principal, después del calentamiento si existe
+        // Para calentamiento, sort_order 1. Para principal, después del calentamiento si existe
         let nextOrder = 1
         if (!esCalentamiento) {
           const { data: maxOrderBlocks } = await supabase
             .from('routine_blocks')
-            .select('orden')
+            .select('sort_order')
             .eq('routine_day_id', dayId)
-            .order('orden', { ascending: false })
+            .order('sort_order', { ascending: false })
             .limit(1)
-          nextOrder = (maxOrderBlocks?.[0]?.orden || 0) + 1
+          nextOrder = (maxOrderBlocks?.[0]?.sort_order || 0) + 1
         }
 
         const { data: newBlock, error: blockCreateError } = await supabase
           .from('routine_blocks')
           .insert({
             routine_day_id: dayId,
-            nombre: blockName,
-            orden: nextOrder,
+            name: blockName,
+            sort_order: nextOrder,
           })
           .select()
           .single()
@@ -361,12 +361,12 @@ export function useAddExerciseToDay() {
       // Obtener el máximo orden de ejercicios en el bloque
       const { data: maxOrderExercises } = await supabase
         .from('routine_exercises')
-        .select('orden')
+        .select('sort_order')
         .eq('routine_block_id', blockId)
-        .order('orden', { ascending: false })
+        .order('sort_order', { ascending: false })
         .limit(1)
 
-      const nextExerciseOrder = (maxOrderExercises?.[0]?.orden || 0) + 1
+      const nextExerciseOrder = (maxOrderExercises?.[0]?.sort_order || 0) + 1
 
       // Insertar el ejercicio en el bloque
       const { data: newExercise, error: exerciseError } = await supabase
@@ -376,8 +376,8 @@ export function useAddExerciseToDay() {
           exercise_id: exerciseId,
           series: series || 3,
           reps: reps || '8-12',
-          orden: nextExerciseOrder,
-          notas: notas || null,
+          sort_order: nextExerciseOrder,
+          notes: notes || null,
           tempo: tempo || null,
           tempo_razon: tempo_razon || null,
         })

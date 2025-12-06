@@ -10,9 +10,9 @@ function NewRoutine() {
   const createRoutine = useCreateRoutine()
 
   const [form, setForm] = useState({
-    nombre: '',
-    descripcion: '',
-    objetivo: '',
+    name: '',
+    description: '',
+    goal: '',
   })
 
   const [error, setError] = useState(null)
@@ -25,16 +25,16 @@ function NewRoutine() {
     e.preventDefault()
     setError(null)
 
-    if (!form.nombre.trim()) {
+    if (!form.name.trim()) {
       setError('El nombre es obligatorio')
       return
     }
 
     try {
       const newRoutine = await createRoutine.mutateAsync({
-        nombre: form.nombre.trim(),
-        descripcion: form.descripcion.trim() || null,
-        objetivo: form.objetivo.trim() || null,
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        goal: form.goal.trim() || null,
       })
       navigate(`/routine/${newRoutine.id}`)
     } catch (err) {
@@ -65,8 +65,8 @@ function NewRoutine() {
           </label>
           <input
             type="text"
-            value={form.nombre}
-            onChange={(e) => handleChange('nombre', e.target.value)}
+            value={form.name}
+            onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Ej: Push Pull Legs"
             className="w-full p-3 rounded-lg text-base"
             style={inputStyle}
@@ -78,8 +78,8 @@ function NewRoutine() {
             Descripción (opcional)
           </label>
           <textarea
-            value={form.descripcion}
-            onChange={(e) => handleChange('descripcion', e.target.value)}
+            value={form.description}
+            onChange={(e) => handleChange('description', e.target.value)}
             placeholder="Descripción de la rutina..."
             rows={2}
             className="w-full p-3 rounded-lg text-base resize-none"
@@ -93,8 +93,8 @@ function NewRoutine() {
           </label>
           <input
             type="text"
-            value={form.objetivo}
-            onChange={(e) => handleChange('objetivo', e.target.value)}
+            value={form.goal}
+            onChange={(e) => handleChange('goal', e.target.value)}
             placeholder="Ej: Hipertrofia, Fuerza, Recomposición..."
             className="w-full p-3 rounded-lg text-base"
             style={inputStyle}

@@ -4,27 +4,27 @@ import { colors, modalOverlayStyle, modalContentStyle, inputStyle } from '../../
 
 function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
   const [form, setForm] = useState({
-    nombre: '',
-    duracion_estimada_min: '',
+    name: '',
+    estimated_duration_min: '',
   })
 
   if (!isOpen) return null
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!form.nombre.trim()) return
+    if (!form.name.trim()) return
 
     onSubmit({
-      nombre: form.nombre.trim(),
-      duracion_estimada_min: form.duracion_estimada_min ? parseInt(form.duracion_estimada_min) : null,
-      orden: nextDayNumber,
+      name: form.name.trim(),
+      estimated_duration_min: form.estimated_duration_min ? parseInt(form.estimated_duration_min) : null,
+      sort_order: nextDayNumber,
     })
 
-    setForm({ nombre: '', duracion_estimada_min: '' })
+    setForm({ name: '', estimated_duration_min: '' })
   }
 
   const handleClose = () => {
-    setForm({ nombre: '', duracion_estimada_min: '' })
+    setForm({ name: '', estimated_duration_min: '' })
     onClose()
   }
 
@@ -50,8 +50,8 @@ function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
             </label>
             <input
               type="text"
-              value={form.nombre}
-              onChange={(e) => setForm(prev => ({ ...prev, nombre: e.target.value }))}
+              value={form.name}
+              onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Ej: Pecho y tríceps"
               className="w-full p-3 rounded-lg text-base"
               style={inputStyle}
@@ -66,8 +66,8 @@ function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
             <input
               type="number"
               min="1"
-              value={form.duracion_estimada_min}
-              onChange={(e) => setForm(prev => ({ ...prev, duracion_estimada_min: e.target.value }))}
+              value={form.estimated_duration_min}
+              onChange={(e) => setForm(prev => ({ ...prev, estimated_duration_min: e.target.value }))}
               placeholder="Ej: 60"
               className="w-full p-3 rounded-lg text-base"
               style={inputStyle}
@@ -80,7 +80,7 @@ function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
             </Button>
             <Button
               type="submit"
-              disabled={!form.nombre.trim() || isPending}
+              disabled={!form.name.trim() || isPending}
             >
               {isPending ? 'Guardando...' : 'Añadir'}
             </Button>

@@ -21,7 +21,7 @@ function DurationChart({ sessions, currentDate }) {
         return {
           date: date.getDate(),
           duration: session.duration_minutes,
-          dayName: session.routine_day?.nombre || 'Sesión',
+          dayName: session.routine_day?.name || 'Sesión',
           fullDate: date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
         }
       })

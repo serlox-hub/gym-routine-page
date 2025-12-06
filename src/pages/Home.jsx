@@ -82,14 +82,14 @@ function Home() {
                 className="p-4"
                 onClick={() => navigate(`/routine/${routine.id}`)}
               >
-                <h2 className="font-semibold text-accent">{routine.nombre}</h2>
-                {routine.descripcion && (
-                  <p className="text-sm text-secondary mt-1">{routine.descripcion}</p>
+                <h2 className="font-semibold text-accent">{routine.name}</h2>
+                {routine.description && (
+                  <p className="text-sm text-secondary mt-1">{routine.description}</p>
                 )}
-                {routine.objetivo && (
+                {routine.goal && (
                   <p className="text-sm mt-2">
                     <span style={{ color: '#3fb950' }}>Objetivo:</span>{' '}
-                    <span className="text-secondary">{routine.objetivo}</span>
+                    <span className="text-secondary">{routine.goal}</span>
                   </p>
                 )}
               </Card>

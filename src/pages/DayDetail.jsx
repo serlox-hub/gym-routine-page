@@ -52,13 +52,13 @@ function DayDetail() {
               className="text-sm font-medium px-2 py-0.5 rounded"
               style={{ backgroundColor: 'rgba(88, 166, 255, 0.15)', color: '#58a6ff' }}
             >
-              Día {day.orden}
+              Día {day.sort_order}
             </span>
-            <h1 className="text-xl font-bold">{day.nombre}</h1>
+            <h1 className="text-xl font-bold">{day.name}</h1>
           </div>
-          {day.duracion_estimada_min && (
+          {day.estimated_duration_min && (
             <span className="text-sm text-muted">
-              {day.duracion_estimada_min} min
+              {day.estimated_duration_min} min
             </span>
           )}
         </div>

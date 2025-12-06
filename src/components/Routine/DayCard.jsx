@@ -9,16 +9,16 @@ import DayEditForm from './DayEditForm.jsx'
 
 function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
   const navigate = useNavigate()
-  const { id, orden, nombre, duracion_estimada_min } = day
+  const { id, sort_order, name, estimated_duration_min } = day
   const { data: blocks } = useRoutineBlocks(isEditing ? id : null)
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
   const updateDay = useUpdateRoutineDay()
   const [editingDay, setEditingDay] = useState(false)
-  const [dayForm, setDayForm] = useState({ nombre, duracion: duracion_estimada_min || '' })
+  const [dayForm, setDayForm] = useState({ name, duration: estimated_duration_min || '' })
 
-  const warmupBlock = blocks?.find(b => b.nombre === 'Calentamiento')
-  const mainBlock = blocks?.find(b => b.nombre === 'Principal')
+  const warmupBlock = blocks?.find(b => b.name === 'Calentamiento')
+  const mainBlock = blocks?.find(b => b.name === 'Principal')
   const warmupExercises = warmupBlock?.routine_exercises || []
   const mainExercises = mainBlock?.routine_exercises || []
   const allExercises = [...warmupExercises, ...mainExercises]
@@ -48,16 +48,16 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
   }
 
   const handleSaveDay = () => {
-    const hasChanges = dayForm.nombre.trim() !== nombre ||
-      (dayForm.duracion || null) !== (duracion_estimada_min || null)
+    const hasChanges = dayForm.name.trim() !== name ||
+      (dayForm.duration || null) !== (estimated_duration_min || null)
 
-    if (dayForm.nombre.trim() && hasChanges) {
+    if (dayForm.name.trim() && hasChanges) {
       updateDay.mutate({
         dayId: id,
         routineId,
         data: {
-          nombre: dayForm.nombre.trim(),
-          duracion_estimada_min: dayForm.duracion ? parseInt(dayForm.duracion) : null
+          name: dayForm.name.trim(),
+          estimated_duration_min: dayForm.duration ? parseInt(dayForm.duration) : null
         }
       })
     }
@@ -94,7 +94,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
     <Card className={`p-4 ${isEditing ? 'cursor-default' : ''}`} onClick={handleClick}>
       {isEditing && editingDay ? (
         <DayEditForm
-          dayNumber={orden}
+          dayNumber={sort_order}
           form={dayForm}
           setForm={setDayForm}
           onSave={handleSaveDay}
@@ -102,19 +102,19 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
       ) : (
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <span className="text-accent font-semibold shrink-0">{orden}</span>
-            <h3 className="font-medium truncate">{nombre}</h3>
+            <span className="text-accent font-semibold shrink-0">{sort_order}</span>
+            <h3 className="font-medium truncate">{name}</h3>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {duracion_estimada_min && (
-              <span className="text-sm text-muted whitespace-nowrap">{duracion_estimada_min} min</span>
+            {estimated_duration_min && (
+              <span className="text-sm text-muted whitespace-nowrap">{estimated_duration_min} min</span>
             )}
             {isEditing && (
               <>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    setDayForm({ nombre, duracion: duracion_estimada_min || '' })
+                    setDayForm({ name, duration: estimated_duration_min || '' })
                     setEditingDay(true)
                   }}
                   className="p-1.5 rounded-lg transition-opacity hover:opacity-80"

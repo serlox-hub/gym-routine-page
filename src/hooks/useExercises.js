@@ -9,8 +9,8 @@ export function useExercises() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, nombre, measurement_type, instrucciones')
-        .order('nombre')
+        .select('id, name, measurement_type, instructions')
+        .order('name')
 
       if (error) throw error
       return data
@@ -26,12 +26,12 @@ export function useExercisesWithMuscleGroup() {
         .from('exercises')
         .select(`
           id,
-          nombre,
+          name,
           measurement_type,
           muscle_group_id,
-          muscle_group:muscle_groups(id, nombre)
+          muscle_group:muscle_groups(id, name)
         `)
-        .order('nombre')
+        .order('name')
 
       if (error) throw error
       return data
@@ -45,8 +45,8 @@ export function useMuscleGroups() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('muscle_groups')
-        .select('id, nombre')
-        .order('nombre')
+        .select('id, name')
+        .order('name')
 
       if (error) throw error
       return data
@@ -62,11 +62,11 @@ export function useExercise(exerciseId) {
         .from('exercises')
         .select(`
           id,
-          nombre,
+          name,
           measurement_type,
-          instrucciones,
+          instructions,
           muscle_group_id,
-          muscle_group:muscle_groups(id, nombre)
+          muscle_group:muscle_groups(id, name)
         `)
         .eq('id', exerciseId)
         .single()
@@ -87,8 +87,8 @@ export function useCreateExercise() {
       const { data: newExercise, error: exerciseError } = await supabase
         .from('exercises')
         .insert({
-          nombre: exercise.nombre,
-          instrucciones: exercise.instrucciones || null,
+          name: exercise.name,
+          instructions: exercise.instructions || null,
           measurement_type: exercise.measurement_type || 'weight_reps',
           muscle_group_id: muscleGroupId || null,
           user_id: userId,
@@ -114,8 +114,8 @@ export function useUpdateExercise() {
       const { error: exerciseError } = await supabase
         .from('exercises')
         .update({
-          nombre: exercise.nombre,
-          instrucciones: exercise.instrucciones || null,
+          name: exercise.name,
+          instructions: exercise.instructions || null,
           measurement_type: exercise.measurement_type || 'weight_reps',
           muscle_group_id: muscleGroupId || null,
         })

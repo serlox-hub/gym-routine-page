@@ -13,9 +13,9 @@ const MEASUREMENT_TYPES = [
 ]
 
 const DEFAULT_FORM = {
-  nombre: '',
+  name: '',
   measurement_type: 'weight_reps',
-  instrucciones: '',
+  instructions: '',
 }
 
 /**
@@ -48,9 +48,9 @@ function ExerciseForm({
   useEffect(() => {
     if (initialData) {
       setForm({
-        nombre: initialData.nombre || '',
+        name: initialData.name || '',
         measurement_type: initialData.measurement_type || 'weight_reps',
-        instrucciones: initialData.instrucciones || '',
+        instructions: initialData.instructions || '',
       })
       setSelectedMuscleGroupId(initialData.muscle_group_id || null)
     }
@@ -64,7 +64,7 @@ function ExerciseForm({
     e.preventDefault()
     setError(null)
 
-    if (!form.nombre.trim()) {
+    if (!form.name.trim()) {
       setError('El nombre es obligatorio')
       return
     }
@@ -108,8 +108,8 @@ function ExerciseForm({
         </label>
         <input
           type="text"
-          value={form.nombre}
-          onChange={(e) => handleChange('nombre', e.target.value)}
+          value={form.name}
+          onChange={(e) => handleChange('name', e.target.value)}
           placeholder="Ej: Press banca con barra (Agarre Prono Medio)"
           className="w-full p-3 rounded-lg text-base"
           style={inputStyle}
@@ -157,7 +157,7 @@ function ExerciseForm({
                   border: isSelected ? `1px solid ${colors.success}` : `1px solid ${colors.border}`,
                 }}
               >
-                {group.nombre}
+                {group.name}
               </button>
             )
           })}
@@ -179,8 +179,8 @@ function ExerciseForm({
             Instrucciones de ejecución
           </label>
           <textarea
-            value={form.instrucciones}
-            onChange={(e) => handleChange('instrucciones', e.target.value)}
+            value={form.instructions}
+            onChange={(e) => handleChange('instructions', e.target.value)}
             placeholder="Cómo ejecutar el ejercicio correctamente... (incluye altura de polea si aplica)"
             rows={3}
             className="w-full p-3 rounded-lg text-base resize-none"

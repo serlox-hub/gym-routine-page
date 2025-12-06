@@ -18,7 +18,7 @@ function Exercises() {
 
     const searchLower = search.toLowerCase()
     return exercises.filter(e =>
-      e.nombre.toLowerCase().includes(searchLower)
+      e.name.toLowerCase().includes(searchLower)
     )
   }, [exercises, search])
 
@@ -94,7 +94,7 @@ function Exercises() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium" style={{ color: '#e6edf3' }}>
-                    {exercise.nombre}
+                    {exercise.name}
                   </h3>
                 </div>
                 <div className="flex items-center gap-1">
@@ -124,7 +124,7 @@ function Exercises() {
       <ConfirmModal
         isOpen={!!exerciseToDelete}
         title="Eliminar ejercicio"
-        message={`¿Seguro que quieres eliminar "${exerciseToDelete?.nombre}"? Esta acción no se puede deshacer.`}
+        message={`¿Seguro que quieres eliminar "${exerciseToDelete?.name}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         cancelText="Cancelar"
         onConfirm={handleDelete}

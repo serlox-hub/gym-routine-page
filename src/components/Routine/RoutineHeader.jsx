@@ -9,29 +9,29 @@ const DEBOUNCE_MS = 500
 
 function RoutineHeader({ routine, routineId, isEditing, onEditStart }) {
   const navigate = useNavigate()
-  const [editForm, setEditForm] = useState({ nombre: '', descripcion: '', objetivo: '' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', goal: '' })
   const debounceRef = useRef(null)
   const updateRoutine = useUpdateRoutine()
 
   useEffect(() => {
     if (routine && !isEditing) {
       setEditForm({
-        nombre: routine.nombre || '',
-        descripcion: routine.descripcion || '',
-        objetivo: routine.objetivo || '',
+        name: routine.name || '',
+        description: routine.description || '',
+        goal: routine.goal || '',
       })
     }
   }, [routine, isEditing])
 
   const saveChanges = useCallback((formData) => {
-    if (!formData.nombre.trim()) return
+    if (!formData.name.trim()) return
 
     updateRoutine.mutate({
       routineId: parseInt(routineId),
       data: {
-        nombre: formData.nombre.trim(),
-        descripcion: formData.descripcion.trim() || null,
-        objetivo: formData.objetivo.trim() || null,
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        goal: formData.goal.trim() || null,
       }
     })
   }, [routineId, updateRoutine])
@@ -60,7 +60,7 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart }) {
   const handleExport = async () => {
     try {
       const data = await exportRoutine(parseInt(routineId))
-      const filename = `${routine.nombre.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`
+      const filename = `${routine.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`
       downloadRoutineAsJson(data, filename)
     } catch (err) {
       console.error('Error exportando rutina:', err)
@@ -79,15 +79,15 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart }) {
         {isEditing ? (
           <input
             type="text"
-            value={editForm.nombre}
-            onChange={(e) => handleFieldChange('nombre', e.target.value)}
+            value={editForm.name}
+            onChange={(e) => handleFieldChange('name', e.target.value)}
             className="flex-1 text-2xl font-bold p-2 rounded-lg"
             style={inputStyle}
             placeholder="Nombre de la rutina"
             autoFocus
           />
         ) : (
-          <h1 className="text-2xl font-bold">{routine.nombre}</h1>
+          <h1 className="text-2xl font-bold">{routine.name}</h1>
         )}
         {!isEditing && (
           <div className="flex items-center gap-2">
@@ -118,8 +118,8 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart }) {
               Descripción
             </label>
             <textarea
-              value={editForm.descripcion}
-              onChange={(e) => handleFieldChange('descripcion', e.target.value)}
+              value={editForm.description}
+              onChange={(e) => handleFieldChange('description', e.target.value)}
               className="w-full p-2 rounded-lg text-sm resize-none"
               style={inputStyle}
               placeholder="Descripción de la rutina..."
@@ -132,8 +132,8 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart }) {
             </label>
             <input
               type="text"
-              value={editForm.objetivo}
-              onChange={(e) => handleFieldChange('objetivo', e.target.value)}
+              value={editForm.goal}
+              onChange={(e) => handleFieldChange('goal', e.target.value)}
               className="w-full p-2 rounded-lg text-sm"
               style={inputStyle}
               placeholder="Ej: Hipertrofia, Fuerza..."
@@ -142,15 +142,15 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart }) {
         </div>
       ) : (
         <>
-          {routine.descripcion && (
+          {routine.description && (
             <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
-              {routine.descripcion}
+              {routine.description}
             </p>
           )}
-          {routine.objetivo && (
+          {routine.goal && (
             <p className="text-sm mt-1">
               <span style={{ color: colors.success }}>Objetivo:</span>{' '}
-              <span style={{ color: colors.textSecondary }}>{routine.objetivo}</span>
+              <span style={{ color: colors.textSecondary }}>{routine.goal}</span>
             </p>
           )}
         </>

@@ -6,7 +6,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
   const [form, setForm] = useState({
     series: '3',
     reps: '',
-    notas: '',
+    notes: '',
     tempo: '',
     tempo_razon: '',
   })
@@ -55,7 +55,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
       setForm({
         series: String(routineExercise.series || 3),
         reps: routineExercise.reps || '',
-        notas: routineExercise.notas || '',
+        notes: routineExercise.notes || '',
         tempo: routineExercise.tempo || '',
         tempo_razon: routineExercise.tempo_razon || '',
       })
@@ -73,7 +73,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
       exerciseId: routineExercise.id,
       series: parseInt(form.series) || 3,
       reps: form.reps || '8-12',
-      notas: form.notas || null,
+      notes: form.notes || null,
       tempo: form.tempo || null,
       tempo_razon: form.tempo_razon || null,
     })
@@ -105,7 +105,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
             style={{ backgroundColor: 'rgba(88, 166, 255, 0.1)' }}
           >
             <div className="font-medium" style={{ color: colors.textPrimary }}>
-              {exercise?.nombre}
+              {exercise?.name}
             </div>
           </div>
 
@@ -187,8 +187,8 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
               </label>
               <input
                 type="text"
-                value={form.notas}
-                onChange={(e) => setForm(prev => ({ ...prev, notas: e.target.value }))}
+                value={form.notes}
+                onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Notas específicas para esta rutina..."
                 className="w-full p-3 rounded-lg text-base"
                 style={inputStyle}

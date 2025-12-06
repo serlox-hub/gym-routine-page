@@ -10,11 +10,11 @@ import ExerciseConfigForm from './ExerciseConfigForm.jsx'
 const DEFAULT_FORM = {
   series: '3',
   reps: '',
-  notas: '',
+  notes: '',
   tempo: '',
   tempo_razon: '',
   rir: '2',
-  descanso_seg: '90',
+  rest_seconds: '90',
 }
 
 /**
@@ -58,14 +58,14 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
       exercise: selectedExercise,
       series: parseInt(form.series) || 3,
       reps: form.reps || getDefaultReps(selectedExercise.measurement_type),
-      notas: form.notas || null,
+      notes: form.notes || null,
       tempo: form.tempo || null,
       tempo_razon: form.tempo_razon || null,
     }
 
     if (isSessionMode) {
       data.rir = parseInt(form.rir) || 2
-      data.descanso_seg = parseInt(form.descanso_seg) || 90
+      data.rest_seconds = parseInt(form.rest_seconds) || 90
     }
 
     onSubmit(data)
@@ -79,7 +79,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
 
     setSelectedExercise({
       id: newExercise.id,
-      nombre: newExercise.nombre,
+      name: newExercise.name,
       measurement_type: newExercise.measurement_type,
     })
     setForm({

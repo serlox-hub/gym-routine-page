@@ -68,10 +68,10 @@ function SessionDetail() {
         <div className="flex items-start justify-between gap-2">
           <div>
             <h1 className="text-xl font-bold mb-1">
-              {session.routine_day?.nombre || 'Sesión'}
+              {session.routine_day?.name || 'Sesión'}
             </h1>
             <p className="text-sm text-secondary">
-              {session.routine_day?.routine?.nombre}
+              {session.routine_day?.routine?.name}
             </p>
           </div>
           <button
@@ -108,25 +108,25 @@ function SessionDetail() {
               <div className="text-sm">{session.duration_minutes} minutos</div>
             </div>
           )}
-          {session.sensacion_general && (
+          {session.overall_feeling && (
             <div>
               <div className="text-xs text-secondary">Sensación</div>
               <span
                 className="text-xs px-2 py-0.5 rounded inline-block mt-1"
                 style={{
-                  backgroundColor: getSensationColor(session.sensacion_general),
+                  backgroundColor: getSensationColor(session.overall_feeling),
                   color: '#0d1117',
                 }}
               >
-                {SENSATION_LABELS[session.sensacion_general]}
+                {SENSATION_LABELS[session.overall_feeling]}
               </span>
             </div>
           )}
         </div>
-        {session.notas && (
+        {session.notes && (
           <div className="mt-4 pt-4" style={{ borderTop: '1px solid #30363d' }}>
             <div className="text-xs text-secondary mb-1">Notas</div>
-            <p className="text-sm">{session.notas}</p>
+            <p className="text-sm">{session.notes}</p>
           </div>
         )}
       </Card>
@@ -136,7 +136,7 @@ function SessionDetail() {
       <div className="space-y-3">
         {session.exercises?.map(({ exercise, sets }) => (
           <Card key={exercise.id} className="p-4">
-            <h3 className="font-medium mb-3">{exercise.nombre}</h3>
+            <h3 className="font-medium mb-3">{exercise.name}</h3>
             <div className="space-y-2">
               {sets.map(set => (
                 <div
@@ -155,8 +155,8 @@ function SessionDetail() {
                   </div>
                   <NotesBadge
                     rir={set.rir_actual}
-                    hasNotes={!!set.notas}
-                    onClick={set.notas ? () => setSelectedSet(set) : null}
+                    hasNotes={!!set.notes}
+                    onClick={set.notes ? () => setSelectedSet(set) : null}
                   />
                 </div>
               ))}
@@ -169,7 +169,7 @@ function SessionDetail() {
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
         rir={selectedSet?.rir_actual}
-        notas={selectedSet?.notas}
+        notes={selectedSet?.notes}
       />
 
       <ConfirmModal

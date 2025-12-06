@@ -127,7 +127,7 @@ const useWorkoutStore = create(
           series: config.series || 3,
           reps: config.reps || '10',
           rir: config.rir ?? 2,
-          descanso_seg: config.descanso_seg || 90,
+          rest_seconds: config.rest_seconds || 90,
           measurement_type: exercise.measurement_type || 'weight_reps',
         }
 
