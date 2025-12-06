@@ -314,7 +314,7 @@ export function useAddExerciseToDay() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ dayId, exerciseId, series, reps, notes, tempo, tempo_razon, esCalentamiento = false }) => {
+    mutationFn: async ({ dayId, exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, esCalentamiento = false }) => {
       const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
 
       // Primero buscar o crear el bloque correspondiente
@@ -377,6 +377,8 @@ export function useAddExerciseToDay() {
           exercise_id: exerciseId,
           series: series || 3,
           reps: reps || '8-12',
+          rir: rir ?? null,
+          rest_seconds: rest_seconds || null,
           sort_order: nextExerciseOrder,
           notes: notes || null,
           tempo: tempo || null,

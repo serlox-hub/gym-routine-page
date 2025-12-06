@@ -4,6 +4,7 @@ import { getRepsLabel, getRepsPlaceholder } from '../../lib/measurementTypes.js'
 
 /**
  * Formulario para configurar series, reps, tempo, notas de un ejercicio
+ * Reutilizable para añadir y editar ejercicios en rutinas/sesiones
  */
 function ExerciseConfigForm({
   exercise,
@@ -12,7 +13,10 @@ function ExerciseConfigForm({
   onSubmit,
   onBack,
   isPending,
-  isSessionMode = false
+  isSessionMode = false,
+  submitLabel = 'Añadir',
+  pendingLabel = 'Añadiendo...',
+  backLabel = 'Volver',
 }) {
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -31,7 +35,7 @@ function ExerciseConfigForm({
       </div>
 
       {/* Campos obligatorios */}
-      <div className={`grid gap-3 ${isSessionMode ? 'grid-cols-4' : 'grid-cols-2'}`}>
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
             Series <span style={{ color: colors.danger }}>*</span>
@@ -58,39 +62,6 @@ function ExerciseConfigForm({
             style={inputStyle}
           />
         </div>
-        {isSessionMode && (
-          <>
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
-                RIR
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="5"
-                value={form.rir}
-                onChange={(e) => setForm(prev => ({ ...prev, rir: e.target.value }))}
-                className="w-full p-3 rounded-lg text-base"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
-                Descanso
-              </label>
-              <input
-                type="number"
-                min="30"
-                step="15"
-                value={form.rest_seconds}
-                onChange={(e) => setForm(prev => ({ ...prev, rest_seconds: e.target.value }))}
-                placeholder="90"
-                className="w-full p-3 rounded-lg text-base"
-                style={inputStyle}
-              />
-            </div>
-          </>
-        )}
       </div>
 
       {/* Campos opcionales */}
@@ -101,6 +72,39 @@ function ExerciseConfigForm({
         <p className="text-xs" style={{ color: colors.textSecondary }}>
           Opcionales
         </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
+              RIR
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="5"
+              value={form.rir}
+              onChange={(e) => setForm(prev => ({ ...prev, rir: e.target.value }))}
+              placeholder="Ej: 2"
+              className="w-full p-3 rounded-lg text-base"
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
+              Descanso (seg)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="15"
+              value={form.rest_seconds}
+              onChange={(e) => setForm(prev => ({ ...prev, rest_seconds: e.target.value }))}
+              placeholder="Ej: 90"
+              className="w-full p-3 rounded-lg text-base"
+              style={inputStyle}
+            />
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -156,10 +160,10 @@ function ExerciseConfigForm({
           type="button"
           onClick={onBack}
         >
-          Volver
+          {backLabel}
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Añadiendo...' : 'Añadir'}
+          {isPending ? pendingLabel : submitLabel}
         </Button>
       </div>
     </form>

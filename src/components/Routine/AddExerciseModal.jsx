@@ -13,8 +13,8 @@ const DEFAULT_FORM = {
   notes: '',
   tempo: '',
   tempo_razon: '',
-  rir: '2',
-  rest_seconds: '90',
+  rir: '',
+  rest_seconds: '',
 }
 
 /**
@@ -61,11 +61,8 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
       notes: form.notes || null,
       tempo: form.tempo || null,
       tempo_razon: form.tempo_razon || null,
-    }
-
-    if (isSessionMode) {
-      data.rir = parseInt(form.rir) || 2
-      data.rest_seconds = parseInt(form.rest_seconds) || 90
+      rir: form.rir !== '' ? parseInt(form.rir) : null,
+      rest_seconds: form.rest_seconds ? parseInt(form.rest_seconds) : null,
     }
 
     onSubmit(data)
