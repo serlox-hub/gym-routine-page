@@ -66,13 +66,15 @@ function RoutineDetail() {
     setShowAddExercise(true)
   }
 
-  const handleAddExercise = async ({ exerciseId, series, reps, notes, tempo, tempo_razon }) => {
+  const handleAddExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon }) => {
     try {
       await addExercise.mutateAsync({
         dayId: selectedDayId,
         exerciseId,
         series,
         reps,
+        rir,
+        rest_seconds,
         notes,
         tempo,
         tempo_razon,
@@ -92,12 +94,12 @@ function RoutineDetail() {
     setShowEditExercise(true)
   }
 
-  const handleEditExercise = async ({ exerciseId, series, reps, notes, tempo, tempo_razon }) => {
+  const handleEditExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon }) => {
     try {
       await updateExercise.mutateAsync({
         exerciseId,
         dayId: selectedDayId,
-        data: { series, reps, notes, tempo, tempo_razon }
+        data: { series, reps, rir, rest_seconds, notes, tempo, tempo_razon }
       })
       setShowEditExercise(false)
       setSelectedExercise(null)
