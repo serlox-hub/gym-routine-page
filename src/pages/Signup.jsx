@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button } from '@/components/ui'
+import { validateSignupForm } from '../lib/validation.js'
 
 function Signup() {
   const navigate = useNavigate()
@@ -18,18 +19,9 @@ function Signup() {
     setLocalError('')
     clearError()
 
-    if (!email || !password || !confirmPassword) {
-      setLocalError('Por favor completa todos los campos')
-      return
-    }
-
-    if (password.length < 6) {
-      setLocalError('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setLocalError('Las contraseñas no coinciden')
+    const validation = validateSignupForm({ email, password, confirmPassword })
+    if (!validation.valid) {
+      setLocalError(validation.error)
       return
     }
 

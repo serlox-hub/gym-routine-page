@@ -4,6 +4,7 @@ import { ChevronLeft, Plus } from 'lucide-react'
 import { ErrorMessage, Card } from '../components/ui/index.js'
 import { useCreateRoutine } from '../hooks/useRoutines.js'
 import { colors, inputStyle } from '../lib/styles.js'
+import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
 
 function NewRoutine() {
   const navigate = useNavigate()
@@ -25,17 +26,15 @@ function NewRoutine() {
     e.preventDefault()
     setError(null)
 
-    if (!form.name.trim()) {
-      setError('El nombre es obligatorio')
+    const validation = validateRoutineForm(form)
+    if (!validation.valid) {
+      setError(validation.error)
       return
     }
 
     try {
-      const newRoutine = await createRoutine.mutateAsync({
-        name: form.name.trim(),
-        description: form.description.trim() || null,
-        goal: form.goal.trim() || null,
-      })
+      const data = prepareRoutineData(form)
+      const newRoutine = await createRoutine.mutateAsync(data)
       navigate(`/routine/${newRoutine.id}`)
     } catch (err) {
       setError(err.message)

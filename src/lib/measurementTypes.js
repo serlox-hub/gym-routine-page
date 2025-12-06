@@ -2,6 +2,46 @@
  * Utilidades para tipos de medición de ejercicios
  */
 
+/**
+ * Tipos de medición válidos
+ */
+export const MEASUREMENT_TYPES = [
+  'weight_reps',
+  'reps_only',
+  'reps_per_side',
+  'time',
+  'time_per_side',
+  'distance',
+]
+
+/**
+ * Tipos de medición que usan peso
+ */
+export const WEIGHT_MEASUREMENT_TYPES = ['weight_reps', 'distance']
+
+/**
+ * Verifica si un tipo de medición es válido
+ * @param {string} type - Tipo de medición
+ * @returns {boolean}
+ */
+export function isValidMeasurementType(type) {
+  return MEASUREMENT_TYPES.includes(type)
+}
+
+/**
+ * Verifica si un tipo de medición usa peso
+ * @param {string} measurementType - Tipo de medición
+ * @returns {boolean}
+ */
+export function measurementTypeUsesWeight(measurementType) {
+  return WEIGHT_MEASUREMENT_TYPES.includes(measurementType)
+}
+
+/**
+ * Obtiene las repeticiones por defecto según el tipo de medición
+ * @param {string} measurementType - Tipo de medición
+ * @returns {string}
+ */
 export function getDefaultReps(measurementType) {
   switch (measurementType) {
     case 'weight_reps':

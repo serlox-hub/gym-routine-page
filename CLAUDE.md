@@ -37,7 +37,16 @@ src/
 ├── lib/                 # Utilities and configurations
 │   ├── supabase.js      # Supabase client
 │   ├── constants.js     # App-wide constants (QUERY_KEYS, etc.)
-│   └── styles.js        # Shared style objects
+│   ├── styles.js        # Shared style objects
+│   ├── dateUtils.js     # Date formatting functions
+│   ├── timeUtils.js     # Time/duration formatting
+│   ├── setUtils.js      # Set validation and formatting
+│   ├── workoutCalculations.js  # 1RM, volume calculations
+│   ├── workoutTransforms.js    # Session data transformations
+│   ├── calendarUtils.js        # Calendar generation
+│   ├── arrayUtils.js           # Array manipulation
+│   ├── measurementTypes.js     # Exercise measurement types
+│   └── validation.js           # Form validation
 ├── pages/               # Route components (one per route)
 ├── stores/              # Zustand stores
 │   ├── authStore.js
@@ -157,3 +166,125 @@ Key relations:
 - ✅ Descriptive names without abbreviations
 - ✅ Comments only when logic isn't self-evident
 - ✅ Handle loading/error states in components
+- ✅ Extract business logic to `lib/` utilities
+- ✅ Keep components "dumb" (UI only)
+
+## Component Architecture: Dumb Components + Testable Utils
+
+### Principle
+All business logic should be extracted to utility functions in `src/lib/`. Components should only handle:
+- UI rendering
+- Event handling (calling utils/hooks)
+- Local UI state (open/closed, hover, etc.)
+
+### When to Extract Logic to `lib/`
+
+Extract when logic:
+- Is more than 5-10 lines
+- Contains calculations or transformations
+- Has multiple branches/conditions
+- Could be reused elsewhere
+- Needs unit testing
+
+### Utility File Organization
+
+| Logic Type | File | Example Functions |
+|------------|------|-------------------|
+| Date/time formatting | `dateUtils.js` | `formatFullDate()`, `formatRelativeDate()` |
+| Time/duration | `timeUtils.js` | `formatSecondsToMMSS()`, `calculateDurationMinutes()` |
+| Workout calculations | `workoutCalculations.js` | `calculateEpley1RM()`, `calculateTotalVolume()` |
+| Session transforms | `workoutTransforms.js` | `transformWorkoutSessionData()` |
+| Set operations | `setUtils.js` | `isSetDataValid()`, `formatSetValue()` |
+| Calendar logic | `calendarUtils.js` | `generateCalendarDays()` |
+| Array operations | `arrayUtils.js` | `reorderArrayItem()`, `filterExercises()` |
+| Form validation | `validation.js` | `validateSignupForm()`, `validateRoutineForm()` |
+| Measurement types | `measurementTypes.js` | `measurementTypeUsesWeight()` |
+
+### Example: Before and After
+
+❌ **Before** - Logic embedded in component:
+```jsx
+// MonthlyCalendar.jsx
+const calendarData = useMemo(() => {
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+  const firstDay = new Date(year, month, 1)
+  // ... 40 more lines of calendar logic
+}, [currentDate, sessions])
+```
+
+✅ **After** - Logic in testable util:
+```jsx
+// MonthlyCalendar.jsx
+import { generateCalendarDays } from '../lib/calendarUtils.js'
+
+const calendarData = useMemo(
+  () => generateCalendarDays(currentDate, sessions),
+  [currentDate, sessions]
+)
+```
+
+```js
+// lib/calendarUtils.js
+export function generateCalendarDays(currentDate, sessions) {
+  // Pure logic, fully testable without React
+}
+```
+
+### Creating New Components Checklist
+
+1. [ ] Component file has single responsibility (UI only)
+2. [ ] Business logic extracted to `src/lib/` utils
+3. [ ] Utils are pure functions (no side effects)
+4. [ ] Complex `useMemo`/`useCallback` calls util functions
+5. [ ] Validation logic in `lib/validation.js`
+6. [ ] Data transformations in appropriate util file
+
+### Updating Existing Components Checklist
+
+1. [ ] Identify embedded business logic (>5 lines in useMemo/handlers)
+2. [ ] Extract to appropriate util file
+3. [ ] Import util and call from component
+4. [ ] Verify component still works
+5. [ ] Add tests for extracted util
+
+### Utility Function Guidelines
+
+1. **Pure functions** - Same input = same output, no side effects
+2. **Single responsibility** - One function, one job
+3. **Descriptive names** - `calculateEpley1RM` not `calc1RM`
+4. **Handle edge cases** - null, undefined, empty arrays
+5. **JSDoc comments** - Only for complex functions
+
+```js
+/**
+ * Calculate estimated 1 rep max using Epley formula
+ * @param {number} weight - Weight lifted
+ * @param {number} reps - Repetitions performed
+ * @returns {number} Estimated 1RM
+ */
+export function calculateEpley1RM(weight, reps) {
+  if (!weight || !reps || reps <= 0) return 0
+  if (reps === 1) return weight
+  return Math.round(weight * (1 + reps / 30))
+}
+```
+
+## Testing
+
+### Test File Structure
+```
+src/lib/
+├── dateUtils.js
+├── __tests__/
+│   ├── dateUtils.test.js
+│   ├── timeUtils.test.js
+│   ├── workoutCalculations.test.js
+│   └── ...
+```
+
+### Running Tests
+```bash
+npm run lint     # Check for linting errors
+npm run build    # Verify build works
+```
