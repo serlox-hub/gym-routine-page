@@ -143,6 +143,12 @@ const useWorkoutStore = create(
         exerciseOrder: state.exerciseOrder.filter(o => o.id !== extraId),
       })),
 
+      // Remove any exercise from session (routine or extra)
+      removeExerciseFromSession: (exerciseId) => set(state => ({
+        extraExercises: state.extraExercises.filter(e => e.id !== exerciseId),
+        exerciseOrder: state.exerciseOrder.filter(o => o.id !== exerciseId),
+      })),
+
       // Get extra exercise by id
       getExtraExercise: (extraId) => {
         const state = get()

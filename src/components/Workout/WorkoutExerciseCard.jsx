@@ -1,14 +1,14 @@
 import { useMemo, useState, useEffect } from 'react'
-import { History } from 'lucide-react'
+import { History, X } from 'lucide-react'
 import { Card, Badge } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
 import PreviousWorkout from './PreviousWorkout.jsx'
 import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { usePreviousWorkout } from '../../hooks/usePreviousWorkout.js'
+import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 
-function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, isWarmup = false }) {
+function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove }) {
   const { id, exercise, series, reps, rir, tempo, tempo_razon, notas, measurement_type, descanso_seg } = routineExercise
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -67,7 +67,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
             <p className="text-sm text-secondary">{equipmentInfo}</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setShowHistory(true)}
             className="p-1.5 rounded hover:opacity-80"
@@ -76,6 +76,16 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
           >
             <History size={14} style={{ color: colors.textSecondary }} />
           </button>
+          {onRemove && (
+            <button
+              onClick={() => onRemove(id)}
+              className="p-1.5 rounded hover:opacity-80"
+              style={{ backgroundColor: 'rgba(248, 81, 73, 0.15)' }}
+              title="Quitar de la sesión"
+            >
+              <X size={14} style={{ color: colors.danger }} />
+            </button>
+          )}
           <span
             className="text-sm font-medium px-2 py-0.5 rounded"
             style={{

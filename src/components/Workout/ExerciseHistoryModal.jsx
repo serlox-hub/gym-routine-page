@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, FileText } from 'lucide-react'
-import { useExerciseHistory } from '../../hooks/useExerciseHistory.js'
+import { useExerciseHistory } from '../../hooks/useWorkout.js'
 import { LoadingSpinner } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Calendar } from 'lucide-react'
-import { useWorkoutHistory } from '../hooks/useWorkoutHistory.js'
+import { useWorkoutHistory } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
 import { MonthlyCalendar, DurationChart } from '../components/History/index.js'
 

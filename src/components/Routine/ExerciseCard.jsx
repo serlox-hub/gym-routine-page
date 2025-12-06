@@ -5,7 +5,7 @@ import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
 
 function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
-  const { exercise, series, reps, rir, descanso_seg, tempo, notas, measurement_type } = routineExercise
+  const { exercise, series, reps, rir, descanso_seg, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
@@ -29,11 +29,6 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
             {reps}
             {equipmentInfo && ` · ${equipmentInfo}`}
           </p>
-          {notas && (
-            <p className="text-xs mt-1" style={{ color: colors.warning }}>
-              {notas}
-            </p>
-          )}
         </div>
       </div>
     )
@@ -67,10 +62,6 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
         {descanso_seg && <Badge variant="warning">{descanso_seg}s</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
       </div>
-
-      {notas && (
-        <p className="mt-2 text-xs text-secondary bg-surface-block rounded p-2">{notas}</p>
-      )}
 
       <ExerciseHistoryModal
         isOpen={showHistory}

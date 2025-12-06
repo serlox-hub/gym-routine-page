@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react'
 import { Card } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
-import { colors, inputStyle } from '../../lib/styles.js'
+import { colors } from '../../lib/styles.js'
+import ExerciseRow from './ExerciseRow.jsx'
+import DayEditForm from './DayEditForm.jsx'
 
 function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
   const navigate = useNavigate()
@@ -15,90 +17,16 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
   const [editingDay, setEditingDay] = useState(false)
   const [dayForm, setDayForm] = useState({ nombre, duracion: duracion_estimada_min || '' })
 
-  const handleClick = () => {
-    if (!isEditing) {
-      navigate(`/routine/${routineId}/day/${id}`)
-    }
-  }
-
   const warmupBlock = blocks?.find(b => b.nombre === 'Calentamiento')
   const mainBlock = blocks?.find(b => b.nombre === 'Principal')
   const warmupExercises = warmupBlock?.routine_exercises || []
   const mainExercises = mainBlock?.routine_exercises || []
   const allExercises = [...warmupExercises, ...mainExercises]
 
-  const renderExerciseRow = (re, index, exerciseList) => {
-    const exercise = re.exercise
-    const isFirstInList = index === 0
-    const isLastInList = index === exerciseList.length - 1
-
-    return (
-      <div className="flex items-center gap-2">
-        <div className="flex-1 min-w-0">
-          <div>
-            <span className="text-sm" style={{ color: colors.textPrimary }}>
-              {exercise?.nombre}
-            </span>
-            <span className="text-sm ml-2" style={{ color: colors.textSecondary }}>
-              {re.series}×{re.reps}
-            </span>
-            {re.tempo && (
-              <span className="text-xs ml-2" style={{ color: colors.accent }}>
-                {re.tempo}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-0.5 shrink-0">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onEditExercise(re, id)
-            }}
-            className="p-1 rounded transition-opacity hover:opacity-80"
-            style={{ color: colors.textSecondary }}
-            title="Editar"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleMoveExercise(re.id, 'up')
-            }}
-            disabled={isFirstInList && warmupExercises.length === 0}
-            className="p-1 rounded transition-opacity hover:opacity-80 disabled:opacity-30"
-            style={{ color: colors.textSecondary }}
-            title="Mover arriba"
-          >
-            <ChevronUp size={14} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleMoveExercise(re.id, 'down')
-            }}
-            disabled={isLastInList && exerciseList === mainExercises}
-            className="p-1 rounded transition-opacity hover:opacity-80 disabled:opacity-30"
-            style={{ color: colors.textSecondary }}
-            title="Mover abajo"
-          >
-            <ChevronDown size={14} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleDeleteExercise(re.id)
-            }}
-            className="p-1 rounded transition-opacity hover:opacity-80"
-            style={{ color: '#f85149' }}
-            title="Eliminar"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      </div>
-    )
+  const handleClick = () => {
+    if (!isEditing) {
+      navigate(`/routine/${routineId}/day/${id}`)
+    }
   }
 
   const handleMoveExercise = (exerciseId, direction) => {
@@ -136,48 +64,41 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
     setEditingDay(false)
   }
 
-  return (
-    <Card
-      className={`p-4 ${isEditing ? 'cursor-default' : ''}`}
-      onClick={handleClick}
-    >
-      {isEditing && editingDay ? (
-        <div className="space-y-2" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center gap-3">
-            <span className="text-accent font-semibold shrink-0">{dia_numero}</span>
-            <input
-              type="text"
-              value={dayForm.nombre}
-              onChange={(e) => setDayForm(prev => ({ ...prev, nombre: e.target.value }))}
-              className="flex-1 font-medium p-1 rounded min-w-0"
-              style={inputStyle}
-              placeholder="Nombre del día"
-              autoFocus
-            />
-          </div>
-          <div className="flex items-center gap-2 pl-8">
-            <label className="text-sm" style={{ color: colors.textSecondary }}>
-              Duración estimada:
-            </label>
-            <input
-              type="number"
-              value={dayForm.duracion}
-              onChange={(e) => setDayForm(prev => ({ ...prev, duracion: e.target.value }))}
-              className="w-16 p-1 rounded text-sm text-center"
-              style={inputStyle}
-              placeholder="--"
-              min="1"
-            />
-            <span className="text-sm" style={{ color: colors.textSecondary }}>min</span>
-            <button
-              onClick={handleSaveDay}
-              className="ml-auto px-3 py-1 rounded text-sm"
-              style={{ backgroundColor: colors.accent, color: '#fff' }}
-            >
-              OK
-            </button>
-          </div>
+  const renderExerciseList = (exercises, sectionLabel, labelColor, canMoveUpFromSection) => (
+    exercises.length > 0 && (
+      <div className="mb-4">
+        <div className="text-xs font-medium mb-2" style={{ color: labelColor }}>
+          {sectionLabel}
         </div>
+        <ul className="space-y-2">
+          {exercises.map((re, index) => (
+            <li key={re.id}>
+              <ExerciseRow
+                routineExercise={re}
+                index={index}
+                totalCount={exercises.length}
+                canMoveUp={canMoveUpFromSection}
+                onEdit={() => onEditExercise(re, id)}
+                onMoveUp={() => handleMoveExercise(re.id, 'up')}
+                onMoveDown={() => handleMoveExercise(re.id, 'down')}
+                onDelete={() => handleDeleteExercise(re.id)}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  )
+
+  return (
+    <Card className={`p-4 ${isEditing ? 'cursor-default' : ''}`} onClick={handleClick}>
+      {isEditing && editingDay ? (
+        <DayEditForm
+          dayNumber={dia_numero}
+          form={dayForm}
+          setForm={setDayForm}
+          onSave={handleSaveDay}
+        />
       ) : (
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -202,69 +123,43 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
                 >
                   <Pencil size={18} />
                 </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onMoveUp(id)
-                }}
-                disabled={isFirst}
-                className="p-1.5 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-30"
-                style={{ color: colors.textSecondary }}
-                title="Mover arriba"
-              >
-                <ChevronUp size={18} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onMoveDown(id)
-                }}
-                disabled={isLast}
-                className="p-1.5 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-30"
-                style={{ color: colors.textSecondary }}
-                title="Mover abajo"
-              >
-                <ChevronDown size={18} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDelete(id)
-                }}
-                className="p-1.5 rounded-lg transition-opacity hover:opacity-80"
-                style={{ backgroundColor: 'rgba(248, 81, 73, 0.1)', color: '#f85149' }}
-                title="Eliminar día"
-              >
-                <Trash2 size={18} />
-              </button>
-            </>
-          )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); onMoveUp(id) }}
+                  disabled={isFirst}
+                  className="p-1.5 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-30"
+                  style={{ color: colors.textSecondary }}
+                  title="Mover arriba"
+                >
+                  <ChevronUp size={18} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onMoveDown(id) }}
+                  disabled={isLast}
+                  className="p-1.5 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-30"
+                  style={{ color: colors.textSecondary }}
+                  title="Mover abajo"
+                >
+                  <ChevronDown size={18} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(id) }}
+                  className="p-1.5 rounded-lg transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: 'rgba(248, 81, 73, 0.1)', color: '#f85149' }}
+                  title="Eliminar día"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
 
       {isEditing && (
         <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.border }}>
-          {/* Sección Calentamiento */}
-          {warmupExercises.length > 0 && (
-            <div className="mb-4">
-              <div className="text-xs font-medium mb-2" style={{ color: colors.accent }}>
-                Calentamiento
-              </div>
-              <ul className="space-y-2">
-                {warmupExercises.map((re, index) => (
-                  <li key={re.id}>
-                    {renderExerciseRow(re, index, warmupExercises)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {renderExerciseList(warmupExercises, 'Calentamiento', colors.accent, false)}
           <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onAddWarmup(id)
-            }}
+            onClick={(e) => { e.stopPropagation(); onAddWarmup(id) }}
             className="w-full py-2 mb-3 rounded-lg text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
             style={{ border: `1px dashed ${colors.border}`, color: colors.accent }}
           >
@@ -272,26 +167,9 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
             Añadir calentamiento
           </button>
 
-          {/* Sección Principal */}
-          {mainExercises.length > 0 && (
-            <div className="mb-4">
-              <div className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
-                Principal
-              </div>
-              <ul className="space-y-2">
-                {mainExercises.map((re, index) => (
-                  <li key={re.id}>
-                    {renderExerciseRow(re, index, mainExercises)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {renderExerciseList(mainExercises, 'Principal', colors.textSecondary, warmupExercises.length > 0)}
           <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onAddExercise(id)
-            }}
+            onClick={(e) => { e.stopPropagation(); onAddExercise(id) }}
             className="w-full py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
             style={{ border: `1px dashed ${colors.border}`, color: colors.textSecondary }}
           >

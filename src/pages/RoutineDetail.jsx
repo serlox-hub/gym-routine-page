@@ -1,18 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Plus, Trash2, Pencil } from 'lucide-react'
-import { useRoutine, useRoutineDays, useCreateRoutineDay, useUpdateRoutine, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise } from '../hooks/useRoutines.js'
+import { Plus, Trash2 } from 'lucide-react'
+import { useRoutine, useRoutineDays, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
-import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal } from '../components/Routine/index.js'
-import { colors, inputStyle } from '../lib/styles.js'
-
-const DEBOUNCE_MS = 500
+import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader } from '../components/Routine/index.js'
 
 function RoutineDetail() {
   const { routineId } = useParams()
   const navigate = useNavigate()
   const [isEditing, setIsEditing] = useState(false)
-  const [editForm, setEditForm] = useState({ nombre: '', descripcion: '', objetivo: '' })
   const [showAddDay, setShowAddDay] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
@@ -20,61 +16,15 @@ function RoutineDetail() {
   const [isAddingWarmup, setIsAddingWarmup] = useState(false)
   const [showEditExercise, setShowEditExercise] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState(null)
-  const debounceRef = useRef(null)
 
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
   const createDay = useCreateRoutineDay()
-  const updateRoutine = useUpdateRoutine()
   const deleteRoutine = useDeleteRoutine()
   const addExercise = useAddExerciseToDay()
   const updateExercise = useUpdateRoutineExercise()
   const deleteDay = useDeleteRoutineDay()
   const reorderDays = useReorderRoutineDays()
-
-  useEffect(() => {
-    if (routine && !isEditing) {
-      setEditForm({
-        nombre: routine.nombre || '',
-        descripcion: routine.descripcion || '',
-        objetivo: routine.objetivo || '',
-      })
-    }
-  }, [routine, isEditing])
-
-  const saveChanges = useCallback((formData) => {
-    if (!formData.nombre.trim()) return
-
-    updateRoutine.mutate({
-      routineId: parseInt(routineId),
-      data: {
-        nombre: formData.nombre.trim(),
-        descripcion: formData.descripcion.trim() || null,
-        objetivo: formData.objetivo.trim() || null,
-      }
-    })
-  }, [routineId, updateRoutine])
-
-  const handleFieldChange = (field, value) => {
-    const newForm = { ...editForm, [field]: value }
-    setEditForm(newForm)
-
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current)
-    }
-
-    debounceRef.current = setTimeout(() => {
-      saveChanges(newForm)
-    }, DEBOUNCE_MS)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current)
-      }
-    }
-  }, [])
 
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
@@ -146,13 +96,7 @@ function RoutineDetail() {
       await updateExercise.mutateAsync({
         exerciseId,
         dayId: selectedDayId,
-        data: {
-          series,
-          reps,
-          notas,
-          tempo,
-          tempo_razon,
-        }
+        data: { series, reps, notas, tempo, tempo_razon }
       })
       setShowEditExercise(false)
       setSelectedExercise(null)
@@ -192,84 +136,12 @@ function RoutineDetail() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <header className="mb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="text-secondary hover:text-accent mb-2 transition-colors"
-        >
-          ← Volver
-        </button>
-        <div className="flex items-center justify-between gap-3">
-          {isEditing ? (
-            <input
-              type="text"
-              value={editForm.nombre}
-              onChange={(e) => handleFieldChange('nombre', e.target.value)}
-              className="flex-1 text-2xl font-bold p-2 rounded-lg"
-              style={inputStyle}
-              placeholder="Nombre de la rutina"
-              autoFocus
-            />
-          ) : (
-            <h1 className="text-2xl font-bold">{routine.nombre}</h1>
-          )}
-          {!isEditing && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-2 rounded-lg transition-opacity hover:opacity-80 shrink-0"
-              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-              title="Editar rutina"
-            >
-              <Pencil size={18} />
-            </button>
-          )}
-        </div>
-
-        {isEditing ? (
-          <div className="mt-4 space-y-3">
-            <div>
-              <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
-                Descripción
-              </label>
-              <textarea
-                value={editForm.descripcion}
-                onChange={(e) => handleFieldChange('descripcion', e.target.value)}
-                className="w-full p-2 rounded-lg text-sm resize-none"
-                style={inputStyle}
-                placeholder="Descripción de la rutina..."
-                rows={2}
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
-                Objetivo
-              </label>
-              <input
-                type="text"
-                value={editForm.objetivo}
-                onChange={(e) => handleFieldChange('objetivo', e.target.value)}
-                className="w-full p-2 rounded-lg text-sm"
-                style={inputStyle}
-                placeholder="Ej: Hipertrofia, Fuerza..."
-              />
-            </div>
-          </div>
-        ) : (
-          <>
-            {routine.descripcion && (
-              <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
-                {routine.descripcion}
-              </p>
-            )}
-            {routine.objetivo && (
-              <p className="text-sm mt-1">
-                <span style={{ color: colors.success }}>Objetivo:</span>{' '}
-                <span style={{ color: colors.textSecondary }}>{routine.objetivo}</span>
-              </p>
-            )}
-          </>
-        )}
-      </header>
+      <RoutineHeader
+        routine={routine}
+        routineId={routineId}
+        isEditing={isEditing}
+        onEditStart={() => setIsEditing(true)}
+      />
 
       <main className="space-y-3">
         <h2 className="text-lg font-semibold">Días de entrenamiento</h2>

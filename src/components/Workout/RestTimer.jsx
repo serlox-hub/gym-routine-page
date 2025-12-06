@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Minimize2, Maximize2 } from 'lucide-react'
-import { useRestTimer } from '../../hooks/useRestTimer.js'
+import { useRestTimer } from '../../hooks/useWorkout.js'
 
 function RestTimer() {
   const { isActive, timeRemaining, progress, skip, addTime } = useRestTimer()

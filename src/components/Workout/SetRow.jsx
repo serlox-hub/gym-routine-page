@@ -1,11 +1,23 @@
 import { useState, useEffect } from 'react'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { NotesBadge } from '../ui/index.js'
-import ExecutionTimer from './ExecutionTimer.jsx'
 import SetCompleteModal from './SetCompleteModal.jsx'
 import SetNotesView from './SetNotesView.jsx'
+import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, DistanceInputs } from './SetInputs.jsx'
 
-function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'weight_reps', defaultWeightUnit = 'kg', descansoSeg, previousSet, onComplete, onUncomplete, canRemove = false, onRemove }) {
+function SetRow({
+  setNumber,
+  routineExerciseId,
+  exerciseId,
+  measurementType = 'weight_reps',
+  defaultWeightUnit = 'kg',
+  descansoSeg,
+  previousSet,
+  onComplete,
+  onUncomplete,
+  canRemove = false,
+  onRemove
+}) {
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(routineExerciseId, setNumber))
   const setData = useWorkoutStore(state => state.getSetData(routineExerciseId, setNumber))
 
@@ -16,7 +28,7 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [showNotesView, setShowNotesView] = useState(false)
 
-  // Cargar valores de sesión anterior cuando lleguen
+  // Cargar valores de sesión anterior
   useEffect(() => {
     if (previousSet && !setData) {
       if (previousSet.weight) setWeight(previousSet.weight)
@@ -26,15 +38,15 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
     }
   }, [previousSet, setData])
 
-  const handleNumberChange = (setter) => (e) => {
-    const raw = e.target.value
-    if (raw === '') {
-      setter('')
-      return
-    }
-    const num = Number(raw)
-    if (!isNaN(num) && num >= 0) {
-      setter(raw)
+  const isValid = () => {
+    switch (measurementType) {
+      case 'weight_reps': return weight !== '' && reps !== ''
+      case 'reps_only':
+      case 'reps_per_side': return reps !== ''
+      case 'time':
+      case 'time_per_side': return time !== ''
+      case 'distance': return distance !== ''
+      default: return false
     }
   }
 
@@ -47,13 +59,7 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
   }
 
   const handleCompleteSet = (rir, notas) => {
-    const data = {
-      routineExerciseId,
-      exerciseId,
-      setNumber,
-      rirActual: rir,
-      notas,
-    }
+    const data = { routineExerciseId, exerciseId, setNumber, rirActual: rir, notas }
 
     switch (measurementType) {
       case 'weight_reps':
@@ -82,171 +88,22 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
     setShowCompleteModal(false)
   }
 
-  const isValid = () => {
-    switch (measurementType) {
-      case 'weight_reps':
-        return weight !== '' && reps !== ''
-      case 'reps_only':
-      case 'reps_per_side':
-        return reps !== ''
-      case 'time':
-      case 'time_per_side':
-        return time !== ''
-      case 'distance':
-        return distance !== ''
-      default:
-        return false
-    }
-  }
-
   const renderInputs = () => {
-    const inputStyle = {
-      backgroundColor: '#161b22',
-      border: '1px solid #30363d',
-      color: '#e6edf3',
-    }
+    const props = { disabled: isCompleted }
 
     switch (measurementType) {
       case 'weight_reps':
-        return (
-          <>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                value={weight}
-                onChange={handleNumberChange(setWeight)}
-                disabled={isCompleted}
-                className="w-16 px-2 py-1 rounded text-center text-sm"
-                style={inputStyle}
-              />
-              <span className="text-xs text-muted">{defaultWeightUnit}</span>
-            </div>
-            <span className="text-secondary text-sm">×</span>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={reps}
-                onChange={handleNumberChange(setReps)}
-                disabled={isCompleted}
-                className="w-16 px-2 py-1 rounded text-center text-sm"
-                style={inputStyle}
-              />
-              <span className="text-xs text-muted">reps</span>
-            </div>
-          </>
-        )
-
+        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={defaultWeightUnit} {...props} />
       case 'reps_only':
-        return (
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              value={reps}
-              onChange={handleNumberChange(setReps)}
-              disabled={isCompleted}
-              className="w-20 px-2 py-1 rounded text-center text-sm"
-              style={inputStyle}
-            />
-            <span className="text-xs text-muted">reps</span>
-          </div>
-        )
-
+        return <RepsOnlyInputs reps={reps} setReps={setReps} {...props} />
       case 'reps_per_side':
-        return (
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              value={reps}
-              onChange={handleNumberChange(setReps)}
-              disabled={isCompleted}
-              className="w-20 px-2 py-1 rounded text-center text-sm"
-              style={inputStyle}
-            />
-            <span className="text-xs text-muted">reps/lado</span>
-          </div>
-        )
-
+        return <RepsOnlyInputs reps={reps} setReps={setReps} label="reps/lado" {...props} />
       case 'time':
-        return (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={time}
-                onChange={handleNumberChange(setTime)}
-                disabled={isCompleted}
-                className="w-16 px-2 py-1 rounded text-center text-sm"
-                style={inputStyle}
-              />
-              <span className="text-xs text-muted">seg</span>
-            </div>
-            {!isCompleted && <ExecutionTimer seconds={time} />}
-          </div>
-        )
-
+        return <TimeInputs time={time} setTime={setTime} {...props} />
       case 'time_per_side':
-        return (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={time}
-                onChange={handleNumberChange(setTime)}
-                disabled={isCompleted}
-                className="w-16 px-2 py-1 rounded text-center text-sm"
-                style={inputStyle}
-              />
-              <span className="text-xs text-muted">seg/lado</span>
-            </div>
-            {!isCompleted && <ExecutionTimer seconds={time} />}
-          </div>
-        )
-
+        return <TimeInputs time={time} setTime={setTime} label="seg/lado" {...props} />
       case 'distance':
-        return (
-          <>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                value={weight}
-                onChange={handleNumberChange(setWeight)}
-                disabled={isCompleted}
-                className="w-14 px-2 py-1 rounded text-center text-sm"
-                style={inputStyle}
-              />
-              <span className="text-xs text-muted">{defaultWeightUnit}</span>
-            </div>
-            <span className="text-secondary text-sm">×</span>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={distance}
-                onChange={handleNumberChange(setDistance)}
-                disabled={isCompleted}
-                className="w-14 px-2 py-1 rounded text-center text-sm"
-                style={inputStyle}
-              />
-              <span className="text-xs text-muted">m</span>
-            </div>
-          </>
-        )
-
+        return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={defaultWeightUnit} {...props} />
       default:
         return null
     }
@@ -317,10 +174,7 @@ function SetRow({ setNumber, routineExerciseId, exerciseId, measurementType = 'w
         <button
           onClick={onRemove}
           className="w-6 h-6 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
-          style={{
-            backgroundColor: '#21262d',
-            color: '#f85149',
-          }}
+          style={{ backgroundColor: '#21262d', color: '#f85149' }}
           title="Eliminar serie"
         >
           ×

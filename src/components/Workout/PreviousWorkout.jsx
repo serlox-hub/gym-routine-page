@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { usePreviousWorkout } from '../../hooks/usePreviousWorkout.js'
+import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { NotesBadge } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 
