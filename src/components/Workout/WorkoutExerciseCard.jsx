@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import { History, X } from 'lucide-react'
-import { Card, Badge } from '../ui/index.js'
+import { Card, Badge, ConfirmModal } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
 import PreviousWorkout from './PreviousWorkout.jsx'
 import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
@@ -12,6 +12,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
   const { id, exercise, series, reps, rir, tempo, tempo_razon, notes, measurement_type, rest_seconds } = routineExercise
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
 
   // Determinar tipo de medición: override en routine_exercise > default del ejercicio > weight_reps
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
@@ -72,7 +73,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
           </button>
           {onRemove && (
             <button
-              onClick={() => onRemove(id)}
+              onClick={() => setShowRemoveConfirm(true)}
               className="p-1.5 rounded hover:opacity-80"
               style={{ backgroundColor: 'rgba(248, 81, 73, 0.15)' }}
               title="Quitar de la sesión"
@@ -176,6 +177,18 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         exerciseId={exercise.id}
         exerciseName={exercise.name}
         measurementType={measurementType}
+      />
+
+      <ConfirmModal
+        isOpen={showRemoveConfirm}
+        title="Quitar ejercicio"
+        message={`¿Seguro que quieres quitar "${exercise.name}" de esta sesión?`}
+        confirmText="Quitar"
+        onConfirm={() => {
+          setShowRemoveConfirm(false)
+          onRemove(id)
+        }}
+        onCancel={() => setShowRemoveConfirm(false)}
       />
     </Card>
   )

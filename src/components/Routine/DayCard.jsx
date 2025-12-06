@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react'
-import { Card } from '../ui/index.js'
+import { Card, ConfirmModal } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { colors } from '../../lib/styles.js'
 import ExerciseRow from './ExerciseRow.jsx'
@@ -16,6 +16,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
   const updateDay = useUpdateRoutineDay()
   const [editingDay, setEditingDay] = useState(false)
   const [dayForm, setDayForm] = useState({ name, duration: estimated_duration_min || '' })
+  const [exerciseToDelete, setExerciseToDelete] = useState(null)
 
   const warmupBlock = blocks?.find(b => b.name === 'Calentamiento')
   const mainBlock = blocks?.find(b => b.name === 'Principal')
@@ -43,8 +44,10 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
     reorderExercises.mutate({ dayId: id, exercises: newExercises })
   }
 
-  const handleDeleteExercise = (exerciseId) => {
-    deleteExercise.mutate({ exerciseId, dayId: id })
+  const handleDeleteExercise = () => {
+    if (!exerciseToDelete) return
+    deleteExercise.mutate({ exerciseId: exerciseToDelete.id, dayId: id })
+    setExerciseToDelete(null)
   }
 
   const handleSaveDay = () => {
@@ -81,7 +84,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
                 onEdit={() => onEditExercise(re, id)}
                 onMoveUp={() => handleMoveExercise(re.id, 'up')}
                 onMoveDown={() => handleMoveExercise(re.id, 'down')}
-                onDelete={() => handleDeleteExercise(re.id)}
+                onDelete={() => setExerciseToDelete(re)}
               />
             </li>
           ))}
@@ -178,6 +181,15 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
           </button>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!exerciseToDelete}
+        title="Eliminar ejercicio"
+        message={`¿Seguro que quieres eliminar "${exerciseToDelete?.exercise?.name}" de este día?`}
+        confirmText="Eliminar"
+        onConfirm={handleDeleteExercise}
+        onCancel={() => setExerciseToDelete(null)}
+      />
     </Card>
   )
 }

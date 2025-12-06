@@ -16,6 +16,7 @@ function RoutineDetail() {
   const [isAddingWarmup, setIsAddingWarmup] = useState(false)
   const [showEditExercise, setShowEditExercise] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState(null)
+  const [dayToDelete, setDayToDelete] = useState(null)
 
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
@@ -106,9 +107,11 @@ function RoutineDetail() {
     }
   }
 
-  const handleDeleteDay = async (dayId) => {
+  const handleDeleteDay = async () => {
+    if (!dayToDelete) return
     try {
-      await deleteDay.mutateAsync({ dayId, routineId })
+      await deleteDay.mutateAsync({ dayId: dayToDelete.id, routineId })
+      setDayToDelete(null)
     } catch (err) {
       console.error('Error deleting day:', err)
     }
@@ -158,7 +161,7 @@ function RoutineDetail() {
                 onAddExercise={handleOpenAddExercise}
                 onAddWarmup={handleOpenAddWarmup}
                 onEditExercise={handleOpenEditExercise}
-                onDelete={handleDeleteDay}
+                onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
                 onMoveUp={(id) => handleMoveDay(id, 'up')}
                 onMoveDown={(id) => handleMoveDay(id, 'down')}
                 isFirst={index === 0}
@@ -206,6 +209,15 @@ function RoutineDetail() {
         confirmText="Eliminar"
         onConfirm={handleDeleteRoutine}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <ConfirmModal
+        isOpen={!!dayToDelete}
+        title="Eliminar día"
+        message={`¿Seguro que quieres eliminar "${dayToDelete?.name}"? Se eliminarán todos los ejercicios del día.`}
+        confirmText="Eliminar"
+        onConfirm={handleDeleteDay}
+        onCancel={() => setDayToDelete(null)}
       />
 
       <AddExerciseModal
