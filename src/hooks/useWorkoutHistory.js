@@ -30,15 +30,9 @@ export function useWorkoutHistory() {
             reps_completed,
             exercise:exercises (
               id,
-              exercise_muscles (
-                es_principal,
-                muscle:muscles (
-                  id,
-                  muscle_group:muscle_groups (
-                    id,
-                    nombre
-                  )
-                )
+              muscle_group:muscle_groups (
+                id,
+                nombre
               )
             )
           )
@@ -52,11 +46,9 @@ export function useWorkoutHistory() {
       return data.map(session => {
         const muscleGroupsSet = new Set()
         session.sets?.forEach(set => {
-          set.exercise?.exercise_muscles?.forEach(em => {
-            if (em.es_principal && em.muscle?.muscle_group?.nombre) {
-              muscleGroupsSet.add(em.muscle.muscle_group.nombre)
-            }
-          })
+          if (set.exercise?.muscle_group?.nombre) {
+            muscleGroupsSet.add(set.exercise.muscle_group.nombre)
+          }
         })
         return {
           ...session,

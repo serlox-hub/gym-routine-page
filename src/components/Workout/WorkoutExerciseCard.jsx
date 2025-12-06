@@ -92,7 +92,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         <Badge variant="accent">{series}×{reps}</Badge>
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
-        {(notas || tempo_razon) && (
+        {(exercise.instrucciones || notas || tempo_razon) && (
           <button
             onClick={() => setShowNotes(!showNotes)}
             className="text-xs px-2 py-1 rounded transition-colors"
@@ -106,17 +106,24 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         )}
       </div>
 
-      {showNotes && (notas || tempo_razon) && (
+      {showNotes && (exercise.instrucciones || notas || tempo_razon) && (
         <div
           className="mb-3 p-3 rounded text-sm space-y-2"
           style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
         >
-          {notas && (
-            <p style={{ color: '#e6edf3' }}>{notas}</p>
+          {exercise.instrucciones && (
+            <p style={{ color: '#e6edf3' }}>
+              <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instrucciones}
+            </p>
           )}
           {tempo_razon && (
-            <p style={{ color: '#8b949e' }}>
+            <p style={{ color: '#e6edf3' }}>
               <span style={{ color: '#a371f7' }}>Tempo:</span> {tempo_razon}
+            </p>
+          )}
+          {notas && (
+            <p style={{ color: '#e6edf3' }}>
+              <span style={{ color: colors.warning }}>Nota:</span> {notas}
             </p>
           )}
         </div>

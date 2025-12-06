@@ -82,6 +82,7 @@ export function useRoutineBlocks(dayId) {
               id,
               nombre,
               measurement_type,
+              instrucciones,
               equipment:equipment(nombre, default_weight_unit),
               grip_type:grip_types(nombre),
               grip_width:grip_widths(nombre),
@@ -327,7 +328,7 @@ export function useAddExerciseToDay() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ dayId, exerciseId, series, reps, esCalentamiento = false }) => {
+    mutationFn: async ({ dayId, exerciseId, series, reps, notas, tempo, tempo_razon, esCalentamiento = false }) => {
       const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
 
       // Primero buscar o crear el bloque correspondiente
@@ -392,6 +393,9 @@ export function useAddExerciseToDay() {
           reps: reps || '8-12',
           orden: nextExerciseOrder,
           es_calentamiento: esCalentamiento,
+          notas: notas || null,
+          tempo: tempo || null,
+          tempo_razon: tempo_razon || null,
         })
         .select()
         .single()

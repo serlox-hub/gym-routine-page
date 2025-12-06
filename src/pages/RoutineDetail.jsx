@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Plus, Trash2, Pencil } from 'lucide-react'
-import { useRoutine, useRoutineDays, useCreateRoutineDay, useUpdateRoutine, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays } from '../hooks/useRoutines.js'
+import { useRoutine, useRoutineDays, useCreateRoutineDay, useUpdateRoutine, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
-import { DayCard, AddDayModal, AddExerciseModal } from '../components/Routine/index.js'
+import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal } from '../components/Routine/index.js'
 import { colors, inputStyle } from '../lib/styles.js'
 
 const DEBOUNCE_MS = 500
@@ -18,6 +18,8 @@ function RoutineDetail() {
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [selectedDayId, setSelectedDayId] = useState(null)
   const [isAddingWarmup, setIsAddingWarmup] = useState(false)
+  const [showEditExercise, setShowEditExercise] = useState(false)
+  const [selectedExercise, setSelectedExercise] = useState(null)
   const debounceRef = useRef(null)
 
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
@@ -26,6 +28,7 @@ function RoutineDetail() {
   const updateRoutine = useUpdateRoutine()
   const deleteRoutine = useDeleteRoutine()
   const addExercise = useAddExerciseToDay()
+  const updateExercise = useUpdateRoutineExercise()
   const deleteDay = useDeleteRoutineDay()
   const reorderDays = useReorderRoutineDays()
 
@@ -112,13 +115,16 @@ function RoutineDetail() {
     setShowAddExercise(true)
   }
 
-  const handleAddExercise = async ({ exerciseId, series, reps }) => {
+  const handleAddExercise = async ({ exerciseId, series, reps, notas, tempo, tempo_razon }) => {
     try {
       await addExercise.mutateAsync({
         dayId: selectedDayId,
         exerciseId,
         series,
         reps,
+        notas,
+        tempo,
+        tempo_razon,
         esCalentamiento: isAddingWarmup,
       })
       setShowAddExercise(false)
@@ -126,6 +132,33 @@ function RoutineDetail() {
       setIsAddingWarmup(false)
     } catch (err) {
       console.error('Error adding exercise:', err)
+    }
+  }
+
+  const handleOpenEditExercise = (routineExercise, dayId) => {
+    setSelectedExercise(routineExercise)
+    setSelectedDayId(dayId)
+    setShowEditExercise(true)
+  }
+
+  const handleEditExercise = async ({ exerciseId, series, reps, notas, tempo, tempo_razon }) => {
+    try {
+      await updateExercise.mutateAsync({
+        exerciseId,
+        dayId: selectedDayId,
+        data: {
+          series,
+          reps,
+          notas,
+          tempo,
+          tempo_razon,
+        }
+      })
+      setShowEditExercise(false)
+      setSelectedExercise(null)
+      setSelectedDayId(null)
+    } catch (err) {
+      console.error('Error updating exercise:', err)
     }
   }
 
@@ -252,6 +285,7 @@ function RoutineDetail() {
                 isEditing={isEditing}
                 onAddExercise={handleOpenAddExercise}
                 onAddWarmup={handleOpenAddWarmup}
+                onEditExercise={handleOpenEditExercise}
                 onDelete={handleDeleteDay}
                 onMoveUp={(id) => handleMoveDay(id, 'up')}
                 onMoveDown={(id) => handleMoveDay(id, 'down')}
@@ -312,6 +346,18 @@ function RoutineDetail() {
         onSubmit={handleAddExercise}
         isPending={addExercise.isPending}
         isWarmup={isAddingWarmup}
+      />
+
+      <EditRoutineExerciseModal
+        isOpen={showEditExercise}
+        onClose={() => {
+          setShowEditExercise(false)
+          setSelectedExercise(null)
+          setSelectedDayId(null)
+        }}
+        onSubmit={handleEditExercise}
+        isPending={updateExercise.isPending}
+        routineExercise={selectedExercise}
       />
     </div>
   )

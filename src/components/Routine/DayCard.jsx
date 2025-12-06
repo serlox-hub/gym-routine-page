@@ -2,19 +2,16 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react'
 import { Card } from '../ui/index.js'
-import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
+import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { colors, inputStyle } from '../../lib/styles.js'
 
-function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
+function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
   const navigate = useNavigate()
   const { id, dia_numero, nombre, duracion_estimada_min } = day
   const { data: blocks } = useRoutineBlocks(isEditing ? id : null)
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
-  const updateExercise = useUpdateRoutineExercise()
   const updateDay = useUpdateRoutineDay()
-  const [editingExercise, setEditingExercise] = useState(null)
-  const [editForm, setEditForm] = useState({ series: '', reps: '' })
   const [editingDay, setEditingDay] = useState(false)
   const [dayForm, setDayForm] = useState({ nombre, duracion: duracion_estimada_min || '' })
 
@@ -32,72 +29,38 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onDele
 
   const renderExerciseRow = (re, index, exerciseList) => {
     const exercise = re.exercise
-    const isEditing = editingExercise === re.id
     const isFirstInList = index === 0
     const isLastInList = index === exerciseList.length - 1
 
     return (
       <div className="flex items-center gap-2">
         <div className="flex-1 min-w-0">
-          {isEditing ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm truncate" style={{ color: colors.textPrimary }}>
-                {exercise?.nombre}
+          <div>
+            <span className="text-sm" style={{ color: colors.textPrimary }}>
+              {exercise?.nombre}
+            </span>
+            <span className="text-sm ml-2" style={{ color: colors.textSecondary }}>
+              {re.series}×{re.reps}
+            </span>
+            {re.tempo && (
+              <span className="text-xs ml-2" style={{ color: colors.accent }}>
+                {re.tempo}
               </span>
-              <input
-                type="number"
-                min="1"
-                value={editForm.series}
-                onChange={(e) => setEditForm(prev => ({ ...prev, series: e.target.value }))}
-                className="w-12 p-1 rounded text-sm text-center"
-                style={inputStyle}
-                onClick={e => e.stopPropagation()}
-              />
-              <span style={{ color: colors.textSecondary }}>×</span>
-              <input
-                type="text"
-                value={editForm.reps}
-                onChange={(e) => setEditForm(prev => ({ ...prev, reps: e.target.value }))}
-                className="w-16 p-1 rounded text-sm text-center"
-                style={inputStyle}
-                onClick={e => e.stopPropagation()}
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleSaveEdit(re.id)
-                }}
-                className="p-1 rounded text-xs"
-                style={{ backgroundColor: colors.accent, color: '#fff' }}
-              >
-                OK
-              </button>
-            </div>
-          ) : (
-            <div>
-              <span className="text-sm" style={{ color: colors.textPrimary }}>
-                {exercise?.nombre}
-              </span>
-              <span className="text-sm ml-2" style={{ color: colors.textSecondary }}>
-                {re.series}×{re.reps}
-              </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
-          {!isEditing && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleStartEdit(re)
-              }}
-              className="p-1 rounded transition-opacity hover:opacity-80"
-              style={{ color: colors.textSecondary }}
-              title="Editar"
-            >
-              <Pencil size={14} />
-            </button>
-          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onEditExercise(re, id)
+            }}
+            className="p-1 rounded transition-opacity hover:opacity-80"
+            style={{ color: colors.textSecondary }}
+            title="Editar"
+          >
+            <Pencil size={14} />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -154,23 +117,6 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onDele
 
   const handleDeleteExercise = (exerciseId) => {
     deleteExercise.mutate({ exerciseId, dayId: id })
-  }
-
-  const handleStartEdit = (re) => {
-    setEditingExercise(re.id)
-    setEditForm({ series: String(re.series), reps: re.reps })
-  }
-
-  const handleSaveEdit = (exerciseId) => {
-    updateExercise.mutate({
-      exerciseId,
-      dayId: id,
-      data: {
-        series: parseInt(editForm.series) || 3,
-        reps: editForm.reps || '8-12',
-      }
-    })
-    setEditingExercise(null)
   }
 
   const handleSaveDay = () => {

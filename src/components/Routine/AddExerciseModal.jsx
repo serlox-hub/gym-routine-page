@@ -1,32 +1,35 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Search, Plus } from 'lucide-react'
 import { Button } from '../ui/index.js'
-import { useExercisesWithMuscles, useMuscleGroups, useMuscles, useCreateExercise } from '../../hooks/useExercises.js'
-import { colors, modalOverlayStyle, modalContentStyle, inputStyle, selectStyle } from '../../lib/styles.js'
+import { useExercisesWithMuscleGroup, useMuscleGroups, useCreateExercise } from '../../hooks/useExercises.js'
+import { colors, modalOverlayStyle, modalContentStyle, inputStyle } from '../../lib/styles.js'
+import ExerciseForm from '../Exercise/ExerciseForm.jsx'
 
-const MEASUREMENT_TYPES = [
-  { value: 'weight_reps', label: 'Peso × Reps' },
-  { value: 'reps_only', label: 'Solo reps' },
-  { value: 'reps_per_side', label: 'Reps por lado' },
-  { value: 'time', label: 'Tiempo' },
-  { value: 'time_per_side', label: 'Tiempo por lado' },
-  { value: 'distance', label: 'Distancia' },
-]
-
-function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false }) {
+/**
+ * Modal unificado para añadir ejercicio a rutina o sesión
+ * @param {boolean} isOpen
+ * @param {Function} onClose
+ * @param {Function} onSubmit - Recibe { exerciseId, series, reps, notas, tempo, tempo_razon, rir, descanso_seg }
+ * @param {boolean} isPending
+ * @param {boolean} isWarmup - Es calentamiento (solo rutina)
+ * @param {string} mode - 'routine' | 'session'
+ */
+function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine' }) {
   const [search, setSearch] = useState('')
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
-  const [newExerciseForm, setNewExerciseForm] = useState({
-    nombre: '',
-    measurement_type: 'weight_reps',
-    muscle_id: '',
-  })
   const [form, setForm] = useState({
     series: '3',
     reps: '',
+    notas: '',
+    tempo: '',
+    tempo_razon: '',
+    rir: '2',
+    descanso_seg: '90',
   })
+
+  const isSessionMode = mode === 'session'
 
   const getDefaultReps = (measurementType) => {
     switch (measurementType) {
@@ -82,33 +85,20 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
     }
   }
 
-  const { data: exercises, isLoading } = useExercisesWithMuscles()
+  const { data: exercises, isLoading } = useExercisesWithMuscleGroup()
   const { data: muscleGroups } = useMuscleGroups()
-  const { data: muscles } = useMuscles()
   const createExercise = useCreateExercise()
 
-  // Resetear estado cuando se abre el modal
+  // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
       setSearch('')
       setSelectedMuscleGroup(null)
       setSelectedExercise(null)
       setIsCreatingNew(false)
-      setNewExerciseForm({ nombre: '', measurement_type: 'weight_reps', muscle_id: '' })
-      setForm({ series: '3', reps: '' })
+      setForm({ series: '3', reps: '', notas: '', tempo: '', tempo_razon: '', rir: '2', descanso_seg: '90' })
     }
   }, [isOpen])
-
-  // Agrupar músculos por grupo
-  const musclesByGroup = useMemo(() => {
-    if (!muscles) return {}
-    return muscles.reduce((acc, muscle) => {
-      const groupName = muscle.muscle_group?.nombre || 'Otros'
-      if (!acc[groupName]) acc[groupName] = []
-      acc[groupName].push(muscle)
-      return acc
-    }, {})
-  }, [muscles])
 
   const filteredExercises = useMemo(() => {
     if (!exercises) return []
@@ -118,11 +108,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
 
       if (!selectedMuscleGroup) return matchesSearch
 
-      const matchesMuscleGroup = ex.exercise_muscles?.some(em =>
-        em.es_principal && em.muscle?.muscle_group?.id === selectedMuscleGroup
-      )
-
-      return matchesSearch && matchesMuscleGroup
+      return matchesSearch && ex.muscle_group_id === selectedMuscleGroup
     })
   }, [exercises, search, selectedMuscleGroup])
 
@@ -132,34 +118,36 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
     e.preventDefault()
     if (!selectedExercise) return
 
-    onSubmit({
+    const data = {
       exerciseId: selectedExercise.id,
+      exercise: selectedExercise,
       series: parseInt(form.series) || 3,
       reps: form.reps || getDefaultReps(selectedExercise.measurement_type),
-    })
+      notas: form.notas || null,
+      tempo: form.tempo || null,
+      tempo_razon: form.tempo_razon || null,
+    }
+
+    if (isSessionMode) {
+      data.rir = parseInt(form.rir) || 2
+      data.descanso_seg = parseInt(form.descanso_seg) || 90
+    }
+
+    onSubmit(data)
   }
 
   const handleClose = () => {
     onClose()
   }
 
-  const handleCreateExercise = async (e) => {
-    e.preventDefault()
-    if (!newExerciseForm.nombre.trim() || !newExerciseForm.muscle_id) return
-
+  const handleCreateExercise = async (exerciseData, muscleGroupId) => {
     try {
       const newExercise = await createExercise.mutateAsync({
-        exercise: {
-          nombre: newExerciseForm.nombre.trim(),
-          measurement_type: newExerciseForm.measurement_type,
-        },
-        muscles: [{
-          muscle_id: parseInt(newExerciseForm.muscle_id),
-          es_principal: true,
-        }],
+        exercise: exerciseData,
+        muscleGroupId,
       })
 
-      // Seleccionar el ejercicio recién creado
+      // Select the newly created exercise
       setSelectedExercise({
         id: newExercise.id,
         nombre: newExercise.nombre,
@@ -168,10 +156,15 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
       setForm({
         series: '3',
         reps: getDefaultReps(newExercise.measurement_type),
+        notas: '',
+        tempo: '',
+        tempo_razon: '',
+        rir: '2',
+        descanso_seg: '90',
       })
       setIsCreatingNew(false)
     } catch (err) {
-      console.error('Error creating exercise:', err)
+      throw err
     }
   }
 
@@ -182,84 +175,36 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-md rounded-lg p-6 max-h-[80vh] flex flex-col"
+        className="w-full max-w-md rounded-lg p-6 max-h-[85vh] flex flex-col"
         style={{ ...modalContentStyle, border: `1px solid ${colors.border}` }}
         onClick={e => e.stopPropagation()}
       >
         <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-          {isWarmup ? 'Añadir calentamiento' : 'Añadir ejercicio'}
+          {isCreatingNew
+            ? 'Nuevo ejercicio'
+            : isWarmup
+              ? 'Añadir calentamiento'
+              : 'Añadir ejercicio'}
         </h3>
 
         {isCreatingNew ? (
-          <form onSubmit={handleCreateExercise} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-                Nombre *
-              </label>
-              <input
-                type="text"
-                value={newExerciseForm.nombre}
-                onChange={(e) => setNewExerciseForm(prev => ({ ...prev, nombre: e.target.value }))}
-                placeholder="Ej: Press banca"
-                className="w-full p-3 rounded-lg text-base"
-                style={inputStyle}
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-                Tipo de medición
-              </label>
-              <select
-                value={newExerciseForm.measurement_type}
-                onChange={(e) => setNewExerciseForm(prev => ({ ...prev, measurement_type: e.target.value }))}
-                className="w-full p-3 rounded-lg text-base appearance-none"
-                style={selectStyle}
-              >
-                {MEASUREMENT_TYPES.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-                Músculo principal *
-              </label>
-              <select
-                value={newExerciseForm.muscle_id}
-                onChange={(e) => setNewExerciseForm(prev => ({ ...prev, muscle_id: e.target.value }))}
-                className="w-full p-3 rounded-lg text-base appearance-none"
-                style={selectStyle}
-              >
-                <option value="">Seleccionar músculo...</option>
-                {Object.entries(musclesByGroup).map(([group, groupMuscles]) => (
-                  <optgroup key={group} label={group}>
-                    {groupMuscles.map(muscle => (
-                      <option key={muscle.id} value={muscle.id}>{muscle.nombre}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex gap-3 justify-end pt-2">
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => setIsCreatingNew(false)}
-              >
-                Volver
-              </Button>
-              <Button
-                type="submit"
-                disabled={createExercise.isPending || !newExerciseForm.nombre.trim() || !newExerciseForm.muscle_id}
-              >
-                {createExercise.isPending ? 'Creando...' : 'Crear y añadir'}
-              </Button>
-            </div>
-          </form>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <ExerciseForm
+              onSubmit={handleCreateExercise}
+              isSubmitting={createExercise.isPending}
+              submitLabel="Crear ejercicio"
+              submitIcon={<Plus size={16} />}
+              compact
+            />
+            <button
+              type="button"
+              onClick={() => setIsCreatingNew(false)}
+              className="w-full mt-3 py-2 rounded-lg text-sm"
+              style={{ color: colors.textSecondary }}
+            >
+              Cancelar
+            </button>
+          </div>
         ) : !selectedExercise ? (
           <>
             <div className="relative mb-3">
@@ -325,6 +270,11 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
                       setForm({
                         series: '3',
                         reps: getDefaultReps(exercise.measurement_type),
+                        notas: '',
+                        tempo: '',
+                        tempo_razon: '',
+                        rir: '2',
+                        descanso_seg: '90',
                       })
                     }}
                     className="w-full text-left p-3 rounded-lg transition-colors hover:bg-surface-alt"
@@ -341,21 +291,30 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
               )}
             </div>
 
-            <div className="flex justify-between pt-4 mt-4 border-t" style={{ borderColor: colors.border }}>
-              <Button
-                variant="secondary"
+            <div className="flex gap-2 pt-3 mt-3 border-t" style={{ borderColor: colors.border }}>
+              <button
                 type="button"
-                onClick={() => {
-                  setNewExerciseForm({ nombre: search, measurement_type: 'weight_reps', muscle_id: '' })
-                  setIsCreatingNew(true)
+                onClick={() => setIsCreatingNew(true)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: colors.accent,
+                  color: '#ffffff',
                 }}
               >
-                <Plus size={16} className="mr-1" />
+                <Plus size={16} />
                 Crear nuevo
-              </Button>
-              <Button variant="secondary" type="button" onClick={handleClose}>
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2.5 rounded-lg text-sm transition-colors"
+                style={{
+                  backgroundColor: colors.bgTertiary,
+                  color: colors.textSecondary,
+                }}
+              >
                 Cancelar
-              </Button>
+              </button>
             </div>
           </>
         ) : (
@@ -374,10 +333,11 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Campos obligatorios */}
+            <div className={`grid gap-3 ${isSessionMode ? 'grid-cols-4' : 'grid-cols-2'}`}>
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-                  Series
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                  Series <span style={{ color: colors.danger }}>*</span>
                 </label>
                 <input
                   type="number"
@@ -389,14 +349,104 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-                  {getRepsLabel(selectedExercise.measurement_type)}
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                  {getRepsLabel(selectedExercise.measurement_type)} <span style={{ color: colors.danger }}>*</span>
                 </label>
                 <input
                   type="text"
                   value={form.reps}
                   onChange={(e) => setForm(prev => ({ ...prev, reps: e.target.value }))}
                   placeholder={getRepsPlaceholder(selectedExercise.measurement_type)}
+                  className="w-full p-3 rounded-lg text-base"
+                  style={inputStyle}
+                />
+              </div>
+              {isSessionMode && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                      RIR
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="5"
+                      value={form.rir}
+                      onChange={(e) => setForm(prev => ({ ...prev, rir: e.target.value }))}
+                      className="w-full p-3 rounded-lg text-base"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                      Descanso
+                    </label>
+                    <input
+                      type="number"
+                      min="30"
+                      step="15"
+                      value={form.descanso_seg}
+                      onChange={(e) => setForm(prev => ({ ...prev, descanso_seg: e.target.value }))}
+                      placeholder="90"
+                      className="w-full p-3 rounded-lg text-base"
+                      style={inputStyle}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Campos opcionales */}
+            <div
+              className="pt-3 mt-1 border-t space-y-3"
+              style={{ borderColor: colors.border }}
+            >
+              <p className="text-xs" style={{ color: colors.textSecondary }}>
+                Opcionales
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
+                    Tempo
+                  </label>
+                  <input
+                    type="text"
+                    value={form.tempo}
+                    onChange={(e) => setForm(prev => ({ ...prev, tempo: e.target.value }))}
+                    placeholder="Ej: 3-1-2-0"
+                    className="w-full p-3 rounded-lg text-base"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: form.tempo ? colors.textSecondary : colors.border }}>
+                    Razón
+                  </label>
+                  <input
+                    type="text"
+                    value={form.tempo_razon}
+                    onChange={(e) => setForm(prev => ({ ...prev, tempo_razon: e.target.value }))}
+                    placeholder="Ej: Más tensión"
+                    className="w-full p-3 rounded-lg text-base"
+                    style={inputStyle}
+                    disabled={!form.tempo}
+                  />
+                </div>
+              </div>
+              <p className="text-xs -mt-2" style={{ color: colors.textSecondary }}>
+                Concéntrica - Pausa arriba - Excéntrica - Pausa abajo
+              </p>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
+                  Notas
+                </label>
+                <input
+                  type="text"
+                  value={form.notas}
+                  onChange={(e) => setForm(prev => ({ ...prev, notas: e.target.value }))}
+                  placeholder={isSessionMode ? "Notas para este ejercicio..." : "Notas específicas para esta rutina..."}
                   className="w-full p-3 rounded-lg text-base"
                   style={inputStyle}
                 />

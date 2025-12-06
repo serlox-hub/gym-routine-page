@@ -4,7 +4,8 @@ import { ChevronUp, ChevronDown, Plus, Trash2, Flame } from 'lucide-react'
 import { useRoutineDay, useRoutineBlocks } from '../hooks/useRoutines.js'
 import { useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../components/ui/index.js'
-import { WorkoutExerciseCard, RestTimer, AddExerciseModal } from '../components/Workout/index.js'
+import { WorkoutExerciseCard, RestTimer } from '../components/Workout/index.js'
+import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { colors } from '../lib/styles.js'
 
@@ -139,8 +140,17 @@ function WorkoutSession() {
     })
   }
 
-  const handleAddExercise = (exercise, config) => {
-    addExtraExercise(exercise, config)
+  const handleAddExercise = (data) => {
+    addExtraExercise(data.exercise, {
+      series: data.series,
+      reps: data.reps,
+      rir: data.rir,
+      descanso_seg: data.descanso_seg,
+      notas: data.notas,
+      tempo: data.tempo,
+      tempo_razon: data.tempo_razon,
+    })
+    setShowAddExercise(false)
   }
 
   return (
@@ -316,7 +326,8 @@ function WorkoutSession() {
       <AddExerciseModal
         isOpen={showAddExercise}
         onClose={() => setShowAddExercise(false)}
-        onAdd={handleAddExercise}
+        onSubmit={handleAddExercise}
+        mode="session"
       />
 
       <RestTimer />

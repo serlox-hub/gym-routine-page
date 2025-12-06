@@ -27,9 +27,9 @@ export function useExercises() {
   })
 }
 
-export function useExercisesWithMuscles() {
+export function useExercisesWithMuscleGroup() {
   return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISES, 'with-muscles'],
+    queryKey: [QUERY_KEYS.EXERCISES, 'with-muscle-group'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exercises')
@@ -37,15 +37,9 @@ export function useExercisesWithMuscles() {
           id,
           nombre,
           measurement_type,
+          muscle_group_id,
           equipment:equipment(id, nombre),
-          exercise_muscles(
-            es_principal,
-            muscle:muscles(
-              id,
-              nombre,
-              muscle_group:muscle_groups(id, nombre)
-            )
-          )
+          muscle_group:muscle_groups(id, nombre)
         `)
         .order('nombre')
 
@@ -155,14 +149,11 @@ export function useExercise(exerciseId) {
           equipment_id,
           grip_type_id,
           grip_width_id,
+          muscle_group_id,
           equipment:equipment(id, nombre, equipment_type:equipment_types(nombre)),
           grip_type:grip_types(id, nombre),
           grip_width:grip_widths(id, nombre),
-          exercise_muscles(
-            muscle_id,
-            es_principal,
-            muscle:muscles(id, nombre)
-          )
+          muscle_group:muscle_groups(id, nombre)
         `)
         .eq('id', exerciseId)
         .single()
@@ -179,7 +170,7 @@ export function useCreateExercise() {
   const userId = useUserId()
 
   return useMutation({
-    mutationFn: async ({ exercise, muscles }) => {
+    mutationFn: async ({ exercise, muscleGroupId }) => {
       const { data: newExercise, error: exerciseError } = await supabase
         .from('exercises')
         .insert({
@@ -190,26 +181,13 @@ export function useCreateExercise() {
           altura_polea: exercise.altura_polea || null,
           instrucciones: exercise.instrucciones || null,
           measurement_type: exercise.measurement_type || 'weight_reps',
+          muscle_group_id: muscleGroupId || null,
           user_id: userId,
         })
         .select()
         .single()
 
       if (exerciseError) throw exerciseError
-
-      if (muscles && muscles.length > 0) {
-        const exerciseMuscles = muscles.map(m => ({
-          exercise_id: newExercise.id,
-          muscle_id: m.muscle_id,
-          es_principal: m.es_principal,
-        }))
-
-        const { error: musclesError } = await supabase
-          .from('exercise_muscles')
-          .insert(exerciseMuscles)
-
-        if (musclesError) throw musclesError
-      }
 
       return newExercise
     },
@@ -223,8 +201,7 @@ export function useUpdateExercise() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ exerciseId, exercise, muscles }) => {
-      // Actualizar ejercicio
+    mutationFn: async ({ exerciseId, exercise, muscleGroupId }) => {
       const { error: exerciseError } = await supabase
         .from('exercises')
         .update({
@@ -235,32 +212,11 @@ export function useUpdateExercise() {
           altura_polea: exercise.altura_polea || null,
           instrucciones: exercise.instrucciones || null,
           measurement_type: exercise.measurement_type || 'weight_reps',
+          muscle_group_id: muscleGroupId || null,
         })
         .eq('id', exerciseId)
 
       if (exerciseError) throw exerciseError
-
-      // Eliminar músculos existentes y añadir los nuevos
-      const { error: deleteError } = await supabase
-        .from('exercise_muscles')
-        .delete()
-        .eq('exercise_id', exerciseId)
-
-      if (deleteError) throw deleteError
-
-      if (muscles && muscles.length > 0) {
-        const exerciseMuscles = muscles.map(m => ({
-          exercise_id: exerciseId,
-          muscle_id: m.muscle_id,
-          es_principal: m.es_principal,
-        }))
-
-        const { error: musclesError } = await supabase
-          .from('exercise_muscles')
-          .insert(exerciseMuscles)
-
-        if (musclesError) throw musclesError
-      }
 
       return { id: exerciseId }
     },

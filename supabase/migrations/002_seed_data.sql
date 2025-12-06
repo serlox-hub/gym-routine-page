@@ -8,7 +8,7 @@
 -- ============================================
 
 INSERT INTO muscle_groups (nombre, categoria) VALUES
-    ('Core', 'Core'),
+    ('Abdominales', 'Abdominales'),
     ('Espalda', 'Superior'),
     ('Pecho', 'Superior'),
     ('Hombros', 'Superior'),
