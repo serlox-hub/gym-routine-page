@@ -101,10 +101,13 @@ function WorkoutSession() {
     return { exercisesByBlock: grouped, flatExercises: flat, hasCustomOrder: customOrder }
   }, [blocks, exerciseOrder, extraExercises])
 
-  if (!sessionId) {
-    navigate(`/routine/${routineId}/day/${dayId}`)
-    return null
-  }
+  useEffect(() => {
+    if (!sessionId) {
+      navigate(`/routine/${routineId}/day/${dayId}`)
+    }
+  }, [sessionId, navigate, routineId, dayId])
+
+  if (!sessionId) return null
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
