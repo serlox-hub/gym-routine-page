@@ -13,7 +13,7 @@ Analiza **solo los archivos modificados** (según `git status` y `git diff`) par
    - Sin dependencias de React
    - Documentadas con JSDoc si son complejas
 
-3. **Tests unitarios**: Cada archivo en `src/lib/` debe tener tests en `src/lib/__tests__/`:
+3. **Tests unitarios**: Cada archivo en `src/lib/` debe tener tests junto al archivo (ej: `dateUtils.test.js`):
    - Cobertura de casos edge (null, undefined, arrays vacíos)
    - Tests para cada función exportada
 
@@ -21,6 +21,12 @@ Analiza **solo los archivos modificados** (según `git status` y `git diff`) par
    - Mismo cálculo en múltiples archivos → extraer a utils
    - Mismo string/label generado → crear función formateadora
    - Misma lógica de validación → mover a validation.js
+
+5. **routineIO.js**: Si hay cambios en el modelo de datos (tablas de rutinas, días, bloques, ejercicios):
+   - Verificar que `exportRoutine()` incluye los nuevos campos
+   - Verificar que `importRoutine()` lee los nuevos campos
+   - Verificar que `buildChatbotPrompt()` refleja el esquema actualizado
+   - Verificar que los tests cubren los nuevos campos
 
 ## Pasos a seguir:
 

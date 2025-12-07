@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { sanitizeFilename } from './textUtils.js'
 
 /**
  * Genera un prompt personalizado para chatbots basado en las preferencias del usuario
@@ -263,9 +264,13 @@ export function downloadRoutineAsJson(data, filename) {
 
 /**
  * Importa una rutina desde JSON
- * Crea ejercicios que no existan
+ * @param {object|string} jsonData - Datos JSON de la rutina
+ * @param {string} userId - ID del usuario
+ * @param {object} options - Opciones de importación
+ * @param {boolean} options.updateExercises - Si true, actualiza ejercicios existentes con los datos del JSON
  */
-export async function importRoutine(jsonData, userId) {
+export async function importRoutine(jsonData, userId, options = {}) {
+  const { updateExercises = false } = options
   const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData
 
   if (!data.routine) {
@@ -277,9 +282,20 @@ export async function importRoutine(jsonData, userId) {
   // Mapa nombre ejercicio -> id
   const exerciseMap = new Map()
 
-  // Crear ejercicios que no existan (solo si el export incluye definiciones)
+  // Crear o actualizar ejercicios (solo si el export incluye definiciones)
   if (exportedExercises && exportedExercises.length > 0) {
     for (const ex of exportedExercises) {
+      // Buscar muscle_group_id por nombre
+      let muscleGroupId = null
+      if (ex.muscle_group_name) {
+        const { data: mg } = await supabase
+          .from('muscle_groups')
+          .select('id')
+          .eq('name', ex.muscle_group_name)
+          .single()
+        muscleGroupId = mg?.id
+      }
+
       const { data: existing } = await supabase
         .from('exercises')
         .select('id')
@@ -288,18 +304,20 @@ export async function importRoutine(jsonData, userId) {
 
       if (existing) {
         exerciseMap.set(ex.name, existing.id)
-      } else {
-        // Buscar muscle_group_id por nombre
-        let muscleGroupId = null
-        if (ex.muscle_group_name) {
-          const { data: mg } = await supabase
-            .from('muscle_groups')
-            .select('id')
-            .eq('name', ex.muscle_group_name)
-            .single()
-          muscleGroupId = mg?.id
-        }
 
+        // Actualizar ejercicio si la opción está habilitada
+        if (updateExercises) {
+          await supabase
+            .from('exercises')
+            .update({
+              measurement_type: ex.measurement_type || 'weight_reps',
+              weight_unit: ex.weight_unit || 'kg',
+              instructions: ex.instructions,
+              muscle_group_id: muscleGroupId,
+            })
+            .eq('id', existing.id)
+        }
+      } else {
         // Crear el ejercicio
         const { data: newExercise, error: exError } = await supabase
           .from('exercises')
@@ -324,7 +342,7 @@ export async function importRoutine(jsonData, userId) {
   const { data: newRoutine, error: routineError } = await supabase
     .from('routines')
     .insert({
-      name: routine.name + ' (importada)',
+      name: routine.name,
       description: routine.description,
       goal: routine.goal,
       user_id: userId,

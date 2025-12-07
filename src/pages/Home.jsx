@@ -4,7 +4,7 @@ import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileT
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
 import { useAuth, useUserId } from '../hooks/useAuth.js'
-import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText } from '../components/ui/index.js'
 import { ChatbotPromptModal } from '../components/Routine/index.js'
 import { importRoutine, readJsonFile } from '../lib/routineIO.js'
 import { useQueryClient } from '@tanstack/react-query'
@@ -25,6 +25,8 @@ function Home() {
   const [showMenu, setShowMenu] = useState(false)
   const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
   const [showChatbotModal, setShowChatbotModal] = useState(false)
+  const [showImportOptions, setShowImportOptions] = useState(false)
+  const [pendingImportData, setPendingImportData] = useState(null)
 
   const favoriteRoutine = routines?.find(r => r.is_favorite)
 
@@ -33,20 +35,39 @@ function Home() {
     navigate('/login')
   }
 
-  const handleImport = async (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     try {
       const data = await readJsonFile(file)
-      const newRoutine = await importRoutine(data, userId)
+      setPendingImportData(data)
+      setShowImportOptions(true)
+    } catch {
+      alert('Error al leer el archivo')
+    }
+
+    e.target.value = ''
+  }
+
+  const handleImportConfirm = async (options) => {
+    if (!pendingImportData) return
+
+    try {
+      const newRoutine = await importRoutine(pendingImportData, userId, options)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
       navigate(`/routine/${newRoutine.id}`)
     } catch {
       alert('Error al importar la rutina')
+    } finally {
+      setShowImportOptions(false)
+      setPendingImportData(null)
     }
+  }
 
-    e.target.value = ''
+  const handleImportCancel = () => {
+    setShowImportOptions(false)
+    setPendingImportData(null)
   }
 
   const handleStartFreeWorkout = () => {
@@ -186,9 +207,11 @@ function Home() {
                       {routine.name}
                     </h3>
                     {routine.description && (
-                      <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                        {routine.description}
-                      </p>
+                      <TruncatedText
+                        text={routine.description}
+                        className="text-xs mt-1"
+                        style={{ color: colors.textSecondary }}
+                      />
                     )}
                     {routine.goal && (
                       <p className="text-xs mt-1">
@@ -288,11 +311,17 @@ function Home() {
         />
       )}
 
+      <ImportOptionsModal
+        isOpen={showImportOptions}
+        onConfirm={handleImportConfirm}
+        onCancel={handleImportCancel}
+      />
+
       <input
         ref={fileInputRef}
         type="file"
         accept=".json"
-        onChange={handleImport}
+        onChange={handleFileSelect}
         className="hidden"
       />
     </div>

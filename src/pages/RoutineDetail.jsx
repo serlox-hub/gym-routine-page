@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useRoutine, useRoutineDays, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
 import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader } from '../components/Routine/index.js'
@@ -151,6 +151,7 @@ function RoutineDetail() {
         isEditing={isEditing}
         onEditStart={() => setIsEditing(true)}
         onEditEnd={() => setIsEditing(false)}
+        onDelete={() => setShowDeleteConfirm(true)}
       />
 
       <main className="space-y-2">
@@ -187,17 +188,6 @@ function RoutineDetail() {
               </div>
             </Card>
           )}
-
-        {isEditing && (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="w-full mt-6 py-3 rounded-lg font-medium transition-opacity hover:opacity-80 flex items-center justify-center gap-2"
-            style={{ backgroundColor: 'rgba(248, 81, 73, 0.1)', color: '#f85149' }}
-          >
-            <Trash2 size={18} />
-            Eliminar rutina
-          </button>
-        )}
       </main>
 
       <AddDayModal

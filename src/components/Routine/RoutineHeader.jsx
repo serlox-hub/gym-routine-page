@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Download } from 'lucide-react'
+import { Pencil, Download, Trash2 } from 'lucide-react'
 import { useUpdateRoutine } from '../../hooks/useRoutines.js'
 import { colors, inputStyle } from '../../lib/styles.js'
 import { exportRoutine, downloadRoutineAsJson } from '../../lib/routineIO.js'
+import { sanitizeFilename } from '../../lib/textUtils.js'
 import { PageHeader } from '../ui/index.js'
 
 const DEBOUNCE_MS = 500
 
-function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd }) {
+function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, onDelete }) {
   const navigate = useNavigate()
   const [editForm, setEditForm] = useState({ name: '', description: '', goal: '' })
   const debounceRef = useRef(null)
@@ -61,7 +62,7 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd }
   const handleExport = async () => {
     try {
       const data = await exportRoutine(parseInt(routineId))
-      const filename = `${routine.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`
+      const filename = `${sanitizeFilename(routine.name)}.json`
       downloadRoutineAsJson(data, filename)
     } catch {
       // Silent fail - export errors are not critical
@@ -71,6 +72,7 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd }
   const menuItems = [
     { icon: Pencil, label: 'Editar', onClick: onEditStart },
     { icon: Download, label: 'Exportar', onClick: handleExport },
+    { icon: Trash2, label: 'Eliminar', onClick: onDelete, danger: true },
   ]
 
   return (

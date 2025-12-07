@@ -199,6 +199,23 @@ Extract when logic:
 | Array operations | `arrayUtils.js` | `reorderArrayItem()`, `filterExercises()` |
 | Form validation | `validation.js` | `validateSignupForm()`, `validateRoutineForm()` |
 | Measurement types | `measurementTypes.js` | `measurementTypeUsesWeight()` |
+| Import/Export rutinas | `routineIO.js` | `importRoutine()`, `exportRoutine()` |
+| Text utilities | `textUtils.js` | `sanitizeFilename()` |
+
+### Archivo crítico: routineIO.js
+
+⚠️ **IMPORTANTE**: `src/lib/routineIO.js` contiene la lógica de importación y exportación de rutinas en formato JSON. Este archivo:
+
+- Define el **esquema de exportación** (versión actual: 4)
+- Mapea la estructura de la base de datos al formato JSON y viceversa
+- Genera el prompt para crear rutinas con IA
+
+**Cuando se modifique el modelo de datos** (tablas `routines`, `routine_days`, `routine_blocks`, `routine_exercises`, `exercises`):
+1. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON
+2. Actualizar `importRoutine()` para leer los nuevos campos del JSON
+3. Actualizar `buildChatbotPrompt()` si afecta al prompt de IA
+4. Considerar incrementar la versión del esquema si hay cambios breaking
+5. Actualizar los tests en `routineIO.test.js`
 
 ### Example: Before and After
 
@@ -276,11 +293,12 @@ export function calculateEpley1RM(weight, reps) {
 ```
 src/lib/
 ├── dateUtils.js
-├── __tests__/
-│   ├── dateUtils.test.js
-│   ├── timeUtils.test.js
-│   ├── workoutCalculations.test.js
-│   └── ...
+├── dateUtils.test.js
+├── timeUtils.js
+├── timeUtils.test.js
+├── workoutCalculations.js
+├── workoutCalculations.test.js
+└── ...
 ```
 
 ### Running Tests
