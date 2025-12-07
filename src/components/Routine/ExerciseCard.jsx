@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { History } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { Card, Badge } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 
@@ -44,9 +44,9 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
           }}
           className="p-1.5 rounded hover:opacity-80 flex-shrink-0"
           style={{ backgroundColor: '#21262d' }}
-          title="Ver histórico"
+          title="Info del ejercicio"
         >
-          <History size={14} style={{ color: '#8b949e' }} />
+          <Info size={14} style={{ color: '#8b949e' }} />
         </button>
       </div>
 

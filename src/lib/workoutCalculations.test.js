@@ -10,6 +10,7 @@ import {
   filterSessionsByMonth,
   transformSessionsToDurationChartData,
   calculateAverageDuration,
+  calculateExerciseStats,
 } from './workoutCalculations.js'
 
 describe('workoutCalculations', () => {
@@ -295,6 +296,77 @@ describe('workoutCalculations', () => {
         { duration: 45 },
       ]
       expect(calculateAverageDuration(chartData)).toBe(43)
+    })
+  })
+
+  describe('calculateExerciseStats', () => {
+    it('retorna null para sessions vacías', () => {
+      expect(calculateExerciseStats([], 'weight_reps')).toBeNull()
+    })
+
+    it('retorna null si sessions es null', () => {
+      expect(calculateExerciseStats(null, 'weight_reps')).toBeNull()
+    })
+
+    it('calcula estadísticas para weight_reps', () => {
+      const sessions = [
+        {
+          sets: [
+            { weight: 100, reps_completed: 5 },
+            { weight: 90, reps_completed: 10 },
+          ],
+        },
+        {
+          sets: [
+            { weight: 95, reps_completed: 8 },
+          ],
+        },
+      ]
+      const result = calculateExerciseStats(sessions, 'weight_reps')
+
+      expect(result.sessionCount).toBe(2)
+      expect(result.maxWeight).toBe(100)
+      expect(result.maxReps).toBe(10)
+      expect(result.best1RM).toBe(120) // 90kg x 10 reps
+      expect(result.totalVolume).toBe(2160) // 500 + 900 + 760
+    })
+
+    it('calcula estadísticas para reps_only', () => {
+      const sessions = [
+        {
+          sets: [
+            { reps_completed: 10 },
+            { reps_completed: 12 },
+          ],
+        },
+        {
+          sets: [
+            { reps_completed: 15 },
+          ],
+        },
+      ]
+      const result = calculateExerciseStats(sessions, 'reps_only')
+
+      expect(result.sessionCount).toBe(2)
+      expect(result.maxReps).toBe(15)
+      expect(result.best1RM).toBe(0)
+      expect(result.maxWeight).toBe(0)
+      expect(result.totalVolume).toBe(0)
+    })
+
+    it('calcula estadísticas para reps_per_side', () => {
+      const sessions = [
+        {
+          sets: [
+            { reps_completed: 8 },
+            { reps_completed: 10 },
+          ],
+        },
+      ]
+      const result = calculateExerciseStats(sessions, 'reps_per_side')
+
+      expect(result.maxReps).toBe(10)
+      expect(result.sessionCount).toBe(1)
     })
   })
 })

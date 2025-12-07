@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { History, X } from 'lucide-react'
+import { Info, X } from 'lucide-react'
 import { Card, Badge, ConfirmModal } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
 import PreviousWorkout from './PreviousWorkout.jsx'
@@ -72,9 +72,9 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
             onClick={() => setShowHistory(true)}
             className="p-1.5 rounded hover:opacity-80"
             style={{ backgroundColor: colors.bgTertiary }}
-            title="Ver histórico"
+            title="Info del ejercicio"
           >
-            <History size={14} style={{ color: colors.textSecondary }} />
+            <Info size={14} style={{ color: colors.textSecondary }} />
           </button>
           {onRemove && (
             <button
@@ -182,6 +182,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         exerciseId={exercise.id}
         exerciseName={exercise.name}
         measurementType={measurementType}
+        weightUnit={weightUnit}
       />
 
       <ConfirmModal

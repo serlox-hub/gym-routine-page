@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Clock, Calendar, Trash2 } from 'lucide-react'
+import { ChevronLeft, Clock, Calendar, Trash2, TrendingUp } from 'lucide-react'
 import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal } from '../components/ui/index.js'
 import SetNotesView from '../components/Workout/SetNotesView.jsx'
@@ -103,7 +103,17 @@ function SessionDetail() {
       <div className="space-y-3">
         {session.exercises?.map(({ exercise, sets }) => (
           <Card key={exercise.id} className="p-4">
-            <h3 className="font-medium mb-3">{exercise.name}</h3>
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <h3 className="font-medium">{exercise.name}</h3>
+              <button
+                onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
+                className="p-1.5 rounded hover:opacity-80"
+                style={{ backgroundColor: '#21262d' }}
+                title="Ver progresión"
+              >
+                <TrendingUp size={14} style={{ color: '#a371f7' }} />
+              </button>
+            </div>
             <div className="space-y-2">
               {sets.map(set => (
                 <div

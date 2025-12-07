@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { X, FileText } from 'lucide-react'
 import { useExerciseHistory } from '../../hooks/useWorkout.js'
-import { LoadingSpinner } from '../ui/index.js'
+import { LoadingSpinner, Card } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'
 import { colors, modalOverlayStyle, modalContentStyle, buttonSecondaryStyle } from '../../lib/styles.js'
 import { formatShortDate } from '../../lib/dateUtils.js'
 import { formatSetValue } from '../../lib/setUtils.js'
+import { calculateExerciseStats } from '../../lib/workoutCalculations.js'
 
 const RIR_LABELS = {
   [-1]: 'F',
@@ -16,9 +17,19 @@ const RIR_LABELS = {
   3: '3+',
 }
 
-function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = 'weight_reps' }) {
+const TABS = {
+  PROGRESS: 'progress',
+  HISTORY: 'history',
+}
+
+function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = 'weight_reps', weightUnit = 'kg' }) {
   const { data: sessions, isLoading } = useExerciseHistory(exerciseId)
   const [selectedSet, setSelectedSet] = useState(null)
+  const [activeTab, setActiveTab] = useState(TABS.PROGRESS)
+
+  const stats = useMemo(() => {
+    return calculateExerciseStats(sessions, measurementType)
+  }, [sessions, measurementType])
 
   if (!isOpen) return null
 
@@ -35,79 +46,65 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
       >
         {/* Header */}
         <div
-          className="p-4 flex justify-between items-center shrink-0"
+          className="p-4 shrink-0"
           style={{ borderBottom: `1px solid ${colors.border}` }}
         >
-          <div>
-            <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-              Histórico
-            </h3>
-            <p className="text-sm text-secondary">{exerciseName}</p>
+          <div className="flex justify-between items-center mb-3">
+            <div>
+              <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                {exerciseName}
+              </h3>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:opacity-80"
+              style={buttonSecondaryStyle}
+            >
+              <X size={20} style={{ color: colors.textSecondary }} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:opacity-80"
-            style={buttonSecondaryStyle}
-          >
-            <X size={20} style={{ color: colors.textSecondary }} />
-          </button>
+
+          {/* Tabs */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab(TABS.PROGRESS)}
+              className="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: activeTab === TABS.PROGRESS ? 'rgba(163, 113, 247, 0.15)' : '#21262d',
+                color: activeTab === TABS.PROGRESS ? colors.purple : colors.textSecondary,
+              }}
+            >
+              Progresion
+            </button>
+            <button
+              onClick={() => setActiveTab(TABS.HISTORY)}
+              className="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: activeTab === TABS.HISTORY ? 'rgba(88, 166, 255, 0.15)' : '#21262d',
+                color: activeTab === TABS.HISTORY ? colors.accent : colors.textSecondary,
+              }}
+            >
+              Historial
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
             <LoadingSpinner />
-          ) : !sessions || sessions.length === 0 ? (
-            <p className="text-center text-secondary py-8">
-              Sin registros anteriores
-            </p>
+          ) : activeTab === TABS.PROGRESS ? (
+            <ProgressTab
+              sessions={sessions}
+              stats={stats}
+              measurementType={measurementType}
+              weightUnit={weightUnit}
+            />
           ) : (
-            <div className="space-y-4">
-              <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
-              {sessions.map(session => (
-                <div
-                  key={session.sessionId}
-                  className="p-3 rounded-lg"
-                  style={{ backgroundColor: colors.bgTertiary }}
-                >
-                  <div className="text-xs text-secondary mb-2">
-                    {formatShortDate(session.date)}
-                  </div>
-                  <div className="space-y-1">
-                    {session.sets.map(set => (
-                      <div
-                        key={set.id}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <span
-                          className="w-5 h-5 flex items-center justify-center rounded text-xs font-bold"
-                          style={{ backgroundColor: colors.border, color: colors.textSecondary }}
-                        >
-                          {set.set_number}
-                        </span>
-                        <span className="flex-1">{formatSetValue(set)}</span>
-                        {set.rir_actual !== null && (
-                          <span
-                            className="text-xs font-bold px-1 rounded"
-                            style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: colors.purple }}
-                          >
-                            {RIR_LABELS[set.rir_actual] ?? set.rir_actual}
-                          </span>
-                        )}
-                        {set.notes && (
-                          <button
-                            onClick={() => setSelectedSet(set)}
-                            className="p-0.5 rounded hover:opacity-80"
-                          >
-                            <FileText size={12} style={{ color: colors.purple }} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <HistoryTab
+              sessions={sessions}
+              onSelectSet={setSelectedSet}
+            />
           )}
         </div>
 
@@ -118,6 +115,137 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
           notes={selectedSet?.notes}
         />
       </div>
+    </div>
+  )
+}
+
+function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
+  if (!sessions || sessions.length === 0) {
+    return (
+      <p className="text-center text-secondary py-8">
+        Sin registros anteriores
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Stats */}
+      {stats && (
+        <div className="grid grid-cols-2 gap-2">
+          {stats.best1RM > 0 && (
+            <StatCard
+              label="Mejor 1RM Est."
+              value={`${stats.best1RM} ${weightUnit}`}
+              color={colors.purple}
+            />
+          )}
+          {stats.maxWeight > 0 && (
+            <StatCard
+              label="Peso maximo"
+              value={`${stats.maxWeight} ${weightUnit}`}
+              color={colors.accent}
+            />
+          )}
+          {stats.maxReps > 0 && (
+            <StatCard
+              label="Max. repeticiones"
+              value={stats.maxReps}
+              color={colors.success}
+            />
+          )}
+          {stats.totalVolume > 0 && (
+            <StatCard
+              label="Volumen total"
+              value={`${stats.totalVolume.toLocaleString()} ${weightUnit}`}
+              color={colors.warning}
+            />
+          )}
+          <StatCard
+            label="Sesiones"
+            value={stats.sessionCount}
+            color={colors.textSecondary}
+          />
+        </div>
+      )}
+
+      {/* Chart */}
+      {sessions.length >= 2 ? (
+        <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
+      ) : (
+        <p className="text-center text-secondary py-4 text-sm">
+          Necesitas al menos 2 sesiones para ver la grafica
+        </p>
+      )}
+    </div>
+  )
+}
+
+function StatCard({ label, value, color }) {
+  return (
+    <Card className="p-2">
+      <div className="text-xs text-secondary">{label}</div>
+      <div className="text-base font-bold" style={{ color }}>
+        {value}
+      </div>
+    </Card>
+  )
+}
+
+function HistoryTab({ sessions, onSelectSet }) {
+  if (!sessions || sessions.length === 0) {
+    return (
+      <p className="text-center text-secondary py-8">
+        Sin registros anteriores
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {sessions.map(session => (
+        <div
+          key={session.sessionId}
+          className="p-3 rounded-lg"
+          style={{ backgroundColor: colors.bgTertiary }}
+        >
+          <div className="text-xs text-secondary mb-2">
+            {formatShortDate(session.date)}
+          </div>
+          <div className="space-y-1">
+            {session.sets.map(set => (
+              <div
+                key={set.id}
+                className="flex items-center gap-2 text-sm"
+              >
+                <span
+                  className="w-5 h-5 flex items-center justify-center rounded text-xs font-bold"
+                  style={{ backgroundColor: colors.border, color: colors.textSecondary }}
+                >
+                  {set.set_number}
+                </span>
+                <span className="flex-1">{formatSetValue(set)}</span>
+                {set.rir_actual !== null && (
+                  <span
+                    className="text-xs font-bold px-1 rounded"
+                    style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: colors.purple }}
+                  >
+                    {RIR_LABELS[set.rir_actual] ?? set.rir_actual}
+                  </span>
+                )}
+                {set.notes && (
+                  <button
+                    onClick={() => onSelectSet(set)}
+                    className="p-0.5 rounded hover:opacity-80"
+                  >
+                    <FileText size={12} style={{ color: colors.purple }} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

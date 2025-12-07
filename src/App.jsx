@@ -9,6 +9,7 @@ import SessionDetail from './pages/SessionDetail.jsx'
 import Exercises from './pages/Exercises.jsx'
 import NewExercise from './pages/NewExercise.jsx'
 import EditExercise from './pages/EditExercise.jsx'
+import ExerciseProgress from './pages/ExerciseProgress.jsx'
 import NewRoutine from './pages/NewRoutine.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
@@ -33,6 +34,7 @@ function App() {
           <Route path="/exercises" element={<PrivateRoute><Exercises /></PrivateRoute>} />
           <Route path="/exercises/new" element={<PrivateRoute><NewExercise /></PrivateRoute>} />
           <Route path="/exercises/:exerciseId/edit" element={<PrivateRoute><EditExercise /></PrivateRoute>} />
+          <Route path="/exercises/:exerciseId/progress" element={<PrivateRoute><ExerciseProgress /></PrivateRoute>} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus, Search, Pencil, Trash2 } from 'lucide-react'
+import { ChevronLeft, Plus, Search, Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { useExercises, useDeleteExercise } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
 
@@ -98,6 +98,14 @@ function Exercises() {
                   </h3>
                 </div>
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
+                    className="p-2 rounded hover:opacity-80"
+                    style={{ backgroundColor: '#21262d' }}
+                    title="Ver progresión"
+                  >
+                    <TrendingUp size={16} style={{ color: '#a371f7' }} />
+                  </button>
                   <button
                     onClick={() => navigate(`/exercises/${exercise.id}/edit`)}
                     className="p-2 rounded hover:opacity-80"

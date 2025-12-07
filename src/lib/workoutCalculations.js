@@ -186,3 +186,37 @@ export function calculateAverageDuration(chartData) {
     chartData.reduce((sum, d) => sum + d.duration, 0) / chartData.length
   )
 }
+
+/**
+ * Calcula estadísticas de progresión para un ejercicio
+ * @param {Array} sessions - Array de sesiones con sets
+ * @param {string} measurementType - Tipo de medición
+ * @returns {{best1RM: number, maxWeight: number, maxReps: number, totalVolume: number, sessionCount: number}|null}
+ */
+export function calculateExerciseStats(sessions, measurementType) {
+  if (!sessions || sessions.length === 0) return null
+
+  const allSets = sessions.flatMap(s => s.sets)
+
+  let best1RM = 0
+  let maxWeight = 0
+  let maxReps = 0
+  let totalVolume = 0
+
+  if (measurementType === 'weight_reps') {
+    best1RM = getBest1RMFromSets(allSets)
+    maxWeight = Math.max(...allSets.map(s => s.weight || 0))
+    maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
+    totalVolume = calculateTotalVolume(allSets)
+  } else if (measurementType === 'reps_only' || measurementType === 'reps_per_side') {
+    maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
+  }
+
+  return {
+    best1RM,
+    maxWeight,
+    maxReps,
+    totalVolume,
+    sessionCount: sessions.length,
+  }
+}
