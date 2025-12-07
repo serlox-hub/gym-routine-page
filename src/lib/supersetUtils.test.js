@@ -6,7 +6,7 @@ import {
   getNextSupersetId,
   isExerciseInSuperset,
   countExercisesInBlock,
-} from '../supersetUtils.js'
+} from './supersetUtils.js'
 
 describe('supersetUtils', () => {
   describe('formatSupersetLabel', () => {

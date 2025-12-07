@@ -1,32 +1,35 @@
 import { Plus, ArrowUpDown } from 'lucide-react'
+import { PageHeader } from '../ui/index.js'
+import { colors } from '../../lib/styles.js'
 
-function SessionHeader({ dayName, isReordering, onToggleReorder, onAddExercise }) {
+function SessionHeader({ dayName, isReordering, onToggleReorder, onAddExercise, onBack }) {
   return (
-    <header className="mb-6">
-      <div className="flex items-baseline justify-between gap-2">
-        <h1 className="text-xl font-bold">{dayName}</h1>
+    <PageHeader
+      title={dayName}
+      onBack={onBack}
+      rightContent={
         <div className="flex items-center gap-2">
           <button
             onClick={onToggleReorder}
             className="p-1.5 rounded hover:opacity-80"
             style={{
-              backgroundColor: isReordering ? 'rgba(88, 166, 255, 0.15)' : '#21262d',
+              backgroundColor: isReordering ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
             }}
             title={isReordering ? 'Listo' : 'Reordenar'}
           >
-            <ArrowUpDown size={18} style={{ color: isReordering ? '#58a6ff' : '#8b949e' }} />
+            <ArrowUpDown size={18} style={{ color: isReordering ? colors.accent : colors.textSecondary }} />
           </button>
           <button
             onClick={onAddExercise}
             className="p-1.5 rounded hover:opacity-80"
-            style={{ backgroundColor: '#21262d' }}
+            style={{ backgroundColor: colors.bgTertiary }}
             title="Añadir ejercicio"
           >
-            <Plus size={18} style={{ color: '#8b949e' }} />
+            <Plus size={18} style={{ color: colors.textSecondary }} />
           </button>
         </div>
-      </div>
-    </header>
+      }
+    />
   )
 }
 

@@ -1,8 +1,7 @@
-import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { useParams } from 'react-router-dom'
 import { useExercise } from '../hooks/useExercises.js'
 import { useExerciseHistory } from '../hooks/useWorkout.js'
-import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import ExerciseProgressChart from '../components/Workout/ExerciseProgressChart.jsx'
 import { formatShortDate } from '../lib/dateUtils.js'
 import { formatSetValue } from '../lib/setUtils.js'
@@ -11,7 +10,6 @@ import { colors } from '../lib/styles.js'
 
 function ExerciseProgress() {
   const { exerciseId } = useParams()
-  const navigate = useNavigate()
   const { data: exercise, isLoading: loadingExercise, error: exerciseError } = useExercise(exerciseId)
   const { data: sessions, isLoading: loadingSessions } = useExerciseHistory(exerciseId)
 
@@ -24,20 +22,7 @@ function ExerciseProgress() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
-      <header className="mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-sm mb-4 hover:opacity-80"
-          style={{ color: colors.accent }}
-        >
-          <ChevronLeft size={16} />
-          Volver
-        </button>
-        <h1 className="text-2xl font-bold">{exercise.name}</h1>
-        {exercise.muscle_group && (
-          <p className="text-sm text-secondary">{exercise.muscle_group.name}</p>
-        )}
-      </header>
+      <PageHeader title={exercise.name} onBack={() => history.back()} />
 
       {/* Stats */}
       {stats && (

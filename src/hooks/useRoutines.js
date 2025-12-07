@@ -198,6 +198,32 @@ export function useDeleteRoutine() {
   })
 }
 
+export function useSetFavoriteRoutine() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ routineId, isFavorite }) => {
+      // Si se marca como favorita, quitar favorito de las demás
+      if (isFavorite) {
+        await supabase
+          .from('routines')
+          .update({ is_favorite: false })
+          .neq('id', routineId)
+      }
+
+      const { error } = await supabase
+        .from('routines')
+        .update({ is_favorite: isFavorite })
+        .eq('id', routineId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+    },
+  })
+}
+
 export function useUpdateRoutineDay() {
   const queryClient = useQueryClient()
 

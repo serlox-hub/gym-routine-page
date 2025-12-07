@@ -40,3 +40,20 @@ export const SENSATION_LABELS = {
   4: 'Bien',
   5: 'Muy bien',
 }
+
+export const SENSATION_COLORS = {
+  1: '#f85149',
+  2: '#d29922',
+  3: '#8b949e',
+  4: '#3fb950',
+  5: '#58a6ff',
+}
+
+/**
+ * Obtiene el color asociado a un valor de sensación
+ * @param {number} value - Valor de sensación (1-5)
+ * @returns {string} Color hex
+ */
+export function getSensationColor(value) {
+  return SENSATION_COLORS[value] || '#8b949e'
+}

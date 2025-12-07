@@ -1,24 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Card } from '../ui/index.js'
+import { Card, BottomActions } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
 import { colors, inputStyle, selectStyle } from '../../lib/styles.js'
-
-const MEASUREMENT_TYPES = [
-  { value: 'weight_reps', label: 'Peso × Reps' },
-  { value: 'reps_only', label: 'Solo reps' },
-  { value: 'reps_per_side', label: 'Reps por lado' },
-  { value: 'time', label: 'Tiempo' },
-  { value: 'time_per_side', label: 'Tiempo por lado' },
-  { value: 'distance', label: 'Distancia' },
-]
+import { MEASUREMENT_TYPE_OPTIONS, measurementTypeUsesWeight } from '../../lib/measurementTypes.js'
 
 const WEIGHT_UNITS = [
   { value: 'kg', label: 'Kilogramos (kg)' },
   { value: 'lb', label: 'Libras (lb)' },
 ]
-
-// Tipos que usan peso
-const USES_WEIGHT = ['weight_reps', 'distance']
 
 const DEFAULT_FORM = {
   name: '',
@@ -34,7 +23,6 @@ const DEFAULT_FORM = {
  * @param {Function} props.onSubmit - Called with (formData, muscleGroupId) when form is valid
  * @param {boolean} props.isSubmitting - Show loading state on submit button
  * @param {string} props.submitLabel - Label for submit button
- * @param {React.ReactNode} props.submitIcon - Icon for submit button
  * @param {boolean} props.compact - Use compact mode (no Card wrappers, for modals)
  * @param {string} props.className - Additional class names
  */
@@ -43,7 +31,6 @@ function ExerciseForm({
   onSubmit,
   isSubmitting = false,
   submitLabel = 'Guardar',
-  submitIcon = null,
   compact = false,
   className = '',
 }) {
@@ -66,7 +53,7 @@ function ExerciseForm({
     }
   }, [initialData])
 
-  const usesWeight = USES_WEIGHT.includes(form.measurement_type)
+  const usesWeight = measurementTypeUsesWeight(form.measurement_type)
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -142,7 +129,7 @@ function ExerciseForm({
           className="w-full p-3 rounded-lg text-base appearance-none"
           style={selectStyle}
         >
-          {MEASUREMENT_TYPES.map(type => (
+          {MEASUREMENT_TYPE_OPTIONS.map(type => (
             <option key={type.value} value={type.value}>{type.label}</option>
           ))}
         </select>
@@ -230,26 +217,13 @@ function ExerciseForm({
         </Wrapper>
       </div>
 
-      {/* Botón guardar */}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full py-4 rounded-lg font-medium text-lg transition-colors flex items-center justify-center gap-2"
-        style={{
-          backgroundColor: colors.success,
-          color: '#ffffff',
-          opacity: isSubmitting ? 0.7 : 1,
+      <BottomActions
+        primary={{
+          label: isSubmitting ? 'Guardando...' : submitLabel,
+          onClick: handleSubmit,
+          disabled: isSubmitting,
         }}
-      >
-        {isSubmitting ? (
-          'Guardando...'
-        ) : (
-          <>
-            {submitIcon}
-            {submitLabel}
-          </>
-        )}
-      </button>
+      />
     </form>
   )
 }

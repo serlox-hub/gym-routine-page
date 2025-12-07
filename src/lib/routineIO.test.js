@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { readJsonFile } from '../routineIO.js'
+import { readJsonFile } from './routineIO.js'
 
 describe('routineIO - funciones puras', () => {
   describe('readJsonFile', () => {

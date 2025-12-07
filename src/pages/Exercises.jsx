@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus, Search, Pencil, Trash2, TrendingUp } from 'lucide-react'
+import { Search, Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { useExercises, useDeleteExercise } from '../hooks/useExercises.js'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
 
 function Exercises() {
   const navigate = useNavigate()
@@ -39,27 +39,7 @@ function Exercises() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
-      <header className="mb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1 text-sm mb-4 hover:opacity-80"
-          style={{ color: '#58a6ff' }}
-        >
-          <ChevronLeft size={16} />
-          Volver
-        </button>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Ejercicios</h1>
-          <button
-            onClick={() => navigate('/exercises/new')}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ backgroundColor: '#238636', color: '#ffffff' }}
-          >
-            <Plus size={16} />
-            Nuevo
-          </button>
-        </div>
-      </header>
+      <PageHeader title="Ejercicios" backTo="/" />
 
       {/* Search */}
       <div className="relative mb-4">
@@ -90,39 +70,18 @@ function Exercises() {
           </p>
         ) : (
           filteredExercises.map(exercise => (
-            <Card key={exercise.id} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium" style={{ color: '#e6edf3' }}>
-                    {exercise.name}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
-                    className="p-2 rounded hover:opacity-80"
-                    style={{ backgroundColor: '#21262d' }}
-                    title="Ver progresión"
-                  >
-                    <TrendingUp size={16} style={{ color: '#a371f7' }} />
-                  </button>
-                  <button
-                    onClick={() => navigate(`/exercises/${exercise.id}/edit`)}
-                    className="p-2 rounded hover:opacity-80"
-                    style={{ backgroundColor: '#21262d' }}
-                    title="Editar"
-                  >
-                    <Pencil size={16} style={{ color: '#8b949e' }} />
-                  </button>
-                  <button
-                    onClick={() => setExerciseToDelete(exercise)}
-                    className="p-2 rounded hover:opacity-80"
-                    style={{ backgroundColor: '#21262d' }}
-                    title="Eliminar"
-                  >
-                    <Trash2 size={16} style={{ color: '#f85149' }} />
-                  </button>
-                </div>
+            <Card key={exercise.id} className="p-3">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-medium text-sm truncate flex-1 min-w-0" style={{ color: '#e6edf3' }}>
+                  {exercise.name}
+                </h3>
+                <DropdownMenu
+                  items={[
+                    { icon: TrendingUp, label: 'Progresión', onClick: () => navigate(`/exercises/${exercise.id}/progress`) },
+                    { icon: Pencil, label: 'Editar', onClick: () => navigate(`/exercises/${exercise.id}/edit`) },
+                    { icon: Trash2, label: 'Eliminar', onClick: () => setExerciseToDelete(exercise), danger: true },
+                  ]}
+                />
               </div>
             </Card>
           ))
@@ -137,6 +96,10 @@ function Exercises() {
         cancelText="Cancelar"
         onConfirm={handleDelete}
         onCancel={() => setExerciseToDelete(null)}
+      />
+
+      <BottomActions
+        primary={{ label: 'Nuevo', onClick: () => navigate('/exercises/new') }}
       />
     </div>
   )

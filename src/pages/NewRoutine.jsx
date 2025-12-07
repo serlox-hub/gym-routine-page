@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus } from 'lucide-react'
-import { ErrorMessage, Card } from '../components/ui/index.js'
+import { Plus } from 'lucide-react'
+import { ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import { useCreateRoutine } from '../hooks/useRoutines.js'
 import { colors, inputStyle } from '../lib/styles.js'
 import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
@@ -43,17 +43,7 @@ function NewRoutine() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
-      <header className="mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-sm mb-4 hover:opacity-80"
-          style={{ color: colors.accent }}
-        >
-          <ChevronLeft size={16} />
-          Volver
-        </button>
-        <h1 className="text-2xl font-bold">Nueva rutina</h1>
-      </header>
+      <PageHeader title="Nueva rutina" onBack={() => navigate(-1)} />
 
       {error && <ErrorMessage message={error} className="mb-4" />}
 

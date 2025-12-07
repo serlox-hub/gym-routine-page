@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Download, MoreVertical } from 'lucide-react'
+import { Pencil, Download } from 'lucide-react'
 import { useUpdateRoutine } from '../../hooks/useRoutines.js'
 import { colors, inputStyle } from '../../lib/styles.js'
 import { exportRoutine, downloadRoutineAsJson } from '../../lib/routineIO.js'
+import { PageHeader } from '../ui/index.js'
 
 const DEBOUNCE_MS = 500
 
 function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd }) {
   const navigate = useNavigate()
   const [editForm, setEditForm] = useState({ name: '', description: '', goal: '' })
-  const [showMenu, setShowMenu] = useState(false)
   const debounceRef = useRef(null)
   const updateRoutine = useUpdateRoutine()
 
@@ -68,106 +68,64 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd }
     }
   }
 
-  return (
-    <header className="mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => isEditing ? onEditEnd() : navigate('/')}
-            className="text-secondary hover:text-accent transition-colors"
-          >
-            ←
-          </button>
-          <h1 className="text-xl font-bold px-2">{isEditing ? 'Editar rutina' : 'Días'}</h1>
-        </div>
-        {!isEditing && (
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-2 rounded-lg transition-opacity hover:opacity-80"
-              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-            >
-              <MoreVertical size={20} />
-            </button>
+  const menuItems = [
+    { icon: Pencil, label: 'Editar', onClick: onEditStart },
+    { icon: Download, label: 'Exportar', onClick: handleExport },
+  ]
 
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowMenu(false)}
-                />
-                <div
-                  className="absolute right-0 top-full mt-1 z-50 py-1 rounded-lg shadow-lg min-w-[140px]"
-                  style={{ backgroundColor: '#21262d', border: '1px solid #30363d' }}
-                >
-                  <button
-                    onClick={() => { onEditStart(); setShowMenu(false) }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:opacity-80"
-                    style={{ color: '#e6edf3' }}
-                  >
-                    <Pencil size={16} style={{ color: '#8b949e' }} />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => { handleExport(); setShowMenu(false) }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:opacity-80"
-                    style={{ color: '#e6edf3' }}
-                  >
-                    <Download size={16} style={{ color: '#8b949e' }} />
-                    Exportar
-                  </button>
-                </div>
-              </>
-            )}
+  return (
+    <>
+      <PageHeader
+        title={isEditing ? 'Editar rutina' : routine?.name || 'Días'}
+        onBack={() => isEditing ? onEditEnd() : navigate('/')}
+        menuItems={!isEditing ? menuItems : undefined}
+      >
+        {isEditing && (
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
+                Nombre
+              </label>
+              <input
+                type="text"
+                value={editForm.name}
+                onChange={(e) => handleFieldChange('name', e.target.value)}
+                className="w-full p-2 rounded-lg text-sm"
+                style={inputStyle}
+                placeholder="Nombre de la rutina"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
+                Descripción
+              </label>
+              <textarea
+                value={editForm.description}
+                onChange={(e) => handleFieldChange('description', e.target.value)}
+                className="w-full p-2 rounded-lg text-sm resize-none"
+                style={inputStyle}
+                placeholder="Descripción de la rutina..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
+                Objetivo
+              </label>
+              <input
+                type="text"
+                value={editForm.goal}
+                onChange={(e) => handleFieldChange('goal', e.target.value)}
+                className="w-full p-2 rounded-lg text-sm"
+                style={inputStyle}
+                placeholder="Ej: Hipertrofia, Fuerza..."
+              />
+            </div>
           </div>
         )}
-      </div>
-
-      {isEditing && (
-        <div className="mt-4 space-y-3">
-          <div>
-            <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
-              Nombre
-            </label>
-            <input
-              type="text"
-              value={editForm.name}
-              onChange={(e) => handleFieldChange('name', e.target.value)}
-              className="w-full p-2 rounded-lg text-sm"
-              style={inputStyle}
-              placeholder="Nombre de la rutina"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
-              Descripción
-            </label>
-            <textarea
-              value={editForm.description}
-              onChange={(e) => handleFieldChange('description', e.target.value)}
-              className="w-full p-2 rounded-lg text-sm resize-none"
-              style={inputStyle}
-              placeholder="Descripción de la rutina..."
-              rows={2}
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
-              Objetivo
-            </label>
-            <input
-              type="text"
-              value={editForm.goal}
-              onChange={(e) => handleFieldChange('goal', e.target.value)}
-              className="w-full p-2 rounded-lg text-sm"
-              style={inputStyle}
-              placeholder="Ej: Hipertrofia, Fuerza..."
-            />
-          </div>
-        </div>
-      )}
-    </header>
+      </PageHeader>
+    </>
   )
 }
 

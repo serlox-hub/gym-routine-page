@@ -14,9 +14,11 @@ describe('measurementTypes', () => {
     it('contiene todos los tipos esperados', () => {
       expect(MEASUREMENT_TYPES).toContain('weight_reps')
       expect(MEASUREMENT_TYPES).toContain('reps_only')
+      expect(MEASUREMENT_TYPES).toContain('reps_per_side')
       expect(MEASUREMENT_TYPES).toContain('time')
+      expect(MEASUREMENT_TYPES).toContain('time_per_side')
       expect(MEASUREMENT_TYPES).toContain('distance')
-      expect(MEASUREMENT_TYPES).toHaveLength(4)
+      expect(MEASUREMENT_TYPES).toHaveLength(6)
     })
   })
 

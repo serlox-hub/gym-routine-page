@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Calendar, X } from 'lucide-react'
+import { Calendar, X } from 'lucide-react'
 import { useWorkoutHistory } from '../hooks/useWorkout.js'
-import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import { MonthlyCalendar, DurationChart } from '../components/History/index.js'
 import { formatTime } from '../lib/dateUtils.js'
 
@@ -30,17 +30,7 @@ function History() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <header className="mb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1 text-sm mb-4 hover:opacity-80"
-          style={{ color: '#58a6ff' }}
-        >
-          <ChevronLeft size={16} />
-          Volver
-        </button>
-        <h1 className="text-2xl font-bold">Histórico</h1>
-      </header>
+      <PageHeader title="Histórico" backTo="/" />
 
       <main>
         {!sessions || sessions.length === 0 ? (

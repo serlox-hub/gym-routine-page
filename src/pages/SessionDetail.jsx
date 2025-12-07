@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Clock, Calendar, Trash2, TrendingUp } from 'lucide-react'
+import { Clock, Calendar, Trash2, TrendingUp } from 'lucide-react'
 import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout.js'
-import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui/index.js'
 import SetNotesView from '../components/Workout/SetNotesView.jsx'
-import { SENSATION_LABELS } from '../lib/constants.js'
+import { SENSATION_LABELS, getSensationColor } from '../lib/constants.js'
 import { formatFullDate, formatTime } from '../lib/dateUtils.js'
 import { formatSetValue } from '../lib/setUtils.js'
 
@@ -20,39 +20,17 @@ function SessionDetail() {
   if (error) return <ErrorMessage message={error.message} className="m-4" />
   if (!session) return <ErrorMessage message="Sesión no encontrada" className="m-4" />
 
+  const menuItems = [
+    { icon: Trash2, label: 'Eliminar', onClick: () => setShowDeleteConfirm(true), danger: true }
+  ]
+
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <header className="mb-6">
-        <button
-          onClick={() => navigate('/history')}
-          className="flex items-center gap-1 text-sm mb-4 hover:opacity-80"
-          style={{ color: '#58a6ff' }}
-        >
-          <ChevronLeft size={16} />
-          Histórico
-        </button>
-
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h1 className="text-xl font-bold mb-1">
-              {session.routine_day?.name || 'Entrenamiento Libre'}
-            </h1>
-            {session.routine_day?.routine?.name && (
-              <p className="text-sm text-secondary">
-                {session.routine_day.routine.name}
-              </p>
-            )}
-          </div>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="p-2 rounded-lg hover:opacity-80"
-            style={{ backgroundColor: 'rgba(248, 81, 73, 0.15)' }}
-            title="Eliminar sesión"
-          >
-            <Trash2 size={18} style={{ color: '#f85149' }} />
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title={session.routine_day?.name || 'Entrenamiento Libre'}
+        backTo="/history"
+        menuItems={menuItems}
+      />
 
       {/* Info de la sesión */}
       <Card className="p-4 mb-4">
@@ -166,17 +144,6 @@ function SessionDetail() {
       />
     </div>
   )
-}
-
-function getSensationColor(value) {
-  const colors = {
-    1: '#f85149',
-    2: '#d29922',
-    3: '#8b949e',
-    4: '#3fb950',
-    5: '#58a6ff',
-  }
-  return colors[value] || '#8b949e'
 }
 
 export default SessionDetail

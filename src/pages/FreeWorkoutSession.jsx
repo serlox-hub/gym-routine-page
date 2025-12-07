@@ -10,7 +10,7 @@ import {
   useRemoveSessionExercise,
   useReorderSessionExercises,
 } from '../hooks/useWorkout.js'
-import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, BottomActions } from '../components/ui/index.js'
 import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList, EndSessionModal } from '../components/Workout/index.js'
 import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -133,6 +133,7 @@ function FreeWorkoutSession() {
         isReordering={isReordering}
         onToggleReorder={hasExercises ? () => setIsReordering(!isReordering) : undefined}
         onAddExercise={() => setShowAddExercise(true)}
+        onBack={() => navigate(-1)}
       />
 
       <main className="space-y-4">
@@ -164,48 +165,26 @@ function FreeWorkoutSession() {
         )}
       </main>
 
-      <div
-        className="fixed bottom-0 left-0 right-0 p-4"
-        style={{ backgroundColor: '#0d1117', borderTop: '1px solid #30363d' }}
-      >
-        <div className="max-w-2xl mx-auto flex gap-3">
-          {isReordering ? (
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => setIsReordering(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                className="flex-1"
-                onClick={() => setIsReordering(false)}
-              >
-                Listo
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="danger"
-                onClick={() => setShowCancelModal(true)}
-                disabled={abandonSessionMutation.isPending}
-              >
-                {abandonSessionMutation.isPending ? 'Cancelando...' : 'Cancelar'}
-              </Button>
-              <Button
-                variant="primary"
-                className="flex-1"
-                onClick={handleEndWorkout}
-                disabled={endSessionMutation.isPending || !hasExercises}
-              >
-                {endSessionMutation.isPending ? 'Guardando...' : 'Finalizar'}
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
+      {isReordering ? (
+        <BottomActions
+          secondary={{ label: 'Cancelar', onClick: () => setIsReordering(false) }}
+          primary={{ label: 'Listo', onClick: () => setIsReordering(false) }}
+        />
+      ) : (
+        <BottomActions
+          secondary={{
+            label: abandonSessionMutation.isPending ? 'Cancelando...' : 'Cancelar',
+            onClick: () => setShowCancelModal(true),
+            disabled: abandonSessionMutation.isPending,
+            danger: true,
+          }}
+          primary={{
+            label: endSessionMutation.isPending ? 'Guardando...' : 'Finalizar',
+            onClick: handleEndWorkout,
+            disabled: endSessionMutation.isPending || !hasExercises,
+          }}
+        />
+      )}
 
       <ConfirmModal
         isOpen={showCancelModal}
