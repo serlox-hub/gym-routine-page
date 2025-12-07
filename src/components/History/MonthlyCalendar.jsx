@@ -10,10 +10,12 @@ const MUSCLE_GROUP_COLORS = {
   'Hombros': '#a371f7',
   'Bíceps': '#d29922',
   'Tríceps': '#f0883e',
-  'Piernas': '#3fb950',
-  'Core': '#88c6be',
+  'Cuádriceps': '#3fb950',
+  'Isquiotibiales': '#2ea043',
+  'Pantorrillas': '#238636',
+  'Abdominales': '#88c6be',
   'Glúteos': '#db61a2',
-  'Antebrazos': '#8b949e',
+  'Antebrazo': '#8b949e',
 }
 
 function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
