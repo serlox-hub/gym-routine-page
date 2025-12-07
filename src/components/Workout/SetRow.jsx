@@ -107,16 +107,6 @@ function SetRow({
         borderLeft: isCompleted ? '3px solid #3fb950' : '3px solid transparent',
       }}
     >
-      <span
-        className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold"
-        style={{
-          backgroundColor: isCompleted ? '#3fb950' : '#30363d',
-          color: isCompleted ? '#0d1117' : '#8b949e',
-        }}
-      >
-        {setNumber}
-      </span>
-
       <div className="flex items-center gap-2 flex-1">
         {renderInputs()}
       </div>
