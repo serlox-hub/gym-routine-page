@@ -58,9 +58,9 @@ function WorkoutSession() {
 
   useEffect(() => {
     if (!sessionId) {
-      navigate(navigateToOnEnd || `/routine/${routineId}/day/${dayId}`)
+      navigate(navigateToOnEnd || `/routine/${routineId}`)
     }
-  }, [sessionId, navigate, routineId, dayId, navigateToOnEnd])
+  }, [sessionId, navigate, routineId, navigateToOnEnd])
 
   if (!sessionId) return null
 
