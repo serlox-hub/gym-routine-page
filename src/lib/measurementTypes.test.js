@@ -14,11 +14,9 @@ describe('measurementTypes', () => {
     it('contiene todos los tipos esperados', () => {
       expect(MEASUREMENT_TYPES).toContain('weight_reps')
       expect(MEASUREMENT_TYPES).toContain('reps_only')
-      expect(MEASUREMENT_TYPES).toContain('reps_per_side')
       expect(MEASUREMENT_TYPES).toContain('time')
-      expect(MEASUREMENT_TYPES).toContain('time_per_side')
       expect(MEASUREMENT_TYPES).toContain('distance')
-      expect(MEASUREMENT_TYPES).toHaveLength(6)
+      expect(MEASUREMENT_TYPES).toHaveLength(4)
     })
   })
 
@@ -75,16 +73,8 @@ describe('measurementTypes', () => {
       expect(getDefaultReps('reps_only')).toBe('8-12')
     })
 
-    it('retorna formato por lado para reps_per_side', () => {
-      expect(getDefaultReps('reps_per_side')).toBe('10/lado')
-    })
-
     it('retorna segundos para time', () => {
       expect(getDefaultReps('time')).toBe('30s')
-    })
-
-    it('retorna segundos por lado para time_per_side', () => {
-      expect(getDefaultReps('time_per_side')).toBe('30s/lado')
     })
 
     it('retorna metros para distance', () => {
@@ -105,16 +95,8 @@ describe('measurementTypes', () => {
       expect(getRepsLabel('reps_only')).toBe('Repeticiones')
     })
 
-    it('retorna "Reps por lado" para reps_per_side', () => {
-      expect(getRepsLabel('reps_per_side')).toBe('Reps por lado')
-    })
-
     it('retorna "Tiempo" para time', () => {
       expect(getRepsLabel('time')).toBe('Tiempo')
-    })
-
-    it('retorna "Tiempo por lado" para time_per_side', () => {
-      expect(getRepsLabel('time_per_side')).toBe('Tiempo por lado')
     })
 
     it('retorna "Distancia" para distance', () => {
@@ -131,16 +113,8 @@ describe('measurementTypes', () => {
       expect(getRepsPlaceholder('weight_reps')).toBe('Ej: 8-12')
     })
 
-    it('retorna placeholder correcto para reps_per_side', () => {
-      expect(getRepsPlaceholder('reps_per_side')).toBe('Ej: 10/lado')
-    })
-
     it('retorna placeholder correcto para time', () => {
       expect(getRepsPlaceholder('time')).toBe('Ej: 30s, 1min')
-    })
-
-    it('retorna placeholder correcto para time_per_side', () => {
-      expect(getRepsPlaceholder('time_per_side')).toBe('Ej: 30s/lado')
     })
 
     it('retorna placeholder correcto para distance', () => {

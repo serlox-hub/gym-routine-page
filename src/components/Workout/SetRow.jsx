@@ -88,12 +88,8 @@ function SetRow({
         return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} {...props} />
       case 'reps_only':
         return <RepsOnlyInputs reps={reps} setReps={setReps} {...props} />
-      case 'reps_per_side':
-        return <RepsOnlyInputs reps={reps} setReps={setReps} label="reps/lado" {...props} />
       case 'time':
         return <TimeInputs time={time} setTime={setTime} {...props} />
-      case 'time_per_side':
-        return <TimeInputs time={time} setTime={setTime} label="seg/lado" {...props} />
       case 'distance':
         return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={weightUnit} {...props} />
       default:
