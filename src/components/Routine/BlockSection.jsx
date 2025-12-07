@@ -1,10 +1,14 @@
-import { Flame } from 'lucide-react'
+import { Flame, Link2 } from 'lucide-react'
 import ExerciseCard from './ExerciseCard.jsx'
+import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
+import { groupExercisesBySupersetId } from '../../lib/workoutTransforms.js'
+import { formatSupersetLabel } from '../../lib/supersetUtils.js'
 
 function BlockSection({ block }) {
   const { name, duration_min, routine_exercises } = block
   const isWarmup = name.toLowerCase() === 'calentamiento'
+  const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
 
   return (
     <section className="space-y-3">
@@ -32,13 +36,50 @@ function BlockSection({ block }) {
         )}
       </div>
       <div className="space-y-2">
-        {routine_exercises.map(routineExercise => (
-          <ExerciseCard
-            key={routineExercise.id}
-            routineExercise={routineExercise}
-            isWarmup={isWarmup}
-          />
-        ))}
+        {exerciseGroups.map(group => {
+          if (group.type === 'individual') {
+            return (
+              <ExerciseCard
+                key={group.exercise.id}
+                routineExercise={group.exercise}
+                isWarmup={isWarmup}
+              />
+            )
+          }
+          // Superset
+          const supersetLabel = formatSupersetLabel(group.supersetId)
+          return (
+            <Card
+              key={`superset-${group.supersetId}`}
+              className="p-0 overflow-hidden"
+              style={{ border: `1px solid ${colors.purple}` }}
+            >
+              <div
+                className="flex items-center gap-2 px-3 py-2"
+                style={{
+                  backgroundColor: 'rgba(163, 113, 247, 0.1)',
+                  borderBottom: `1px solid ${colors.purple}`,
+                }}
+              >
+                <Link2 size={14} style={{ color: colors.purple }} />
+                <span className="text-xs font-medium" style={{ color: colors.purple }}>
+                  {supersetLabel}
+                </span>
+              </div>
+              <div className="divide-y" style={{ borderColor: colors.border }}>
+                {group.exercises.map(exercise => (
+                  <div key={exercise.id} className="p-3">
+                    <ExerciseCard
+                      routineExercise={exercise}
+                      isWarmup={isWarmup}
+                      isSuperset
+                    />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )
+        })}
       </div>
     </section>
   )

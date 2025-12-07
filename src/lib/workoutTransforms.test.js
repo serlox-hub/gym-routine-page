@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   buildRoutineExerciseMap,
   groupExercisesByBlock,
+  groupExercisesBySupersetId,
   buildDefaultExerciseOrder,
   applyCustomExerciseOrder,
   hasCustomOrderChanged,
@@ -17,7 +18,7 @@ describe('workoutTransforms', () => {
       sort_order: 0,
       duration_min: 10,
       routine_exercises: [
-        { id: 101, exercise: { name: 'Cardio' } },
+        { id: 101, sort_order: 0, exercise: { name: 'Cardio' } },
       ],
     },
     {
@@ -26,8 +27,24 @@ describe('workoutTransforms', () => {
       sort_order: 1,
       duration_min: 45,
       routine_exercises: [
-        { id: 201, exercise: { name: 'Press banca' } },
-        { id: 202, exercise: { name: 'Press inclinado' } },
+        { id: 201, sort_order: 0, exercise: { name: 'Press banca' } },
+        { id: 202, sort_order: 1, exercise: { name: 'Press inclinado' } },
+      ],
+    },
+  ]
+
+  // Bloques con supersets para tests específicos
+  const blocksWithSupersets = [
+    {
+      id: 1,
+      name: 'Principal',
+      sort_order: 0,
+      duration_min: 45,
+      routine_exercises: [
+        { id: 301, sort_order: 0, superset_group: null, exercise: { name: 'Press banca' } },
+        { id: 302, sort_order: 1, superset_group: 1, exercise: { name: 'Curl biceps' } },
+        { id: 303, sort_order: 2, superset_group: 1, exercise: { name: 'Press francés' } },
+        { id: 304, sort_order: 3, superset_group: null, exercise: { name: 'Sentadilla' } },
       ],
     },
   ]
@@ -66,9 +83,9 @@ describe('workoutTransforms', () => {
       const result = groupExercisesByBlock(sampleBlocks)
       expect(result).toHaveLength(2)
       expect(result[0].blockName).toBe('Calentamiento')
-      expect(result[0].exercises).toHaveLength(1)
+      expect(result[0].exerciseGroups).toHaveLength(1)
       expect(result[1].blockName).toBe('Principal')
-      expect(result[1].exercises).toHaveLength(2)
+      expect(result[1].exerciseGroups).toHaveLength(2)
     })
 
     it('marca bloques como warmup correctamente', () => {
@@ -77,9 +94,64 @@ describe('workoutTransforms', () => {
       expect(result[1].isWarmup).toBe(false)
     })
 
-    it('incluye tipo routine en ejercicios', () => {
+    it('incluye tipo routine en ejercicios individuales', () => {
       const result = groupExercisesByBlock(sampleBlocks)
-      expect(result[0].exercises[0].type).toBe('routine')
+      expect(result[0].exerciseGroups[0].type).toBe('individual')
+      expect(result[0].exerciseGroups[0].exercise.type).toBe('routine')
+    })
+  })
+
+  describe('groupExercisesBySupersetId', () => {
+    it('retorna array vacío para null', () => {
+      expect(groupExercisesBySupersetId(null, 'Principal')).toEqual([])
+    })
+
+    it('retorna array vacío para array vacío', () => {
+      expect(groupExercisesBySupersetId([], 'Principal')).toEqual([])
+    })
+
+    it('agrupa ejercicios individuales correctamente', () => {
+      const exercises = [
+        { id: 1, sort_order: 0, superset_group: null },
+        { id: 2, sort_order: 1, superset_group: null },
+      ]
+      const result = groupExercisesBySupersetId(exercises, 'Principal')
+      expect(result).toHaveLength(2)
+      expect(result[0].type).toBe('individual')
+      expect(result[1].type).toBe('individual')
+    })
+
+    it('agrupa ejercicios en supersets', () => {
+      const exercises = blocksWithSupersets[0].routine_exercises
+      const result = groupExercisesBySupersetId(exercises, 'Principal')
+
+      // Debería tener: individual, superset(2 ejercicios), individual
+      expect(result).toHaveLength(3)
+      expect(result[0].type).toBe('individual')
+      expect(result[0].exercise.id).toBe(301)
+
+      expect(result[1].type).toBe('superset')
+      expect(result[1].supersetId).toBe(1)
+      expect(result[1].exercises).toHaveLength(2)
+      expect(result[1].exercises[0].id).toBe(302)
+      expect(result[1].exercises[1].id).toBe(303)
+
+      expect(result[2].type).toBe('individual')
+      expect(result[2].exercise.id).toBe(304)
+    })
+
+    it('enriquece ejercicios con blockName e isWarmup', () => {
+      const exercises = [{ id: 1, sort_order: 0, superset_group: null }]
+      const result = groupExercisesBySupersetId(exercises, 'Calentamiento')
+      expect(result[0].exercise.blockName).toBe('Calentamiento')
+      expect(result[0].exercise.isWarmup).toBe(true)
+      expect(result[0].exercise.type).toBe('routine')
+    })
+
+    it('marca isWarmup false para bloque principal', () => {
+      const exercises = [{ id: 1, sort_order: 0, superset_group: null }]
+      const result = groupExercisesBySupersetId(exercises, 'Principal')
+      expect(result[0].exercise.isWarmup).toBe(false)
     })
   })
 

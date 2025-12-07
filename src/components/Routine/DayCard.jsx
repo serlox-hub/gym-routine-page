@@ -5,6 +5,7 @@ import { Card, ConfirmModal } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { colors } from '../../lib/styles.js'
 import { moveItemById } from '../../lib/arrayUtils.js'
+import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
 import ExerciseRow from './ExerciseRow.jsx'
 import DayEditForm from './DayEditForm.jsx'
 
@@ -24,6 +25,8 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
   const warmupExercises = warmupBlock?.routine_exercises || []
   const mainExercises = mainBlock?.routine_exercises || []
   const allExercises = [...warmupExercises, ...mainExercises]
+
+  const existingSupersets = getExistingSupersetIds(allExercises)
 
   const handleClick = () => {
     if (!isEditing) {
@@ -75,7 +78,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
                 index={index}
                 totalCount={exercises.length}
                 canMoveUp={canMoveUpFromSection}
-                onEdit={() => onEditExercise(re, id)}
+                onEdit={() => onEditExercise(re, id, existingSupersets)}
                 onMoveUp={() => handleMoveExercise(re.id, 'up')}
                 onMoveDown={() => handleMoveExercise(re.id, 'down')}
                 onDelete={() => setExerciseToDelete(re)}
@@ -156,7 +159,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
         <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.border }}>
           {renderExerciseList(warmupExercises, 'Calentamiento', colors.accent, false)}
           <button
-            onClick={(e) => { e.stopPropagation(); onAddWarmup(id) }}
+            onClick={(e) => { e.stopPropagation(); onAddWarmup(id, existingSupersets) }}
             className="w-full py-2 mb-3 rounded-lg text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
             style={{ border: `1px dashed ${colors.border}`, color: colors.accent }}
           >
@@ -166,7 +169,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
 
           {renderExerciseList(mainExercises, 'Principal', colors.textSecondary, warmupExercises.length > 0)}
           <button
-            onClick={(e) => { e.stopPropagation(); onAddExercise(id) }}
+            onClick={(e) => { e.stopPropagation(); onAddExercise(id, existingSupersets) }}
             className="w-full py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
             style={{ border: `1px dashed ${colors.border}`, color: colors.textSecondary }}
           >

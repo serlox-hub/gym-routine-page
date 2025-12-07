@@ -3,7 +3,7 @@ import { Info } from 'lucide-react'
 import { Card, Badge } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 
-function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
+function ExerciseCard({ routineExercise, onClick, isWarmup = false, isSuperset = false }) {
   const { exercise, series, reps, rir, rest_seconds, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
@@ -31,8 +31,11 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
     )
   }
 
+  const Wrapper = isSuperset ? 'div' : Card
+  const wrapperProps = isSuperset ? {} : { className: 'p-3', onClick }
+
   return (
-    <Card className="p-3" onClick={onClick}>
+    <Wrapper {...wrapperProps}>
       <div className="flex justify-between items-start gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="font-medium truncate">{exercise.name}</h4>
@@ -50,7 +53,7 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
         </button>
       </div>
 
-      <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-2">
+      <div className={`${isSuperset ? 'mt-2' : 'mt-2 pt-2 border-t border-border'} flex flex-wrap gap-2`}>
         <Badge variant="accent">{series}×{reps}</Badge>
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
         {rest_seconds && <Badge variant="warning">{rest_seconds}s</Badge>}
@@ -64,7 +67,7 @@ function ExerciseCard({ routineExercise, onClick, isWarmup = false }) {
         exerciseName={exercise.name}
         measurementType={measurementType}
       />
-    </Card>
+    </Wrapper>
   )
 }
 

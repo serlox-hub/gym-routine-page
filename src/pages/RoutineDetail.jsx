@@ -18,6 +18,7 @@ function RoutineDetail() {
   const [showEditExercise, setShowEditExercise] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [dayToDelete, setDayToDelete] = useState(null)
+  const [existingSupersets, setExistingSupersets] = useState([])
 
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
@@ -55,19 +56,21 @@ function RoutineDetail() {
     }
   }
 
-  const handleOpenAddExercise = (dayId) => {
+  const handleOpenAddExercise = (dayId, supersets = []) => {
     setSelectedDayId(dayId)
     setIsAddingWarmup(false)
+    setExistingSupersets(supersets)
     setShowAddExercise(true)
   }
 
-  const handleOpenAddWarmup = (dayId) => {
+  const handleOpenAddWarmup = (dayId, supersets = []) => {
     setSelectedDayId(dayId)
     setIsAddingWarmup(true)
+    setExistingSupersets(supersets)
     setShowAddExercise(true)
   }
 
-  const handleAddExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon }) => {
+  const handleAddExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group }) => {
     try {
       await addExercise.mutateAsync({
         dayId: selectedDayId,
@@ -80,27 +83,30 @@ function RoutineDetail() {
         tempo,
         tempo_razon,
         esCalentamiento: isAddingWarmup,
+        superset_group,
       })
       setShowAddExercise(false)
       setSelectedDayId(null)
       setIsAddingWarmup(false)
+      setExistingSupersets([])
     } catch (err) {
       console.error('Error adding exercise:', err)
     }
   }
 
-  const handleOpenEditExercise = (routineExercise, dayId) => {
+  const handleOpenEditExercise = (routineExercise, dayId, supersets = []) => {
     setSelectedExercise(routineExercise)
     setSelectedDayId(dayId)
+    setExistingSupersets(supersets)
     setShowEditExercise(true)
   }
 
-  const handleEditExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon }) => {
+  const handleEditExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group }) => {
     try {
       await updateExercise.mutateAsync({
         exerciseId,
         dayId: selectedDayId,
-        data: { series, reps, rir, rest_seconds, notes, tempo, tempo_razon }
+        data: { series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group }
       })
       setShowEditExercise(false)
       setSelectedExercise(null)
@@ -222,10 +228,12 @@ function RoutineDetail() {
           setShowAddExercise(false)
           setSelectedDayId(null)
           setIsAddingWarmup(false)
+          setExistingSupersets([])
         }}
         onSubmit={handleAddExercise}
         isPending={addExercise.isPending}
         isWarmup={isAddingWarmup}
+        existingSupersets={existingSupersets}
       />
 
       <EditRoutineExerciseModal
@@ -238,6 +246,7 @@ function RoutineDetail() {
         onSubmit={handleEditExercise}
         isPending={updateExercise.isPending}
         routineExercise={selectedExercise}
+        existingSupersets={existingSupersets}
       />
     </div>
   )

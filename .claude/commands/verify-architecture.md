@@ -1,0 +1,54 @@
+# Verificar Arquitectura
+
+Analiza **solo los archivos modificados** (según `git status` y `git diff`) para verificar que:
+
+1. **Componentes tontos**: Los componentes en `src/components/` solo contienen lógica de UI (renderizado, eventos, estado local de UI). No deben contener:
+   - Cálculos complejos (>5 líneas)
+   - Transformaciones de datos
+   - Lógica de negocio duplicada
+   - Generación de strings/labels repetida
+
+2. **Lógica en utils**: Toda la lógica de negocio debe estar en `src/lib/`:
+   - Funciones puras y testables
+   - Sin dependencias de React
+   - Documentadas con JSDoc si son complejas
+
+3. **Tests unitarios**: Cada archivo en `src/lib/` debe tener tests en `src/lib/__tests__/`:
+   - Cobertura de casos edge (null, undefined, arrays vacíos)
+   - Tests para cada función exportada
+
+4. **Sin duplicación**: No debe haber código duplicado entre componentes. Si encuentras:
+   - Mismo cálculo en múltiples archivos → extraer a utils
+   - Mismo string/label generado → crear función formateadora
+   - Misma lógica de validación → mover a validation.js
+
+## Pasos a seguir:
+
+1. Busca patrones de código duplicado en componentes
+2. Identifica lógica que debería estar en utils
+3. Verifica que existen tests para las funciones en lib/
+4. Lista los problemas encontrados con:
+   - Archivo y línea
+   - Descripción del problema
+   - Solución propuesta
+
+## Pasos iniciales:
+
+1. Ejecuta `git status --porcelain` para ver si hay cambios en el workspace
+2. Si hay cambios pendientes (staged o unstaged):
+   - Usa `git diff --name-only` y `git diff --name-only --cached` para obtener los archivos modificados
+3. Si NO hay cambios pendientes (workspace limpio):
+   - Usa `git diff --name-only main...HEAD` para obtener archivos modificados en la rama actual respecto a main
+4. Analiza solo esos archivos (componentes, páginas, hooks, stores, lib)
+
+## Output esperado:
+
+Resume los hallazgos en formato:
+
+```
+✅ Correcto: [descripción]
+⚠️ Advertencia: [descripción] en [archivo:línea]
+❌ Problema: [descripción] en [archivo:línea] → Solución: [propuesta]
+```
+
+Al final indica si es necesario hacer cambios o si la arquitectura es correcta.

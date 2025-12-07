@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useCreateExercise } from '../../hooks/useExercises.js'
 import { colors, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
 import { getDefaultReps } from '../../lib/measurementTypes.js'
+import { getNextSupersetId } from '../../lib/supersetUtils.js'
 import ExerciseForm from '../Exercise/ExerciseForm.jsx'
 import ExerciseSearchList from './ExerciseSearchList.jsx'
 import ExerciseConfigForm from './ExerciseConfigForm.jsx'
@@ -15,12 +16,13 @@ const DEFAULT_FORM = {
   tempo_razon: '',
   rir: '',
   rest_seconds: '',
+  superset_group: '',
 }
 
 /**
  * Modal unificado para añadir ejercicio a rutina o sesión
  */
-function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine' }) {
+function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine', existingSupersets = [] }) {
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [form, setForm] = useState(DEFAULT_FORM)
@@ -63,6 +65,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
       tempo_razon: form.tempo_razon || null,
       rir: form.rir !== '' ? parseInt(form.rir) : null,
       rest_seconds: form.rest_seconds ? parseInt(form.rest_seconds) : null,
+      superset_group: form.superset_group !== '' ? parseInt(form.superset_group) : null,
     }
 
     onSubmit(data)
@@ -91,6 +94,11 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
     if (isWarmup) return 'Añadir calentamiento'
     return 'Añadir ejercicio'
   }
+
+  const nextSuperset = getNextSupersetId(existingSupersets)
+
+  // Solo mostrar superset en modo rutina y si no es calentamiento
+  const showSupersetField = mode === 'routine' && !isWarmup
 
   return (
     <div
@@ -162,6 +170,9 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
             onBack={() => setSelectedExercise(null)}
             isPending={isPending}
             isSessionMode={isSessionMode}
+            showSupersetField={showSupersetField}
+            existingSupersets={existingSupersets}
+            nextSupersetId={nextSuperset}
           />
         )}
       </div>

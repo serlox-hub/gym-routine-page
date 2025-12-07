@@ -1,6 +1,7 @@
 import { Button } from '../ui/index.js'
 import { colors, inputStyle } from '../../lib/styles.js'
 import { getRepsLabel, getRepsPlaceholder } from '../../lib/measurementTypes.js'
+import { formatSupersetLabel } from '../../lib/supersetUtils.js'
 
 /**
  * Formulario para configurar series, reps, tempo, notas de un ejercicio
@@ -17,6 +18,9 @@ function ExerciseConfigForm({
   submitLabel = 'Añadir',
   pendingLabel = 'Añadiendo...',
   backLabel = 'Volver',
+  existingSupersets = [],
+  nextSupersetId = 1,
+  showSupersetField = false,
 }) {
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -152,6 +156,33 @@ function ExerciseConfigForm({
             style={inputStyle}
           />
         </div>
+
+        {showSupersetField && (
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
+              Superset
+            </label>
+            <select
+              value={form.superset_group || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, superset_group: e.target.value }))}
+              className="w-full p-3 rounded-lg text-base"
+              style={inputStyle}
+            >
+              <option value="">Sin superset</option>
+              {existingSupersets.map(id => (
+                <option key={id} value={id}>
+                  {formatSupersetLabel(id)}
+                </option>
+              ))}
+              <option value={nextSupersetId}>
+                + Nuevo {formatSupersetLabel(nextSupersetId).toLowerCase()}
+              </option>
+            </select>
+            <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+              Ejercicios en el mismo superset se hacen sin descanso entre ellos
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-3 justify-end pt-2">

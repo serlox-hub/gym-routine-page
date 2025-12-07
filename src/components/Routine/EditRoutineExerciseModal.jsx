@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { colors, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
+import { getNextSupersetId } from '../../lib/supersetUtils.js'
 import ExerciseConfigForm from './ExerciseConfigForm.jsx'
 
-function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routineExercise }) {
+function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routineExercise, existingSupersets = [] }) {
   const [form, setForm] = useState({
     series: '3',
     reps: '',
@@ -11,6 +12,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
     notes: '',
     tempo: '',
     tempo_razon: '',
+    superset_group: '',
   })
 
   const exercise = routineExercise?.exercise
@@ -26,6 +28,9 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
         notes: routineExercise.notes || '',
         tempo: routineExercise.tempo || '',
         tempo_razon: routineExercise.tempo_razon || '',
+        superset_group: routineExercise.superset_group !== null && routineExercise.superset_group !== undefined
+          ? String(routineExercise.superset_group)
+          : '',
       })
     }
   }, [routineExercise])
@@ -42,8 +47,11 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
       notes: form.notes || null,
       tempo: form.tempo || null,
       tempo_razon: form.tempo_razon || null,
+      superset_group: form.superset_group !== '' ? parseInt(form.superset_group) : null,
     })
   }
+
+  const nextSuperset = getNextSupersetId(existingSupersets)
 
   return (
     <div
@@ -70,6 +78,9 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
           submitLabel="Guardar"
           pendingLabel="Guardando..."
           backLabel="Cancelar"
+          showSupersetField={true}
+          existingSupersets={existingSupersets}
+          nextSupersetId={nextSuperset}
         />
       </div>
     </div>

@@ -8,7 +8,7 @@ import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 
-function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove }) {
+function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false }) {
   const { id, exercise, series, reps, rir, tempo, tempo_razon, notes, measurement_type, rest_seconds } = routineExercise
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -61,8 +61,12 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
     )
   }
 
+  // Si está dentro de un superset, no usar Card (ya tiene contenedor)
+  const Wrapper = isSuperset ? 'div' : Card
+  const wrapperProps = isSuperset ? {} : { className: 'p-4' }
+
   return (
-    <Card className="p-4">
+    <Wrapper {...wrapperProps}>
       <div className="flex justify-between items-start gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="font-medium">{exercise.name}</h4>
@@ -196,7 +200,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         }}
         onCancel={() => setShowRemoveConfirm(false)}
       />
-    </Card>
+    </Wrapper>
   )
 }
 
