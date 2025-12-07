@@ -24,11 +24,14 @@ function DayDetail() {
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   const handleStartWorkout = () => {
-    startSessionMutation.mutate(parseInt(dayId), {
-      onSuccess: () => {
-        navigate(`/routine/${routineId}/day/${dayId}/workout`)
+    startSessionMutation.mutate(
+      { routineDayId: parseInt(dayId), blocks },
+      {
+        onSuccess: () => {
+          navigate(`/routine/${routineId}/day/${dayId}/workout`)
+        }
       }
-    })
+    )
   }
 
   const handleContinueWorkout = () => {

@@ -11,24 +11,13 @@ function ExerciseConfigForm({
   exercise,
   form,
   setForm,
-  onSubmit,
-  onBack,
-  isPending,
   isSessionMode = false,
-  submitLabel = 'Añadir',
-  pendingLabel = 'Añadiendo...',
-  backLabel = 'Volver',
   existingSupersets = [],
   nextSupersetId = 1,
   showSupersetField = false,
 }) {
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit()
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div
         className="p-3 rounded-lg"
         style={{ backgroundColor: 'rgba(88, 166, 255, 0.1)' }}
@@ -184,20 +173,24 @@ function ExerciseConfigForm({
           </div>
         )}
       </div>
+    </div>
+  )
+}
 
-      <div className="flex gap-3 justify-end pt-2">
-        <Button
-          variant="secondary"
-          type="button"
-          onClick={onBack}
-        >
-          {backLabel}
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? pendingLabel : submitLabel}
-        </Button>
-      </div>
-    </form>
+export function ExerciseConfigFormButtons({ onBack, onSubmit, isPending, backLabel = 'Volver', submitLabel = 'Añadir', pendingLabel = 'Añadiendo...' }) {
+  return (
+    <div className="flex gap-3 justify-end pt-3 border-t flex-shrink-0" style={{ borderColor: colors.border }}>
+      <Button
+        variant="secondary"
+        type="button"
+        onClick={onBack}
+      >
+        {backLabel}
+      </Button>
+      <Button onClick={onSubmit} disabled={isPending}>
+        {isPending ? pendingLabel : submitLabel}
+      </Button>
+    </div>
   )
 }
 

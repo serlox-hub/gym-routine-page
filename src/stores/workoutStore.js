@@ -9,14 +9,11 @@ const useWorkoutStore = create(
       routineDayId: null,
       startedAt: null,
 
-      // Completed sets during this session (before saving to DB)
+      // Completed sets during this session (optimistic UI cache)
+      // Key: `${sessionExerciseId}-${setNumber}` -> setData
       completedSets: {},
       // Cached set data (for re-checking after uncomplete)
       cachedSetData: {},
-
-      // Custom exercise order and added exercises
-      exerciseOrder: [], // Array of { id, type: 'routine' | 'extra' }
-      extraExercises: [], // Exercises added during session
 
       // Rest timer state
       restTimerActive: false,
@@ -30,8 +27,6 @@ const useWorkoutStore = create(
         startedAt: new Date().toISOString(),
         completedSets: {},
         cachedSetData: {},
-        exerciseOrder: [],
-        extraExercises: [],
       }),
 
       // End current session
@@ -41,15 +36,13 @@ const useWorkoutStore = create(
         startedAt: null,
         completedSets: {},
         cachedSetData: {},
-        exerciseOrder: [],
-        extraExercises: [],
       }),
 
-      // Mark a set as completed
-      completeSet: (routineExerciseId, setNumber, data) => set(state => {
-        const key = `${routineExerciseId}-${setNumber}`
+      // Mark a set as completed (optimistic update)
+      completeSet: (sessionExerciseId, setNumber, data) => set(state => {
+        const key = `${sessionExerciseId}-${setNumber}`
         const setData = {
-          routineExerciseId,
+          sessionExerciseId,
           setNumber,
           ...data,
           completedAt: new Date().toISOString(),
@@ -67,110 +60,42 @@ const useWorkoutStore = create(
       }),
 
       // Uncheck a completed set (keeps data in cache for re-checking)
-      uncompleteSet: (routineExerciseId, setNumber) => set(state => {
+      uncompleteSet: (sessionExerciseId, setNumber) => set(state => {
         const newCompletedSets = { ...state.completedSets }
-        delete newCompletedSets[`${routineExerciseId}-${setNumber}`]
+        delete newCompletedSets[`${sessionExerciseId}-${setNumber}`]
         return { completedSets: newCompletedSets }
       }),
 
       // Get cached data for a set (even if uncompleted)
-      getCachedSetData: (routineExerciseId, setNumber) => {
+      getCachedSetData: (sessionExerciseId, setNumber) => {
         const state = get()
-        return state.cachedSetData[`${routineExerciseId}-${setNumber}`]
+        return state.cachedSetData[`${sessionExerciseId}-${setNumber}`]
       },
 
       // Get completed sets for an exercise
-      getSetsForExercise: (routineExerciseId) => {
+      getSetsForExercise: (sessionExerciseId) => {
         const state = get()
         return Object.values(state.completedSets)
-          .filter(set => set.routineExerciseId === routineExerciseId)
+          .filter(set => set.sessionExerciseId === sessionExerciseId)
           .sort((a, b) => a.setNumber - b.setNumber)
       },
 
       // Check if a specific set is completed
-      isSetCompleted: (routineExerciseId, setNumber) => {
+      isSetCompleted: (sessionExerciseId, setNumber) => {
         const state = get()
-        return !!state.completedSets[`${routineExerciseId}-${setNumber}`]
+        return !!state.completedSets[`${sessionExerciseId}-${setNumber}`]
       },
 
       // Get data for a specific set
-      getSetData: (routineExerciseId, setNumber) => {
+      getSetData: (sessionExerciseId, setNumber) => {
         const state = get()
-        return state.completedSets[`${routineExerciseId}-${setNumber}`]
+        return state.completedSets[`${sessionExerciseId}-${setNumber}`]
       },
 
       // Check if session is active
       hasActiveSession: () => {
         const state = get()
         return !!state.sessionId
-      },
-
-      // Initialize exercise order from routine blocks
-      initializeExerciseOrder: (blocks) => {
-        const state = get()
-        if (state.exerciseOrder.length > 0) return // Already initialized
-
-        const order = []
-        blocks.forEach(block => {
-          block.routine_exercises.forEach(re => {
-            order.push({ id: re.id, type: 'routine', blockId: block.id })
-          })
-        })
-        set({ exerciseOrder: order })
-      },
-
-      // Reorder exercises
-      reorderExercises: (newOrder) => set({ exerciseOrder: newOrder }),
-
-      // Move exercise up/down
-      moveExercise: (index, direction) => set(state => {
-        const newOrder = [...state.exerciseOrder]
-        const newIndex = direction === 'up' ? index - 1 : index + 1
-
-        if (newIndex < 0 || newIndex >= newOrder.length) return state
-
-        const temp = newOrder[index]
-        newOrder[index] = newOrder[newIndex]
-        newOrder[newIndex] = temp
-
-        return { exerciseOrder: newOrder }
-      }),
-
-      // Add extra exercise to session
-      addExtraExercise: (exercise, config) => set(state => {
-        const extraId = `extra-${Date.now()}`
-        const extraExercise = {
-          id: extraId,
-          exercise,
-          series: config.series || 3,
-          reps: config.reps || '10',
-          rir: config.rir ?? 2,
-          rest_seconds: config.rest_seconds || 90,
-          measurement_type: exercise.measurement_type || 'weight_reps',
-        }
-
-        return {
-          extraExercises: [...state.extraExercises, extraExercise],
-          exerciseOrder: [...state.exerciseOrder, { id: extraId, type: 'extra' }],
-        }
-      }),
-
-      // Remove extra exercise
-      removeExtraExercise: (extraId) => set(state => ({
-        extraExercises: state.extraExercises.filter(e => e.id !== extraId),
-        exerciseOrder: state.exerciseOrder.filter(o => o.id !== extraId),
-      })),
-
-      // Remove any exercise from session (routine or extra)
-      removeExerciseFromSession: (exerciseId) => set(state => ({
-        extraExercises: state.extraExercises.filter(e => e.id !== exerciseId),
-        exerciseOrder: state.exerciseOrder.filter(o => o.id !== exerciseId),
-      })),
-
-      // Get extra exercise by id
-      getExtraExercise: (extraId) => {
-        const state = get()
-        return state.extraExercises.find(e => e.id === extraId)
       },
 
       // Rest timer actions

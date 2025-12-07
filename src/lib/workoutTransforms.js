@@ -2,6 +2,161 @@
  * Utilidades para transformación de datos de sesiones de entrenamiento
  */
 
+// ============================================
+// SESSION EXERCISES (nueva tabla)
+// ============================================
+
+/**
+ * Transforma session_exercises de la BD al formato esperado por los componentes
+ * @param {Array} sessionExercises - Ejercicios de la sesión desde session_exercises
+ * @returns {{exercisesByBlock: Array, flatExercises: Array}}
+ */
+export function transformSessionExercises(sessionExercises) {
+  if (!sessionExercises || sessionExercises.length === 0) {
+    return { exercisesByBlock: [], flatExercises: [] }
+  }
+
+  // Ordenar por sort_order
+  const sorted = [...sessionExercises].sort((a, b) => a.sort_order - b.sort_order)
+
+  // Agrupar por bloque
+  const blockMap = new Map()
+  sorted.forEach(se => {
+    const blockName = se.block_name || 'Principal'
+    if (!blockMap.has(blockName)) {
+      blockMap.set(blockName, {
+        blockName,
+        isWarmup: blockName.toLowerCase() === 'calentamiento',
+        exerciseGroups: [],
+      })
+    }
+  })
+
+  // Crear grupos de ejercicios (individuales y supersets)
+  const supersetMap = new Map()
+
+  sorted.forEach(se => {
+    const blockName = se.block_name || 'Principal'
+    const block = blockMap.get(blockName)
+
+    const enrichedExercise = {
+      id: se.id,
+      sessionExerciseId: se.id,
+      exercise: se.exercise,
+      exercise_id: se.exercise_id,
+      series: se.series,
+      reps: se.reps,
+      rir: se.rir,
+      rest_seconds: se.rest_seconds,
+      tempo: se.tempo,
+      notes: se.notes,
+      superset_group: se.superset_group,
+      is_extra: se.is_extra,
+      blockName,
+      isWarmup: blockName.toLowerCase() === 'calentamiento',
+      type: se.is_extra ? 'extra' : 'routine',
+    }
+
+    if (se.superset_group === null || se.superset_group === undefined) {
+      // Ejercicio individual
+      block.exerciseGroups.push({
+        type: 'individual',
+        exercise: enrichedExercise,
+      })
+    } else {
+      // Parte de un superset
+      const supersetKey = `${blockName}-${se.superset_group}`
+      if (!supersetMap.has(supersetKey)) {
+        const supersetGroup = {
+          type: 'superset',
+          supersetId: se.superset_group,
+          exercises: [],
+        }
+        supersetMap.set(supersetKey, supersetGroup)
+        block.exerciseGroups.push(supersetGroup)
+      }
+      supersetMap.get(supersetKey).exercises.push(enrichedExercise)
+    }
+  })
+
+  // Construir exercisesByBlock en orden predeterminado
+  const exercisesByBlock = []
+  const warmupBlock = blockMap.get('Calentamiento')
+  if (warmupBlock && warmupBlock.exerciseGroups.length > 0) {
+    exercisesByBlock.push(warmupBlock)
+  }
+  const mainBlock = blockMap.get('Principal')
+  if (mainBlock && mainBlock.exerciseGroups.length > 0) {
+    exercisesByBlock.push(mainBlock)
+  }
+  const addedBlock = blockMap.get('Añadido')
+  if (addedBlock && addedBlock.exerciseGroups.length > 0) {
+    exercisesByBlock.push(addedBlock)
+  }
+
+  // flatExercises mantiene el orden de sort_order
+  const flatExercises = sorted.map(se => ({
+    id: se.id,
+    sessionExerciseId: se.id,
+    exercise: se.exercise,
+    exercise_id: se.exercise_id,
+    series: se.series,
+    reps: se.reps,
+    rir: se.rir,
+    rest_seconds: se.rest_seconds,
+    tempo: se.tempo,
+    notes: se.notes,
+    superset_group: se.superset_group,
+    is_extra: se.is_extra,
+    blockName: se.block_name || 'Principal',
+    isWarmup: (se.block_name || '').toLowerCase() === 'calentamiento',
+    type: se.is_extra ? 'extra' : 'routine',
+  }))
+
+  return { exercisesByBlock, flatExercises }
+}
+
+/**
+ * Construye los datos para insertar en session_exercises desde routine_exercises
+ * @param {Array} blocks - Bloques de la rutina
+ * @returns {Array} Array de objetos listos para insertar en session_exercises
+ */
+export function buildSessionExercisesFromBlocks(blocks) {
+  if (!blocks) return []
+
+  const sessionExercises = []
+  let sortOrder = 1
+
+  blocks.forEach(block => {
+    const blockExercises = [...(block.routine_exercises || [])].sort(
+      (a, b) => a.sort_order - b.sort_order
+    )
+
+    blockExercises.forEach(re => {
+      sessionExercises.push({
+        exercise_id: re.exercise_id,
+        routine_exercise_id: re.id,
+        sort_order: sortOrder++,
+        series: re.series,
+        reps: re.reps,
+        rir: re.rir,
+        rest_seconds: re.rest_seconds,
+        tempo: re.tempo,
+        notes: re.notes,
+        superset_group: re.superset_group,
+        is_extra: false,
+        block_name: block.name,
+      })
+    })
+  })
+
+  return sessionExercises
+}
+
+// ============================================
+// ROUTINE EXERCISES (funciones legacy para rutinas)
+// ============================================
+
 /**
  * Construye un mapa de ejercicios de rutina desde los bloques
  * @param {Array} blocks - Bloques de la rutina
@@ -109,79 +264,3 @@ export function buildDefaultExerciseOrder(groupedBlocks) {
   return order
 }
 
-/**
- * Aplica un orden personalizado de ejercicios
- * @param {Array} exerciseOrder - Orden personalizado [{id, type}]
- * @param {Map} routineExerciseMap - Mapa de ejercicios de rutina
- * @param {Array} extraExercises - Ejercicios extra añadidos
- * @returns {Array} Lista de ejercicios en el orden especificado
- */
-export function applyCustomExerciseOrder(exerciseOrder, routineExerciseMap, extraExercises) {
-  return exerciseOrder.map(item => {
-    if (item.type === 'routine') {
-      const re = routineExerciseMap.get(item.id)
-      return re ? { ...re, type: 'routine' } : null
-    } else {
-      const extra = extraExercises.find(e => e.id === item.id)
-      return extra ? { ...extra, type: 'extra', blockName: 'Añadido' } : null
-    }
-  }).filter(Boolean)
-}
-
-/**
- * Detecta si el orden actual difiere del orden por defecto
- * @param {Array} flatOrder - Orden actual plano
- * @param {Array} defaultOrder - Orden por defecto
- * @param {boolean} hasExtraExercises - Si hay ejercicios extra
- * @returns {boolean}
- */
-export function hasCustomOrderChanged(flatOrder, defaultOrder, hasExtraExercises) {
-  if (hasExtraExercises) return true
-  if (flatOrder.length !== defaultOrder.length) return true
-  return flatOrder.some((ex, i) => defaultOrder[i]?.id !== ex.id)
-}
-
-/**
- * Transforma datos de bloques para la sesión de entrenamiento
- * @param {Array} blocks - Bloques de la rutina
- * @param {Array} exerciseOrder - Orden personalizado (puede estar vacío)
- * @param {Array} extraExercises - Ejercicios extra añadidos
- * @returns {{exercisesByBlock: Array, flatExercises: Array, hasCustomOrder: boolean}}
- */
-export function transformWorkoutSessionData(blocks, exerciseOrder, extraExercises) {
-  if (!blocks) {
-    return { exercisesByBlock: [], flatExercises: [], hasCustomOrder: false }
-  }
-
-  const routineExerciseMap = buildRoutineExerciseMap(blocks)
-  const exercisesByBlock = groupExercisesByBlock(blocks)
-  const defaultOrder = buildDefaultExerciseOrder(exercisesByBlock)
-
-  let flatExercises
-  let hasCustomOrder
-
-  if (exerciseOrder.length === 0) {
-    flatExercises = defaultOrder
-    hasCustomOrder = false
-  } else {
-    flatExercises = applyCustomExerciseOrder(exerciseOrder, routineExerciseMap, extraExercises)
-    hasCustomOrder = hasCustomOrderChanged(flatExercises, defaultOrder, extraExercises.length > 0)
-  }
-
-  return { exercisesByBlock, flatExercises, hasCustomOrder }
-}
-
-/**
- * Construye el orden inicial de ejercicios desde bloques (para el store)
- * @param {Array} blocks - Bloques de la rutina
- * @returns {Array} Array de {id, type, blockId}
- */
-export function buildExerciseOrderFromBlocks(blocks) {
-  const order = []
-  blocks.forEach(block => {
-    block.routine_exercises.forEach(re => {
-      order.push({ id: re.id, type: 'routine', blockId: block.id })
-    })
-  })
-  return order
-}

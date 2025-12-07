@@ -11,8 +11,8 @@ function ReorderableExerciseList({
 }) {
   return (
     <div className="space-y-3">
-      {exercises.map((routineExercise, index) => (
-        <div key={routineExercise.id} className="relative">
+      {exercises.map((sessionExercise, index) => (
+        <div key={sessionExercise.sessionExerciseId || sessionExercise.id} className="relative">
           <div className="absolute -left-10 top-1/2 -translate-y-1/2 flex flex-col gap-1 z-10">
             <button
               onClick={() => onMove(index, 'up')}
@@ -33,7 +33,7 @@ function ReorderableExerciseList({
           </div>
 
           <div className="ml-8">
-            {routineExercise.type === 'extra' && (
+            {sessionExercise.is_extra && (
               <div
                 className="text-xs font-medium px-2 py-0.5 rounded inline-block mb-1"
                 style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: colors.purple }}
@@ -42,7 +42,7 @@ function ReorderableExerciseList({
               </div>
             )}
             <WorkoutExerciseCard
-              routineExercise={routineExercise}
+              sessionExercise={sessionExercise}
               onCompleteSet={onCompleteSet}
               onUncompleteSet={onUncompleteSet}
               onRemove={onRemove}

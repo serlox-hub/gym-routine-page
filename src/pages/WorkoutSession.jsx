@@ -1,12 +1,22 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useRoutineDay, useRoutineBlocks } from '../hooks/useRoutines.js'
-import { useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession } from '../hooks/useWorkout.js'
+import { useRoutineDay } from '../hooks/useRoutines.js'
+import {
+  useCompleteSet,
+  useUncompleteSet,
+  useEndSession,
+  useAbandonSession,
+  useSessionExercises,
+  useAddSessionExercise,
+  useRemoveSessionExercise,
+  useReorderSessionExercises,
+} from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../components/ui/index.js'
-import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList, FlatExerciseList } from '../components/Workout/index.js'
+import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList } from '../components/Workout/index.js'
 import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
-import { transformWorkoutSessionData } from '../lib/workoutTransforms.js'
+import { transformSessionExercises } from '../lib/workoutTransforms.js'
+import { getExistingSupersetIds } from '../lib/supersetUtils.js'
 
 function WorkoutSession() {
   const { routineId, dayId } = useParams()
@@ -14,15 +24,9 @@ function WorkoutSession() {
 
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
-  const exerciseOrder = useWorkoutStore(state => state.exerciseOrder)
-  const extraExercises = useWorkoutStore(state => state.extraExercises)
-  const initializeExerciseOrder = useWorkoutStore(state => state.initializeExerciseOrder)
-  const moveExercise = useWorkoutStore(state => state.moveExercise)
-  const addExtraExercise = useWorkoutStore(state => state.addExtraExercise)
-  const removeExerciseFromSession = useWorkoutStore(state => state.removeExerciseFromSession)
 
   const { data: day, isLoading: loadingDay, error: dayError } = useRoutineDay(dayId)
-  const { data: blocks, isLoading: loadingBlocks, error: blocksError } = useRoutineBlocks(dayId)
+  const { data: sessionExercises, isLoading: loadingExercises, error: exercisesError } = useSessionExercises(sessionId)
 
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
@@ -32,19 +36,22 @@ function WorkoutSession() {
   const uncompleteSetMutation = useUncompleteSet()
   const endSessionMutation = useEndSession()
   const abandonSessionMutation = useAbandonSession()
+  const addSessionExerciseMutation = useAddSessionExercise()
+  const removeSessionExerciseMutation = useRemoveSessionExercise()
+  const reorderSessionExercisesMutation = useReorderSessionExercises()
 
-  const isLoading = loadingDay || loadingBlocks
-  const error = dayError || blocksError
+  const isLoading = loadingDay || loadingExercises
+  const error = dayError || exercisesError
 
-  useEffect(() => {
-    if (blocks && blocks.length > 0) {
-      initializeExerciseOrder(blocks)
-    }
-  }, [blocks, initializeExerciseOrder])
+  const { exercisesByBlock, flatExercises } = useMemo(
+    () => transformSessionExercises(sessionExercises),
+    [sessionExercises]
+  )
 
-  const { exercisesByBlock, flatExercises, hasCustomOrder } = useMemo(
-    () => transformWorkoutSessionData(blocks, exerciseOrder, extraExercises),
-    [blocks, exerciseOrder, extraExercises]
+  // Obtener supersets existentes para el modal de añadir ejercicio
+  const existingSupersets = useMemo(
+    () => getExistingSupersetIds(sessionExercises || []),
+    [sessionExercises]
   )
 
   useEffect(() => {
@@ -87,16 +94,36 @@ function WorkoutSession() {
   }
 
   const handleAddExercise = (data) => {
-    addExtraExercise(data.exercise, {
+    addSessionExerciseMutation.mutate({
+      exercise: data.exercise,
       series: data.series,
       reps: data.reps,
       rir: data.rir,
       rest_seconds: data.rest_seconds,
       notes: data.notes,
       tempo: data.tempo,
-      tempo_razon: data.tempo_razon,
+      superset_group: data.superset_group,
+    }, {
+      onSuccess: () => setShowAddExercise(false)
     })
-    setShowAddExercise(false)
+  }
+
+  const handleRemoveExercise = (sessionExerciseId) => {
+    removeSessionExerciseMutation.mutate(sessionExerciseId)
+  }
+
+  const handleMoveExercise = (index, direction) => {
+    const newOrder = [...flatExercises]
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+
+    if (newIndex < 0 || newIndex >= newOrder.length) return
+
+    const temp = newOrder[index]
+    newOrder[index] = newOrder[newIndex]
+    newOrder[newIndex] = temp
+
+    const orderedIds = newOrder.map(e => e.sessionExerciseId)
+    reorderSessionExercisesMutation.mutate(orderedIds)
   }
 
   return (
@@ -112,24 +139,17 @@ function WorkoutSession() {
         {isReordering ? (
           <ReorderableExerciseList
             exercises={flatExercises}
-            onMove={moveExercise}
-            onRemove={removeExerciseFromSession}
+            onMove={handleMoveExercise}
+            onRemove={handleRemoveExercise}
             onCompleteSet={handleCompleteSet}
             onUncompleteSet={handleUncompleteSet}
-          />
-        ) : hasCustomOrder ? (
-          <FlatExerciseList
-            exercises={flatExercises}
-            onCompleteSet={handleCompleteSet}
-            onUncompleteSet={handleUncompleteSet}
-            onRemove={removeExerciseFromSession}
           />
         ) : (
           <BlockExerciseList
             exercisesByBlock={exercisesByBlock}
             onCompleteSet={handleCompleteSet}
             onUncompleteSet={handleUncompleteSet}
-            onRemove={removeExerciseFromSession}
+            onRemove={handleRemoveExercise}
           />
         )}
       </main>
@@ -195,7 +215,9 @@ function WorkoutSession() {
         isOpen={showAddExercise}
         onClose={() => setShowAddExercise(false)}
         onSubmit={handleAddExercise}
+        isPending={addSessionExerciseMutation.isPending}
         mode="session"
+        existingSupersets={existingSupersets}
       />
 
       <RestTimer />

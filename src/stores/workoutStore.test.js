@@ -14,8 +14,6 @@ describe('workoutStore', () => {
         startedAt: null,
         completedSets: {},
         cachedSetData: {},
-        exerciseOrder: [],
-        extraExercises: [],
         restTimerActive: false,
         restTimeRemaining: 0,
         restTimeInitial: 0,
@@ -66,7 +64,7 @@ describe('workoutStore', () => {
       })
     })
 
-    it('completes a set', () => {
+    it('completes a set with sessionExerciseId', () => {
       act(() => {
         useWorkoutStore.getState().completeSet(1, 1, {
           weight: 100,
@@ -76,6 +74,7 @@ describe('workoutStore', () => {
 
       const state = useWorkoutStore.getState()
       expect(state.completedSets['1-1']).toBeTruthy()
+      expect(state.completedSets['1-1'].sessionExerciseId).toBe(1)
       expect(state.completedSets['1-1'].weight).toBe(100)
       expect(state.completedSets['1-1'].repsCompleted).toBe(10)
     })
@@ -139,184 +138,6 @@ describe('workoutStore', () => {
       expect(sets[0].setNumber).toBe(1)
       expect(sets[1].setNumber).toBe(2)
       expect(sets[2].setNumber).toBe(3)
-    })
-  })
-
-  describe('Exercise Order', () => {
-    it('initializes exercise order from blocks', () => {
-      const blocks = [
-        {
-          id: 1,
-          routine_exercises: [{ id: 101 }, { id: 102 }],
-        },
-        {
-          id: 2,
-          routine_exercises: [{ id: 201 }],
-        },
-      ]
-
-      act(() => {
-        useWorkoutStore.getState().initializeExerciseOrder(blocks)
-      })
-
-      const order = useWorkoutStore.getState().exerciseOrder
-      expect(order).toHaveLength(3)
-      expect(order[0]).toEqual({ id: 101, type: 'routine', blockId: 1 })
-      expect(order[2]).toEqual({ id: 201, type: 'routine', blockId: 2 })
-    })
-
-    it('does not reinitialize if already set', () => {
-      act(() => {
-        useWorkoutStore.setState({ exerciseOrder: [{ id: 1, type: 'routine' }] })
-        useWorkoutStore.getState().initializeExerciseOrder([
-          { id: 2, routine_exercises: [{ id: 999 }] },
-        ])
-      })
-
-      const order = useWorkoutStore.getState().exerciseOrder
-      expect(order).toHaveLength(1)
-      expect(order[0].id).toBe(1)
-    })
-
-    it('moves exercise up', () => {
-      act(() => {
-        useWorkoutStore.setState({
-          exerciseOrder: [
-            { id: 1, type: 'routine' },
-            { id: 2, type: 'routine' },
-            { id: 3, type: 'routine' },
-          ],
-        })
-        useWorkoutStore.getState().moveExercise(1, 'up')
-      })
-
-      const order = useWorkoutStore.getState().exerciseOrder
-      expect(order[0].id).toBe(2)
-      expect(order[1].id).toBe(1)
-    })
-
-    it('moves exercise down', () => {
-      act(() => {
-        useWorkoutStore.setState({
-          exerciseOrder: [
-            { id: 1, type: 'routine' },
-            { id: 2, type: 'routine' },
-            { id: 3, type: 'routine' },
-          ],
-        })
-        useWorkoutStore.getState().moveExercise(1, 'down')
-      })
-
-      const order = useWorkoutStore.getState().exerciseOrder
-      expect(order[1].id).toBe(3)
-      expect(order[2].id).toBe(2)
-    })
-
-    it('does not move beyond boundaries', () => {
-      act(() => {
-        useWorkoutStore.setState({
-          exerciseOrder: [
-            { id: 1, type: 'routine' },
-            { id: 2, type: 'routine' },
-          ],
-        })
-        useWorkoutStore.getState().moveExercise(0, 'up')
-      })
-
-      const order = useWorkoutStore.getState().exerciseOrder
-      expect(order[0].id).toBe(1) // Unchanged
-    })
-
-    it('reorders exercises', () => {
-      const newOrder = [
-        { id: 3, type: 'routine' },
-        { id: 1, type: 'routine' },
-        { id: 2, type: 'routine' },
-      ]
-
-      act(() => {
-        useWorkoutStore.getState().reorderExercises(newOrder)
-      })
-
-      expect(useWorkoutStore.getState().exerciseOrder).toEqual(newOrder)
-    })
-  })
-
-  describe('Extra Exercises', () => {
-    it('adds extra exercise', () => {
-      const exercise = { id: 1, name: 'Curl', measurement_type: 'weight_reps' }
-      const config = { series: 4, reps: '12', rir: 1, rest_seconds: 60 }
-
-      act(() => {
-        useWorkoutStore.getState().addExtraExercise(exercise, config)
-      })
-
-      const state = useWorkoutStore.getState()
-      expect(state.extraExercises).toHaveLength(1)
-      expect(state.extraExercises[0].exercise).toEqual(exercise)
-      expect(state.extraExercises[0].series).toBe(4)
-      expect(state.extraExercises[0].id).toMatch(/^extra-/)
-
-      expect(state.exerciseOrder).toHaveLength(1)
-      expect(state.exerciseOrder[0].type).toBe('extra')
-    })
-
-    it('uses default config values', () => {
-      const exercise = { id: 1, name: 'Curl' }
-
-      act(() => {
-        useWorkoutStore.getState().addExtraExercise(exercise, {})
-      })
-
-      const extra = useWorkoutStore.getState().extraExercises[0]
-      expect(extra.series).toBe(3)
-      expect(extra.reps).toBe('10')
-      expect(extra.rir).toBe(2)
-      expect(extra.rest_seconds).toBe(90)
-    })
-
-    it('removes extra exercise', () => {
-      act(() => {
-        useWorkoutStore.getState().addExtraExercise({ id: 1, name: 'Curl' }, {})
-      })
-
-      const extraId = useWorkoutStore.getState().extraExercises[0].id
-
-      act(() => {
-        useWorkoutStore.getState().removeExtraExercise(extraId)
-      })
-
-      const state = useWorkoutStore.getState()
-      expect(state.extraExercises).toHaveLength(0)
-      expect(state.exerciseOrder).toHaveLength(0)
-    })
-
-    it('getExtraExercise returns exercise by id', () => {
-      act(() => {
-        useWorkoutStore.getState().addExtraExercise({ id: 1, name: 'Curl' }, {})
-      })
-
-      const extraId = useWorkoutStore.getState().extraExercises[0].id
-      const extra = useWorkoutStore.getState().getExtraExercise(extraId)
-
-      expect(extra).toBeTruthy()
-      expect(extra.exercise.name).toBe('Curl')
-    })
-
-    it('removeExerciseFromSession removes both routine and extra', () => {
-      act(() => {
-        useWorkoutStore.setState({
-          exerciseOrder: [
-            { id: 1, type: 'routine' },
-            { id: 'extra-123', type: 'extra' },
-          ],
-          extraExercises: [{ id: 'extra-123', exercise: { name: 'Curl' } }],
-        })
-        useWorkoutStore.getState().removeExerciseFromSession(1)
-      })
-
-      expect(useWorkoutStore.getState().exerciseOrder).toHaveLength(1)
-      expect(useWorkoutStore.getState().exerciseOrder[0].id).toBe('extra-123')
     })
   })
 

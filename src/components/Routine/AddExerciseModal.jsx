@@ -6,7 +6,7 @@ import { getDefaultReps } from '../../lib/measurementTypes.js'
 import { getNextSupersetId } from '../../lib/supersetUtils.js'
 import ExerciseForm from '../Exercise/ExerciseForm.jsx'
 import ExerciseSearchList from './ExerciseSearchList.jsx'
-import ExerciseConfigForm from './ExerciseConfigForm.jsx'
+import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
 
 const DEFAULT_FORM = {
   series: '3',
@@ -97,8 +97,8 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
 
   const nextSuperset = getNextSupersetId(existingSupersets)
 
-  // Solo mostrar superset en modo rutina y si no es calentamiento
-  const showSupersetField = mode === 'routine' && !isWarmup
+  // Mostrar superset si no es calentamiento (tanto en rutina como en sesión)
+  const showSupersetField = !isWarmup
 
   return (
     <div
@@ -162,18 +162,24 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
             </div>
           </>
         ) : (
-          <ExerciseConfigForm
-            exercise={selectedExercise}
-            form={form}
-            setForm={setForm}
-            onSubmit={handleSubmit}
-            onBack={() => setSelectedExercise(null)}
-            isPending={isPending}
-            isSessionMode={isSessionMode}
-            showSupersetField={showSupersetField}
-            existingSupersets={existingSupersets}
-            nextSupersetId={nextSuperset}
-          />
+          <>
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <ExerciseConfigForm
+                exercise={selectedExercise}
+                form={form}
+                setForm={setForm}
+                isSessionMode={isSessionMode}
+                showSupersetField={showSupersetField}
+                existingSupersets={existingSupersets}
+                nextSupersetId={nextSuperset}
+              />
+            </div>
+            <ExerciseConfigFormButtons
+              onBack={() => setSelectedExercise(null)}
+              onSubmit={handleSubmit}
+              isPending={isPending}
+            />
+          </>
         )}
       </div>
     </div>

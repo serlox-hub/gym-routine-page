@@ -39,10 +39,10 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
 
       {/* Ejercicios del superset */}
       <div className="divide-y" style={{ borderColor: colors.border }}>
-        {exercises.map((routineExercise, index) => (
-          <div key={routineExercise.id} className="p-4">
+        {exercises.map((sessionExercise, index) => (
+          <div key={sessionExercise.sessionExerciseId || sessionExercise.id} className="p-4">
             <SupersetExerciseItem
-              routineExercise={routineExercise}
+              sessionExercise={sessionExercise}
               isLast={index === exercises.length - 1}
               onCompleteSet={onCompleteSet}
               onUncompleteSet={onUncompleteSet}
@@ -55,12 +55,12 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
   )
 }
 
-function SupersetExerciseItem({ routineExercise, isLast, onCompleteSet, onUncompleteSet, onRemove }) {
+function SupersetExerciseItem({ sessionExercise, isLast, onCompleteSet, onUncompleteSet, onRemove }) {
   // Usar el WorkoutExerciseCard pero indicando que es parte de superset
   // El timer solo se activa si rest_seconds está configurado
   return (
     <WorkoutExerciseCard
-      routineExercise={routineExercise}
+      sessionExercise={sessionExercise}
       onCompleteSet={onCompleteSet}
       onUncompleteSet={onUncompleteSet}
       onRemove={onRemove}

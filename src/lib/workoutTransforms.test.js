@@ -1,13 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
+  transformSessionExercises,
+  buildSessionExercisesFromBlocks,
   buildRoutineExerciseMap,
   groupExercisesByBlock,
   groupExercisesBySupersetId,
   buildDefaultExerciseOrder,
-  applyCustomExerciseOrder,
-  hasCustomOrderChanged,
-  transformWorkoutSessionData,
-  buildExerciseOrderFromBlocks,
 } from './workoutTransforms.js'
 
 describe('workoutTransforms', () => {
@@ -170,120 +168,257 @@ describe('workoutTransforms', () => {
     })
   })
 
-  describe('applyCustomExerciseOrder', () => {
-    it('aplica orden personalizado de ejercicios de rutina', () => {
-      const map = buildRoutineExerciseMap(sampleBlocks)
-      const order = [
-        { id: 202, type: 'routine' },
-        { id: 201, type: 'routine' },
-      ]
-      const result = applyCustomExerciseOrder(order, map, [])
-      expect(result).toHaveLength(2)
-      expect(result[0].id).toBe(202)
-      expect(result[1].id).toBe(201)
+  // ============================================
+  // SESSION EXERCISES (nueva tabla)
+  // ============================================
+
+  describe('transformSessionExercises', () => {
+    const sampleSessionExercises = [
+      {
+        id: 1,
+        exercise_id: 10,
+        sort_order: 1,
+        series: 3,
+        reps: '10',
+        rir: 2,
+        rest_seconds: 90,
+        tempo: '3010',
+        notes: 'Nota test',
+        superset_group: null,
+        is_extra: false,
+        block_name: 'Principal',
+        exercise: { id: 10, name: 'Press banca', measurement_type: 'weight_reps' },
+      },
+      {
+        id: 2,
+        exercise_id: 11,
+        sort_order: 2,
+        series: 3,
+        reps: '12',
+        rir: 1,
+        rest_seconds: 60,
+        tempo: null,
+        notes: null,
+        superset_group: null,
+        is_extra: false,
+        block_name: 'Principal',
+        exercise: { id: 11, name: 'Press inclinado', measurement_type: 'weight_reps' },
+      },
+    ]
+
+    it('retorna estructura vacía para null', () => {
+      const result = transformSessionExercises(null)
+      expect(result).toEqual({ exercisesByBlock: [], flatExercises: [] })
     })
 
-    it('incluye ejercicios extra', () => {
-      const map = buildRoutineExerciseMap(sampleBlocks)
-      const extraExercises = [
-        { id: 'extra-1', exercise: { name: 'Curl' } },
-      ]
-      const order = [
-        { id: 201, type: 'routine' },
-        { id: 'extra-1', type: 'extra' },
-      ]
-      const result = applyCustomExerciseOrder(order, map, extraExercises)
-      expect(result).toHaveLength(2)
-      expect(result[1].id).toBe('extra-1')
-      expect(result[1].blockName).toBe('Añadido')
+    it('retorna estructura vacía para array vacío', () => {
+      const result = transformSessionExercises([])
+      expect(result).toEqual({ exercisesByBlock: [], flatExercises: [] })
     })
 
-    it('filtra elementos no encontrados', () => {
-      const map = buildRoutineExerciseMap(sampleBlocks)
-      const order = [
-        { id: 201, type: 'routine' },
-        { id: 999, type: 'routine' },
+    it('transforma ejercicios individuales correctamente', () => {
+      const result = transformSessionExercises(sampleSessionExercises)
+
+      expect(result.flatExercises).toHaveLength(2)
+      expect(result.flatExercises[0].sessionExerciseId).toBe(1)
+      expect(result.flatExercises[0].exercise.name).toBe('Press banca')
+      expect(result.flatExercises[0].series).toBe(3)
+      expect(result.flatExercises[0].reps).toBe('10')
+    })
+
+    it('agrupa ejercicios por bloque', () => {
+      const result = transformSessionExercises(sampleSessionExercises)
+
+      expect(result.exercisesByBlock).toHaveLength(1)
+      expect(result.exercisesByBlock[0].blockName).toBe('Principal')
+      expect(result.exercisesByBlock[0].exerciseGroups).toHaveLength(2)
+    })
+
+    it('marca bloques de calentamiento correctamente', () => {
+      const warmupExercises = [
+        {
+          id: 1,
+          sort_order: 1,
+          block_name: 'Calentamiento',
+          exercise: { id: 1, name: 'Cardio' },
+          series: 1,
+          reps: '5min',
+        },
       ]
-      const result = applyCustomExerciseOrder(order, map, [])
-      expect(result).toHaveLength(1)
+      const result = transformSessionExercises(warmupExercises)
+
+      expect(result.exercisesByBlock[0].isWarmup).toBe(true)
+      expect(result.flatExercises[0].isWarmup).toBe(true)
+    })
+
+    it('agrupa supersets correctamente', () => {
+      const exercisesWithSuperset = [
+        {
+          id: 1,
+          sort_order: 1,
+          superset_group: null,
+          block_name: 'Principal',
+          exercise: { id: 1, name: 'Press' },
+          series: 3,
+          reps: '10',
+        },
+        {
+          id: 2,
+          sort_order: 2,
+          superset_group: 1,
+          block_name: 'Principal',
+          exercise: { id: 2, name: 'Curl' },
+          series: 3,
+          reps: '12',
+        },
+        {
+          id: 3,
+          sort_order: 3,
+          superset_group: 1,
+          block_name: 'Principal',
+          exercise: { id: 3, name: 'Triceps' },
+          series: 3,
+          reps: '12',
+        },
+      ]
+      const result = transformSessionExercises(exercisesWithSuperset)
+
+      expect(result.exercisesByBlock[0].exerciseGroups).toHaveLength(2)
+      expect(result.exercisesByBlock[0].exerciseGroups[0].type).toBe('individual')
+      expect(result.exercisesByBlock[0].exerciseGroups[1].type).toBe('superset')
+      expect(result.exercisesByBlock[0].exerciseGroups[1].exercises).toHaveLength(2)
+    })
+
+    it('mantiene orden por sort_order', () => {
+      const unorderedExercises = [
+        { id: 2, sort_order: 2, block_name: 'Principal', exercise: { id: 2, name: 'B' }, series: 3, reps: '10' },
+        { id: 1, sort_order: 1, block_name: 'Principal', exercise: { id: 1, name: 'A' }, series: 3, reps: '10' },
+        { id: 3, sort_order: 3, block_name: 'Principal', exercise: { id: 3, name: 'C' }, series: 3, reps: '10' },
+      ]
+      const result = transformSessionExercises(unorderedExercises)
+
+      expect(result.flatExercises[0].exercise.name).toBe('A')
+      expect(result.flatExercises[1].exercise.name).toBe('B')
+      expect(result.flatExercises[2].exercise.name).toBe('C')
+    })
+
+    it('marca ejercicios extra correctamente', () => {
+      const exercises = [
+        { id: 1, sort_order: 1, is_extra: true, block_name: 'Añadido', exercise: { id: 1, name: 'Extra' }, series: 3, reps: '10' },
+      ]
+      const result = transformSessionExercises(exercises)
+
+      expect(result.flatExercises[0].is_extra).toBe(true)
+      expect(result.flatExercises[0].type).toBe('extra')
+    })
+
+    it('usa "Principal" como bloque por defecto si block_name es null', () => {
+      const exercises = [
+        { id: 1, sort_order: 1, block_name: null, exercise: { id: 1, name: 'Test' }, series: 3, reps: '10' },
+      ]
+      const result = transformSessionExercises(exercises)
+
+      expect(result.flatExercises[0].blockName).toBe('Principal')
     })
   })
 
-  describe('hasCustomOrderChanged', () => {
-    it('retorna true si hay ejercicios extra', () => {
-      expect(hasCustomOrderChanged([], [], true)).toBe(true)
+  describe('buildSessionExercisesFromBlocks', () => {
+    it('retorna array vacío para null', () => {
+      expect(buildSessionExercisesFromBlocks(null)).toEqual([])
     })
 
-    it('retorna true si longitudes difieren', () => {
-      const flat = [{ id: 1 }, { id: 2 }]
-      const defaultOrder = [{ id: 1 }]
-      expect(hasCustomOrderChanged(flat, defaultOrder, false)).toBe(true)
+    it('retorna array vacío para undefined', () => {
+      expect(buildSessionExercisesFromBlocks(undefined)).toEqual([])
     })
 
-    it('retorna true si orden difiere', () => {
-      const flat = [{ id: 2 }, { id: 1 }]
-      const defaultOrder = [{ id: 1 }, { id: 2 }]
-      expect(hasCustomOrderChanged(flat, defaultOrder, false)).toBe(true)
+    it('construye session_exercises desde bloques', () => {
+      const result = buildSessionExercisesFromBlocks(sampleBlocks)
+
+      expect(result).toHaveLength(3)
+      expect(result[0].exercise_id).toBe(undefined) // sampleBlocks no tiene exercise_id
+      expect(result[0].block_name).toBe('Calentamiento')
+      expect(result[0].is_extra).toBe(false)
     })
 
-    it('retorna false si orden es igual', () => {
-      const flat = [{ id: 1 }, { id: 2 }]
-      const defaultOrder = [{ id: 1 }, { id: 2 }]
-      expect(hasCustomOrderChanged(flat, defaultOrder, false)).toBe(false)
-    })
-  })
+    it('asigna sort_order secuencial', () => {
+      const result = buildSessionExercisesFromBlocks(sampleBlocks)
 
-  describe('transformWorkoutSessionData', () => {
-    it('retorna estructura vacía para blocks null', () => {
-      const result = transformWorkoutSessionData(null, [], [])
-      expect(result).toEqual({
-        exercisesByBlock: [],
-        flatExercises: [],
-        hasCustomOrder: false,
+      expect(result[0].sort_order).toBe(1)
+      expect(result[1].sort_order).toBe(2)
+      expect(result[2].sort_order).toBe(3)
+    })
+
+    it('copia todos los campos de routine_exercises', () => {
+      const blocksWithFullData = [
+        {
+          id: 1,
+          name: 'Principal',
+          routine_exercises: [
+            {
+              id: 100,
+              exercise_id: 10,
+              sort_order: 0,
+              series: 4,
+              reps: '8-10',
+              rir: 2,
+              rest_seconds: 120,
+              tempo: '3011',
+              notes: 'Controlar bajada',
+              superset_group: null,
+            },
+          ],
+        },
+      ]
+      const result = buildSessionExercisesFromBlocks(blocksWithFullData)
+
+      expect(result[0]).toEqual({
+        exercise_id: 10,
+        routine_exercise_id: 100,
+        sort_order: 1,
+        series: 4,
+        reps: '8-10',
+        rir: 2,
+        rest_seconds: 120,
+        tempo: '3011',
+        notes: 'Controlar bajada',
+        superset_group: null,
+        is_extra: false,
+        block_name: 'Principal',
       })
     })
 
-    it('usa orden por defecto si exerciseOrder está vacío', () => {
-      const result = transformWorkoutSessionData(sampleBlocks, [], [])
-      expect(result.flatExercises).toHaveLength(3)
-      expect(result.hasCustomOrder).toBe(false)
-      expect(result.exercisesByBlock).toHaveLength(2)
-    })
-
-    it('aplica orden personalizado', () => {
-      const customOrder = [
-        { id: 202, type: 'routine' },
-        { id: 201, type: 'routine' },
-        { id: 101, type: 'routine' },
+    it('preserva superset_group', () => {
+      const blocksWithSuperset = [
+        {
+          id: 1,
+          name: 'Principal',
+          routine_exercises: [
+            { id: 1, exercise_id: 1, sort_order: 0, series: 3, reps: '10', superset_group: 1 },
+            { id: 2, exercise_id: 2, sort_order: 1, series: 3, reps: '10', superset_group: 1 },
+          ],
+        },
       ]
-      const result = transformWorkoutSessionData(sampleBlocks, customOrder, [])
-      expect(result.flatExercises[0].id).toBe(202)
-      expect(result.hasCustomOrder).toBe(true)
+      const result = buildSessionExercisesFromBlocks(blocksWithSuperset)
+
+      expect(result[0].superset_group).toBe(1)
+      expect(result[1].superset_group).toBe(1)
     })
 
-    it('detecta ejercicios extra como orden personalizado', () => {
-      const extraExercises = [{ id: 'extra-1', exercise: { name: 'Curl' } }]
-      const customOrder = [
-        { id: 101, type: 'routine' },
-        { id: 201, type: 'routine' },
-        { id: 202, type: 'routine' },
-        { id: 'extra-1', type: 'extra' },
+    it('ordena ejercicios dentro del bloque por sort_order', () => {
+      const blocksUnordered = [
+        {
+          id: 1,
+          name: 'Principal',
+          routine_exercises: [
+            { id: 2, exercise_id: 2, sort_order: 1, series: 3, reps: '10' },
+            { id: 1, exercise_id: 1, sort_order: 0, series: 3, reps: '10' },
+          ],
+        },
       ]
-      const result = transformWorkoutSessionData(sampleBlocks, customOrder, extraExercises)
-      expect(result.hasCustomOrder).toBe(true)
-    })
-  })
+      const result = buildSessionExercisesFromBlocks(blocksUnordered)
 
-  describe('buildExerciseOrderFromBlocks', () => {
-    it('construye orden con blockId', () => {
-      const result = buildExerciseOrderFromBlocks(sampleBlocks)
-      expect(result).toHaveLength(3)
-      expect(result[0]).toEqual({ id: 101, type: 'routine', blockId: 1 })
-      expect(result[1]).toEqual({ id: 201, type: 'routine', blockId: 2 })
-    })
-
-    it('retorna array vacío para bloques vacíos', () => {
-      expect(buildExerciseOrderFromBlocks([])).toEqual([])
+      expect(result[0].exercise_id).toBe(1)
+      expect(result[1].exercise_id).toBe(2)
     })
   })
 })

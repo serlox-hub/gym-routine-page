@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { useUserId } from './useAuth.js'
+import { buildSessionExercisesFromBlocks } from '../lib/workoutTransforms.js'
 
 // ============================================
 // SESSION MUTATIONS
@@ -14,8 +15,9 @@ export function useStartSession() {
   const userId = useUserId()
 
   return useMutation({
-    mutationFn: async (routineDayId) => {
-      const { data, error } = await supabase
+    mutationFn: async ({ routineDayId, blocks }) => {
+      // 1. Crear workout_session
+      const { data: session, error: sessionError } = await supabase
         .from('workout_sessions')
         .insert({
           routine_day_id: routineDayId,
@@ -25,12 +27,30 @@ export function useStartSession() {
         .select()
         .single()
 
-      if (error) throw error
-      return data
+      if (sessionError) throw sessionError
+
+      // 2. Crear session_exercises desde los bloques de la rutina
+      const sessionExercisesData = buildSessionExercisesFromBlocks(blocks)
+
+      if (sessionExercisesData.length > 0) {
+        const { error: exercisesError } = await supabase
+          .from('session_exercises')
+          .insert(
+            sessionExercisesData.map(se => ({
+              ...se,
+              session_id: session.id,
+            }))
+          )
+
+        if (exercisesError) throw exercisesError
+      }
+
+      return session
     },
-    onSuccess: (data, routineDayId) => {
+    onSuccess: (data, { routineDayId }) => {
       startSession(data.id, routineDayId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES] })
     },
   })
 }
@@ -41,16 +61,12 @@ export function useCompleteSet() {
   const completeSet = useWorkoutStore(state => state.completeSet)
 
   return useMutation({
-    mutationFn: async ({ routineExerciseId, exerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notes }) => {
-      // Para ejercicios extra (id empieza con "extra-"), routine_exercise_id es null
-      const isExtraExercise = typeof routineExerciseId === 'string' && routineExerciseId.startsWith('extra-')
-
+    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notes }) => {
       const { data, error } = await supabase
         .from('completed_sets')
         .upsert({
           session_id: sessionId,
-          routine_exercise_id: isExtraExercise ? null : routineExerciseId,
-          exercise_id: exerciseId,
+          session_exercise_id: sessionExerciseId,
           set_number: setNumber,
           weight,
           weight_unit: weightUnit,
@@ -61,16 +77,16 @@ export function useCompleteSet() {
           notes,
           completed: true,
         }, {
-          onConflict: 'session_id,exercise_id,set_number,routine_exercise_id',
+          onConflict: 'session_id,session_exercise_id,set_number',
         })
         .select()
         .single()
 
       if (error) throw error
-      return { ...data, localExerciseId: routineExerciseId }
+      return data
     },
     onSuccess: (data, variables) => {
-      completeSet(variables.routineExerciseId, variables.setNumber, {
+      completeSet(variables.sessionExerciseId, variables.setNumber, {
         weight: variables.weight,
         weightUnit: variables.weightUnit,
         repsCompleted: variables.repsCompleted,
@@ -89,36 +105,20 @@ export function useUncompleteSet() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const uncompleteSet = useWorkoutStore(state => state.uncompleteSet)
-  const getSetData = useWorkoutStore(state => state.getSetData)
 
   return useMutation({
-    mutationFn: async ({ routineExerciseId, setNumber }) => {
-      const isExtraExercise = typeof routineExerciseId === 'string' && routineExerciseId.startsWith('extra-')
+    mutationFn: async ({ sessionExerciseId, setNumber }) => {
+      const { error } = await supabase
+        .from('completed_sets')
+        .delete()
+        .eq('session_id', sessionId)
+        .eq('session_exercise_id', sessionExerciseId)
+        .eq('set_number', setNumber)
 
-      if (isExtraExercise) {
-        // Para ejercicios extra, usar el dbId guardado en el store
-        const setData = getSetData(routineExerciseId, setNumber)
-        if (setData?.dbId) {
-          const { error } = await supabase
-            .from('completed_sets')
-            .delete()
-            .eq('id', setData.dbId)
-
-          if (error) throw error
-        }
-      } else {
-        const { error } = await supabase
-          .from('completed_sets')
-          .delete()
-          .eq('session_id', sessionId)
-          .eq('routine_exercise_id', routineExerciseId)
-          .eq('set_number', setNumber)
-
-        if (error) throw error
-      }
+      if (error) throw error
     },
     onSuccess: (_, variables) => {
-      uncompleteSet(variables.routineExerciseId, variables.setNumber)
+      uncompleteSet(variables.sessionExerciseId, variables.setNumber)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
     },
   })
@@ -166,7 +166,7 @@ export function useAbandonSession() {
 
   return useMutation({
     mutationFn: async () => {
-      // Eliminar la sesión (las series se eliminan en cascada por FK)
+      // Eliminar la sesión (session_exercises y completed_sets se eliminan en cascada por FK)
       const { error } = await supabase
         .from('workout_sessions')
         .delete()
@@ -178,6 +178,201 @@ export function useAbandonSession() {
       endSession()
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES] })
+    },
+  })
+}
+
+// ============================================
+// SESSION EXERCISES QUERIES & MUTATIONS
+// ============================================
+
+export function useSessionExercises(sessionId) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('session_exercises')
+        .select(`
+          id,
+          exercise_id,
+          routine_exercise_id,
+          sort_order,
+          series,
+          reps,
+          rir,
+          rest_seconds,
+          tempo,
+          notes,
+          superset_group,
+          is_extra,
+          block_name,
+          exercise:exercises (
+            id,
+            name,
+            measurement_type,
+            muscle_group:muscle_groups (
+              id,
+              name
+            )
+          )
+        `)
+        .eq('session_id', sessionId)
+        .order('sort_order', { ascending: true })
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!sessionId,
+  })
+}
+
+export function useAddSessionExercise() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+
+  return useMutation({
+    mutationFn: async ({ exercise, series, reps, rir, rest_seconds, notes, tempo, superset_group }) => {
+      // Obtener todos los ejercicios de la sesión para calcular posición
+      const { data: existing } = await supabase
+        .from('session_exercises')
+        .select('id, sort_order, superset_group')
+        .eq('session_id', sessionId)
+        .order('sort_order', { ascending: true })
+
+      let insertSortOrder
+      let blockName = 'Principal'
+
+      if (superset_group && existing?.length) {
+        // Si se asigna a un superset, insertar después del último ejercicio del superset
+        const supersetExercises = existing.filter(e => e.superset_group === superset_group)
+
+        if (supersetExercises.length > 0) {
+          // Encontrar la posición del último ejercicio del superset
+          const lastSupersetExercise = supersetExercises[supersetExercises.length - 1]
+          insertSortOrder = lastSupersetExercise.sort_order + 1
+
+          // Usar el mismo bloque que el superset (buscar en existing)
+          const supersetMember = existing.find(e => e.superset_group === superset_group)
+          if (supersetMember) {
+            // Necesitamos obtener el block_name del superset
+            const { data: memberData } = await supabase
+              .from('session_exercises')
+              .select('block_name')
+              .eq('id', supersetMember.id)
+              .single()
+            if (memberData?.block_name) {
+              blockName = memberData.block_name
+            }
+          }
+
+          // Desplazar los ejercicios posteriores
+          const exercisesToShift = existing.filter(e => e.sort_order >= insertSortOrder)
+          if (exercisesToShift.length > 0) {
+            const updates = exercisesToShift.map(e =>
+              supabase
+                .from('session_exercises')
+                .update({ sort_order: e.sort_order + 1 })
+                .eq('id', e.id)
+            )
+            await Promise.all(updates)
+          }
+        } else {
+          // Superset nuevo, añadir al final
+          insertSortOrder = (existing[existing.length - 1]?.sort_order || 0) + 1
+        }
+      } else {
+        // Sin superset, añadir al final
+        insertSortOrder = (existing?.[existing.length - 1]?.sort_order || 0) + 1
+      }
+
+      const { data, error } = await supabase
+        .from('session_exercises')
+        .insert({
+          session_id: sessionId,
+          exercise_id: exercise.id,
+          routine_exercise_id: null,
+          sort_order: insertSortOrder,
+          series: series || 3,
+          reps: reps || '10',
+          rir,
+          rest_seconds,
+          tempo,
+          notes,
+          superset_group,
+          is_extra: true,
+          block_name: blockName,
+        })
+        .select(`
+          id,
+          exercise_id,
+          sort_order,
+          series,
+          reps,
+          rir,
+          rest_seconds,
+          tempo,
+          notes,
+          superset_group,
+          is_extra,
+          block_name,
+          exercise:exercises (
+            id,
+            name,
+            measurement_type
+          )
+        `)
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
+    },
+  })
+}
+
+export function useRemoveSessionExercise() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+
+  return useMutation({
+    mutationFn: async (sessionExerciseId) => {
+      const { error } = await supabase
+        .from('session_exercises')
+        .delete()
+        .eq('id', sessionExerciseId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+    },
+  })
+}
+
+export function useReorderSessionExercises() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+
+  return useMutation({
+    mutationFn: async (orderedExerciseIds) => {
+      // Actualizar sort_order para cada ejercicio
+      const updates = orderedExerciseIds.map((id, index) =>
+        supabase
+          .from('session_exercises')
+          .update({ sort_order: index + 1 })
+          .eq('id', id)
+      )
+
+      const results = await Promise.all(updates)
+      const errors = results.filter(r => r.error)
+      if (errors.length > 0) throw errors[0].error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
     },
   })
 }
@@ -230,10 +425,8 @@ export function useWorkoutHistory() {
               name
             )
           ),
-          sets:completed_sets (
+          session_exercises (
             id,
-            weight,
-            reps_completed,
             exercise:exercises (
               id,
               muscle_group:muscle_groups (
@@ -251,9 +444,9 @@ export function useWorkoutHistory() {
       // Extraer grupos musculares únicos de cada sesión
       return data.map(session => {
         const muscleGroupsSet = new Set()
-        session.sets?.forEach(set => {
-          if (set.exercise?.muscle_group?.name) {
-            muscleGroupsSet.add(set.exercise.muscle_group.name)
+        session.session_exercises?.forEach(se => {
+          if (se.exercise?.muscle_group?.name) {
+            muscleGroupsSet.add(se.exercise.muscle_group.name)
           }
         })
         return {
@@ -269,7 +462,7 @@ export function useSessionDetail(sessionId) {
   return useQuery({
     queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId],
     queryFn: async () => {
-      // Obtener sesión con info del día
+      // Obtener sesión con info del día y ejercicios
       const { data: session, error: sessionError } = await supabase
         .from('workout_sessions')
         .select(`
@@ -287,6 +480,30 @@ export function useSessionDetail(sessionId) {
               id,
               name
             )
+          ),
+          session_exercises (
+            id,
+            sort_order,
+            series,
+            reps,
+            is_extra,
+            block_name,
+            exercise:exercises (
+              id,
+              name
+            ),
+            completed_sets (
+              id,
+              set_number,
+              weight,
+              weight_unit,
+              reps_completed,
+              time_seconds,
+              distance_meters,
+              rir_actual,
+              notes,
+              performed_at
+            )
           )
         `)
         .eq('id', sessionId)
@@ -294,46 +511,22 @@ export function useSessionDetail(sessionId) {
 
       if (sessionError) throw sessionError
 
-      // Obtener series completadas
-      const { data: sets, error: setsError } = await supabase
-        .from('completed_sets')
-        .select(`
-          id,
-          set_number,
-          weight,
-          weight_unit,
-          reps_completed,
-          time_seconds,
-          distance_meters,
-          rir_actual,
-          notes,
-          performed_at,
-          exercise:exercises (
-            id,
-            name
-          )
-        `)
-        .eq('session_id', sessionId)
-        .order('performed_at', { ascending: true })
-
-      if (setsError) throw setsError
-
-      // Agrupar series por ejercicio
-      const exerciseMap = new Map()
-      sets.forEach(set => {
-        const exerciseId = set.exercise.id
-        if (!exerciseMap.has(exerciseId)) {
-          exerciseMap.set(exerciseId, {
-            exercise: set.exercise,
-            sets: []
-          })
-        }
-        exerciseMap.get(exerciseId).sets.push(set)
-      })
+      // Transformar a formato esperado por los componentes
+      const exercises = (session.session_exercises || [])
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(se => ({
+          exercise: se.exercise,
+          series: se.series,
+          reps: se.reps,
+          is_extra: se.is_extra,
+          block_name: se.block_name,
+          sets: (se.completed_sets || []).sort((a, b) => a.set_number - b.set_number)
+        }))
 
       return {
         ...session,
-        exercises: Array.from(exerciseMap.values())
+        exercises,
+        session_exercises: undefined // Limpiar campo intermedio
       }
     },
     enabled: !!sessionId,
@@ -348,53 +541,44 @@ export function useExerciseHistory(exerciseId) {
   return useQuery({
     queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId],
     queryFn: async () => {
+      // Buscar session_exercises que tengan este ejercicio en sesiones completadas
       const { data, error } = await supabase
-        .from('completed_sets')
+        .from('session_exercises')
         .select(`
           id,
-          set_number,
-          weight,
-          weight_unit,
-          reps_completed,
-          time_seconds,
-          distance_meters,
-          rir_actual,
-          notes,
-          performed_at,
           session:workout_sessions!inner (
             id,
             started_at,
             status
+          ),
+          completed_sets (
+            id,
+            set_number,
+            weight,
+            weight_unit,
+            reps_completed,
+            time_seconds,
+            distance_meters,
+            rir_actual,
+            notes,
+            performed_at
           )
         `)
         .eq('exercise_id', exerciseId)
         .eq('session.status', 'completed')
-        .order('performed_at', { ascending: false })
+        .order('session(started_at)', { ascending: false })
         .limit(50)
 
       if (error) throw error
 
-      // Agrupar por sesión
-      const sessionMap = new Map()
-      data.forEach(set => {
-        const sessionId = set.session.id
-        if (!sessionMap.has(sessionId)) {
-          sessionMap.set(sessionId, {
-            sessionId,
-            date: set.session.started_at,
-            sets: []
-          })
-        }
-        sessionMap.get(sessionId).sets.push(set)
-      })
-
-      // Ordenar sets dentro de cada sesión
-      const sessions = Array.from(sessionMap.values())
-      sessions.forEach(session => {
-        session.sets.sort((a, b) => a.set_number - b.set_number)
-      })
-
-      return sessions
+      // Transformar a formato esperado
+      return data
+        .filter(se => se.completed_sets && se.completed_sets.length > 0)
+        .map(se => ({
+          sessionId: se.session.id,
+          date: se.session.started_at,
+          sets: se.completed_sets.sort((a, b) => a.set_number - b.set_number)
+        }))
     },
     enabled: !!exerciseId,
   })
@@ -404,41 +588,44 @@ export function usePreviousWorkout(exerciseId) {
   return useQuery({
     queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT, exerciseId],
     queryFn: async () => {
+      // Buscar la sesión más reciente con este ejercicio
       const { data, error } = await supabase
-        .from('completed_sets')
+        .from('session_exercises')
         .select(`
-          set_number,
-          weight,
-          weight_unit,
-          reps_completed,
-          time_seconds,
-          distance_meters,
-          rir_actual,
-          notes,
-          performed_at,
-          workout_sessions!inner (
+          id,
+          session:workout_sessions!inner (
             id,
             started_at,
             status
+          ),
+          completed_sets (
+            set_number,
+            weight,
+            weight_unit,
+            reps_completed,
+            time_seconds,
+            distance_meters,
+            rir_actual,
+            notes,
+            performed_at
           )
         `)
         .eq('exercise_id', exerciseId)
-        .eq('workout_sessions.status', 'completed')
-        .order('performed_at', { ascending: false })
-        .limit(20)
+        .eq('session.status', 'completed')
+        .order('session(started_at)', { ascending: false })
+        .limit(1)
 
       if (error) throw error
       if (!data || data.length === 0) return null
 
-      // Agrupar por sesión y tomar solo la más reciente
-      const lastSessionId = data[0].workout_sessions.id
-      const lastSessionSets = data.filter(
-        set => set.workout_sessions.id === lastSessionId
-      )
+      const lastSession = data[0]
+      if (!lastSession.completed_sets || lastSession.completed_sets.length === 0) {
+        return null
+      }
 
       return {
-        date: data[0].workout_sessions.started_at,
-        sets: lastSessionSets
+        date: lastSession.session.started_at,
+        sets: lastSession.completed_sets
           .map(set => ({
             setNumber: set.set_number,
             weight: set.weight,

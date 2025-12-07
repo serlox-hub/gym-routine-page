@@ -41,8 +41,8 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                 if (group.type === 'individual') {
                   return (
                     <WorkoutExerciseCard
-                      key={group.exercise.id}
-                      routineExercise={group.exercise}
+                      key={group.exercise.sessionExerciseId || group.exercise.id}
+                      sessionExercise={group.exercise}
                       onCompleteSet={onCompleteSet}
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}

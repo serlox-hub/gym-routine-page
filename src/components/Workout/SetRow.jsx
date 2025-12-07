@@ -8,7 +8,7 @@ import { isSetDataValid } from '../../lib/setUtils.js'
 
 function SetRow({
   setNumber,
-  routineExerciseId,
+  sessionExerciseId,
   exerciseId,
   measurementType = 'weight_reps',
   weightUnit = 'kg',
@@ -19,9 +19,9 @@ function SetRow({
   canRemove = false,
   onRemove
 }) {
-  const isCompleted = useWorkoutStore(state => state.isSetCompleted(routineExerciseId, setNumber))
-  const setData = useWorkoutStore(state => state.getSetData(routineExerciseId, setNumber))
-  const cachedData = useWorkoutStore(state => state.getCachedSetData(routineExerciseId, setNumber))
+  const isCompleted = useWorkoutStore(state => state.isSetCompleted(sessionExerciseId, setNumber))
+  const setData = useWorkoutStore(state => state.getSetData(sessionExerciseId, setNumber))
+  const cachedData = useWorkoutStore(state => state.getCachedSetData(sessionExerciseId, setNumber))
 
   const [weight, setWeight] = useState(setData?.weight ?? '')
   const [reps, setReps] = useState(setData?.repsCompleted ?? '')
@@ -44,14 +44,14 @@ function SetRow({
 
   const handleCheckClick = () => {
     if (isCompleted) {
-      onUncomplete({ routineExerciseId, setNumber })
+      onUncomplete({ sessionExerciseId, setNumber })
     } else if (isValid()) {
       setShowCompleteModal(true)
     }
   }
 
   const handleCompleteSet = (rir, notes) => {
-    const data = { routineExerciseId, exerciseId, setNumber, rirActual: rir, notes }
+    const data = { sessionExerciseId, exerciseId, setNumber, rirActual: rir, notes }
 
     switch (measurementType) {
       case 'weight_reps':

@@ -7,6 +7,7 @@ export const QUERY_KEYS = {
   ROUTINE_BLOCKS: 'routine-blocks',
   EXERCISES: 'exercises',
   WORKOUT_SESSION: 'workout-session',
+  SESSION_EXERCISES: 'session-exercises',
   COMPLETED_SETS: 'completed-sets',
   PREVIOUS_WORKOUT: 'previous-workout',
   WORKOUT_HISTORY: 'workout-history',

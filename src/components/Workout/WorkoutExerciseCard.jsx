@@ -8,17 +8,21 @@ import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 
-function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false }) {
-  const { id, exercise, series, reps, rir, tempo, tempo_razon, notes, measurement_type, rest_seconds } = routineExercise
+function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false }) {
+  const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds } = sessionExercise
+  // sessionExerciseId es el id de session_exercises (puede ser igual a id si viene transformado)
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
 
-  // Determinar tipo de medición: override en routine_exercise > default del ejercicio > weight_reps
-  const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
+  // Determinar tipo de medición del ejercicio
+  const measurementType = exercise.measurement_type || 'weight_reps'
 
   // Unidad de peso del ejercicio
   const weightUnit = exercise.weight_unit || 'kg'
+
+  // Usar sessionExerciseId (id de session_exercises) para rastrear sets
+  const exerciseKey = sessionExerciseId || id
 
   const completedSets = useWorkoutStore(state => state.completedSets)
   const { data: previousWorkout } = usePreviousWorkout(exercise.id)
@@ -33,9 +37,9 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
 
   const completedCount = useMemo(() => {
     return Object.values(completedSets)
-      .filter(set => set.routineExerciseId === id)
+      .filter(set => set.sessionExerciseId === exerciseKey)
       .length
-  }, [completedSets, id])
+  }, [completedSets, exerciseKey])
 
   const addSet = () => setSetsCount(prev => prev + 1)
 
@@ -54,7 +58,6 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         reps={reps}
         rir={rir}
         tempo={tempo}
-        tempo_razon={tempo_razon}
         notes={notes}
         rest_seconds={rest_seconds}
       />
@@ -106,7 +109,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         <Badge variant="accent">{series}×{reps}</Badge>
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
-        {(exercise.instructions || notes || tempo_razon) && (
+        {(exercise.instructions || notes) && (
           <button
             onClick={() => setShowNotes(!showNotes)}
             className="text-xs px-2 py-1 rounded transition-colors"
@@ -120,7 +123,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         )}
       </div>
 
-      {showNotes && (exercise.instructions || notes || tempo_razon) && (
+      {showNotes && (exercise.instructions || notes) && (
         <div
           className="mb-3 p-3 rounded text-sm space-y-2"
           style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
@@ -128,11 +131,6 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
           {exercise.instructions && (
             <p style={{ color: '#e6edf3' }}>
               <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
-            </p>
-          )}
-          {tempo_razon && (
-            <p style={{ color: '#e6edf3' }}>
-              <span style={{ color: '#a371f7' }}>Tempo:</span> {tempo_razon}
             </p>
           )}
           {notes && (
@@ -154,7 +152,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
             <SetRow
               key={i + 1}
               setNumber={i + 1}
-              routineExerciseId={id}
+              sessionExerciseId={exerciseKey}
               exerciseId={exercise.id}
               measurementType={measurementType}
               weightUnit={weightUnit}
@@ -196,7 +194,7 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
         confirmText="Quitar"
         onConfirm={() => {
           setShowRemoveConfirm(false)
-          onRemove(id)
+          onRemove(exerciseKey)
         }}
         onCancel={() => setShowRemoveConfirm(false)}
       />
@@ -205,9 +203,9 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
 }
 
 // Simplified card for warmup exercises (read-only list)
-function WarmupExerciseCard({ exercise, series, reps, rir, tempo, tempo_razon, notes, rest_seconds }) {
+function WarmupExerciseCard({ exercise, series, reps, rir, tempo, notes, rest_seconds }) {
   const [showNotes, setShowNotes] = useState(false)
-  const hasNotes = exercise.instructions || notes || tempo_razon
+  const hasNotes = exercise.instructions || notes
 
   return (
     <div
@@ -252,11 +250,6 @@ function WarmupExerciseCard({ exercise, series, reps, rir, tempo, tempo_razon, n
           {exercise.instructions && (
             <p style={{ color: '#e6edf3' }}>
               <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
-            </p>
-          )}
-          {tempo_razon && (
-            <p style={{ color: '#e6edf3' }}>
-              <span style={{ color: '#a371f7' }}>Tempo:</span> {tempo_razon}
             </p>
           )}
           {notes && (
