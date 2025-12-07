@@ -12,7 +12,7 @@ import {
   useReorderSessionExercises,
 } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../components/ui/index.js'
-import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList } from '../components/Workout/index.js'
+import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList, EndSessionModal } from '../components/Workout/index.js'
 import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { transformSessionExercises } from '../lib/workoutTransforms.js'
@@ -29,6 +29,7 @@ function WorkoutSession() {
   const { data: sessionExercises, isLoading: loadingExercises, error: exercisesError } = useSessionExercises(sessionId)
 
   const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [isReordering, setIsReordering] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
@@ -81,8 +82,12 @@ function WorkoutSession() {
   }
 
   const handleEndWorkout = () => {
+    setShowEndModal(true)
+  }
+
+  const handleConfirmEnd = ({ overallFeeling, notes }) => {
     setNavigateToOnEnd('/history')
-    endSessionMutation.mutate({ overallFeeling: null, notes: null })
+    endSessionMutation.mutate({ overallFeeling, notes })
   }
 
   const handleAbandonWorkout = () => {
@@ -211,6 +216,13 @@ function WorkoutSession() {
         isPending={addSessionExerciseMutation.isPending}
         mode="session"
         existingSupersets={existingSupersets}
+      />
+
+      <EndSessionModal
+        isOpen={showEndModal}
+        onClose={() => setShowEndModal(false)}
+        onConfirm={handleConfirmEnd}
+        isPending={endSessionMutation.isPending}
       />
 
       <RestTimer />

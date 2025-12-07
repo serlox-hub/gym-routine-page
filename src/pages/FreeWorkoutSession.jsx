@@ -11,7 +11,7 @@ import {
   useReorderSessionExercises,
 } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal } from '../components/ui/index.js'
-import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList } from '../components/Workout/index.js'
+import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList, EndSessionModal } from '../components/Workout/index.js'
 import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { transformSessionExercises } from '../lib/workoutTransforms.js'
@@ -26,6 +26,7 @@ function FreeWorkoutSession() {
   const { data: sessionExercises, isLoading, error } = useSessionExercises(sessionId)
 
   const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [isReordering, setIsReordering] = useState(false)
 
@@ -73,8 +74,12 @@ function FreeWorkoutSession() {
   }
 
   const handleEndWorkout = () => {
+    setShowEndModal(true)
+  }
+
+  const handleConfirmEnd = ({ overallFeeling, notes }) => {
     endSessionMutation.mutate(
-      { overallFeeling: null, notes: null },
+      { overallFeeling, notes },
       { onSuccess: () => navigate('/history') }
     )
   }
@@ -219,6 +224,13 @@ function FreeWorkoutSession() {
         isPending={addSessionExerciseMutation.isPending}
         mode="session"
         existingSupersets={existingSupersets}
+      />
+
+      <EndSessionModal
+        isOpen={showEndModal}
+        onClose={() => setShowEndModal(false)}
+        onConfirm={handleConfirmEnd}
+        isPending={endSessionMutation.isPending}
       />
 
       <RestTimer />
