@@ -89,7 +89,6 @@ function ExerciseConfigForm({
             <input
               type="number"
               min="0"
-              step="15"
               value={form.rest_seconds}
               onChange={(e) => setForm(prev => ({ ...prev, rest_seconds: e.target.value }))}
               placeholder="Ej: 90"
