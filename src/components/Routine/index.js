@@ -7,5 +7,4 @@ export { default as EditRoutineExerciseModal } from './EditRoutineExerciseModal.
 export { default as ExerciseSearchList } from './ExerciseSearchList.jsx'
 export { default as ExerciseConfigForm } from './ExerciseConfigForm.jsx'
 export { default as RoutineHeader } from './RoutineHeader.jsx'
-export { default as ExerciseRow } from './ExerciseRow.jsx'
 export { default as DayEditForm } from './DayEditForm.jsx'

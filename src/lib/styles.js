@@ -55,3 +55,9 @@ export const cardStyle = {
   backgroundColor: colors.bgSecondary,
   border: `1px solid ${colors.border}`,
 }
+
+// Estilos para menús desplegables
+export const menuStyle = {
+  backgroundColor: colors.bgTertiary,
+  border: `1px solid ${colors.border}`,
+}

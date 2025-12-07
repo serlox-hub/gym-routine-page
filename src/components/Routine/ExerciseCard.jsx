@@ -1,63 +1,62 @@
 import { useState } from 'react'
-import { Info } from 'lucide-react'
-import { Card, Badge } from '../ui/index.js'
+import { Info, Pencil, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
+import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
+import { colors } from '../../lib/styles.js'
 
-function ExerciseCard({ routineExercise, onClick, isWarmup = false, isSuperset = false }) {
+function ExerciseCard({
+  routineExercise,
+  onClick,
+  isWarmup = false,
+  isSuperset = false,
+  isEditing = false,
+  onEdit,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+  canMoveUp = true,
+  canMoveDown = true
+}) {
   const { exercise, series, reps, rir, rest_seconds, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
   const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
 
-  // Simplified warmup card
-  if (isWarmup) {
-    return (
-      <div
-        className="flex items-center gap-3 p-3 rounded-lg"
-        style={{
-          backgroundColor: '#161b22',
-          border: '1px solid #30363d',
-        }}
-      >
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm" style={{ color: '#e6edf3' }}>
-            {exercise.name}
-          </p>
-          <p className="text-xs" style={{ color: '#8b949e' }}>
-            {reps}
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   const Wrapper = isSuperset ? 'div' : Card
-  const wrapperProps = isSuperset ? {} : { className: 'p-3', onClick }
+  const wrapperProps = isSuperset ? {} : { className: 'p-2', onClick }
+
+  const menuItems = [
+    { icon: Pencil, label: 'Editar', onClick: onEdit },
+    { icon: ChevronUp, label: 'Mover arriba', onClick: onMoveUp, disabled: !canMoveUp },
+    { icon: ChevronDown, label: 'Mover abajo', onClick: onMoveDown, disabled: !canMoveDown },
+    { icon: Trash2, label: 'Eliminar', onClick: onDelete, danger: true },
+  ]
 
   return (
     <Wrapper {...wrapperProps}>
-      <div className="flex justify-between items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium truncate">{exercise.name}</h4>
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowHistory(true)
-          }}
-          className="p-1.5 rounded hover:opacity-80 flex-shrink-0"
-          style={{ backgroundColor: '#21262d' }}
-          title="Info del ejercicio"
-        >
-          <Info size={14} style={{ color: '#8b949e' }} />
-        </button>
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="font-medium text-sm truncate flex-1 min-w-0">{exercise.name}</h4>
+        {isEditing ? (
+          <DropdownMenu items={menuItems} triggerSize={14} />
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowHistory(true)
+            }}
+            className="p-1 rounded hover:opacity-80 flex-shrink-0"
+            style={{ backgroundColor: colors.bgTertiary }}
+            title="Info del ejercicio"
+          >
+            <Info size={14} style={{ color: colors.textSecondary }} />
+          </button>
+        )}
       </div>
-
-      <div className={`${isSuperset ? 'mt-2' : 'mt-2 pt-2 border-t border-border'} flex flex-wrap gap-2`}>
-        <Badge variant="accent">{series}×{reps}</Badge>
-        {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
-        {rest_seconds && <Badge variant="warning">{rest_seconds}s</Badge>}
-        {tempo && <Badge variant="default">{tempo}</Badge>}
+      <div className="flex flex-wrap gap-2 mt-1">
+        <span className="text-xs" style={{ color: '#8b949e' }}>{series}×{reps}</span>
+        {rir !== null && rir !== undefined && <span className="text-xs" style={{ color: '#a371f7' }}>RIR {rir}</span>}
+        {rest_seconds > 0 && <span className="text-xs" style={{ color: '#d29922' }}>{rest_seconds}s</span>}
+        {tempo && <span className="text-xs" style={{ color: '#8b949e' }}>{tempo}</span>}
       </div>
 
       <ExerciseHistoryModal

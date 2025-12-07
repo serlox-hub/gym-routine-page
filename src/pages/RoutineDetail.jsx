@@ -5,10 +5,14 @@ import { useRoutine, useRoutineDays, useCreateRoutineDay, useDeleteRoutine, useA
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
 import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader } from '../components/Routine/index.js'
 import { moveItemById } from '../lib/arrayUtils.js'
+import useWorkoutStore from '../stores/workoutStore.js'
 
 function RoutineDetail() {
   const { routineId } = useParams()
   const navigate = useNavigate()
+
+  const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
+  const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
   const [isEditing, setIsEditing] = useState(false)
   const [showAddDay, setShowAddDay] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -146,11 +150,10 @@ function RoutineDetail() {
         routineId={routineId}
         isEditing={isEditing}
         onEditStart={() => setIsEditing(true)}
+        onEditEnd={() => setIsEditing(false)}
       />
 
-      <main className="space-y-3">
-        <h2 className="text-lg font-semibold">Días de entrenamiento</h2>
-        <div className="space-y-2">
+      <main className="space-y-2">
           {days?.length === 0 && !isEditing ? (
             <p className="text-secondary">No hay días configurados</p>
           ) : (
@@ -168,6 +171,8 @@ function RoutineDetail() {
                 onMoveDown={(id) => handleMoveDay(id, 'down')}
                 isFirst={index === 0}
                 isLast={index === days.length - 1}
+                hasActiveSession={hasActiveSession}
+                activeRoutineDayId={activeRoutineDayId}
               />
             ))
           )}
@@ -182,7 +187,6 @@ function RoutineDetail() {
               </div>
             </Card>
           )}
-        </div>
 
         {isEditing && (
           <button

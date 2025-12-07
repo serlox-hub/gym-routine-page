@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
 import Home from './pages/Home.jsx'
 import RoutineDetail from './pages/RoutineDetail.jsx'
-import DayDetail from './pages/DayDetail.jsx'
 import WorkoutSession from './pages/WorkoutSession.jsx'
 import FreeWorkoutSession from './pages/FreeWorkoutSession.jsx'
 import History from './pages/History.jsx'
@@ -30,7 +29,6 @@ function App() {
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
           <Route path="/routines/new" element={<PrivateRoute><NewRoutine /></PrivateRoute>} />
           <Route path="/routine/:routineId" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
-          <Route path="/routine/:routineId/day/:dayId" element={<PrivateRoute><DayDetail /></PrivateRoute>} />
           <Route path="/routine/:routineId/day/:dayId/workout" element={<PrivateRoute><WorkoutSession /></PrivateRoute>} />
           <Route path="/workout/free" element={<PrivateRoute><FreeWorkoutSession /></PrivateRoute>} />
           <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />

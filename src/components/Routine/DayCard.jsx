@@ -1,18 +1,23 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react'
-import { Card, ConfirmModal } from '../ui/index.js'
+import { Trash2, ChevronUp, ChevronDown, ChevronRight, Pencil } from 'lucide-react'
+import { Card, ConfirmModal, Button, DropdownMenu } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
+import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { moveItemById } from '../../lib/arrayUtils.js'
 import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
-import ExerciseRow from './ExerciseRow.jsx'
 import DayEditForm from './DayEditForm.jsx'
+import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
+function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast, hasActiveSession, activeRoutineDayId }) {
   const navigate = useNavigate()
   const { id, sort_order, name, estimated_duration_min } = day
-  const { data: blocks } = useRoutineBlocks(isEditing ? id : null)
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  // Cargar bloques si está expandido
+  const { data: blocks } = useRoutineBlocks(isExpanded ? id : null)
+  const startSessionMutation = useStartSession()
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
   const updateDay = useUpdateRoutineDay()
@@ -29,9 +34,26 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
   const existingSupersets = getExistingSupersetIds(allExercises)
 
   const handleClick = () => {
-    if (!isEditing) {
-      navigate(`/routine/${routineId}/day/${id}`)
+    if (!editingDay) {
+      setIsExpanded(!isExpanded)
     }
+  }
+
+  const isThisDayActive = hasActiveSession && activeRoutineDayId === id
+
+  const handleStartWorkout = (e) => {
+    e.stopPropagation()
+    startSessionMutation.mutate(
+      { routineDayId: id, routineId: parseInt(routineId), blocks },
+      {
+        onSuccess: () => navigate(`/routine/${routineId}/day/${id}/workout`)
+      }
+    )
+  }
+
+  const handleContinueWorkout = (e) => {
+    e.stopPropagation()
+    navigate(`/routine/${routineId}/day/${id}/workout`)
   }
 
   const handleMoveExercise = (exerciseId, direction) => {
@@ -64,35 +86,10 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
     setEditingDay(false)
   }
 
-  const renderExerciseList = (exercises, sectionLabel, labelColor, canMoveUpFromSection) => (
-    exercises.length > 0 && (
-      <div className="mb-4">
-        <div className="text-xs font-medium mb-2" style={{ color: labelColor }}>
-          {sectionLabel}
-        </div>
-        <ul className="space-y-2">
-          {exercises.map((re, index) => (
-            <li key={re.id}>
-              <ExerciseRow
-                routineExercise={re}
-                index={index}
-                totalCount={exercises.length}
-                canMoveUp={canMoveUpFromSection}
-                onEdit={() => onEditExercise(re, id, existingSupersets)}
-                onMoveUp={() => handleMoveExercise(re.id, 'up')}
-                onMoveDown={() => handleMoveExercise(re.id, 'down')}
-                onDelete={() => setExerciseToDelete(re)}
-              />
-            </li>
-          ))}
-        </ul>
-      </div>
-    )
-  )
 
   return (
-    <Card className={`p-4 ${isEditing ? 'cursor-default' : ''}`} onClick={handleClick}>
-      {isEditing && editingDay ? (
+    <Card className={`p-4 ${editingDay ? 'cursor-default' : 'cursor-pointer'}`} onClick={handleClick}>
+      {editingDay ? (
         <DayEditForm
           dayNumber={sort_order}
           form={dayForm}
@@ -102,7 +99,14 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
       ) : (
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <span className="text-accent font-semibold shrink-0">{sort_order}</span>
+            <ChevronRight
+              size={18}
+              className="shrink-0 transition-transform"
+              style={{
+                color: colors.textSecondary,
+                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+              }}
+            />
             <h3 className="font-medium truncate">{name}</h3>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -110,72 +114,99 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
               <span className="text-sm text-muted whitespace-nowrap">{estimated_duration_min} min</span>
             )}
             {isEditing && (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setDayForm({ name, duration: estimated_duration_min || '' })
-                    setEditingDay(true)
-                  }}
-                  className="p-1.5 rounded-lg transition-opacity hover:opacity-80"
-                  style={{ color: colors.textSecondary }}
-                  title="Editar día"
-                >
-                  <Pencil size={18} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onMoveUp(id) }}
-                  disabled={isFirst}
-                  className="p-1.5 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-30"
-                  style={{ color: colors.textSecondary }}
-                  title="Mover arriba"
-                >
-                  <ChevronUp size={18} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onMoveDown(id) }}
-                  disabled={isLast}
-                  className="p-1.5 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-30"
-                  style={{ color: colors.textSecondary }}
-                  title="Mover abajo"
-                >
-                  <ChevronDown size={18} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(id) }}
-                  className="p-1.5 rounded-lg transition-opacity hover:opacity-80"
-                  style={{ backgroundColor: 'rgba(248, 81, 73, 0.1)', color: '#f85149' }}
-                  title="Eliminar día"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </>
+              <DropdownMenu
+                items={[
+                  {
+                    icon: Pencil,
+                    label: 'Editar',
+                    onClick: () => {
+                      setDayForm({ name, duration: estimated_duration_min || '' })
+                      setEditingDay(true)
+                    }
+                  },
+                  { icon: ChevronUp, label: 'Mover arriba', onClick: () => onMoveUp(id), disabled: isFirst },
+                  { icon: ChevronDown, label: 'Mover abajo', onClick: () => onMoveDown(id), disabled: isLast },
+                  { icon: Trash2, label: 'Eliminar', onClick: () => onDelete(id), danger: true },
+                ]}
+              />
             )}
           </div>
         </div>
       )}
 
-      {isEditing && (
-        <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.border }}>
-          {renderExerciseList(warmupExercises, 'Calentamiento', colors.accent, false)}
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddWarmup(id, existingSupersets) }}
-            className="w-full py-2 mb-3 rounded-lg text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-            style={{ border: `1px dashed ${colors.border}`, color: colors.accent }}
-          >
-            <Plus size={16} />
-            Añadir calentamiento
-          </button>
+      {isExpanded && (
+        <div className="mt-3 pt-3 border-t space-y-4" style={{ borderColor: colors.border }}>
+          {isEditing ? (
+            <>
+              {warmupBlock && (
+                <BlockSection
+                  block={warmupBlock}
+                  isEditing
+                  onAddExercise={() => onAddWarmup(id, existingSupersets)}
+                  onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
+                  onMoveExercise={handleMoveExercise}
+                  onDeleteExercise={(re) => setExerciseToDelete(re)}
+                  canMoveUp={false}
+                />
+              )}
+              {!warmupBlock && (
+                <BlockSection
+                  block={{ name: 'Calentamiento', routine_exercises: [] }}
+                  isEditing
+                  onAddExercise={() => onAddWarmup(id, existingSupersets)}
+                />
+              )}
+              {mainBlock && (
+                <BlockSection
+                  block={mainBlock}
+                  isEditing
+                  onAddExercise={() => onAddExercise(id, existingSupersets)}
+                  onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
+                  onMoveExercise={handleMoveExercise}
+                  onDeleteExercise={(re) => setExerciseToDelete(re)}
+                  canMoveUp={warmupExercises.length > 0}
+                />
+              )}
+              {!mainBlock && (
+                <BlockSection
+                  block={{ name: 'Principal', routine_exercises: [] }}
+                  isEditing
+                  onAddExercise={() => onAddExercise(id, existingSupersets)}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              {blocks?.length === 0 ? (
+                <p className="text-secondary text-sm">No hay ejercicios configurados</p>
+              ) : (
+                blocks?.map(block => (
+                  <BlockSection key={block.id} block={block} />
+                ))
+              )}
 
-          {renderExerciseList(mainExercises, 'Principal', colors.textSecondary, warmupExercises.length > 0)}
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddExercise(id, existingSupersets) }}
-            className="w-full py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-            style={{ border: `1px dashed ${colors.border}`, color: colors.textSecondary }}
-          >
-            <Plus size={16} />
-            Añadir ejercicio
-          </button>
+              <div className="pt-2">
+                {isThisDayActive ? (
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={handleContinueWorkout}
+                  >
+                    Continuar Entrenamiento
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={handleStartWorkout}
+                    disabled={startSessionMutation.isPending || (hasActiveSession && !isThisDayActive)}
+                  >
+                    {startSessionMutation.isPending ? 'Iniciando...' : 'Iniciar Entrenamiento'}
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
