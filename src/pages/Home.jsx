@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText } from 'lucide-react'
+import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot } from 'lucide-react'
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
 import { useAuth, useUserId } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, Card } from '../components/ui/index.js'
+import { ChatbotPromptModal } from '../components/Routine/index.js'
 import { importRoutine, readJsonFile } from '../lib/routineIO.js'
 import { useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
@@ -23,6 +24,7 @@ function Home() {
   const setFavoriteMutation = useSetFavoriteRoutine()
   const [showMenu, setShowMenu] = useState(false)
   const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
+  const [showChatbotModal, setShowChatbotModal] = useState(false)
 
   const favoriteRoutine = routines?.find(r => r.is_favorite)
 
@@ -259,9 +261,31 @@ function Home() {
                   </div>
                 </div>
               </Card>
+              <Card
+                className="p-3"
+                onClick={() => {
+                  setShowNewRoutineModal(false)
+                  setShowChatbotModal(true)
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <Bot size={20} style={{ color: '#58a6ff' }} />
+                  <div>
+                    <h4 className="font-medium text-sm" style={{ color: colors.textPrimary }}>Crear con IA</h4>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>Genera un prompt para ChatGPT/Claude</p>
+                  </div>
+                </div>
+              </Card>
             </div>
           </div>
         </div>
+      )}
+
+      {showChatbotModal && (
+        <ChatbotPromptModal
+          onClose={() => setShowChatbotModal(false)}
+          onImportClick={() => fileInputRef.current?.click()}
+        />
       )}
 
       <input

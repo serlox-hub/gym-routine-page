@@ -1,6 +1,125 @@
 import { supabase } from './supabase.js'
 
 /**
+ * Genera un prompt personalizado para chatbots basado en las preferencias del usuario
+ */
+export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }) {
+  const userRequest = [
+    objetivo && `- Objetivo: ${objetivo}`,
+    diasPorSemana && `- Días por semana: ${diasPorSemana}`,
+    nivelExperiencia && `- Nivel de experiencia: ${nivelExperiencia}`,
+    duracionSesion && `- Duración por sesión: ${duracionSesion} minutos`,
+    equipamiento && `- Equipamiento disponible: ${equipamiento}`,
+    notas && `- Notas adicionales: ${notas}`,
+  ].filter(Boolean).join('\n')
+
+  return `Actúa como un entrenador personal certificado con más de 10 años de experiencia. Diseña rutinas efectivas, seguras y basadas en evidencia científica, adaptadas a cada persona.
+
+Crea una rutina de entrenamiento personalizada con estos requisitos del cliente:
+
+${userRequest}
+
+CRITERIOS DE DISEÑO:
+- Adapta la selección de ejercicios, volumen e intensidad al objetivo y nivel indicados
+- Asegura una distribución equilibrada del trabajo según los días disponibles
+- Incluye tiempos de descanso coherentes con el tipo de entrenamiento
+
+Genera el resultado en formato JSON siguiendo EXACTAMENTE esta estructura:
+
+\`\`\`json
+{
+  "version": 4,
+  "exercises": [
+    {
+      "name": "Nombre del ejercicio",
+      "measurement_type": "weight_reps",
+      "muscle_group_name": "Pecho",
+      "weight_unit": "kg",
+      "instructions": "Instrucciones de ejecución del ejercicio (opcional)"
+    }
+  ],
+  "routine": {
+    "name": "Nombre de la rutina",
+    "description": "Descripción breve",
+    "goal": "${objetivo || 'General'}",
+    "days": [
+      {
+        "name": "Día 1 - Nombre descriptivo",
+        "sort_order": 0,
+        "estimated_duration_min": 60,
+        "blocks": [
+          {
+            "name": "Calentamiento",
+            "sort_order": 0,
+            "duration_min": 10,
+            "exercises": []
+          },
+          {
+            "name": "Principal",
+            "sort_order": 1,
+            "duration_min": 50,
+            "exercises": [
+              {
+                "exercise_name": "Nombre del ejercicio",
+                "series": 4,
+                "reps": "8-12",
+                "rir": 2,
+                "rest_seconds": 90,
+                "tempo": "3-1-1-0",
+                "tempo_razon": "Razón del tempo elegido (opcional)",
+                "notes": "Notas de ejecución específicas para esta rutina (opcional)"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+\`\`\`
+
+REGLAS IMPORTANTES:
+1. Cada ejercicio en "exercises" debe usarse en "routine.days[].blocks[].exercises"
+2. El "exercise_name" debe coincidir EXACTAMENTE con el "name" del ejercicio
+3. Cada día debe tener exactamente 2 bloques: "Calentamiento" (sort_order: 0) y "Principal" (sort_order: 1)
+4. Los días deben tener sort_order secuencial empezando en 0
+
+CAMPOS DE EJERCICIOS (en "exercises"):
+- name: nombre del ejercicio (OBLIGATORIO)
+- measurement_type (OBLIGATORIO, uno de estos):
+  - "weight_reps": peso × repeticiones (ej: press banca)
+  - "reps_only": solo repeticiones sin peso (ej: dominadas)
+  - "reps_per_side": repeticiones por lado (ej: zancadas)
+  - "time": tiempo (ej: plancha)
+  - "time_per_side": tiempo por lado (ej: plancha lateral)
+  - "distance": distancia (ej: farmer walk)
+- muscle_group_name (OBLIGATORIO, uno de estos):
+  - "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps"
+  - "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas"
+  - "Abdominales", "Antebrazo"
+- weight_unit: "kg" o "lb" (opcional, por defecto "kg")
+- instructions: instrucciones generales de ejecución del ejercicio (opcional)
+
+CAMPOS DE BLOQUES (en "days[].blocks"):
+- name: "Calentamiento" o "Principal" (OBLIGATORIO)
+- sort_order: 0 para Calentamiento, 1 para Principal (OBLIGATORIO)
+- duration_min: duración estimada del bloque en minutos (opcional)
+- exercises: array de ejercicios del bloque (OBLIGATORIO)
+
+CAMPOS DE EJERCICIOS EN RUTINA (en "blocks[].exercises"):
+- exercise_name: debe coincidir con "name" del ejercicio (OBLIGATORIO)
+- series: número de series (OBLIGATORIO)
+- reps: string con repeticiones, tiempo o distancia (OBLIGATORIO, ej: "8-12", "30s", "40m")
+- rir: 0-5, repeticiones en reserva (opcional)
+- rest_seconds: segundos de descanso entre series (opcional)
+- tempo: cadencia del movimiento en formato "excéntrico-pausa abajo-concéntrico-pausa arriba" (opcional, ej: "3-1-1-0")
+- tempo_razon: explicación de por qué se usa ese tempo (opcional)
+- notes: notas específicas de ejecución para esta rutina (opcional, ej: "Agarre cerrado", "Pausa en el pecho")
+
+Responde SOLO con el JSON, sin texto adicional.`
+}
+
+/**
  * Exporta una rutina completa a JSON
  * Incluye definición completa de ejercicios para poder importar en otra cuenta
  */
