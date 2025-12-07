@@ -50,8 +50,13 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
     return (
       <WarmupExerciseCard
         exercise={exercise}
+        series={series}
         reps={reps}
+        rir={rir}
+        tempo={tempo}
+        tempo_razon={tempo_razon}
         notes={notes}
+        rest_seconds={rest_seconds}
       />
     )
   }
@@ -195,28 +200,67 @@ function WorkoutExerciseCard({ routineExercise, onCompleteSet, onUncompleteSet, 
 }
 
 // Simplified card for warmup exercises (read-only list)
-function WarmupExerciseCard({ exercise, reps, notes }) {
+function WarmupExerciseCard({ exercise, series, reps, rir, tempo, tempo_razon, notes, rest_seconds }) {
+  const [showNotes, setShowNotes] = useState(false)
+  const hasNotes = exercise.instructions || notes || tempo_razon
+
   return (
     <div
-      className="flex items-center gap-3 p-3 rounded-lg"
+      className="p-3 rounded-lg"
       style={{
         backgroundColor: colors.bgSecondary,
         border: `1px solid ${colors.border}`,
       }}
     >
-      <div className="flex-1 min-w-0">
+      <div className="flex items-start justify-between gap-2">
         <p className="font-medium text-sm" style={{ color: colors.textPrimary }}>
           {exercise.name}
         </p>
-        <p className="text-xs" style={{ color: colors.textSecondary }}>
-          {reps}
-        </p>
-        {notes && (
-          <p className="text-xs mt-1" style={{ color: colors.warning }}>
-            {notes}
-          </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+        <Badge variant="accent">{series}×{reps}</Badge>
+        {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
+        {tempo && <Badge variant="default">{tempo}</Badge>}
+        {rest_seconds && (
+          <Badge variant="default">{rest_seconds}s</Badge>
+        )}
+        {hasNotes && (
+          <button
+            onClick={() => setShowNotes(!showNotes)}
+            className="text-xs px-2 py-0.5 rounded transition-colors"
+            style={{
+              backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : '#21262d',
+              color: showNotes ? '#88c6be' : '#8b949e',
+            }}
+          >
+            {showNotes ? '▲' : '▼'} Notas
+          </button>
         )}
       </div>
+
+      {showNotes && hasNotes && (
+        <div
+          className="mt-2 p-2 rounded text-xs space-y-1"
+          style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
+        >
+          {exercise.instructions && (
+            <p style={{ color: '#e6edf3' }}>
+              <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
+            </p>
+          )}
+          {tempo_razon && (
+            <p style={{ color: '#e6edf3' }}>
+              <span style={{ color: '#a371f7' }}>Tempo:</span> {tempo_razon}
+            </p>
+          )}
+          {notes && (
+            <p style={{ color: '#e6edf3' }}>
+              <span style={{ color: colors.warning }}>Nota:</span> {notes}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
