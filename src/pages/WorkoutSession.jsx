@@ -160,14 +160,12 @@ function WorkoutSession() {
             <>
               <Button
                 variant="secondary"
-                size="lg"
                 onClick={() => setIsReordering(false)}
               >
                 Cancelar
               </Button>
               <Button
                 variant="primary"
-                size="lg"
                 className="flex-1"
                 onClick={() => setIsReordering(false)}
               >
@@ -178,7 +176,6 @@ function WorkoutSession() {
             <>
               <Button
                 variant="danger"
-                size="lg"
                 onClick={() => setShowCancelModal(true)}
                 disabled={abandonSessionMutation.isPending}
               >
@@ -186,12 +183,11 @@ function WorkoutSession() {
               </Button>
               <Button
                 variant="primary"
-                size="lg"
                 className="flex-1"
                 onClick={handleEndWorkout}
                 disabled={endSessionMutation.isPending}
               >
-                {endSessionMutation.isPending ? 'Guardando...' : 'Finalizar Entrenamiento'}
+                {endSessionMutation.isPending ? 'Guardando...' : 'Finalizar'}
               </Button>
             </>
           )}
