@@ -294,7 +294,7 @@ export function readJsonFile(file) {
       try {
         const data = JSON.parse(e.target.result)
         resolve(data)
-      } catch (err) {
+      } catch {
         reject(new Error('Error al leer el archivo JSON'))
       }
     }

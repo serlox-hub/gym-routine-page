@@ -56,7 +56,6 @@ function BlockSection({
               <ExerciseCard
                 key={group.exercise.id}
                 routineExercise={group.exercise}
-                isWarmup={isWarmup}
                 isEditing={isEditing}
                 onEdit={() => onEditExercise?.(group.exercise)}
                 onMoveUp={() => onMoveExercise?.(group.exercise.id, 'up')}
@@ -88,13 +87,12 @@ function BlockSection({
                 </span>
               </div>
               <div className="divide-y" style={{ borderColor: colors.border }}>
-                {group.exercises.map((exercise, idx) => {
+                {group.exercises.map((exercise) => {
                   const index = routine_exercises.findIndex(re => re.id === exercise.id)
                   return (
                     <div key={exercise.id} className="p-2">
                       <ExerciseCard
                         routineExercise={exercise}
-                        isWarmup={isWarmup}
                         isSuperset
                         isEditing={isEditing}
                         onEdit={() => onEditExercise?.(exercise)}

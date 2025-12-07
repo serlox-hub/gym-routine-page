@@ -7,7 +7,6 @@ import { colors } from '../../lib/styles.js'
 function ExerciseCard({
   routineExercise,
   onClick,
-  isWarmup = false,
   isSuperset = false,
   isEditing = false,
   onEdit,

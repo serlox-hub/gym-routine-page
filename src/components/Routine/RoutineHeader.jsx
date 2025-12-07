@@ -63,8 +63,8 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd }
       const data = await exportRoutine(parseInt(routineId))
       const filename = `${routine.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`
       downloadRoutineAsJson(data, filename)
-    } catch (err) {
-      console.error('Error exportando rutina:', err)
+    } catch {
+      // Silent fail - export errors are not critical
     }
   }
 

@@ -46,8 +46,8 @@ function RoutineDetail() {
     try {
       await createDay.mutateAsync({ routineId: parseInt(routineId), day })
       setShowAddDay(false)
-    } catch (err) {
-      console.error('Error creating day:', err)
+    } catch {
+      // Error handled by TanStack Query
     }
   }
 
@@ -55,8 +55,8 @@ function RoutineDetail() {
     try {
       await deleteRoutine.mutateAsync(parseInt(routineId))
       navigate('/')
-    } catch (err) {
-      console.error('Error deleting routine:', err)
+    } catch {
+      // Error handled by TanStack Query
     }
   }
 
@@ -93,8 +93,8 @@ function RoutineDetail() {
       setSelectedDayId(null)
       setIsAddingWarmup(false)
       setExistingSupersets([])
-    } catch (err) {
-      console.error('Error adding exercise:', err)
+    } catch {
+      // Error handled by TanStack Query
     }
   }
 
@@ -115,8 +115,8 @@ function RoutineDetail() {
       setShowEditExercise(false)
       setSelectedExercise(null)
       setSelectedDayId(null)
-    } catch (err) {
-      console.error('Error updating exercise:', err)
+    } catch {
+      // Error handled by TanStack Query
     }
   }
 
@@ -125,8 +125,8 @@ function RoutineDetail() {
     try {
       await deleteDay.mutateAsync({ dayId: dayToDelete.id, routineId })
       setDayToDelete(null)
-    } catch (err) {
-      console.error('Error deleting day:', err)
+    } catch {
+      // Error handled by TanStack Query
     }
   }
 
@@ -138,8 +138,8 @@ function RoutineDetail() {
 
     try {
       await reorderDays.mutateAsync({ routineId, days: newDays })
-    } catch (err) {
-      console.error('Error reordering days:', err)
+    } catch {
+      // Error handled by TanStack Query
     }
   }
 

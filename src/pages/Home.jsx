@@ -35,8 +35,7 @@ function Home() {
       const newRoutine = await importRoutine(data, userId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
       navigate(`/routine/${newRoutine.id}`)
-    } catch (err) {
-      console.error('Error importando rutina:', err)
+    } catch {
       alert('Error al importar la rutina')
     }
 

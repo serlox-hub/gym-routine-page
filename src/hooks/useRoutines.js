@@ -202,7 +202,7 @@ export function useUpdateRoutineDay() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ dayId, routineId, data }) => {
+    mutationFn: async ({ dayId, data }) => {
       const { error } = await supabase
         .from('routine_days')
         .update(data)
@@ -220,7 +220,7 @@ export function useDeleteRoutineDay() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ dayId, routineId }) => {
+    mutationFn: async ({ dayId }) => {
       const { error } = await supabase
         .from('routine_days')
         .delete()
@@ -238,7 +238,7 @@ export function useReorderRoutineDays() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ routineId, days }) => {
+    mutationFn: async ({ days }) => {
       // Actualizar el orden de cada día
       for (let i = 0; i < days.length; i++) {
         const { error } = await supabase
@@ -258,7 +258,7 @@ export function useDeleteRoutineExercise() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ exerciseId, dayId }) => {
+    mutationFn: async ({ exerciseId }) => {
       const { error } = await supabase
         .from('routine_exercises')
         .delete()
@@ -276,7 +276,7 @@ export function useUpdateRoutineExercise() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ exerciseId, dayId, data }) => {
+    mutationFn: async ({ exerciseId, data }) => {
       const { error } = await supabase
         .from('routine_exercises')
         .update(data)
@@ -294,7 +294,7 @@ export function useReorderRoutineExercises() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ dayId, exercises }) => {
+    mutationFn: async ({ exercises }) => {
       // Actualizar el orden de cada ejercicio secuencialmente
       for (let i = 0; i < exercises.length; i++) {
         const { error } = await supabase
