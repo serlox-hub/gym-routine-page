@@ -4,6 +4,7 @@ import Home from './pages/Home.jsx'
 import RoutineDetail from './pages/RoutineDetail.jsx'
 import DayDetail from './pages/DayDetail.jsx'
 import WorkoutSession from './pages/WorkoutSession.jsx'
+import FreeWorkoutSession from './pages/FreeWorkoutSession.jsx'
 import History from './pages/History.jsx'
 import SessionDetail from './pages/SessionDetail.jsx'
 import Exercises from './pages/Exercises.jsx'
@@ -13,11 +14,13 @@ import ExerciseProgress from './pages/ExerciseProgress.jsx'
 import NewRoutine from './pages/NewRoutine.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
+import { ActiveSessionBanner } from './components/ui/index.js'
 
 function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <div className="min-h-screen bg-surface text-primary">
+        <ActiveSessionBanner />
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
@@ -29,6 +32,7 @@ function App() {
           <Route path="/routine/:routineId" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
           <Route path="/routine/:routineId/day/:dayId" element={<PrivateRoute><DayDetail /></PrivateRoute>} />
           <Route path="/routine/:routineId/day/:dayId/workout" element={<PrivateRoute><WorkoutSession /></PrivateRoute>} />
+          <Route path="/workout/free" element={<PrivateRoute><FreeWorkoutSession /></PrivateRoute>} />
           <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
           <Route path="/history/:sessionId" element={<PrivateRoute><SessionDetail /></PrivateRoute>} />
           <Route path="/exercises" element={<PrivateRoute><Exercises /></PrivateRoute>} />

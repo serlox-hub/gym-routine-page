@@ -7,6 +7,7 @@ const useWorkoutStore = create(
       // Current session
       sessionId: null,
       routineDayId: null,
+      routineId: null,
       startedAt: null,
 
       // Completed sets during this session (optimistic UI cache)
@@ -21,9 +22,11 @@ const useWorkoutStore = create(
       restTimeInitial: 0,
 
       // Start a new workout session
-      startSession: (sessionId, routineDayId) => set({
+      // routineId and routineDayId can be null for free sessions
+      startSession: (sessionId, routineDayId, routineId = null) => set({
         sessionId,
         routineDayId,
+        routineId,
         startedAt: new Date().toISOString(),
         completedSets: {},
         cachedSetData: {},
@@ -33,6 +36,7 @@ const useWorkoutStore = create(
       endSession: () => set({
         sessionId: null,
         routineDayId: null,
+        routineId: null,
         startedAt: null,
         completedSets: {},
         cachedSetData: {},

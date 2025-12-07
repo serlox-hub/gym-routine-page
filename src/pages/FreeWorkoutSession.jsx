@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useRoutineDay } from '../hooks/useRoutines.js'
+import { useNavigate } from 'react-router-dom'
 import {
   useCompleteSet,
   useUncompleteSet,
@@ -18,20 +17,17 @@ import useWorkoutStore from '../stores/workoutStore.js'
 import { transformSessionExercises } from '../lib/workoutTransforms.js'
 import { getExistingSupersetIds } from '../lib/supersetUtils.js'
 
-function WorkoutSession() {
-  const { routineId, dayId } = useParams()
+function FreeWorkoutSession() {
   const navigate = useNavigate()
 
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
 
-  const { data: day, isLoading: loadingDay, error: dayError } = useRoutineDay(dayId)
-  const { data: sessionExercises, isLoading: loadingExercises, error: exercisesError } = useSessionExercises(sessionId)
+  const { data: sessionExercises, isLoading, error } = useSessionExercises(sessionId)
 
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [isReordering, setIsReordering] = useState(false)
-  const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -41,15 +37,11 @@ function WorkoutSession() {
   const removeSessionExerciseMutation = useRemoveSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
 
-  const isLoading = loadingDay || loadingExercises
-  const error = dayError || exercisesError
-
   const { exercisesByBlock, flatExercises } = useMemo(
     () => transformSessionExercises(sessionExercises),
     [sessionExercises]
   )
 
-  // Obtener supersets existentes para el modal de añadir ejercicio
   const existingSupersets = useMemo(
     () => getExistingSupersetIds(sessionExercises || []),
     [sessionExercises]
@@ -57,9 +49,9 @@ function WorkoutSession() {
 
   useEffect(() => {
     if (!sessionId) {
-      navigate(navigateToOnEnd || `/routine/${routineId}/day/${dayId}`)
+      navigate('/')
     }
-  }, [sessionId, navigate, routineId, dayId, navigateToOnEnd])
+  }, [sessionId, navigate])
 
   if (!sessionId) return null
 
@@ -81,13 +73,17 @@ function WorkoutSession() {
   }
 
   const handleEndWorkout = () => {
-    setNavigateToOnEnd('/history')
-    endSessionMutation.mutate({ overallFeeling: null, notes: null })
+    endSessionMutation.mutate(
+      { overallFeeling: null, notes: null },
+      { onSuccess: () => navigate('/history') }
+    )
   }
 
   const handleAbandonWorkout = () => {
     setShowCancelModal(false)
-    abandonSessionMutation.mutate()
+    abandonSessionMutation.mutate(undefined, {
+      onSuccess: () => navigate('/')
+    })
   }
 
   const handleAddExercise = (data) => {
@@ -123,17 +119,29 @@ function WorkoutSession() {
     reorderSessionExercisesMutation.mutate(orderedIds)
   }
 
+  const hasExercises = flatExercises.length > 0
+
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
       <SessionHeader
-        dayName={day?.name}
+        dayName="Entrenamiento Libre"
         isReordering={isReordering}
-        onToggleReorder={() => setIsReordering(!isReordering)}
+        onToggleReorder={hasExercises ? () => setIsReordering(!isReordering) : undefined}
         onAddExercise={() => setShowAddExercise(true)}
       />
 
       <main className="space-y-4">
-        {isReordering ? (
+        {!hasExercises ? (
+          <div className="text-center py-12">
+            <p className="text-secondary mb-4">No hay ejercicios todavía</p>
+            <Button
+              variant="primary"
+              onClick={() => setShowAddExercise(true)}
+            >
+              Añadir primer ejercicio
+            </Button>
+          </div>
+        ) : isReordering ? (
           <ReorderableExerciseList
             exercises={flatExercises}
             onMove={handleMoveExercise}
@@ -189,7 +197,7 @@ function WorkoutSession() {
                 size="lg"
                 className="flex-1"
                 onClick={handleEndWorkout}
-                disabled={endSessionMutation.isPending}
+                disabled={endSessionMutation.isPending || !hasExercises}
               >
                 {endSessionMutation.isPending ? 'Guardando...' : 'Finalizar Entrenamiento'}
               </Button>
@@ -222,4 +230,4 @@ function WorkoutSession() {
   )
 }
 
-export default WorkoutSession
+export default FreeWorkoutSession

@@ -15,8 +15,7 @@ export function useStartSession() {
   const userId = useUserId()
 
   return useMutation({
-    mutationFn: async ({ routineDayId, blocks }) => {
-      // 1. Crear workout_session
+    mutationFn: async ({ routineDayId = null, blocks = [] } = {}) => {
       const { data: session, error: sessionError } = await supabase
         .from('workout_sessions')
         .insert({
@@ -29,7 +28,6 @@ export function useStartSession() {
 
       if (sessionError) throw sessionError
 
-      // 2. Crear session_exercises desde los bloques de la rutina
       const sessionExercisesData = buildSessionExercisesFromBlocks(blocks)
 
       if (sessionExercisesData.length > 0) {
@@ -47,8 +45,8 @@ export function useStartSession() {
 
       return session
     },
-    onSuccess: (data, { routineDayId }) => {
-      startSession(data.id, routineDayId)
+    onSuccess: (data, { routineDayId = null, routineId = null } = {}) => {
+      startSession(data.id, routineDayId, routineId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES] })
     },
@@ -155,6 +153,7 @@ export function useEndSession() {
     onSuccess: () => {
       endSession()
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
     },
   })
 }

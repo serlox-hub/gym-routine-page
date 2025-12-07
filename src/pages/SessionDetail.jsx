@@ -35,11 +35,13 @@ function SessionDetail() {
         <div className="flex items-start justify-between gap-2">
           <div>
             <h1 className="text-xl font-bold mb-1">
-              {session.routine_day?.name || 'Sesión'}
+              {session.routine_day?.name || 'Entrenamiento Libre'}
             </h1>
-            <p className="text-sm text-secondary">
-              {session.routine_day?.routine?.name}
-            </p>
+            {session.routine_day?.routine?.name && (
+              <p className="text-sm text-secondary">
+                {session.routine_day.routine.name}
+              </p>
+            )}
           </div>
           <button
             onClick={() => setShowDeleteConfirm(true)}

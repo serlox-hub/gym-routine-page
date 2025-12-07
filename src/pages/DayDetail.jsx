@@ -25,7 +25,7 @@ function DayDetail() {
 
   const handleStartWorkout = () => {
     startSessionMutation.mutate(
-      { routineDayId: parseInt(dayId), blocks },
+      { routineDayId: parseInt(dayId), routineId: parseInt(routineId), blocks },
       {
         onSuccess: () => {
           navigate(`/routine/${routineId}/day/${dayId}/workout`)
