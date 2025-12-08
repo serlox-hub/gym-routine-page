@@ -59,8 +59,9 @@ function Home() {
       const newRoutine = await importRoutine(pendingImportData, userId, options)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
       navigate(`/routine/${newRoutine.id}`)
-    } catch {
-      alert('Error al importar la rutina')
+    } catch (err) {
+      console.error('Error importando rutina:', err)
+      alert(`Error al importar la rutina: ${err.message}`)
     } finally {
       setShowImportOptions(false)
       setPendingImportData(null)

@@ -315,7 +315,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
           .from('muscle_groups')
           .select('id')
           .eq('name', ex.muscle_group_name)
-          .single()
+          .maybeSingle()
         muscleGroupId = mg?.id
       }
 
