@@ -2,32 +2,10 @@ import { supabase } from './supabase.js'
 import { sanitizeFilename } from './textUtils.js'
 
 /**
- * Genera un prompt personalizado para chatbots basado en las preferencias del usuario
+ * Formato JSON para importar/exportar rutinas
+ * Usado tanto para crear rutinas con IA como para adaptar rutinas existentes
  */
-export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }) {
-  const userRequest = [
-    objetivo && `- Objetivo: ${objetivo}`,
-    diasPorSemana && `- Días por semana: ${diasPorSemana}`,
-    nivelExperiencia && `- Nivel de experiencia: ${nivelExperiencia}`,
-    duracionSesion && `- Duración por sesión: ${duracionSesion} minutos`,
-    equipamiento && `- Equipamiento disponible: ${equipamiento}`,
-    notas && `- Notas adicionales: ${notas}`,
-  ].filter(Boolean).join('\n')
-
-  return `Actúa como un entrenador personal certificado con más de 10 años de experiencia. Diseña rutinas efectivas, seguras y basadas en evidencia científica, adaptadas a cada persona.
-
-Crea una rutina de entrenamiento personalizada con estos requisitos del cliente:
-
-${userRequest}
-
-CRITERIOS DE DISEÑO:
-- Adapta la selección de ejercicios, volumen e intensidad al objetivo y nivel indicados
-- Asegura una distribución equilibrada del trabajo según los días disponibles
-- Incluye tiempos de descanso coherentes con el tipo de entrenamiento
-
-Genera el resultado en formato JSON siguiendo EXACTAMENTE esta estructura:
-
-\`\`\`json
+export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
   "version": 4,
   "exercises": [
@@ -42,7 +20,7 @@ Genera el resultado en formato JSON siguiendo EXACTAMENTE esta estructura:
   "routine": {
     "name": "Nombre de la rutina",
     "description": "Descripción breve",
-    "goal": "${objetivo || 'General'}",
+    "goal": "Objetivo",
     "days": [
       {
         "name": "Día 1 - Nombre descriptivo",
@@ -68,7 +46,7 @@ Genera el resultado en formato JSON siguiendo EXACTAMENTE esta estructura:
                 "rest_seconds": 90,
                 "tempo": "3-1-1-0",
                 "tempo_razon": "Razón del tempo elegido (opcional)",
-                "notes": "Notas de ejecución específicas para esta rutina (opcional)"
+                "notes": "Notas de ejecución específicas (opcional)"
               }
             ]
           }
@@ -77,9 +55,9 @@ Genera el resultado en formato JSON siguiendo EXACTAMENTE esta estructura:
     ]
   }
 }
-\`\`\`
+\`\`\``
 
-REGLAS IMPORTANTES:
+export const ROUTINE_JSON_RULES = `REGLAS IMPORTANTES:
 1. Cada ejercicio en "exercises" debe usarse en "routine.days[].blocks[].exercises"
 2. El "exercise_name" debe coincidir EXACTAMENTE con el "name" del ejercicio
 3. Cada día debe tener exactamente 2 bloques: "Calentamiento" (sort_order: 0) y "Principal" (sort_order: 1)
@@ -90,9 +68,7 @@ CAMPOS DE EJERCICIOS (en "exercises"):
 - measurement_type (OBLIGATORIO, uno de estos):
   - "weight_reps": peso × repeticiones (ej: press banca)
   - "reps_only": solo repeticiones sin peso (ej: dominadas)
-  - "reps_per_side": repeticiones por lado (ej: zancadas)
   - "time": tiempo (ej: plancha)
-  - "time_per_side": tiempo por lado (ej: plancha lateral)
   - "distance": distancia (ej: farmer walk)
 - muscle_group_name (OBLIGATORIO, uno de estos):
   - "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps"
@@ -115,9 +91,56 @@ CAMPOS DE EJERCICIOS EN RUTINA (en "blocks[].exercises"):
 - rest_seconds: segundos de descanso entre series (opcional)
 - tempo: cadencia del movimiento en formato "excéntrico-pausa abajo-concéntrico-pausa arriba" (opcional, ej: "3-1-1-0")
 - tempo_razon: explicación de por qué se usa ese tempo (opcional)
-- notes: notas específicas de ejecución para esta rutina (opcional, ej: "Agarre cerrado", "Pausa en el pecho")
+- notes: notas específicas de ejecución para esta rutina (opcional, ej: "Agarre cerrado", "Pausa en el pecho")`
+
+/**
+ * Genera un prompt personalizado para chatbots basado en las preferencias del usuario
+ */
+export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }) {
+  const userRequest = [
+    objetivo && `- Objetivo: ${objetivo}`,
+    diasPorSemana && `- Días por semana: ${diasPorSemana}`,
+    nivelExperiencia && `- Nivel de experiencia: ${nivelExperiencia}`,
+    duracionSesion && `- Duración por sesión: ${duracionSesion} minutos`,
+    equipamiento && `- Equipamiento disponible: ${equipamiento}`,
+    notas && `- Notas adicionales: ${notas}`,
+  ].filter(Boolean).join('\n')
+
+  return `Actúa como un entrenador personal certificado con más de 10 años de experiencia. Diseña rutinas efectivas, seguras y basadas en evidencia científica, adaptadas a cada persona.
+
+Crea una rutina de entrenamiento personalizada con estos requisitos del cliente:
+
+${userRequest}
+
+CRITERIOS DE DISEÑO:
+- Adapta la selección de ejercicios, volumen e intensidad al objetivo y nivel indicados
+- Asegura una distribución equilibrada del trabajo según los días disponibles
+- Incluye tiempos de descanso coherentes con el tipo de entrenamiento
+
+Genera el resultado en formato JSON siguiendo EXACTAMENTE esta estructura:
+
+${ROUTINE_JSON_FORMAT}
+
+${ROUTINE_JSON_RULES}
 
 Responde SOLO con el JSON, sin texto adicional.`
+}
+
+/**
+ * Genera un prompt para adaptar una rutina existente al formato JSON
+ */
+export function buildAdaptRoutinePrompt() {
+  return `Convierte esta rutina de entrenamiento al siguiente formato JSON. Mantén todos los ejercicios, series, repeticiones y configuraciones lo más fiel posible al original.
+
+FORMATO REQUERIDO:
+${ROUTINE_JSON_FORMAT}
+
+${ROUTINE_JSON_RULES}
+
+Responde SOLO con el JSON, sin texto adicional.
+
+MI RUTINA A CONVERTIR:
+`
 }
 
 /**

@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot } from 'lucide-react'
+import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw } from 'lucide-react'
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
 import { useAuth, useUserId } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText } from '../components/ui/index.js'
-import { ChatbotPromptModal } from '../components/Routine/index.js'
+import { ChatbotPromptModal, AdaptRoutineModal } from '../components/Routine/index.js'
 import { importRoutine, readJsonFile } from '../lib/routineIO.js'
 import { useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
@@ -25,6 +25,7 @@ function Home() {
   const [showMenu, setShowMenu] = useState(false)
   const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
   const [showChatbotModal, setShowChatbotModal] = useState(false)
+  const [showAdaptModal, setShowAdaptModal] = useState(false)
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
 
@@ -299,6 +300,21 @@ function Home() {
                   </div>
                 </div>
               </Card>
+              <Card
+                className="p-3"
+                onClick={() => {
+                  setShowNewRoutineModal(false)
+                  setShowAdaptModal(true)
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <RefreshCw size={20} style={{ color: '#f0883e' }} />
+                  <div>
+                    <h4 className="font-medium text-sm" style={{ color: colors.textPrimary }}>Adaptar rutina existente</h4>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>Convierte tu rutina actual con IA</p>
+                  </div>
+                </div>
+              </Card>
             </div>
           </div>
         </div>
@@ -307,6 +323,13 @@ function Home() {
       {showChatbotModal && (
         <ChatbotPromptModal
           onClose={() => setShowChatbotModal(false)}
+          onImportClick={() => fileInputRef.current?.click()}
+        />
+      )}
+
+      {showAdaptModal && (
+        <AdaptRoutineModal
+          onClose={() => setShowAdaptModal(false)}
           onImportClick={() => fileInputRef.current?.click()}
         />
       )}
