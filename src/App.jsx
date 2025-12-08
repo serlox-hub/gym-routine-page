@@ -14,6 +14,7 @@ import NewRoutine from './pages/NewRoutine.jsx'
 import BodyWeight from './pages/BodyWeight.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
 import { ActiveSessionBanner } from './components/ui/index.js'
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* Protected routes */}
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />

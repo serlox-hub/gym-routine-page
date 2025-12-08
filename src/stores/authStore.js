@@ -78,6 +78,19 @@ const useAuthStore = create((set, get) => ({
 
   clearError: () => set({ error: null }),
 
+  resetPassword: async (email) => {
+    set({ error: null, isLoading: true })
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      if (error) throw error
+      set({ isLoading: false })
+      return { success: true }
+    } catch (error) {
+      set({ error: error.message, isLoading: false })
+      return { success: false, error: error.message }
+    }
+  },
+
   isAuthenticated: () => !!get().session,
 }))
 

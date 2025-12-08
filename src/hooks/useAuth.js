@@ -12,6 +12,7 @@ export function useAuth() {
     signup,
     logout,
     clearError,
+    resetPassword,
     isAuthenticated,
   } = useAuthStore()
 
@@ -28,6 +29,7 @@ export function useAuth() {
     signup,
     logout,
     clearError,
+    resetPassword,
     isAuthenticated: isAuthenticated(),
   }
 }

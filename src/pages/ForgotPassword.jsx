@@ -1,41 +1,56 @@
 import { useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button } from '@/components/ui'
 
-function Login() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { login, isLoading, error, clearError } = useAuth()
+function ForgotPassword() {
+  const { resetPassword, isLoading, error, clearError } = useAuth()
 
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [localError, setLocalError] = useState('')
-
-  const from = location.state?.from?.pathname || '/'
+  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLocalError('')
     clearError()
 
-    if (!email || !password) {
-      setLocalError('Por favor completa todos los campos')
+    if (!email) {
+      setLocalError('Por favor ingresa tu email')
       return
     }
 
-    const result = await login(email, password)
+    const result = await resetPassword(email)
     if (result.success) {
-      navigate(from, { replace: true })
+      setSuccess(true)
     }
   }
 
   const displayError = localError || error
 
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+        <Card className="w-full max-w-md p-6 text-center">
+          <h1 className="text-2xl font-bold mb-4">Revisa tu email</h1>
+          <p className="mb-6" style={{ color: '#8b949e' }}>
+            Te hemos enviado un enlace para restablecer tu contraseña a <strong style={{ color: '#c9d1d9' }}>{email}</strong>
+          </p>
+          <Link to="/login">
+            <Button className="w-full">Volver al inicio de sesión</Button>
+          </Link>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
       <Card className="w-full max-w-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Iniciar Sesión</h1>
+        <h1 className="text-2xl font-bold text-center mb-2">Recuperar contraseña</h1>
+        <p className="text-center mb-6" style={{ color: '#8b949e' }}>
+          Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -58,31 +73,6 @@ function Login() {
             />
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1" style={{ color: '#c9d1d9' }}>
-              Contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
-                color: '#c9d1d9'
-              }}
-              placeholder="••••••••"
-              autoComplete="current-password"
-            />
-            <div className="text-right mt-1">
-              <Link to="/forgot-password" className="text-sm hover:underline" style={{ color: '#58a6ff' }}>
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
-          </div>
-
           {displayError && (
             <p className="text-sm text-center" style={{ color: '#f85149' }}>
               {displayError}
@@ -94,14 +84,13 @@ function Login() {
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? 'Entrando...' : 'Entrar'}
+            {isLoading ? 'Enviando...' : 'Enviar enlace'}
           </Button>
         </form>
 
         <p className="text-center mt-4 text-sm" style={{ color: '#8b949e' }}>
-          ¿No tienes cuenta?{' '}
-          <Link to="/signup" className="hover:underline" style={{ color: '#58a6ff' }}>
-            Regístrate
+          <Link to="/login" className="hover:underline" style={{ color: '#58a6ff' }}>
+            Volver al inicio de sesión
           </Link>
         </p>
       </Card>
@@ -109,4 +98,4 @@ function Login() {
   )
 }
 
-export default Login
+export default ForgotPassword
