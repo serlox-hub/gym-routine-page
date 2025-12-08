@@ -6,7 +6,7 @@ const RIR_LABELS = {
   3: { label: '3+', description: 'Cómodo' },
 }
 
-function SetNotesView({ isOpen, onClose, rir, notes }) {
+function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
   if (!isOpen) return null
 
   const rirInfo = rir !== null && rir !== undefined ? RIR_LABELS[rir] : null
@@ -69,6 +69,19 @@ function SetNotesView({ isOpen, onClose, rir, notes }) {
               <div className="text-sm" style={{ color: '#e6edf3' }}>
                 {notes}
               </div>
+            </div>
+          )}
+
+          {videoUrl && (
+            <div
+              className="rounded-lg overflow-hidden"
+              style={{ backgroundColor: '#21262d' }}
+            >
+              <video
+                src={videoUrl}
+                controls
+                className="w-full"
+              />
             </div>
           )}
         </div>

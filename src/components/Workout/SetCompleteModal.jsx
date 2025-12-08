@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
-import { Check } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Check, Video, X, Loader2 } from 'lucide-react'
 import { colors, inputStyle, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
 import { formatRestTimeDisplay } from '../../lib/timeUtils.js'
+import { uploadVideo } from '../../lib/cloudinary.js'
+import { useCanUploadVideo } from '../../hooks/useAuth.js'
 
 const RIR_OPTIONS = [
   { value: -1, label: 'F', description: 'Fallo' },
@@ -11,27 +13,75 @@ const RIR_OPTIONS = [
   { value: 3, label: '3+', description: 'Cómodo' },
 ]
 
-function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir, initialNote }) {
+function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir, initialNote, initialVideoUrl }) {
+  const canUploadVideo = useCanUploadVideo()
   const [rir, setRir] = useState(null)
   const [note, setNote] = useState('')
+  const [videoUrl, setVideoUrl] = useState(null)
+  const [videoFile, setVideoFile] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
+  const fileInputRef = useRef(null)
 
   // Cargar valores iniciales cuando se abre el modal
   useEffect(() => {
     if (isOpen) {
       setRir(initialRir ?? null)
       setNote(initialNote ?? '')
+      setVideoUrl(initialVideoUrl ?? null)
+      setVideoFile(null)
+      setUploadError(null)
     }
-  }, [isOpen, initialRir, initialNote])
+  }, [isOpen, initialRir, initialNote, initialVideoUrl])
 
-  const handleComplete = () => {
-    onComplete(rir, note.trim() || null)
+  const handleVideoSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setVideoFile(file)
+      setVideoUrl(URL.createObjectURL(file))
+      setUploadError(null)
+    }
+  }
+
+  const handleRemoveVideo = () => {
+    setVideoFile(null)
+    setVideoUrl(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleComplete = async () => {
+    let finalVideoUrl = initialVideoUrl
+
+    if (videoFile) {
+      setIsUploading(true)
+      setUploadError(null)
+      try {
+        finalVideoUrl = await uploadVideo(videoFile)
+      } catch {
+        setUploadError('Error al subir el video')
+        setIsUploading(false)
+        return
+      }
+      setIsUploading(false)
+    } else if (!videoUrl && initialVideoUrl) {
+      finalVideoUrl = null
+    }
+
+    onComplete(rir, note.trim() || null, finalVideoUrl)
     setRir(null)
     setNote('')
+    setVideoUrl(null)
+    setVideoFile(null)
   }
 
   const handleClose = () => {
     setRir(null)
     setNote('')
+    setVideoUrl(null)
+    setVideoFile(null)
+    setUploadError(null)
     onClose()
   }
 
@@ -103,6 +153,57 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
             />
           </div>
 
+          {/* Video */}
+          {canUploadVideo && (
+            <div>
+              <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>
+                Video (opcional)
+              </label>
+              {videoUrl ? (
+                <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
+                  <video
+                    src={videoUrl}
+                    controls
+                    className="w-full max-h-40 object-contain"
+                  />
+                  <button
+                    onClick={handleRemoveVideo}
+                    className="absolute top-2 right-2 p-1 rounded-full"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+                  >
+                    <X size={16} style={{ color: colors.textPrimary }} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={handleVideoSelect}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                  >
+                    <Video size={18} />
+                    Añadir video
+                  </button>
+                  <p className="text-xs mt-1 text-center" style={{ color: colors.textSecondary }}>
+                    MP4, WebM o MOV. Máx 100MB
+                  </p>
+                </>
+              )}
+              {uploadError && (
+                <p className="text-xs mt-1" style={{ color: colors.error }}>
+                  {uploadError}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Info descanso */}
           {descansoSeg > 0 && (
             <div
@@ -120,11 +221,21 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
         <div className="p-4" style={{ borderTop: `1px solid ${colors.border}` }}>
           <button
             onClick={handleComplete}
-            className="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+            disabled={isUploading}
+            className="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: colors.success, color: '#ffffff' }}
           >
-            <Check size={20} />
-            Completar
+            {isUploading ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Subiendo video...
+              </>
+            ) : (
+              <>
+                <Check size={20} />
+                Completar
+              </>
+            )}
           </button>
         </div>
       </div>

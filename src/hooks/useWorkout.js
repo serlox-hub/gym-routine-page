@@ -61,7 +61,7 @@ export function useCompleteSet() {
   const completeSet = useWorkoutStore(state => state.completeSet)
 
   return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notes }) => {
+    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notes, videoUrl }) => {
       const { data, error } = await supabase
         .from('completed_sets')
         .upsert({
@@ -75,6 +75,7 @@ export function useCompleteSet() {
           distance_meters: distanceMeters,
           rir_actual: rirActual,
           notes,
+          video_url: videoUrl,
           completed: true,
         }, {
           onConflict: 'session_id,session_exercise_id,set_number',
@@ -94,6 +95,7 @@ export function useCompleteSet() {
         distanceMeters: variables.distanceMeters,
         rirActual: variables.rirActual,
         notes: variables.notes,
+        videoUrl: variables.videoUrl,
         dbId: data.id,
       })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
@@ -531,6 +533,7 @@ export function useSessionDetail(sessionId) {
               distance_meters,
               rir_actual,
               notes,
+              video_url,
               performed_at
             )
           )

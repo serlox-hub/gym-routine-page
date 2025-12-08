@@ -140,7 +140,8 @@ function SessionDetail() {
                   <NotesBadge
                     rir={set.rir_actual}
                     hasNotes={!!set.notes}
-                    onClick={set.notes ? () => setSelectedSet(set) : null}
+                    hasVideo={!!set.video_url}
+                    onClick={(set.notes || set.video_url) ? () => setSelectedSet(set) : null}
                   />
                 </div>
               ))}
@@ -154,6 +155,7 @@ function SessionDetail() {
         onClose={() => setSelectedSet(null)}
         rir={selectedSet?.rir_actual}
         notes={selectedSet?.notes}
+        videoUrl={selectedSet?.video_url}
       />
 
       <ConfirmModal
