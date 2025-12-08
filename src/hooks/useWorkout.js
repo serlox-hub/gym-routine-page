@@ -678,7 +678,7 @@ export function usePreviousWorkout(exerciseId) {
 // REST TIMER HOOK
 // ============================================
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 
 export function useRestTimer() {
   const restTimerActive = useWorkoutStore(state => state.restTimerActive)
@@ -765,4 +765,58 @@ export function useRestTimer() {
     skip: skipRest,
     addTime: (delta) => adjustRestTime(delta),
   }
+}
+
+// ============================================
+// WAKE LOCK HOOK
+// ============================================
+
+export function useWakeLock() {
+  const [isSupported] = useState(() => 'wakeLock' in navigator)
+  const [isActive, setIsActive] = useState(false)
+  const wakeLockRef = useRef(null)
+
+  const request = useCallback(async () => {
+    if (!isSupported || wakeLockRef.current) return
+
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request('screen')
+      setIsActive(true)
+
+      wakeLockRef.current.addEventListener('release', () => {
+        setIsActive(false)
+        wakeLockRef.current = null
+      })
+    } catch {
+      // Wake lock request failed (e.g., low battery, tab not visible)
+    }
+  }, [isSupported])
+
+  const release = useCallback(async () => {
+    if (wakeLockRef.current) {
+      await wakeLockRef.current.release()
+      wakeLockRef.current = null
+      setIsActive(false)
+    }
+  }, [])
+
+  // Re-acquire wake lock when page becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isSupported && !wakeLockRef.current) {
+        request()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [isSupported, request])
+
+  // Request on mount, release on unmount
+  useEffect(() => {
+    request()
+    return () => { release() }
+  }, [request, release])
+
+  return { isSupported, isActive }
 }

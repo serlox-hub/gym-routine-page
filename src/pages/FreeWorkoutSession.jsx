@@ -9,6 +9,7 @@ import {
   useAddSessionExercise,
   useRemoveSessionExercise,
   useReorderSessionExercises,
+  useWakeLock,
 } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, BottomActions } from '../components/ui/index.js'
 import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList, EndSessionModal } from '../components/Workout/index.js'
@@ -23,6 +24,9 @@ function FreeWorkoutSession() {
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
   const completedSets = useWorkoutStore(state => state.completedSets)
+
+  // Mantener pantalla encendida durante la sesión
+  useWakeLock()
 
   const hasCompletedSets = Object.keys(completedSets).length > 0
 
