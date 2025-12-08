@@ -56,7 +56,6 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         exercise={exercise}
         series={series}
         reps={reps}
-        rir={rir}
         tempo={tempo}
         notes={notes}
         rest_seconds={rest_seconds}
@@ -203,7 +202,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 }
 
 // Simplified card for warmup exercises (read-only list)
-function WarmupExerciseCard({ exercise, series, reps, rir, tempo, notes, rest_seconds }) {
+function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds }) {
   const [showNotes, setShowNotes] = useState(false)
   const hasNotes = exercise.instructions || notes
 
@@ -222,10 +221,9 @@ function WarmupExerciseCard({ exercise, series, reps, rir, tempo, notes, rest_se
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 mt-2">
-        <Badge variant="accent">{series}×{reps}</Badge>
-        {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
+        {series > 0 && <Badge variant="accent">{series}×{reps}</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
-        {rest_seconds && (
+        {rest_seconds > 0 && (
           <Badge variant="default">{rest_seconds}s</Badge>
         )}
         {hasNotes && (

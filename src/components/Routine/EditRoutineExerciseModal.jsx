@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { colors, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
 import { getNextSupersetId } from '../../lib/supersetUtils.js'
-import ExerciseConfigForm from './ExerciseConfigForm.jsx'
+import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
 
 function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routineExercise, existingSupersets = [] }) {
   const [form, setForm] = useState({
@@ -68,19 +68,23 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
           Editar ejercicio
         </h3>
 
-        <ExerciseConfigForm
-          exercise={exercise}
-          form={form}
-          setForm={setForm}
-          onSubmit={handleSubmit}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <ExerciseConfigForm
+            exercise={exercise}
+            form={form}
+            setForm={setForm}
+            showSupersetField={true}
+            existingSupersets={existingSupersets}
+            nextSupersetId={nextSuperset}
+          />
+        </div>
+        <ExerciseConfigFormButtons
           onBack={onClose}
+          onSubmit={handleSubmit}
           isPending={isPending}
+          backLabel="Cancelar"
           submitLabel="Guardar"
           pendingLabel="Guardando..."
-          backLabel="Cancelar"
-          showSupersetField={true}
-          existingSupersets={existingSupersets}
-          nextSupersetId={nextSuperset}
         />
       </div>
     </div>
