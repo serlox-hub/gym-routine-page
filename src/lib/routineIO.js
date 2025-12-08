@@ -1,5 +1,4 @@
 import { supabase } from './supabase.js'
-import { sanitizeFilename } from './textUtils.js'
 
 /**
  * Formato JSON para importar/exportar rutinas
