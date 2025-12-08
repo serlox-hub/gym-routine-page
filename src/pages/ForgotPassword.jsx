@@ -4,11 +4,27 @@ import { useAuth } from '@/hooks/useAuth'
 import { Card, Button } from '@/components/ui'
 
 function ForgotPassword() {
-  const { resetPassword, isLoading, error, clearError } = useAuth()
+  const { resetPassword, isLoading, error, clearError, isAuthenticated } = useAuth()
 
   const [email, setEmail] = useState('')
   const [localError, setLocalError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+        <Card className="w-full max-w-md p-6 text-center">
+          <h1 className="text-2xl font-bold mb-4">Enlace abierto en otra pestaña</h1>
+          <p className="mb-6" style={{ color: '#8b949e' }}>
+            Continúa el proceso de cambio de contraseña en la pestaña que se abrió con el enlace del correo.
+          </p>
+          <p className="text-sm" style={{ color: '#8b949e' }}>
+            Puedes cerrar esta pestaña.
+          </p>
+        </Card>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()

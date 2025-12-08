@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button } from '@/components/ui'
@@ -6,13 +6,19 @@ import { Card, Button } from '@/components/ui'
 function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, isLoading, error, clearError } = useAuth()
+  const { login, isLoading, error, clearError, isAuthenticated } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [localError, setLocalError] = useState('')
 
   const from = location.state?.from?.pathname || '/'
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true })
+    }
+  }, [isAuthenticated, navigate, from])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
