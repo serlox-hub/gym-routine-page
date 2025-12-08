@@ -10,19 +10,25 @@ const useAuthStore = create((set, get) => ({
 
   initialize: async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      set({
-        session,
-        user: session?.user ?? null,
-        isLoading: false,
-      })
+      // Detectar type=recovery en el hash antes de que Supabase lo limpie
+      const hashParams = new URLSearchParams(window.location.hash.slice(1))
+      const isRecoveryFromHash = hashParams.get('type') === 'recovery'
 
+      // Registrar listener ANTES de getSession para capturar eventos
       supabase.auth.onAuthStateChange((event, session) => {
         set({
           session,
           user: session?.user ?? null,
           isPasswordRecovery: event === 'PASSWORD_RECOVERY',
         })
+      })
+
+      const { data: { session } } = await supabase.auth.getSession()
+      set({
+        session,
+        user: session?.user ?? null,
+        isLoading: false,
+        isPasswordRecovery: isRecoveryFromHash,
       })
     } catch (error) {
       set({ error: error.message, isLoading: false })
