@@ -1,11 +1,12 @@
-import { useState } from 'react'
 import { Minimize2, Maximize2 } from 'lucide-react'
 import { useRestTimer } from '../../hooks/useWorkout.js'
 import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
+import useWorkoutStore from '../../stores/workoutStore.js'
 
 function RestTimer() {
   const { isActive, timeRemaining, progress, skip, addTime } = useRestTimer()
-  const [minimized, setMinimized] = useState(false)
+  const minimized = useWorkoutStore(state => state.restTimerMinimized)
+  const setMinimized = useWorkoutStore(state => state.setRestTimerMinimized)
 
   if (!isActive) return null
 

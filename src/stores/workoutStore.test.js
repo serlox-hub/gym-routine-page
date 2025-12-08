@@ -17,6 +17,7 @@ describe('workoutStore', () => {
         restTimerActive: false,
         restTimeRemaining: 0,
         restTimeInitial: 0,
+        restTimerMinimized: false,
       })
     })
   })
@@ -200,6 +201,22 @@ describe('workoutStore', () => {
       })
 
       expect(useWorkoutStore.getState().restTimeRemaining).toBe(0)
+    })
+
+    it('sets timer minimized state', () => {
+      expect(useWorkoutStore.getState().restTimerMinimized).toBe(false)
+
+      act(() => {
+        useWorkoutStore.getState().setRestTimerMinimized(true)
+      })
+
+      expect(useWorkoutStore.getState().restTimerMinimized).toBe(true)
+
+      act(() => {
+        useWorkoutStore.getState().setRestTimerMinimized(false)
+      })
+
+      expect(useWorkoutStore.getState().restTimerMinimized).toBe(false)
     })
   })
 

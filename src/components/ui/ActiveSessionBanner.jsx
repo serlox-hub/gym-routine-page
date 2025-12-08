@@ -1,6 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Play } from 'lucide-react'
+import { Undo2 } from 'lucide-react'
 import useWorkoutStore from '../../stores/workoutStore.js'
+import { useRestTimer } from '../../hooks/useWorkout.js'
+import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
 
 function ActiveSessionBanner() {
   const navigate = useNavigate()
@@ -9,6 +11,8 @@ function ActiveSessionBanner() {
   const sessionId = useWorkoutStore(state => state.sessionId)
   const routineDayId = useWorkoutStore(state => state.routineDayId)
   const routineId = useWorkoutStore(state => state.routineId)
+
+  const { isActive: restTimerActive, timeRemaining } = useRestTimer()
 
   if (!sessionId) return null
 
@@ -24,24 +28,36 @@ function ActiveSessionBanner() {
     }
   }
 
-  return (
-    <div
-      className="fixed top-0 left-0 right-0 z-50 px-4 py-2"
-      style={{ backgroundColor: 'rgba(35, 134, 54, 0.95)', borderBottom: '1px solid #238636' }}
-    >
-      <div className="max-w-2xl mx-auto flex items-center justify-between">
-        <span className="text-sm font-medium text-white">
-          Entrenamiento en curso
-        </span>
+  const isWarning = timeRemaining <= 10 && timeRemaining > 3
+  const isCritical = timeRemaining <= 3
+  const timerColor = isCritical ? '#f85149' : isWarning ? '#d29922' : '#ffffff'
+
+  // Si el timer de descanso está activo, mostrar banner con timer
+  if (restTimerActive) {
+    return (
+      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
         <button
           onClick={handleContinue}
-          className="flex items-center gap-1 px-3 py-1 rounded text-sm font-medium transition-opacity hover:opacity-80"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: '#ffffff' }}
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${isCritical ? 'animate-pulse' : ''}`}
+          style={{ backgroundColor: '#161b22', border: '1px solid #30363d', color: timerColor }}
         >
-          <Play size={14} />
-          Continuar
+          <span className="font-mono font-bold">{formatSecondsToMMSS(timeRemaining)}</span>
+          <Undo2 size={10} />
         </button>
       </div>
+    )
+  }
+
+  return (
+    <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
+      <button
+        onClick={handleContinue}
+        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium"
+        style={{ backgroundColor: 'rgba(35, 134, 54, 0.95)', color: '#ffffff' }}
+      >
+        <Undo2 size={10} />
+        Volver
+      </button>
     </div>
   )
 }

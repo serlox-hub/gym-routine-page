@@ -20,6 +20,7 @@ const useWorkoutStore = create(
       restTimerActive: false,
       restTimeRemaining: 0,
       restTimeInitial: 0,
+      restTimerMinimized: false,
 
       // Start a new workout session
       // routineId and routineDayId can be null for free sessions
@@ -124,6 +125,8 @@ const useWorkoutStore = create(
       adjustRestTime: (delta) => set(state => ({
         restTimeRemaining: Math.max(0, state.restTimeRemaining + delta),
       })),
+
+      setRestTimerMinimized: (minimized) => set({ restTimerMinimized: minimized }),
     }),
     {
       name: 'workout-session',
