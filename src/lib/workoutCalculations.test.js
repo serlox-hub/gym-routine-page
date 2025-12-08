@@ -270,6 +270,32 @@ describe('workoutCalculations', () => {
       )
       expect(result[0].dayName).toBe('Sesión')
     })
+
+    it('usa day_name desnormalizado con prioridad sobre routine_day.name', () => {
+      const sessionsWithDayName = [
+        {
+          started_at: '2024-01-15T10:00:00Z',
+          duration_minutes: 45,
+          day_name: 'Push (desnormalizado)',
+          routine_day: { name: 'Push' },
+        },
+      ]
+      const result = transformSessionsToDurationChartData(sessionsWithDayName, new Date('2024-01-25'))
+      expect(result[0].dayName).toBe('Push (desnormalizado)')
+    })
+
+    it('usa routine_day.name como fallback si day_name es null', () => {
+      const sessionsWithoutDayName = [
+        {
+          started_at: '2024-01-15T10:00:00Z',
+          duration_minutes: 45,
+          day_name: null,
+          routine_day: { name: 'Pull' },
+        },
+      ]
+      const result = transformSessionsToDurationChartData(sessionsWithoutDayName, new Date('2024-01-25'))
+      expect(result[0].dayName).toBe('Pull')
+    })
   })
 
   describe('calculateAverageDuration', () => {

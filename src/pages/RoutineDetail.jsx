@@ -163,6 +163,7 @@ function RoutineDetail() {
                 key={day.id}
                 day={day}
                 routineId={routineId}
+                routineName={routine?.name}
                 isEditing={isEditing}
                 onAddExercise={handleOpenAddExercise}
                 onAddWarmup={handleOpenAddWarmup}

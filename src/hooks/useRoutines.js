@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { useUserId } from './useAuth.js'
+import { duplicateRoutine } from '../lib/routineIO.js'
 
 export function useRoutines() {
   return useQuery({
@@ -332,6 +333,20 @@ export function useReorderRoutineExercises() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
+    },
+  })
+}
+
+export function useDuplicateRoutine() {
+  const queryClient = useQueryClient()
+  const userId = useUserId()
+
+  return useMutation({
+    mutationFn: async ({ routineId, newName }) => {
+      return duplicateRoutine(routineId, userId, newName)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
     },
   })
 }

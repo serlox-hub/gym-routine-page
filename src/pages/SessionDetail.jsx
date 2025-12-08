@@ -27,7 +27,7 @@ function SessionDetail() {
   return (
     <div className="p-4 max-w-2xl mx-auto">
       <PageHeader
-        title={session.routine_day?.name || 'Entrenamiento Libre'}
+        title="Detalle de sesión"
         backTo="/history"
         menuItems={menuItems}
       />
@@ -35,6 +35,20 @@ function SessionDetail() {
       {/* Info de la sesión */}
       <Card className="p-4 mb-4">
         <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <div className="text-xs text-secondary">Día</div>
+            <div className="text-sm font-medium">
+              {session.day_name || session.routine_day?.name || 'Entrenamiento Libre'}
+            </div>
+          </div>
+          {(session.routine_name || session.routine_day?.routine?.name) && (
+            <div className="col-span-2">
+              <div className="text-xs text-secondary">Rutina</div>
+              <div className="text-sm">
+                {session.routine_name || session.routine_day?.routine?.name}
+              </div>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Calendar size={16} style={{ color: '#8b949e' }} />
             <div>
@@ -49,10 +63,12 @@ function SessionDetail() {
               <div className="text-sm">{formatTime(session.started_at)}</div>
             </div>
           </div>
-          {session.duration_minutes && (
+          {session.duration_minutes != null && (
             <div>
               <div className="text-xs text-secondary">Duración</div>
-              <div className="text-sm">{session.duration_minutes} minutos</div>
+              <div className="text-sm">
+                {session.duration_minutes > 0 ? `${session.duration_minutes} minutos` : '< 1 minuto'}
+              </div>
             </div>
           )}
           {session.overall_feeling && (
@@ -81,18 +97,29 @@ function SessionDetail() {
       {/* Ejercicios */}
       <h2 className="text-lg font-bold mb-3">Ejercicios</h2>
       <div className="space-y-3">
-        {session.exercises?.map(({ exercise, sets }) => (
-          <Card key={exercise.id} className="p-4">
+        {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
+          <Card key={sessionExerciseId} className="p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
-              <h3 className="font-medium">{exercise.name}</h3>
-              <button
-                onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
-                className="p-1.5 rounded hover:opacity-80"
-                style={{ backgroundColor: '#21262d' }}
-                title="Ver progresión"
-              >
-                <TrendingUp size={14} style={{ color: '#a371f7' }} />
-              </button>
+              <div className="flex items-center gap-2">
+                <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>
+                  {exercise.name}
+                </h3>
+                {exercise.deleted_at && (
+                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#f8514966', color: '#f85149' }}>
+                    Eliminado
+                  </span>
+                )}
+              </div>
+              {!exercise.deleted_at && (
+                <button
+                  onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
+                  className="p-1.5 rounded hover:opacity-80"
+                  style={{ backgroundColor: '#21262d' }}
+                  title="Ver progresión"
+                >
+                  <TrendingUp size={14} style={{ color: '#a371f7' }} />
+                </button>
+              )}
             </div>
             <div className="space-y-2">
               {sets.map(set => (

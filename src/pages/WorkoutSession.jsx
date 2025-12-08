@@ -24,6 +24,9 @@ function WorkoutSession() {
 
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
+  const completedSets = useWorkoutStore(state => state.completedSets)
+
+  const hasCompletedSets = Object.keys(completedSets).length > 0
 
   const { data: day, isLoading: loadingDay, error: dayError } = useRoutineDay(dayId)
   const { data: sessionExercises, isLoading: loadingExercises, error: exercisesError } = useSessionExercises(sessionId)
@@ -173,7 +176,7 @@ function WorkoutSession() {
           primary={{
             label: endSessionMutation.isPending ? 'Guardando...' : 'Finalizar',
             onClick: handleEndWorkout,
-            disabled: endSessionMutation.isPending,
+            disabled: endSessionMutation.isPending || !hasCompletedSets,
           }}
         />
       )}

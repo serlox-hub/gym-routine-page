@@ -10,7 +10,7 @@ import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
 import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast, hasActiveSession, activeRoutineDayId }) {
+function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast, hasActiveSession, activeRoutineDayId }) {
   const navigate = useNavigate()
   const { id, sort_order, name, estimated_duration_min } = day
   const [isExpanded, setIsExpanded] = useState(false)
@@ -44,7 +44,7 @@ function DayCard({ day, routineId, isEditing, onAddExercise, onAddWarmup, onEdit
   const handleStartWorkout = (e) => {
     e.stopPropagation()
     startSessionMutation.mutate(
-      { routineDayId: id, routineId: parseInt(routineId), blocks },
+      { routineDayId: id, routineId: parseInt(routineId), routineName, dayName: name, blocks },
       {
         onSuccess: () => navigate(`/routine/${routineId}/day/${id}/workout`)
       }

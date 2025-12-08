@@ -10,6 +10,7 @@ export function useExercises() {
       const { data, error } = await supabase
         .from('exercises')
         .select('id, name, measurement_type, instructions, weight_unit')
+        .is('deleted_at', null)
         .order('name')
 
       if (error) throw error
@@ -32,6 +33,7 @@ export function useExercisesWithMuscleGroup() {
           muscle_group_id,
           muscle_group:muscle_groups(id, name)
         `)
+        .is('deleted_at', null)
         .order('name')
 
       if (error) throw error
@@ -67,6 +69,7 @@ export function useExercise(exerciseId) {
           measurement_type,
           weight_unit,
           instructions,
+          deleted_at,
           muscle_group_id,
           muscle_group:muscle_groups(id, name)
         `)
@@ -154,9 +157,10 @@ export function useDeleteExercise() {
         throw new Error('Este ejercicio está siendo usado en una rutina. Elimínalo de la rutina primero.')
       }
 
+      // Soft delete: marcar como eliminado en lugar de borrar
       const { error } = await supabase
         .from('exercises')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', exerciseId)
 
       if (error) throw error

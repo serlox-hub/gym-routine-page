@@ -22,6 +22,9 @@ function FreeWorkoutSession() {
 
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
+  const completedSets = useWorkoutStore(state => state.completedSets)
+
+  const hasCompletedSets = Object.keys(completedSets).length > 0
 
   const { data: sessionExercises, isLoading, error } = useSessionExercises(sessionId)
 
@@ -181,7 +184,7 @@ function FreeWorkoutSession() {
           primary={{
             label: endSessionMutation.isPending ? 'Guardando...' : 'Finalizar',
             onClick: handleEndWorkout,
-            disabled: endSessionMutation.isPending || !hasExercises,
+            disabled: endSessionMutation.isPending || !hasCompletedSets,
           }}
         />
       )}

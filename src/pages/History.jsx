@@ -85,7 +85,7 @@ function History() {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium">
-                        {session.routine_day?.name || 'Entrenamiento Libre'}
+                        {session.day_name || session.routine_day?.name || 'Entrenamiento Libre'}
                       </div>
                       <div className="text-sm text-secondary">
                         {formatTime(session.started_at)}

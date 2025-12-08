@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { readJsonFile, buildChatbotPrompt, buildAdaptRoutinePrompt, ROUTINE_JSON_FORMAT, ROUTINE_JSON_RULES } from './routineIO.js'
+import { readJsonFile, buildChatbotPrompt, buildAdaptRoutinePrompt, ROUTINE_JSON_FORMAT, ROUTINE_JSON_RULES, duplicateRoutine } from './routineIO.js'
 
 describe('routineIO - funciones puras', () => {
   describe('readJsonFile', () => {
@@ -257,6 +257,17 @@ describe('routineIO - funciones puras', () => {
       // Ambos deben contener las reglas
       expect(chatbotPrompt).toContain('CAMPOS DE EJERCICIOS')
       expect(adaptPrompt).toContain('CAMPOS DE EJERCICIOS')
+    })
+  })
+
+  describe('duplicateRoutine', () => {
+    it('está exportada como función', () => {
+      expect(typeof duplicateRoutine).toBe('function')
+    })
+
+    it('requiere routineId y userId como parámetros', () => {
+      // La función es async y usa Supabase, solo verificamos la firma
+      expect(duplicateRoutine.length).toBeGreaterThanOrEqual(2)
     })
   })
 })

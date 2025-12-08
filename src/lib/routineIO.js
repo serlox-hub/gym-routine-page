@@ -319,11 +319,13 @@ export async function importRoutine(jsonData, userId, options = {}) {
         muscleGroupId = mg?.id
       }
 
+      // Buscar ejercicio existente del usuario
       const { data: existing } = await supabase
         .from('exercises')
         .select('id')
         .eq('name', ex.name)
-        .single()
+        .eq('user_id', userId)
+        .maybeSingle()
 
       if (existing) {
         exerciseMap.set(ex.name, existing.id)
@@ -417,7 +419,8 @@ export async function importRoutine(jsonData, userId, options = {}) {
             .from('exercises')
             .select('id')
             .eq('name', ex.exercise_name)
-            .single()
+            .eq('user_id', userId)
+            .maybeSingle()
           exerciseId = exercise?.id
         }
 
@@ -442,6 +445,23 @@ export async function importRoutine(jsonData, userId, options = {}) {
   }
 
   return newRoutine
+}
+
+/**
+ * Duplica una rutina completa con todos sus días, bloques y ejercicios
+ * @param {string} routineId - ID de la rutina a duplicar
+ * @param {string} userId - ID del usuario
+ * @param {string} newName - Nombre para la rutina duplicada (opcional)
+ * @returns {Promise<object>} La nueva rutina creada
+ */
+export async function duplicateRoutine(routineId, userId, newName) {
+  const exportData = await exportRoutine(routineId)
+
+  // Modificar el nombre de la rutina
+  exportData.routine.name = newName || `${exportData.routine.name} (copia)`
+
+  // Importar como nueva rutina (sin actualizar ejercicios existentes)
+  return importRoutine(exportData, userId, { updateExercises: false })
 }
 
 /**

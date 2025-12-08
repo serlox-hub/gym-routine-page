@@ -15,11 +15,13 @@ export function useStartSession() {
   const userId = useUserId()
 
   return useMutation({
-    mutationFn: async ({ routineDayId = null, blocks = [] } = {}) => {
+    mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [] } = {}) => {
       const { data: session, error: sessionError } = await supabase
         .from('workout_sessions')
         .insert({
           routine_day_id: routineDayId,
+          routine_name: routineName,
+          day_name: dayName,
           status: 'in_progress',
           user_id: userId,
         })
@@ -130,6 +132,25 @@ export function useEndSession() {
 
   return useMutation({
     mutationFn: async ({ overallFeeling, notes }) => {
+      // Eliminar session_exercises sin series completadas
+      const { data: exercisesWithSets } = await supabase
+        .from('completed_sets')
+        .select('session_exercise_id')
+        .eq('session_id', sessionId)
+
+      const exerciseIdsWithSets = new Set(
+        (exercisesWithSets || []).map(s => s.session_exercise_id)
+      )
+
+      if (exerciseIdsWithSets.size > 0) {
+        // Eliminar ejercicios sin series completadas
+        await supabase
+          .from('session_exercises')
+          .delete()
+          .eq('session_id', sessionId)
+          .not('id', 'in', `(${Array.from(exerciseIdsWithSets).join(',')})`)
+      }
+
       const completedAt = new Date()
       const startedAtDate = new Date(startedAt)
       const durationMinutes = Math.round((completedAt - startedAtDate) / 60000)
@@ -391,8 +412,10 @@ export function useDeleteSession() {
         .eq('id', sessionId)
 
       if (error) throw error
+      return sessionId
     },
-    onSuccess: () => {
+    onSuccess: (sessionId) => {
+      queryClient.removeQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
     },
   })
@@ -416,6 +439,8 @@ export function useWorkoutHistory() {
           status,
           overall_feeling,
           notes,
+          routine_name,
+          day_name,
           routine_day:routine_days (
             id,
             name,
@@ -472,6 +497,8 @@ export function useSessionDetail(sessionId) {
           status,
           overall_feeling,
           notes,
+          routine_name,
+          day_name,
           routine_day:routine_days (
             id,
             name,
@@ -489,7 +516,8 @@ export function useSessionDetail(sessionId) {
             block_name,
             exercise:exercises (
               id,
-              name
+              name,
+              deleted_at
             ),
             completed_sets (
               id,
@@ -514,6 +542,7 @@ export function useSessionDetail(sessionId) {
       const exercises = (session.session_exercises || [])
         .sort((a, b) => a.sort_order - b.sort_order)
         .map(se => ({
+          sessionExerciseId: se.id,
           exercise: se.exercise,
           series: se.series,
           reps: se.reps,
