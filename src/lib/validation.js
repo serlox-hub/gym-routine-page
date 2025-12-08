@@ -67,6 +67,27 @@ export function prepareRoutineData(form) {
 }
 
 /**
+ * Valida el formulario de reset de contraseña
+ * @param {{password: string, confirmPassword: string}} data - Datos del formulario
+ * @returns {{valid: boolean, error: string|null}}
+ */
+export function validateResetPasswordForm({ password, confirmPassword }) {
+  if (!password) {
+    return { valid: false, error: 'Por favor ingresa una contraseña' }
+  }
+
+  if (password.length < 6) {
+    return { valid: false, error: 'La contraseña debe tener al menos 6 caracteres' }
+  }
+
+  if (password !== confirmPassword) {
+    return { valid: false, error: 'Las contraseñas no coinciden' }
+  }
+
+  return { valid: true, error: null }
+}
+
+/**
  * Verifica si un email es válido
  * @param {string} email - Email a validar
  * @returns {boolean}

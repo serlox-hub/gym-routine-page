@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
 import Home from './pages/Home.jsx'
 import RoutineDetail from './pages/RoutineDetail.jsx'
@@ -15,18 +16,36 @@ import BodyWeight from './pages/BodyWeight.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
+import ResetPassword from './pages/ResetPassword.jsx'
 import { ActiveSessionBanner } from './components/ui/index.js'
+import { useAuth } from './hooks/useAuth.js'
+
+function PasswordRecoveryRedirect({ children }) {
+  const { isPasswordRecovery, clearPasswordRecovery } = useAuth()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (isPasswordRecovery) {
+      clearPasswordRecovery()
+      navigate('/reset-password', { replace: true })
+    }
+  }, [isPasswordRecovery, clearPasswordRecovery, navigate])
+
+  return children
+}
 
 function App() {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <div className="min-h-screen bg-surface text-primary">
-        <ActiveSessionBanner />
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+    <BrowserRouter>
+      <PasswordRecoveryRedirect>
+        <div className="min-h-screen bg-surface text-primary">
+          <ActiveSessionBanner />
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected routes */}
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
@@ -41,8 +60,9 @@ function App() {
           <Route path="/exercises/:exerciseId/edit" element={<PrivateRoute><EditExercise /></PrivateRoute>} />
           <Route path="/exercises/:exerciseId/progress" element={<PrivateRoute><ExerciseProgress /></PrivateRoute>} />
           <Route path="/body-weight" element={<PrivateRoute><BodyWeight /></PrivateRoute>} />
-        </Routes>
-      </div>
+          </Routes>
+        </div>
+      </PasswordRecoveryRedirect>
     </BrowserRouter>
   )
 }

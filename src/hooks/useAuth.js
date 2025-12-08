@@ -12,8 +12,10 @@ export function useAuth() {
     signup,
     logout,
     clearError,
+    clearPasswordRecovery,
     resetPassword,
     isAuthenticated,
+    isPasswordRecovery,
   } = useAuthStore()
 
   useEffect(() => {
@@ -29,8 +31,10 @@ export function useAuth() {
     signup,
     logout,
     clearError,
+    clearPasswordRecovery,
     resetPassword,
     isAuthenticated: isAuthenticated(),
+    isPasswordRecovery,
   }
 }
 
