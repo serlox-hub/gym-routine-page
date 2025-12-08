@@ -11,6 +11,7 @@ import NewExercise from './pages/NewExercise.jsx'
 import EditExercise from './pages/EditExercise.jsx'
 import ExerciseProgress from './pages/ExerciseProgress.jsx'
 import NewRoutine from './pages/NewRoutine.jsx'
+import BodyWeight from './pages/BodyWeight.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import { ActiveSessionBanner } from './components/ui/index.js'
@@ -37,6 +38,7 @@ function App() {
           <Route path="/exercises/new" element={<PrivateRoute><NewExercise /></PrivateRoute>} />
           <Route path="/exercises/:exerciseId/edit" element={<PrivateRoute><EditExercise /></PrivateRoute>} />
           <Route path="/exercises/:exerciseId/progress" element={<PrivateRoute><ExerciseProgress /></PrivateRoute>} />
+          <Route path="/body-weight" element={<PrivateRoute><BodyWeight /></PrivateRoute>} />
         </Routes>
       </div>
     </BrowserRouter>

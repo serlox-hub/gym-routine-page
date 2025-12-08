@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate } from 'lucide-react'
+import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate, Scale } from 'lucide-react'
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
 import { useAuth, useUserId } from '../hooks/useAuth.js'
@@ -120,6 +120,14 @@ function Home() {
                   >
                     <History size={16} style={{ color: '#8b949e' }} />
                     Histórico
+                  </button>
+                  <button
+                    onClick={() => { navigate('/body-weight'); setShowMenu(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:opacity-80"
+                    style={{ color: '#e6edf3' }}
+                  >
+                    <Scale size={16} style={{ color: '#8b949e' }} />
+                    Peso Corporal
                   </button>
                   <div style={{ borderTop: '1px solid #30363d', margin: '4px 0' }} />
                   <button

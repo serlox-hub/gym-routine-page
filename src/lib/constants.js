@@ -13,6 +13,8 @@ export const QUERY_KEYS = {
   WORKOUT_HISTORY: 'workout-history',
   SESSION_DETAIL: 'session-detail',
   EXERCISE_HISTORY: 'exercise-history',
+  BODY_WEIGHT_HISTORY: 'body-weight-history',
+  BODY_WEIGHT_LATEST: 'body-weight-latest',
 }
 
 // Timer
