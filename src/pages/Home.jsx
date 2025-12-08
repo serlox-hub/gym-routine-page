@@ -1,12 +1,12 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate, Scale } from 'lucide-react'
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
 import { useAuth, useUserId } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText } from '../components/ui/index.js'
-import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal } from '../components/Routine/index.js'
-import { importRoutine, readJsonFile } from '../lib/routineIO.js'
+import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal, ImportRoutineModal } from '../components/Routine/index.js'
+import { importRoutine } from '../lib/routineIO.js'
 import { useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -18,7 +18,6 @@ function Home() {
   const { logout } = useAuth()
   const userId = useUserId()
   const queryClient = useQueryClient()
-  const fileInputRef = useRef(null)
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const startSessionMutation = useStartSession()
   const setFavoriteMutation = useSetFavoriteRoutine()
@@ -27,6 +26,7 @@ function Home() {
   const [showChatbotModal, setShowChatbotModal] = useState(false)
   const [showAdaptModal, setShowAdaptModal] = useState(false)
   const [showTemplatesModal, setShowTemplatesModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
 
@@ -37,19 +37,10 @@ function Home() {
     navigate('/login')
   }
 
-  const handleFileSelect = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    try {
-      const data = await readJsonFile(file)
-      setPendingImportData(data)
-      setShowImportOptions(true)
-    } catch {
-      alert('Error al leer el archivo')
-    }
-
-    e.target.value = ''
+  const handleImportData = (data) => {
+    setPendingImportData(data)
+    setShowImportModal(false)
+    setShowImportOptions(true)
   }
 
   const handleImportConfirm = async (options) => {
@@ -275,7 +266,7 @@ function Home() {
                 <div className="flex items-center gap-3">
                   <LayoutTemplate size={20} style={{ color: colors.success }} />
                   <div>
-                    <h4 className="font-medium text-sm" style={{ color: colors.textPrimary }}>Usar plantilla</h4>
+                    <h4 className="font-medium text-sm" style={{ color: colors.textPrimary }}>Rutinas predefinidas</h4>
                     <p className="text-xs" style={{ color: colors.textSecondary }}>PPL, Upper/Lower, Full Body, 5/3/1</p>
                   </div>
                 </div>
@@ -299,14 +290,14 @@ function Home() {
                 className="p-3"
                 onClick={() => {
                   setShowNewRoutineModal(false)
-                  fileInputRef.current?.click()
+                  setShowImportModal(true)
                 }}
               >
                 <div className="flex items-center gap-3">
                   <Upload size={20} style={{ color: colors.success }} />
                   <div>
-                    <h4 className="font-medium text-sm" style={{ color: colors.textPrimary }}>Importar archivo</h4>
-                    <p className="text-xs" style={{ color: colors.textSecondary }}>Cargar desde un archivo JSON</p>
+                    <h4 className="font-medium text-sm" style={{ color: colors.textPrimary }}>Importar JSON</h4>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>Desde archivo o pegando texto</p>
                   </div>
                 </div>
               </Card>
@@ -348,14 +339,20 @@ function Home() {
       {showChatbotModal && (
         <ChatbotPromptModal
           onClose={() => setShowChatbotModal(false)}
-          onImportClick={() => fileInputRef.current?.click()}
+          onImportClick={() => {
+            setShowChatbotModal(false)
+            setShowImportModal(true)
+          }}
         />
       )}
 
       {showAdaptModal && (
         <AdaptRoutineModal
           onClose={() => setShowAdaptModal(false)}
-          onImportClick={() => fileInputRef.current?.click()}
+          onImportClick={() => {
+            setShowAdaptModal(false)
+            setShowImportModal(true)
+          }}
         />
       )}
 
@@ -369,18 +366,16 @@ function Home() {
         />
       )}
 
+      <ImportRoutineModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportData}
+      />
+
       <ImportOptionsModal
         isOpen={showImportOptions}
         onConfirm={handleImportConfirm}
         onCancel={handleImportCancel}
-      />
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        onChange={handleFileSelect}
-        className="hidden"
       />
     </div>
   )

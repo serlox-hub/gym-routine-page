@@ -127,14 +127,14 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
             style={{ backgroundColor: 'rgba(46, 160, 67, 0.1)', border: `1px solid ${colors.success}` }}
           >
             <p style={{ color: colors.success }}>
-              La IA te devolverá un JSON. Cópialo y guárdalo en un archivo .json
+              La IA te devolverá un JSON. Cópialo para pegarlo en el siguiente paso.
             </p>
           </div>
         </div>
       )
     },
     {
-      title: 'Paso 4: Importa el resultado',
+      title: 'Paso 4: Pega el resultado',
       content: (
         <div className="space-y-3">
           <p style={{ color: colors.textSecondary }}>
@@ -142,9 +142,8 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
           </p>
           <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: colors.textSecondary }}>
             <li>Copia el JSON que te devolvió la IA</li>
-            <li>Pégalo en un editor de texto</li>
-            <li>Guárdalo como archivo <code className="px-1 rounded" style={{ backgroundColor: colors.bgPrimary }}>.json</code></li>
-            <li>Pulsa el botón de abajo para importarlo</li>
+            <li>Pulsa el botón de abajo</li>
+            <li>Pega el JSON en el campo de texto</li>
           </ol>
           <Button
             variant="primary"
@@ -154,7 +153,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
               onImportClick()
             }}
           >
-            Importar archivo JSON
+            Pegar JSON
           </Button>
         </div>
       )

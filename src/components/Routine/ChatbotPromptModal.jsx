@@ -200,7 +200,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
           <>
             <div className="p-4 overflow-y-auto flex-1">
               <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-                Copia este prompt y pégalo en ChatGPT, Claude u otro chatbot. El resultado será un JSON que puedes importar.
+                Copia este prompt y pégalo en ChatGPT, Claude u otro chatbot. Luego copia el JSON generado y pégalo en la app.
               </p>
               <div
                 className="p-3 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre-wrap"
@@ -225,7 +225,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
                   onImportClick()
                 }}
               >
-                Importar JSON
+                Pegar JSON
               </Button>
             </div>
           </>
