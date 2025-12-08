@@ -231,6 +231,7 @@ export function useSessionExercises(sessionId) {
             id,
             name,
             measurement_type,
+            weight_unit,
             muscle_group:muscle_groups (
               id,
               name
@@ -339,7 +340,8 @@ export function useAddSessionExercise() {
           exercise:exercises (
             id,
             name,
-            measurement_type
+            measurement_type,
+            weight_unit
           )
         `)
         .single()
