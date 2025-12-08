@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw } from 'lucide-react'
+import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate } from 'lucide-react'
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
 import { useAuth, useUserId } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText } from '../components/ui/index.js'
-import { ChatbotPromptModal, AdaptRoutineModal } from '../components/Routine/index.js'
+import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal } from '../components/Routine/index.js'
 import { importRoutine, readJsonFile } from '../lib/routineIO.js'
 import { useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
@@ -26,6 +26,7 @@ function Home() {
   const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
   const [showChatbotModal, setShowChatbotModal] = useState(false)
   const [showAdaptModal, setShowAdaptModal] = useState(false)
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false)
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
 
@@ -259,6 +260,21 @@ function Home() {
                 className="p-3"
                 onClick={() => {
                   setShowNewRoutineModal(false)
+                  setShowTemplatesModal(true)
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <LayoutTemplate size={20} style={{ color: colors.success }} />
+                  <div>
+                    <h4 className="font-medium text-sm" style={{ color: colors.textPrimary }}>Usar plantilla</h4>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>PPL, Upper/Lower, Full Body, 5/3/1</p>
+                  </div>
+                </div>
+              </Card>
+              <Card
+                className="p-3"
+                onClick={() => {
+                  setShowNewRoutineModal(false)
                   navigate('/routines/new')
                 }}
               >
@@ -331,6 +347,16 @@ function Home() {
         <AdaptRoutineModal
           onClose={() => setShowAdaptModal(false)}
           onImportClick={() => fileInputRef.current?.click()}
+        />
+      )}
+
+      {showTemplatesModal && (
+        <TemplatesModal
+          onClose={() => setShowTemplatesModal(false)}
+          onSelect={(templateData) => {
+            setPendingImportData(templateData)
+            setShowImportOptions(true)
+          }}
         />
       )}
 
