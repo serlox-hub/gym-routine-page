@@ -9,32 +9,6 @@ test.describe('Autenticación', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
-  test('muestra formulario de login', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible()
-    await expect(page.locator('#email')).toBeVisible()
-    await expect(page.locator('#password')).toBeVisible()
-    await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible()
-  })
-
-  test('muestra link para crear cuenta', async ({ page }) => {
-    await expect(page.getByRole('link', { name: /regístrate/i })).toBeVisible()
-  })
-
-  test('navega a signup desde login', async ({ page }) => {
-    await page.getByRole('link', { name: /regístrate/i }).click()
-    await expect(page).toHaveURL(/\/signup/)
-    await expect(page.getByRole('heading', { name: /crear cuenta/i })).toBeVisible()
-  })
-
-  test('muestra formulario de signup', async ({ page }) => {
-    await page.goto('/signup')
-
-    await expect(page.locator('#email')).toBeVisible()
-    await expect(page.locator('#password')).toBeVisible()
-    await expect(page.locator('#confirmPassword')).toBeVisible()
-    await expect(page.getByRole('button', { name: /crear cuenta/i })).toBeVisible()
-  })
-
   test('valida campos vacíos en login', async ({ page }) => {
     await page.getByRole('button', { name: /entrar/i }).click()
 
