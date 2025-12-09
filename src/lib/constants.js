@@ -1,3 +1,18 @@
+// RIR (Reps In Reserve) Options
+export const RIR_OPTIONS = [
+  { value: -1, label: 'F', description: 'Fallo' },
+  { value: 0, label: '0', description: 'Última rep' },
+  { value: 1, label: '1', description: 'Muy cerca' },
+  { value: 2, label: '2', description: 'Controlado' },
+  { value: 3, label: '3+', description: 'Cómodo' },
+]
+
+// RIR Labels lookup (for display)
+export const RIR_LABELS = RIR_OPTIONS.reduce((acc, opt) => {
+  acc[opt.value] = { label: opt.label, description: opt.description }
+  return acc
+}, {})
+
 // Query Keys
 export const QUERY_KEYS = {
   ROUTINES: 'routines',
@@ -15,7 +30,8 @@ export const QUERY_KEYS = {
   EXERCISE_HISTORY: 'exercise-history',
   BODY_WEIGHT_HISTORY: 'body-weight-history',
   BODY_WEIGHT_LATEST: 'body-weight-latest',
-  USER_PERMISSIONS: 'user-permissions',
+  USER_SETTINGS: 'user-settings',
+  ADMIN_USERS: 'admin-users',
 }
 
 // Timer

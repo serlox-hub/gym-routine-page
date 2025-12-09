@@ -1,9 +1,67 @@
-const RIR_LABELS = {
-  [-1]: { label: 'F', description: 'Fallo' },
-  0: { label: '0', description: 'Última rep' },
-  1: { label: '1', description: 'Muy cerca' },
-  2: { label: '2', description: 'Controlado' },
-  3: { label: '3+', description: 'Cómodo' },
+import { useState, useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
+import { getVideoUrl } from '../../lib/videoStorage.js'
+import { RIR_LABELS } from '../../lib/constants.js'
+import { colors, modalOverlayStyle } from '../../lib/styles.js'
+
+function VideoPlayer({ videoKey }) {
+  const [url, setUrl] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!videoKey) return
+
+    // Si es una URL completa (legacy Cloudinary), usarla directamente
+    if (videoKey.startsWith('http')) {
+      setUrl(videoKey)
+      setLoading(false)
+      return
+    }
+
+    // Si es una key de MinIO, obtener URL firmada
+    setLoading(true)
+    setError(null)
+    getVideoUrl(videoKey)
+      .then(setUrl)
+      .catch(() => setError('Error al cargar video'))
+      .finally(() => setLoading(false))
+  }, [videoKey])
+
+  if (loading) {
+    return (
+      <div
+        className="flex items-center justify-center py-8 rounded-lg"
+        style={{ backgroundColor: colors.bgTertiary }}
+      >
+        <Loader2 size={24} className="animate-spin" style={{ color: colors.textSecondary }} />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div
+        className="p-3 rounded-lg text-center text-sm"
+        style={{ backgroundColor: colors.bgTertiary, color: colors.danger }}
+      >
+        {error}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="rounded-lg overflow-hidden"
+      style={{ backgroundColor: colors.bgTertiary }}
+    >
+      <video
+        src={url}
+        controls
+        className="w-full"
+      />
+    </div>
+  )
 }
 
 function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
@@ -14,22 +72,22 @@ function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+      style={modalOverlayStyle}
       onClick={onClose}
     >
       <div
         className="w-full max-w-sm rounded-xl p-4"
-        style={{ backgroundColor: '#161b22' }}
+        style={{ backgroundColor: colors.bgSecondary }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold" style={{ color: '#e6edf3' }}>
+          <h3 className="font-bold" style={{ color: colors.textPrimary }}>
             Notas de la serie
           </h3>
           <button
             onClick={onClose}
             className="text-xl"
-            style={{ color: '#8b949e' }}
+            style={{ color: colors.textSecondary }}
           >
             ✕
           </button>
@@ -39,19 +97,19 @@ function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
           {rirInfo && (
             <div
               className="flex items-center gap-3 p-3 rounded-lg"
-              style={{ backgroundColor: '#21262d' }}
+              style={{ backgroundColor: colors.bgTertiary }}
             >
               <span
                 className="w-10 h-10 flex items-center justify-center rounded-lg text-lg font-bold"
-                style={{ backgroundColor: '#a371f7', color: '#0d1117' }}
+                style={{ backgroundColor: colors.purple, color: colors.bgPrimary }}
               >
                 {rirInfo.label}
               </span>
               <div>
-                <div className="text-sm font-medium" style={{ color: '#e6edf3' }}>
+                <div className="text-sm font-medium" style={{ color: colors.textPrimary }}>
                   RIR {rirInfo.label}
                 </div>
-                <div className="text-xs" style={{ color: '#8b949e' }}>
+                <div className="text-xs" style={{ color: colors.textSecondary }}>
                   {rirInfo.description}
                 </div>
               </div>
@@ -61,35 +119,26 @@ function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
           {notes && (
             <div
               className="p-3 rounded-lg"
-              style={{ backgroundColor: '#21262d' }}
+              style={{ backgroundColor: colors.bgTertiary }}
             >
-              <div className="text-xs mb-1" style={{ color: '#8b949e' }}>
+              <div className="text-xs mb-1" style={{ color: colors.textSecondary }}>
                 Nota
               </div>
-              <div className="text-sm" style={{ color: '#e6edf3' }}>
+              <div className="text-sm" style={{ color: colors.textPrimary }}>
                 {notes}
               </div>
             </div>
           )}
 
           {videoUrl && (
-            <div
-              className="rounded-lg overflow-hidden"
-              style={{ backgroundColor: '#21262d' }}
-            >
-              <video
-                src={videoUrl}
-                controls
-                className="w-full"
-              />
-            </div>
+            <VideoPlayer videoKey={videoUrl} />
           )}
         </div>
 
         <button
           onClick={onClose}
           className="w-full mt-4 py-2 rounded-lg text-sm font-medium"
-          style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+          style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
         >
           Cerrar
         </button>

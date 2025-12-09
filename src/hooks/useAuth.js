@@ -46,20 +46,24 @@ export function useUserId() {
   return user?.id ?? null
 }
 
-export function useUserPermissions() {
+export function useUserSettings() {
   const userId = useUserId()
 
   return useQuery({
-    queryKey: [QUERY_KEYS.USER_PERMISSIONS, userId],
+    queryKey: [QUERY_KEYS.USER_SETTINGS, userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_permissions')
-        .select('can_upload_video')
+        .from('user_settings')
+        .select('key, value')
         .eq('user_id', userId)
-        .single()
 
-      if (error && error.code !== 'PGRST116') throw error
-      return data || { can_upload_video: false }
+      if (error) throw error
+
+      // Convertir array a objeto { key: value }
+      return (data || []).reduce((acc, { key, value }) => {
+        acc[key] = value
+        return acc
+      }, {})
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutos
@@ -67,6 +71,11 @@ export function useUserPermissions() {
 }
 
 export function useCanUploadVideo() {
-  const { data } = useUserPermissions()
-  return data?.can_upload_video ?? false
+  const { data } = useUserSettings()
+  return data?.can_upload_video === 'true'
+}
+
+export function useIsAdmin() {
+  const { data, isLoading } = useUserSettings()
+  return { isAdmin: data?.is_admin === 'true', isLoading }
 }

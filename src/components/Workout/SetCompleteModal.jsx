@@ -2,16 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { Check, Video, X, Loader2 } from 'lucide-react'
 import { colors, inputStyle, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
 import { formatRestTimeDisplay } from '../../lib/timeUtils.js'
-import { uploadVideo } from '../../lib/cloudinary.js'
+import { uploadVideo } from '../../lib/videoStorage.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
-
-const RIR_OPTIONS = [
-  { value: -1, label: 'F', description: 'Fallo' },
-  { value: 0, label: '0', description: 'Última rep' },
-  { value: 1, label: '1', description: 'Muy cerca' },
-  { value: 2, label: '2', description: 'Controlado' },
-  { value: 3, label: '3+', description: 'Cómodo' },
-]
+import { RIR_OPTIONS } from '../../lib/constants.js'
 
 function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir, initialNote, initialVideoUrl }) {
   const canUploadVideo = useCanUploadVideo()
