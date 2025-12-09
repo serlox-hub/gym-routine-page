@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
 import useWorkoutStore from './workoutStore'
-import { queryClient } from '@/main'
+import { queryClient } from '@/lib/queryClient'
 
 const useAuthStore = create((set, get) => ({
   user: null,
