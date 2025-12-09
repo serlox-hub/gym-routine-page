@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
 import useWorkoutStore from './workoutStore'
+import { queryClient } from '@/main'
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -80,6 +81,8 @@ const useAuthStore = create((set, get) => ({
       set({ session: null, user: null })
       // Limpiar sesión de entrenamiento activa
       useWorkoutStore.getState().endSession()
+      // Limpiar caché de queries para evitar mostrar datos del usuario anterior
+      queryClient.clear()
       return { success: true }
     } catch (error) {
       set({ error: error.message })
