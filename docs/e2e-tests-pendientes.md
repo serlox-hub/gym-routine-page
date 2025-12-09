@@ -1,6 +1,6 @@
 # Tests E2E Pendientes
 
-## Estado actual: 44 tests pasando
+## Estado actual: 90 tests pasando
 
 ### Features cubiertas ✅
 - Login/Signup (formularios, validaciones)
@@ -13,19 +13,15 @@
 - Responsive (móvil, tablet, desktop)
 - Accesibilidad (labels, navegación teclado)
 - Protección de rutas (redirección a login)
+- **Exercises** - Listar, buscar, crear ejercicios
+- **NewExercise** - Formulario, validaciones, grupos musculares
+- **BodyWeight** - Registrar peso, estadísticas, historial
+- **EditExercise** - Editar ejercicio existente, guardar cambios
+- **SessionDetail** - Ver detalle de sesión pasada, navegación
+- **FreeWorkoutSession** - Iniciar, cancelar, añadir ejercicios
+- **ExerciseProgress** - Ver página de progresión, historial
 
 ### Features pendientes de tests
-
-#### Prioridad alta
-- [ ] **Exercises** - Listar ejercicios existentes
-- [ ] **NewExercise** - Crear ejercicio nuevo
-- [ ] **BodyWeight** - Registrar peso corporal
-
-#### Prioridad media
-- [ ] **EditExercise** - Editar ejercicio existente
-- [ ] **SessionDetail** - Ver detalle de sesión pasada
-- [ ] **FreeWorkoutSession** - Sesión de entrenamiento libre
-- [ ] **ExerciseProgress** - Ver gráficas de progreso
 
 #### Prioridad baja (difícil de testear)
 - [ ] **ForgotPassword** - Requiere verificar email
