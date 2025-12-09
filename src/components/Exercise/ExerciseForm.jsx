@@ -217,13 +217,24 @@ function ExerciseForm({
         </Wrapper>
       </div>
 
-      <BottomActions
-        primary={{
-          label: isSubmitting ? 'Guardando...' : submitLabel,
-          onClick: handleSubmit,
-          disabled: isSubmitting,
-        }}
-      />
+      {compact ? (
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 mt-4"
+          style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+        >
+          {isSubmitting ? 'Guardando...' : submitLabel}
+        </button>
+      ) : (
+        <BottomActions
+          primary={{
+            label: isSubmitting ? 'Guardando...' : submitLabel,
+            onClick: handleSubmit,
+            disabled: isSubmitting,
+          }}
+        />
+      )}
     </form>
   )
 }
