@@ -18,16 +18,22 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    // Setup project - hace login y guarda la sesión
+    // Setup de autenticación - hace login y guarda la sesión
     {
-      name: 'setup',
-      testMatch: /.*\.setup\.js/,
+      name: 'auth-setup',
+      testMatch: /auth\.setup\.js/,
+    },
+    // Setup de datos - crea rutina de test
+    {
+      name: 'data-setup',
+      testMatch: /testData\.setup\.js/,
+      dependencies: ['auth-setup'],
     },
     // Tests que NO requieren autenticación
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/.*\.setup\.js/, /workout\.spec\.js/],
+      testIgnore: [/.*\.setup\.js/, /(workout|completeSet|createRoutine|routineIO)\.spec\.js/],
     },
     // Tests que SÍ requieren autenticación
     {
@@ -37,8 +43,8 @@ export default defineConfig({
         // Usa el estado guardado por el setup
         storageState: '.auth/user.json',
       },
-      dependencies: ['setup'],
-      testMatch: /workout\.spec\.js/,
+      dependencies: ['data-setup'],
+      testMatch: /(workout|completeSet|createRoutine|routineIO)\.spec\.js/,
     },
   ],
   webServer: {
