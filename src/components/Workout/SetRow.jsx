@@ -50,8 +50,8 @@ function SetRow({
     }
   }
 
-  const handleCompleteSet = (rir, notes) => {
-    const data = { sessionExerciseId, exerciseId, setNumber, rirActual: rir, notes }
+  const handleCompleteSet = (rir, notes, videoUrl) => {
+    const data = { sessionExerciseId, exerciseId, setNumber, rirActual: rir, notes, videoUrl }
 
     switch (measurementType) {
       case 'weight_reps':
@@ -98,6 +98,7 @@ function SetRow({
   }
 
   const hasTextNote = !!setData?.notes
+  const hasVideo = !!setData?.videoUrl
 
   return (
     <div
@@ -115,7 +116,8 @@ function SetRow({
         <NotesBadge
           rir={setData?.rirActual}
           hasNotes={hasTextNote}
-          onClick={hasTextNote ? () => setShowNotesView(true) : null}
+          hasVideo={hasVideo}
+          onClick={(hasTextNote || hasVideo) ? () => setShowNotesView(true) : null}
         />
       )}
 
@@ -141,6 +143,7 @@ function SetRow({
         descansoSeg={descansoSeg}
         initialRir={cachedData?.rirActual}
         initialNote={cachedData?.notes}
+        initialVideoUrl={cachedData?.videoUrl}
       />
 
       <SetNotesView
@@ -148,6 +151,7 @@ function SetRow({
         onClose={() => setShowNotesView(false)}
         rir={setData?.rirActual}
         notes={setData?.notes}
+        videoUrl={setData?.videoUrl}
       />
 
       {canRemove && !isCompleted && onRemove && (

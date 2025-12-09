@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate, Scale } from 'lucide-react'
+import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate, Scale, Users } from 'lucide-react'
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
-import { useAuth, useUserId } from '../hooks/useAuth.js'
+import { useAuth, useUserId, useIsAdmin } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText } from '../components/ui/index.js'
 import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal, ImportRoutineModal } from '../components/Routine/index.js'
 import { importRoutine } from '../lib/routineIO.js'
@@ -17,6 +17,7 @@ function Home() {
   const { data: routines, isLoading, error } = useRoutines()
   const { logout } = useAuth()
   const userId = useUserId()
+  const { isAdmin } = useIsAdmin()
   const queryClient = useQueryClient()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const startSessionMutation = useStartSession()
@@ -120,6 +121,16 @@ function Home() {
                     <Scale size={16} style={{ color: '#8b949e' }} />
                     Peso Corporal
                   </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => { navigate('/admin/users'); setShowMenu(false) }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:opacity-80"
+                      style={{ color: '#e6edf3' }}
+                    >
+                      <Users size={16} style={{ color: '#a371f7' }} />
+                      Gestión usuarios
+                    </button>
+                  )}
                   <div style={{ borderTop: '1px solid #30363d', margin: '4px 0' }} />
                   <button
                     onClick={() => { handleLogout(); setShowMenu(false) }}
