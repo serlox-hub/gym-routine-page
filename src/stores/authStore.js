@@ -110,6 +110,23 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  loginWithGoogle: async () => {
+    set({ error: null })
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      })
+      if (error) throw error
+      return { success: true }
+    } catch (error) {
+      set({ error: error.message })
+      return { success: false, error: error.message }
+    }
+  },
+
   isAuthenticated: () => !!get().session,
 }))
 
