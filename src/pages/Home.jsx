@@ -31,6 +31,7 @@ function Home() {
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importType, setImportType] = useState(null)
 
@@ -46,9 +47,13 @@ function Home() {
   }
 
   const handleLogout = async () => {
-    setShowLogoutConfirm(false)
-    await logout()
-    navigate('/login')
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      navigate('/login')
+    } catch {
+      setIsLoggingOut(false)
+    }
   }
 
   const handleImportData = (data) => {
@@ -436,6 +441,8 @@ function Home() {
         message="Tienes un entrenamiento en curso. Si cierras sesión, perderás el progreso no guardado."
         confirmText="Cerrar sesión"
         cancelText="Continuar entrenando"
+        loadingText="Cerrando sesión..."
+        isLoading={isLoggingOut}
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutConfirm(false)}
       />

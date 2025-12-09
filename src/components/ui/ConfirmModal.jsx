@@ -1,14 +1,14 @@
 import Button from './Button.jsx'
 import { colors, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
 
-function ConfirmModal({ isOpen, title, message, confirmText = 'Confirmar', cancelText = 'Cancelar', onConfirm, onCancel, variant = 'danger' }) {
+function ConfirmModal({ isOpen, title, message, confirmText = 'Confirmar', cancelText = 'Cancelar', loadingText, onConfirm, onCancel, variant = 'danger', isLoading = false }) {
   if (!isOpen) return null
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={modalOverlayStyle}
-      onClick={onCancel}
+      onClick={isLoading ? undefined : onCancel}
     >
       <div
         className="w-full max-w-sm rounded-lg p-6"
@@ -22,11 +22,11 @@ function ConfirmModal({ isOpen, title, message, confirmText = 'Confirmar', cance
           {message}
         </p>
         <div className="flex gap-3 justify-end">
-          <Button variant="secondary" onClick={onCancel}>
+          <Button variant="secondary" onClick={onCancel} disabled={isLoading}>
             {cancelText}
           </Button>
-          <Button variant={variant} onClick={onConfirm}>
-            {confirmText}
+          <Button variant={variant} onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? (loadingText || 'Procesando...') : confirmText}
           </Button>
         </div>
       </div>

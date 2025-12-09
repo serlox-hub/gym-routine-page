@@ -147,7 +147,7 @@ function BodyWeight() {
                   </button>
                   <button
                     onClick={() => handleDelete(record.id)}
-                    className="p-2 rounded hover:opacity-80"
+                    className="p-2 rounded hover:opacity-80 disabled:opacity-50"
                     style={{ color: colors.error }}
                     disabled={deleteMutation.isPending}
                   >

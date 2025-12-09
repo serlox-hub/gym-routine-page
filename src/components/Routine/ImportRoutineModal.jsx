@@ -8,6 +8,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport }) {
   const [mode, setMode] = useState(null) // null, 'file', 'text'
   const [jsonText, setJsonText] = useState('')
   const [error, setError] = useState('')
+  const [isReading, setIsReading] = useState(false)
   const fileInputRef = useRef(null)
 
   if (!isOpen) return null
@@ -16,12 +17,15 @@ function ImportRoutineModal({ isOpen, onClose, onImport }) {
     const file = e.target.files?.[0]
     if (!file) return
 
+    setIsReading(true)
     try {
       const data = await readJsonFile(file)
       onImport(data)
       handleClose()
     } catch {
       setError('Error al leer el archivo JSON')
+    } finally {
+      setIsReading(false)
     }
 
     e.target.value = ''
@@ -74,12 +78,15 @@ function ImportRoutineModal({ isOpen, onClose, onImport }) {
             <div className="space-y-2">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full p-3 rounded-lg flex items-center gap-3 transition-opacity hover:opacity-80"
+                className="w-full p-3 rounded-lg flex items-center gap-3 transition-opacity hover:opacity-80 disabled:opacity-50"
                 style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+                disabled={isReading}
               >
                 <Upload size={20} style={{ color: colors.success }} />
                 <div className="text-left">
-                  <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>Desde archivo</p>
+                  <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+                    {isReading ? 'Leyendo archivo...' : 'Desde archivo'}
+                  </p>
                   <p className="text-xs" style={{ color: colors.textSecondary }}>Seleccionar archivo JSON</p>
                 </div>
               </button>

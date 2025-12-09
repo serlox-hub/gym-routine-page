@@ -163,10 +163,14 @@ function SessionDetail() {
         title="Eliminar sesión"
         message="¿Seguro que quieres eliminar esta sesión? Se eliminarán todas las series registradas."
         confirmText="Eliminar"
+        loadingText="Eliminando..."
+        isLoading={deleteSession.isPending}
         onConfirm={() => {
-          setShowDeleteConfirm(false)
           deleteSession.mutate(sessionId, {
-            onSuccess: () => navigate('/history')
+            onSuccess: () => {
+              setShowDeleteConfirm(false)
+              navigate('/history')
+            }
           })
         }}
         onCancel={() => setShowDeleteConfirm(false)}
