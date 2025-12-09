@@ -46,22 +46,22 @@ test.describe('Responsive', () => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/')
 
-    // La app debería seguir siendo usable
-    await expect(page.getByRole('button')).toBeVisible()
+    // La app debería seguir siendo usable - verificar botón de login
+    await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible()
   })
 
   test('se adapta a tablet', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 })
     await page.goto('/')
 
-    await expect(page.getByRole('button')).toBeVisible()
+    await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible()
   })
 
   test('se adapta a desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/')
 
-    await expect(page.getByRole('button')).toBeVisible()
+    await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible()
   })
 })
 
