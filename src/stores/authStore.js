@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
+import useWorkoutStore from './workoutStore'
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -77,6 +78,8 @@ const useAuthStore = create((set, get) => ({
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       set({ session: null, user: null })
+      // Limpiar sesión de entrenamiento activa
+      useWorkoutStore.getState().endSession()
       return { success: true }
     } catch (error) {
       set({ error: error.message })

@@ -4,7 +4,7 @@ import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileT
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
 import { useAuth, useUserId, useIsAdmin } from '../hooks/useAuth.js'
-import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText, ConfirmModal } from '../components/ui/index.js'
 import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal, ImportRoutineModal } from '../components/Routine/index.js'
 import { importRoutine } from '../lib/routineIO.js'
 import { useQueryClient } from '@tanstack/react-query'
@@ -30,10 +30,21 @@ function Home() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const favoriteRoutine = routines?.find(r => r.is_favorite)
 
+  const handleLogoutClick = () => {
+    if (hasActiveSession) {
+      setShowLogoutConfirm(true)
+      setShowMenu(false)
+    } else {
+      handleLogout()
+    }
+  }
+
   const handleLogout = async () => {
+    setShowLogoutConfirm(false)
     await logout()
     navigate('/login')
   }
@@ -133,7 +144,7 @@ function Home() {
                   )}
                   <div style={{ borderTop: '1px solid #30363d', margin: '4px 0' }} />
                   <button
-                    onClick={() => { handleLogout(); setShowMenu(false) }}
+                    onClick={() => { handleLogoutClick(); setShowMenu(false) }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:opacity-80"
                     style={{ color: '#f85149' }}
                   >
@@ -386,6 +397,16 @@ function Home() {
         isOpen={showImportOptions}
         onConfirm={handleImportConfirm}
         onCancel={handleImportCancel}
+      />
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="Sesión de entrenamiento activa"
+        message="Tienes un entrenamiento en curso. Si cierras sesión, perderás el progreso no guardado."
+        confirmText="Cerrar sesión"
+        cancelText="Continuar entrenando"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
       />
     </div>
   )
