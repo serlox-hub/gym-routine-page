@@ -31,6 +31,8 @@ function Home() {
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importType, setImportType] = useState(null)
 
   const favoriteRoutine = routines?.find(r => r.is_favorite)
 
@@ -57,16 +59,34 @@ function Home() {
 
   const handleImportConfirm = async (options) => {
     if (!pendingImportData) return
+    setImportType('json')
+    setIsImporting(true)
+    setShowImportOptions(false)
 
     try {
-      const newRoutine = await importRoutine(pendingImportData, userId, options)
+      await importRoutine(pendingImportData, userId, options)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
-      navigate(`/routine/${newRoutine.id}`)
     } catch (err) {
       alert(`Error al importar la rutina: ${err.message}`)
     } finally {
-      setShowImportOptions(false)
+      setIsImporting(false)
+      setImportType(null)
       setPendingImportData(null)
+    }
+  }
+
+  const handleTemplateImport = async (templateData) => {
+    setImportType('template')
+    setIsImporting(true)
+    setShowTemplatesModal(false)
+    try {
+      await importRoutine(templateData, userId, { updateExercises: false })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+    } catch (err) {
+      alert(`Error al importar la rutina: ${err.message}`)
+    } finally {
+      setIsImporting(false)
+      setImportType(null)
     }
   }
 
@@ -380,10 +400,7 @@ function Home() {
       {showTemplatesModal && (
         <TemplatesModal
           onClose={() => setShowTemplatesModal(false)}
-          onSelect={(templateData) => {
-            setPendingImportData(templateData)
-            setShowImportOptions(true)
-          }}
+          onSelect={handleTemplateImport}
         />
       )}
 
@@ -398,6 +415,20 @@ function Home() {
         onConfirm={handleImportConfirm}
         onCancel={handleImportCancel}
       />
+
+      {isImporting && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <LoadingSpinner />
+            <span style={{ color: colors.textPrimary }}>
+              {importType === 'template' ? 'Creando rutina...' : 'Importando rutina...'}
+            </span>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={showLogoutConfirm}
