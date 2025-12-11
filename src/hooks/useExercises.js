@@ -3,22 +3,6 @@ import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { useUserId } from './useAuth.js'
 
-export function useExercises() {
-  return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISES],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('id, name, measurement_type, instructions, weight_unit')
-        .is('deleted_at', null)
-        .order('name')
-
-      if (error) throw error
-      return data
-    },
-  })
-}
-
 export function useExercisesWithMuscleGroup() {
   return useQuery({
     queryKey: [QUERY_KEYS.EXERCISES, 'with-muscle-group'],

@@ -1,26 +1,28 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Pencil, Trash2, TrendingUp } from 'lucide-react'
-import { useExercises, useDeleteExercise } from '../hooks/useExercises.js'
+import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
 
 function Exercises() {
   const navigate = useNavigate()
-  const { data: exercises, isLoading, error } = useExercises()
+  const { data: exercises, isLoading, error } = useExercisesWithMuscleGroup()
+  const { data: muscleGroups } = useMuscleGroups()
   const deleteExercise = useDeleteExercise()
 
   const [search, setSearch] = useState('')
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
 
   const filteredExercises = useMemo(() => {
     if (!exercises) return []
-    if (!search.trim()) return exercises
 
-    const searchLower = search.toLowerCase()
-    return exercises.filter(e =>
-      e.name.toLowerCase().includes(searchLower)
-    )
-  }, [exercises, search])
+    return exercises.filter(e => {
+      const matchesSearch = !search.trim() || e.name.toLowerCase().includes(search.toLowerCase())
+      const matchesMuscleGroup = !selectedMuscleGroup || e.muscle_group_id === selectedMuscleGroup
+      return matchesSearch && matchesMuscleGroup
+    })
+  }, [exercises, search, selectedMuscleGroup])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
@@ -42,7 +44,7 @@ function Exercises() {
       <PageHeader title="Ejercicios" backTo="/" />
 
       {/* Search */}
-      <div className="relative mb-4">
+      <div className="relative mb-3">
         <Search
           size={18}
           className="absolute left-3 top-1/2 -translate-y-1/2"
@@ -60,6 +62,35 @@ function Exercises() {
             color: '#e6edf3',
           }}
         />
+      </div>
+
+      {/* Muscle group filter */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button
+          onClick={() => setSelectedMuscleGroup(null)}
+          className="px-3 py-1.5 rounded-full text-sm transition-colors"
+          style={{
+            backgroundColor: !selectedMuscleGroup ? '#58a6ff' : 'transparent',
+            color: !selectedMuscleGroup ? '#ffffff' : '#8b949e',
+            border: `1px solid ${!selectedMuscleGroup ? '#58a6ff' : '#30363d'}`,
+          }}
+        >
+          Todos
+        </button>
+        {muscleGroups?.map(group => (
+          <button
+            key={group.id}
+            onClick={() => setSelectedMuscleGroup(group.id)}
+            className="px-3 py-1.5 rounded-full text-sm transition-colors"
+            style={{
+              backgroundColor: selectedMuscleGroup === group.id ? '#58a6ff' : 'transparent',
+              color: selectedMuscleGroup === group.id ? '#ffffff' : '#8b949e',
+              border: `1px solid ${selectedMuscleGroup === group.id ? '#58a6ff' : '#30363d'}`,
+            }}
+          >
+            {group.name}
+          </button>
+        ))}
       </div>
 
       {/* Exercise list */}
