@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2, ChevronUp, ChevronDown, ChevronRight, Pencil } from 'lucide-react'
-import { Card, ConfirmModal, Button, DropdownMenu } from '../ui/index.js'
+import { Card, ConfirmModal, Button, DropdownMenu, LoadingSpinner } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
@@ -16,7 +16,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
   const [isExpanded, setIsExpanded] = useState(false)
 
   // Cargar bloques si está expandido
-  const { data: blocks } = useRoutineBlocks(isExpanded ? id : null)
+  const { data: blocks, isLoading: loadingBlocks } = useRoutineBlocks(isExpanded ? id : null)
   const startSessionMutation = useStartSession()
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
@@ -136,7 +136,9 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
 
       {isExpanded && (
         <div className="mt-3 pt-3 border-t space-y-4" style={{ borderColor: colors.border }}>
-          {isEditing ? (
+          {loadingBlocks ? (
+            <LoadingSpinner />
+          ) : isEditing ? (
             <>
               {warmupBlock && (
                 <BlockSection
