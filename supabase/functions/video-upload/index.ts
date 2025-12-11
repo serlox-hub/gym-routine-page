@@ -43,6 +43,8 @@ serve(async (req) => {
     )
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log('User:', user?.id, 'Auth error:', authError?.message)
+
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
@@ -51,16 +53,18 @@ serve(async (req) => {
     }
 
     // Check if user has video upload permission
-    const { data: setting } = await supabase
+    const { data: setting, error: settingError } = await supabase
       .from('user_settings')
       .select('value')
       .eq('user_id', user.id)
       .eq('key', 'can_upload_video')
       .single()
 
+    console.log('Setting:', setting, 'Error:', settingError?.message)
+
     if (setting?.value !== 'true') {
       return new Response(
-        JSON.stringify({ error: 'No tienes permiso para subir videos' }),
+        JSON.stringify({ error: 'No tienes permiso para subir videos', debug: { userId: user.id, setting, settingError: settingError?.message } }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
