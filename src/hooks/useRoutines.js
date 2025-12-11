@@ -199,6 +199,24 @@ export function useDeleteRoutine() {
   })
 }
 
+export function useDeleteRoutines() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (routineIds) => {
+      const { error } = await supabase
+        .from('routines')
+        .delete()
+        .in('id', routineIds)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+    },
+  })
+}
+
 export function useSetFavoriteRoutine() {
   const queryClient = useQueryClient()
 
