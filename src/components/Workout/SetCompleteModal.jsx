@@ -195,7 +195,7 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
                     Añadir video
                   </button>
                   <p className="text-xs mt-1 text-center" style={{ color: colors.textSecondary }}>
-                    MP4, WebM o MOV. Máx 100MB
+                    MP4, WebM o MOV. Máx 200MB
                   </p>
                 </>
               )}

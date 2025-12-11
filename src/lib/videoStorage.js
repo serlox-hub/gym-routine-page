@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js'
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+const MAX_FILE_SIZE = 200 * 1024 * 1024 // 200MB
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo']
 
 /**
@@ -14,7 +14,7 @@ export async function uploadVideo(file) {
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    throw new Error('El video no puede superar los 100MB')
+    throw new Error('El video no puede superar los 200MB')
   }
 
   // 1. Obtener presigned URL desde Edge Function
