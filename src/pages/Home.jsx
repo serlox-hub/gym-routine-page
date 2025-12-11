@@ -20,6 +20,9 @@ function Home() {
   const { isAdmin } = useIsAdmin()
   const queryClient = useQueryClient()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
+  const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
+  const isFreeSessionActive = hasActiveSession && activeRoutineDayId === null
+  const isRoutineSessionActive = hasActiveSession && activeRoutineDayId !== null
   const startSessionMutation = useStartSession()
   const setFavoriteMutation = useSetFavoriteRoutine()
   const deleteRoutinesMutation = useDeleteRoutines()
@@ -255,8 +258,16 @@ function Home() {
         <div className="space-y-2">
           <Card
             className="p-3"
-            onClick={!hasActiveSession && !startSessionMutation.isPending ? handleStartFreeWorkout : undefined}
-            style={hasActiveSession ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            onClick={
+              isFreeSessionActive
+                ? () => navigate('/workout/free')
+                : isRoutineSessionActive
+                  ? undefined
+                  : !startSessionMutation.isPending
+                    ? handleStartFreeWorkout
+                    : undefined
+            }
+            style={isRoutineSessionActive ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             <div className="flex items-center gap-3">
               <div
@@ -267,8 +278,17 @@ function Home() {
               </div>
               <div className="flex-1">
                 <h3 className="font-medium text-sm" style={{ color: '#8957e5' }}>
-                  {startSessionMutation.isPending ? 'Iniciando...' : 'Entrenamiento Libre'}
+                  {startSessionMutation.isPending
+                    ? 'Iniciando...'
+                    : isFreeSessionActive
+                      ? 'Continuar Entrenamiento'
+                      : 'Entrenamiento Libre'}
                 </h3>
+                {isRoutineSessionActive && (
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>
+                    Tienes un entrenamiento de rutina en curso
+                  </p>
+                )}
               </div>
             </div>
           </Card>
