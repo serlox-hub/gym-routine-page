@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
@@ -706,8 +707,6 @@ export function usePreviousWorkout(exerciseId) {
 // ============================================
 // REST TIMER HOOK
 // ============================================
-
-import { useEffect, useRef, useState } from 'react'
 
 export function useRestTimer() {
   const restTimerActive = useWorkoutStore(state => state.restTimerActive)
