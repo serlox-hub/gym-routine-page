@@ -24,6 +24,7 @@ const DEFAULT_FORM = {
  * @param {boolean} props.isSubmitting - Show loading state on submit button
  * @param {string} props.submitLabel - Label for submit button
  * @param {boolean} props.compact - Use compact mode (no Card wrappers, for modals)
+ * @param {boolean} props.hideSubmitButton - Hide internal submit button (for external button control)
  * @param {string} props.className - Additional class names
  */
 function ExerciseForm({
@@ -32,6 +33,7 @@ function ExerciseForm({
   isSubmitting = false,
   submitLabel = 'Guardar',
   compact = false,
+  hideSubmitButton = false,
   className = '',
 }) {
   const { data: muscleGroups, isLoading } = useMuscleGroups()
@@ -217,23 +219,25 @@ function ExerciseForm({
         </Wrapper>
       </div>
 
-      {compact ? (
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 mt-4"
-          style={{ backgroundColor: colors.accent, color: '#ffffff' }}
-        >
-          {isSubmitting ? 'Guardando...' : submitLabel}
-        </button>
-      ) : (
-        <BottomActions
-          primary={{
-            label: isSubmitting ? 'Guardando...' : submitLabel,
-            onClick: handleSubmit,
-            disabled: isSubmitting,
-          }}
-        />
+      {!hideSubmitButton && (
+        compact ? (
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 mt-4"
+            style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+          >
+            {isSubmitting ? 'Guardando...' : submitLabel}
+          </button>
+        ) : (
+          <BottomActions
+            primary={{
+              label: isSubmitting ? 'Guardando...' : submitLabel,
+              onClick: handleSubmit,
+              disabled: isSubmitting,
+            }}
+          />
+        )
       )}
     </form>
   )

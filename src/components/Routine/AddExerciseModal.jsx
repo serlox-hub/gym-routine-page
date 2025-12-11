@@ -116,23 +116,39 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
         </h3>
 
         {isCreatingNew ? (
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <ExerciseForm
-              onSubmit={handleCreateExercise}
-              isSubmitting={createExercise.isPending}
-              submitLabel="Crear ejercicio"
-              submitIcon={<Plus size={16} />}
-              compact
-            />
-            <button
-              type="button"
-              onClick={() => setIsCreatingNew(false)}
-              className="w-full mt-3 py-2 rounded-lg text-sm"
-              style={{ color: colors.textSecondary }}
-            >
-              Cancelar
-            </button>
-          </div>
+          <>
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <ExerciseForm
+                onSubmit={handleCreateExercise}
+                isSubmitting={createExercise.isPending}
+                compact
+                hideSubmitButton
+              />
+            </div>
+            <div className="flex gap-2 pt-3 mt-3 border-t" style={{ borderColor: colors.border }}>
+              <button
+                type="button"
+                onClick={() => setIsCreatingNew(false)}
+                className="px-4 py-2.5 rounded-lg text-sm transition-colors"
+                style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const form = document.querySelector('form')
+                  if (form) form.requestSubmit()
+                }}
+                disabled={createExercise.isPending}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+              >
+                <Plus size={16} />
+                {createExercise.isPending ? 'Creando...' : 'Crear ejercicio'}
+              </button>
+            </div>
+          </>
         ) : !selectedExercise ? (
           <>
             <ExerciseSearchList
