@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
+import { usePreference } from '../../hooks/usePreferences.js'
 
 function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
+  const { value: showSessionNotes } = usePreference('show_session_notes')
   const [notes, setNotes] = useState('')
 
   if (!isOpen) return null
@@ -48,23 +50,25 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
           </button>
         </div>
 
-        <div className="mb-5">
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
-            Notas (opcional)
-          </label>
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder="¿Algo que quieras recordar de esta sesión?"
-            rows={3}
-            className="w-full px-3 py-2 rounded-lg text-sm resize-none"
-            style={{
-              backgroundColor: colors.bgTertiary,
-              border: `1px solid ${colors.border}`,
-              color: colors.textPrimary,
-            }}
-          />
-        </div>
+        {showSessionNotes && (
+          <div className="mb-5">
+            <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              Notas (opcional)
+            </label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="¿Algo que quieras recordar de esta sesión?"
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg text-sm resize-none"
+              style={{
+                backgroundColor: colors.bgTertiary,
+                border: `1px solid ${colors.border}`,
+                color: colors.textPrimary,
+              }}
+            />
+          </div>
+        )}
 
         <div className="flex gap-3">
           <Button variant="secondary" className="flex-1" onClick={handleClose}>

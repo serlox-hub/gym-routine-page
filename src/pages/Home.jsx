@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate, Scale, Users, Trash2, X, Check } from 'lucide-react'
+import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate, Scale, Users, Trash2, X, Check, Settings } from 'lucide-react'
 import { useRoutines, useSetFavoriteRoutine, useDeleteRoutines } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
 import { useAuth, useUserId, useIsAdmin } from '../hooks/useAuth.js'
@@ -236,6 +236,14 @@ function Home() {
                     </>
                   )}
                   <div style={{ borderTop: '1px solid #30363d', margin: '4px 0' }} />
+                  <button
+                    onClick={() => { navigate('/preferences'); setShowMenu(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:opacity-80"
+                    style={{ color: '#e6edf3' }}
+                  >
+                    <Settings size={16} style={{ color: '#8b949e' }} />
+                    Preferencias
+                  </button>
                   <button
                     onClick={() => { handleLogoutClick(); setShowMenu(false) }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:opacity-80"

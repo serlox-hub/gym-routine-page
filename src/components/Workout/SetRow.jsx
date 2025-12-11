@@ -5,6 +5,8 @@ import SetCompleteModal from './SetCompleteModal.jsx'
 import SetNotesView from './SetNotesView.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, DistanceInputs } from './SetInputs.jsx'
 import { isSetDataValid } from '../../lib/setUtils.js'
+import { usePreferences } from '../../hooks/usePreferences.js'
+import { useCanUploadVideo } from '../../hooks/useAuth.js'
 
 function SetRow({
   setNumber,
@@ -22,6 +24,15 @@ function SetRow({
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(sessionExerciseId, setNumber))
   const setData = useWorkoutStore(state => state.getSetData(sessionExerciseId, setNumber))
   const cachedData = useWorkoutStore(state => state.getCachedSetData(sessionExerciseId, setNumber))
+
+  const { data: preferences } = usePreferences()
+  const canUploadVideo = useCanUploadVideo()
+
+  const showRirInput = preferences?.show_rir_input ?? true
+  const showSetNotes = preferences?.show_set_notes ?? true
+  const showVideoUpload = preferences?.show_video_upload ?? true
+  const showVideo = canUploadVideo && showVideoUpload
+  const shouldShowModal = showRirInput || showSetNotes || showVideo
 
   const [weight, setWeight] = useState(setData?.weight ?? '')
   const [reps, setReps] = useState(setData?.repsCompleted ?? '')
@@ -46,7 +57,12 @@ function SetRow({
     if (isCompleted) {
       onUncomplete({ sessionExerciseId, setNumber })
     } else if (isValid()) {
-      setShowCompleteModal(true)
+      if (shouldShowModal) {
+        setShowCompleteModal(true)
+      } else {
+        // Completar directamente sin modal
+        handleCompleteSet(null, null, null)
+      }
     }
   }
 

@@ -5,9 +5,14 @@ import { formatRestTimeDisplay } from '../../lib/timeUtils.js'
 import { uploadVideo } from '../../lib/videoStorage.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { RIR_OPTIONS } from '../../lib/constants.js'
+import { usePreference } from '../../hooks/usePreferences.js'
 
 function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir, initialNote, initialVideoUrl }) {
   const canUploadVideo = useCanUploadVideo()
+  const { value: showRirInput } = usePreference('show_rir_input')
+  const { value: showSetNotes } = usePreference('show_set_notes')
+  const { value: showVideoUpload } = usePreference('show_video_upload')
+  const showVideo = canUploadVideo && showVideoUpload
   const [rir, setRir] = useState(null)
   const [note, setNote] = useState('')
   const [videoUrl, setVideoUrl] = useState(null)
@@ -110,44 +115,48 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
 
         <div className="p-4 space-y-5">
           {/* RIR */}
-          <div>
-            <label className="block text-sm mb-3" style={{ color: colors.textSecondary }}>
-              RIR (opcional)
-            </label>
-            <div className="grid grid-cols-5 gap-2">
-              {RIR_OPTIONS.map(option => (
-                <button
-                  key={option.value}
-                  onClick={() => setRir(rir === option.value ? null : option.value)}
-                  className="p-2 rounded-lg text-center transition-colors"
-                  style={{
-                    backgroundColor: rir === option.value ? colors.purple : colors.bgTertiary,
-                    color: rir === option.value ? colors.bgPrimary : colors.textPrimary,
-                  }}
-                >
-                  <div className="text-lg font-bold">{option.label}</div>
-                  <div className="text-xs opacity-75">{option.description}</div>
-                </button>
-              ))}
+          {showRirInput && (
+            <div>
+              <label className="block text-sm mb-3" style={{ color: colors.textSecondary }}>
+                RIR (opcional)
+              </label>
+              <div className="grid grid-cols-5 gap-2">
+                {RIR_OPTIONS.map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => setRir(rir === option.value ? null : option.value)}
+                    className="p-2 rounded-lg text-center transition-colors"
+                    style={{
+                      backgroundColor: rir === option.value ? colors.purple : colors.bgTertiary,
+                      color: rir === option.value ? colors.bgPrimary : colors.textPrimary,
+                    }}
+                  >
+                    <div className="text-lg font-bold">{option.label}</div>
+                    <div className="text-xs opacity-75">{option.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Nota */}
-          <div>
-            <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>
-              Nota (opcional)
-            </label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Ej: Buen pump, molestia en codo..."
-              className="w-full rounded-lg p-3 text-sm resize-none h-16"
-              style={inputStyle}
-            />
-          </div>
+          {showSetNotes && (
+            <div>
+              <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>
+                Nota (opcional)
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Ej: Buen pump, molestia en codo..."
+                className="w-full rounded-lg p-3 text-sm resize-none h-16"
+                style={inputStyle}
+              />
+            </div>
+          )}
 
           {/* Video */}
-          {canUploadVideo && (
+          {showVideo && (
             <div>
               <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>
                 Video (opcional)

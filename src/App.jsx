@@ -13,6 +13,7 @@ import EditExercise from './pages/EditExercise.jsx'
 import ExerciseProgress from './pages/ExerciseProgress.jsx'
 import NewRoutine from './pages/NewRoutine.jsx'
 import BodyWeight from './pages/BodyWeight.jsx'
+import Preferences from './pages/Preferences.jsx'
 import AdminUsers from './pages/AdminUsers.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
@@ -61,6 +62,7 @@ function App() {
           <Route path="/exercises/:exerciseId/edit" element={<PrivateRoute><EditExercise /></PrivateRoute>} />
           <Route path="/exercises/:exerciseId/progress" element={<PrivateRoute><ExerciseProgress /></PrivateRoute>} />
           <Route path="/body-weight" element={<PrivateRoute><BodyWeight /></PrivateRoute>} />
+          <Route path="/preferences" element={<PrivateRoute><Preferences /></PrivateRoute>} />
           <Route path="/admin/users" element={<PrivateRoute><AdminUsers /></PrivateRoute>} />
           </Routes>
         </div>

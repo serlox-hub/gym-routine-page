@@ -31,6 +31,7 @@ export const QUERY_KEYS = {
   BODY_WEIGHT_HISTORY: 'body-weight-history',
   BODY_WEIGHT_LATEST: 'body-weight-latest',
   USER_SETTINGS: 'user-settings',
+  USER_PREFERENCES: 'user-preferences',
   ADMIN_USERS: 'admin-users',
 }
 
