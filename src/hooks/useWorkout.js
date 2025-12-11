@@ -570,19 +570,20 @@ export function useSessionDetail(sessionId) {
 // EXERCISE HISTORY QUERIES
 // ============================================
 
-export function useExerciseHistory(exerciseId) {
+export function useExerciseHistory(exerciseId, routineDayId = null) {
   return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId],
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId, routineDayId],
     queryFn: async () => {
       // Buscar session_exercises que tengan este ejercicio en sesiones completadas
-      const { data, error } = await supabase
+      let query = supabase
         .from('session_exercises')
         .select(`
           id,
           session:workout_sessions!inner (
             id,
             started_at,
-            status
+            status,
+            routine_day_id
           ),
           completed_sets (
             id,
@@ -602,10 +603,18 @@ export function useExerciseHistory(exerciseId) {
         .order('session(started_at)', { ascending: false })
         .limit(50)
 
+      const { data, error } = await query
+
       if (error) throw error
 
+      // Filtrar por routine_day_id si se especifica
+      let filteredData = data
+      if (routineDayId) {
+        filteredData = data.filter(se => se.session.routine_day_id === routineDayId)
+      }
+
       // Transformar a formato esperado
-      return data
+      return filteredData
         .filter(se => se.completed_sets && se.completed_sets.length > 0)
         .map(se => ({
           sessionId: se.session.id,

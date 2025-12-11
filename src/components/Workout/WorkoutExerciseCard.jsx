@@ -25,6 +25,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const exerciseKey = sessionExerciseId || id
 
   const completedSets = useWorkoutStore(state => state.completedSets)
+  const routineDayId = useWorkoutStore(state => state.routineDayId)
   const { data: previousWorkout } = usePreviousWorkout(exercise.id)
   const [setsCount, setSetsCount] = useState(series)
 
@@ -184,6 +185,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         exerciseName={exercise.name}
         measurementType={measurementType}
         weightUnit={weightUnit}
+        routineDayId={routineDayId}
       />
 
       <ConfirmModal

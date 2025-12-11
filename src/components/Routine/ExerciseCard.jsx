@@ -6,6 +6,7 @@ import { colors } from '../../lib/styles.js'
 
 function ExerciseCard({
   routineExercise,
+  routineDayId,
   onClick,
   isSuperset = false,
   isEditing = false,
@@ -64,6 +65,7 @@ function ExerciseCard({
         exerciseId={exercise.id}
         exerciseName={exercise.name}
         measurementType={measurementType}
+        routineDayId={routineDayId}
       />
     </Wrapper>
   )

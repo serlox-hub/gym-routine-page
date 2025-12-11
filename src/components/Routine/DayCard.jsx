@@ -143,6 +143,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
               {warmupBlock && (
                 <BlockSection
                   block={warmupBlock}
+                  routineDayId={id}
                   isEditing
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
@@ -154,6 +155,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
               {!warmupBlock && (
                 <BlockSection
                   block={{ name: 'Calentamiento', routine_exercises: [] }}
+                  routineDayId={id}
                   isEditing
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
                 />
@@ -161,6 +163,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
               {mainBlock && (
                 <BlockSection
                   block={mainBlock}
+                  routineDayId={id}
                   isEditing
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
@@ -172,6 +175,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
               {!mainBlock && (
                 <BlockSection
                   block={{ name: 'Principal', routine_exercises: [] }}
+                  routineDayId={id}
                   isEditing
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
                 />
@@ -183,7 +187,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                 <p className="text-secondary text-sm">No hay ejercicios configurados</p>
               ) : (
                 blocks?.filter(block => block.routine_exercises?.length > 0).map(block => (
-                  <BlockSection key={block.id} block={block} />
+                  <BlockSection key={block.id} block={block} routineDayId={id} />
                 ))
               )}
 

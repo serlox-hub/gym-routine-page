@@ -7,6 +7,7 @@ import { formatSupersetLabel } from '../../lib/supersetUtils.js'
 
 function BlockSection({
   block,
+  routineDayId,
   isEditing = false,
   onAddExercise,
   onEditExercise,
@@ -56,6 +57,7 @@ function BlockSection({
               <ExerciseCard
                 key={group.exercise.id}
                 routineExercise={group.exercise}
+                routineDayId={routineDayId}
                 isEditing={isEditing}
                 onEdit={() => onEditExercise?.(group.exercise)}
                 onMoveUp={() => onMoveExercise?.(group.exercise.id, 'up')}
@@ -93,6 +95,7 @@ function BlockSection({
                     <div key={exercise.id} className="p-2">
                       <ExerciseCard
                         routineExercise={exercise}
+                        routineDayId={routineDayId}
                         isSuperset
                         isEditing={isEditing}
                         onEdit={() => onEditExercise?.(exercise)}

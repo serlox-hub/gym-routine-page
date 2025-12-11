@@ -22,10 +22,18 @@ const TABS = {
   HISTORY: 'history',
 }
 
-function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = 'weight_reps', weightUnit = 'kg' }) {
-  const { data: sessions, isLoading } = useExerciseHistory(exerciseId)
+const SCOPE = {
+  GLOBAL: 'global',
+  DAY: 'day',
+}
+
+function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = 'weight_reps', weightUnit = 'kg', routineDayId = null }) {
   const [selectedSet, setSelectedSet] = useState(null)
   const [activeTab, setActiveTab] = useState(TABS.PROGRESS)
+  const [scope, setScope] = useState(routineDayId ? SCOPE.DAY : SCOPE.GLOBAL)
+
+  const filterByDayId = scope === SCOPE.DAY ? routineDayId : null
+  const { data: sessions, isLoading } = useExerciseHistory(exerciseId, filterByDayId)
 
   const stats = useMemo(() => {
     return calculateExerciseStats(sessions, measurementType)
@@ -65,28 +73,63 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2">
+          <div
+            className="flex"
+            style={{
+              backgroundColor: colors.bgTertiary,
+              borderRadius: '8px',
+              padding: '4px',
+            }}
+          >
             <button
               onClick={() => setActiveTab(TABS.PROGRESS)}
-              className="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              className="flex-1 py-2 rounded-md text-sm font-medium transition-all"
               style={{
-                backgroundColor: activeTab === TABS.PROGRESS ? 'rgba(163, 113, 247, 0.15)' : '#21262d',
+                backgroundColor: activeTab === TABS.PROGRESS ? colors.bgSecondary : 'transparent',
                 color: activeTab === TABS.PROGRESS ? colors.purple : colors.textSecondary,
+                boxShadow: activeTab === TABS.PROGRESS ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
               }}
             >
-              Progresion
+              Progresión
             </button>
             <button
               onClick={() => setActiveTab(TABS.HISTORY)}
-              className="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              className="flex-1 py-2 rounded-md text-sm font-medium transition-all"
               style={{
-                backgroundColor: activeTab === TABS.HISTORY ? 'rgba(88, 166, 255, 0.15)' : '#21262d',
+                backgroundColor: activeTab === TABS.HISTORY ? colors.bgSecondary : 'transparent',
                 color: activeTab === TABS.HISTORY ? colors.accent : colors.textSecondary,
+                boxShadow: activeTab === TABS.HISTORY ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
               }}
             >
               Historial
             </button>
           </div>
+
+          {/* Scope selector - solo si hay routineDayId */}
+          {routineDayId && (
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => setScope(SCOPE.DAY)}
+                className="px-3 py-1 rounded text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: scope === SCOPE.DAY ? 'rgba(63, 185, 80, 0.15)' : '#21262d',
+                  color: scope === SCOPE.DAY ? colors.success : colors.textSecondary,
+                }}
+              >
+                Esta rutina
+              </button>
+              <button
+                onClick={() => setScope(SCOPE.GLOBAL)}
+                className="px-3 py-1 rounded text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: scope === SCOPE.GLOBAL ? 'rgba(139, 148, 158, 0.15)' : '#21262d',
+                  color: scope === SCOPE.GLOBAL ? colors.textPrimary : colors.textSecondary,
+                }}
+              >
+                Todas
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Content */}
