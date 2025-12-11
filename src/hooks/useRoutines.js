@@ -284,14 +284,16 @@ export function useReorderRoutineDays() {
 
   return useMutation({
     mutationFn: async ({ days }) => {
-      // Actualizar el orden de cada día
-      for (let i = 0; i < days.length; i++) {
-        const { error } = await supabase
-          .from('routine_days')
-          .update({ sort_order: i + 1 })
-          .eq('id', days[i].id)
-        if (error) throw error
-      }
+      const dayOrders = days.map((day, index) => ({
+        id: day.id,
+        sort_order: index + 1
+      }))
+
+      const { error } = await supabase.rpc('reorder_routine_days', {
+        day_orders: dayOrders
+      })
+
+      if (error) throw error
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
@@ -340,14 +342,16 @@ export function useReorderRoutineExercises() {
 
   return useMutation({
     mutationFn: async ({ exercises }) => {
-      // Actualizar el orden de cada ejercicio secuencialmente
-      for (let i = 0; i < exercises.length; i++) {
-        const { error } = await supabase
-          .from('routine_exercises')
-          .update({ sort_order: i + 1 })
-          .eq('id', exercises[i].id)
-        if (error) throw error
-      }
+      const exerciseOrders = exercises.map((exercise, index) => ({
+        id: exercise.id,
+        sort_order: index + 1
+      }))
+
+      const { error } = await supabase.rpc('reorder_routine_exercises', {
+        exercise_orders: exerciseOrders
+      })
+
+      if (error) throw error
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })

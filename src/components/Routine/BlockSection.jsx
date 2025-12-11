@@ -9,6 +9,7 @@ function BlockSection({
   block,
   routineDayId,
   isEditing = false,
+  isReordering = false,
   onAddExercise,
   onEditExercise,
   onMoveExercise,
@@ -59,6 +60,7 @@ function BlockSection({
                 routineExercise={group.exercise}
                 routineDayId={routineDayId}
                 isEditing={isEditing}
+                isReordering={isReordering}
                 onEdit={() => onEditExercise?.(group.exercise)}
                 onMoveUp={() => onMoveExercise?.(group.exercise.id, 'up')}
                 onMoveDown={() => onMoveExercise?.(group.exercise.id, 'down')}
@@ -98,6 +100,7 @@ function BlockSection({
                         routineDayId={routineDayId}
                         isSuperset
                         isEditing={isEditing}
+                        isReordering={isReordering}
                         onEdit={() => onEditExercise?.(exercise)}
                         onMoveUp={() => onMoveExercise?.(exercise.id, 'up')}
                         onMoveDown={() => onMoveExercise?.(exercise.id, 'down')}

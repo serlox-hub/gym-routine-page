@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Info, Pencil, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
+import { Info, Pencil, ChevronUp, ChevronDown, Trash2, Loader2 } from 'lucide-react'
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
@@ -10,6 +10,7 @@ function ExerciseCard({
   onClick,
   isSuperset = false,
   isEditing = false,
+  isReordering = false,
   onEdit,
   onMoveUp,
   onMoveDown,
@@ -27,8 +28,8 @@ function ExerciseCard({
 
   const menuItems = [
     { icon: Pencil, label: 'Editar', onClick: onEdit },
-    { icon: ChevronUp, label: 'Mover arriba', onClick: onMoveUp, disabled: !canMoveUp },
-    { icon: ChevronDown, label: 'Mover abajo', onClick: onMoveDown, disabled: !canMoveDown },
+    { icon: ChevronUp, label: 'Mover arriba', onClick: onMoveUp, disabled: !canMoveUp || isReordering },
+    { icon: ChevronDown, label: 'Mover abajo', onClick: onMoveDown, disabled: !canMoveDown || isReordering },
     { icon: Trash2, label: 'Eliminar', onClick: onDelete, danger: true },
   ]
 
@@ -37,7 +38,13 @@ function ExerciseCard({
       <div className="flex items-center justify-between gap-2">
         <h4 className="font-medium text-sm truncate flex-1 min-w-0">{exercise.name}</h4>
         {isEditing ? (
-          <DropdownMenu items={menuItems} triggerSize={14} />
+          isReordering ? (
+            <div className="p-1.5" style={{ color: colors.textSecondary }}>
+              <Loader2 size={14} className="animate-spin" />
+            </div>
+          ) : (
+            <DropdownMenu items={menuItems} triggerSize={14} />
+          )
         ) : (
           <button
             onClick={(e) => {

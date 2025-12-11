@@ -145,6 +145,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   block={warmupBlock}
                   routineDayId={id}
                   isEditing
+                  isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                   onMoveExercise={handleMoveExercise}
@@ -165,6 +166,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   block={mainBlock}
                   routineDayId={id}
                   isEditing
+                  isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                   onMoveExercise={handleMoveExercise}
