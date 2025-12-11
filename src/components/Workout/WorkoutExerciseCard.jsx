@@ -110,6 +110,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         <Badge variant="accent">{series}×{reps}</Badge>
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
+        {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
         {(exercise.instructions || notes) && (
           <button
             onClick={() => setShowNotes(!showNotes)}
