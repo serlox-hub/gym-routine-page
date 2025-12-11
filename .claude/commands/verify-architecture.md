@@ -16,6 +16,7 @@ Analiza **solo los archivos modificados** (según `git status` y `git diff`) par
 3. **Tests unitarios**: Cada archivo en `src/lib/` debe tener tests junto al archivo (ej: `dateUtils.test.js`):
    - Cobertura de casos edge (null, undefined, arrays vacíos)
    - Tests para cada función exportada
+   - **IMPORTANTE**: Buscar tests con `find src -name "*.test.js" -o -name "*.test.jsx"` (no usar Glob que puede fallar)
 
 4. **Sin duplicación**: No debe haber código duplicado entre componentes. Si encuentras:
    - Mismo cálculo en múltiples archivos → extraer a utils
@@ -32,7 +33,14 @@ Analiza **solo los archivos modificados** (según `git status` y `git diff`) par
 
 1. Busca patrones de código duplicado en componentes
 2. Identifica lógica que debería estar en utils
-3. Verifica que existen tests para las funciones en lib/
+3. **Verifica tests**: Para cada archivo `.js` en `src/lib/` **que contenga funciones de lógica de negocio** (cálculos, transformaciones, validaciones, utilidades), verifica que existe su correspondiente `.test.js`.
+
+   **Archivos que NO necesitan tests**: configuración, clientes externos, constantes simples (ej: `supabase.js`, `queryClient.js`, `styles.js`, `constants.js`)
+
+   Usa el comando Bash:
+   ```bash
+   for f in src/lib/*.js; do if [[ ! "$f" == *.test.js ]]; then test_file="${f%.js}.test.js"; if [ ! -f "$test_file" ]; then echo "Falta test: $test_file"; fi; fi; done
+   ```
 4. Lista los problemas encontrados con:
    - Archivo y línea
    - Descripción del problema

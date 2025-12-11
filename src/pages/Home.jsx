@@ -205,12 +205,12 @@ function Home() {
                     Histórico
                   </button>
                   <button
-                    onClick={() => { navigate('/body-weight'); setShowMenu(false) }}
+                    onClick={() => { navigate('/body-metrics'); setShowMenu(false) }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:opacity-80"
                     style={{ color: '#e6edf3' }}
                   >
                     <Scale size={16} style={{ color: '#8b949e' }} />
-                    Peso Corporal
+                    Registro Corporal
                   </button>
                   {isAdmin && (
                     <button

@@ -1,2 +1,6 @@
 export { default as BodyWeightChart } from './BodyWeightChart.jsx'
 export { default as BodyWeightModal } from './BodyWeightModal.jsx'
+export { default as MeasurementChart } from './MeasurementChart.jsx'
+export { default as MeasurementModal } from './MeasurementModal.jsx'
+export { default as MeasurementConfigModal } from './MeasurementConfigModal.jsx'
+export { default as MeasurementSection } from './MeasurementSection.jsx'

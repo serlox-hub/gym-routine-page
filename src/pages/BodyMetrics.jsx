@@ -2,12 +2,49 @@ import { useState } from 'react'
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader, Button } from '../components/ui/index.js'
-import { BodyWeightChart, BodyWeightModal } from '../components/BodyWeight/index.js'
+import { BodyWeightChart, BodyWeightModal, MeasurementSection } from '../components/BodyWeight/index.js'
 import { calculateBodyWeightStats, calculateWeightTrend } from '../lib/bodyWeightCalculations.js'
 import { formatShortDate } from '../lib/dateUtils.js'
 import { colors } from '../lib/styles.js'
 
-function BodyWeight() {
+function BodyMetrics() {
+  const [activeTab, setActiveTab] = useState('peso')
+
+  return (
+    <div className="p-4 max-w-2xl mx-auto pb-24">
+      <PageHeader title="Registro Corporal" backTo="/" />
+
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 rounded-lg mb-6" style={{ backgroundColor: colors.bgTertiary }}>
+        <button
+          onClick={() => setActiveTab('peso')}
+          className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors"
+          style={{
+            backgroundColor: activeTab === 'peso' ? colors.bgSecondary : 'transparent',
+            color: activeTab === 'peso' ? colors.textPrimary : colors.textSecondary,
+          }}
+        >
+          Peso
+        </button>
+        <button
+          onClick={() => setActiveTab('medidas')}
+          className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors"
+          style={{
+            backgroundColor: activeTab === 'medidas' ? colors.bgSecondary : 'transparent',
+            color: activeTab === 'medidas' ? colors.textPrimary : colors.textSecondary,
+          }}
+        >
+          Medidas
+        </button>
+      </div>
+
+      {activeTab === 'peso' && <WeightSection />}
+      {activeTab === 'medidas' && <MeasurementSection />}
+    </div>
+  )
+}
+
+function WeightSection() {
   const { data: records, isLoading, error } = useBodyWeightHistory()
   const recordMutation = useRecordBodyWeight()
   const updateMutation = useUpdateBodyWeight()
@@ -17,7 +54,7 @@ function BodyWeight() {
   const [editingRecord, setEditingRecord] = useState(null)
 
   if (isLoading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error.message} className="m-4" />
+  if (error) return <ErrorMessage message={error.message} />
 
   const stats = calculateBodyWeightStats(records)
   const trend = calculateWeightTrend(records)
@@ -57,9 +94,7 @@ function BodyWeight() {
   const trendColor = trend === 'increasing' ? colors.error : trend === 'decreasing' ? colors.success : colors.textSecondary
 
   return (
-    <div className="p-4 max-w-2xl mx-auto pb-24">
-      <PageHeader title="Peso Corporal" backTo="/" />
-
+    <>
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 gap-3 mb-6">
@@ -168,8 +203,8 @@ function BodyWeight() {
         record={editingRecord}
         isPending={recordMutation.isPending || updateMutation.isPending}
       />
-    </div>
+    </>
   )
 }
 
-export default BodyWeight
+export default BodyMetrics
