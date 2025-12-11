@@ -145,13 +145,16 @@ function FreeWorkoutSession() {
 
       <main className="space-y-4">
         {!hasExercises ? (
-          <div className="text-center py-12">
-            <p className="text-secondary mb-4">No hay ejercicios todavía</p>
+          <div className="text-center py-12 px-4">
+            <h2 className="text-lg font-medium mb-2">Entrenamiento sin rutina</h2>
+            <p className="text-secondary text-sm mb-6">
+              Añade los ejercicios que quieras hacer hoy. Puedes registrar series, peso y repeticiones de forma libre.
+            </p>
             <Button
               variant="primary"
               onClick={() => setShowAddExercise(true)}
             >
-              Añadir primer ejercicio
+              Añadir ejercicio
             </Button>
           </div>
         ) : isReordering ? (
