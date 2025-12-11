@@ -707,7 +707,7 @@ export function usePreviousWorkout(exerciseId) {
 // REST TIMER HOOK
 // ============================================
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function useRestTimer() {
   const restTimerActive = useWorkoutStore(state => state.restTimerActive)
@@ -718,30 +718,6 @@ export function useRestTimer() {
   const adjustRestTime = useWorkoutStore(state => state.adjustRestTime)
 
   const intervalRef = useRef(null)
-  const audioContextRef = useRef(null)
-
-  const playBeep = useCallback(() => {
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
-      }
-      const ctx = audioContextRef.current
-      const oscillator = ctx.createOscillator()
-      const gainNode = ctx.createGain()
-
-      oscillator.connect(gainNode)
-      gainNode.connect(ctx.destination)
-
-      oscillator.frequency.value = 880 // A5 note
-      oscillator.type = 'sine'
-      gainNode.gain.value = 0.3
-
-      oscillator.start()
-      oscillator.stop(ctx.currentTime + 0.15)
-    } catch {
-      // Ignorar errores de audio
-    }
-  }, [])
 
   // Timer interval - solo depende de restTimerActive para evitar múltiples intervalos
   useEffect(() => {
@@ -763,24 +739,6 @@ export function useRestTimer() {
       }
     }
   }, [restTimerActive, tickTimer])
-
-  // Alerta sonora cuando quedan 3 segundos
-  useEffect(() => {
-    if (restTimerActive && restTimeRemaining <= 3 && restTimeRemaining > 0) {
-      playBeep()
-    }
-  }, [restTimeRemaining, restTimerActive, playBeep])
-
-  // Alerta cuando termina
-  useEffect(() => {
-    if (restTimerActive && restTimeRemaining === 0) {
-      playBeep()
-      // Vibración si está disponible
-      if (navigator.vibrate) {
-        navigator.vibrate([200, 100, 200])
-      }
-    }
-  }, [restTimerActive, restTimeRemaining, playBeep])
 
   const progress = restTimeInitial > 0
     ? ((restTimeInitial - restTimeRemaining) / restTimeInitial) * 100
