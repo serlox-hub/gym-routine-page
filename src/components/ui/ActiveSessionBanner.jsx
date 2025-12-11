@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Undo2 } from 'lucide-react'
+import { Play } from 'lucide-react'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { useRestTimer } from '../../hooks/useWorkout.js'
 import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
@@ -32,32 +32,32 @@ function ActiveSessionBanner() {
   const isCritical = timeRemaining <= 3
   const timerColor = isCritical ? '#f85149' : isWarning ? '#d29922' : '#ffffff'
 
-  // Si el timer de descanso está activo, mostrar banner con timer
-  if (restTimerActive) {
-    return (
-      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
-        <button
-          onClick={handleContinue}
-          className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${isCritical ? 'animate-pulse' : ''}`}
-          style={{ backgroundColor: '#161b22', border: '1px solid #30363d', color: timerColor }}
-        >
-          <span className="font-mono font-bold">{formatSecondsToMMSS(timeRemaining)}</span>
-          <Undo2 size={10} />
-        </button>
-      </div>
-    )
-  }
-
   return (
     <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
-      <button
-        onClick={handleContinue}
-        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium"
-        style={{ backgroundColor: 'rgba(35, 134, 54, 0.95)', color: '#ffffff' }}
+      <div
+        className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg shadow-lg"
+        style={{ backgroundColor: '#161b22', border: '2px solid #58a6ff' }}
       >
-        <Undo2 size={10} />
-        Volver
-      </button>
+        <span className="text-xs font-medium" style={{ color: '#58a6ff' }}>
+          Entrenamiento en curso
+        </span>
+        {restTimerActive && (
+          <span
+            className={`font-mono font-bold text-lg ${isCritical ? 'animate-pulse' : ''}`}
+            style={{ color: timerColor }}
+          >
+            {formatSecondsToMMSS(timeRemaining)}
+          </span>
+        )}
+        <button
+          onClick={handleContinue}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium"
+          style={{ backgroundColor: 'rgba(35, 134, 54, 0.95)', color: '#ffffff' }}
+        >
+          <Play size={14} fill="#ffffff" />
+          Volver
+        </button>
+      </div>
     </div>
   )
 }

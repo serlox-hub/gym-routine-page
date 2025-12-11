@@ -17,57 +17,55 @@ function RestTimer() {
 
   if (minimized) {
     return (
-      <div
-        className="fixed top-0 left-0 right-0 z-50 p-3"
-        style={{ backgroundColor: '#161b22', borderBottom: '1px solid #30363d' }}
-      >
-        <div className="flex flex-col gap-2 max-w-2xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
-              <span
-                className={`text-2xl font-bold font-mono ${isCritical ? 'animate-pulse' : ''}`}
-                style={{ color: timerColor }}
-              >
-                {timeDisplay}
-              </span>
-              <div
-                className="flex-1 h-1.5 rounded-full overflow-hidden"
-                style={{ backgroundColor: '#21262d' }}
-              >
-                <div
-                  className="h-full transition-all duration-1000"
-                  style={{ width: `${progress}%`, backgroundColor: timerColor }}
-                />
-              </div>
-            </div>
-            <button
-              onClick={() => setMinimized(false)}
-              className="p-1.5 rounded ml-3"
-              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-              title="Expandir"
-            >
-              <Maximize2 size={18} />
-            </button>
+      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
+        <div
+          className="relative flex flex-col items-center gap-2 px-4 py-3 rounded-lg shadow-lg"
+          style={{ backgroundColor: '#161b22', border: '2px solid #58a6ff' }}
+        >
+          <button
+            onClick={() => setMinimized(false)}
+            className="absolute top-1 right-1 p-1 rounded"
+            style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+            title="Expandir"
+          >
+            <Maximize2 size={14} />
+          </button>
+          <span className="text-xs font-medium" style={{ color: '#58a6ff' }}>
+            Descanso
+          </span>
+          <span
+            className={`text-2xl font-bold font-mono ${isCritical ? 'animate-pulse' : ''}`}
+            style={{ color: timerColor }}
+          >
+            {timeDisplay}
+          </span>
+          <div
+            className="w-full h-1.5 rounded-full overflow-hidden"
+            style={{ backgroundColor: '#21262d' }}
+          >
+            <div
+              className="h-full transition-all duration-1000"
+              style={{ width: `${progress}%`, backgroundColor: timerColor }}
+            />
           </div>
-
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => addTime(-30)}
-              className="px-3 py-1.5 rounded text-sm font-medium"
+              className="px-2 py-1 rounded text-xs font-medium"
               style={{ backgroundColor: '#21262d', color: '#8b949e' }}
             >
               -30s
             </button>
             <button
               onClick={skip}
-              className="px-4 py-1.5 rounded text-sm font-bold"
+              className="px-3 py-1 rounded text-xs font-bold"
               style={{ backgroundColor: '#238636', color: '#ffffff' }}
             >
               SALTAR
             </button>
             <button
               onClick={() => addTime(30)}
-              className="px-3 py-1.5 rounded text-sm font-medium"
+              className="px-2 py-1 rounded text-xs font-medium"
               style={{ backgroundColor: '#21262d', color: '#8b949e' }}
             >
               +30s
