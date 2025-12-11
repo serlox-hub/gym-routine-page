@@ -134,14 +134,16 @@ function FreeWorkoutSession() {
   const hasExercises = flatExercises.length > 0
 
   return (
-    <div className="p-4 max-w-2xl mx-auto pb-24">
-      <SessionHeader
-        dayName="Entrenamiento Libre"
-        isReordering={isReordering}
-        onToggleReorder={hasExercises ? () => setIsReordering(!isReordering) : undefined}
-        onAddExercise={() => setShowAddExercise(true)}
-        onBack={() => navigate(-1)}
-      />
+    <>
+      <RestTimer />
+      <div className="p-4 max-w-2xl mx-auto pb-24">
+        <SessionHeader
+          dayName="Entrenamiento Libre"
+          isReordering={isReordering}
+          onToggleReorder={hasExercises ? () => setIsReordering(!isReordering) : undefined}
+          onAddExercise={() => setShowAddExercise(true)}
+          onBack={() => navigate(-1)}
+        />
 
       <main className="space-y-4">
         {!hasExercises ? (
@@ -222,8 +224,8 @@ function FreeWorkoutSession() {
         isPending={endSessionMutation.isPending}
       />
 
-      <RestTimer />
     </div>
+    </>
   )
 }
 

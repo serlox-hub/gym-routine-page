@@ -136,8 +136,10 @@ function WorkoutSession() {
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto pb-24">
-      <SessionHeader
+    <>
+      <RestTimer />
+      <div className="p-4 max-w-2xl mx-auto pb-24">
+        <SessionHeader
         dayName={day?.name}
         isReordering={isReordering}
         onToggleReorder={() => setIsReordering(!isReordering)}
@@ -211,8 +213,8 @@ function WorkoutSession() {
         isPending={endSessionMutation.isPending}
       />
 
-      <RestTimer />
     </div>
+    </>
   )
 }
 
