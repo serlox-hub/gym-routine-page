@@ -117,8 +117,8 @@ const useWorkoutStore = create(
       // Rollback a set (remove from completedSets, for error handling)
       rollbackSet: (sessionExerciseId, setNumber) => set(state => {
         const key = `${sessionExerciseId}-${setNumber}`
-        const { [key]: removed, ...restCompleted } = state.completedSets
-        const { [key]: removedCached, ...restCached } = state.cachedSetData
+        const { [key]: _removed, ...restCompleted } = state.completedSets
+        const { [key]: _removedCached, ...restCached } = state.cachedSetData
         return {
           completedSets: restCompleted,
           cachedSetData: restCached,
