@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { History, Dumbbell, LogOut, Plus, Upload, Zap, MoreVertical, Star, FileText, Bot, RefreshCw, LayoutTemplate, Scale, Users, Trash2, X, Check, Settings } from 'lucide-react'
 import { useRoutines, useSetFavoriteRoutine, useDeleteRoutines } from '../hooks/useRoutines.js'
 import { useStartSession } from '../hooks/useWorkout.js'
-import { useAuth, useUserId, useIsAdmin } from '../hooks/useAuth.js'
-import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText, ConfirmModal } from '../components/ui/index.js'
+import { useAuth, useUserId, useIsAdmin, useIsPremium } from '../hooks/useAuth.js'
+import { LoadingSpinner, ErrorMessage, Card, ImportOptionsModal, TruncatedText, ConfirmModal, PlanBadge } from '../components/ui/index.js'
 import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal, ImportRoutineModal } from '../components/Routine/index.js'
 import { importRoutine } from '../lib/routineIO.js'
 import { useQueryClient } from '@tanstack/react-query'
@@ -18,6 +18,7 @@ function Home() {
   const { logout } = useAuth()
   const userId = useUserId()
   const { isAdmin } = useIsAdmin()
+  const isPremium = useIsPremium()
   const queryClient = useQueryClient()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
@@ -146,9 +147,12 @@ function Home() {
     <div className="p-4 max-w-2xl mx-auto">
       <header className="mb-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-            {isSelectMode ? `${selectedRoutines.size} seleccionadas` : 'Inicio'}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+              {isSelectMode ? `${selectedRoutines.size} seleccionadas` : 'Inicio'}
+            </h1>
+            {!isSelectMode && <PlanBadge isPremium={isPremium} />}
+          </div>
           <div className="flex items-center gap-2">
             {isSelectMode ? (
               <>

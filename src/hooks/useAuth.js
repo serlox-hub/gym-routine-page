@@ -81,3 +81,8 @@ export function useIsAdmin() {
   const { data, isLoading } = useUserSettings()
   return { isAdmin: data?.is_admin === 'true', isLoading }
 }
+
+export function useIsPremium() {
+  const canUploadVideo = useCanUploadVideo()
+  return canUploadVideo
+}

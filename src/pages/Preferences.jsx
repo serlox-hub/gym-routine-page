@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
-import { Card, LoadingSpinner } from '../components/ui/index.js'
+import { ArrowLeft, Check, X } from 'lucide-react'
+import { Card, LoadingSpinner, PlanBadge } from '../components/ui/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
-import { useCanUploadVideo } from '../hooks/useAuth.js'
+import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import { colors } from '../lib/styles.js'
 
 function Preferences() {
@@ -10,6 +10,7 @@ function Preferences() {
   const { data: preferences, isLoading } = usePreferences()
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
+  const isPremium = useIsPremium()
 
   const handleChange = (key, value) => {
     updatePreference.mutate({ key, value })
@@ -41,6 +42,34 @@ function Preferences() {
       </header>
 
       <main className="space-y-4">
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+              Tu plan
+            </h2>
+            <PlanBadge isPremium={isPremium} />
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+              Beneficios Premium
+            </h3>
+            <ul className="space-y-2">
+              <PremiumFeature
+                title="Subir videos"
+                description="Graba y guarda videos de tus series para revisar tu técnica"
+                enabled={isPremium}
+              />
+              <PremiumFeature
+                title="Más funciones próximamente"
+                description="Nuevas características exclusivas en desarrollo"
+                enabled={isPremium}
+                comingSoon
+              />
+            </ul>
+          </div>
+        </Card>
+
         <Card className="p-4">
           <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
             Durante el entrenamiento
@@ -122,6 +151,36 @@ function PreferenceToggle({ label, description, checked, onChange, disabled }) {
         </p>
       </div>
     </label>
+  )
+}
+
+function PremiumFeature({ title, description, enabled, comingSoon }) {
+  return (
+    <li className="flex items-start gap-3">
+      <div className="mt-0.5">
+        {enabled ? (
+          <Check size={16} style={{ color: colors.success }} />
+        ) : (
+          <X size={16} style={{ color: colors.textSecondary }} />
+        )}
+      </div>
+      <div>
+        <p className="text-sm" style={{ color: enabled ? colors.textPrimary : colors.textSecondary }}>
+          {title}
+          {comingSoon && (
+            <span
+              className="ml-2 text-xs px-1.5 py-0.5 rounded"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+            >
+              Próximamente
+            </span>
+          )}
+        </p>
+        <p className="text-xs" style={{ color: colors.textSecondary }}>
+          {description}
+        </p>
+      </div>
+    </li>
   )
 }
 
