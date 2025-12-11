@@ -8,9 +8,7 @@
 export const MEASUREMENT_TYPES = [
   'weight_reps',
   'reps_only',
-  'reps_per_side',
   'time',
-  'time_per_side',
   'distance',
 ]
 
@@ -20,9 +18,7 @@ export const MEASUREMENT_TYPES = [
 export const MEASUREMENT_TYPE_OPTIONS = [
   { value: 'weight_reps', label: 'Peso × Reps' },
   { value: 'reps_only', label: 'Solo reps' },
-  { value: 'reps_per_side', label: 'Reps por lado' },
   { value: 'time', label: 'Tiempo' },
-  { value: 'time_per_side', label: 'Tiempo por lado' },
   { value: 'distance', label: 'Distancia' },
 ]
 

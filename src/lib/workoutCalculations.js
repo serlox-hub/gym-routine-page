@@ -57,7 +57,7 @@ export function getBestValueFromSets(sets, measurementType) {
         bestValue = set.weight
         unit = set.weight_unit || 'kg'
       }
-    } else if (measurementType === 'time' || measurementType === 'time_per_side') {
+    } else if (measurementType === 'time') {
       if (set.time_seconds && set.time_seconds > bestValue) {
         bestValue = set.time_seconds
         unit = 's'
@@ -208,7 +208,7 @@ export function calculateExerciseStats(sessions, measurementType) {
     maxWeight = Math.max(...allSets.map(s => s.weight || 0))
     maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
     totalVolume = calculateTotalVolume(allSets)
-  } else if (measurementType === 'reps_only' || measurementType === 'reps_per_side') {
+  } else if (measurementType === 'reps_only') {
     maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
   }
 

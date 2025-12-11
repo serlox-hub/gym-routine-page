@@ -78,12 +78,6 @@ describe('setUtils', () => {
       })
     })
 
-    describe('reps_per_side', () => {
-      it('válido con reps', () => {
-        expect(isSetDataValid('reps_per_side', { reps: '10' })).toBe(true)
-      })
-    })
-
     describe('time', () => {
       it('válido con tiempo', () => {
         expect(isSetDataValid('time', { time: '60' })).toBe(true)
@@ -91,12 +85,6 @@ describe('setUtils', () => {
 
       it('inválido sin tiempo', () => {
         expect(isSetDataValid('time', { time: '' })).toBe(false)
-      })
-    })
-
-    describe('time_per_side', () => {
-      it('válido con tiempo', () => {
-        expect(isSetDataValid('time_per_side', { time: '30' })).toBe(true)
       })
     })
 
@@ -224,19 +212,9 @@ describe('setUtils', () => {
         .toBe('15 reps')
     })
 
-    it('formatea reps_per_side', () => {
-      expect(formatSetValueByType({ reps: 10 }, 'reps_per_side'))
-        .toBe('10 reps/lado')
-    })
-
     it('formatea time', () => {
       expect(formatSetValueByType({ timeSeconds: 60 }, 'time'))
         .toBe('60s')
-    })
-
-    it('formatea time_per_side', () => {
-      expect(formatSetValueByType({ timeSeconds: 30 }, 'time_per_side'))
-        .toBe('30s/lado')
     })
 
     it('formatea distance con peso', () => {

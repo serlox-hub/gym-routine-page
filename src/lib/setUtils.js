@@ -40,10 +40,8 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance }
     case 'weight_reps':
       return weight !== '' && weight !== undefined && reps !== '' && reps !== undefined
     case 'reps_only':
-    case 'reps_per_side':
       return reps !== '' && reps !== undefined
     case 'time':
-    case 'time_per_side':
       return time !== '' && time !== undefined
     case 'distance':
       return distance !== '' && distance !== undefined
@@ -78,11 +76,9 @@ export function buildCompletedSetData(measurementType, formData, info) {
       data.repsCompleted = parseInt(reps)
       break
     case 'reps_only':
-    case 'reps_per_side':
       data.repsCompleted = parseInt(reps)
       break
     case 'time':
-    case 'time_per_side':
       data.timeSeconds = parseInt(time)
       break
     case 'distance':
@@ -131,12 +127,8 @@ export function formatSetValueByType(set, measurementType) {
       return `${set.weight}${set.weightUnit || 'kg'} × ${set.reps}`
     case 'reps_only':
       return `${set.reps} reps`
-    case 'reps_per_side':
-      return `${set.reps} reps/lado`
     case 'time':
       return `${set.timeSeconds}s`
-    case 'time_per_side':
-      return `${set.timeSeconds}s/lado`
     case 'distance':
       return set.weight
         ? `${set.weight}${set.weightUnit || 'kg'} × ${set.distanceMeters}m`

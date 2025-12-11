@@ -380,19 +380,5 @@ describe('workoutCalculations', () => {
       expect(result.totalVolume).toBe(0)
     })
 
-    it('calcula estadísticas para reps_per_side', () => {
-      const sessions = [
-        {
-          sets: [
-            { reps_completed: 8 },
-            { reps_completed: 10 },
-          ],
-        },
-      ]
-      const result = calculateExerciseStats(sessions, 'reps_per_side')
-
-      expect(result.maxReps).toBe(10)
-      expect(result.sessionCount).toBe(1)
-    })
   })
 })

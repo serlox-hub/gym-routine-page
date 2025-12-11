@@ -40,9 +40,7 @@ DROP TYPE IF EXISTS session_status CASCADE;
 CREATE TYPE measurement_type AS ENUM (
     'weight_reps',      -- Peso × Repeticiones (ej: 50kg × 10)
     'reps_only',        -- Solo repeticiones (ej: dominadas sin peso)
-    'reps_per_side',    -- Repeticiones por lado (ej: 10/lado)
     'time',             -- Tiempo (ej: 30 seg)
-    'time_per_side',    -- Tiempo por lado (ej: 30 seg/lado)
     'distance'          -- Distancia con peso opcional (ej: 40m)
 );
 
@@ -412,11 +410,11 @@ INSERT INTO grip_widths (nombre) VALUES
 -- Core
 INSERT INTO exercises (nombre, equipment_id, grip_type_id, grip_width_id, altura_polea, measurement_type) VALUES
     ('Rueda Abdominal', 13, NULL, NULL, NULL, 'weight_reps'),
-    ('Bicho Muerto', 11, NULL, NULL, NULL, 'reps_per_side'),
-    ('Press Pallof', 6, 3, 1, 'Media', 'reps_per_side'),
-    ('Perro-Pájaro Lento', 11, NULL, NULL, NULL, 'reps_per_side'),
+    ('Bicho Muerto', 11, NULL, NULL, NULL, 'reps_only'),
+    ('Press Pallof', 6, 3, 1, 'Media', 'reps_only'),
+    ('Perro-Pájaro Lento', 11, NULL, NULL, NULL, 'reps_only'),
     ('Crunch en Polea', 6, 3, 1, 'Alta', 'weight_reps'),
-    ('Plancha Lateral', 11, NULL, NULL, NULL, 'time_per_side'),
+    ('Plancha Lateral', 11, NULL, NULL, NULL, 'time'),
     ('Hollow Body Hold', 11, NULL, NULL, NULL, 'time'),
     ('Paseo del Granjero', 5, 3, 4, NULL, 'distance');
 
