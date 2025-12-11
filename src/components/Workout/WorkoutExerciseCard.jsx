@@ -7,6 +7,7 @@ import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
+import { MeasurementType } from '../../lib/measurementTypes.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds } = sessionExercise
@@ -16,7 +17,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
 
   // Determinar tipo de medición del ejercicio
-  const measurementType = exercise.measurement_type || 'weight_reps'
+  const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
 
   // Unidad de peso del ejercicio
   const weightUnit = exercise.weight_unit || 'kg'

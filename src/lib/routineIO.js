@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { MeasurementType } from './measurementTypes.js'
 
 /**
  * Formato JSON para importar/exportar rutinas
@@ -334,7 +335,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
           await supabase
             .from('exercises')
             .update({
-              measurement_type: ex.measurement_type || 'weight_reps',
+              measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
               weight_unit: ex.weight_unit || 'kg',
               instructions: ex.instructions,
               muscle_group_id: muscleGroupId,
@@ -347,7 +348,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
           .from('exercises')
           .insert({
             name: ex.name,
-            measurement_type: ex.measurement_type || 'weight_reps',
+            measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
             weight_unit: ex.weight_unit || 'kg',
             instructions: ex.instructions,
             muscle_group_id: muscleGroupId,

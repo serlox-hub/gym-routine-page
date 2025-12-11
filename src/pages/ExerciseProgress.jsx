@@ -7,6 +7,7 @@ import { formatShortDate } from '../lib/dateUtils.js'
 import { formatSetValue } from '../lib/setUtils.js'
 import { calculateExerciseStats } from '../lib/workoutCalculations.js'
 import { colors } from '../lib/styles.js'
+import { MeasurementType } from '../lib/measurementTypes.js'
 
 function ExerciseProgress() {
   const { exerciseId } = useParams()
@@ -17,7 +18,7 @@ function ExerciseProgress() {
   if (exerciseError) return <ErrorMessage message={exerciseError.message} className="m-4" />
   if (!exercise) return <ErrorMessage message="Ejercicio no encontrado" className="m-4" />
 
-  const measurementType = exercise.measurement_type || 'weight_reps'
+  const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
   const stats = calculateExerciseStats(sessions, measurementType)
 
   return (

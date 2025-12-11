@@ -2,6 +2,8 @@
  * Utilidades para cálculos de entrenamiento
  */
 
+import { MeasurementType } from './measurementTypes.js'
+
 /**
  * Calcula el 1RM estimado usando la fórmula Epley
  * @param {number} weight - Peso levantado
@@ -52,15 +54,25 @@ export function getBestValueFromSets(sets, measurementType) {
   let unit = ''
 
   sets.forEach(set => {
-    if (measurementType === 'weight_reps' || measurementType === 'distance') {
+    if (measurementType === MeasurementType.WEIGHT_REPS || measurementType === MeasurementType.WEIGHT_DISTANCE || measurementType === MeasurementType.WEIGHT_TIME) {
       if (set.weight && set.weight > bestValue) {
         bestValue = set.weight
         unit = set.weight_unit || 'kg'
       }
-    } else if (measurementType === 'time') {
+    } else if (measurementType === MeasurementType.TIME) {
       if (set.time_seconds && set.time_seconds > bestValue) {
         bestValue = set.time_seconds
         unit = 's'
+      }
+    } else if (measurementType === MeasurementType.DISTANCE) {
+      if (set.distance_meters && set.distance_meters > bestValue) {
+        bestValue = set.distance_meters
+        unit = 'm'
+      }
+    } else if (measurementType === MeasurementType.CALORIES) {
+      if (set.calories_burned && set.calories_burned > bestValue) {
+        bestValue = set.calories_burned
+        unit = 'kcal'
       }
     } else {
       const reps = set.reps_completed || set.reps || 0
@@ -203,12 +215,12 @@ export function calculateExerciseStats(sessions, measurementType) {
   let maxReps = 0
   let totalVolume = 0
 
-  if (measurementType === 'weight_reps') {
+  if (measurementType === MeasurementType.WEIGHT_REPS) {
     best1RM = getBest1RMFromSets(allSets)
     maxWeight = Math.max(...allSets.map(s => s.weight || 0))
     maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
     totalVolume = calculateTotalVolume(allSets)
-  } else if (measurementType === 'reps_only') {
+  } else if (measurementType === MeasurementType.REPS_ONLY) {
     maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
   }
 

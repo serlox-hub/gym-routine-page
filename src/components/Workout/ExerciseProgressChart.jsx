@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { transformSessionsToChartData } from '../../lib/workoutCalculations.js'
+import { MeasurementType } from '../../lib/measurementTypes.js'
 
 const TABS = {
   WEIGHT: 'weight',
@@ -18,7 +19,7 @@ const TABS = {
 
 function ExerciseProgressChart({ sessions, measurementType }) {
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
-  const showVolumeTabs = measurementType === 'weight_reps'
+  const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
 
   const chartData = useMemo(
     () => transformSessionsToChartData(sessions, measurementType),

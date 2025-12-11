@@ -26,7 +26,6 @@ export async function uploadVideo(file) {
   })
 
   if (error) {
-    console.error('Error getting upload URL:', error)
     throw new Error('Error al obtener URL de subida')
   }
 
@@ -42,7 +41,6 @@ export async function uploadVideo(file) {
   })
 
   if (!uploadResponse.ok) {
-    console.error('Upload failed:', uploadResponse.status, await uploadResponse.text())
     throw new Error('Error al subir el video')
   }
 
@@ -62,7 +60,6 @@ export async function getVideoUrl(key) {
   })
 
   if (error) {
-    console.error('Error getting video URL:', error)
     throw new Error('Error al obtener URL del video')
   }
 

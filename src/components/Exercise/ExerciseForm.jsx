@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, BottomActions } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
 import { colors, inputStyle, selectStyle } from '../../lib/styles.js'
-import { MEASUREMENT_TYPE_OPTIONS, measurementTypeUsesWeight } from '../../lib/measurementTypes.js'
+import { MEASUREMENT_TYPE_OPTIONS, measurementTypeUsesWeight, MeasurementType } from '../../lib/measurementTypes.js'
 
 const WEIGHT_UNITS = [
   { value: 'kg', label: 'Kilogramos (kg)' },
@@ -11,7 +11,7 @@ const WEIGHT_UNITS = [
 
 const DEFAULT_FORM = {
   name: '',
-  measurement_type: 'weight_reps',
+  measurement_type: MeasurementType.WEIGHT_REPS,
   weight_unit: 'kg',
   instructions: '',
 }
@@ -47,7 +47,7 @@ function ExerciseForm({
     if (initialData) {
       setForm({
         name: initialData.name || '',
-        measurement_type: initialData.measurement_type || 'weight_reps',
+        measurement_type: initialData.measurement_type || MeasurementType.WEIGHT_REPS,
         weight_unit: initialData.weight_unit || 'kg',
         instructions: initialData.instructions || '',
       })

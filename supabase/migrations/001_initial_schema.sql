@@ -12,7 +12,10 @@ CREATE TYPE measurement_type AS ENUM (
     'weight_reps',      -- Peso × Repeticiones (ej: 50kg × 10)
     'reps_only',        -- Solo repeticiones (ej: dominadas sin peso)
     'time',             -- Tiempo (ej: 30 seg)
-    'distance'          -- Distancia con peso opcional (ej: 40m)
+    'weight_time',      -- Peso × Tiempo (ej: dead hang con peso)
+    'distance',         -- Distancia (ej: sprint 100m)
+    'weight_distance',  -- Peso × Distancia (ej: farmer's walk 24kg × 40m)
+    'calories'          -- Calorías (ej: cardio 300kcal)
 );
 
 CREATE TYPE weight_unit AS ENUM ('kg', 'lb');
@@ -152,6 +155,7 @@ CREATE TABLE completed_sets (
     reps_completed SMALLINT,
     time_seconds INT,           -- Para ejercicios isométricos/tiempo
     distance_meters DECIMAL(6,2), -- Para ejercicios de distancia
+    calories_burned INT,        -- Para ejercicios de cardio
     rir_actual SMALLINT,
     completed BOOLEAN DEFAULT FALSE,
     notes TEXT,

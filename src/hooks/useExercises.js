@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
+import { MeasurementType } from '../lib/measurementTypes.js'
 import { useUserId } from './useAuth.js'
 
 export function useExercisesWithMuscleGroup() {
@@ -78,7 +79,7 @@ export function useCreateExercise() {
         .insert({
           name: exercise.name,
           instructions: exercise.instructions || null,
-          measurement_type: exercise.measurement_type || 'weight_reps',
+          measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
           weight_unit: exercise.weight_unit || 'kg',
           muscle_group_id: muscleGroupId || null,
           user_id: userId,
@@ -106,7 +107,7 @@ export function useUpdateExercise() {
         .update({
           name: exercise.name,
           instructions: exercise.instructions || null,
-          measurement_type: exercise.measurement_type || 'weight_reps',
+          measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
           weight_unit: exercise.weight_unit || 'kg',
           muscle_group_id: muscleGroupId || null,
         })

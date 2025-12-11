@@ -6,8 +6,9 @@ import { uploadVideo } from '../../lib/videoStorage.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { RIR_OPTIONS } from '../../lib/constants.js'
 import { usePreference } from '../../hooks/usePreferences.js'
+import { getEffortLabel } from '../../lib/measurementTypes.js'
 
-function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir, initialNote, initialVideoUrl }) {
+function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir, initialNote, initialVideoUrl, measurementType }) {
   const canUploadVideo = useCanUploadVideo()
   const { value: showRirInput } = usePreference('show_rir_input')
   const { value: showSetNotes } = usePreference('show_set_notes')
@@ -114,11 +115,11 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
         </div>
 
         <div className="p-4 space-y-5">
-          {/* RIR */}
+          {/* RIR / Esfuerzo */}
           {showRirInput && (
             <div>
               <label className="block text-sm mb-3" style={{ color: colors.textSecondary }}>
-                RIR (opcional)
+                {getEffortLabel(measurementType)} (opcional)
               </label>
               <div className="grid grid-cols-5 gap-2">
                 {RIR_OPTIONS.map(option => (

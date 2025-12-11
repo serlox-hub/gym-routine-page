@@ -2,6 +2,8 @@
  * Utilidades para manejo de series (sets)
  */
 
+import { MeasurementType } from './measurementTypes.js'
+
 /**
  * Crea una clave única para identificar una serie
  * @param {string|number} routineExerciseId - ID del ejercicio de rutina
@@ -35,16 +37,22 @@ export function generateExtraExerciseId() {
  * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number}} data - Datos de la serie
  * @returns {boolean}
  */
-export function isSetDataValid(measurementType, { weight, reps, time, distance }) {
+export function isSetDataValid(measurementType, { weight, reps, time, distance, calories }) {
   switch (measurementType) {
-    case 'weight_reps':
+    case MeasurementType.WEIGHT_REPS:
       return weight !== '' && weight !== undefined && reps !== '' && reps !== undefined
-    case 'reps_only':
+    case MeasurementType.REPS_ONLY:
       return reps !== '' && reps !== undefined
-    case 'time':
+    case MeasurementType.TIME:
       return time !== '' && time !== undefined
-    case 'distance':
+    case MeasurementType.WEIGHT_TIME:
+      return weight !== '' && weight !== undefined && time !== '' && time !== undefined
+    case MeasurementType.DISTANCE:
       return distance !== '' && distance !== undefined
+    case MeasurementType.WEIGHT_DISTANCE:
+      return weight !== '' && weight !== undefined && distance !== '' && distance !== undefined
+    case MeasurementType.CALORIES:
+      return calories !== '' && calories !== undefined
     default:
       return false
   }
@@ -53,40 +61,53 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance }
 /**
  * Construye el objeto de datos para completar una serie
  * @param {string} measurementType - Tipo de medición
- * @param {{weight?: string, reps?: string, time?: string, distance?: string}} formData - Datos del formulario
- * @param {{routineExerciseId: string|number, exerciseId: number, setNumber: number, weightUnit?: string, rirActual?: number, notes?: string}} info - Información adicional
+ * @param {{weight?: string, reps?: string, time?: string, distance?: string, calories?: string}} formData - Datos del formulario
+ * @param {{routineExerciseId?: string|number, sessionExerciseId?: string|number, exerciseId: number, setNumber: number, weightUnit?: string, rirActual?: number, notes?: string, videoUrl?: string}} info - Información adicional
  * @returns {Object} Datos para guardar la serie
  */
 export function buildCompletedSetData(measurementType, formData, info) {
-  const { routineExerciseId, exerciseId, setNumber, weightUnit = 'kg', rirActual, notes } = info
-  const { weight, reps, time, distance } = formData
+  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, weightUnit = 'kg', rirActual, notes, videoUrl } = info
+  const { weight, reps, time, distance, calories } = formData
 
   const data = {
-    routineExerciseId,
     exerciseId,
     setNumber,
     rirActual,
     notes,
   }
 
+  // Soportar ambos IDs para flexibilidad
+  if (sessionExerciseId !== undefined) data.sessionExerciseId = sessionExerciseId
+  if (routineExerciseId !== undefined) data.routineExerciseId = routineExerciseId
+  if (videoUrl !== undefined) data.videoUrl = videoUrl
+
   switch (measurementType) {
-    case 'weight_reps':
+    case MeasurementType.WEIGHT_REPS:
       data.weight = parseFloat(weight)
       data.weightUnit = weightUnit
       data.repsCompleted = parseInt(reps)
       break
-    case 'reps_only':
+    case MeasurementType.REPS_ONLY:
       data.repsCompleted = parseInt(reps)
       break
-    case 'time':
+    case MeasurementType.TIME:
       data.timeSeconds = parseInt(time)
       break
-    case 'distance':
+    case MeasurementType.WEIGHT_TIME:
+      data.weight = parseFloat(weight)
+      data.weightUnit = weightUnit
+      data.timeSeconds = parseInt(time)
+      break
+    case MeasurementType.DISTANCE:
       data.distanceMeters = parseFloat(distance)
-      if (weight) {
-        data.weight = parseFloat(weight)
-        data.weightUnit = weightUnit
-      }
+      break
+    case MeasurementType.WEIGHT_DISTANCE:
+      data.weight = parseFloat(weight)
+      data.weightUnit = weightUnit
+      data.distanceMeters = parseFloat(distance)
+      break
+    case MeasurementType.CALORIES:
+      data.caloriesBurned = parseInt(calories)
       break
   }
 
@@ -112,6 +133,9 @@ export function formatSetValue(set) {
   if (set.distance_meters) {
     parts.push(`${set.distance_meters}m`)
   }
+  if (set.calories_burned) {
+    parts.push(`${set.calories_burned}kcal`)
+  }
   return parts.join(' × ')
 }
 
@@ -123,16 +147,20 @@ export function formatSetValue(set) {
  */
 export function formatSetValueByType(set, measurementType) {
   switch (measurementType) {
-    case 'weight_reps':
+    case MeasurementType.WEIGHT_REPS:
       return `${set.weight}${set.weightUnit || 'kg'} × ${set.reps}`
-    case 'reps_only':
+    case MeasurementType.REPS_ONLY:
       return `${set.reps} reps`
-    case 'time':
+    case MeasurementType.TIME:
       return `${set.timeSeconds}s`
-    case 'distance':
-      return set.weight
-        ? `${set.weight}${set.weightUnit || 'kg'} × ${set.distanceMeters}m`
-        : `${set.distanceMeters}m`
+    case MeasurementType.WEIGHT_TIME:
+      return `${set.weight}${set.weightUnit || 'kg'} × ${set.timeSeconds}s`
+    case MeasurementType.DISTANCE:
+      return `${set.distanceMeters}m`
+    case MeasurementType.WEIGHT_DISTANCE:
+      return `${set.weight}${set.weightUnit || 'kg'} × ${set.distanceMeters}m`
+    case MeasurementType.CALORIES:
+      return `${set.caloriesBurned}kcal`
     default:
       return set.weight ? `${set.weight}${set.weightUnit || 'kg'} × ${set.reps}` : `${set.reps}`
   }
@@ -165,6 +193,6 @@ export function buildExtraExerciseConfig(extraId, exercise, config) {
     reps: config.reps || '10',
     rir: config.rir ?? 2,
     rest_seconds: config.rest_seconds || 90,
-    measurement_type: exercise.measurement_type || 'weight_reps',
+    measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
   }
 }

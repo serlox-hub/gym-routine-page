@@ -8,6 +8,7 @@ import { colors, modalOverlayStyle, modalContentStyle, buttonSecondaryStyle } fr
 import { formatShortDate } from '../../lib/dateUtils.js'
 import { formatSetValue } from '../../lib/setUtils.js'
 import { calculateExerciseStats } from '../../lib/workoutCalculations.js'
+import { MeasurementType } from '../../lib/measurementTypes.js'
 
 const RIR_LABELS = {
   [-1]: 'F',
@@ -27,7 +28,7 @@ const SCOPE = {
   DAY: 'day',
 }
 
-function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = 'weight_reps', weightUnit = 'kg', routineDayId = null }) {
+function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', routineDayId = null }) {
   const [selectedSet, setSelectedSet] = useState(null)
   const [activeTab, setActiveTab] = useState(TABS.PROGRESS)
   const [scope, setScope] = useState(routineDayId ? SCOPE.DAY : SCOPE.GLOBAL)

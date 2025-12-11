@@ -4,8 +4,9 @@ import { NotesBadge } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import { formatRelativeDate } from '../../lib/dateUtils.js'
 import { formatSetValueByType } from '../../lib/setUtils.js'
+import { MeasurementType } from '../../lib/measurementTypes.js'
 
-function PreviousWorkout({ exerciseId, measurementType = 'weight_reps' }) {
+function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS }) {
   const { data: previous, isLoading } = usePreviousWorkout(exerciseId)
   const [selectedSet, setSelectedSet] = useState(null)
 

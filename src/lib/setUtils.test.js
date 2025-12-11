@@ -93,8 +93,50 @@ describe('setUtils', () => {
         expect(isSetDataValid('distance', { distance: '100' })).toBe(true)
       })
 
+      it('válido con peso y distancia', () => {
+        expect(isSetDataValid('distance', { weight: '20', distance: '100' })).toBe(true)
+      })
+
       it('inválido sin distancia', () => {
         expect(isSetDataValid('distance', { distance: '' })).toBe(false)
+      })
+    })
+
+    describe('weight_distance', () => {
+      it('válido con peso y distancia', () => {
+        expect(isSetDataValid('weight_distance', { weight: '20', distance: '100' })).toBe(true)
+      })
+
+      it('inválido sin peso', () => {
+        expect(isSetDataValid('weight_distance', { weight: '', distance: '100' })).toBe(false)
+      })
+
+      it('inválido sin distancia', () => {
+        expect(isSetDataValid('weight_distance', { weight: '20', distance: '' })).toBe(false)
+      })
+    })
+
+    describe('weight_time', () => {
+      it('válido con peso y tiempo', () => {
+        expect(isSetDataValid('weight_time', { weight: '10', time: '30' })).toBe(true)
+      })
+
+      it('inválido sin peso', () => {
+        expect(isSetDataValid('weight_time', { weight: '', time: '30' })).toBe(false)
+      })
+
+      it('inválido sin tiempo', () => {
+        expect(isSetDataValid('weight_time', { weight: '10', time: '' })).toBe(false)
+      })
+    })
+
+    describe('calories', () => {
+      it('válido con calorías', () => {
+        expect(isSetDataValid('calories', { calories: '200' })).toBe(true)
+      })
+
+      it('inválido sin calorías', () => {
+        expect(isSetDataValid('calories', { calories: '' })).toBe(false)
       })
     })
 
@@ -151,24 +193,64 @@ describe('setUtils', () => {
       expect(result.timeSeconds).toBe(60)
     })
 
-    it('construye datos para distance con peso', () => {
+    it('construye datos para distance', () => {
       const result = buildCompletedSetData(
         'distance',
+        { distance: '100' },
+        baseInfo
+      )
+      expect(result.distanceMeters).toBe(100)
+      expect(result.weight).toBeUndefined()
+    })
+
+    it('construye datos para weight_distance', () => {
+      const result = buildCompletedSetData(
+        'weight_distance',
         { distance: '100', weight: '20' },
         baseInfo
       )
       expect(result.distanceMeters).toBe(100)
       expect(result.weight).toBe(20)
+      expect(result.weightUnit).toBe('kg')
     })
 
-    it('construye datos para distance sin peso', () => {
+    it('construye datos para weight_time', () => {
       const result = buildCompletedSetData(
-        'distance',
-        { distance: '100', weight: '' },
+        'weight_time',
+        { weight: '10', time: '30' },
         baseInfo
       )
-      expect(result.distanceMeters).toBe(100)
-      expect(result.weight).toBeUndefined()
+      expect(result.weight).toBe(10)
+      expect(result.weightUnit).toBe('kg')
+      expect(result.timeSeconds).toBe(30)
+    })
+
+    it('construye datos para calories', () => {
+      const result = buildCompletedSetData(
+        'calories',
+        { calories: '250' },
+        baseInfo
+      )
+      expect(result.caloriesBurned).toBe(250)
+    })
+
+    it('soporta sessionExerciseId', () => {
+      const result = buildCompletedSetData(
+        'weight_reps',
+        { weight: '80', reps: '12' },
+        { sessionExerciseId: 789, exerciseId: 456, setNumber: 1 }
+      )
+      expect(result.sessionExerciseId).toBe(789)
+      expect(result.routineExerciseId).toBeUndefined()
+    })
+
+    it('soporta videoUrl', () => {
+      const result = buildCompletedSetData(
+        'weight_reps',
+        { weight: '80', reps: '12' },
+        { ...baseInfo, videoUrl: 'https://example.com/video.mp4' }
+      )
+      expect(result.videoUrl).toBe('https://example.com/video.mp4')
     })
   })
 
@@ -199,6 +281,15 @@ describe('setUtils', () => {
       expect(formatSetValue({ weight: 80, reps_completed: 10 }))
         .toBe('80kg × 10 reps')
     })
+
+    it('formatea calorías', () => {
+      expect(formatSetValue({ calories_burned: 300 })).toBe('300kcal')
+    })
+
+    it('formatea peso y tiempo', () => {
+      expect(formatSetValue({ weight: 10, weight_unit: 'kg', time_seconds: 30 }))
+        .toBe('10kg × 30s')
+    })
   })
 
   describe('formatSetValueByType', () => {
@@ -217,14 +308,24 @@ describe('setUtils', () => {
         .toBe('60s')
     })
 
-    it('formatea distance con peso', () => {
-      expect(formatSetValueByType({ weight: 20, weightUnit: 'kg', distanceMeters: 100 }, 'distance'))
-        .toBe('20kg × 100m')
-    })
-
-    it('formatea distance sin peso', () => {
+    it('formatea distance', () => {
       expect(formatSetValueByType({ distanceMeters: 100 }, 'distance'))
         .toBe('100m')
+    })
+
+    it('formatea weight_distance', () => {
+      expect(formatSetValueByType({ weight: 24, weightUnit: 'kg', distanceMeters: 40 }, 'weight_distance'))
+        .toBe('24kg × 40m')
+    })
+
+    it('formatea weight_time', () => {
+      expect(formatSetValueByType({ weight: 10, weightUnit: 'kg', timeSeconds: 30 }, 'weight_time'))
+        .toBe('10kg × 30s')
+    })
+
+    it('formatea calories', () => {
+      expect(formatSetValueByType({ caloriesBurned: 300 }, 'calories'))
+        .toBe('300kcal')
     })
   })
 

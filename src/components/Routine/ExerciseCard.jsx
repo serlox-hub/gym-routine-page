@@ -3,6 +3,7 @@ import { Info, Pencil, ChevronUp, ChevronDown, Trash2, Loader2 } from 'lucide-re
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
+import { MeasurementType } from '../../lib/measurementTypes.js'
 
 function ExerciseCard({
   routineExercise,
@@ -21,7 +22,7 @@ function ExerciseCard({
   const { exercise, series, reps, rir, rest_seconds, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
-  const measurementType = measurement_type || exercise.measurement_type || 'weight_reps'
+  const measurementType = measurement_type || exercise.measurement_type || MeasurementType.WEIGHT_REPS
 
   const Wrapper = isSuperset ? 'div' : Card
   const wrapperProps = isSuperset ? {} : { className: 'p-2', onClick }

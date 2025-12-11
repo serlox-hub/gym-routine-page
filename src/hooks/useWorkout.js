@@ -575,7 +575,7 @@ export function useExerciseHistory(exerciseId, routineDayId = null) {
     queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId, routineDayId],
     queryFn: async () => {
       // Buscar session_exercises que tengan este ejercicio en sesiones completadas
-      let query = supabase
+      const query = supabase
         .from('session_exercises')
         .select(`
           id,
