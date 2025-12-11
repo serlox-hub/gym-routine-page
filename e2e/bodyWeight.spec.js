@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Registrar peso corporal', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/body-weight')
+    await page.goto('/body-metrics')
   })
 
   test('puede registrar un peso', async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe('Registrar peso corporal', () => {
 
 test.describe('Estadísticas de peso', () => {
   test('muestra estadísticas si hay registros', async ({ page }) => {
-    await page.goto('/body-weight')
+    await page.goto('/body-metrics')
 
     // Primero registrar un peso para asegurar que hay datos
     await page.getByRole('button', { name: /registrar peso/i }).click()
@@ -43,7 +43,7 @@ test.describe('Estadísticas de peso', () => {
 
 test.describe('Historial de peso', () => {
   test('historial muestra registros existentes', async ({ page }) => {
-    await page.goto('/body-weight')
+    await page.goto('/body-metrics')
 
     // Primero registrar un peso
     const peso = (70 + Math.random() * 10).toFixed(1)
@@ -61,7 +61,7 @@ test.describe('Historial de peso', () => {
   })
 
   test('registros tienen botones de editar y eliminar', async ({ page }) => {
-    await page.goto('/body-weight')
+    await page.goto('/body-metrics')
 
     // Registrar un peso primero
     await page.getByRole('button', { name: /registrar peso/i }).click()
@@ -84,8 +84,8 @@ test.describe('Historial de peso', () => {
 test.describe('Protección de rutas de peso corporal', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('body-weight requiere autenticación', async ({ page }) => {
-    await page.goto('/body-weight')
+  test('body-metrics requiere autenticación', async ({ page }) => {
+    await page.goto('/body-metrics')
     await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
   })
 })
