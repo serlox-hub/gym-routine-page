@@ -140,6 +140,52 @@ describe('workoutStore', () => {
       expect(sets[1].setNumber).toBe(2)
       expect(sets[2].setNumber).toBe(3)
     })
+
+    it('updateSetDbId updates dbId after server confirms', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 100, dbId: null })
+      })
+
+      expect(useWorkoutStore.getState().getSetData(1, 1).dbId).toBeNull()
+
+      act(() => {
+        useWorkoutStore.getState().updateSetDbId(1, 1, 999)
+      })
+
+      const state = useWorkoutStore.getState()
+      expect(state.completedSets['1-1'].dbId).toBe(999)
+      expect(state.cachedSetData['1-1'].dbId).toBe(999)
+    })
+
+    it('updateSetDbId does nothing if set does not exist', () => {
+      const stateBefore = useWorkoutStore.getState()
+
+      act(() => {
+        useWorkoutStore.getState().updateSetDbId(99, 99, 999)
+      })
+
+      const stateAfter = useWorkoutStore.getState()
+      expect(stateAfter.completedSets).toEqual(stateBefore.completedSets)
+    })
+
+    it('rollbackSet removes set from completedSets and cachedSetData', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 100 })
+        useWorkoutStore.getState().completeSet(1, 2, { weight: 105 })
+      })
+
+      expect(useWorkoutStore.getState().isSetCompleted(1, 1)).toBe(true)
+
+      act(() => {
+        useWorkoutStore.getState().rollbackSet(1, 1)
+      })
+
+      const state = useWorkoutStore.getState()
+      expect(state.completedSets['1-1']).toBeUndefined()
+      expect(state.cachedSetData['1-1']).toBeUndefined()
+      // Other set should remain
+      expect(state.completedSets['1-2']).toBeTruthy()
+    })
   })
 
   describe('Rest Timer', () => {

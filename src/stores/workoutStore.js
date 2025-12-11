@@ -97,6 +97,34 @@ const useWorkoutStore = create(
         return state.completedSets[`${sessionExerciseId}-${setNumber}`]
       },
 
+      // Update dbId after server confirms (for optimistic updates)
+      updateSetDbId: (sessionExerciseId, setNumber, dbId) => set(state => {
+        const key = `${sessionExerciseId}-${setNumber}`
+        const existing = state.completedSets[key]
+        if (!existing) return state
+        return {
+          completedSets: {
+            ...state.completedSets,
+            [key]: { ...existing, dbId },
+          },
+          cachedSetData: {
+            ...state.cachedSetData,
+            [key]: { ...existing, dbId },
+          },
+        }
+      }),
+
+      // Rollback a set (remove from completedSets, for error handling)
+      rollbackSet: (sessionExerciseId, setNumber) => set(state => {
+        const key = `${sessionExerciseId}-${setNumber}`
+        const { [key]: removed, ...restCompleted } = state.completedSets
+        const { [key]: removedCached, ...restCached } = state.cachedSetData
+        return {
+          completedSets: restCompleted,
+          cachedSetData: restCached,
+        }
+      }),
+
       // Check if session is active
       hasActiveSession: () => {
         const state = get()

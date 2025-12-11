@@ -59,6 +59,8 @@ export function useCompleteSet() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const completeSet = useWorkoutStore(state => state.completeSet)
+  const updateSetDbId = useWorkoutStore(state => state.updateSetDbId)
+  const rollbackSet = useWorkoutStore(state => state.rollbackSet)
 
   return useMutation({
     mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notes, videoUrl }) => {
@@ -86,7 +88,8 @@ export function useCompleteSet() {
       if (error) throw error
       return data
     },
-    onSuccess: (data, variables) => {
+    onMutate: async (variables) => {
+      // Optimistic update: marcar serie como completada inmediatamente
       completeSet(variables.sessionExerciseId, variables.setNumber, {
         weight: variables.weight,
         weightUnit: variables.weightUnit,
@@ -96,9 +99,23 @@ export function useCompleteSet() {
         rirActual: variables.rirActual,
         notes: variables.notes,
         videoUrl: variables.videoUrl,
-        dbId: data.id,
+        dbId: null, // Temporal hasta confirmación del servidor
       })
+
+      return { sessionExerciseId: variables.sessionExerciseId, setNumber: variables.setNumber }
+    },
+    onSuccess: (data, variables) => {
+      // Actualizar con el dbId real del servidor
+      updateSetDbId(variables.sessionExerciseId, variables.setNumber, data.id)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+    },
+    onError: (error, variables, context) => {
+      // Rollback: revertir el optimistic update
+      if (context) {
+        rollbackSet(context.sessionExerciseId, context.setNumber)
+      }
+      // Mostrar error al usuario
+      alert('Error al guardar la serie. Por favor, inténtalo de nuevo.')
     },
   })
 }
