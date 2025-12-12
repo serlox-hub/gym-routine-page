@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, X } from 'lucide-react'
-import { Card, LoadingSpinner, PlanBadge } from '../components/ui/index.js'
+import { ArrowLeft, Check, X, Smartphone, Share, MoreVertical, Download } from 'lucide-react'
+import { Card, LoadingSpinner, PlanBadge, Button } from '../components/ui/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
 import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import { colors } from '../lib/styles.js'
@@ -111,8 +112,126 @@ function Preferences() {
             )}
           </div>
         </Card>
+
+        <InstallAppSection />
       </main>
     </div>
+  )
+}
+
+function InstallAppSection() {
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true
+    setIsInstalled(isStandalone)
+
+    const handleBeforeInstall = (e) => {
+      e.preventDefault()
+      setInstallPrompt(e)
+    }
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true)
+      setInstallPrompt(null)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
+    window.addEventListener('appinstalled', handleAppInstalled)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
+      window.removeEventListener('appinstalled', handleAppInstalled)
+    }
+  }, [])
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const { outcome } = await installPrompt.userChoice
+    if (outcome === 'accepted') {
+      setIsInstalled(true)
+    }
+    setInstallPrompt(null)
+  }
+
+  if (isInstalled) {
+    return (
+      <Card className="p-4">
+        <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
+          Aplicación
+        </h2>
+        <div className="flex items-center gap-2">
+          <Check size={16} style={{ color: colors.success }} />
+          <p className="text-sm" style={{ color: colors.textPrimary }}>
+            App instalada correctamente
+          </p>
+        </div>
+      </Card>
+    )
+  }
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+
+  return (
+    <Card className="p-4">
+      <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
+        Aplicación
+      </h2>
+      <div className="flex items-start gap-3">
+        <Smartphone size={20} style={{ color: colors.accent }} className="mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
+            Añadir en pantalla de inicio
+          </p>
+          <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
+            Accede más rápido y úsala como una app nativa
+          </p>
+          {installPrompt ? (
+            <Button
+              onClick={handleInstallClick}
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Download size={16} />
+              Instalar
+            </Button>
+          ) : isIOS ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Share size={14} style={{ color: colors.textSecondary }} />
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                  Pulsa el botón <strong>Compartir</strong>
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: colors.textSecondary }}>→</span>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                  Selecciona <strong>Añadir a pantalla de inicio</strong>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <MoreVertical size={14} style={{ color: colors.textSecondary }} />
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                  Pulsa el menú del navegador
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: colors.textSecondary }}>→</span>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                  Selecciona <strong>Añadir a pantalla de inicio</strong> o <strong>Instalar</strong>
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
   )
 }
 
