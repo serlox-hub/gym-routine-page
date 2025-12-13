@@ -76,18 +76,16 @@ const useAuthStore = create((set, get) => ({
   logout: async () => {
     set({ error: null })
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      set({ session: null, user: null })
-      // Limpiar sesión de entrenamiento activa
-      useWorkoutStore.getState().endSession()
-      // Limpiar caché de queries para evitar mostrar datos del usuario anterior
-      queryClient.clear()
-      return { success: true }
-    } catch (error) {
-      set({ error: error.message })
-      return { success: false, error: error.message }
+      await supabase.auth.signOut({ scope: 'local' })
+    } catch {
+      // Si falla (sesión expirada), limpiar storage manualmente
+      const storageKey = `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`
+      localStorage.removeItem(storageKey)
     }
+    set({ session: null, user: null })
+    useWorkoutStore.getState().endSession()
+    queryClient.clear()
+    return { success: true }
   },
 
   clearError: () => set({ error: null }),
