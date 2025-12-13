@@ -21,7 +21,7 @@ const useWorkoutStore = create(
 
       // Rest timer state
       restTimerActive: false,
-      restTimeRemaining: 0,
+      restTimerEndTime: null,  // Timestamp cuando termina el timer
       restTimeInitial: 0,
       restTimerMinimized: false,
 
@@ -139,24 +139,34 @@ const useWorkoutStore = create(
       // Rest timer actions
       startRestTimer: (seconds) => set({
         restTimerActive: true,
-        restTimeRemaining: seconds,
+        restTimerEndTime: Date.now() + seconds * 1000,
         restTimeInitial: seconds,
       }),
 
-      tickTimer: () => set(state => {
-        if (state.restTimeRemaining <= 1) {
-          return { restTimeRemaining: 0, restTimerActive: false }
+      // Calcula tiempo restante basado en timestamp real
+      getTimeRemaining: () => {
+        const state = get()
+        if (!state.restTimerActive || !state.restTimerEndTime) return 0
+        return Math.max(0, Math.ceil((state.restTimerEndTime - Date.now()) / 1000))
+      },
+
+      // Tick solo verifica si el timer debe parar
+      tickTimer: () => {
+        const state = get()
+        if (!state.restTimerActive) return
+        const remaining = Math.ceil((state.restTimerEndTime - Date.now()) / 1000)
+        if (remaining <= 0) {
+          set({ restTimerActive: false, restTimerEndTime: null })
         }
-        return { restTimeRemaining: state.restTimeRemaining - 1 }
-      }),
+      },
 
       skipRest: () => set({
         restTimerActive: false,
-        restTimeRemaining: 0,
+        restTimerEndTime: null,
       }),
 
       adjustRestTime: (delta) => set(state => ({
-        restTimeRemaining: Math.max(0, state.restTimeRemaining + delta),
+        restTimerEndTime: state.restTimerEndTime ? state.restTimerEndTime + delta * 1000 : null,
       })),
 
       setRestTimerMinimized: (minimized) => set({ restTimerMinimized: minimized }),

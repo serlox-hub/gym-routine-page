@@ -18,7 +18,7 @@ describe('useWorkout hooks', () => {
       // Reset store
       useWorkoutStore.setState({
         restTimerActive: false,
-        restTimeRemaining: 0,
+        restTimerEndTime: null,
         restTimeInitial: 0,
       })
     })
@@ -46,9 +46,10 @@ describe('useWorkout hooks', () => {
     })
 
     it('calculates progress correctly', () => {
+      // Simular timer con 30s restantes de 60s iniciales
       useWorkoutStore.setState({
         restTimerActive: true,
-        restTimeRemaining: 30,
+        restTimerEndTime: Date.now() + 30000, // 30 segundos desde ahora
         restTimeInitial: 60,
       })
 
@@ -60,7 +61,7 @@ describe('useWorkout hooks', () => {
     it('progress is 0 when initial time is 0', () => {
       useWorkoutStore.setState({
         restTimerActive: true,
-        restTimeRemaining: 0,
+        restTimerEndTime: Date.now(),
         restTimeInitial: 0,
       })
 
@@ -86,11 +87,14 @@ describe('useWorkout hooks', () => {
 
       const { result } = renderHook(() => useRestTimer())
 
+      const initialRemaining = result.current.timeRemaining
+
       act(() => {
         result.current.addTime(30)
+        vi.advanceTimersByTime(250) // Trigger update
       })
 
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(90)
+      expect(result.current.timeRemaining).toBe(initialRemaining + 30)
     })
 
     it('addTime can reduce time', () => {
@@ -98,31 +102,36 @@ describe('useWorkout hooks', () => {
 
       const { result } = renderHook(() => useRestTimer())
 
+      const initialRemaining = result.current.timeRemaining
+
       act(() => {
         result.current.addTime(-30)
+        vi.advanceTimersByTime(250) // Trigger update
       })
 
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(30)
+      expect(result.current.timeRemaining).toBe(initialRemaining - 30)
     })
 
-    it('timer ticks every second when active', async () => {
+    it('timer updates based on real time', async () => {
       useWorkoutStore.getState().startRestTimer(60)
 
-      renderHook(() => useRestTimer())
+      const { result } = renderHook(() => useRestTimer())
+
+      expect(result.current.timeRemaining).toBe(60)
 
       // Avanzar 1 segundo
       act(() => {
         vi.advanceTimersByTime(1000)
       })
 
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(59)
+      expect(result.current.timeRemaining).toBe(59)
 
       // Avanzar 2 segundos más
       act(() => {
         vi.advanceTimersByTime(2000)
       })
 
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(57)
+      expect(result.current.timeRemaining).toBe(57)
     })
 
     it('timer stops when reaching 0', () => {
@@ -135,7 +144,7 @@ describe('useWorkout hooks', () => {
       })
 
       const state = useWorkoutStore.getState()
-      expect(state.restTimeRemaining).toBe(0)
+      expect(state.getTimeRemaining()).toBe(0)
       expect(state.restTimerActive).toBe(false)
     })
 
@@ -144,24 +153,18 @@ describe('useWorkout hooks', () => {
 
       const { unmount } = renderHook(() => useRestTimer())
 
+      const remainingBefore = useWorkoutStore.getState().getTimeRemaining()
+
       unmount()
 
-      // Store shouldn't tick after unmount
-      const remainingBefore = useWorkoutStore.getState().restTimeRemaining
-
-      act(() => {
-        vi.advanceTimersByTime(5000)
-      })
-
-      // El timer del store puede seguir activo por otros listeners,
-      // pero el intervalo del hook debe estar limpio
-      expect(useWorkoutStore.getState().restTimeRemaining).toBeLessThanOrEqual(remainingBefore)
+      // Después de unmount, el timer del store sigue pero el hook no actualiza
+      expect(useWorkoutStore.getState().getTimeRemaining()).toBeLessThanOrEqual(remainingBefore)
     })
 
     it('multiple renders dont create multiple intervals', () => {
       useWorkoutStore.getState().startRestTimer(60)
 
-      const { rerender } = renderHook(() => useRestTimer())
+      const { result, rerender } = renderHook(() => useRestTimer())
 
       // Rerender multiple times
       rerender()
@@ -173,7 +176,7 @@ describe('useWorkout hooks', () => {
       })
 
       // Should only tick once, not multiple times
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(59)
+      expect(result.current.timeRemaining).toBe(59)
     })
   })
 
@@ -182,7 +185,7 @@ describe('useWorkout hooks', () => {
       vi.useFakeTimers()
       useWorkoutStore.setState({
         restTimerActive: false,
-        restTimeRemaining: 0,
+        restTimerEndTime: null,
         restTimeInitial: 0,
       })
     })
@@ -200,11 +203,12 @@ describe('useWorkout hooks', () => {
         vi.advanceTimersByTime(2000)
       })
 
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(58)
+      expect(result.current.timeRemaining).toBe(58)
 
       // Start new timer
       act(() => {
         useWorkoutStore.getState().startRestTimer(90)
+        vi.advanceTimersByTime(250) // Trigger update
       })
 
       expect(result.current.timeRemaining).toBe(90)
@@ -212,9 +216,10 @@ describe('useWorkout hooks', () => {
     })
 
     it('progress reaches 100 when time is 0', () => {
+      // Timer que ya terminó
       useWorkoutStore.setState({
         restTimerActive: true,
-        restTimeRemaining: 0,
+        restTimerEndTime: Date.now() - 1000, // Ya pasó
         restTimeInitial: 60,
       })
 

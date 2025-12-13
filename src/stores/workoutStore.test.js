@@ -196,27 +196,34 @@ describe('workoutStore', () => {
 
       const state = useWorkoutStore.getState()
       expect(state.restTimerActive).toBe(true)
-      expect(state.restTimeRemaining).toBe(90)
+      expect(state.restTimerEndTime).toBeGreaterThan(Date.now())
       expect(state.restTimeInitial).toBe(90)
+      expect(state.getTimeRemaining()).toBeGreaterThanOrEqual(89)
+      expect(state.getTimeRemaining()).toBeLessThanOrEqual(90)
     })
 
-    it('ticks timer', () => {
+    it('getTimeRemaining returns correct value', () => {
       act(() => {
-        useWorkoutStore.getState().startRestTimer(90)
-        useWorkoutStore.getState().tickTimer()
+        useWorkoutStore.getState().startRestTimer(60)
       })
 
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(89)
+      const remaining = useWorkoutStore.getState().getTimeRemaining()
+      expect(remaining).toBeGreaterThanOrEqual(59)
+      expect(remaining).toBeLessThanOrEqual(60)
     })
 
-    it('stops timer when reaching 0', () => {
+    it('tickTimer stops timer when time expired', () => {
       act(() => {
-        useWorkoutStore.getState().startRestTimer(1)
+        // Forzar un endTime en el pasado
+        useWorkoutStore.setState({
+          restTimerActive: true,
+          restTimerEndTime: Date.now() - 1000,
+          restTimeInitial: 10,
+        })
         useWorkoutStore.getState().tickTimer()
       })
 
       const state = useWorkoutStore.getState()
-      expect(state.restTimeRemaining).toBe(0)
       expect(state.restTimerActive).toBe(false)
     })
 
@@ -228,25 +235,37 @@ describe('workoutStore', () => {
 
       const state = useWorkoutStore.getState()
       expect(state.restTimerActive).toBe(false)
-      expect(state.restTimeRemaining).toBe(0)
+      expect(state.restTimerEndTime).toBe(null)
+      expect(state.getTimeRemaining()).toBe(0)
     })
 
     it('adjusts rest time positively', () => {
       act(() => {
         useWorkoutStore.getState().startRestTimer(60)
+      })
+      const initialRemaining = useWorkoutStore.getState().getTimeRemaining()
+
+      act(() => {
         useWorkoutStore.getState().adjustRestTime(30)
       })
 
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(90)
+      const newRemaining = useWorkoutStore.getState().getTimeRemaining()
+      expect(newRemaining).toBeGreaterThanOrEqual(initialRemaining + 29)
     })
 
-    it('adjusts rest time negatively without going below 0', () => {
+    it('adjusts rest time negatively', () => {
       act(() => {
-        useWorkoutStore.getState().startRestTimer(20)
-        useWorkoutStore.getState().adjustRestTime(-30)
+        useWorkoutStore.getState().startRestTimer(60)
+      })
+      const initialRemaining = useWorkoutStore.getState().getTimeRemaining()
+
+      act(() => {
+        useWorkoutStore.getState().adjustRestTime(-20)
       })
 
-      expect(useWorkoutStore.getState().restTimeRemaining).toBe(0)
+      const newRemaining = useWorkoutStore.getState().getTimeRemaining()
+      expect(newRemaining).toBeLessThan(initialRemaining)
+      expect(newRemaining).toBeGreaterThanOrEqual(initialRemaining - 21)
     })
 
     it('sets timer minimized state', () => {

@@ -708,44 +708,164 @@ export function usePreviousWorkout(exerciseId) {
 // REST TIMER HOOK
 // ============================================
 
+// Singleton para el intervalo del timer
+let globalTimerInterval = null
+let audioContext = null
+// Set de funciones para notificar a los componentes suscritos
+const timerUpdateCallbacks = new Set()
+
+function playTimerBeep() {
+  try {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    }
+    const ctx = audioContext
+    const oscillator = ctx.createOscillator()
+    const gainNode = ctx.createGain()
+
+    oscillator.connect(gainNode)
+    gainNode.connect(ctx.destination)
+
+    oscillator.frequency.value = 880
+    oscillator.type = 'sine'
+    gainNode.gain.value = 0.3
+
+    oscillator.start()
+    oscillator.stop(ctx.currentTime + 0.15)
+  } catch {
+    // Ignorar errores de audio
+  }
+}
+
+function vibrateDevice() {
+  if (navigator.vibrate) {
+    navigator.vibrate([200, 100, 200])
+  }
+}
+
+// Track del último segundo en que sonó beep para evitar repetir
+let lastBeepSecond = -1
+
+function startGlobalTimerInterval() {
+  if (globalTimerInterval) return
+  lastBeepSecond = -1
+
+  globalTimerInterval = setInterval(() => {
+    const wasActive = useWorkoutStore.getState().restTimerActive
+    useWorkoutStore.getState().tickTimer()
+
+    const currentState = useWorkoutStore.getState()
+    const remaining = currentState.getTimeRemaining()
+
+    // Notificar a todos los componentes suscritos
+    timerUpdateCallbacks.forEach(cb => cb(remaining))
+
+    // Beep en los últimos 2 segundos (2, 1) y al terminar (0)
+    if (currentState.restTimerActive && remaining <= 2 && remaining > 0 && remaining !== lastBeepSecond) {
+      lastBeepSecond = remaining
+      try {
+        const pref = localStorage.getItem('timer_sound_enabled')
+        if (pref === null || pref === 'true') {
+          playTimerBeep()
+        }
+      } catch {
+        playTimerBeep()
+      }
+    }
+
+    // Detectar cuando el timer termina naturalmente
+    if (wasActive && !currentState.restTimerActive && remaining === 0) {
+      try {
+        const pref = localStorage.getItem('timer_sound_enabled')
+        if (pref === null || pref === 'true') {
+          playTimerBeep()
+          vibrateDevice()
+        }
+      } catch {
+        playTimerBeep()
+        vibrateDevice()
+      }
+      // Limpiar el intervalo cuando termine
+      clearInterval(globalTimerInterval)
+      globalTimerInterval = null
+      lastBeepSecond = -1
+    }
+  }, 250)
+}
+
+function stopGlobalTimerInterval() {
+  if (globalTimerInterval) {
+    clearInterval(globalTimerInterval)
+    globalTimerInterval = null
+  }
+}
+
+// Suscribirse a cambios del store para iniciar/detener el intervalo automáticamente
+let prevRestTimerActive = useWorkoutStore.getState().restTimerActive
+let prevRestTimerEndTime = useWorkoutStore.getState().restTimerEndTime
+
+useWorkoutStore.subscribe((state) => {
+  // Detectar cambio en restTimerActive
+  if (state.restTimerActive !== prevRestTimerActive) {
+    prevRestTimerActive = state.restTimerActive
+    if (state.restTimerActive) {
+      startGlobalTimerInterval()
+    }
+  }
+
+  // Detectar cambio en restTimerEndTime (nuevo timer iniciado)
+  if (state.restTimerEndTime !== prevRestTimerEndTime) {
+    prevRestTimerEndTime = state.restTimerEndTime
+    if (state.restTimerEndTime && state.restTimerActive) {
+      stopGlobalTimerInterval()
+      startGlobalTimerInterval()
+    }
+  }
+})
+
 export function useRestTimer() {
   const restTimerActive = useWorkoutStore(state => state.restTimerActive)
-  const restTimeRemaining = useWorkoutStore(state => state.restTimeRemaining)
+  const restTimerEndTime = useWorkoutStore(state => state.restTimerEndTime)
   const restTimeInitial = useWorkoutStore(state => state.restTimeInitial)
-  const tickTimer = useWorkoutStore(state => state.tickTimer)
+  const getTimeRemaining = useWorkoutStore(state => state.getTimeRemaining)
   const skipRest = useWorkoutStore(state => state.skipRest)
   const adjustRestTime = useWorkoutStore(state => state.adjustRestTime)
 
-  const intervalRef = useRef(null)
+  const [timeRemaining, setTimeRemaining] = useState(() => getTimeRemaining())
 
-  // Timer interval - solo depende de restTimerActive para evitar múltiples intervalos
+  // Suscribirse a actualizaciones del timer global
   useEffect(() => {
-    if (restTimerActive) {
-      // Limpiar cualquier intervalo previo antes de crear uno nuevo
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
+    const updateCallback = (remaining) => setTimeRemaining(remaining)
+    timerUpdateCallbacks.add(updateCallback)
 
-      intervalRef.current = setInterval(() => {
-        tickTimer()
-      }, 1000)
+    // Si el timer está activo, asegurar que el intervalo esté corriendo
+    if (restTimerActive && !globalTimerInterval) {
+      startGlobalTimerInterval()
     }
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
+      timerUpdateCallbacks.delete(updateCallback)
     }
-  }, [restTimerActive, tickTimer])
+  }, [restTimerActive])
 
-  const progress = restTimeInitial > 0
-    ? ((restTimeInitial - restTimeRemaining) / restTimeInitial) * 100
+  // Sincronizar timeRemaining cuando cambia el timer (inicio o nuevo timer)
+  useEffect(() => {
+    if (restTimerActive) {
+      setTimeRemaining(getTimeRemaining())
+    } else {
+      setTimeRemaining(0)
+    }
+  }, [restTimerActive, restTimerEndTime, getTimeRemaining])
+
+  // Calcular progreso directamente del store para evitar desincronización
+  const currentRemaining = restTimerActive ? getTimeRemaining() : 0
+  const progress = restTimeInitial > 0 && restTimerActive
+    ? Math.max(0, Math.min(100, ((restTimeInitial - currentRemaining) / restTimeInitial) * 100))
     : 0
 
   return {
     isActive: restTimerActive,
-    timeRemaining: restTimeRemaining,
+    timeRemaining,
     timeInitial: restTimeInitial,
     progress,
     skip: skipRest,

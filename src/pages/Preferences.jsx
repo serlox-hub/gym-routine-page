@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, X, Smartphone, Share, MoreVertical } from 'lucide-react'
 import { Card, LoadingSpinner, PlanBadge, PageHeader } from '../components/ui/index.js'
@@ -11,6 +12,25 @@ function Preferences() {
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
   const isPremium = useIsPremium()
+
+  // Preferencia de sonido guardada en localStorage (funciona offline)
+  const [timerSoundEnabled, setTimerSoundEnabled] = useState(() => {
+    try {
+      const saved = localStorage.getItem('timer_sound_enabled')
+      return saved === null ? true : saved === 'true'
+    } catch {
+      return true
+    }
+  })
+
+  const handleTimerSoundChange = (value) => {
+    setTimerSoundEnabled(value)
+    try {
+      localStorage.setItem('timer_sound_enabled', String(value))
+    } catch {
+      // Ignorar errores de localStorage
+    }
+  }
 
   const handleChange = (key, value) => {
     updatePreference.mutate({ key, value })
@@ -63,6 +83,13 @@ function Preferences() {
           </h2>
 
           <div className="space-y-4">
+            <PreferenceToggle
+              label="Sonido y vibración del timer"
+              description="Reproducir sonido y vibrar cuando termine el descanso"
+              checked={timerSoundEnabled}
+              onChange={handleTimerSoundChange}
+            />
+
             <PreferenceToggle
               label="Registrar RIR (esfuerzo)"
               description="Mostrar selector de RIR al completar cada serie"
