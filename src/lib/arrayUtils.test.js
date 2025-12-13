@@ -7,6 +7,8 @@ import {
   moveItemById,
   filterBySearchTerm,
   filterExercises,
+  findExerciseIndex,
+  getMoveProps,
 } from './arrayUtils.js'
 
 describe('arrayUtils', () => {
@@ -198,6 +200,84 @@ describe('arrayUtils', () => {
 
     it('retorna array vacío si exercises es null', () => {
       expect(filterExercises(null, 'test', 1)).toEqual([])
+    })
+  })
+
+  describe('findExerciseIndex', () => {
+    const exercises = [
+      { id: 1, sessionExerciseId: 100 },
+      { id: 2, sessionExerciseId: 200 },
+      { id: 3 }, // sin sessionExerciseId
+    ]
+
+    it('encuentra por sessionExerciseId', () => {
+      expect(findExerciseIndex(exercises, { sessionExerciseId: 200 })).toBe(1)
+    })
+
+    it('encuentra por id si no hay sessionExerciseId', () => {
+      expect(findExerciseIndex(exercises, { id: 3 })).toBe(2)
+    })
+
+    it('prioriza sessionExerciseId sobre id', () => {
+      expect(findExerciseIndex(exercises, { id: 999, sessionExerciseId: 100 })).toBe(0)
+    })
+
+    it('retorna -1 si no encuentra', () => {
+      expect(findExerciseIndex(exercises, { id: 999 })).toBe(-1)
+    })
+
+    it('retorna -1 si exercises es null', () => {
+      expect(findExerciseIndex(null, { id: 1 })).toBe(-1)
+    })
+
+    it('retorna -1 si exercise es null', () => {
+      expect(findExerciseIndex(exercises, null)).toBe(-1)
+    })
+  })
+
+  describe('getMoveProps', () => {
+    const exercises = [
+      { id: 1, sessionExerciseId: 100 },
+      { id: 2, sessionExerciseId: 200 },
+      { id: 3, sessionExerciseId: 300 },
+    ]
+    const mockOnMove = () => {}
+
+    it('retorna objeto vacío si no hay onMove', () => {
+      expect(getMoveProps(exercises, exercises[0], null)).toEqual({})
+    })
+
+    it('retorna objeto vacío si exercises está vacío', () => {
+      expect(getMoveProps([], exercises[0], mockOnMove)).toEqual({})
+    })
+
+    it('retorna canMoveUp false para primer elemento', () => {
+      const props = getMoveProps(exercises, exercises[0], mockOnMove)
+      expect(props.canMoveUp).toBe(false)
+      expect(props.canMoveDown).toBe(true)
+    })
+
+    it('retorna canMoveDown false para último elemento', () => {
+      const props = getMoveProps(exercises, exercises[2], mockOnMove)
+      expect(props.canMoveUp).toBe(true)
+      expect(props.canMoveDown).toBe(false)
+    })
+
+    it('retorna ambos true para elemento del medio', () => {
+      const props = getMoveProps(exercises, exercises[1], mockOnMove)
+      expect(props.canMoveUp).toBe(true)
+      expect(props.canMoveDown).toBe(true)
+    })
+
+    it('retorna callbacks onMoveUp y onMoveDown', () => {
+      const props = getMoveProps(exercises, exercises[1], mockOnMove)
+      expect(typeof props.onMoveUp).toBe('function')
+      expect(typeof props.onMoveDown).toBe('function')
+    })
+
+    it('retorna objeto vacío si ejercicio no está en la lista', () => {
+      const props = getMoveProps(exercises, { id: 999 }, mockOnMove)
+      expect(props).toEqual({})
     })
   })
 })

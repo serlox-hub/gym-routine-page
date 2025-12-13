@@ -3,8 +3,11 @@ import { WorkoutExerciseCard } from './index.js'
 import SupersetCard from './SupersetCard.jsx'
 import { colors } from '../../lib/styles.js'
 import { countExercisesInBlock } from '../../lib/supersetUtils.js'
+import { getMoveProps } from '../../lib/arrayUtils.js'
 
-function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove }) {
+function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, flatExercises = [], onMove }) {
+  const getExerciseMoveProps = (exercise) => getMoveProps(flatExercises, exercise, onMove)
+
   return (
     <>
       {exercisesByBlock.map((block) => {
@@ -47,6 +50,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}
                       isWarmup={block.isWarmup}
+                      {...getExerciseMoveProps(group.exercise)}
                     />
                   )
                 } else {
@@ -59,6 +63,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onCompleteSet={onCompleteSet}
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}
+                      getMoveProps={getExerciseMoveProps}
                     />
                   )
                 }

@@ -100,6 +100,39 @@ export function filterBySearchTerm(array, searchTerm, property = 'name') {
 }
 
 /**
+ * Encuentra el índice de un ejercicio por sessionExerciseId o id
+ * @param {Array} exercises - Array de ejercicios
+ * @param {Object} exercise - Ejercicio a buscar
+ * @returns {number} Índice del ejercicio o -1 si no se encuentra
+ */
+export function findExerciseIndex(exercises, exercise) {
+  if (!exercises || !exercise) return -1
+  const key = exercise.sessionExerciseId || exercise.id
+  return exercises.findIndex(e => (e.sessionExerciseId || e.id) === key)
+}
+
+/**
+ * Genera props de movimiento para un ejercicio en una lista
+ * @param {Array} exercises - Array de ejercicios
+ * @param {Object} exercise - Ejercicio actual
+ * @param {Function} onMove - Callback (index, direction) => void
+ * @returns {Object} Props { onMoveUp, onMoveDown, canMoveUp, canMoveDown } o {}
+ */
+export function getMoveProps(exercises, exercise, onMove) {
+  if (!onMove || !exercises?.length) return {}
+
+  const index = findExerciseIndex(exercises, exercise)
+  if (index === -1) return {}
+
+  return {
+    onMoveUp: () => onMove(index, 'up'),
+    onMoveDown: () => onMove(index, 'down'),
+    canMoveUp: index > 0,
+    canMoveDown: index < exercises.length - 1,
+  }
+}
+
+/**
  * Filtra ejercicios por término de búsqueda y grupo muscular
  * @param {Array} exercises - Array de ejercicios
  * @param {string} searchTerm - Término de búsqueda

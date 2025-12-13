@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
-import { Info, X } from 'lucide-react'
-import { Card, Badge, ConfirmModal } from '../ui/index.js'
+import { Info, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import { Card, Badge, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
 import PreviousWorkout from './PreviousWorkout.jsx'
 import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
@@ -9,7 +9,7 @@ import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 
-function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false }) {
+function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false, onMoveUp, onMoveDown, canMoveUp = true, canMoveDown = true }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds } = sessionExercise
   // sessionExerciseId es el id de session_exercises (puede ser igual a id si viene transformado)
   const [showNotes, setShowNotes] = useState(false)
@@ -80,24 +80,6 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
           <h4 className="font-medium">{exercise.name}</h4>
         </div>
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setShowHistory(true)}
-            className="p-1.5 rounded hover:opacity-80"
-            style={{ backgroundColor: colors.bgTertiary }}
-            title="Info del ejercicio"
-          >
-            <Info size={14} style={{ color: colors.textSecondary }} />
-          </button>
-          {onRemove && (
-            <button
-              onClick={() => setShowRemoveConfirm(true)}
-              className="p-1.5 rounded hover:opacity-80"
-              style={{ backgroundColor: 'rgba(248, 81, 73, 0.15)' }}
-              title="Quitar de la sesión"
-            >
-              <X size={14} style={{ color: colors.danger }} />
-            </button>
-          )}
           <span
             className="text-sm font-medium px-2 py-0.5 rounded"
             style={{
@@ -107,6 +89,18 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
           >
             {completedCount}/{setsCount}
           </span>
+          <DropdownMenu
+            triggerSize={16}
+            items={[
+              { label: 'Ver historial', icon: Info, onClick: () => setShowHistory(true) },
+              { label: 'Añadir serie', icon: Plus, onClick: addSet },
+              onMoveUp && { type: 'separator' },
+              onMoveUp && { label: 'Mover arriba', icon: ChevronUp, onClick: onMoveUp, disabled: !canMoveUp },
+              onMoveDown && { label: 'Mover abajo', icon: ChevronDown, onClick: onMoveDown, disabled: !canMoveDown },
+              onRemove && { type: 'separator' },
+              onRemove && { label: 'Quitar ejercicio', icon: Trash2, onClick: () => setShowRemoveConfirm(true), danger: true },
+            ]}
+          />
         </div>
       </div>
 
@@ -172,17 +166,6 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
           )
         })}
       </div>
-
-      <button
-        onClick={addSet}
-        className="w-full mt-3 py-2 rounded text-sm font-medium transition-colors"
-        style={{
-          backgroundColor: '#21262d',
-          color: '#8b949e',
-        }}
-      >
-        + Añadir serie
-      </button>
 
       <ExerciseHistoryModal
         isOpen={showHistory}

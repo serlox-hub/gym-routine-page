@@ -401,17 +401,16 @@ export function useReorderSessionExercises() {
 
   return useMutation({
     mutationFn: async (orderedExerciseIds) => {
-      // Actualizar sort_order para cada ejercicio
-      const updates = orderedExerciseIds.map((id, index) =>
-        supabase
-          .from('session_exercises')
-          .update({ sort_order: index + 1 })
-          .eq('id', id)
-      )
+      const exerciseOrders = orderedExerciseIds.map((id, index) => ({
+        id,
+        sort_order: index + 1
+      }))
 
-      const results = await Promise.all(updates)
-      const errors = results.filter(r => r.error)
-      if (errors.length > 0) throw errors[0].error
+      const { error } = await supabase.rpc('reorder_session_exercises', {
+        exercise_orders: exerciseOrders
+      })
+
+      if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
