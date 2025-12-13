@@ -15,6 +15,9 @@ const useWorkoutStore = create(
       completedSets: {},
       // Cached set data (for re-checking after uncomplete)
       cachedSetData: {},
+      // Current set count per exercise (for tracking added/removed sets)
+      // Key: sessionExerciseId -> number of sets
+      exerciseSetCounts: {},
 
       // Rest timer state
       restTimerActive: false,
@@ -31,6 +34,7 @@ const useWorkoutStore = create(
         startedAt: new Date().toISOString(),
         completedSets: {},
         cachedSetData: {},
+        exerciseSetCounts: {},
       }),
 
       // End current session
@@ -41,6 +45,7 @@ const useWorkoutStore = create(
         startedAt: null,
         completedSets: {},
         cachedSetData: {},
+        exerciseSetCounts: {},
       }),
 
       // Mark a set as completed (optimistic update)
@@ -155,6 +160,19 @@ const useWorkoutStore = create(
       })),
 
       setRestTimerMinimized: (minimized) => set({ restTimerMinimized: minimized }),
+
+      // Exercise set count actions
+      setExerciseSetCount: (sessionExerciseId, count) => set(state => ({
+        exerciseSetCounts: {
+          ...state.exerciseSetCounts,
+          [sessionExerciseId]: count,
+        },
+      })),
+
+      getExerciseSetCount: (sessionExerciseId, defaultCount) => {
+        const state = get()
+        return state.exerciseSetCounts[sessionExerciseId] ?? defaultCount
+      },
     }),
     {
       name: 'workout-session',

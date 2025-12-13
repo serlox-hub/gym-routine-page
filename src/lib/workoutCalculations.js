@@ -147,6 +147,38 @@ export function countCompletedSets(completedSetsMap, routineExerciseId) {
 }
 
 /**
+ * Calcula el progreso de series completadas en una sesión (excluye calentamiento)
+ * @param {Array} flatExercises - Lista plana de ejercicios con sessionExerciseId y series
+ * @param {Object} completedSets - Mapa de series completadas (key: sessionExerciseId-setNumber)
+ * @param {Object} exerciseSetCounts - Mapa de conteo de series por ejercicio (key: sessionExerciseId)
+ * @returns {{completed: number, total: number}}
+ */
+export function calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts = {}) {
+  if (!flatExercises || flatExercises.length === 0) return { completed: 0, total: 0 }
+
+  let completed = 0
+  let total = 0
+
+  flatExercises.forEach(exercise => {
+    // Excluir ejercicios de calentamiento
+    if (exercise.isWarmup) return
+
+    const exerciseKey = exercise.sessionExerciseId
+    // Usar el conteo del store si existe, sino usar series planificadas
+    const actualSeries = exerciseSetCounts[exerciseKey] ?? exercise.series ?? 1
+    total += actualSeries
+
+    for (let i = 1; i <= actualSeries; i++) {
+      if (completedSets[`${exerciseKey}-${i}`]) {
+        completed++
+      }
+    }
+  })
+
+  return { completed, total }
+}
+
+/**
  * Filtra sesiones por mes y año
  * @param {Array} sessions - Array de sesiones
  * @param {number} year - Año a filtrar

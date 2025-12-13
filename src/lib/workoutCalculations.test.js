@@ -7,6 +7,7 @@ import {
   getBest1RMFromSets,
   transformSessionsToChartData,
   countCompletedSets,
+  calculateExerciseProgress,
   filterSessionsByMonth,
   transformSessionsToDurationChartData,
   calculateAverageDuration,
@@ -201,6 +202,106 @@ describe('workoutCalculations', () => {
         '456-1': { routineExerciseId: 456 },
       }
       expect(countCompletedSets(completedSetsMap, 123)).toBe(0)
+    })
+  })
+
+  describe('calculateExerciseProgress', () => {
+    it('retorna 0/0 para array vacío', () => {
+      expect(calculateExerciseProgress([], {})).toEqual({ completed: 0, total: 0 })
+    })
+
+    it('retorna 0/0 si flatExercises es null', () => {
+      expect(calculateExerciseProgress(null, {})).toEqual({ completed: 0, total: 0 })
+    })
+
+    it('cuenta series planificadas como total', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 3, isWarmup: false },
+        { sessionExerciseId: 2, series: 4, isWarmup: false },
+      ]
+      const result = calculateExerciseProgress(exercises, {})
+      expect(result.total).toBe(7)
+      expect(result.completed).toBe(0)
+    })
+
+    it('cuenta series completadas correctamente', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 3, isWarmup: false },
+      ]
+      const completedSets = {
+        '1-1': { sessionExerciseId: 1 },
+        '1-2': { sessionExerciseId: 1 },
+      }
+      const result = calculateExerciseProgress(exercises, completedSets)
+      expect(result.total).toBe(3)
+      expect(result.completed).toBe(2)
+    })
+
+    it('excluye ejercicios de calentamiento', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 2, isWarmup: true },
+        { sessionExerciseId: 2, series: 3, isWarmup: false },
+      ]
+      const completedSets = {
+        '1-1': { sessionExerciseId: 1 },
+        '2-1': { sessionExerciseId: 2 },
+      }
+      const result = calculateExerciseProgress(exercises, completedSets)
+      expect(result.total).toBe(3) // Solo cuenta ejercicio 2
+      expect(result.completed).toBe(1) // Solo cuenta serie completada del ejercicio 2
+    })
+
+    it('usa exerciseSetCounts del store cuando existe', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 3, isWarmup: false },
+      ]
+      const completedSets = {
+        '1-1': { sessionExerciseId: 1 },
+        '1-2': { sessionExerciseId: 1 },
+        '1-3': { sessionExerciseId: 1 },
+        '1-4': { sessionExerciseId: 1 },
+      }
+      const exerciseSetCounts = { 1: 5 } // Usuario añadió 2 series extra
+      const result = calculateExerciseProgress(exercises, completedSets, exerciseSetCounts)
+      expect(result.total).toBe(5)
+      expect(result.completed).toBe(4)
+    })
+
+    it('usa series planificadas si exerciseSetCounts no tiene el ejercicio', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 3, isWarmup: false },
+        { sessionExerciseId: 2, series: 4, isWarmup: false },
+      ]
+      const exerciseSetCounts = { 1: 5 } // Solo ejercicio 1 tiene conteo custom
+      const result = calculateExerciseProgress(exercises, {}, exerciseSetCounts)
+      expect(result.total).toBe(9) // 5 + 4
+    })
+
+    it('usa 1 como fallback si no hay series definidas', () => {
+      const exercises = [
+        { sessionExerciseId: 1, isWarmup: false }, // sin series
+      ]
+      const result = calculateExerciseProgress(exercises, {})
+      expect(result.total).toBe(1)
+    })
+
+    it('maneja múltiples ejercicios con series completadas', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 3, isWarmup: false },
+        { sessionExerciseId: 2, series: 4, isWarmup: false },
+        { sessionExerciseId: 3, series: 2, isWarmup: true }, // calentamiento
+      ]
+      const completedSets = {
+        '1-1': { sessionExerciseId: 1 },
+        '1-2': { sessionExerciseId: 1 },
+        '1-3': { sessionExerciseId: 1 },
+        '2-1': { sessionExerciseId: 2 },
+        '2-2': { sessionExerciseId: 2 },
+        '3-1': { sessionExerciseId: 3 }, // calentamiento, no cuenta
+      }
+      const result = calculateExerciseProgress(exercises, completedSets)
+      expect(result.total).toBe(7) // 3 + 4 (sin calentamiento)
+      expect(result.completed).toBe(5) // 3 + 2 (sin calentamiento)
     })
   })
 

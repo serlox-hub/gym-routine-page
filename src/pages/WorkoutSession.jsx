@@ -19,6 +19,7 @@ import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { transformSessionExercises } from '../lib/workoutTransforms.js'
 import { getExistingSupersetIds } from '../lib/supersetUtils.js'
+import { calculateExerciseProgress } from '../lib/workoutCalculations.js'
 
 function WorkoutSession() {
   const { routineId, dayId } = useParams()
@@ -27,6 +28,7 @@ function WorkoutSession() {
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
   const completedSets = useWorkoutStore(state => state.completedSets)
+  const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
 
   // Mantener pantalla encendida durante la sesión
   useWakeLock()
@@ -62,6 +64,12 @@ function WorkoutSession() {
   const existingSupersets = useMemo(
     () => getExistingSupersetIds(sessionExercises || []),
     [sessionExercises]
+  )
+
+  // Calcular progreso de series
+  const progress = useMemo(
+    () => calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts),
+    [flatExercises, completedSets, exerciseSetCounts]
   )
 
   useEffect(() => {
@@ -142,6 +150,13 @@ function WorkoutSession() {
       <div className="p-4 max-w-2xl mx-auto pb-24">
         <PageHeader
           title={day?.name}
+          titleExtra={
+            progress.total > 0 && (
+              <span className="text-sm font-normal" style={{ color: '#8b949e' }}>
+                {progress.completed}/{progress.total}
+              </span>
+            )
+          }
           onBack={() => navigate(-1)}
           menuItems={[
             { icon: ArrowUpDown, label: isReordering ? 'Listo' : 'Reordenar', onClick: () => setIsReordering(!isReordering) },

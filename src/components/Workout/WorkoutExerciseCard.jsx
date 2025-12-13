@@ -27,15 +27,19 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const completedSets = useWorkoutStore(state => state.completedSets)
   const routineDayId = useWorkoutStore(state => state.routineDayId)
+  const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
+  const setExerciseSetCount = useWorkoutStore(state => state.setExerciseSetCount)
   const { data: previousWorkout } = usePreviousWorkout(exercise.id)
-  const [setsCount, setSetsCount] = useState(series)
 
-  // Actualizar cuando lleguen los datos de la sesión anterior
+  // Usar el store para el conteo de series, con fallback a series planificadas
+  const setsCount = exerciseSetCounts[exerciseKey] ?? series
+
+  // Inicializar con datos de sesión anterior si existen
   useEffect(() => {
-    if (previousWorkout?.sets?.length) {
-      setSetsCount(previousWorkout.sets.length)
+    if (previousWorkout?.sets?.length && exerciseSetCounts[exerciseKey] === undefined) {
+      setExerciseSetCount(exerciseKey, previousWorkout.sets.length)
     }
-  }, [previousWorkout])
+  }, [previousWorkout, exerciseKey, exerciseSetCounts, setExerciseSetCount])
 
   const completedCount = useMemo(() => {
     return Object.values(completedSets)
@@ -43,11 +47,11 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       .length
   }, [completedSets, exerciseKey])
 
-  const addSet = () => setSetsCount(prev => prev + 1)
+  const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
 
   const removeSet = () => {
     if (setsCount > 0) {
-      setSetsCount(prev => prev - 1)
+      setExerciseSetCount(exerciseKey, setsCount - 1)
     }
   }
 

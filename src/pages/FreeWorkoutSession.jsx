@@ -18,6 +18,7 @@ import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { transformSessionExercises } from '../lib/workoutTransforms.js'
 import { getExistingSupersetIds } from '../lib/supersetUtils.js'
+import { calculateExerciseProgress } from '../lib/workoutCalculations.js'
 
 function FreeWorkoutSession() {
   const navigate = useNavigate()
@@ -25,6 +26,7 @@ function FreeWorkoutSession() {
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
   const completedSets = useWorkoutStore(state => state.completedSets)
+  const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
 
   // Mantener pantalla encendida durante la sesión
   useWakeLock()
@@ -54,6 +56,12 @@ function FreeWorkoutSession() {
   const existingSupersets = useMemo(
     () => getExistingSupersetIds(sessionExercises || []),
     [sessionExercises]
+  )
+
+  // Calcular progreso de series
+  const progress = useMemo(
+    () => calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts),
+    [flatExercises, completedSets, exerciseSetCounts]
   )
 
   useEffect(() => {
@@ -140,6 +148,13 @@ function FreeWorkoutSession() {
       <div className="p-4 max-w-2xl mx-auto pb-24">
         <PageHeader
           title="Entrenamiento Libre"
+          titleExtra={
+            progress.total > 0 && (
+              <span className="text-sm font-normal" style={{ color: '#8b949e' }}>
+                {progress.completed}/{progress.total}
+              </span>
+            )
+          }
           onBack={() => navigate(-1)}
           menuItems={[
             hasExercises && { icon: ArrowUpDown, label: isReordering ? 'Listo' : 'Reordenar', onClick: () => setIsReordering(!isReordering) },
