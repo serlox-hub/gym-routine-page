@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { X, FileText } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { X, FileText, ChevronRight } from 'lucide-react'
 import { useExerciseHistory } from '../../hooks/useWorkout.js'
 import { LoadingSpinner, Card } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
@@ -29,12 +30,18 @@ const SCOPE = {
 }
 
 function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', routineDayId = null }) {
+  const navigate = useNavigate()
   const [selectedSet, setSelectedSet] = useState(null)
   const [activeTab, setActiveTab] = useState(TABS.PROGRESS)
   const [scope, setScope] = useState(routineDayId ? SCOPE.DAY : SCOPE.GLOBAL)
 
   const filterByDayId = scope === SCOPE.DAY ? routineDayId : null
   const { data: sessions, isLoading } = useExerciseHistory(exerciseId, filterByDayId)
+
+  const handleSessionClick = (sessionId) => {
+    onClose()
+    navigate(`/history/${sessionId}`)
+  }
 
   const stats = useMemo(() => {
     return calculateExerciseStats(sessions, measurementType)
@@ -148,6 +155,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
             <HistoryTab
               sessions={sessions}
               onSelectSet={setSelectedSet}
+              onSessionClick={handleSessionClick}
             />
           )}
         </div>
@@ -236,7 +244,7 @@ function StatCard({ label, value, color }) {
   )
 }
 
-function HistoryTab({ sessions, onSelectSet }) {
+function HistoryTab({ sessions, onSelectSet, onSessionClick }) {
   if (!sessions || sessions.length === 0) {
     return (
       <p className="text-center text-secondary py-8">
@@ -250,11 +258,15 @@ function HistoryTab({ sessions, onSelectSet }) {
       {sessions.map(session => (
         <div
           key={session.sessionId}
-          className="p-3 rounded-lg"
+          className="p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
           style={{ backgroundColor: colors.bgTertiary }}
+          onClick={() => onSessionClick(session.sessionId)}
         >
-          <div className="text-xs text-secondary mb-2">
-            {formatShortDate(session.date)}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-secondary">
+              {formatShortDate(session.date)}
+            </span>
+            <ChevronRight size={14} style={{ color: colors.textSecondary }} />
           </div>
           <div className="space-y-1">
             {session.sets.map(set => (
@@ -269,20 +281,24 @@ function HistoryTab({ sessions, onSelectSet }) {
                   {set.set_number}
                 </span>
                 <span className="flex-1">{formatSetValue(set)}</span>
-                {set.rir_actual !== null && (
-                  <span
-                    className="text-xs font-bold px-1 rounded"
-                    style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: colors.purple }}
-                  >
-                    {RIR_LABELS[set.rir_actual] ?? set.rir_actual}
-                  </span>
-                )}
-                {set.notes && (
+                {(set.rir_actual !== null || set.notes) && (
                   <button
-                    onClick={() => onSelectSet(set)}
-                    className="p-0.5 rounded hover:opacity-80"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (set.notes) onSelectSet(set)
+                    }}
+                    className={`flex items-center justify-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded ${set.notes ? 'hover:opacity-80' : ''}`}
+                    style={{
+                      backgroundColor: 'rgba(163, 113, 247, 0.15)',
+                      color: colors.purple,
+                      cursor: set.notes ? 'pointer' : 'default',
+                      minWidth: '24px',
+                    }}
                   >
-                    <FileText size={12} style={{ color: colors.purple }} />
+                    {set.rir_actual !== null && (
+                      <span className="w-4 text-center">{RIR_LABELS[set.rir_actual] ?? set.rir_actual}</span>
+                    )}
+                    {set.notes && <FileText size={12} />}
                   </button>
                 )}
               </div>
