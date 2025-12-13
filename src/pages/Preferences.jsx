@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, X, Smartphone, Share, MoreVertical, Download } from 'lucide-react'
-import { Card, LoadingSpinner, PlanBadge, Button } from '../components/ui/index.js'
+import { ArrowLeft, Check, X, Smartphone, Share, MoreVertical } from 'lucide-react'
+import { Card, LoadingSpinner, PlanBadge } from '../components/ui/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
 import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import { colors } from '../lib/styles.js'
@@ -120,44 +119,10 @@ function Preferences() {
 }
 
 function InstallAppSection() {
-  const [installPrompt, setInstallPrompt] = useState(null)
-  const [isInstalled, setIsInstalled] = useState(false)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true
 
-  useEffect(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-      || window.navigator.standalone === true
-    setIsInstalled(isStandalone)
-
-    const handleBeforeInstall = (e) => {
-      e.preventDefault()
-      setInstallPrompt(e)
-    }
-
-    const handleAppInstalled = () => {
-      setIsInstalled(true)
-      setInstallPrompt(null)
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
-    window.addEventListener('appinstalled', handleAppInstalled)
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
-      window.removeEventListener('appinstalled', handleAppInstalled)
-    }
-  }, [])
-
-  const handleInstallClick = async () => {
-    if (!installPrompt) return
-    installPrompt.prompt()
-    const { outcome } = await installPrompt.userChoice
-    if (outcome === 'accepted') {
-      setIsInstalled(true)
-    }
-    setInstallPrompt(null)
-  }
-
-  if (isInstalled) {
+  if (isStandalone) {
     return (
       <Card className="p-4">
         <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
@@ -184,21 +149,12 @@ function InstallAppSection() {
         <Smartphone size={20} style={{ color: colors.accent }} className="mt-0.5 flex-shrink-0" />
         <div className="flex-1">
           <p className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-            Añadir en pantalla de inicio
+            Añadir a pantalla de inicio
           </p>
           <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
             Accede más rápido y úsala como una app nativa
           </p>
-          {installPrompt ? (
-            <Button
-              onClick={handleInstallClick}
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Download size={16} />
-              Instalar
-            </Button>
-          ) : isIOS ? (
+          {isIOS ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Share size={14} style={{ color: colors.textSecondary }} />
