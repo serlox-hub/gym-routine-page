@@ -4,7 +4,7 @@ import WorkoutExerciseCard from './WorkoutExerciseCard.jsx'
 import { colors } from '../../lib/styles.js'
 import { formatSupersetLabel } from '../../lib/supersetUtils.js'
 
-function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove }) {
+function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, getMoveProps }) {
   const supersetLabel = formatSupersetLabel(supersetId)
 
   return (
@@ -47,6 +47,7 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
               onCompleteSet={onCompleteSet}
               onUncompleteSet={onUncompleteSet}
               onRemove={onRemove}
+              moveProps={getMoveProps?.(sessionExercise) || {}}
             />
           </div>
         ))}
@@ -55,7 +56,7 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
   )
 }
 
-function SupersetExerciseItem({ sessionExercise, isLast, onCompleteSet, onUncompleteSet, onRemove }) {
+function SupersetExerciseItem({ sessionExercise, isLast, onCompleteSet, onUncompleteSet, onRemove, moveProps }) {
   // Usar el WorkoutExerciseCard pero indicando que es parte de superset
   // El timer solo se activa si rest_seconds está configurado
   return (
@@ -66,6 +67,7 @@ function SupersetExerciseItem({ sessionExercise, isLast, onCompleteSet, onUncomp
       onRemove={onRemove}
       isSuperset={true}
       isLastInSuperset={isLast}
+      {...moveProps}
     />
   )
 }
