@@ -25,27 +25,31 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
             onClick={(e) => { e.stopPropagation(); setIsOpen(false) }}
           />
           <div
-            className="absolute right-0 top-full mt-1 z-50 py-1 rounded-lg shadow-lg min-w-[140px]"
+            className="absolute right-0 top-full mt-1 z-50 py-1 rounded-lg shadow-lg min-w-[180px]"
             style={menuStyle}
           >
-            {items.map((item, index) => (
-              <button
-                key={index}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  item.onClick?.()
-                  setIsOpen(false)
-                }}
-                disabled={item.disabled}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:opacity-80 disabled:opacity-30"
-                style={{ color: item.danger ? colors.danger : colors.textPrimary }}
-              >
-                {item.icon && (
-                  <item.icon size={14} style={{ color: item.danger ? colors.danger : colors.textSecondary }} />
-                )}
-                {item.label}
-              </button>
-            ))}
+            {items.filter(Boolean).map((item, index) =>
+              item.type === 'separator' ? (
+                <div key={index} style={{ borderTop: `1px solid ${colors.border}`, margin: '4px 0' }} />
+              ) : (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    item.onClick?.()
+                    setIsOpen(false)
+                  }}
+                  disabled={item.disabled}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:opacity-80 disabled:opacity-30"
+                  style={{ color: item.danger ? colors.danger : colors.textPrimary }}
+                >
+                  {item.icon && (
+                    <item.icon size={14} style={{ color: item.danger ? colors.danger : colors.textSecondary }} />
+                  )}
+                  {item.label}
+                </button>
+              )
+            )}
           </div>
         </>
       )}

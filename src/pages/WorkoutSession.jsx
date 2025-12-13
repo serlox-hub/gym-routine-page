@@ -12,8 +12,9 @@ import {
   useReorderSessionExercises,
   useWakeLock,
 } from '../hooks/useWorkout.js'
-import { LoadingSpinner, ErrorMessage, ConfirmModal, BottomActions } from '../components/ui/index.js'
-import { RestTimer, SessionHeader, BlockExerciseList, ReorderableExerciseList, EndSessionModal } from '../components/Workout/index.js'
+import { ArrowUpDown, Plus } from 'lucide-react'
+import { LoadingSpinner, ErrorMessage, ConfirmModal, BottomActions, PageHeader } from '../components/ui/index.js'
+import { RestTimer, BlockExerciseList, ReorderableExerciseList, EndSessionModal } from '../components/Workout/index.js'
 import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { transformSessionExercises } from '../lib/workoutTransforms.js'
@@ -139,13 +140,14 @@ function WorkoutSession() {
     <>
       <RestTimer />
       <div className="p-4 max-w-2xl mx-auto pb-24">
-        <SessionHeader
-        dayName={day?.name}
-        isReordering={isReordering}
-        onToggleReorder={() => setIsReordering(!isReordering)}
-        onAddExercise={() => setShowAddExercise(true)}
-        onBack={() => navigate(-1)}
-      />
+        <PageHeader
+          title={day?.name}
+          onBack={() => navigate(-1)}
+          menuItems={[
+            { icon: ArrowUpDown, label: isReordering ? 'Listo' : 'Reordenar', onClick: () => setIsReordering(!isReordering) },
+            { icon: Plus, label: 'Añadir ejercicio', onClick: () => setShowAddExercise(true) }
+          ]}
+        />
 
       <main className="space-y-4">
         {isReordering ? (

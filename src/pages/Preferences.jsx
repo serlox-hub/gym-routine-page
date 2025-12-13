@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, X, Smartphone, Share, MoreVertical } from 'lucide-react'
-import { Card, LoadingSpinner, PlanBadge } from '../components/ui/index.js'
+import { Check, X, Smartphone, Share, MoreVertical } from 'lucide-react'
+import { Card, LoadingSpinner, PlanBadge, PageHeader } from '../components/ui/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
 import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import { colors } from '../lib/styles.js'
@@ -26,20 +26,7 @@ function Preferences() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <header className="mb-6">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-lg transition-opacity hover:opacity-80"
-            style={{ backgroundColor: colors.bgTertiary }}
-          >
-            <ArrowLeft size={20} style={{ color: colors.textSecondary }} />
-          </button>
-          <h1 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-            Preferencias
-          </h1>
-        </div>
-      </header>
+      <PageHeader title="Preferencias" onBack={() => navigate(-1)} />
 
       <main className="space-y-4">
         <Card className="p-4">

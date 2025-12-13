@@ -5,10 +5,10 @@ import DropdownMenu from './DropdownMenu.jsx'
 
 function PageHeader({
   title,
+  titleExtra,
   backTo,
   onBack,
   menuItems,
-  rightContent,
   children
 }) {
   const navigate = useNavigate()
@@ -26,7 +26,10 @@ function PageHeader({
   const showBack = backTo || onBack
 
   return (
-    <header className="mb-6">
+    <header
+      className="sticky top-0 z-40 pb-4 -mx-4 px-4 pt-4 -mt-4"
+      style={{ backgroundColor: colors.bgPrimary }}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {showBack && (
@@ -39,13 +42,11 @@ function PageHeader({
             </button>
           )}
           <h1 className="text-xl font-bold truncate">{title}</h1>
+          {titleExtra}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {rightContent}
-          {menuItems && menuItems.length > 0 && (
-            <DropdownMenu items={menuItems} />
-          )}
-        </div>
+        {menuItems && menuItems.length > 0 && (
+          <DropdownMenu items={menuItems} />
+        )}
       </div>
       {children}
     </header>
