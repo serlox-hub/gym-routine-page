@@ -25,15 +25,19 @@ const useAuthStore = create((set, get) => ({
         })
       })
 
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error) throw error
       set({
         session,
         user: session?.user ?? null,
         isLoading: false,
         isPasswordRecovery: isRecoveryFromHash,
       })
-    } catch (error) {
-      set({ error: error.message, isLoading: false })
+    } catch {
+      // Si falla (token corrupto), limpiar storage y continuar sin sesión
+      const storageKey = `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`
+      localStorage.removeItem(storageKey)
+      set({ session: null, user: null, isLoading: false })
     }
   },
 
