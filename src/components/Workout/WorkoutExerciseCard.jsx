@@ -10,7 +10,8 @@ import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false }) {
-  const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds } = sessionExercise
+  const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
+  const tempoRazon = routine_exercise?.tempo_razon
   // sessionExerciseId es el id de session_exercises (puede ser igual a id si viene transformado)
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -115,7 +116,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
         {tempo && <Badge variant="default">{tempo}</Badge>}
         {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
-        {(exercise.instructions || notes) && (
+        {(exercise.instructions || notes || tempoRazon) && (
           <button
             onClick={() => setShowNotes(!showNotes)}
             className="text-xs px-2 py-1 rounded transition-colors"
@@ -129,7 +130,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         )}
       </div>
 
-      {showNotes && (exercise.instructions || notes) && (
+      {showNotes && (exercise.instructions || notes || tempoRazon) && (
         <div
           className="mb-3 p-3 rounded text-sm space-y-2"
           style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
@@ -137,6 +138,11 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
           {exercise.instructions && (
             <p style={{ color: '#e6edf3' }}>
               <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
+            </p>
+          )}
+          {tempoRazon && (
+            <p style={{ color: '#e6edf3' }}>
+              <span style={{ color: colors.purple }}>Tempo:</span> {tempoRazon}
             </p>
           )}
           {notes && (

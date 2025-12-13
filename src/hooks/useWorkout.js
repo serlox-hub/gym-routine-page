@@ -250,12 +250,16 @@ export function useSessionExercises(sessionId) {
           exercise:exercises (
             id,
             name,
+            instructions,
             measurement_type,
             weight_unit,
             muscle_group:muscle_groups (
               id,
               name
             )
+          ),
+          routine_exercise:routine_exercises (
+            tempo_razon
           )
         `)
         .eq('session_id', sessionId)
