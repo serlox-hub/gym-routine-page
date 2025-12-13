@@ -105,18 +105,18 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
 
               {/* Indicadores de grupos musculares */}
               {dayData.muscleGroups.length > 0 && (
-                <div className="flex flex-wrap gap-0.5 mt-auto">
-                  {dayData.muscleGroups.slice(0, 4).map(mg => (
+                <div className="grid grid-cols-4 gap-0.5 mt-auto">
+                  {dayData.muscleGroups.slice(0, 8).map(mg => (
                     <div
                       key={mg}
-                      className="w-2 h-2 rounded-full"
+                      className="w-1.5 h-1.5 rounded-full"
                       style={{ backgroundColor: MUSCLE_GROUP_COLORS[mg] || '#8b949e' }}
                       title={mg}
                     />
                   ))}
-                  {dayData.muscleGroups.length > 4 && (
-                    <span className="text-xs" style={{ color: '#8b949e', fontSize: 8 }}>
-                      +{dayData.muscleGroups.length - 4}
+                  {dayData.muscleGroups.length > 8 && (
+                    <span className="text-[6px] leading-none col-span-4 text-center" style={{ color: '#8b949e' }}>
+                      +{dayData.muscleGroups.length - 8}
                     </span>
                   )}
                 </div>
