@@ -75,11 +75,11 @@ function BlockSection({
           return (
             <Card
               key={`superset-${group.supersetId}`}
-              className="p-0 overflow-hidden"
+              className="p-0"
               style={{ border: `1px solid ${colors.purple}` }}
             >
               <div
-                className="flex items-center gap-2 px-2 py-1"
+                className="flex items-center gap-2 px-2 py-1 rounded-t-lg"
                 style={{
                   backgroundColor: 'rgba(163, 113, 247, 0.1)',
                   borderBottom: `1px solid ${colors.purple}`,

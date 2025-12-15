@@ -9,14 +9,14 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
 
   return (
     <Card
-      className="p-0 overflow-hidden"
+      className="p-0"
       style={{
         border: `1px solid ${colors.purple}`,
       }}
     >
       {/* Header del superset */}
       <div
-        className="flex items-center gap-2 px-3 py-2"
+        className="flex items-center gap-2 px-3 py-2 rounded-t-lg"
         style={{
           backgroundColor: 'rgba(163, 113, 247, 0.1)',
           borderBottom: `1px solid ${colors.purple}`,
