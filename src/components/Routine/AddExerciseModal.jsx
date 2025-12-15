@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useCreateExercise } from '../../hooks/useExercises.js'
-import { colors, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
+import { Modal } from '../ui/index.js'
+import { colors } from '../../lib/styles.js'
 import { getDefaultReps } from '../../lib/measurementTypes.js'
 import { getNextSupersetId } from '../../lib/supersetUtils.js'
 import ExerciseForm from '../Exercise/ExerciseForm.jsx'
@@ -41,8 +42,6 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
       setForm(DEFAULT_FORM)
     }
   }, [isOpen])
-
-  if (!isOpen) return null
 
   const handleSelectExercise = (exercise) => {
     setSelectedExercise(exercise)
@@ -101,104 +100,99 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
   const showSupersetField = !isWarmup
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={modalOverlayStyle}
-      onClick={onClose}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-md"
+      className="p-6 max-h-[85vh] flex flex-col"
     >
-      <div
-        className="w-full max-w-md rounded-lg p-6 max-h-[85vh] flex flex-col"
-        style={{ ...modalContentStyle, border: `1px solid ${colors.border}` }}
-        onClick={e => e.stopPropagation()}
-      >
-        <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-          {getTitle()}
-        </h3>
+      <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
+        {getTitle()}
+      </h3>
 
-        {isCreatingNew ? (
-          <>
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <ExerciseForm
-                onSubmit={handleCreateExercise}
-                isSubmitting={createExercise.isPending}
-                compact
-                hideSubmitButton
-              />
-            </div>
-            <div className="flex gap-2 pt-3 mt-3 border-t" style={{ borderColor: colors.border }}>
-              <button
-                type="button"
-                onClick={() => setIsCreatingNew(false)}
-                className="px-4 py-2.5 rounded-lg text-sm transition-colors"
-                style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const form = document.querySelector('form')
-                  if (form) form.requestSubmit()
-                }}
-                disabled={createExercise.isPending}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                style={{ backgroundColor: colors.accent, color: '#ffffff' }}
-              >
-                <Plus size={16} />
-                {createExercise.isPending ? 'Creando...' : 'Crear ejercicio'}
-              </button>
-            </div>
-          </>
-        ) : !selectedExercise ? (
-          <>
-            <ExerciseSearchList
-              exercises={exercises}
-              muscleGroups={muscleGroups}
-              isLoading={isLoading}
-              onSelect={handleSelectExercise}
+      {isCreatingNew ? (
+        <>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <ExerciseForm
+              onSubmit={handleCreateExercise}
+              isSubmitting={createExercise.isPending}
+              compact
+              hideSubmitButton
             />
-            <div className="flex gap-2 pt-3 mt-3 border-t" style={{ borderColor: colors.border }}>
-              <button
-                type="button"
-                onClick={() => setIsCreatingNew(true)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-colors"
-                style={{ backgroundColor: colors.accent, color: '#ffffff' }}
-              >
-                <Plus size={16} />
-                Crear nuevo
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2.5 rounded-lg text-sm transition-colors"
-                style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <ExerciseConfigForm
-                exercise={selectedExercise}
-                form={form}
-                setForm={setForm}
-                isSessionMode={isSessionMode}
-                showSupersetField={showSupersetField}
-                existingSupersets={existingSupersets}
-                nextSupersetId={nextSuperset}
-              />
-            </div>
-            <ExerciseConfigFormButtons
-              onBack={() => setSelectedExercise(null)}
-              onSubmit={handleSubmit}
-              isPending={isPending}
+          </div>
+          <div className="flex gap-2 pt-3 mt-3 border-t" style={{ borderColor: colors.border }}>
+            <button
+              type="button"
+              onClick={() => setIsCreatingNew(false)}
+              className="px-4 py-2.5 rounded-lg text-sm transition-colors"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const form = document.querySelector('form')
+                if (form) form.requestSubmit()
+              }}
+              disabled={createExercise.isPending}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+            >
+              <Plus size={16} />
+              {createExercise.isPending ? 'Creando...' : 'Crear ejercicio'}
+            </button>
+          </div>
+        </>
+      ) : !selectedExercise ? (
+        <>
+          <ExerciseSearchList
+            exercises={exercises}
+            muscleGroups={muscleGroups}
+            isLoading={isLoading}
+            onSelect={handleSelectExercise}
+          />
+          <div className="flex gap-2 pt-3 mt-3 border-t" style={{ borderColor: colors.border }}>
+            <button
+              type="button"
+              onClick={() => setIsCreatingNew(true)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+              style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+            >
+              <Plus size={16} />
+              Crear nuevo
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-lg text-sm transition-colors"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <ExerciseConfigForm
+              exercise={selectedExercise}
+              form={form}
+              setForm={setForm}
+              isSessionMode={isSessionMode}
+              showSupersetField={showSupersetField}
+              existingSupersets={existingSupersets}
+              nextSupersetId={nextSuperset}
             />
-          </>
-        )}
-      </div>
-    </div>
+          </div>
+          <ExerciseConfigFormButtons
+            onBack={() => setSelectedExercise(null)}
+            onSubmit={handleSubmit}
+            isPending={isPending}
+          />
+        </>
+      )}
+    </Modal>
   )
 }
 

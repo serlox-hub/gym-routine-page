@@ -2,10 +2,10 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, FileText, ChevronRight } from 'lucide-react'
 import { useExerciseHistory } from '../../hooks/useWorkout.js'
-import { LoadingSpinner, Card } from '../ui/index.js'
+import { LoadingSpinner, Card, Modal } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'
-import { colors, modalOverlayStyle, modalContentStyle, buttonSecondaryStyle } from '../../lib/styles.js'
+import { colors, buttonSecondaryStyle } from '../../lib/styles.js'
 import { formatShortDate } from '../../lib/dateUtils.js'
 import { formatSetValue } from '../../lib/setUtils.js'
 import { calculateExerciseStats } from '../../lib/workoutCalculations.js'
@@ -47,127 +47,122 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
     return calculateExerciseStats(sessions, measurementType)
   }, [sessions, measurementType])
 
-  if (!isOpen) return null
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={modalOverlayStyle}
-      onClick={onClose}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      position="bottom"
+      maxWidth="max-w-lg"
+      className="max-h-[80vh] flex flex-col"
+      noBorder
     >
+      {/* Header */}
       <div
-        className="w-full max-w-lg rounded-t-2xl max-h-[80vh] flex flex-col"
-        style={modalContentStyle}
-        onClick={e => e.stopPropagation()}
+        className="p-4 shrink-0"
+        style={{ borderBottom: `1px solid ${colors.border}` }}
       >
-        {/* Header */}
-        <div
-          className="p-4 shrink-0"
-          style={{ borderBottom: `1px solid ${colors.border}` }}
-        >
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                {exerciseName}
-              </h3>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:opacity-80"
-              style={buttonSecondaryStyle}
-            >
-              <X size={20} style={{ color: colors.textSecondary }} />
-            </button>
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+              {exerciseName}
+            </h3>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:opacity-80"
+            style={buttonSecondaryStyle}
+          >
+            <X size={20} style={{ color: colors.textSecondary }} />
+          </button>
+        </div>
 
-          {/* Tabs */}
-          <div
-            className="flex"
+        {/* Tabs */}
+        <div
+          className="flex"
+          style={{
+            backgroundColor: colors.bgTertiary,
+            borderRadius: '8px',
+            padding: '4px',
+          }}
+        >
+          <button
+            onClick={() => setActiveTab(TABS.PROGRESS)}
+            className="flex-1 py-2 rounded-md text-sm font-medium transition-all"
             style={{
-              backgroundColor: colors.bgTertiary,
-              borderRadius: '8px',
-              padding: '4px',
+              backgroundColor: activeTab === TABS.PROGRESS ? colors.bgSecondary : 'transparent',
+              color: activeTab === TABS.PROGRESS ? colors.purple : colors.textSecondary,
+              boxShadow: activeTab === TABS.PROGRESS ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
             }}
           >
+            Progresión
+          </button>
+          <button
+            onClick={() => setActiveTab(TABS.HISTORY)}
+            className="flex-1 py-2 rounded-md text-sm font-medium transition-all"
+            style={{
+              backgroundColor: activeTab === TABS.HISTORY ? colors.bgSecondary : 'transparent',
+              color: activeTab === TABS.HISTORY ? colors.accent : colors.textSecondary,
+              boxShadow: activeTab === TABS.HISTORY ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+            }}
+          >
+            Historial
+          </button>
+        </div>
+
+        {/* Scope selector - solo si hay routineDayId */}
+        {routineDayId && (
+          <div className="flex gap-2 mt-2">
             <button
-              onClick={() => setActiveTab(TABS.PROGRESS)}
-              className="flex-1 py-2 rounded-md text-sm font-medium transition-all"
+              onClick={() => setScope(SCOPE.DAY)}
+              className="px-3 py-1 rounded text-xs font-medium transition-colors"
               style={{
-                backgroundColor: activeTab === TABS.PROGRESS ? colors.bgSecondary : 'transparent',
-                color: activeTab === TABS.PROGRESS ? colors.purple : colors.textSecondary,
-                boxShadow: activeTab === TABS.PROGRESS ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                backgroundColor: scope === SCOPE.DAY ? 'rgba(63, 185, 80, 0.15)' : '#21262d',
+                color: scope === SCOPE.DAY ? colors.success : colors.textSecondary,
               }}
             >
-              Progresión
+              Esta rutina
             </button>
             <button
-              onClick={() => setActiveTab(TABS.HISTORY)}
-              className="flex-1 py-2 rounded-md text-sm font-medium transition-all"
+              onClick={() => setScope(SCOPE.GLOBAL)}
+              className="px-3 py-1 rounded text-xs font-medium transition-colors"
               style={{
-                backgroundColor: activeTab === TABS.HISTORY ? colors.bgSecondary : 'transparent',
-                color: activeTab === TABS.HISTORY ? colors.accent : colors.textSecondary,
-                boxShadow: activeTab === TABS.HISTORY ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                backgroundColor: scope === SCOPE.GLOBAL ? 'rgba(139, 148, 158, 0.15)' : '#21262d',
+                color: scope === SCOPE.GLOBAL ? colors.textPrimary : colors.textSecondary,
               }}
             >
-              Historial
+              Todas
             </button>
           </div>
-
-          {/* Scope selector - solo si hay routineDayId */}
-          {routineDayId && (
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={() => setScope(SCOPE.DAY)}
-                className="px-3 py-1 rounded text-xs font-medium transition-colors"
-                style={{
-                  backgroundColor: scope === SCOPE.DAY ? 'rgba(63, 185, 80, 0.15)' : '#21262d',
-                  color: scope === SCOPE.DAY ? colors.success : colors.textSecondary,
-                }}
-              >
-                Esta rutina
-              </button>
-              <button
-                onClick={() => setScope(SCOPE.GLOBAL)}
-                className="px-3 py-1 rounded text-xs font-medium transition-colors"
-                style={{
-                  backgroundColor: scope === SCOPE.GLOBAL ? 'rgba(139, 148, 158, 0.15)' : '#21262d',
-                  color: scope === SCOPE.GLOBAL ? colors.textPrimary : colors.textSecondary,
-                }}
-              >
-                Todas
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {isLoading ? (
-            <LoadingSpinner />
-          ) : activeTab === TABS.PROGRESS ? (
-            <ProgressTab
-              sessions={sessions}
-              stats={stats}
-              measurementType={measurementType}
-              weightUnit={weightUnit}
-            />
-          ) : (
-            <HistoryTab
-              sessions={sessions}
-              onSelectSet={setSelectedSet}
-              onSessionClick={handleSessionClick}
-            />
-          )}
-        </div>
-
-        <SetNotesView
-          isOpen={!!selectedSet}
-          onClose={() => setSelectedSet(null)}
-          rir={selectedSet?.rir_actual}
-          notes={selectedSet?.notes}
-        />
+        )}
       </div>
-    </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : activeTab === TABS.PROGRESS ? (
+          <ProgressTab
+            sessions={sessions}
+            stats={stats}
+            measurementType={measurementType}
+            weightUnit={weightUnit}
+          />
+        ) : (
+          <HistoryTab
+            sessions={sessions}
+            onSelectSet={setSelectedSet}
+            onSessionClick={handleSessionClick}
+          />
+        )}
+      </div>
+
+      <SetNotesView
+        isOpen={!!selectedSet}
+        onClose={() => setSelectedSet(null)}
+        rir={selectedSet?.rir_actual}
+        notes={selectedSet?.notes}
+      />
+    </Modal>
   )
 }
 

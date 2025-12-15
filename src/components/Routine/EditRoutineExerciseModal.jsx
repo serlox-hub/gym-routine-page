@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { colors, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
+import { Modal } from '../ui/index.js'
+import { colors } from '../../lib/styles.js'
 import { getNextSupersetId } from '../../lib/supersetUtils.js'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
 
@@ -35,7 +36,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
     }
   }, [routineExercise])
 
-  if (!isOpen || !routineExercise) return null
+  if (!routineExercise) return null
 
   const handleSubmit = () => {
     onSubmit({
@@ -54,40 +55,35 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
   const nextSuperset = getNextSupersetId(existingSupersets)
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={modalOverlayStyle}
-      onClick={onClose}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-md"
+      className="p-6 max-h-[85vh] flex flex-col"
     >
-      <div
-        className="w-full max-w-md rounded-lg p-6 max-h-[85vh] flex flex-col"
-        style={{ ...modalContentStyle, border: `1px solid ${colors.border}` }}
-        onClick={e => e.stopPropagation()}
-      >
-        <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-          Editar ejercicio
-        </h3>
+      <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
+        Editar ejercicio
+      </h3>
 
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <ExerciseConfigForm
-            exercise={exercise}
-            form={form}
-            setForm={setForm}
-            showSupersetField={true}
-            existingSupersets={existingSupersets}
-            nextSupersetId={nextSuperset}
-          />
-        </div>
-        <ExerciseConfigFormButtons
-          onBack={onClose}
-          onSubmit={handleSubmit}
-          isPending={isPending}
-          backLabel="Cancelar"
-          submitLabel="Guardar"
-          pendingLabel="Guardando..."
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <ExerciseConfigForm
+          exercise={exercise}
+          form={form}
+          setForm={setForm}
+          showSupersetField={true}
+          existingSupersets={existingSupersets}
+          nextSupersetId={nextSuperset}
         />
       </div>
-    </div>
+      <ExerciseConfigFormButtons
+        onBack={onClose}
+        onSubmit={handleSubmit}
+        isPending={isPending}
+        backLabel="Cancelar"
+        submitLabel="Guardar"
+        pendingLabel="Guardando..."
+      />
+    </Modal>
   )
 }
 
