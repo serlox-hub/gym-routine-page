@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Check } from 'lucide-react'
 import { colors, inputStyle } from '../../lib/styles.js'
 
 /**
  * Lista de ejercicios con búsqueda y filtro por grupo muscular
  */
-function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect }) {
+function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, existingExerciseIds = new Set() }) {
   const [search, setSearch] = useState('')
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
 
@@ -76,16 +76,28 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect }) {
             No se encontraron ejercicios
           </p>
         ) : (
-          filteredExercises.map(exercise => (
-            <button
-              key={exercise.id}
-              onClick={() => onSelect(exercise)}
-              className="w-full text-left p-3 rounded-lg transition-colors hover:bg-surface-alt"
-              style={{ color: colors.textPrimary }}
-            >
-              <div className="font-medium">{exercise.name}</div>
-            </button>
-          ))
+          filteredExercises.map(exercise => {
+            const isInRoutine = existingExerciseIds.has(exercise.id)
+            return (
+              <button
+                key={exercise.id}
+                onClick={() => onSelect(exercise)}
+                className="w-full text-left p-3 rounded-lg transition-colors hover:bg-surface-alt flex items-center justify-between gap-2"
+                style={{ color: colors.textPrimary }}
+              >
+                <div className="font-medium">{exercise.name}</div>
+                {isInRoutine && (
+                  <span
+                    className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full shrink-0"
+                    style={{ backgroundColor: 'rgba(63, 185, 80, 0.15)', color: colors.success }}
+                  >
+                    <Check size={12} />
+                    En rutina
+                  </span>
+                )}
+              </button>
+            )
+          })
         )}
       </div>
     </>

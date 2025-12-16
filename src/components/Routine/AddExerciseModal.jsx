@@ -23,7 +23,7 @@ const DEFAULT_FORM = {
 /**
  * Modal unificado para añadir ejercicio a rutina o sesión
  */
-function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine', existingSupersets = [] }) {
+function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine', existingSupersets = [], existingExercises = [] }) {
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [form, setForm] = useState(DEFAULT_FORM)
@@ -151,6 +151,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
             muscleGroups={muscleGroups}
             isLoading={isLoading}
             onSelect={handleSelectExercise}
+            existingExerciseIds={new Set(existingExercises.map(e => e.exercise_id))}
           />
           <div className="flex gap-2 pt-3 mt-3 border-t" style={{ borderColor: colors.border }}>
             <button

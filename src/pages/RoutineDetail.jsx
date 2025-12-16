@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { useRoutine, useRoutineDays, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise } from '../hooks/useRoutines.js'
+import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useMoveRoutineExerciseToDay } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
-import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader } from '../components/Routine/index.js'
+import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, MoveToDayModal } from '../components/Routine/index.js'
 import { moveItemById } from '../lib/arrayUtils.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 
@@ -23,15 +23,21 @@ function RoutineDetail() {
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [dayToDelete, setDayToDelete] = useState(null)
   const [existingSupersets, setExistingSupersets] = useState([])
+  const [showMoveModal, setShowMoveModal] = useState(false)
+  const [exerciseToMove, setExerciseToMove] = useState(null)
+  const [movingFromDayId, setMovingFromDayId] = useState(null)
 
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
+  const { data: allRoutineExercises } = useRoutineAllExercises(routineId)
   const createDay = useCreateRoutineDay()
   const deleteRoutine = useDeleteRoutine()
   const addExercise = useAddExerciseToDay()
   const updateExercise = useUpdateRoutineExercise()
   const deleteDay = useDeleteRoutineDay()
   const reorderDays = useReorderRoutineDays()
+  const duplicateExercise = useDuplicateRoutineExercise()
+  const moveExercise = useMoveRoutineExerciseToDay()
 
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
@@ -143,6 +149,36 @@ function RoutineDetail() {
     }
   }
 
+  const handleDuplicateExercise = async (routineExercise, dayId) => {
+    try {
+      await duplicateExercise.mutateAsync({ routineExercise, dayId })
+    } catch {
+      // Error handled by TanStack Query
+    }
+  }
+
+  const handleOpenMoveModal = (routineExercise, dayId) => {
+    setExerciseToMove(routineExercise)
+    setMovingFromDayId(dayId)
+    setShowMoveModal(true)
+  }
+
+  const handleMoveExerciseToDay = async (targetDayId) => {
+    if (!exerciseToMove || !movingFromDayId) return
+    try {
+      await moveExercise.mutateAsync({
+        routineExercise: exerciseToMove,
+        sourceDayId: movingFromDayId,
+        targetDayId,
+      })
+      setShowMoveModal(false)
+      setExerciseToMove(null)
+      setMovingFromDayId(null)
+    } catch {
+      // Error handled by TanStack Query
+    }
+  }
+
   return (
     <div className="p-4 max-w-2xl mx-auto">
       <RoutineHeader
@@ -168,6 +204,8 @@ function RoutineDetail() {
                 onAddExercise={handleOpenAddExercise}
                 onAddWarmup={handleOpenAddWarmup}
                 onEditExercise={handleOpenEditExercise}
+                onDuplicateExercise={handleDuplicateExercise}
+                onMoveExerciseToDay={handleOpenMoveModal}
                 onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
                 onMoveUp={(id) => handleMoveDay(id, 'up')}
                 onMoveDown={(id) => handleMoveDay(id, 'down')}
@@ -229,6 +267,7 @@ function RoutineDetail() {
         isPending={addExercise.isPending}
         isWarmup={isAddingWarmup}
         existingSupersets={existingSupersets}
+        existingExercises={allRoutineExercises || []}
       />
 
       <EditRoutineExerciseModal
@@ -242,6 +281,20 @@ function RoutineDetail() {
         isPending={updateExercise.isPending}
         routineExercise={selectedExercise}
         existingSupersets={existingSupersets}
+      />
+
+      <MoveToDayModal
+        isOpen={showMoveModal}
+        onClose={() => {
+          setShowMoveModal(false)
+          setExerciseToMove(null)
+          setMovingFromDayId(null)
+        }}
+        onSubmit={handleMoveExerciseToDay}
+        days={days}
+        currentDayId={movingFromDayId}
+        exerciseName={exerciseToMove?.exercise?.name}
+        isPending={moveExercise.isPending}
       />
     </div>
   )

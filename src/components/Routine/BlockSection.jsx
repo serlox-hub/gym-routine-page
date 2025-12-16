@@ -14,6 +14,8 @@ function BlockSection({
   onEditExercise,
   onMoveExercise,
   onDeleteExercise,
+  onDuplicateExercise,
+  onMoveExerciseToDay,
   canMoveUp = false
 }) {
   const { name, duration_min, routine_exercises } = block
@@ -65,6 +67,8 @@ function BlockSection({
                 onMoveUp={() => onMoveExercise?.(group.exercise.id, 'up')}
                 onMoveDown={() => onMoveExercise?.(group.exercise.id, 'down')}
                 onDelete={() => onDeleteExercise?.(group.exercise)}
+                onDuplicate={() => onDuplicateExercise?.(group.exercise)}
+                onMoveToDay={() => onMoveExerciseToDay?.(group.exercise)}
                 canMoveUp={index > 0 || canMoveUp}
                 canMoveDown={index < routine_exercises.length - 1}
               />
@@ -105,6 +109,8 @@ function BlockSection({
                         onMoveUp={() => onMoveExercise?.(exercise.id, 'up')}
                         onMoveDown={() => onMoveExercise?.(exercise.id, 'down')}
                         onDelete={() => onDeleteExercise?.(exercise)}
+                        onDuplicate={() => onDuplicateExercise?.(exercise)}
+                        onMoveToDay={() => onMoveExerciseToDay?.(exercise)}
                         canMoveUp={index > 0 || canMoveUp}
                         canMoveDown={index < routine_exercises.length - 1}
                       />

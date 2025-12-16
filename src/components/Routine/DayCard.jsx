@@ -10,7 +10,7 @@ import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
 import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDelete, onMoveUp, onMoveDown, isFirst, isLast, hasActiveSession, activeRoutineDayId }) {
+function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onMoveUp, onMoveDown, isFirst, isLast, hasActiveSession, activeRoutineDayId }) {
   const navigate = useNavigate()
   const { id, sort_order, name, estimated_duration_min } = day
   const [isExpanded, setIsExpanded] = useState(false)
@@ -150,6 +150,8 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                   onMoveExercise={handleMoveExercise}
                   onDeleteExercise={(re) => setExerciseToDelete(re)}
+                  onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
+                  onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                   canMoveUp={false}
                 />
               )}
@@ -171,6 +173,8 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                   onMoveExercise={handleMoveExercise}
                   onDeleteExercise={(re) => setExerciseToDelete(re)}
+                  onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
+                  onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                   canMoveUp={warmupExercises.length > 0}
                 />
               )}

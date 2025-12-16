@@ -108,6 +108,33 @@ export function useRoutineBlocks(dayId) {
   })
 }
 
+/**
+ * Obtiene todos los ejercicios de una rutina (de todos los días)
+ * Útil para detectar ejercicios duplicados al añadir uno nuevo
+ */
+export function useRoutineAllExercises(routineId) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES, routineId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('routine_exercises')
+        .select(`
+          *,
+          routine_block:routine_blocks!inner (
+            routine_day:routine_days!inner (
+              routine_id
+            )
+          )
+        `)
+        .eq('routine_block.routine_day.routine_id', routineId)
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!routineId
+  })
+}
+
 export function useCreateRoutine() {
   const queryClient = useQueryClient()
   const userId = useUserId()
@@ -456,6 +483,124 @@ export function useAddExerciseToDay() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
+    },
+  })
+}
+
+export function useDuplicateRoutineExercise() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ routineExercise, dayId }) => {
+      const blockId = routineExercise.routine_block_id
+
+      const { data: maxOrderExercises } = await supabase
+        .from('routine_exercises')
+        .select('sort_order')
+        .eq('routine_block_id', blockId)
+        .order('sort_order', { ascending: false })
+        .limit(1)
+
+      const nextOrder = (maxOrderExercises?.[0]?.sort_order || 0) + 1
+
+      const { data, error } = await supabase
+        .from('routine_exercises')
+        .insert({
+          routine_block_id: blockId,
+          exercise_id: routineExercise.exercise_id,
+          series: routineExercise.series,
+          reps: routineExercise.reps,
+          rir: routineExercise.rir,
+          rest_seconds: routineExercise.rest_seconds,
+          tempo: routineExercise.tempo,
+          tempo_razon: routineExercise.tempo_razon,
+          notes: routineExercise.notes,
+          superset_group: null,
+          sort_order: nextOrder,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
+    },
+  })
+}
+
+export function useMoveRoutineExerciseToDay() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ routineExercise, sourceDayId, targetDayId, esCalentamiento = false }) => {
+      const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
+
+      const { data: existingBlock, error: blockFetchError } = await supabase
+        .from('routine_blocks')
+        .select('id')
+        .eq('routine_day_id', targetDayId)
+        .eq('name', blockName)
+        .single()
+
+      if (blockFetchError && blockFetchError.code !== 'PGRST116') {
+        throw blockFetchError
+      }
+
+      let targetBlockId
+      if (!existingBlock) {
+        const { data: maxOrderBlocks } = await supabase
+          .from('routine_blocks')
+          .select('sort_order')
+          .eq('routine_day_id', targetDayId)
+          .order('sort_order', { ascending: false })
+          .limit(1)
+
+        const nextBlockOrder = (maxOrderBlocks?.[0]?.sort_order || 0) + 1
+
+        const { data: newBlock, error: blockCreateError } = await supabase
+          .from('routine_blocks')
+          .insert({
+            routine_day_id: targetDayId,
+            name: blockName,
+            sort_order: nextBlockOrder,
+          })
+          .select()
+          .single()
+
+        if (blockCreateError) throw blockCreateError
+        targetBlockId = newBlock.id
+      } else {
+        targetBlockId = existingBlock.id
+      }
+
+      const { data: maxOrderExercises } = await supabase
+        .from('routine_exercises')
+        .select('sort_order')
+        .eq('routine_block_id', targetBlockId)
+        .order('sort_order', { ascending: false })
+        .limit(1)
+
+      const nextOrder = (maxOrderExercises?.[0]?.sort_order || 0) + 1
+
+      const { data, error } = await supabase
+        .from('routine_exercises')
+        .update({
+          routine_block_id: targetBlockId,
+          sort_order: nextOrder,
+          superset_group: null,
+        })
+        .eq('id', routineExercise.id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.sourceDayId)] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.targetDayId)] })
     },
   })
 }

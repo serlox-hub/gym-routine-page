@@ -20,6 +20,7 @@ export const QUERY_KEYS = {
   ROUTINE_DAYS: 'routine-days',
   ROUTINE_DAY: 'routine-day',
   ROUTINE_BLOCKS: 'routine-blocks',
+  ROUTINE_ALL_EXERCISES: 'routine-all-exercises',
   EXERCISES: 'exercises',
   WORKOUT_SESSION: 'workout-session',
   SESSION_EXERCISES: 'session-exercises',

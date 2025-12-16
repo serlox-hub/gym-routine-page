@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Info, Pencil, ChevronUp, ChevronDown, Trash2, Loader2 } from 'lucide-react'
+import { Info, Pencil, ChevronUp, ChevronDown, Trash2, Loader2, Copy, FolderInput } from 'lucide-react'
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
@@ -16,6 +16,8 @@ function ExerciseCard({
   onMoveUp,
   onMoveDown,
   onDelete,
+  onDuplicate,
+  onMoveToDay,
   canMoveUp = true,
   canMoveDown = true
 }) {
@@ -29,6 +31,8 @@ function ExerciseCard({
 
   const menuItems = [
     { icon: Pencil, label: 'Editar', onClick: onEdit },
+    { icon: Copy, label: 'Duplicar', onClick: onDuplicate },
+    { icon: FolderInput, label: 'Mover de día', onClick: onMoveToDay },
     { icon: ChevronUp, label: 'Mover arriba', onClick: onMoveUp, disabled: !canMoveUp || isReordering },
     { icon: ChevronDown, label: 'Mover abajo', onClick: onMoveDown, disabled: !canMoveDown || isReordering },
     { icon: Trash2, label: 'Eliminar', onClick: onDelete, danger: true },
