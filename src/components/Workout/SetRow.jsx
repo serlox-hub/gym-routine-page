@@ -46,11 +46,11 @@ function SetRow({
   // Cargar valores de sesión anterior
   useEffect(() => {
     if (previousSet && !setData) {
-      if (previousSet.weight) setWeight(previousSet.weight)
-      if (previousSet.reps) setReps(previousSet.reps)
-      if (previousSet.timeSeconds) setTime(previousSet.timeSeconds)
-      if (previousSet.distanceMeters) setDistance(previousSet.distanceMeters)
-      if (previousSet.caloriesBurned) setCalories(previousSet.caloriesBurned)
+      if (previousSet.weight != null) setWeight(previousSet.weight)
+      if (previousSet.reps != null) setReps(previousSet.reps)
+      if (previousSet.timeSeconds != null) setTime(previousSet.timeSeconds)
+      if (previousSet.distanceMeters != null) setDistance(previousSet.distanceMeters)
+      if (previousSet.caloriesBurned != null) setCalories(previousSet.caloriesBurned)
     }
   }, [previousSet, setData])
 
