@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useMoveRoutineExerciseToDay } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
@@ -10,10 +10,11 @@ import useWorkoutStore from '../stores/workoutStore.js'
 function RoutineDetail() {
   const { routineId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
 
+  const isEditing = location.pathname.endsWith('/edit')
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
-  const [isEditing, setIsEditing] = useState(false)
   const [showAddDay, setShowAddDay] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
@@ -185,8 +186,8 @@ function RoutineDetail() {
         routine={routine}
         routineId={routineId}
         isEditing={isEditing}
-        onEditStart={() => setIsEditing(true)}
-        onEditEnd={() => setIsEditing(false)}
+        onEditStart={() => navigate(`/routine/${routineId}/edit`)}
+        onEditEnd={() => navigate(`/routine/${routineId}`)}
         onDelete={() => setShowDeleteConfirm(true)}
       />
 
