@@ -163,7 +163,7 @@ function ExerciseConfigForm({
                 </option>
               ))}
               <option value={nextSupersetId}>
-                + Nuevo {formatSupersetLabel(nextSupersetId).toLowerCase()}
+                + Nuevo {formatSupersetLabel(nextSupersetId)}
               </option>
             </select>
             <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>

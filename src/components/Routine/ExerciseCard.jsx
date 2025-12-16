@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Info, Pencil, ChevronUp, ChevronDown, Trash2, Loader2, Copy, FolderInput } from 'lucide-react'
+import { Info, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown } from 'lucide-react'
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
@@ -13,13 +13,12 @@ function ExerciseCard({
   isEditing = false,
   isReordering = false,
   onEdit,
-  onMoveUp,
-  onMoveDown,
   onDelete,
   onDuplicate,
   onMoveToDay,
-  canMoveUp = true,
-  canMoveDown = true
+  onReorderToPosition,
+  currentIndex = 0,
+  totalExercises = 1
 }) {
   const { exercise, series, reps, rir, rest_seconds, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
@@ -29,14 +28,21 @@ function ExerciseCard({
   const Wrapper = isSuperset ? 'div' : Card
   const wrapperProps = isSuperset ? {} : { className: 'p-2', onClick }
 
+  // Generar opciones de posición para el submenú
+  const positionOptions = Array.from({ length: totalExercises }, (_, i) => ({
+    label: `Posición ${i + 1}`,
+    onClick: () => onReorderToPosition?.(i),
+    active: i === currentIndex,
+    disabled: i === currentIndex || isReordering,
+  }))
+
   const menuItems = [
     { icon: Pencil, label: 'Editar', onClick: onEdit },
     { icon: Copy, label: 'Duplicar', onClick: onDuplicate },
     { icon: FolderInput, label: 'Mover de día', onClick: onMoveToDay },
-    { icon: ChevronUp, label: 'Mover arriba', onClick: onMoveUp, disabled: !canMoveUp || isReordering },
-    { icon: ChevronDown, label: 'Mover abajo', onClick: onMoveDown, disabled: !canMoveDown || isReordering },
+    totalExercises > 1 && { icon: ArrowUpDown, label: 'Reordenar', children: positionOptions, disabled: isReordering },
     { icon: Trash2, label: 'Eliminar', onClick: onDelete, danger: true },
-  ]
+  ].filter(Boolean)
 
   return (
     <Wrapper {...wrapperProps}>

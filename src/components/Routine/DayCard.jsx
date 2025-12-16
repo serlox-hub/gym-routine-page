@@ -5,7 +5,7 @@ import { Card, ConfirmModal, Button, DropdownMenu, LoadingSpinner } from '../ui/
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
-import { moveItemById } from '../../lib/arrayUtils.js'
+import { moveItemById, moveItemToPosition } from '../../lib/arrayUtils.js'
 import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
 import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
@@ -56,8 +56,8 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
     navigate(`/routine/${routineId}/day/${id}/workout`)
   }
 
-  const handleMoveExercise = (exerciseId, direction) => {
-    const newExercises = moveItemById(allExercises, exerciseId, direction)
+  const handleReorderExercise = (exerciseId, newIndex) => {
+    const newExercises = moveItemToPosition(allExercises, exerciseId, newIndex)
     if (newExercises) {
       reorderExercises.mutate({ dayId: id, exercises: newExercises })
     }
@@ -148,11 +148,10 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
-                  onMoveExercise={handleMoveExercise}
+                  onReorderExercise={handleReorderExercise}
                   onDeleteExercise={(re) => setExerciseToDelete(re)}
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
-                  canMoveUp={false}
                 />
               )}
               {!warmupBlock && (
@@ -171,11 +170,10 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
-                  onMoveExercise={handleMoveExercise}
+                  onReorderExercise={handleReorderExercise}
                   onDeleteExercise={(re) => setExerciseToDelete(re)}
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
-                  canMoveUp={warmupExercises.length > 0}
                 />
               )}
               {!mainBlock && (

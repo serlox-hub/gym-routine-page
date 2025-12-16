@@ -12,11 +12,10 @@ function BlockSection({
   isReordering = false,
   onAddExercise,
   onEditExercise,
-  onMoveExercise,
+  onReorderExercise,
   onDeleteExercise,
   onDuplicateExercise,
   onMoveExerciseToDay,
-  canMoveUp = false
 }) {
   const { name, duration_min, routine_exercises } = block
   const isWarmup = name.toLowerCase() === 'calentamiento'
@@ -64,21 +63,20 @@ function BlockSection({
                 isEditing={isEditing}
                 isReordering={isReordering}
                 onEdit={() => onEditExercise?.(group.exercise)}
-                onMoveUp={() => onMoveExercise?.(group.exercise.id, 'up')}
-                onMoveDown={() => onMoveExercise?.(group.exercise.id, 'down')}
                 onDelete={() => onDeleteExercise?.(group.exercise)}
                 onDuplicate={() => onDuplicateExercise?.(group.exercise)}
                 onMoveToDay={() => onMoveExerciseToDay?.(group.exercise)}
-                canMoveUp={index > 0 || canMoveUp}
-                canMoveDown={index < routine_exercises.length - 1}
+                onReorderToPosition={(newIndex) => onReorderExercise?.(group.exercise.id, newIndex)}
+                currentIndex={index}
+                totalExercises={routine_exercises.length}
               />
             )
           }
-          // Superset
+          // Superset - usar ID del primer ejercicio para key única
           const supersetLabel = formatSupersetLabel(group.supersetId)
           return (
             <Card
-              key={`superset-${group.supersetId}`}
+              key={`superset-${group.supersetId}-${group.exercises[0]?.id}`}
               className="p-0"
               style={{ border: `1px solid ${colors.purple}` }}
             >
@@ -106,13 +104,12 @@ function BlockSection({
                         isEditing={isEditing}
                         isReordering={isReordering}
                         onEdit={() => onEditExercise?.(exercise)}
-                        onMoveUp={() => onMoveExercise?.(exercise.id, 'up')}
-                        onMoveDown={() => onMoveExercise?.(exercise.id, 'down')}
                         onDelete={() => onDeleteExercise?.(exercise)}
                         onDuplicate={() => onDuplicateExercise?.(exercise)}
                         onMoveToDay={() => onMoveExerciseToDay?.(exercise)}
-                        canMoveUp={index > 0 || canMoveUp}
-                        canMoveDown={index < routine_exercises.length - 1}
+                        onReorderToPosition={(newIndex) => onReorderExercise?.(exercise.id, newIndex)}
+                        currentIndex={index}
+                        totalExercises={routine_exercises.length}
                       />
                     </div>
                   )

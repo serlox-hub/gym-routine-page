@@ -83,6 +83,25 @@ export function moveItemById(array, id, direction) {
 }
 
 /**
+ * Mueve un elemento a una posición específica
+ * @param {Array} array - Array original
+ * @param {*} id - ID del elemento a mover
+ * @param {number} newIndex - Nueva posición (0-indexed)
+ * @returns {Array|null} Nuevo array o null si no es posible
+ */
+export function moveItemToPosition(array, id, newIndex) {
+  const currentIndex = findIndexById(array, id)
+  if (currentIndex === -1) return null
+  if (newIndex < 0 || newIndex >= array.length) return null
+  if (currentIndex === newIndex) return array
+
+  const result = [...array]
+  const [removed] = result.splice(currentIndex, 1)
+  result.splice(newIndex, 0, removed)
+  return result
+}
+
+/**
  * Filtra un array por término de búsqueda en una propiedad
  * @param {Array} array - Array a filtrar
  * @param {string} searchTerm - Término de búsqueda

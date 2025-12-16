@@ -54,10 +54,10 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                     />
                   )
                 } else {
-                  // Superset
+                  // Superset - usar ID del primer ejercicio para key única
                   return (
                     <SupersetCard
-                      key={`superset-${group.supersetId}`}
+                      key={`superset-${group.supersetId}-${group.exercises[0]?.sessionExerciseId || group.exercises[0]?.id}`}
                       exercises={group.exercises}
                       supersetId={group.supersetId}
                       onCompleteSet={onCompleteSet}

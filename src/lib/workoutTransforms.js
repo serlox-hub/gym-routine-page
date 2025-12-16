@@ -33,7 +33,8 @@ export function transformSessionExercises(sessionExercises) {
   })
 
   // Crear grupos de ejercicios (individuales y supersets)
-  const supersetMap = new Map()
+  // Solo agrupa ejercicios CONSECUTIVOS con el mismo superset_group
+  const currentSupersetByBlock = new Map()
 
   sorted.forEach(se => {
     const blockName = se.block_name || 'Principal'
@@ -59,24 +60,28 @@ export function transformSessionExercises(sessionExercises) {
     }
 
     if (se.superset_group === null || se.superset_group === undefined) {
-      // Ejercicio individual
+      // Ejercicio individual - cerrar cualquier superset abierto en este bloque
+      currentSupersetByBlock.delete(blockName)
       block.exerciseGroups.push({
         type: 'individual',
         exercise: enrichedExercise,
       })
     } else {
-      // Parte de un superset
-      const supersetKey = `${blockName}-${se.superset_group}`
-      if (!supersetMap.has(supersetKey)) {
+      // Parte de un superset - solo agrupar si es consecutivo con el mismo grupo
+      const currentSuperset = currentSupersetByBlock.get(blockName)
+      if (currentSuperset && currentSuperset.supersetId === se.superset_group) {
+        // Mismo superset que el anterior, añadir al grupo existente
+        currentSuperset.exercises.push(enrichedExercise)
+      } else {
+        // Nuevo superset o diferente al anterior
         const supersetGroup = {
           type: 'superset',
           supersetId: se.superset_group,
-          exercises: [],
+          exercises: [enrichedExercise],
         }
-        supersetMap.set(supersetKey, supersetGroup)
+        currentSupersetByBlock.set(blockName, supersetGroup)
         block.exerciseGroups.push(supersetGroup)
       }
-      supersetMap.get(supersetKey).exercises.push(enrichedExercise)
     }
   })
 
@@ -201,6 +206,7 @@ export function groupExercisesByBlock(blocks) {
 
 /**
  * Agrupa ejercicios por superset_group dentro de un bloque
+ * Solo agrupa ejercicios CONSECUTIVOS con el mismo superset_group
  * @param {Array} exercises - Ejercicios del bloque
  * @param {string} blockName - Nombre del bloque
  * @returns {Array} Array de grupos: [{type: 'individual', exercise}, {type: 'superset', exercises, supersetId}]
@@ -210,10 +216,11 @@ export function groupExercisesBySupersetId(exercises, blockName) {
 
   const isWarmup = blockName.toLowerCase() === 'calentamiento'
   const groups = []
-  const supersetMap = new Map()
 
   // Ordenar por sort_order
   const sorted = [...exercises].sort((a, b) => a.sort_order - b.sort_order)
+
+  let currentSuperset = null
 
   sorted.forEach(re => {
     const enrichedExercise = {
@@ -224,23 +231,26 @@ export function groupExercisesBySupersetId(exercises, blockName) {
     }
 
     if (re.superset_group === null || re.superset_group === undefined) {
-      // Ejercicio individual
+      // Ejercicio individual - cerrar cualquier superset abierto
+      currentSuperset = null
       groups.push({
         type: 'individual',
         exercise: enrichedExercise,
       })
     } else {
-      // Parte de un superset
-      if (!supersetMap.has(re.superset_group)) {
-        const supersetGroup = {
+      // Parte de un superset - solo agrupar si es consecutivo con el mismo grupo
+      if (currentSuperset && currentSuperset.supersetId === re.superset_group) {
+        // Mismo superset que el anterior, añadir al grupo existente
+        currentSuperset.exercises.push(enrichedExercise)
+      } else {
+        // Nuevo superset o diferente al anterior
+        currentSuperset = {
           type: 'superset',
           supersetId: re.superset_group,
-          exercises: [],
+          exercises: [enrichedExercise],
         }
-        supersetMap.set(re.superset_group, supersetGroup)
-        groups.push(supersetGroup)
+        groups.push(currentSuperset)
       }
-      supersetMap.get(re.superset_group).exercises.push(enrichedExercise)
     }
   })
 
