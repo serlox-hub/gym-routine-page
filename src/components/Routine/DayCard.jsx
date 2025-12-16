@@ -5,7 +5,7 @@ import { Card, ConfirmModal, Button, DropdownMenu, LoadingSpinner } from '../ui/
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
-import { moveItemById, moveItemToPosition } from '../../lib/arrayUtils.js'
+import { moveItemToPosition } from '../../lib/arrayUtils.js'
 import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
 import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
@@ -56,10 +56,19 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
     navigate(`/routine/${routineId}/day/${id}/workout`)
   }
 
-  const handleReorderExercise = (exerciseId, newIndex) => {
-    const newExercises = moveItemToPosition(allExercises, exerciseId, newIndex)
+  const handleReorderWarmup = (exerciseId, newIndex) => {
+    const newExercises = moveItemToPosition(warmupExercises, exerciseId, newIndex)
     if (newExercises) {
-      reorderExercises.mutate({ dayId: id, exercises: newExercises })
+      // Combinar con main exercises para enviar todo el día
+      reorderExercises.mutate({ dayId: id, exercises: [...newExercises, ...mainExercises] })
+    }
+  }
+
+  const handleReorderMain = (exerciseId, newIndex) => {
+    const newExercises = moveItemToPosition(mainExercises, exerciseId, newIndex)
+    if (newExercises) {
+      // Combinar con warmup exercises para enviar todo el día
+      reorderExercises.mutate({ dayId: id, exercises: [...warmupExercises, ...newExercises] })
     }
   }
 
@@ -148,7 +157,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
-                  onReorderExercise={handleReorderExercise}
+                  onReorderExercise={handleReorderWarmup}
                   onDeleteExercise={(re) => setExerciseToDelete(re)}
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
@@ -170,7 +179,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
-                  onReorderExercise={handleReorderExercise}
+                  onReorderExercise={handleReorderMain}
                   onDeleteExercise={(re) => setExerciseToDelete(re)}
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
