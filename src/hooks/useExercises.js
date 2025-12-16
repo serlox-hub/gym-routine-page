@@ -120,6 +120,9 @@ export function useUpdateExercise() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES, data.id] })
+      // Invalidar rutinas que pueden contener este ejercicio
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES] })
     },
   })
 }
