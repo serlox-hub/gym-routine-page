@@ -4,7 +4,7 @@
 
 Comprimir automáticamente los videos subidos a MinIO para reducir almacenamiento (~50-70%) con mínima pérdida de calidad.
 
-## Arquitectura propuesta
+## Arquitectura
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -14,44 +14,68 @@ Comprimir automáticamente los videos subidos a MinIO para reducir almacenamient
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Nuevo componente                          │
+│                    Procesador de videos                      │
 │                                                              │
-│  MinIO ──► inotifywait ──► FFmpeg ──► Video optimizado      │
+│  mc watch ──► mc cp (descarga) ──► FFmpeg ──► mc cp (sube)  │
 │                                                              │
-│  Servicio systemd que monitorea nuevos archivos             │
+│  Servicio systemd que monitorea nuevos objetos en MinIO     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
+**Nota**: MinIO almacena objetos en formato interno (no como archivos directos), por lo que usamos `mc` (MinIO Client) para detectar y manejar los videos.
+
 ## Pasos de implementación
 
-### 1. Instalar FFmpeg en la Raspberry Pi
+### 1. Instalar dependencias
 
 ```bash
 ssh pi@[IP-PI]
-sudo apt update && sudo apt install ffmpeg inotify-tools -y
+sudo apt update && sudo apt install ffmpeg -y
 ```
 
-### 2. Crear directorio del procesador
+### 2. Instalar MinIO Client (mc)
+
+```bash
+# Descargar mc para ARM64
+wget https://dl.min.io/client/mc/release/linux-arm64/mc
+chmod +x mc
+sudo mv mc /usr/local/bin/
+
+# Verificar instalación
+mc --version
+```
+
+### 3. Configurar alias de MinIO
+
+```bash
+# Configurar conexión a MinIO local
+mc alias set minio http://localhost:9000 TU_ACCESS_KEY TU_SECRET_KEY
+
+# Verificar conexión
+mc ls minio/exercise-videos
+```
+
+### 4. Crear directorios necesarios
 
 ```bash
 mkdir -p ~/video-processor
+sudo mkdir -p /mnt/videos/tmp
+sudo chown pi:pi /mnt/videos/tmp
 ```
 
-### 3. Crear script de procesamiento
+### 5. Crear script de procesamiento
 
 ```bash
 # ~/video-processor/process.sh
 #!/bin/bash
 
-MINIO_DATA="/mnt/videos/minio-data/exercise-videos"
+MINIO_ALIAS="minio"
+BUCKET="exercise-videos"
 PROCESSED_LOG="$HOME/video-processor/processed.txt"
 ERRORS_LOG="$HOME/video-processor/errors.txt"
+HISTORY_CSV="$HOME/video-processor/history.csv"
 TEMP_DIR="/mnt/videos/tmp"
 LOCK_FILE="/tmp/video-processor.lock"
-MAX_WAIT_ITERATIONS=60  # 60 × 2s = 2 minutos máximo de espera
-
-# Habilitar case insensitive para comparaciones
-shopt -s nocasematch
 
 # ============================================
 # LOCK FILE - Evitar múltiples instancias
@@ -63,6 +87,7 @@ flock -n 200 || { echo "Ya hay una instancia ejecutándose"; exit 1; }
 # CLEANUP - Limpiar archivos temporales al salir
 # ============================================
 cleanup() {
+  rm -f "$TEMP_DIR"/original_$$_*.mp4
   rm -f "$TEMP_DIR"/optimized_$$_*.mp4
 }
 trap cleanup EXIT
@@ -74,118 +99,114 @@ log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
-# Verificar si un archivo ya fue procesado
 is_processed() {
   grep -qxF "$1" "$PROCESSED_LOG" 2>/dev/null
 }
 
-# Verificar si un archivo tuvo error previamente
 has_error() {
   grep -qxF "$1" "$ERRORS_LOG" 2>/dev/null
 }
 
-# Marcar archivo como procesado
 mark_processed() {
   echo "$1" >> "$PROCESSED_LOG"
 }
 
-# Marcar archivo con error
 mark_error() {
   echo "$1" >> "$ERRORS_LOG"
 }
 
-# Esperar a que el archivo termine de escribirse (con timeout)
-wait_for_file() {
-  local filepath="$1"
-  local prev_size=0
-  local curr_size=1
-  local iterations=0
+log_to_history() {
+  local object_key="$1"
+  local original_size="$2"
+  local new_size="$3"
+  local savings_percent="$4"
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
-  while [ "$prev_size" != "$curr_size" ] && [ "$iterations" -lt "$MAX_WAIT_ITERATIONS" ]; do
-    prev_size=$(stat -c%s "$filepath" 2>/dev/null || echo 0)
-    sleep 2
-    curr_size=$(stat -c%s "$filepath" 2>/dev/null || echo 0)
-    iterations=$((iterations + 1))
-  done
+  if [ ! -f "$HISTORY_CSV" ]; then
+    echo "timestamp,object_key,original_kb,final_kb,savings_percent" > "$HISTORY_CSV"
+  fi
 
-  # Retornar error si se alcanzó el timeout
-  [ "$iterations" -ge "$MAX_WAIT_ITERATIONS" ] && return 1
-  return 0
-}
-
-# Generar nombre único para archivo temporal
-get_temp_filename() {
-  local filepath="$1"
-  local hash=$(echo "$filepath" | md5sum | cut -d' ' -f1)
-  echo "$TEMP_DIR/optimized_$$_${hash}.mp4"
+  echo "$timestamp,$object_key,$((original_size / 1024)),$((new_size / 1024)),$savings_percent" >> "$HISTORY_CSV"
 }
 
 process_video() {
-  local filepath="$1"
-  local filename=$(basename "$filepath")
-  local temp_output=$(get_temp_filename "$filepath")
-
-  # Verificar que el archivo existe
-  if [ ! -f "$filepath" ]; then
-    log "Saltado: $filename - Archivo no existe"
-    return
-  fi
+  local object_key="$1"
+  local filename=$(basename "$object_key")
+  local temp_original="$TEMP_DIR/original_$$_${filename}"
+  local temp_optimized="$TEMP_DIR/optimized_$$_${filename%.mp4}.mp4"
 
   # Saltar si ya fue procesado
-  if is_processed "$filepath"; then
-    log "Saltado: $filename - Ya fue procesado anteriormente"
+  if is_processed "$object_key"; then
+    log "Saltado: $object_key - Ya procesado"
     return
   fi
 
   # Saltar si tuvo error previamente
-  if has_error "$filepath"; then
-    log "Saltado: $filename - Error previo registrado"
+  if has_error "$object_key"; then
+    log "Saltado: $object_key - Error previo"
     return
   fi
 
-  log "Procesando: $filepath"
+  log "Descargando: $object_key"
 
-  # Obtener tamaño original
-  original_size=$(stat -c%s "$filepath" 2>/dev/null || stat -f%z "$filepath")
+  # Descargar video de MinIO
+  if ! mc cp "$MINIO_ALIAS/$BUCKET/$object_key" "$temp_original" 2>/dev/null; then
+    log "Error descargando: $object_key"
+    mark_error "$object_key"
+    return
+  fi
+
+  original_size=$(stat -c%s "$temp_original" 2>/dev/null)
+  log "Comprimiendo: $filename ($(($original_size / 1024 / 1024))MB)"
 
   # Comprimir con FFmpeg
-  ffmpeg -i "$filepath" \
+  if ! ffmpeg -i "$temp_original" \
     -c:v libx264 \
     -crf 24 \
     -preset medium \
-    -vf "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease" \
+    -vf "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2" \
     -c:a aac \
     -b:a 128k \
     -movflags +faststart \
-    -y "$temp_output" 2>&1
+    -y "$temp_optimized" 2>/dev/null; then
+    log "Error comprimiendo: $filename"
+    mark_error "$object_key"
+    rm -f "$temp_original" "$temp_optimized"
+    return
+  fi
 
-  if [ $? -eq 0 ] && [ -f "$temp_output" ]; then
-    # Verificar que el video comprimido no está corrupto
-    if ! ffprobe -v error "$temp_output" >/dev/null 2>&1; then
-      log "Error: $filename - Video comprimido corrupto"
-      mark_error "$filepath"
-      rm -f "$temp_output"
+  # Verificar integridad del video comprimido
+  if ! ffprobe -v error "$temp_optimized" >/dev/null 2>&1; then
+    log "Error: $filename - Video comprimido corrupto"
+    mark_error "$object_key"
+    rm -f "$temp_original" "$temp_optimized"
+    return
+  fi
+
+  new_size=$(stat -c%s "$temp_optimized" 2>/dev/null)
+
+  # Solo subir si es más pequeño
+  if [ "$new_size" -lt "$original_size" ]; then
+    log "Subiendo video optimizado: $object_key"
+
+    if mc cp "$temp_optimized" "$MINIO_ALIAS/$BUCKET/$object_key" 2>/dev/null; then
+      savings=$((original_size - new_size))
+      savings_percent=$(($savings * 100 / $original_size))
+      log "Completado: $filename - Reducido $(($savings / 1024))KB ($savings_percent%)"
+      log_to_history "$object_key" "$original_size" "$new_size" "$savings_percent"
+    else
+      log "Error subiendo: $object_key"
+      mark_error "$object_key"
+      rm -f "$temp_original" "$temp_optimized"
       return
     fi
-
-    new_size=$(stat -c%s "$temp_output" 2>/dev/null || stat -f%z "$temp_output")
-
-    # Solo reemplazar si es más pequeño
-    if [ "$new_size" -lt "$original_size" ]; then
-      mv "$temp_output" "$filepath"
-      savings=$((original_size - new_size))
-      log "Completado: $filename - Reducido $(($savings / 1024))KB ($(($savings * 100 / $original_size))%)"
-    else
-      rm "$temp_output"
-      log "Saltado: $filename - Compresión no reduce tamaño"
-    fi
-    # Marcar como procesado (exitoso o no necesitó compresión)
-    mark_processed "$filepath"
   else
-    log "Error procesando: $filename"
-    mark_error "$filepath"
-    rm -f "$temp_output"
+    log "Saltado: $filename - Compresión no reduce tamaño"
+    log_to_history "$object_key" "$original_size" "$original_size" "0"
   fi
+
+  mark_processed "$object_key"
+  rm -f "$temp_original" "$temp_optimized"
 }
 
 # ============================================
@@ -193,32 +214,33 @@ process_video() {
 # ============================================
 log "Iniciando video processor..."
 
-# Crear directorios y archivos necesarios
+# Crear archivos necesarios
 mkdir -p "$TEMP_DIR"
 touch "$PROCESSED_LOG"
 touch "$ERRORS_LOG"
 
-# Monitorear nuevos archivos (recursivo para subdirectorios de usuarios)
-inotifywait -m -r -e close_write --format '%w%f' "$MINIO_DATA" 2>/dev/null | while IFS= read -r filepath; do
-  # Solo procesar videos (case insensitive gracias a shopt)
-  if [[ "$filepath" =~ \.(mp4|mov|webm|avi)$ ]]; then
-    # Esperar a que MinIO termine de escribir
-    if wait_for_file "$filepath"; then
-      process_video "$filepath"
-    else
-      log "Timeout esperando: $(basename "$filepath")"
-    fi
+# Monitorear nuevos objetos en MinIO
+mc watch "$MINIO_ALIAS/$BUCKET" --events put 2>/dev/null | while read -r line; do
+  # Extraer la key del objeto del evento
+  # Formato: [timestamp] [size] s3:ObjectCreated:Put http://localhost:9000/bucket/key
+  object_key=$(echo "$line" | awk '{print $NF}' | sed "s|.*/$BUCKET/||")
+
+  # Solo procesar videos
+  if [[ "$object_key" =~ \.(mp4|mov|webm|avi)$ ]]; then
+    # Esperar un momento para asegurar que la subida terminó
+    sleep 3
+    process_video "$object_key"
   fi
 done
 ```
 
-### 4. Hacer ejecutable
+### 6. Hacer ejecutable
 
 ```bash
 chmod +x ~/video-processor/process.sh
 ```
 
-### 5. Crear servicio systemd
+### 7. Crear servicio systemd
 
 ```bash
 sudo tee /etc/systemd/system/video-processor.service << 'EOF'
@@ -231,7 +253,7 @@ Wants=docker.service
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/video-processor
-ExecStart=/usr/bin/nice -n 19 /home/pi/video-processor/process.sh
+ExecStart=/usr/bin/nice -n 19 /bin/bash /home/pi/video-processor/process.sh
 Restart=always
 RestartSec=10
 
@@ -240,7 +262,7 @@ WantedBy=multi-user.target
 EOF
 ```
 
-### 6. Activar servicio
+### 8. Activar servicio
 
 ```bash
 sudo systemctl daemon-reload
@@ -248,7 +270,7 @@ sudo systemctl enable video-processor
 sudo systemctl start video-processor
 ```
 
-### 7. Verificar funcionamiento
+### 9. Verificar funcionamiento
 
 ```bash
 # Ver estado
@@ -293,9 +315,11 @@ journalctl -u video-processor -f
 # ~/video-processor/optimize-existing.sh
 #!/bin/bash
 
-MINIO_DATA="/mnt/videos/minio-data/exercise-videos"
+MINIO_ALIAS="minio"
+BUCKET="exercise-videos"
 PROCESSED_LOG="$HOME/video-processor/processed.txt"
 ERRORS_LOG="$HOME/video-processor/errors.txt"
+HISTORY_CSV="$HOME/video-processor/history.csv"
 TEMP_DIR="/mnt/videos/tmp"
 
 log() {
@@ -318,70 +342,90 @@ mark_error() {
   echo "$1" >> "$ERRORS_LOG"
 }
 
-get_temp_filename() {
-  local filepath="$1"
-  local hash=$(echo "$filepath" | md5sum | cut -d' ' -f1)
-  echo "$TEMP_DIR/optimized_$$_${hash}.mp4"
+log_to_history() {
+  local object_key="$1"
+  local original_size="$2"
+  local new_size="$3"
+  local savings_percent="$4"
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+
+  if [ ! -f "$HISTORY_CSV" ]; then
+    echo "timestamp,object_key,original_kb,final_kb,savings_percent" > "$HISTORY_CSV"
+  fi
+
+  echo "$timestamp,$object_key,$((original_size / 1024)),$((new_size / 1024)),$savings_percent" >> "$HISTORY_CSV"
 }
 
 process_video() {
-  local filepath="$1"
-  local filename=$(basename "$filepath")
-  local temp_output=$(get_temp_filename "$filepath")
+  local object_key="$1"
+  local filename=$(basename "$object_key")
+  local temp_original="$TEMP_DIR/original_$$_${filename}"
+  local temp_optimized="$TEMP_DIR/optimized_$$_${filename%.mp4}.mp4"
 
-  # Verificar que el archivo existe
-  if [ ! -f "$filepath" ]; then
-    log "Saltado: $filename - Archivo no existe"
+  if is_processed "$object_key"; then
+    log "Saltado: $object_key - Ya procesado"
     return
   fi
 
-  if is_processed "$filepath"; then
-    log "Saltado: $filename - Ya fue procesado anteriormente"
+  if has_error "$object_key"; then
+    log "Saltado: $object_key - Error previo"
     return
   fi
 
-  if has_error "$filepath"; then
-    log "Saltado: $filename - Error previo registrado"
+  log "Descargando: $object_key"
+
+  if ! mc cp "$MINIO_ALIAS/$BUCKET/$object_key" "$temp_original" 2>/dev/null; then
+    log "Error descargando: $object_key"
+    mark_error "$object_key"
     return
   fi
 
-  log "Procesando: $filepath"
-  original_size=$(stat -c%s "$filepath" 2>/dev/null || stat -f%z "$filepath")
+  original_size=$(stat -c%s "$temp_original" 2>/dev/null)
+  log "Comprimiendo: $filename ($(($original_size / 1024 / 1024))MB)"
 
-  ffmpeg -i "$filepath" \
+  if ! ffmpeg -i "$temp_original" \
     -c:v libx264 \
     -crf 24 \
     -preset medium \
-    -vf "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease" \
+    -vf "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2" \
     -c:a aac \
     -b:a 128k \
     -movflags +faststart \
-    -y "$temp_output" 2>&1
-
-  if [ $? -eq 0 ] && [ -f "$temp_output" ]; then
-    # Verificar que el video comprimido no está corrupto
-    if ! ffprobe -v error "$temp_output" >/dev/null 2>&1; then
-      log "Error: $filename - Video comprimido corrupto"
-      mark_error "$filepath"
-      rm -f "$temp_output"
-      return
-    fi
-
-    new_size=$(stat -c%s "$temp_output" 2>/dev/null || stat -f%z "$temp_output")
-    if [ "$new_size" -lt "$original_size" ]; then
-      mv "$temp_output" "$filepath"
-      savings=$((original_size - new_size))
-      log "Completado: $filename - Reducido $(($savings / 1024))KB ($(($savings * 100 / $original_size))%)"
-    else
-      rm "$temp_output"
-      log "Saltado: $filename - Compresión no reduce tamaño"
-    fi
-    mark_processed "$filepath"
-  else
-    log "Error procesando: $filename"
-    mark_error "$filepath"
-    rm -f "$temp_output"
+    -y "$temp_optimized" 2>/dev/null; then
+    log "Error comprimiendo: $filename"
+    mark_error "$object_key"
+    rm -f "$temp_original" "$temp_optimized"
+    return
   fi
+
+  if ! ffprobe -v error "$temp_optimized" >/dev/null 2>&1; then
+    log "Error: $filename - Video comprimido corrupto"
+    mark_error "$object_key"
+    rm -f "$temp_original" "$temp_optimized"
+    return
+  fi
+
+  new_size=$(stat -c%s "$temp_optimized" 2>/dev/null)
+
+  if [ "$new_size" -lt "$original_size" ]; then
+    log "Subiendo video optimizado: $object_key"
+
+    if mc cp "$temp_optimized" "$MINIO_ALIAS/$BUCKET/$object_key" 2>/dev/null; then
+      savings=$((original_size - new_size))
+      savings_percent=$(($savings * 100 / $original_size))
+      log "Completado: $filename - Reducido $(($savings / 1024))KB ($savings_percent%)"
+      log_to_history "$object_key" "$original_size" "$new_size" "$savings_percent"
+    else
+      log "Error subiendo: $object_key"
+      mark_error "$object_key"
+    fi
+  else
+    log "Saltado: $filename - Compresión no reduce tamaño"
+    log_to_history "$object_key" "$original_size" "$original_size" "0"
+  fi
+
+  mark_processed "$object_key"
+  rm -f "$temp_original" "$temp_optimized"
 }
 
 # Crear directorios necesarios
@@ -389,36 +433,138 @@ mkdir -p "$TEMP_DIR"
 touch "$PROCESSED_LOG"
 touch "$ERRORS_LOG"
 
-log "Procesando videos existentes..."
+log "Listando videos existentes en MinIO..."
 
-# Buscar y procesar todos los videos (incluyendo subdirectorios)
-find "$MINIO_DATA" -type f \( -iname "*.mp4" -o -iname "*.mov" -o -iname "*.webm" -o -iname "*.avi" \) | while IFS= read -r filepath; do
-  process_video "$filepath"
+# Listar todos los videos y procesarlos
+mc find "$MINIO_ALIAS/$BUCKET" --name "*.mp4" 2>/dev/null | while read -r full_path; do
+  object_key=$(echo "$full_path" | sed "s|$MINIO_ALIAS/$BUCKET/||")
+  process_video "$object_key"
 done
 
 log "Procesamiento de videos existentes completado"
 ```
 
+```bash
+chmod +x ~/video-processor/optimize-existing.sh
+
+# Ejecutar (puede tardar mucho)
+~/video-processor/optimize-existing.sh
+
+# O en segundo plano
+nohup ~/video-processor/optimize-existing.sh > ~/video-processor/optimize-existing.log 2>&1 &
+tail -f ~/video-processor/optimize-existing.log
+```
+
 ## Monitoreo de espacio
 
 ```bash
-# Ver espacio usado por videos
-du -sh /mnt/videos/minio-data/exercise-videos
+# Ver espacio usado por videos en MinIO
+mc du minio/exercise-videos
 
-# Ver espacio disponible
+# Ver espacio disponible en disco
 df -h /mnt/videos
+```
+
+## Consultar historial de optimizaciones
+
+El archivo `~/video-processor/history.csv` guarda un registro permanente de todas las optimizaciones con los tamaños antes y después.
+
+### Formato del CSV
+
+```csv
+timestamp,object_key,original_kb,final_kb,savings_percent
+2025-12-19 10:30:45,user-id/1234567890-video.mp4,15234,5821,62
+```
+
+### Comandos útiles
+
+```bash
+# Ver todo el historial
+cat ~/video-processor/history.csv
+
+# Ver últimas 10 optimizaciones
+tail -n 10 ~/video-processor/history.csv
+
+# Ver historial formateado como tabla
+column -t -s',' ~/video-processor/history.csv | less
+
+# Calcular espacio total ahorrado (en MB)
+awk -F',' 'NR>1 {sum += ($3 - $4)} END {print sum / 1024 " MB ahorrados"}' ~/video-processor/history.csv
+
+# Ver videos con mayor reducción (top 10)
+sort -t',' -k5 -rn ~/video-processor/history.csv | head -n 10
+
+# Contar videos procesados
+wc -l < ~/video-processor/history.csv
+
+# Promedio de reducción
+awk -F',' 'NR>1 && $5 > 0 {sum += $5; count++} END {print sum/count "%"}' ~/video-processor/history.csv
+```
+
+### Script para resumen de estadísticas
+
+```bash
+# ~/video-processor/stats.sh
+#!/bin/bash
+
+HISTORY_CSV="$HOME/video-processor/history.csv"
+
+if [ ! -f "$HISTORY_CSV" ]; then
+  echo "No hay historial de optimizaciones"
+  exit 0
+fi
+
+total_videos=$(($(wc -l < "$HISTORY_CSV") - 1))
+if [ "$total_videos" -le 0 ]; then
+  echo "No hay videos procesados"
+  exit 0
+fi
+
+echo "=== Estadísticas de optimización ==="
+echo ""
+echo "Videos procesados: $total_videos"
+
+awk -F',' 'NR>1 {
+  original += $3
+  final += $4
+  savings += ($3 - $4)
+}
+END {
+  printf "Tamaño original total: %.2f MB\n", original / 1024
+  printf "Tamaño final total: %.2f MB\n", final / 1024
+  printf "Espacio ahorrado: %.2f MB (%.1f%%)\n", savings / 1024, (savings / original) * 100
+}' "$HISTORY_CSV"
+
+echo ""
+echo "=== Top 5 mayores reducciones ==="
+echo "Archivo | Original | Final | Reducción"
+sort -t',' -k5 -rn "$HISTORY_CSV" | head -n 5 | awk -F',' '{
+  split($2, path, "/")
+  filename = path[length(path)]
+  printf "%s | %d KB | %d KB | %d%%\n", filename, $3, $4, $5
+}'
+```
+
+```bash
+chmod +x ~/video-processor/stats.sh
+~/video-processor/stats.sh
 ```
 
 ## Script para limpiar logs
 
-Los logs `processed.txt` y `errors.txt` crecen indefinidamente. Este script elimina entradas de videos que ya no existen.
+Los logs `processed.txt` y `errors.txt` crecen indefinidamente. Este script elimina entradas de videos que ya no existen en MinIO.
 
 ```bash
 # ~/video-processor/cleanup-log.sh
 #!/bin/bash
 
+MINIO_ALIAS="minio"
+BUCKET="exercise-videos"
 PROCESSED_LOG="$HOME/video-processor/processed.txt"
 ERRORS_LOG="$HOME/video-processor/errors.txt"
+
+# Obtener lista de objetos actuales en MinIO
+CURRENT_OBJECTS=$(mc find "$MINIO_ALIAS/$BUCKET" --name "*.mp4" 2>/dev/null | sed "s|$MINIO_ALIAS/$BUCKET/||")
 
 cleanup_file() {
   local logfile="$1"
@@ -431,9 +577,9 @@ cleanup_file() {
 
   total_antes=$(wc -l < "$logfile")
 
-  # Filtrar solo rutas que aún existen
-  while IFS= read -r filepath; do
-    [ -f "$filepath" ] && echo "$filepath"
+  # Filtrar solo objetos que aún existen en MinIO
+  while IFS= read -r object_key; do
+    echo "$CURRENT_OBJECTS" | grep -qxF "$object_key" && echo "$object_key"
   done < "$logfile" > "${logfile}.tmp"
 
   mv "${logfile}.tmp" "$logfile"
@@ -453,7 +599,6 @@ echo "Limpieza completada"
 ### Programar limpieza semanal con cron
 
 ```bash
-# Hacer ejecutable
 chmod +x ~/video-processor/cleanup-log.sh
 
 # Añadir a crontab (ejecutar domingos a las 3am)
@@ -478,13 +623,13 @@ sudo systemctl daemon-reload
 
 1. **CPU de la Pi**: La compresión H.264 es intensiva. En Pi 4 un video de 1 min puede tardar 2-5 min en procesarse
 2. **Cola de videos**: Si se suben muchos videos seguidos, se procesarán en serie
-3. **Espacio temporal**: Los archivos temporales se guardan en `/mnt/videos/tmp` (mismo disco que MinIO) para evitar llenar la RAM si `/tmp` está en tmpfs
-4. **Videos originales**: Se sobrescriben. Si quieres mantener originales, modificar el script para guardar en otra ubicación
-5. **Registro de procesados**: El archivo `~/video-processor/processed.txt` guarda las rutas de videos ya procesados para evitar reprocesarlos y prevenir loops infinitos. Si necesitas reprocesar un video, elimina su línea del archivo
-6. **Registro de errores**: El archivo `~/video-processor/errors.txt` guarda rutas de videos que fallaron al procesar. Evita reintentos infinitos de archivos corruptos. Para reintentar, elimina la línea del archivo
-7. **Subdirectorios**: El script monitorea recursivamente (`-r`) para detectar videos en carpetas de usuarios (`{user_id}/timestamp-video.mp4`)
-8. **Lock file**: Solo puede ejecutarse una instancia a la vez. Si intentas ejecutar otra, mostrará "Ya hay una instancia ejecutándose"
-9. **Limpieza automática**: Configura el cron de `cleanup-log.sh` para evitar que el log crezca indefinidamente con rutas de videos eliminados
-10. **Tamaño máximo**: El límite de subida es 200MB. La función `wait_for_file` espera hasta que el archivo deje de cambiar de tamaño (máximo 2 minutos)
-11. **Extensiones soportadas**: mp4, mov, webm, avi (case insensitive)
-12. **Verificación de integridad**: Antes de reemplazar el original, se verifica con `ffprobe` que el video comprimido no esté corrupto. Si lo está, se marca como error y se conserva el original
+3. **Espacio temporal**: Los archivos temporales se guardan en `/mnt/videos/tmp` (mismo disco que MinIO) para evitar llenar la SD
+4. **Videos originales**: Se sobrescriben en MinIO. El video está disponible inmediatamente tras subir; la versión optimizada lo reemplaza después
+5. **Registro de procesados**: El archivo `processed.txt` guarda las keys de videos ya procesados para evitar reprocesarlos
+6. **Registro de errores**: El archivo `errors.txt` guarda keys de videos que fallaron. Para reintentar, elimina la línea del archivo
+7. **Historial CSV**: Registro permanente de todas las optimizaciones con tamaños. Usa `stats.sh` para ver estadísticas
+8. **Lock file**: Solo puede ejecutarse una instancia a la vez
+9. **Transferencia local**: La descarga/subida entre el script y MinIO es por localhost, muy rápida
+10. **Tamaño máximo**: El límite de subida es 200MB
+11. **Extensiones soportadas**: mp4, mov, webm, avi
+12. **Verificación de integridad**: Antes de reemplazar, se verifica con `ffprobe` que el video no esté corrupto
