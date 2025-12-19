@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2, ChevronUp, ChevronDown, ChevronRight, Pencil } from 'lucide-react'
-import { Card, ConfirmModal, Button, DropdownMenu, LoadingSpinner } from '../ui/index.js'
+import { Card, ConfirmModal, DropdownMenu, LoadingSpinner } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
@@ -15,8 +15,8 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
   const { id, sort_order, name, estimated_duration_min } = day
   const [isExpanded, setIsExpanded] = useState(false)
 
-  // Cargar bloques si está expandido
-  const { data: blocks, isLoading: loadingBlocks } = useRoutineBlocks(isExpanded ? id : null)
+  // Cargar bloques siempre (necesarios para iniciar workout)
+  const { data: blocks, isLoading: loadingBlocks } = useRoutineBlocks(id)
   const startSessionMutation = useStartSession()
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
@@ -118,9 +118,20 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
             />
             <h3 className="font-medium truncate">{name}</h3>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {estimated_duration_min && (
-              <span className="text-sm text-muted whitespace-nowrap">{estimated_duration_min} min</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {!isEditing && (
+              <button
+                onClick={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
+                disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
+                className="px-4 py-1 rounded-full text-xs font-semibold uppercase tracking-wide transition-all disabled:opacity-40"
+                style={{
+                  backgroundColor: isThisDayActive ? colors.success : colors.accent,
+                  color: isThisDayActive ? '#fff' : '#000',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                }}
+              >
+                {isThisDayActive ? 'Continuar' : 'Iniciar'}
+              </button>
             )}
             {isEditing && (
               <DropdownMenu
@@ -203,27 +214,6 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   <BlockSection key={block.id} block={block} routineDayId={id} />
                 ))
               )}
-
-              <div className="pt-2">
-                {isThisDayActive ? (
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={handleContinueWorkout}
-                  >
-                    Continuar Entrenamiento
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={handleStartWorkout}
-                    disabled={startSessionMutation.isPending || (hasActiveSession && !isThisDayActive)}
-                  >
-                    {startSessionMutation.isPending ? 'Iniciando...' : 'Iniciar Entrenamiento'}
-                  </Button>
-                )}
-              </div>
             </>
           )}
         </div>
