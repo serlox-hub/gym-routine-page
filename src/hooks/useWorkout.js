@@ -121,6 +121,32 @@ export function useCompleteSet() {
   })
 }
 
+export function useUpdateSetVideo() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+  const updateSetVideo = useWorkoutStore(state => state.updateSetVideo)
+
+  return useMutation({
+    mutationFn: async ({ sessionExerciseId, setNumber, videoUrl }) => {
+      const { data, error } = await supabase
+        .from('completed_sets')
+        .update({ video_url: videoUrl })
+        .eq('session_id', sessionId)
+        .eq('session_exercise_id', sessionExerciseId)
+        .eq('set_number', setNumber)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data, variables) => {
+      updateSetVideo(variables.sessionExerciseId, variables.setNumber, variables.videoUrl)
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+    },
+  })
+}
+
 export function useUncompleteSet() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)

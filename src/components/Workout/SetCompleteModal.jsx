@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Check, Video, X, Loader2 } from 'lucide-react'
+import { Check, Video, X } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import { colors, inputStyle } from '../../lib/styles.js'
 import { formatRestTimeDisplay } from '../../lib/timeUtils.js'
-import { uploadVideo } from '../../lib/videoStorage.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { RIR_OPTIONS } from '../../lib/constants.js'
 import { usePreference } from '../../hooks/usePreferences.js'
@@ -19,8 +18,6 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
   const [note, setNote] = useState('')
   const [videoUrl, setVideoUrl] = useState(null)
   const [videoFile, setVideoFile] = useState(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState(null)
   const fileInputRef = useRef(null)
 
   // Cargar valores iniciales cuando se abre el modal
@@ -30,7 +27,6 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
       setNote(initialNote ?? '')
       setVideoUrl(initialVideoUrl ?? null)
       setVideoFile(null)
-      setUploadError(null)
     }
   }, [isOpen, initialRir, initialNote, initialVideoUrl])
 
@@ -39,7 +35,6 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
     if (file) {
       setVideoFile(file)
       setVideoUrl(URL.createObjectURL(file))
-      setUploadError(null)
     }
   }
 
@@ -51,25 +46,12 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
     }
   }
 
-  const handleComplete = async () => {
-    let finalVideoUrl = initialVideoUrl
+  const handleComplete = () => {
+    // Determinar el video existente (si no hay nuevo archivo y no se borró)
+    const existingVideoUrl = (!videoFile && videoUrl) ? initialVideoUrl : null
 
-    if (videoFile) {
-      setIsUploading(true)
-      setUploadError(null)
-      try {
-        finalVideoUrl = await uploadVideo(videoFile)
-      } catch {
-        setUploadError('Error al subir el video')
-        setIsUploading(false)
-        return
-      }
-      setIsUploading(false)
-    } else if (!videoUrl && initialVideoUrl) {
-      finalVideoUrl = null
-    }
-
-    onComplete(rir, note.trim() || null, finalVideoUrl)
+    // Pasar videoFile para subida en background (si hay archivo nuevo)
+    onComplete(rir, note.trim() || null, existingVideoUrl, videoFile)
     setRir(null)
     setNote('')
     setVideoUrl(null)
@@ -81,7 +63,6 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
     setNote('')
     setVideoUrl(null)
     setVideoFile(null)
-    setUploadError(null)
     onClose()
   }
 
@@ -195,11 +176,6 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
                 </p>
               </>
             )}
-            {uploadError && (
-              <p className="text-xs mt-1" style={{ color: colors.error }}>
-                {uploadError}
-              </p>
-            )}
           </div>
         )}
 
@@ -220,21 +196,11 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
       <div className="p-4" style={{ borderTop: `1px solid ${colors.border}` }}>
         <button
           onClick={handleComplete}
-          disabled={isUploading}
-          className="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
           style={{ backgroundColor: colors.success, color: '#ffffff' }}
         >
-          {isUploading ? (
-            <>
-              <Loader2 size={20} className="animate-spin" />
-              Subiendo video...
-            </>
-          ) : (
-            <>
-              <Check size={20} />
-              Completar
-            </>
-          )}
+          <Check size={20} />
+          Completar
         </button>
       </div>
     </Modal>

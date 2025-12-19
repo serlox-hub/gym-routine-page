@@ -119,6 +119,23 @@ const useWorkoutStore = create(
         }
       }),
 
+      // Update videoUrl for a set (used for background uploads)
+      updateSetVideo: (sessionExerciseId, setNumber, videoUrl) => set(state => {
+        const key = `${sessionExerciseId}-${setNumber}`
+        const existing = state.completedSets[key]
+        if (!existing) return state
+        return {
+          completedSets: {
+            ...state.completedSets,
+            [key]: { ...existing, videoUrl },
+          },
+          cachedSetData: {
+            ...state.cachedSetData,
+            [key]: { ...existing, videoUrl },
+          },
+        }
+      }),
+
       // Rollback a set (remove from completedSets, for error handling)
       rollbackSet: (sessionExerciseId, setNumber) => set(state => {
         const key = `${sessionExerciseId}-${setNumber}`

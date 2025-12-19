@@ -8,6 +8,8 @@ import { isSetDataValid, buildCompletedSetData } from '../../lib/setUtils.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
+import { useUpdateSetVideo } from '../../hooks/useWorkout.js'
+import { uploadVideo } from '../../lib/videoStorage.js'
 
 function SetRow({
   setNumber,
@@ -28,6 +30,10 @@ function SetRow({
 
   const { data: preferences } = usePreferences()
   const canUploadVideo = useCanUploadVideo()
+  const { mutate: updateSetVideo } = useUpdateSetVideo()
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+  const [videoUploadError, setVideoUploadError] = useState(false)
+  const [pendingVideoFile, setPendingVideoFile] = useState(null)
 
   const showRirInput = preferences?.show_rir_input ?? true
   const showSetNotes = preferences?.show_set_notes ?? true
@@ -69,15 +75,42 @@ function SetRow({
     }
   }
 
-  const handleCompleteSet = (rir, notes, videoUrl) => {
+  const uploadVideoInBackground = async (file) => {
+    setIsUploadingVideo(true)
+    setVideoUploadError(false)
+    setPendingVideoFile(file)
+    try {
+      const uploadedUrl = await uploadVideo(file)
+      updateSetVideo({ sessionExerciseId, setNumber, videoUrl: uploadedUrl })
+      setPendingVideoFile(null)
+    } catch {
+      setVideoUploadError(true)
+    } finally {
+      setIsUploadingVideo(false)
+    }
+  }
+
+  const handleRetryVideoUpload = () => {
+    if (pendingVideoFile) {
+      uploadVideoInBackground(pendingVideoFile)
+    }
+  }
+
+  const handleCompleteSet = async (rir, notes, videoUrl, videoFile) => {
     const data = buildCompletedSetData(
       measurementType,
       { weight, reps, time, distance, calories },
       { sessionExerciseId, exerciseId, setNumber, weightUnit, rirActual: rir, notes, videoUrl }
     )
 
+    // Completar serie inmediatamente (el timer empieza)
     onComplete(data, descansoSeg)
     setShowCompleteModal(false)
+
+    // Subir video en background si hay archivo
+    if (videoFile) {
+      uploadVideoInBackground(videoFile)
+    }
   }
 
   const renderInputs = () => {
@@ -118,11 +151,14 @@ function SetRow({
         {renderInputs()}
       </div>
 
-      {isCompleted && (
+      {(isCompleted || isUploadingVideo || videoUploadError) && (
         <NotesBadge
           rir={setData?.rirActual}
           hasNotes={hasTextNote}
           hasVideo={hasVideo}
+          isUploadingVideo={isUploadingVideo}
+          videoUploadError={videoUploadError}
+          onRetryUpload={handleRetryVideoUpload}
           onClick={(hasTextNote || hasVideo) ? () => setShowNotesView(true) : null}
         />
       )}
