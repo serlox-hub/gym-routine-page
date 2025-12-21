@@ -5,6 +5,11 @@ import { queryClient } from './lib/queryClient'
 import App from './App.jsx'
 import './index.css'
 
+// Consola de desarrollo para móvil
+if (import.meta.env.DEV) {
+  import('eruda').then(eruda => eruda.default.init())
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>

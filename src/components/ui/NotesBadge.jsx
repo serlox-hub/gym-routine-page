@@ -1,4 +1,4 @@
-import { FileText, Video, Loader2, AlertCircle } from 'lucide-react'
+import { FileText, Video, AlertCircle } from 'lucide-react'
 
 const RIR_LABELS = {
   [-1]: 'F',
@@ -8,7 +8,7 @@ const RIR_LABELS = {
   3: '3+',
 }
 
-function NotesBadge({ rir, hasNotes, hasVideo, isUploadingVideo, videoUploadError, onRetryUpload, onClick }) {
+function NotesBadge({ rir, hasNotes, hasVideo, isUploadingVideo, uploadProgress = 0, videoUploadError, onRetryUpload, onClick }) {
   const hasRir = rir !== null && rir !== undefined
 
   if (!hasRir && !hasNotes && !hasVideo && !isUploadingVideo && !videoUploadError) return null
@@ -30,7 +30,11 @@ function NotesBadge({ rir, hasNotes, hasVideo, isUploadingVideo, videoUploadErro
       )
     }
     if (isUploadingVideo) {
-      return <Loader2 size={12} className="animate-spin" style={{ color: '#a371f7' }} />
+      return (
+        <span className="text-xs font-medium" style={{ color: '#a371f7' }}>
+          {uploadProgress}%
+        </span>
+      )
     }
     if (hasVideo) {
       return <Video size={12} style={{ color: '#a371f7' }} />

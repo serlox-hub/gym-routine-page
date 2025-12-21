@@ -9,6 +9,8 @@ import { usePreference } from '../../hooks/usePreferences.js'
 import { getEffortLabel } from '../../lib/measurementTypes.js'
 import { getVideoUrl } from '../../lib/videoStorage.js'
 
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
+
 function VideoPlayer({ videoKey }) {
   const [url, setUrl] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -83,6 +85,7 @@ function SetDetailsModal({
   const [note, setNote] = useState('')
   const [videoUrl, setVideoUrl] = useState(null)
   const [videoFile, setVideoFile] = useState(null)
+  const [videoError, setVideoError] = useState(null)
   const [hasChanges, setHasChanges] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -92,6 +95,7 @@ function SetDetailsModal({
       setNote(initialNote ?? '')
       setVideoUrl(initialVideoUrl ?? null)
       setVideoFile(null)
+      setVideoError(null)
       setHasChanges(false)
     }
   }, [isOpen, initialRir, initialNote, initialVideoUrl])
@@ -109,6 +113,15 @@ function SetDetailsModal({
   const handleVideoSelect = (e) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.size > MAX_VIDEO_SIZE) {
+        const sizeMB = Math.round(file.size / 1024 / 1024)
+        setVideoError(`El video pesa ${sizeMB}MB. Máximo permitido: 100MB`)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+        return
+      }
+      setVideoError(null)
       setVideoFile(file)
       setVideoUrl(URL.createObjectURL(file))
       setHasChanges(true)
@@ -135,6 +148,7 @@ function SetDetailsModal({
     setNote('')
     setVideoUrl(null)
     setVideoFile(null)
+    setVideoError(null)
     setHasChanges(false)
   }
 
@@ -258,9 +272,15 @@ function SetDetailsModal({
                   <Video size={18} />
                   Añadir video
                 </button>
-                <p className="text-xs mt-1 text-center" style={{ color: colors.textSecondary }}>
-                  MP4, WebM o MOV. Máx 200MB
-                </p>
+                {videoError ? (
+                  <p className="text-xs mt-1 text-center" style={{ color: colors.danger }}>
+                    {videoError}
+                  </p>
+                ) : (
+                  <p className="text-xs mt-1 text-center" style={{ color: colors.textSecondary }}>
+                    MP4, WebM o MOV. Máx 100MB
+                  </p>
+                )}
               </>
             )}
           </div>

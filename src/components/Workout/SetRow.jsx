@@ -32,6 +32,7 @@ function SetRow({
   const { mutate: updateSetVideo } = useUpdateSetVideo()
   const { mutate: updateSetDetails } = useUpdateSetDetails()
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [videoUploadError, setVideoUploadError] = useState(false)
   const [pendingVideoFile, setPendingVideoFile] = useState(null)
 
@@ -82,10 +83,11 @@ function SetRow({
 
   const uploadVideoInBackground = async (file) => {
     setIsUploadingVideo(true)
+    setUploadProgress(0)
     setVideoUploadError(false)
     setPendingVideoFile(file)
     try {
-      const uploadedUrl = await uploadVideo(file)
+      const uploadedUrl = await uploadVideo(file, setUploadProgress)
       updateSetVideo({ sessionExerciseId, setNumber, videoUrl: uploadedUrl })
       setPendingVideoFile(null)
     } catch {
@@ -180,6 +182,7 @@ function SetRow({
           hasNotes={hasTextNote}
           hasVideo={hasVideo}
           isUploadingVideo={isUploadingVideo}
+          uploadProgress={uploadProgress}
           videoUploadError={videoUploadError}
           onRetryUpload={handleRetryVideoUpload}
           onClick={isCompleted ? handleEditClick : null}
