@@ -13,14 +13,12 @@ function VideoPlayer({ videoKey }) {
   useEffect(() => {
     if (!videoKey) return
 
-    // Si es una URL completa (legacy Cloudinary), usarla directamente
     if (videoKey.startsWith('http')) {
       setUrl(videoKey)
       setLoading(false)
       return
     }
 
-    // Si es una key de MinIO, obtener URL firmada
     setLoading(true)
     setError(null)
     getVideoUrl(videoKey)

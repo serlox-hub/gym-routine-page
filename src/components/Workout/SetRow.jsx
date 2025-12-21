@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { NotesBadge } from '../ui/index.js'
-import SetCompleteModal from './SetCompleteModal.jsx'
-import SetNotesView from './SetNotesView.jsx'
+import SetDetailsModal from './SetDetailsModal.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, DistanceInputs } from './SetInputs.jsx'
 import { isSetDataValid, buildCompletedSetData } from '../../lib/setUtils.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
-import { useUpdateSetVideo } from '../../hooks/useWorkout.js'
+import { useUpdateSetVideo, useUpdateSetDetails } from '../../hooks/useWorkout.js'
 import { uploadVideo } from '../../lib/videoStorage.js'
 
 function SetRow({
@@ -31,6 +30,7 @@ function SetRow({
   const { data: preferences } = usePreferences()
   const canUploadVideo = useCanUploadVideo()
   const { mutate: updateSetVideo } = useUpdateSetVideo()
+  const { mutate: updateSetDetails } = useUpdateSetDetails()
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const [videoUploadError, setVideoUploadError] = useState(false)
   const [pendingVideoFile, setPendingVideoFile] = useState(null)
@@ -46,8 +46,8 @@ function SetRow({
   const [time, setTime] = useState(setData?.timeSeconds ?? '')
   const [distance, setDistance] = useState(setData?.distanceMeters ?? '')
   const [calories, setCalories] = useState(setData?.caloriesBurned ?? '')
-  const [showCompleteModal, setShowCompleteModal] = useState(false)
-  const [showNotesView, setShowNotesView] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [modalMode, setModalMode] = useState('complete')
 
   // Cargar valores de sesión anterior
   useEffect(() => {
@@ -67,12 +67,17 @@ function SetRow({
       onUncomplete({ sessionExerciseId, setNumber })
     } else if (isValid()) {
       if (shouldShowModal) {
-        setShowCompleteModal(true)
+        setModalMode('complete')
+        setShowModal(true)
       } else {
-        // Completar directamente sin modal
         handleCompleteSet(null, null, null)
       }
     }
+  }
+
+  const handleEditClick = () => {
+    setModalMode('edit')
+    setShowModal(true)
   }
 
   const uploadVideoInBackground = async (file) => {
@@ -96,21 +101,38 @@ function SetRow({
     }
   }
 
-  const handleCompleteSet = async (rir, notes, videoUrl, videoFile) => {
+  const handleModalSubmit = (rir, notes, videoUrl, videoFile) => {
+    if (modalMode === 'complete') {
+      const data = buildCompletedSetData(
+        measurementType,
+        { weight, reps, time, distance, calories },
+        { sessionExerciseId, exerciseId, setNumber, weightUnit, rirActual: rir, notes, videoUrl }
+      )
+      onComplete(data, descansoSeg)
+    } else {
+      updateSetDetails({
+        sessionExerciseId,
+        setNumber,
+        rirActual: rir,
+        notes,
+        videoUrl,
+      })
+    }
+
+    setShowModal(false)
+
+    if (videoFile) {
+      uploadVideoInBackground(videoFile)
+    }
+  }
+
+  const handleCompleteSet = (rir, notes, videoUrl) => {
     const data = buildCompletedSetData(
       measurementType,
       { weight, reps, time, distance, calories },
       { sessionExerciseId, exerciseId, setNumber, weightUnit, rirActual: rir, notes, videoUrl }
     )
-
-    // Completar serie inmediatamente (el timer empieza)
     onComplete(data, descansoSeg)
-    setShowCompleteModal(false)
-
-    // Subir video en background si hay archivo
-    if (videoFile) {
-      uploadVideoInBackground(videoFile)
-    }
   }
 
   const renderInputs = () => {
@@ -138,6 +160,7 @@ function SetRow({
 
   const hasTextNote = !!setData?.notes
   const hasVideo = !!setData?.videoUrl
+  const initialData = modalMode === 'edit' ? setData : cachedData
 
   return (
     <div
@@ -159,7 +182,7 @@ function SetRow({
           isUploadingVideo={isUploadingVideo}
           videoUploadError={videoUploadError}
           onRetryUpload={handleRetryVideoUpload}
-          onClick={(hasTextNote || hasVideo) ? () => setShowNotesView(true) : null}
+          onClick={isCompleted ? handleEditClick : null}
         />
       )}
 
@@ -178,23 +201,16 @@ function SetRow({
         {isCompleted ? '✕' : '✓'}
       </button>
 
-      <SetCompleteModal
-        isOpen={showCompleteModal}
-        onClose={() => setShowCompleteModal(false)}
-        onComplete={handleCompleteSet}
+      <SetDetailsModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleModalSubmit}
+        mode={modalMode}
         descansoSeg={descansoSeg}
-        initialRir={cachedData?.rirActual}
-        initialNote={cachedData?.notes}
-        initialVideoUrl={cachedData?.videoUrl}
+        initialRir={initialData?.rirActual}
+        initialNote={initialData?.notes}
+        initialVideoUrl={initialData?.videoUrl}
         measurementType={measurementType}
-      />
-
-      <SetNotesView
-        isOpen={showNotesView}
-        onClose={() => setShowNotesView(false)}
-        rir={setData?.rirActual}
-        notes={setData?.notes}
-        videoUrl={setData?.videoUrl}
       />
 
       {canRemove && !isCompleted && onRemove && (

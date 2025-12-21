@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Check, Video, X } from 'lucide-react'
+import { Check, Video, X, Save, Loader2 } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import { colors, inputStyle } from '../../lib/styles.js'
 import { formatRestTimeDisplay } from '../../lib/timeUtils.js'
@@ -7,64 +7,147 @@ import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { RIR_OPTIONS } from '../../lib/constants.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 import { getEffortLabel } from '../../lib/measurementTypes.js'
+import { getVideoUrl } from '../../lib/videoStorage.js'
 
-function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir, initialNote, initialVideoUrl, measurementType }) {
+function VideoPlayer({ videoKey }) {
+  const [url, setUrl] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!videoKey) return
+
+    if (videoKey.startsWith('http') || videoKey.startsWith('blob:')) {
+      setUrl(videoKey)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    getVideoUrl(videoKey)
+      .then(setUrl)
+      .catch(() => setError('Error al cargar video'))
+      .finally(() => setLoading(false))
+  }, [videoKey])
+
+  if (loading) {
+    return (
+      <div
+        className="flex items-center justify-center py-8 rounded-lg"
+        style={{ backgroundColor: colors.bgTertiary }}
+      >
+        <Loader2 size={24} className="animate-spin" style={{ color: colors.textSecondary }} />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div
+        className="p-3 rounded-lg text-center text-sm"
+        style={{ backgroundColor: colors.bgTertiary, color: colors.danger }}
+      >
+        {error}
+      </div>
+    )
+  }
+
+  return (
+    <video
+      src={url}
+      controls
+      className="w-full max-h-40 object-contain"
+    />
+  )
+}
+
+function SetDetailsModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  mode = 'complete', // 'complete' | 'edit'
+  initialRir,
+  initialNote,
+  initialVideoUrl,
+  descansoSeg = 0,
+  measurementType
+}) {
   const canUploadVideo = useCanUploadVideo()
   const { value: showRirInput } = usePreference('show_rir_input')
   const { value: showSetNotes } = usePreference('show_set_notes')
   const { value: showVideoUpload } = usePreference('show_video_upload')
   const showVideo = canUploadVideo && showVideoUpload
+
   const [rir, setRir] = useState(null)
   const [note, setNote] = useState('')
   const [videoUrl, setVideoUrl] = useState(null)
   const [videoFile, setVideoFile] = useState(null)
+  const [hasChanges, setHasChanges] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Cargar valores iniciales cuando se abre el modal
   useEffect(() => {
     if (isOpen) {
       setRir(initialRir ?? null)
       setNote(initialNote ?? '')
       setVideoUrl(initialVideoUrl ?? null)
       setVideoFile(null)
+      setHasChanges(false)
     }
   }, [isOpen, initialRir, initialNote, initialVideoUrl])
+
+  const handleRirChange = (value) => {
+    setRir(rir === value ? null : value)
+    setHasChanges(true)
+  }
+
+  const handleNoteChange = (e) => {
+    setNote(e.target.value)
+    setHasChanges(true)
+  }
 
   const handleVideoSelect = (e) => {
     const file = e.target.files?.[0]
     if (file) {
       setVideoFile(file)
       setVideoUrl(URL.createObjectURL(file))
+      setHasChanges(true)
     }
   }
 
   const handleRemoveVideo = () => {
     setVideoFile(null)
     setVideoUrl(null)
+    setHasChanges(true)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
   }
 
-  const handleComplete = () => {
-    // Determinar el video existente (si no hay nuevo archivo y no se borró)
+  const handleSubmit = () => {
     const existingVideoUrl = (!videoFile && videoUrl) ? initialVideoUrl : null
+    onSubmit(rir, note.trim() || null, existingVideoUrl, videoFile)
+    resetState()
+  }
 
-    // Pasar videoFile para subida en background (si hay archivo nuevo)
-    onComplete(rir, note.trim() || null, existingVideoUrl, videoFile)
+  const resetState = () => {
     setRir(null)
     setNote('')
     setVideoUrl(null)
     setVideoFile(null)
+    setHasChanges(false)
   }
 
   const handleClose = () => {
-    setRir(null)
-    setNote('')
-    setVideoUrl(null)
-    setVideoFile(null)
+    resetState()
     onClose()
   }
+
+  const isEditMode = mode === 'edit'
+  const title = isEditMode ? 'Editar serie' : 'Completar serie'
+  const buttonDisabled = isEditMode && !hasChanges
+  const buttonColor = buttonDisabled ? colors.bgTertiary : (isEditMode ? colors.purple : colors.success)
+  const buttonTextColor = buttonDisabled ? colors.textSecondary : '#ffffff'
 
   return (
     <Modal
@@ -80,7 +163,7 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
         style={{ borderBottom: `1px solid ${colors.border}` }}
       >
         <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-          Completar serie
+          {title}
         </h3>
         <button
           onClick={handleClose}
@@ -102,7 +185,7 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
               {RIR_OPTIONS.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setRir(rir === option.value ? null : option.value)}
+                  onClick={() => handleRirChange(option.value)}
                   className="p-2 rounded-lg text-center transition-colors"
                   style={{
                     backgroundColor: rir === option.value ? colors.purple : colors.bgTertiary,
@@ -125,7 +208,7 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
             </label>
             <textarea
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={handleNoteChange}
               placeholder="Ej: Buen pump, molestia en codo..."
               className="w-full rounded-lg p-3 text-sm resize-none h-16"
               style={inputStyle}
@@ -141,11 +224,15 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
             </label>
             {videoUrl ? (
               <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
-                <video
-                  src={videoUrl}
-                  controls
-                  className="w-full max-h-40 object-contain"
-                />
+                {videoFile ? (
+                  <video
+                    src={videoUrl}
+                    controls
+                    className="w-full max-h-40 object-contain"
+                  />
+                ) : (
+                  <VideoPlayer videoKey={videoUrl} />
+                )}
                 <button
                   onClick={handleRemoveVideo}
                   className="absolute top-2 right-2 p-1 rounded-full"
@@ -179,8 +266,8 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
           </div>
         )}
 
-        {/* Info descanso */}
-        {descansoSeg > 0 && (
+        {/* Info descanso (solo en modo complete) */}
+        {!isEditMode && descansoSeg > 0 && (
           <div
             className="text-center py-2 rounded-lg"
             style={{ backgroundColor: colors.bgTertiary }}
@@ -195,16 +282,21 @@ function SetCompleteModal({ isOpen, onClose, onComplete, descansoSeg, initialRir
       {/* Footer */}
       <div className="p-4" style={{ borderTop: `1px solid ${colors.border}` }}>
         <button
-          onClick={handleComplete}
+          onClick={handleSubmit}
+          disabled={buttonDisabled}
           className="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-          style={{ backgroundColor: colors.success, color: '#ffffff' }}
+          style={{
+            backgroundColor: buttonColor,
+            color: buttonTextColor,
+            cursor: buttonDisabled ? 'default' : 'pointer',
+          }}
         >
-          <Check size={20} />
-          Completar
+          {isEditMode ? <Save size={20} /> : <Check size={20} />}
+          {isEditMode ? 'Guardar cambios' : 'Completar'}
         </button>
       </div>
     </Modal>
   )
 }
 
-export default SetCompleteModal
+export default SetDetailsModal

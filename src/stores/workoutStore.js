@@ -136,6 +136,24 @@ const useWorkoutStore = create(
         }
       }),
 
+      // Update RIR and notes for a completed set (without uncompleting)
+      updateSetDetails: (sessionExerciseId, setNumber, { rirActual, notes }) => set(state => {
+        const key = `${sessionExerciseId}-${setNumber}`
+        const existing = state.completedSets[key]
+        if (!existing) return state
+        const updated = { ...existing, rirActual, notes }
+        return {
+          completedSets: {
+            ...state.completedSets,
+            [key]: updated,
+          },
+          cachedSetData: {
+            ...state.cachedSetData,
+            [key]: updated,
+          },
+        }
+      }),
+
       // Rollback a set (remove from completedSets, for error handling)
       rollbackSet: (sessionExerciseId, setNumber) => set(state => {
         const key = `${sessionExerciseId}-${setNumber}`

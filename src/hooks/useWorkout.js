@@ -147,6 +147,40 @@ export function useUpdateSetVideo() {
   })
 }
 
+export function useUpdateSetDetails() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+  const updateSetDetails = useWorkoutStore(state => state.updateSetDetails)
+
+  return useMutation({
+    mutationFn: async ({ sessionExerciseId, setNumber, rirActual, notes, videoUrl }) => {
+      const updateData = {
+        rir_actual: rirActual,
+        notes,
+      }
+      if (videoUrl !== undefined) {
+        updateData.video_url = videoUrl
+      }
+
+      const { error } = await supabase
+        .from('completed_sets')
+        .update(updateData)
+        .eq('session_id', sessionId)
+        .eq('session_exercise_id', sessionExerciseId)
+        .eq('set_number', setNumber)
+
+      if (error) throw error
+    },
+    onSuccess: (_result, variables) => {
+      updateSetDetails(variables.sessionExerciseId, variables.setNumber, {
+        rirActual: variables.rirActual,
+        notes: variables.notes,
+      })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+    },
+  })
+}
+
 export function useUncompleteSet() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
