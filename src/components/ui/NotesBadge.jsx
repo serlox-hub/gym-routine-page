@@ -58,7 +58,7 @@ function NotesBadge({ rir, hasNotes, hasVideo, isUploadingVideo, uploadProgress 
     ? 'rgba(248, 81, 73, 0.15)'
     : 'rgba(163, 113, 247, 0.15)'
 
-  if ((hasNotes || hasVideo) && onClick) {
+  if ((hasRir || hasNotes || hasVideo) && onClick) {
     return (
       <button
         onClick={onClick}
