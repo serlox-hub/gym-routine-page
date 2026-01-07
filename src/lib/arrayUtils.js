@@ -2,6 +2,8 @@
  * Utilidades para manipulación de arrays
  */
 
+import { normalizeSearchText } from './textUtils.js'
+
 /**
  * Reordena un elemento en un array moviéndolo arriba o abajo
  * @param {Array} array - Array original
@@ -112,9 +114,9 @@ export function filterBySearchTerm(array, searchTerm, property = 'name') {
   if (!array) return []
   if (!searchTerm || !searchTerm.trim()) return array
 
-  const searchLower = searchTerm.toLowerCase().trim()
+  const searchNormalized = normalizeSearchText(searchTerm.trim())
   return array.filter(item =>
-    item[property]?.toLowerCase().includes(searchLower)
+    normalizeSearchText(item[property]).includes(searchNormalized)
   )
 }
 
@@ -164,9 +166,9 @@ export function filterExercises(exercises, searchTerm, muscleGroupId) {
   let filtered = exercises
 
   if (searchTerm && searchTerm.trim()) {
-    const searchLower = searchTerm.toLowerCase().trim()
+    const searchNormalized = normalizeSearchText(searchTerm.trim())
     filtered = filtered.filter(e =>
-      e.name.toLowerCase().includes(searchLower)
+      normalizeSearchText(e.name).includes(searchNormalized)
     )
   }
 

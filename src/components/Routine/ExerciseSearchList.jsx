@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Search, Check } from 'lucide-react'
 import { colors, inputStyle } from '../../lib/styles.js'
+import { normalizeSearchText } from '../../lib/textUtils.js'
 
 /**
  * Lista de ejercicios con búsqueda y filtro por grupo muscular
@@ -13,7 +14,7 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, exis
     if (!exercises) return []
 
     return exercises.filter(ex => {
-      const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase())
+      const matchesSearch = normalizeSearchText(ex.name).includes(normalizeSearchText(search))
       if (!selectedMuscleGroup) return matchesSearch
       return matchesSearch && ex.muscle_group_id === selectedMuscleGroup
     })

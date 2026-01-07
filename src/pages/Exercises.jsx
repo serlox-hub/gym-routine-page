@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
+import { normalizeSearchText } from '../lib/textUtils.js'
 
 function Exercises() {
   const navigate = useNavigate()
@@ -18,7 +19,7 @@ function Exercises() {
     if (!exercises) return []
 
     return exercises.filter(e => {
-      const matchesSearch = !search.trim() || e.name.toLowerCase().includes(search.toLowerCase())
+      const matchesSearch = !search.trim() || normalizeSearchText(e.name).includes(normalizeSearchText(search))
       const matchesMuscleGroup = !selectedMuscleGroup || e.muscle_group_id === selectedMuscleGroup
       return matchesSearch && matchesMuscleGroup
     })
