@@ -31,14 +31,14 @@ function ExerciseProgress() {
           {stats.best1RM > 0 && (
             <StatCard
               label="Mejor 1RM Est."
-              value={`${stats.best1RM} ${exercise.weight_unit || 'kg'}`}
+              value={`${stats.best1RM.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
               color={colors.purple}
             />
           )}
           {stats.maxWeight > 0 && (
             <StatCard
               label="Peso máximo"
-              value={`${stats.maxWeight} ${exercise.weight_unit || 'kg'}`}
+              value={`${stats.maxWeight.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
               color={colors.accent}
             />
           )}

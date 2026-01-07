@@ -5,6 +5,14 @@
 import { MeasurementType } from './measurementTypes.js'
 
 /**
+ * Formatea un número con coma decimal (formato español)
+ */
+function formatNumber(value) {
+  if (value == null) return ''
+  return Number(value).toLocaleString('es-ES')
+}
+
+/**
  * Crea una clave única para identificar una serie
  * @param {string|number} routineExerciseId - ID del ejercicio de rutina
  * @param {number} setNumber - Número de serie
@@ -122,7 +130,7 @@ export function buildCompletedSetData(measurementType, formData, info) {
 export function formatSetValue(set) {
   const parts = []
   if (set.weight) {
-    parts.push(`${set.weight}${set.weight_unit || 'kg'}`)
+    parts.push(`${formatNumber(set.weight)}${set.weight_unit || 'kg'}`)
   }
   if (set.reps_completed) {
     parts.push(`${set.reps_completed} reps`)
@@ -131,7 +139,7 @@ export function formatSetValue(set) {
     parts.push(`${set.time_seconds}s`)
   }
   if (set.distance_meters) {
-    parts.push(`${set.distance_meters}m`)
+    parts.push(`${formatNumber(set.distance_meters)}m`)
   }
   if (set.calories_burned) {
     parts.push(`${set.calories_burned}kcal`)
@@ -146,23 +154,24 @@ export function formatSetValue(set) {
  * @returns {string}
  */
 export function formatSetValueByType(set, measurementType) {
+  const unit = set.weightUnit || 'kg'
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
-      return `${set.weight}${set.weightUnit || 'kg'} × ${set.reps}`
+      return `${formatNumber(set.weight)}${unit} × ${set.reps}`
     case MeasurementType.REPS_ONLY:
       return `${set.reps} reps`
     case MeasurementType.TIME:
       return `${set.timeSeconds}s`
     case MeasurementType.WEIGHT_TIME:
-      return `${set.weight}${set.weightUnit || 'kg'} × ${set.timeSeconds}s`
+      return `${formatNumber(set.weight)}${unit} × ${set.timeSeconds}s`
     case MeasurementType.DISTANCE:
-      return `${set.distanceMeters}m`
+      return `${formatNumber(set.distanceMeters)}m`
     case MeasurementType.WEIGHT_DISTANCE:
-      return `${set.weight}${set.weightUnit || 'kg'} × ${set.distanceMeters}m`
+      return `${formatNumber(set.weight)}${unit} × ${formatNumber(set.distanceMeters)}m`
     case MeasurementType.CALORIES:
       return `${set.caloriesBurned}kcal`
     default:
-      return set.weight ? `${set.weight}${set.weightUnit || 'kg'} × ${set.reps}` : `${set.reps}`
+      return set.weight ? `${formatNumber(set.weight)}${unit} × ${set.reps}` : `${set.reps}`
   }
 }
 

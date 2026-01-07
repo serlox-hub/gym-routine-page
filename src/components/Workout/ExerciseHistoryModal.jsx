@@ -183,14 +183,14 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
           {stats.best1RM > 0 && (
             <StatCard
               label="Mejor 1RM Est."
-              value={`${stats.best1RM} ${weightUnit}`}
+              value={`${stats.best1RM.toLocaleString()} ${weightUnit}`}
               color={colors.purple}
             />
           )}
           {stats.maxWeight > 0 && (
             <StatCard
               label="Peso maximo"
-              value={`${stats.maxWeight} ${weightUnit}`}
+              value={`${stats.maxWeight.toLocaleString()} ${weightUnit}`}
               color={colors.accent}
             />
           )}
