@@ -35,7 +35,7 @@ function WorkoutSession() {
 
   const hasCompletedSets = Object.keys(completedSets).length > 0
 
-  const { data: day, isLoading: loadingDay, error: dayError } = useRoutineDay(dayId)
+  const { data: day, isLoading: loadingDay } = useRoutineDay(dayId)
   const { data: sessionExercises, isLoading: loadingExercises, error: exercisesError } = useSessionExercises(sessionId)
 
   const [showCancelModal, setShowCancelModal] = useState(false)
@@ -52,7 +52,8 @@ function WorkoutSession() {
   const reorderSessionExercisesMutation = useReorderSessionExercises()
 
   const isLoading = loadingDay || loadingExercises
-  const error = dayError || exercisesError
+  // dayError no es crítico - la sesión puede continuar sin info del día
+  const error = exercisesError
 
   const { exercisesByBlock, flatExercises } = useMemo(
     () => transformSessionExercises(sessionExercises),
@@ -80,7 +81,21 @@ function WorkoutSession() {
   if (!sessionId) return null
 
   if (isLoading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error.message} className="m-4" />
+  if (error) {
+    return (
+      <div className="p-4 max-w-2xl mx-auto">
+        <ErrorMessage message={error.message} className="mb-4" />
+        <button
+          onClick={() => abandonSessionMutation.mutate()}
+          disabled={abandonSessionMutation.isPending}
+          className="w-full py-3 rounded-lg font-medium"
+          style={{ backgroundColor: '#f85149', color: '#ffffff' }}
+        >
+          {abandonSessionMutation.isPending ? 'Cancelando...' : 'Cancelar sesión'}
+        </button>
+      </div>
+    )
+  }
 
   const handleCompleteSet = (setData, descansoSeg) => {
     completeSetMutation.mutate(setData, {
@@ -148,7 +163,7 @@ function WorkoutSession() {
       <RestTimer />
       <div className="p-4 max-w-2xl mx-auto pb-24">
         <PageHeader
-          title={day?.name}
+          title={day?.name || 'Sesión en curso'}
           titleExtra={
             progress.total > 0 && (
               <span className="text-sm font-normal" style={{ color: '#8b949e' }}>
