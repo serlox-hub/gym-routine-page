@@ -50,16 +50,16 @@ function SetRow({
   const [showModal, setShowModal] = useState(false)
   const [modalMode, setModalMode] = useState('complete')
 
-  // Cargar valores de sesión anterior
+  // Cargar valores de sesión anterior (solo si no hay datos en caché)
   useEffect(() => {
-    if (previousSet && !setData) {
+    if (previousSet && !setData && !cachedData) {
       if (previousSet.weight != null) setWeight(previousSet.weight)
       if (previousSet.reps != null) setReps(previousSet.reps)
       if (previousSet.timeSeconds != null) setTime(previousSet.timeSeconds)
       if (previousSet.distanceMeters != null) setDistance(previousSet.distanceMeters)
       if (previousSet.caloriesBurned != null) setCalories(previousSet.caloriesBurned)
     }
-  }, [previousSet, setData])
+  }, [previousSet, setData, cachedData])
 
   const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories })
 
