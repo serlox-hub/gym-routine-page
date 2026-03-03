@@ -27,6 +27,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [form, setForm] = useState(DEFAULT_FORM)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const isSessionMode = mode === 'session'
 
@@ -40,6 +41,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
       setSelectedExercise(null)
       setIsCreatingNew(false)
       setForm(DEFAULT_FORM)
+      setSearchTerm('')
     }
   }, [isOpen])
 
@@ -116,6 +118,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
             <ExerciseForm
               onSubmit={handleCreateExercise}
               isSubmitting={createExercise.isPending}
+              initialData={searchTerm.trim() ? { name: searchTerm.trim() } : null}
               compact
               hideSubmitButton
             />
@@ -152,6 +155,8 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
             isLoading={isLoading}
             onSelect={handleSelectExercise}
             existingExerciseIds={new Set(existingExercises.map(e => e.exercise_id))}
+            search={searchTerm}
+            onSearchChange={setSearchTerm}
           />
           <div className="flex gap-2 pt-3 mt-3 border-t" style={{ borderColor: colors.border }}>
             <button

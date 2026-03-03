@@ -1,11 +1,13 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useCreateExercise } from '../hooks/useExercises.js'
 import { PageHeader } from '../components/ui/index.js'
 import ExerciseForm from '../components/Exercise/ExerciseForm.jsx'
 
 function NewExercise() {
   const navigate = useNavigate()
+  const location = useLocation()
   const createExercise = useCreateExercise()
+  const initialName = location.state?.name
 
   const handleSubmit = async (exerciseData, muscleGroupId) => {
     await createExercise.mutateAsync({
@@ -23,6 +25,7 @@ function NewExercise() {
         onSubmit={handleSubmit}
         isSubmitting={createExercise.isPending}
         submitLabel="Crear"
+        initialData={initialName ? { name: initialName } : null}
       />
     </div>
   )

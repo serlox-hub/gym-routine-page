@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Pencil, Trash2, TrendingUp } from 'lucide-react'
+import { Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
+import { ExerciseSearchBar } from '../components/Exercise/index.js'
 import { normalizeSearchText } from '../lib/textUtils.js'
-import { selectStyle } from '../lib/styles.js'
 
 function Exercises() {
   const navigate = useNavigate()
@@ -41,43 +41,22 @@ function Exercises() {
     })
   }
 
+  const handleCreate = () => {
+    const state = search.trim() ? { name: search.trim() } : undefined
+    navigate('/exercises/new', { state })
+  }
+
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
       <PageHeader title="Ejercicios" backTo="/" />
 
-      {/* Search */}
-      <div className="relative mb-3">
-        <Search
-          size={18}
-          className="absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: '#8b949e' }}
-        />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar ejercicio..."
-          className="w-full pl-10 pr-4 py-3 rounded-lg"
-          style={{
-            backgroundColor: '#21262d',
-            border: '1px solid #30363d',
-            color: '#e6edf3',
-          }}
-        />
-      </div>
-
-      {/* Muscle group filter */}
-      <select
-        value={selectedMuscleGroup || ''}
-        onChange={(e) => setSelectedMuscleGroup(e.target.value ? Number(e.target.value) : null)}
-        className="w-full p-3 rounded-lg text-base appearance-none mb-4"
-        style={selectStyle}
-      >
-        <option value="">Todos los grupos musculares</option>
-        {muscleGroups?.map(group => (
-          <option key={group.id} value={group.id}>{group.name}</option>
-        ))}
-      </select>
+      <ExerciseSearchBar
+        search={search}
+        onSearchChange={setSearch}
+        muscleGroups={muscleGroups}
+        selectedMuscleGroup={selectedMuscleGroup}
+        onMuscleGroupChange={setSelectedMuscleGroup}
+      />
 
       {/* Exercise list */}
       <main className="space-y-2">
@@ -116,7 +95,7 @@ function Exercises() {
       />
 
       <BottomActions
-        primary={{ label: 'Nuevo', onClick: () => navigate('/exercises/new') }}
+        primary={{ label: 'Nuevo', onClick: handleCreate }}
       />
     </div>
   )

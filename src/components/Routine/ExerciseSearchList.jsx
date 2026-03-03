@@ -1,55 +1,39 @@
 import { useState, useMemo } from 'react'
-import { Search, Check } from 'lucide-react'
-import { colors, inputStyle, selectStyle } from '../../lib/styles.js'
+import { Check } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 import { normalizeSearchText } from '../../lib/textUtils.js'
+import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
 
 /**
  * Lista de ejercicios con búsqueda y filtro por grupo muscular
  */
-function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, existingExerciseIds = new Set() }) {
-  const [search, setSearch] = useState('')
+function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, existingExerciseIds = new Set(), search = '', onSearchChange }) {
+  const [internalSearch, setInternalSearch] = useState(search)
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
+
+  const currentSearch = onSearchChange ? search : internalSearch
+  const handleSearchChange = onSearchChange || setInternalSearch
 
   const filteredExercises = useMemo(() => {
     if (!exercises) return []
 
     return exercises.filter(ex => {
-      const matchesSearch = normalizeSearchText(ex.name).includes(normalizeSearchText(search))
+      const matchesSearch = normalizeSearchText(ex.name).includes(normalizeSearchText(currentSearch))
       if (!selectedMuscleGroup) return matchesSearch
       return matchesSearch && ex.muscle_group_id === selectedMuscleGroup
     })
-  }, [exercises, search, selectedMuscleGroup])
+  }, [exercises, currentSearch, selectedMuscleGroup])
 
   return (
     <>
-      <div className="relative mb-3">
-        <Search
-          size={18}
-          className="absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: colors.textSecondary }}
-        />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar ejercicio..."
-          className="w-full p-3 pl-10 rounded-lg text-base"
-          style={inputStyle}
-          autoFocus
-        />
-      </div>
-
-      <select
-        value={selectedMuscleGroup || ''}
-        onChange={(e) => setSelectedMuscleGroup(e.target.value ? Number(e.target.value) : null)}
-        className="w-full p-3 rounded-lg text-base appearance-none mb-3"
-        style={selectStyle}
-      >
-        <option value="">Todos los grupos musculares</option>
-        {muscleGroups?.map(group => (
-          <option key={group.id} value={group.id}>{group.name}</option>
-        ))}
-      </select>
+      <ExerciseSearchBar
+        search={currentSearch}
+        onSearchChange={handleSearchChange}
+        muscleGroups={muscleGroups}
+        selectedMuscleGroup={selectedMuscleGroup}
+        onMuscleGroupChange={setSelectedMuscleGroup}
+        autoFocus
+      />
 
       <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
         {isLoading ? (
