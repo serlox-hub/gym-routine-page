@@ -86,8 +86,11 @@ test.describe('Crear rutina desde template', () => {
   test('puede crear rutina con nombre y descripción', async ({ page }) => {
     await page.goto('/routines/new')
 
+    // Esperar a que cargue el formulario
+    const nameInput = page.getByPlaceholder(/push pull legs/i)
+    await expect(nameInput).toBeVisible({ timeout: 10000 })
+
     // Rellenar nombre
-    const nameInput = page.locator('input').first()
     await nameInput.fill('Rutina E2E Test')
 
     // Rellenar descripción si existe

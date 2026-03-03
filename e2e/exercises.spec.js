@@ -43,8 +43,9 @@ test.describe('Crear nuevo ejercicio', () => {
   })
 
   test('puede crear un ejercicio', async ({ page }) => {
-    // Esperar a que carguen los grupos musculares
-    await page.waitForSelector('button:has-text("Pecho"), button:has-text("Espalda")', { timeout: 10000 })
+    // Esperar a que cargue el formulario
+    const muscleGroupSelect = page.locator('select')
+    await expect(muscleGroupSelect).toBeVisible({ timeout: 10000 })
 
     // Usar timestamp para nombre único
     const exerciseName = `Test E2E Exercise ${Date.now()}`
@@ -53,7 +54,7 @@ test.describe('Crear nuevo ejercicio', () => {
     await page.getByPlaceholder(/press banca/i).fill(exerciseName)
 
     // Seleccionar grupo muscular
-    await page.getByRole('button', { name: /pecho/i }).click()
+    await muscleGroupSelect.selectOption({ label: /pecho/i })
 
     // Crear ejercicio
     await page.getByRole('button', { name: /crear/i }).click()
@@ -92,8 +93,8 @@ test.describe('Editar ejercicio', () => {
 
     await expect(page).toHaveURL(/\/exercises\/\d+\/edit/)
 
-    // Esperar a que carguen los grupos musculares
-    await page.waitForSelector('button:has-text("Pecho"), button:has-text("Espalda")', { timeout: 10000 })
+    // Esperar a que cargue el formulario con el selector de grupo muscular
+    await expect(page.locator('select')).toBeVisible({ timeout: 10000 })
 
     // Guardar cambios
     await page.getByRole('button', { name: /guardar cambios/i }).click()
