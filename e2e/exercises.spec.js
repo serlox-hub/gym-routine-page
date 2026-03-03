@@ -54,7 +54,7 @@ test.describe('Crear nuevo ejercicio', () => {
     await page.getByPlaceholder(/press banca/i).fill(exerciseName)
 
     // Seleccionar grupo muscular
-    await muscleGroupSelect.selectOption({ label: /pecho/i })
+    await muscleGroupSelect.selectOption({ label: 'Pecho' })
 
     // Crear ejercicio
     await page.getByRole('button', { name: /crear/i }).click()
