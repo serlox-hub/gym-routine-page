@@ -211,6 +211,7 @@ function RoutineDetail() {
                 onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
                 currentIndex={index}
                 totalDays={days.length}
+                dayNames={days.map(d => d.name)}
                 isReorderingDays={reorderDays.isPending}
                 hasActiveSession={hasActiveSession}
                 activeRoutineDayId={activeRoutineDayId}

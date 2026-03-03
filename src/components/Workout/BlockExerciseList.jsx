@@ -6,9 +6,11 @@ import { countExercisesInBlock } from '../../lib/supersetUtils.js'
 import { getReorderProps } from '../../lib/arrayUtils.js'
 
 function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, flatExercises = [], onReorder, isReordering = false }) {
+  const positionLabels = flatExercises.map(e => e.exercise.name)
   const getExerciseReorderProps = (exercise) => ({
     ...getReorderProps(flatExercises, exercise, onReorder),
     isReordering,
+    positionLabels,
   })
 
   return (

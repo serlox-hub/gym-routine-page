@@ -20,6 +20,7 @@ function BlockSection({
   const { name, duration_min, routine_exercises } = block
   const isWarmup = name.toLowerCase() === 'calentamiento'
   const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
+  const positionLabels = routine_exercises.map(re => re.exercise.name)
 
   return (
     <section className="space-y-2">
@@ -69,6 +70,7 @@ function BlockSection({
                 onReorderToPosition={(newIndex) => onReorderExercise?.(group.exercise.id, newIndex)}
                 currentIndex={index}
                 totalExercises={routine_exercises.length}
+                positionLabels={positionLabels}
               />
             )
           }
@@ -110,6 +112,7 @@ function BlockSection({
                         onReorderToPosition={(newIndex) => onReorderExercise?.(exercise.id, newIndex)}
                         currentIndex={index}
                         totalExercises={routine_exercises.length}
+                        positionLabels={positionLabels}
                       />
                     </div>
                   )

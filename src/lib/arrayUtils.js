@@ -72,19 +72,6 @@ export function findIndexById(array, id) {
 }
 
 /**
- * Mueve un elemento identificado por ID
- * @param {Array} array - Array original
- * @param {*} id - ID del elemento a mover
- * @param {'up'|'down'} direction - Dirección del movimiento
- * @returns {Array|null} Nuevo array o null si no es posible
- */
-export function moveItemById(array, id, direction) {
-  const currentIndex = findIndexById(array, id)
-  if (currentIndex === -1) return null
-  return reorderArrayItem(array, currentIndex, direction)
-}
-
-/**
  * Mueve un elemento a una posición específica
  * @param {Array} array - Array original
  * @param {*} id - ID del elemento a mover

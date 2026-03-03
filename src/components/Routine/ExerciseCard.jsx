@@ -18,7 +18,8 @@ function ExerciseCard({
   onMoveToDay,
   onReorderToPosition,
   currentIndex = 0,
-  totalExercises = 1
+  totalExercises = 1,
+  positionLabels = [],
 }) {
   const { exercise, series, reps, rir, rest_seconds, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
@@ -30,7 +31,7 @@ function ExerciseCard({
 
   // Generar opciones de posición para el submenú
   const positionOptions = Array.from({ length: totalExercises }, (_, i) => ({
-    label: `Posición ${i + 1}`,
+    label: `${i + 1}. ${positionLabels[i] || ''}`,
     onClick: () => onReorderToPosition?.(i),
     active: i === currentIndex,
     disabled: i === currentIndex || isReordering,

@@ -10,7 +10,7 @@ import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
 import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
+function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
   const navigate = useNavigate()
   const { id, sort_order, name, estimated_duration_min } = day
   const [isExpanded, setIsExpanded] = useState(false)
@@ -149,7 +149,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                     label: 'Reordenar',
                     disabled: isReorderingDays,
                     children: Array.from({ length: totalDays }, (_, i) => ({
-                      label: `Posición ${i + 1}`,
+                      label: `${i + 1}. ${dayNames[i] || ''}`,
                       onClick: () => onReorderToPosition(i),
                       active: i === currentIndex,
                       disabled: i === currentIndex || isReorderingDays,

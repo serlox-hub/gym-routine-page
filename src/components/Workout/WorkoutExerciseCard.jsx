@@ -9,7 +9,7 @@ import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 
-function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false }) {
+function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [] }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
   const tempoRazon = routine_exercise?.tempo_razon
   // sessionExerciseId es el id de session_exercises (puede ser igual a id si viene transformado)
@@ -101,7 +101,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
                 label: 'Reordenar',
                 disabled: isReordering,
                 children: Array.from({ length: totalExercises }, (_, i) => ({
-                  label: `Posición ${i + 1}`,
+                  label: `${i + 1}. ${positionLabels[i] || ''}`,
                   onClick: () => onReorderToPosition(i),
                   active: i === currentIndex,
                   disabled: i === currentIndex || isReordering,

@@ -4,7 +4,6 @@ import {
   swapArrayElements,
   calculateNextSortOrder,
   findIndexById,
-  moveItemById,
   filterBySearchTerm,
   filterExercises,
   findExerciseIndex,
@@ -106,28 +105,6 @@ describe('arrayUtils', () => {
     it('funciona con strings como id', () => {
       const strArray = [{ id: 'a' }, { id: 'b' }]
       expect(findIndexById(strArray, 'b')).toBe(1)
-    })
-  })
-
-  describe('moveItemById', () => {
-    const array = [{ id: 1 }, { id: 2 }, { id: 3 }]
-
-    it('mueve item hacia arriba por id', () => {
-      const result = moveItemById(array, 2, 'up')
-      expect(result.map(i => i.id)).toEqual([2, 1, 3])
-    })
-
-    it('mueve item hacia abajo por id', () => {
-      const result = moveItemById(array, 2, 'down')
-      expect(result.map(i => i.id)).toEqual([1, 3, 2])
-    })
-
-    it('retorna null si no encuentra el id', () => {
-      expect(moveItemById(array, 99, 'up')).toBeNull()
-    })
-
-    it('retorna null si no puede mover', () => {
-      expect(moveItemById(array, 1, 'up')).toBeNull()
     })
   })
 

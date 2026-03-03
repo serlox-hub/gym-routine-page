@@ -57,7 +57,7 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
                   </button>
                   {expandedSubmenu === index && (
                     <div
-                      className="absolute right-full top-0 mr-1 z-50 py-1 rounded-lg shadow-lg min-w-[120px] max-h-[200px] overflow-y-auto"
+                      className="absolute right-full top-0 mr-1 z-50 py-1 rounded-lg shadow-lg min-w-[200px] max-h-[200px] overflow-y-auto"
                       style={menuStyle}
                     >
                       {item.children.map((child, childIndex) => (
@@ -70,9 +70,9 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
                           }}
                           disabled={child.disabled}
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:opacity-80 disabled:opacity-30"
-                          style={{ color: child.active ? colors.accent : colors.textPrimary }}
+                          style={{ color: child.active ? colors.accent : colors.textPrimary, maxWidth: '60vw' }}
                         >
-                          {child.label}
+                          <span className="truncate">{child.label}</span>
                         </button>
                       ))}
                     </div>
