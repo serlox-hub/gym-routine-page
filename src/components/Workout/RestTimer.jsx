@@ -18,60 +18,20 @@ function RestTimer() {
   if (minimized) {
     return (
       <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
-        <div
-          className="relative flex flex-col items-center gap-2 px-4 py-3 rounded-lg shadow-lg"
-          style={{ backgroundColor: '#161b22', border: '2px solid #58a6ff' }}
+        <button
+          onClick={() => setMinimized(false)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg"
+          style={{ backgroundColor: '#161b22', border: `2px solid ${timerColor}` }}
+          title="Expandir"
         >
-          <button
-            onClick={() => setMinimized(false)}
-            className="absolute top-1 right-1 p-1 rounded"
-            style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-            title="Expandir"
-          >
-            <Maximize2 size={14} />
-          </button>
-          <span className="text-xs font-medium" style={{ color: '#58a6ff' }}>
-            Descanso
-          </span>
           <span
-            className={`text-2xl font-bold font-mono ${isCritical ? 'animate-pulse' : ''}`}
+            className={`text-sm font-bold font-mono ${isCritical ? 'animate-pulse' : ''}`}
             style={{ color: timerColor }}
           >
             {timeDisplay}
           </span>
-          <div
-            className="w-full h-1.5 rounded-full overflow-hidden"
-            style={{ backgroundColor: '#21262d' }}
-          >
-            <div
-              className="h-full transition-all duration-1000"
-              style={{ width: `${progress}%`, backgroundColor: timerColor }}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => addTime(-30)}
-              className="px-2 py-1 rounded text-xs font-medium"
-              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-            >
-              -30s
-            </button>
-            <button
-              onClick={skip}
-              className="px-3 py-1 rounded text-xs font-bold"
-              style={{ backgroundColor: '#238636', color: '#ffffff' }}
-            >
-              SALTAR
-            </button>
-            <button
-              onClick={() => addTime(30)}
-              className="px-2 py-1 rounded text-xs font-medium"
-              style={{ backgroundColor: '#21262d', color: '#8b949e' }}
-            >
-              +30s
-            </button>
-          </div>
-        </div>
+          <Maximize2 size={14} style={{ color: '#8b949e' }} />
+        </button>
       </div>
     )
   }
