@@ -74,6 +74,16 @@ export function getBestValueFromSets(sets, measurementType) {
         bestValue = set.calories_burned
         unit = 'kcal'
       }
+    } else if (measurementType === MeasurementType.LEVEL_TIME || measurementType === MeasurementType.LEVEL_DISTANCE || measurementType === MeasurementType.LEVEL_CALORIES) {
+      if (set.level && set.level > bestValue) {
+        bestValue = set.level
+        unit = 'nv'
+      }
+    } else if (measurementType === MeasurementType.DISTANCE_TIME) {
+      if (set.distance_meters && set.distance_meters > bestValue) {
+        bestValue = set.distance_meters
+        unit = 'm'
+      }
     } else {
       const reps = set.reps_completed || set.reps || 0
       if (reps > bestValue) {

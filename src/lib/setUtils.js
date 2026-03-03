@@ -45,7 +45,7 @@ export function generateExtraExerciseId() {
  * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number}} data - Datos de la serie
  * @returns {boolean}
  */
-export function isSetDataValid(measurementType, { weight, reps, time, distance, calories }) {
+export function isSetDataValid(measurementType, { weight, reps, time, distance, calories, level }) {
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
       return weight !== '' && weight !== undefined && reps !== '' && reps !== undefined
@@ -61,6 +61,14 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance, 
       return weight !== '' && weight !== undefined && distance !== '' && distance !== undefined
     case MeasurementType.CALORIES:
       return calories !== '' && calories !== undefined
+    case MeasurementType.LEVEL_TIME:
+      return level !== '' && level !== undefined && time !== '' && time !== undefined
+    case MeasurementType.LEVEL_DISTANCE:
+      return level !== '' && level !== undefined && distance !== '' && distance !== undefined
+    case MeasurementType.LEVEL_CALORIES:
+      return level !== '' && level !== undefined && calories !== '' && calories !== undefined
+    case MeasurementType.DISTANCE_TIME:
+      return distance !== '' && distance !== undefined && time !== '' && time !== undefined
     default:
       return false
   }
@@ -75,7 +83,7 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance, 
  */
 export function buildCompletedSetData(measurementType, formData, info) {
   const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, weightUnit = 'kg', rirActual, notes, videoUrl } = info
-  const { weight, reps, time, distance, calories } = formData
+  const { weight, reps, time, distance, calories, level } = formData
 
   const data = {
     exerciseId,
@@ -117,6 +125,22 @@ export function buildCompletedSetData(measurementType, formData, info) {
     case MeasurementType.CALORIES:
       data.caloriesBurned = parseInt(calories)
       break
+    case MeasurementType.LEVEL_TIME:
+      data.level = parseInt(level)
+      data.timeSeconds = parseInt(time)
+      break
+    case MeasurementType.LEVEL_DISTANCE:
+      data.level = parseInt(level)
+      data.distanceMeters = parseFloat(distance)
+      break
+    case MeasurementType.LEVEL_CALORIES:
+      data.level = parseInt(level)
+      data.caloriesBurned = parseInt(calories)
+      break
+    case MeasurementType.DISTANCE_TIME:
+      data.distanceMeters = parseFloat(distance)
+      data.timeSeconds = parseInt(time)
+      break
   }
 
   return data
@@ -129,6 +153,9 @@ export function buildCompletedSetData(measurementType, formData, info) {
  */
 export function formatSetValue(set) {
   const parts = []
+  if (set.level) {
+    parts.push(`Nv${set.level}`)
+  }
   if (set.weight) {
     parts.push(`${formatNumber(set.weight)}${set.weight_unit || 'kg'}`)
   }
@@ -170,6 +197,14 @@ export function formatSetValueByType(set, measurementType) {
       return `${formatNumber(set.weight)}${unit} × ${formatNumber(set.distanceMeters)}m`
     case MeasurementType.CALORIES:
       return `${set.caloriesBurned}kcal`
+    case MeasurementType.LEVEL_TIME:
+      return `Nv${set.level} × ${set.timeSeconds}s`
+    case MeasurementType.LEVEL_DISTANCE:
+      return `Nv${set.level} × ${formatNumber(set.distanceMeters)}m`
+    case MeasurementType.LEVEL_CALORIES:
+      return `Nv${set.level} × ${set.caloriesBurned}kcal`
+    case MeasurementType.DISTANCE_TIME:
+      return `${formatNumber(set.distanceMeters)}m × ${set.timeSeconds}s`
     default:
       return set.weight ? `${formatNumber(set.weight)}${unit} × ${set.reps}` : `${set.reps}`
   }

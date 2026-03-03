@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { NotesBadge } from '../ui/index.js'
 import SetDetailsModal from './SetDetailsModal.jsx'
-import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, DistanceInputs } from './SetInputs.jsx'
+import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs } from './SetInputs.jsx'
 import { isSetDataValid, buildCompletedSetData } from '../../lib/setUtils.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
@@ -47,6 +47,7 @@ function SetRow({
   const [time, setTime] = useState(setData?.timeSeconds ?? '')
   const [distance, setDistance] = useState(setData?.distanceMeters ?? '')
   const [calories, setCalories] = useState(setData?.caloriesBurned ?? '')
+  const [level, setLevel] = useState(setData?.level ?? '')
   const [showModal, setShowModal] = useState(false)
   const [modalMode, setModalMode] = useState('complete')
 
@@ -58,10 +59,11 @@ function SetRow({
       if (previousSet.timeSeconds != null) setTime(previousSet.timeSeconds)
       if (previousSet.distanceMeters != null) setDistance(previousSet.distanceMeters)
       if (previousSet.caloriesBurned != null) setCalories(previousSet.caloriesBurned)
+      if (previousSet.level != null) setLevel(previousSet.level)
     }
   }, [previousSet, setData, cachedData])
 
-  const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories })
+  const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level })
 
   const handleCheckClick = () => {
     if (isCompleted) {
@@ -107,7 +109,7 @@ function SetRow({
     if (modalMode === 'complete') {
       const data = buildCompletedSetData(
         measurementType,
-        { weight, reps, time, distance, calories },
+        { weight, reps, time, distance, calories, level },
         { sessionExerciseId, exerciseId, setNumber, weightUnit, rirActual: rir, notes, videoUrl }
       )
       onComplete(data, descansoSeg)
@@ -131,7 +133,7 @@ function SetRow({
   const handleCompleteSet = (rir, notes, videoUrl) => {
     const data = buildCompletedSetData(
       measurementType,
-      { weight, reps, time, distance, calories },
+      { weight, reps, time, distance, calories, level },
       { sessionExerciseId, exerciseId, setNumber, weightUnit, rirActual: rir, notes, videoUrl }
     )
     onComplete(data, descansoSeg)
@@ -155,6 +157,14 @@ function SetRow({
         return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={weightUnit} {...props} />
       case MeasurementType.CALORIES:
         return <RepsOnlyInputs reps={calories} setReps={setCalories} label="kcal" {...props} />
+      case MeasurementType.LEVEL_TIME:
+        return <LevelTimeInputs level={level} setLevel={setLevel} time={time} setTime={setTime} {...props} />
+      case MeasurementType.LEVEL_DISTANCE:
+        return <LevelDistanceInputs level={level} setLevel={setLevel} distance={distance} setDistance={setDistance} {...props} />
+      case MeasurementType.LEVEL_CALORIES:
+        return <LevelCaloriesInputs level={level} setLevel={setLevel} calories={calories} setCalories={setCalories} {...props} />
+      case MeasurementType.DISTANCE_TIME:
+        return <DistanceTimeInputs distance={distance} setDistance={setDistance} time={time} setTime={setTime} {...props} />
       default:
         return null
     }

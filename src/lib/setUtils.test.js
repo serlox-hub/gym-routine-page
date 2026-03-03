@@ -140,6 +140,62 @@ describe('setUtils', () => {
       })
     })
 
+    describe('level_time', () => {
+      it('válido con nivel y tiempo', () => {
+        expect(isSetDataValid('level_time', { level: '12', time: '1800' })).toBe(true)
+      })
+
+      it('inválido sin nivel', () => {
+        expect(isSetDataValid('level_time', { level: '', time: '1800' })).toBe(false)
+      })
+
+      it('inválido sin tiempo', () => {
+        expect(isSetDataValid('level_time', { level: '12', time: '' })).toBe(false)
+      })
+    })
+
+    describe('level_distance', () => {
+      it('válido con nivel y distancia', () => {
+        expect(isSetDataValid('level_distance', { level: '8', distance: '5000' })).toBe(true)
+      })
+
+      it('inválido sin nivel', () => {
+        expect(isSetDataValid('level_distance', { level: '', distance: '5000' })).toBe(false)
+      })
+
+      it('inválido sin distancia', () => {
+        expect(isSetDataValid('level_distance', { level: '8', distance: '' })).toBe(false)
+      })
+    })
+
+    describe('level_calories', () => {
+      it('válido con nivel y calorías', () => {
+        expect(isSetDataValid('level_calories', { level: '10', calories: '200' })).toBe(true)
+      })
+
+      it('inválido sin nivel', () => {
+        expect(isSetDataValid('level_calories', { level: '', calories: '200' })).toBe(false)
+      })
+
+      it('inválido sin calorías', () => {
+        expect(isSetDataValid('level_calories', { level: '10', calories: '' })).toBe(false)
+      })
+    })
+
+    describe('distance_time', () => {
+      it('válido con distancia y tiempo', () => {
+        expect(isSetDataValid('distance_time', { distance: '5000', time: '1500' })).toBe(true)
+      })
+
+      it('inválido sin distancia', () => {
+        expect(isSetDataValid('distance_time', { distance: '', time: '1500' })).toBe(false)
+      })
+
+      it('inválido sin tiempo', () => {
+        expect(isSetDataValid('distance_time', { distance: '5000', time: '' })).toBe(false)
+      })
+    })
+
     describe('tipo desconocido', () => {
       it('retorna false', () => {
         expect(isSetDataValid('unknown', { reps: '10' })).toBe(false)
@@ -234,6 +290,48 @@ describe('setUtils', () => {
       expect(result.caloriesBurned).toBe(250)
     })
 
+    it('construye datos para level_time', () => {
+      const result = buildCompletedSetData(
+        'level_time',
+        { level: '12', time: '1800' },
+        baseInfo
+      )
+      expect(result.level).toBe(12)
+      expect(result.timeSeconds).toBe(1800)
+      expect(result.weight).toBeUndefined()
+    })
+
+    it('construye datos para level_distance', () => {
+      const result = buildCompletedSetData(
+        'level_distance',
+        { level: '8', distance: '5000' },
+        baseInfo
+      )
+      expect(result.level).toBe(8)
+      expect(result.distanceMeters).toBe(5000)
+    })
+
+    it('construye datos para level_calories', () => {
+      const result = buildCompletedSetData(
+        'level_calories',
+        { level: '10', calories: '200' },
+        baseInfo
+      )
+      expect(result.level).toBe(10)
+      expect(result.caloriesBurned).toBe(200)
+    })
+
+    it('construye datos para distance_time', () => {
+      const result = buildCompletedSetData(
+        'distance_time',
+        { distance: '5000', time: '1500' },
+        baseInfo
+      )
+      expect(result.distanceMeters).toBe(5000)
+      expect(result.timeSeconds).toBe(1500)
+      expect(result.weight).toBeUndefined()
+    })
+
     it('soporta sessionExerciseId', () => {
       const result = buildCompletedSetData(
         'weight_reps',
@@ -290,6 +388,26 @@ describe('setUtils', () => {
       expect(formatSetValue({ weight: 10, weight_unit: 'kg', time_seconds: 30 }))
         .toBe('10kg × 30s')
     })
+
+    it('formatea nivel y tiempo', () => {
+      expect(formatSetValue({ level: 12, time_seconds: 30 }))
+        .toBe('Nv12 × 30s')
+    })
+
+    it('formatea nivel y distancia', () => {
+      expect(formatSetValue({ level: 8, distance_meters: 500 }))
+        .toBe('Nv8 × 500m')
+    })
+
+    it('formatea nivel y calorías', () => {
+      expect(formatSetValue({ level: 10, calories_burned: 200 }))
+        .toBe('Nv10 × 200kcal')
+    })
+
+    it('formatea distancia y tiempo', () => {
+      expect(formatSetValue({ distance_meters: 500, time_seconds: 120 }))
+        .toBe('120s × 500m')
+    })
   })
 
   describe('formatSetValueByType', () => {
@@ -326,6 +444,26 @@ describe('setUtils', () => {
     it('formatea calories', () => {
       expect(formatSetValueByType({ caloriesBurned: 300 }, 'calories'))
         .toBe('300kcal')
+    })
+
+    it('formatea level_time', () => {
+      expect(formatSetValueByType({ level: 12, timeSeconds: 1800 }, 'level_time'))
+        .toBe('Nv12 × 1800s')
+    })
+
+    it('formatea level_distance', () => {
+      expect(formatSetValueByType({ level: 8, distanceMeters: 500 }, 'level_distance'))
+        .toBe('Nv8 × 500m')
+    })
+
+    it('formatea level_calories', () => {
+      expect(formatSetValueByType({ level: 10, caloriesBurned: 200 }, 'level_calories'))
+        .toBe('Nv10 × 200kcal')
+    })
+
+    it('formatea distance_time', () => {
+      expect(formatSetValueByType({ distanceMeters: 500, timeSeconds: 120 }, 'distance_time'))
+        .toBe('500m × 120s')
     })
   })
 

@@ -70,6 +70,10 @@ CAMPOS DE EJERCICIOS (en "exercises"):
   - "reps_only": solo repeticiones sin peso (ej: dominadas)
   - "time": tiempo (ej: plancha)
   - "distance": distancia (ej: farmer walk)
+  - "level_time": nivel × tiempo (ej: bici estática)
+  - "level_distance": nivel × distancia (ej: elíptica)
+  - "level_calories": nivel × calorías (ej: remo estático)
+  - "distance_time": distancia × tiempo (ej: cinta de correr)
 - muscle_group_name (OBLIGATORIO, uno de estos):
   - "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps"
   - "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas"

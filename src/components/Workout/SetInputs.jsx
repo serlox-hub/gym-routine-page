@@ -85,3 +85,69 @@ export function DistanceInputs({ weight, setWeight, distance, setDistance, weigh
     </>
   )
 }
+
+export function LevelTimeInputs({ level, setLevel, time, setTime, disabled }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <NumberInput value={level} onChange={setLevel} disabled={disabled} width="w-14" />
+        <span className="text-xs text-muted">nv</span>
+      </div>
+      <span className="text-secondary text-sm">×</span>
+      <div className="flex items-center gap-1">
+        <NumberInput value={time} onChange={setTime} disabled={disabled} />
+        <span className="text-xs text-muted">seg</span>
+      </div>
+      {!disabled && <ExecutionTimer seconds={time} />}
+    </div>
+  )
+}
+
+export function LevelDistanceInputs({ level, setLevel, distance, setDistance, disabled }) {
+  return (
+    <>
+      <div className="flex items-center gap-1">
+        <NumberInput value={level} onChange={setLevel} disabled={disabled} width="w-14" />
+        <span className="text-xs text-muted">nv</span>
+      </div>
+      <span className="text-secondary text-sm">×</span>
+      <div className="flex items-center gap-1">
+        <NumberInput value={distance} onChange={setDistance} disabled={disabled} width="w-14" />
+        <span className="text-xs text-muted">m</span>
+      </div>
+    </>
+  )
+}
+
+export function LevelCaloriesInputs({ level, setLevel, calories, setCalories, disabled }) {
+  return (
+    <>
+      <div className="flex items-center gap-1">
+        <NumberInput value={level} onChange={setLevel} disabled={disabled} width="w-14" />
+        <span className="text-xs text-muted">nv</span>
+      </div>
+      <span className="text-secondary text-sm">×</span>
+      <div className="flex items-center gap-1">
+        <NumberInput value={calories} onChange={setCalories} disabled={disabled} width="w-16" />
+        <span className="text-xs text-muted">kcal</span>
+      </div>
+    </>
+  )
+}
+
+export function DistanceTimeInputs({ distance, setDistance, time, setTime, disabled }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <NumberInput value={distance} onChange={setDistance} disabled={disabled} width="w-14" />
+        <span className="text-xs text-muted">m</span>
+      </div>
+      <span className="text-secondary text-sm">×</span>
+      <div className="flex items-center gap-1">
+        <NumberInput value={time} onChange={setTime} disabled={disabled} />
+        <span className="text-xs text-muted">seg</span>
+      </div>
+      {!disabled && <ExecutionTimer seconds={time} />}
+    </div>
+  )
+}

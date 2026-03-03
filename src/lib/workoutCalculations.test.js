@@ -123,6 +123,39 @@ describe('workoutCalculations', () => {
       const sets = [{ reps: 10 }, { reps: 15 }]
       expect(getBestValueFromSets(sets, 'reps_only')).toEqual({ value: 15, unit: 'reps' })
     })
+
+    it('obtiene mejor nivel para level_time', () => {
+      const sets = [
+        { level: 8, time_seconds: 1800 },
+        { level: 12, time_seconds: 1200 },
+        { level: 10, time_seconds: 1500 },
+      ]
+      expect(getBestValueFromSets(sets, 'level_time')).toEqual({ value: 12, unit: 'nv' })
+    })
+
+    it('obtiene mejor nivel para level_distance', () => {
+      const sets = [
+        { level: 5, distance_meters: 3000 },
+        { level: 10, distance_meters: 5000 },
+      ]
+      expect(getBestValueFromSets(sets, 'level_distance')).toEqual({ value: 10, unit: 'nv' })
+    })
+
+    it('obtiene mejor nivel para level_calories', () => {
+      const sets = [
+        { level: 7, calories_burned: 150 },
+        { level: 9, calories_burned: 200 },
+      ]
+      expect(getBestValueFromSets(sets, 'level_calories')).toEqual({ value: 9, unit: 'nv' })
+    })
+
+    it('obtiene mejor distancia para distance_time', () => {
+      const sets = [
+        { distance_meters: 3000, time_seconds: 900 },
+        { distance_meters: 5000, time_seconds: 1500 },
+      ]
+      expect(getBestValueFromSets(sets, 'distance_time')).toEqual({ value: 5000, unit: 'm' })
+    })
   })
 
   describe('getBest1RMFromSets', () => {
