@@ -4,6 +4,7 @@ import { Search, Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
 import { normalizeSearchText } from '../lib/textUtils.js'
+import { selectStyle } from '../lib/styles.js'
 
 function Exercises() {
   const navigate = useNavigate()
@@ -66,33 +67,17 @@ function Exercises() {
       </div>
 
       {/* Muscle group filter */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => setSelectedMuscleGroup(null)}
-          className="px-3 py-1.5 rounded-full text-sm transition-colors"
-          style={{
-            backgroundColor: !selectedMuscleGroup ? '#58a6ff' : 'transparent',
-            color: !selectedMuscleGroup ? '#ffffff' : '#8b949e',
-            border: `1px solid ${!selectedMuscleGroup ? '#58a6ff' : '#30363d'}`,
-          }}
-        >
-          Todos
-        </button>
+      <select
+        value={selectedMuscleGroup || ''}
+        onChange={(e) => setSelectedMuscleGroup(e.target.value ? Number(e.target.value) : null)}
+        className="w-full p-3 rounded-lg text-base appearance-none mb-4"
+        style={selectStyle}
+      >
+        <option value="">Todos los grupos musculares</option>
         {muscleGroups?.map(group => (
-          <button
-            key={group.id}
-            onClick={() => setSelectedMuscleGroup(group.id)}
-            className="px-3 py-1.5 rounded-full text-sm transition-colors"
-            style={{
-              backgroundColor: selectedMuscleGroup === group.id ? '#58a6ff' : 'transparent',
-              color: selectedMuscleGroup === group.id ? '#ffffff' : '#8b949e',
-              border: `1px solid ${selectedMuscleGroup === group.id ? '#58a6ff' : '#30363d'}`,
-            }}
-          >
-            {group.name}
-          </button>
+          <option key={group.id} value={group.id}>{group.name}</option>
         ))}
-      </div>
+      </select>
 
       {/* Exercise list */}
       <main className="space-y-2">

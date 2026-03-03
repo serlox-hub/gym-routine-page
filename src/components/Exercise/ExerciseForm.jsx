@@ -171,27 +171,17 @@ function ExerciseForm({
         <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
           Grupo muscular <span style={{ color: colors.danger }}>*</span>
         </label>
-
-        <div className="flex flex-wrap gap-2">
-          {muscleGroups?.map(group => {
-            const isSelected = selectedMuscleGroupId === group.id
-            return (
-              <button
-                key={group.id}
-                type="button"
-                onClick={() => setSelectedMuscleGroupId(group.id)}
-                className="px-3 py-1.5 rounded-lg text-sm transition-colors"
-                style={{
-                  backgroundColor: isSelected ? 'rgba(63, 185, 80, 0.15)' : colors.bgTertiary,
-                  color: isSelected ? colors.success : colors.textPrimary,
-                  border: isSelected ? `1px solid ${colors.success}` : `1px solid ${colors.border}`,
-                }}
-              >
-                {group.name}
-              </button>
-            )
-          })}
-        </div>
+        <select
+          value={selectedMuscleGroupId || ''}
+          onChange={(e) => setSelectedMuscleGroupId(e.target.value ? Number(e.target.value) : null)}
+          className="w-full p-3 rounded-lg text-base appearance-none"
+          style={selectStyle}
+        >
+          <option value="">Seleccionar grupo muscular</option>
+          {muscleGroups?.map(group => (
+            <option key={group.id} value={group.id}>{group.name}</option>
+          ))}
+        </select>
       </Wrapper>
 
       {/* === CAMPOS OPCIONALES === */}

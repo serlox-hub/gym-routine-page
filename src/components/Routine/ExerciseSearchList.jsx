@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Search, Check } from 'lucide-react'
-import { colors, inputStyle } from '../../lib/styles.js'
+import { colors, inputStyle, selectStyle } from '../../lib/styles.js'
 import { normalizeSearchText } from '../../lib/textUtils.js'
 
 /**
@@ -39,33 +39,17 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, exis
         />
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-3">
-        <button
-          onClick={() => setSelectedMuscleGroup(null)}
-          className="px-3 py-1.5 rounded-full text-sm transition-colors"
-          style={{
-            backgroundColor: !selectedMuscleGroup ? colors.accent : 'transparent',
-            color: !selectedMuscleGroup ? '#ffffff' : colors.textSecondary,
-            border: `1px solid ${!selectedMuscleGroup ? colors.accent : colors.border}`,
-          }}
-        >
-          Todos
-        </button>
+      <select
+        value={selectedMuscleGroup || ''}
+        onChange={(e) => setSelectedMuscleGroup(e.target.value ? Number(e.target.value) : null)}
+        className="w-full p-3 rounded-lg text-base appearance-none mb-3"
+        style={selectStyle}
+      >
+        <option value="">Todos los grupos musculares</option>
         {muscleGroups?.map(group => (
-          <button
-            key={group.id}
-            onClick={() => setSelectedMuscleGroup(group.id)}
-            className="px-3 py-1.5 rounded-full text-sm transition-colors"
-            style={{
-              backgroundColor: selectedMuscleGroup === group.id ? colors.accent : 'transparent',
-              color: selectedMuscleGroup === group.id ? '#ffffff' : colors.textSecondary,
-              border: `1px solid ${selectedMuscleGroup === group.id ? colors.accent : colors.border}`,
-            }}
-          >
-            {group.name}
-          </button>
+          <option key={group.id} value={group.id}>{group.name}</option>
         ))}
-      </div>
+      </select>
 
       <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
         {isLoading ? (
