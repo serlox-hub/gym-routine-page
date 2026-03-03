@@ -443,6 +443,8 @@ export function useRemoveSessionExercise() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
 
+  const clearExerciseFromStore = useWorkoutStore(state => state.clearExercise)
+
   return useMutation({
     mutationFn: async (sessionExerciseId) => {
       const { error } = await supabase
@@ -452,7 +454,8 @@ export function useRemoveSessionExercise() {
 
       if (error) throw error
     },
-    onSuccess: () => {
+    onSuccess: (_, sessionExerciseId) => {
+      clearExerciseFromStore(sessionExerciseId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
     },

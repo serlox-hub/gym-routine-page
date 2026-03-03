@@ -218,6 +218,19 @@ const useWorkoutStore = create(
         const state = get()
         return state.exerciseSetCounts[sessionExerciseId] ?? defaultCount
       },
+
+      clearExercise: (sessionExerciseId) => set(state => {
+        const newCompleted = {}
+        for (const [key, val] of Object.entries(state.completedSets)) {
+          if (val.sessionExerciseId !== sessionExerciseId) newCompleted[key] = val
+        }
+        const newCached = {}
+        for (const [key, val] of Object.entries(state.cachedSetData)) {
+          if (val.sessionExerciseId !== sessionExerciseId) newCached[key] = val
+        }
+        const { [sessionExerciseId]: _, ...newCounts } = state.exerciseSetCounts
+        return { completedSets: newCompleted, cachedSetData: newCached, exerciseSetCounts: newCounts }
+      }),
     }),
     {
       name: 'workout-session',
