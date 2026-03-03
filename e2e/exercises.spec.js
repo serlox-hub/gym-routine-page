@@ -43,8 +43,8 @@ test.describe('Crear nuevo ejercicio', () => {
   })
 
   test('puede crear un ejercicio', async ({ page }) => {
-    // Esperar a que carguen las opciones del selector de grupo muscular
-    const muscleGroupSelect = page.locator('select').first()
+    // Grupo muscular es el segundo select (el primero es tipo de medición)
+    const muscleGroupSelect = page.locator('select').nth(1)
     await expect(muscleGroupSelect.locator('option')).not.toHaveCount(1, { timeout: 10000 })
 
     // Usar timestamp para nombre único
