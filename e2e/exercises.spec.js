@@ -43,9 +43,9 @@ test.describe('Crear nuevo ejercicio', () => {
   })
 
   test('puede crear un ejercicio', async ({ page }) => {
-    // Esperar a que cargue el formulario (grupo muscular es el primer select)
+    // Esperar a que carguen las opciones del selector de grupo muscular
     const muscleGroupSelect = page.locator('select').first()
-    await expect(muscleGroupSelect).toBeVisible({ timeout: 10000 })
+    await expect(muscleGroupSelect.locator('option')).not.toHaveCount(1, { timeout: 10000 })
 
     // Usar timestamp para nombre único
     const exerciseName = `Test E2E Exercise ${Date.now()}`
