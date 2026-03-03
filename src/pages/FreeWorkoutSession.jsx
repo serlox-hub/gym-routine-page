@@ -13,7 +13,7 @@ import {
 } from '../hooks/useWorkout.js'
 import { Plus } from 'lucide-react'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, BottomActions, PageHeader } from '../components/ui/index.js'
-import { RestTimer, BlockExerciseList, EndSessionModal } from '../components/Workout/index.js'
+import { RestTimer, BlockExerciseList, EndSessionModal, SessionTimer } from '../components/Workout/index.js'
 import { AddExerciseModal } from '../components/Routine/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { transformSessionExercises } from '../lib/workoutTransforms.js'
@@ -193,6 +193,7 @@ function FreeWorkoutSession() {
           disabled: abandonSessionMutation.isPending,
           danger: true,
         }}
+        center={<SessionTimer />}
         primary={{
           label: endSessionMutation.isPending ? 'Guardando...' : 'Finalizar',
           onClick: handleEndWorkout,
