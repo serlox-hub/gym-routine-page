@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { Info, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import { Info, Plus, Trash2, ArrowUpDown } from 'lucide-react'
 import { Card, Badge, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
 import PreviousWorkout from './PreviousWorkout.jsx'
@@ -9,7 +9,7 @@ import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 
-function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false, onMoveUp, onMoveDown, canMoveUp = true, canMoveDown = true }) {
+function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
   const tempoRazon = routine_exercise?.tempo_razon
   // sessionExerciseId es el id de session_exercises (puede ser igual a id si viene transformado)
@@ -95,9 +95,18 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
             items={[
               { label: 'Ver historial', icon: Info, onClick: () => setShowHistory(true) },
               { label: 'Añadir serie', icon: Plus, onClick: addSet },
-              onMoveUp && { type: 'separator' },
-              onMoveUp && { label: 'Mover arriba', icon: ChevronUp, onClick: onMoveUp, disabled: !canMoveUp },
-              onMoveDown && { label: 'Mover abajo', icon: ChevronDown, onClick: onMoveDown, disabled: !canMoveDown },
+              onReorderToPosition && totalExercises > 1 && { type: 'separator' },
+              onReorderToPosition && totalExercises > 1 && {
+                icon: ArrowUpDown,
+                label: 'Reordenar',
+                disabled: isReordering,
+                children: Array.from({ length: totalExercises }, (_, i) => ({
+                  label: `Posición ${i + 1}`,
+                  onClick: () => onReorderToPosition(i),
+                  active: i === currentIndex,
+                  disabled: i === currentIndex || isReordering,
+                })),
+              },
               onRemove && { type: 'separator' },
               onRemove && { label: 'Quitar ejercicio', icon: Trash2, onClick: () => setShowRemoveConfirm(true), danger: true },
             ]}

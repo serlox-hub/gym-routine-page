@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2, ChevronUp, ChevronDown, ChevronRight, Pencil } from 'lucide-react'
+import { Trash2, ChevronRight, Pencil, ArrowUpDown } from 'lucide-react'
 import { Card, ConfirmModal, DropdownMenu, LoadingSpinner } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
@@ -10,7 +10,7 @@ import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
 import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onMoveUp, onMoveDown, isFirst, isLast, hasActiveSession, activeRoutineDayId }) {
+function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
   const navigate = useNavigate()
   const { id, sort_order, name, estimated_duration_min } = day
   const [isExpanded, setIsExpanded] = useState(false)
@@ -144,8 +144,17 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                       setEditingDay(true)
                     }
                   },
-                  { icon: ChevronUp, label: 'Mover arriba', onClick: () => onMoveUp(id), disabled: isFirst },
-                  { icon: ChevronDown, label: 'Mover abajo', onClick: () => onMoveDown(id), disabled: isLast },
+                  totalDays > 1 && {
+                    icon: ArrowUpDown,
+                    label: 'Reordenar',
+                    disabled: isReorderingDays,
+                    children: Array.from({ length: totalDays }, (_, i) => ({
+                      label: `Posición ${i + 1}`,
+                      onClick: () => onReorderToPosition(i),
+                      active: i === currentIndex,
+                      disabled: i === currentIndex || isReorderingDays,
+                    })),
+                  },
                   { icon: Trash2, label: 'Eliminar', onClick: () => onDelete(id), danger: true },
                 ]}
               />

@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react'
 import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useMoveRoutineExerciseToDay } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
 import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, MoveToDayModal } from '../components/Routine/index.js'
-import { moveItemById } from '../lib/arrayUtils.js'
+import { moveItemToPosition } from '../lib/arrayUtils.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 function RoutineDetail() {
@@ -137,10 +137,10 @@ function RoutineDetail() {
     }
   }
 
-  const handleMoveDay = async (dayId, direction) => {
+  const handleReorderDay = async (dayId, newIndex) => {
     if (!days) return
 
-    const newDays = moveItemById(days, dayId, direction)
+    const newDays = moveItemToPosition(days, dayId, newIndex)
     if (!newDays) return
 
     try {
@@ -208,10 +208,10 @@ function RoutineDetail() {
                 onDuplicateExercise={handleDuplicateExercise}
                 onMoveExerciseToDay={handleOpenMoveModal}
                 onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
-                onMoveUp={(id) => handleMoveDay(id, 'up')}
-                onMoveDown={(id) => handleMoveDay(id, 'down')}
-                isFirst={index === 0}
-                isLast={index === days.length - 1}
+                onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
+                currentIndex={index}
+                totalDays={days.length}
+                isReorderingDays={reorderDays.isPending}
                 hasActiveSession={hasActiveSession}
                 activeRoutineDayId={activeRoutineDayId}
               />

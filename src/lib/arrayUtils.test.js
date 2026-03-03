@@ -8,7 +8,7 @@ import {
   filterBySearchTerm,
   filterExercises,
   findExerciseIndex,
-  getMoveProps,
+  getReorderProps,
 } from './arrayUtils.js'
 
 describe('arrayUtils', () => {
@@ -235,48 +235,48 @@ describe('arrayUtils', () => {
     })
   })
 
-  describe('getMoveProps', () => {
+  describe('getReorderProps', () => {
     const exercises = [
       { id: 1, sessionExerciseId: 100 },
       { id: 2, sessionExerciseId: 200 },
       { id: 3, sessionExerciseId: 300 },
     ]
-    const mockOnMove = () => {}
+    const mockOnReorder = () => {}
 
-    it('retorna objeto vacío si no hay onMove', () => {
-      expect(getMoveProps(exercises, exercises[0], null)).toEqual({})
+    it('retorna objeto vacío si no hay onReorder', () => {
+      expect(getReorderProps(exercises, exercises[0], null)).toEqual({})
     })
 
     it('retorna objeto vacío si exercises está vacío', () => {
-      expect(getMoveProps([], exercises[0], mockOnMove)).toEqual({})
+      expect(getReorderProps([], exercises[0], mockOnReorder)).toEqual({})
     })
 
-    it('retorna canMoveUp false para primer elemento', () => {
-      const props = getMoveProps(exercises, exercises[0], mockOnMove)
-      expect(props.canMoveUp).toBe(false)
-      expect(props.canMoveDown).toBe(true)
+    it('retorna currentIndex y totalExercises correctos para primer elemento', () => {
+      const props = getReorderProps(exercises, exercises[0], mockOnReorder)
+      expect(props.currentIndex).toBe(0)
+      expect(props.totalExercises).toBe(3)
     })
 
-    it('retorna canMoveDown false para último elemento', () => {
-      const props = getMoveProps(exercises, exercises[2], mockOnMove)
-      expect(props.canMoveUp).toBe(true)
-      expect(props.canMoveDown).toBe(false)
+    it('retorna currentIndex correcto para último elemento', () => {
+      const props = getReorderProps(exercises, exercises[2], mockOnReorder)
+      expect(props.currentIndex).toBe(2)
+      expect(props.totalExercises).toBe(3)
     })
 
-    it('retorna ambos true para elemento del medio', () => {
-      const props = getMoveProps(exercises, exercises[1], mockOnMove)
-      expect(props.canMoveUp).toBe(true)
-      expect(props.canMoveDown).toBe(true)
+    it('retorna callback onReorderToPosition', () => {
+      const props = getReorderProps(exercises, exercises[1], mockOnReorder)
+      expect(typeof props.onReorderToPosition).toBe('function')
     })
 
-    it('retorna callbacks onMoveUp y onMoveDown', () => {
-      const props = getMoveProps(exercises, exercises[1], mockOnMove)
-      expect(typeof props.onMoveUp).toBe('function')
-      expect(typeof props.onMoveDown).toBe('function')
+    it('onReorderToPosition llama onReorder con índices correctos', () => {
+      const spy = (currentIndex, newIndex) => ({ currentIndex, newIndex })
+      const props = getReorderProps(exercises, exercises[1], spy)
+      const result = props.onReorderToPosition(0)
+      expect(result).toEqual({ currentIndex: 1, newIndex: 0 })
     })
 
     it('retorna objeto vacío si ejercicio no está en la lista', () => {
-      const props = getMoveProps(exercises, { id: 999 }, mockOnMove)
+      const props = getReorderProps(exercises, { id: 999 }, mockOnReorder)
       expect(props).toEqual({})
     })
   })

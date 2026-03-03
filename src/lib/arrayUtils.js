@@ -133,23 +133,22 @@ export function findExerciseIndex(exercises, exercise) {
 }
 
 /**
- * Genera props de movimiento para un ejercicio en una lista
+ * Genera props de reordenamiento para un ejercicio en una lista
  * @param {Array} exercises - Array de ejercicios
  * @param {Object} exercise - Ejercicio actual
- * @param {Function} onMove - Callback (index, direction) => void
- * @returns {Object} Props { onMoveUp, onMoveDown, canMoveUp, canMoveDown } o {}
+ * @param {Function} onReorder - Callback (currentIndex, newIndex) => void
+ * @returns {Object} Props { onReorderToPosition, currentIndex, totalExercises } o {}
  */
-export function getMoveProps(exercises, exercise, onMove) {
-  if (!onMove || !exercises?.length) return {}
+export function getReorderProps(exercises, exercise, onReorder) {
+  if (!onReorder || !exercises?.length) return {}
 
   const index = findExerciseIndex(exercises, exercise)
   if (index === -1) return {}
 
   return {
-    onMoveUp: () => onMove(index, 'up'),
-    onMoveDown: () => onMove(index, 'down'),
-    canMoveUp: index > 0,
-    canMoveDown: index < exercises.length - 1,
+    onReorderToPosition: (newIndex) => onReorder(index, newIndex),
+    currentIndex: index,
+    totalExercises: exercises.length,
   }
 }
 

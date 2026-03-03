@@ -137,15 +137,12 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     removeSessionExerciseMutation.mutate(sessionExerciseId)
   }
 
-  const handleMoveExercise = (index, direction) => {
+  const handleReorderExercise = (currentIndex, newIndex) => {
+    if (currentIndex === newIndex) return
+
     const newOrder = [...flatExercises]
-    const newIndex = direction === 'up' ? index - 1 : index + 1
-
-    if (newIndex < 0 || newIndex >= newOrder.length) return
-
-    const temp = newOrder[index]
-    newOrder[index] = newOrder[newIndex]
-    newOrder[newIndex] = temp
+    const [removed] = newOrder.splice(currentIndex, 1)
+    newOrder.splice(newIndex, 0, removed)
 
     const orderedIds = newOrder.map(e => e.sessionExerciseId)
     reorderSessionExercisesMutation.mutate(orderedIds)
@@ -192,7 +189,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             onUncompleteSet={handleUncompleteSet}
             onRemove={handleRemoveExercise}
             flatExercises={flatExercises}
-            onMove={handleMoveExercise}
+            onReorder={handleReorderExercise}
+            isReordering={reorderSessionExercisesMutation.isPending}
           />
         )}
       </main>
