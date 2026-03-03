@@ -43,8 +43,8 @@ test.describe('Crear nuevo ejercicio', () => {
   })
 
   test('puede crear un ejercicio', async ({ page }) => {
-    // Esperar a que cargue el formulario
-    const muscleGroupSelect = page.getByLabel(/grupo muscular/i)
+    // Esperar a que cargue el formulario (grupo muscular es el primer select)
+    const muscleGroupSelect = page.locator('select').first()
     await expect(muscleGroupSelect).toBeVisible({ timeout: 10000 })
 
     // Usar timestamp para nombre único
@@ -94,7 +94,7 @@ test.describe('Editar ejercicio', () => {
     await expect(page).toHaveURL(/\/exercises\/\d+\/edit/)
 
     // Esperar a que cargue el formulario con el selector de grupo muscular
-    await expect(page.getByLabel(/grupo muscular/i)).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 10000 })
 
     // Guardar cambios
     await page.getByRole('button', { name: /guardar cambios/i }).click()
