@@ -5,6 +5,7 @@ import { Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { getDefaultReps } from '../../lib/measurementTypes.js'
 import { getNextSupersetId } from '../../lib/supersetUtils.js'
+import { parseExerciseConfigForm } from '../../lib/routineExerciseForm.js'
 import ExerciseForm from '../Exercise/ExerciseForm.jsx'
 import ExerciseSearchList from './ExerciseSearchList.jsx'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
@@ -56,20 +57,12 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
   const handleSubmit = () => {
     if (!selectedExercise) return
 
-    const data = {
+    const defaultReps = getDefaultReps(selectedExercise.measurement_type)
+    onSubmit({
       exerciseId: selectedExercise.id,
       exercise: selectedExercise,
-      series: parseInt(form.series) || 3,
-      reps: form.reps || getDefaultReps(selectedExercise.measurement_type),
-      notes: form.notes || null,
-      tempo: form.tempo || null,
-      tempo_razon: form.tempo_razon || null,
-      rir: form.rir !== '' ? parseInt(form.rir) : null,
-      rest_seconds: form.rest_seconds ? parseInt(form.rest_seconds) : null,
-      superset_group: form.superset_group !== '' ? parseInt(form.superset_group) : null,
-    }
-
-    onSubmit(data)
+      ...parseExerciseConfigForm(form, { defaultReps }),
+    })
   }
 
   const handleCreateExercise = async (exerciseData, muscleGroupId) => {

@@ -10,7 +10,7 @@ import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
 import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
+function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
   const navigate = useNavigate()
   const { id, sort_order, name, estimated_duration_min } = day
   const [isExpanded, setIsExpanded] = useState(false)
@@ -177,6 +177,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
+                  onReplaceExercise={(re) => onReplaceExercise(re, id)}
                   onReorderExercise={handleReorderWarmup}
                   onDeleteExercise={(re) => setExerciseToDelete(re)}
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
@@ -199,6 +200,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
+                  onReplaceExercise={(re) => onReplaceExercise(re, id)}
                   onReorderExercise={handleReorderMain}
                   onDeleteExercise={(re) => setExerciseToDelete(re)}
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}

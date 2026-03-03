@@ -12,6 +12,7 @@ function BlockSection({
   isReordering = false,
   onAddExercise,
   onEditExercise,
+  onReplaceExercise,
   onReorderExercise,
   onDeleteExercise,
   onDuplicateExercise,
@@ -64,6 +65,7 @@ function BlockSection({
                 isEditing={isEditing}
                 isReordering={isReordering}
                 onEdit={() => onEditExercise?.(group.exercise)}
+                onReplace={() => onReplaceExercise?.(group.exercise)}
                 onDelete={() => onDeleteExercise?.(group.exercise)}
                 onDuplicate={() => onDuplicateExercise?.(group.exercise)}
                 onMoveToDay={() => onMoveExerciseToDay?.(group.exercise)}
@@ -106,6 +108,7 @@ function BlockSection({
                         isEditing={isEditing}
                         isReordering={isReordering}
                         onEdit={() => onEditExercise?.(exercise)}
+                        onReplace={() => onReplaceExercise?.(exercise)}
                         onDelete={() => onDeleteExercise?.(exercise)}
                         onDuplicate={() => onDuplicateExercise?.(exercise)}
                         onMoveToDay={() => onMoveExerciseToDay?.(exercise)}

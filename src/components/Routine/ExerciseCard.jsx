@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Info, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown } from 'lucide-react'
+import { Info, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
@@ -16,6 +16,7 @@ function ExerciseCard({
   onDelete,
   onDuplicate,
   onMoveToDay,
+  onReplace,
   onReorderToPosition,
   currentIndex = 0,
   totalExercises = 1,
@@ -39,6 +40,7 @@ function ExerciseCard({
 
   const menuItems = [
     { icon: Pencil, label: 'Editar', onClick: onEdit },
+    { icon: Repeat2, label: 'Sustituir', onClick: onReplace },
     { icon: Copy, label: 'Duplicar', onClick: onDuplicate },
     { icon: FolderInput, label: 'Mover de día', onClick: onMoveToDay },
     totalExercises > 1 && { icon: ArrowUpDown, label: 'Reordenar', children: positionOptions, disabled: isReordering },

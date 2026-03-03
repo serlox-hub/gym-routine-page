@@ -24,6 +24,7 @@ function RoutineDetail() {
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [dayToDelete, setDayToDelete] = useState(null)
   const [existingSupersets, setExistingSupersets] = useState([])
+  const [isReplacing, setIsReplacing] = useState(false)
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [exerciseToMove, setExerciseToMove] = useState(null)
   const [movingFromDayId, setMovingFromDayId] = useState(null)
@@ -109,19 +110,30 @@ function RoutineDetail() {
     setSelectedExercise(routineExercise)
     setSelectedDayId(dayId)
     setExistingSupersets(supersets)
+    setIsReplacing(false)
     setShowEditExercise(true)
   }
 
-  const handleEditExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group }) => {
+  const handleOpenReplaceExercise = (routineExercise, dayId) => {
+    setSelectedExercise(routineExercise)
+    setSelectedDayId(dayId)
+    setIsReplacing(true)
+    setShowEditExercise(true)
+  }
+
+  const handleEditExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group, exercise_id }) => {
     try {
+      const data = { series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group }
+      if (exercise_id) data.exercise_id = exercise_id
       await updateExercise.mutateAsync({
         exerciseId,
         dayId: selectedDayId,
-        data: { series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group }
+        data,
       })
       setShowEditExercise(false)
       setSelectedExercise(null)
       setSelectedDayId(null)
+      setIsReplacing(false)
     } catch {
       // Error handled by TanStack Query
     }
@@ -205,6 +217,7 @@ function RoutineDetail() {
                 onAddExercise={handleOpenAddExercise}
                 onAddWarmup={handleOpenAddWarmup}
                 onEditExercise={handleOpenEditExercise}
+                onReplaceExercise={handleOpenReplaceExercise}
                 onDuplicateExercise={handleDuplicateExercise}
                 onMoveExerciseToDay={handleOpenMoveModal}
                 onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
@@ -278,11 +291,13 @@ function RoutineDetail() {
           setShowEditExercise(false)
           setSelectedExercise(null)
           setSelectedDayId(null)
+          setIsReplacing(false)
         }}
         onSubmit={handleEditExercise}
         isPending={updateExercise.isPending}
         routineExercise={selectedExercise}
         existingSupersets={existingSupersets}
+        isReplacing={isReplacing}
       />
 
       <MoveToDayModal
