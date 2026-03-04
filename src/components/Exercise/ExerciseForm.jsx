@@ -3,6 +3,7 @@ import { Card, BottomActions } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
 import { colors, inputStyle, selectStyle } from '../../lib/styles.js'
 import { MEASUREMENT_TYPE_OPTIONS, measurementTypeUsesWeight, MeasurementType } from '../../lib/measurementTypes.js'
+import { getMuscleGroupColor } from '../../lib/constants.js'
 
 const WEIGHT_UNITS = [
   { value: 'kg', label: 'Kilogramos (kg)' },
@@ -171,17 +172,29 @@ function ExerciseForm({
         <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
           Grupo muscular <span style={{ color: colors.danger }}>*</span>
         </label>
-        <select
-          value={selectedMuscleGroupId || ''}
-          onChange={(e) => setSelectedMuscleGroupId(e.target.value ? Number(e.target.value) : null)}
-          className="w-full p-3 rounded-lg text-base appearance-none"
-          style={selectStyle}
-        >
-          <option value="">Seleccionar grupo muscular</option>
-          {muscleGroups?.map(group => (
-            <option key={group.id} value={group.id}>{group.name}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          {selectedMuscleGroupId && (
+            <span
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{
+                backgroundColor: getMuscleGroupColor(
+                  muscleGroups?.find(g => g.id === selectedMuscleGroupId)?.name
+                ),
+              }}
+            />
+          )}
+          <select
+            value={selectedMuscleGroupId || ''}
+            onChange={(e) => setSelectedMuscleGroupId(e.target.value ? Number(e.target.value) : null)}
+            className="w-full p-3 rounded-lg text-base appearance-none"
+            style={selectStyle}
+          >
+            <option value="">Seleccionar grupo muscular</option>
+            {muscleGroups?.map(group => (
+              <option key={group.id} value={group.id}>{group.name}</option>
+            ))}
+          </select>
+        </div>
       </Wrapper>
 
       {/* === CAMPOS OPCIONALES === */}

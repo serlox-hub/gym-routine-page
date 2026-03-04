@@ -4,7 +4,7 @@ import { Clock, Calendar, Trash2, TrendingUp } from 'lucide-react'
 import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui/index.js'
 import SetNotesView from '../components/Workout/SetNotesView.jsx'
-import { SENSATION_LABELS, getSensationColor } from '../lib/constants.js'
+import { SENSATION_LABELS, getSensationColor, getMuscleGroupBorderStyle } from '../lib/constants.js'
 import { formatFullDate, formatTime } from '../lib/dateUtils.js'
 import { formatSetValue } from '../lib/setUtils.js'
 
@@ -98,7 +98,7 @@ function SessionDetail() {
       <h2 className="text-lg font-bold mb-3">Ejercicios</h2>
       <div className="space-y-3">
         {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
-          <Card key={sessionExerciseId} className="p-4">
+          <Card key={sessionExerciseId} className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>

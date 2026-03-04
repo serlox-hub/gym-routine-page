@@ -5,6 +5,7 @@ import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExe
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
 import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise/index.js'
 import { normalizeSearchText } from '../lib/textUtils.js'
+import { getMuscleGroupBorderStyle } from '../lib/constants.js'
 
 function Exercises() {
   const navigate = useNavigate()
@@ -68,7 +69,7 @@ function Exercises() {
           </p>
         ) : (
           filteredExercises.map(exercise => (
-            <Card key={exercise.id} className="p-3">
+            <Card key={exercise.id} className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-sm truncate" style={{ color: '#e6edf3' }}>

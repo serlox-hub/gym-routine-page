@@ -8,6 +8,7 @@ import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
+import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [] }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
@@ -72,7 +73,9 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   // Si está dentro de un superset, no usar Card (ya tiene contenedor)
   const Wrapper = isSuperset ? 'div' : Card
-  const wrapperProps = isSuperset ? {} : { className: 'p-4' }
+  const wrapperProps = isSuperset
+    ? {}
+    : { className: 'p-4', style: getMuscleGroupBorderStyle(exercise.muscle_group?.name) }
 
   return (
     <Wrapper {...wrapperProps}>
@@ -218,6 +221,7 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
       style={{
         backgroundColor: colors.bgSecondary,
         border: `1px solid ${colors.border}`,
+        ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
       }}
     >
       <div className="flex items-start justify-between gap-2">

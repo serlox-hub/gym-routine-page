@@ -4,6 +4,7 @@ import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { groupExercisesBySupersetId } from '../../lib/workoutTransforms.js'
 import { formatSupersetLabel } from '../../lib/supersetUtils.js'
+import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
 
 function BlockSection({
   block,
@@ -100,7 +101,11 @@ function BlockSection({
                 {group.exercises.map((exercise) => {
                   const index = routine_exercises.findIndex(re => re.id === exercise.id)
                   return (
-                    <div key={exercise.id} className="p-2">
+                    <div
+                      key={exercise.id}
+                      className="p-2"
+                      style={getMuscleGroupBorderStyle(exercise.exercise?.muscle_group?.name)}
+                    >
                       <ExerciseCard
                         routineExercise={exercise}
                         routineDayId={routineDayId}

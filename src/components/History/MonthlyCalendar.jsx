@@ -1,22 +1,9 @@
 import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { generateCalendarDays, getMonthName, getPreviousMonth, getNextMonth } from '../../lib/calendarUtils.js'
+import { MUSCLE_GROUP_COLORS } from '../../lib/constants.js'
 
 const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-
-const MUSCLE_GROUP_COLORS = {
-  'Pecho': '#f85149',
-  'Espalda': '#58a6ff',
-  'Hombros': '#a371f7',
-  'Bíceps': '#d29922',
-  'Tríceps': '#f0883e',
-  'Cuádriceps': '#3fb950',
-  'Isquiotibiales': '#2ea043',
-  'Pantorrillas': '#238636',
-  'Abdominales': '#88c6be',
-  'Glúteos': '#db61a2',
-  'Antebrazo': '#8b949e',
-}
 
 function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
   const calendarData = useMemo(

@@ -1,4 +1,4 @@
-function Card({ children, className = '', onClick }) {
+function Card({ children, className = '', onClick, style = {} }) {
   const clickableClasses = onClick ? 'cursor-pointer transition-colors' : ''
 
   return (
@@ -7,7 +7,8 @@ function Card({ children, className = '', onClick }) {
       style={{
         backgroundColor: '#161b22',
         borderWidth: '1px',
-        borderColor: '#30363d'
+        borderColor: '#30363d',
+        ...style,
       }}
       onMouseEnter={onClick ? (e) => e.currentTarget.style.backgroundColor = '#1c2128' : undefined}
       onMouseLeave={onClick ? (e) => e.currentTarget.style.backgroundColor = '#161b22' : undefined}

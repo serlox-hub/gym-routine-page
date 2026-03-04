@@ -605,7 +605,11 @@ export function useSessionDetail(sessionId) {
             exercise:exercises (
               id,
               name,
-              deleted_at
+              deleted_at,
+              muscle_group:muscle_groups (
+                id,
+                name
+              )
             ),
             completed_sets (
               id,

@@ -84,7 +84,11 @@ export function useRoutineBlocks(dayId) {
               name,
               measurement_type,
               weight_unit,
-              instructions
+              instructions,
+              muscle_group:muscle_groups (
+                id,
+                name
+              )
             )
           )
         `)

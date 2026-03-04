@@ -4,6 +4,7 @@ import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
+import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
 
 function ExerciseCard({
   routineExercise,
@@ -28,7 +29,9 @@ function ExerciseCard({
   const measurementType = measurement_type || exercise.measurement_type || MeasurementType.WEIGHT_REPS
 
   const Wrapper = isSuperset ? 'div' : Card
-  const wrapperProps = isSuperset ? {} : { className: 'p-2', onClick }
+  const wrapperProps = isSuperset
+    ? {}
+    : { className: 'p-2', onClick, style: getMuscleGroupBorderStyle(exercise.muscle_group?.name) }
 
   // Generar opciones de posición para el submenú
   const positionOptions = Array.from({ length: totalExercises }, (_, i) => ({

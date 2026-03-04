@@ -82,3 +82,26 @@ export const SENSATION_COLORS = {
 export function getSensationColor(value) {
   return SENSATION_COLORS[value] || '#8b949e'
 }
+
+// Muscle Group Colors
+export const MUSCLE_GROUP_COLORS = {
+  'Pecho': '#f85149',
+  'Espalda': '#58a6ff',
+  'Hombros': '#a371f7',
+  'Bíceps': '#d29922',
+  'Tríceps': '#39d2c0',
+  'Cuádriceps': '#226f2dff',
+  'Isquiotibiales': '#f0883e',
+  'Pantorrillas': '#c69178',
+  'Abdominales': '#abe79fff',
+  'Glúteos': '#db61a2',
+  'Antebrazo': '#8b949e',
+}
+
+export function getMuscleGroupColor(name) {
+  return MUSCLE_GROUP_COLORS[name] || '#8b949e'
+}
+
+export function getMuscleGroupBorderStyle(name) {
+  return { borderLeftWidth: '3px', borderLeftColor: getMuscleGroupColor(name) }
+}

@@ -3,6 +3,7 @@ import { Card } from '../ui/index.js'
 import WorkoutExerciseCard from './WorkoutExerciseCard.jsx'
 import { colors } from '../../lib/styles.js'
 import { formatSupersetLabel } from '../../lib/supersetUtils.js'
+import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
 
 function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, getReorderProps }) {
   const supersetLabel = formatSupersetLabel(supersetId)
@@ -40,7 +41,11 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
       {/* Ejercicios del superset */}
       <div className="divide-y" style={{ borderColor: colors.border }}>
         {exercises.map((sessionExercise, index) => (
-          <div key={sessionExercise.sessionExerciseId || sessionExercise.id} className="p-4">
+          <div
+            key={sessionExercise.sessionExerciseId || sessionExercise.id}
+            className="p-4"
+            style={getMuscleGroupBorderStyle(sessionExercise.exercise?.muscle_group?.name)}
+          >
             <SupersetExerciseItem
               sessionExercise={sessionExercise}
               isLast={index === exercises.length - 1}

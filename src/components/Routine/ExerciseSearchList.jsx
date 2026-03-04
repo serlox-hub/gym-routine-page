@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Check } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { normalizeSearchText } from '../../lib/textUtils.js'
+import { getMuscleGroupColor } from '../../lib/constants.js'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
 
 /**
@@ -54,7 +55,14 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, exis
                 className="w-full text-left p-3 rounded-lg transition-colors hover:bg-surface-alt flex items-center justify-between gap-2"
                 style={{ color: colors.textPrimary }}
               >
-                <div className="font-medium">{exercise.name}</div>
+                <div className="flex items-center gap-2 font-medium">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: getMuscleGroupColor(exercise.muscle_group?.name) }}
+                    title={exercise.muscle_group?.name}
+                  />
+                  {exercise.name}
+                </div>
                 {isInRoutine && (
                   <span
                     className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full shrink-0"
