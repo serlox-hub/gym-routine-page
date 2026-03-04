@@ -1,20 +1,22 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Trash2, TrendingUp } from 'lucide-react'
-import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups } from '../hooks/useExercises.js'
+import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react'
+import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
-import { ExerciseSearchBar } from '../components/Exercise/index.js'
+import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise/index.js'
 import { normalizeSearchText } from '../lib/textUtils.js'
 
 function Exercises() {
   const navigate = useNavigate()
   const { data: exercises, isLoading, error } = useExercisesWithMuscleGroup()
   const { data: muscleGroups } = useMuscleGroups()
+  const { data: exerciseStats } = useExerciseStats()
   const deleteExercise = useDeleteExercise()
 
   const [search, setSearch] = useState('')
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
+  const [exerciseForUsage, setExerciseForUsage] = useState(null)
 
   const filteredExercises = useMemo(() => {
     if (!exercises) return []
@@ -68,11 +70,24 @@ function Exercises() {
           filteredExercises.map(exercise => (
             <Card key={exercise.id} className="p-3">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="font-medium text-sm truncate flex-1 min-w-0" style={{ color: '#e6edf3' }}>
-                  {exercise.name}
-                </h3>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-sm truncate" style={{ color: '#e6edf3' }}>
+                    {exercise.name}
+                  </h3>
+                  <p className="text-xs text-secondary">
+                    {[
+                      exerciseStats?.routineCounts?.[exercise.id]
+                        ? `En ${exerciseStats.routineCounts[exercise.id]} ${exerciseStats.routineCounts[exercise.id] === 1 ? 'rutina' : 'rutinas'}`
+                        : null,
+                      exerciseStats?.sessionCounts?.[exercise.id]
+                        ? `Usado ${exerciseStats.sessionCounts[exercise.id]} ${exerciseStats.sessionCounts[exercise.id] === 1 ? 'vez' : 'veces'}`
+                        : 'Sin uso',
+                    ].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
                 <DropdownMenu
                   items={[
+                    { icon: BarChart3, label: 'Ver usos', onClick: () => setExerciseForUsage(exercise) },
                     { icon: TrendingUp, label: 'Progresión', onClick: () => navigate(`/exercises/${exercise.id}/progress`) },
                     { icon: Pencil, label: 'Editar', onClick: () => navigate(`/exercises/${exercise.id}/edit`) },
                     { icon: Trash2, label: 'Eliminar', onClick: () => setExerciseToDelete(exercise), danger: true },
@@ -92,6 +107,11 @@ function Exercises() {
         cancelText="Cancelar"
         onConfirm={handleDelete}
         onCancel={() => setExerciseToDelete(null)}
+      />
+
+      <ExerciseUsageModal
+        exercise={exerciseForUsage}
+        onClose={() => setExerciseForUsage(null)}
       />
 
       <BottomActions

@@ -36,6 +36,8 @@ export const QUERY_KEYS = {
   USER_SETTINGS: 'user-settings',
   USER_PREFERENCES: 'user-preferences',
   ADMIN_USERS: 'admin-users',
+  EXERCISE_USAGE_COUNTS: 'exercise-usage-counts',
+  EXERCISE_USAGE_DETAIL: 'exercise-usage-detail',
 }
 
 // Timer

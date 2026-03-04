@@ -42,6 +42,112 @@ export function useMuscleGroups() {
   })
 }
 
+export function useExerciseStats() {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISE_USAGE_COUNTS],
+    queryFn: async () => {
+      const [sessionRes, routineRes] = await Promise.all([
+        supabase.from('session_exercises').select('exercise_id'),
+        supabase.from('routine_exercises').select('exercise_id, routine_block:routine_blocks(routine_day:routine_days(routine_id))'),
+      ])
+
+      if (sessionRes.error) throw sessionRes.error
+      if (routineRes.error) throw routineRes.error
+
+      const sessionCounts = {}
+      for (const row of sessionRes.data) {
+        sessionCounts[row.exercise_id] = (sessionCounts[row.exercise_id] || 0) + 1
+      }
+
+      const routineCounts = {}
+      const routineSeen = {}
+      for (const row of routineRes.data) {
+        const routineId = row.routine_block?.routine_day?.routine_id
+        const key = `${row.exercise_id}-${routineId}`
+        if (!routineSeen[key]) {
+          routineSeen[key] = true
+          routineCounts[row.exercise_id] = (routineCounts[row.exercise_id] || 0) + 1
+        }
+      }
+
+      return { sessionCounts, routineCounts }
+    },
+  })
+}
+
+// ============================================
+// USAGE DETAIL
+// ============================================
+
+export function useExerciseUsageDetail(exerciseId) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISE_USAGE_DETAIL, exerciseId],
+    queryFn: async () => {
+      const [routineRes, sessionRes] = await Promise.all([
+        supabase
+          .from('routine_exercises')
+          .select(`
+            id,
+            routine_block:routine_blocks(
+              routine_day:routine_days(
+                name,
+                routine:routines(id, name)
+              )
+            )
+          `)
+          .eq('exercise_id', exerciseId),
+        supabase
+          .from('session_exercises')
+          .select(`
+            id,
+            workout_session:workout_sessions!inner(id, started_at, routine_name)
+          `)
+          .eq('exercise_id', exerciseId)
+          .eq('workout_session.status', 'completed')
+          .order('id', { ascending: false }),
+      ])
+
+      if (routineRes.error) throw routineRes.error
+      if (sessionRes.error) throw sessionRes.error
+
+      const routines = routineRes.data
+        .map(re => {
+          const day = re.routine_block?.routine_day
+          const routine = day?.routine
+          if (!routine) return null
+          return { routineId: routine.id, routineName: routine.name, dayName: day.name }
+        })
+        .filter(Boolean)
+
+      const seen = new Set()
+      const uniqueRoutines = routines.filter(r => {
+        const key = `${r.routineId}-${r.dayName}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+
+      const sessions = sessionRes.data
+        .filter(se => se.workout_session)
+        .map(se => ({
+          sessionId: se.workout_session.id,
+          date: se.workout_session.started_at,
+          routineName: se.workout_session.routine_name,
+        }))
+
+      const seenSessions = new Set()
+      const uniqueSessions = sessions.filter(s => {
+        if (seenSessions.has(s.sessionId)) return false
+        seenSessions.add(s.sessionId)
+        return true
+      })
+
+      return { routines: uniqueRoutines, sessions: uniqueSessions }
+    },
+    enabled: !!exerciseId,
+  })
+}
+
 export function useExercise(exerciseId) {
   return useQuery({
     queryKey: [QUERY_KEYS.EXERCISES, exerciseId],
