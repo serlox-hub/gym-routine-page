@@ -96,6 +96,9 @@ export const MUSCLE_GROUP_COLORS = {
   'Abdominales': '#abe79fff',
   'Glúteos': '#db61a2',
   'Antebrazo': '#8b949e',
+  'Cardio': '#dd23d9ff',
+  'Movilidad': '#ddddddff',
+  'Cuerpo Completo': '#1d3bdfff',
 }
 
 export function getMuscleGroupColor(name) {
