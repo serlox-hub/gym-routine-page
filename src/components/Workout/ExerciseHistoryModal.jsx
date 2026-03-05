@@ -29,7 +29,7 @@ const SCOPE = {
   DAY: 'day',
 }
 
-function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', routineDayId = null }) {
+function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm', routineDayId = null }) {
   const navigate = useNavigate()
   const [selectedSet, setSelectedSet] = useState(null)
   const [activeTab, setActiveTab] = useState(TABS.PROGRESS)
@@ -150,6 +150,8 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
         ) : (
           <HistoryTab
             sessions={sessions}
+            timeUnit={timeUnit}
+            distanceUnit={distanceUnit}
             onSelectSet={setSelectedSet}
             onSessionClick={handleSessionClick}
           />
@@ -239,7 +241,7 @@ function StatCard({ label, value, color }) {
   )
 }
 
-function HistoryTab({ sessions, onSelectSet, onSessionClick }) {
+function HistoryTab({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSet, onSessionClick }) {
   if (!sessions || sessions.length === 0) {
     return (
       <p className="text-center text-secondary py-8">
@@ -275,7 +277,7 @@ function HistoryTab({ sessions, onSelectSet, onSessionClick }) {
                 >
                   {set.set_number}
                 </span>
-                <span className="flex-1">{formatSetValue(set)}</span>
+                <span className="flex-1">{formatSetValue(set, { timeUnit, distanceUnit })}</span>
                 {(set.rir_actual !== null || set.notes) && (
                   <button
                     onClick={(e) => {

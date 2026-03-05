@@ -14,6 +14,8 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
       "measurement_type": "weight_reps",
       "muscle_group_name": "Pecho",
       "weight_unit": "kg",
+      "time_unit": "s",
+      "distance_unit": "m",
       "instructions": "Instrucciones de ejecución del ejercicio (opcional)"
     }
   ],
@@ -74,11 +76,14 @@ CAMPOS DE EJERCICIOS (en "exercises"):
   - "level_distance": nivel × distancia (ej: elíptica)
   - "level_calories": nivel × calorías (ej: remo estático)
   - "distance_time": distancia × tiempo (ej: cinta de correr)
+  - "distance_pace": distancia × ritmo (ej: running con pace min/km)
 - muscle_group_name (OBLIGATORIO, uno de estos):
   - "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps"
   - "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas"
   - "Abdominales", "Antebrazo"
 - weight_unit: "kg" o "lb" (opcional, por defecto "kg")
+- time_unit: "s" o "min" (opcional, por defecto "s")
+- distance_unit: "m" o "km" (opcional, por defecto "m")
 - instructions: instrucciones generales de ejecución del ejercicio (opcional)
 
 CAMPOS DE BLOQUES (en "days[].blocks"):
@@ -246,6 +251,8 @@ export async function exportRoutine(routineId) {
       name,
       measurement_type,
       weight_unit,
+      time_unit,
+      distance_unit,
       instructions,
       muscle_group:muscle_groups(name)
     `)
@@ -260,6 +267,8 @@ export async function exportRoutine(routineId) {
       name: ex.name,
       measurement_type: ex.measurement_type,
       weight_unit: ex.weight_unit,
+      time_unit: ex.time_unit,
+      distance_unit: ex.distance_unit,
       instructions: ex.instructions,
       muscle_group_name: ex.muscle_group?.name,
     })),
@@ -341,6 +350,8 @@ export async function importRoutine(jsonData, userId, options = {}) {
             .update({
               measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
               weight_unit: ex.weight_unit || 'kg',
+              time_unit: ex.time_unit || 's',
+              distance_unit: ex.distance_unit || 'm',
               instructions: ex.instructions,
               muscle_group_id: muscleGroupId,
             })
@@ -354,6 +365,8 @@ export async function importRoutine(jsonData, userId, options = {}) {
             name: ex.name,
             measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
             weight_unit: ex.weight_unit || 'kg',
+            time_unit: ex.time_unit || 's',
+            distance_unit: ex.distance_unit || 'm',
             instructions: ex.instructions,
             muscle_group_id: muscleGroupId,
             user_id: userId,

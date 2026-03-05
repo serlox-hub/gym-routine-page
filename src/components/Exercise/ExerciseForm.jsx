@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, BottomActions } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
 import { colors, inputStyle, selectStyle } from '../../lib/styles.js'
-import { MEASUREMENT_TYPE_OPTIONS, measurementTypeUsesWeight, MeasurementType } from '../../lib/measurementTypes.js'
+import { MEASUREMENT_TYPE_OPTIONS, measurementTypeUsesWeight, measurementTypeUsesTime, measurementTypeUsesDistance, MeasurementType } from '../../lib/measurementTypes.js'
 import { getMuscleGroupColor } from '../../lib/constants.js'
 
 const WEIGHT_UNITS = [
@@ -10,10 +10,52 @@ const WEIGHT_UNITS = [
   { value: 'lb', label: 'Libras (lb)' },
 ]
 
+const TIME_UNITS = [
+  { value: 's', label: 'Segundos (s)' },
+  { value: 'min', label: 'Minutos (min)' },
+]
+
+const DISTANCE_UNITS = [
+  { value: 'm', label: 'Metros (m)' },
+  { value: 'km', label: 'Kilómetros (km)' },
+]
+
+function UnitSelector({ label, units, field, form, onChange, Wrapper, compact }) {
+  return (
+    <Wrapper className={compact ? '' : 'p-4'}>
+      <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
+        {label}
+      </label>
+      <div className="flex gap-2">
+        {units.map(unit => {
+          const isSelected = form[field] === unit.value
+          return (
+            <button
+              key={unit.value}
+              type="button"
+              onClick={() => onChange(field, unit.value)}
+              className="flex-1 py-2 px-3 rounded-lg text-sm transition-colors"
+              style={{
+                backgroundColor: isSelected ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+                color: isSelected ? colors.accent : colors.textPrimary,
+                border: isSelected ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
+              }}
+            >
+              {unit.label}
+            </button>
+          )
+        })}
+      </div>
+    </Wrapper>
+  )
+}
+
 const DEFAULT_FORM = {
   name: '',
   measurement_type: MeasurementType.WEIGHT_REPS,
   weight_unit: 'kg',
+  time_unit: 's',
+  distance_unit: 'm',
   instructions: '',
 }
 
@@ -50,6 +92,8 @@ function ExerciseForm({
         name: initialData.name || '',
         measurement_type: initialData.measurement_type || MeasurementType.WEIGHT_REPS,
         weight_unit: initialData.weight_unit || 'kg',
+        time_unit: initialData.time_unit || 's',
+        distance_unit: initialData.distance_unit || 'm',
         instructions: initialData.instructions || '',
       })
       setSelectedMuscleGroupId(initialData.muscle_group_id || null)
@@ -57,6 +101,8 @@ function ExerciseForm({
   }, [initialData])
 
   const usesWeight = measurementTypeUsesWeight(form.measurement_type)
+  const usesTime = measurementTypeUsesTime(form.measurement_type)
+  const usesDistance = measurementTypeUsesDistance(form.measurement_type)
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -140,31 +186,17 @@ function ExerciseForm({
 
       {/* Unidad de peso (solo si usa peso) */}
       {usesWeight && (
-        <Wrapper className={compact ? '' : 'p-4'}>
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-            Unidad de peso
-          </label>
-          <div className="flex gap-2">
-            {WEIGHT_UNITS.map(unit => {
-              const isSelected = form.weight_unit === unit.value
-              return (
-                <button
-                  key={unit.value}
-                  type="button"
-                  onClick={() => handleChange('weight_unit', unit.value)}
-                  className="flex-1 py-2 px-3 rounded-lg text-sm transition-colors"
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
-                    color: isSelected ? colors.accent : colors.textPrimary,
-                    border: isSelected ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
-                  }}
-                >
-                  {unit.label}
-                </button>
-              )
-            })}
-          </div>
-        </Wrapper>
+        <UnitSelector label="Unidad de peso" units={WEIGHT_UNITS} field="weight_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
+      )}
+
+      {/* Unidad de tiempo (solo si usa tiempo) */}
+      {usesTime && (
+        <UnitSelector label="Unidad de tiempo" units={TIME_UNITS} field="time_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
+      )}
+
+      {/* Unidad de distancia (solo si usa distancia) */}
+      {usesDistance && (
+        <UnitSelector label="Unidad de distancia" units={DISTANCE_UNITS} field="distance_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
       )}
 
       {/* Grupo muscular */}

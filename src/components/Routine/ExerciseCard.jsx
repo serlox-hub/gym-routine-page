@@ -89,6 +89,8 @@ function ExerciseCard({
         exerciseId={exercise.id}
         exerciseName={exercise.name}
         measurementType={measurementType}
+        timeUnit={exercise.time_unit}
+        distanceUnit={exercise.distance_unit}
         routineDayId={routineDayId}
       />
     </Wrapper>

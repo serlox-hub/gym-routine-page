@@ -21,8 +21,10 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   // Determinar tipo de medición del ejercicio
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
 
-  // Unidad de peso del ejercicio
+  // Unidades del ejercicio
   const weightUnit = exercise.weight_unit || 'kg'
+  const timeUnit = exercise.time_unit || 's'
+  const distanceUnit = exercise.distance_unit || 'm'
 
   // Usar sessionExerciseId (id de session_exercises) para rastrear sets
   const exerciseKey = sessionExerciseId || id
@@ -160,7 +162,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       )}
 
       <div className="mb-3">
-        <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} />
+        <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} timeUnit={timeUnit} distanceUnit={distanceUnit} />
       </div>
 
       <div className="space-y-2">
@@ -174,6 +176,8 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
               exerciseId={exercise.id}
               measurementType={measurementType}
               weightUnit={weightUnit}
+              timeUnit={timeUnit}
+              distanceUnit={distanceUnit}
               descansoSeg={rest_seconds}
               previousSet={previousSet}
               onComplete={onCompleteSet}
@@ -192,6 +196,8 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         exerciseName={exercise.name}
         measurementType={measurementType}
         weightUnit={weightUnit}
+        timeUnit={timeUnit}
+        distanceUnit={distanceUnit}
         routineDayId={routineDayId}
       />
 

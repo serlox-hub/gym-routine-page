@@ -17,6 +17,7 @@ export const MeasurementType = {
   LEVEL_DISTANCE: 'level_distance',
   LEVEL_CALORIES: 'level_calories',
   DISTANCE_TIME: 'distance_time',
+  DISTANCE_PACE: 'distance_pace',
 }
 
 /**
@@ -39,6 +40,7 @@ export const MEASUREMENT_TYPE_OPTIONS = [
   { value: MeasurementType.LEVEL_DISTANCE, label: 'Nivel × Distancia' },
   { value: MeasurementType.LEVEL_CALORIES, label: 'Nivel × Calorías' },
   { value: MeasurementType.DISTANCE_TIME, label: 'Distancia × Tiempo' },
+  { value: MeasurementType.DISTANCE_PACE, label: 'Distancia × Ritmo' },
 ]
 
 /**
@@ -57,6 +59,35 @@ export const REPS_MEASUREMENT_TYPES = [
   MeasurementType.WEIGHT_REPS,
   MeasurementType.REPS_ONLY,
 ]
+
+/**
+ * Tipos de medición que usan tiempo
+ */
+export const TIME_MEASUREMENT_TYPES = [
+  MeasurementType.TIME,
+  MeasurementType.WEIGHT_TIME,
+  MeasurementType.LEVEL_TIME,
+  MeasurementType.DISTANCE_TIME,
+]
+
+/**
+ * Tipos de medición que usan distancia
+ */
+export const DISTANCE_MEASUREMENT_TYPES = [
+  MeasurementType.DISTANCE,
+  MeasurementType.WEIGHT_DISTANCE,
+  MeasurementType.LEVEL_DISTANCE,
+  MeasurementType.DISTANCE_TIME,
+  MeasurementType.DISTANCE_PACE,
+]
+
+export function measurementTypeUsesTime(measurementType) {
+  return TIME_MEASUREMENT_TYPES.includes(measurementType)
+}
+
+export function measurementTypeUsesDistance(measurementType) {
+  return DISTANCE_MEASUREMENT_TYPES.includes(measurementType)
+}
 
 /**
  * Tipos de medición que usan nivel (resistencia/inclinación)
@@ -134,6 +165,7 @@ export function getDefaultReps(measurementType) {
     case MeasurementType.LEVEL_CALORIES:
       return '100kcal'
     case MeasurementType.DISTANCE_TIME:
+    case MeasurementType.DISTANCE_PACE:
       return '5km'
     default:
       return '8-12'
@@ -157,6 +189,7 @@ export function getRepsLabel(measurementType) {
     case MeasurementType.LEVEL_CALORIES:
       return 'Calorías'
     case MeasurementType.DISTANCE_TIME:
+    case MeasurementType.DISTANCE_PACE:
       return 'Distancia'
     default:
       return 'Repeticiones'
@@ -180,6 +213,7 @@ export function getRepsPlaceholder(measurementType) {
     case MeasurementType.LEVEL_CALORIES:
       return 'Ej: 100kcal'
     case MeasurementType.DISTANCE_TIME:
+    case MeasurementType.DISTANCE_PACE:
       return 'Ej: 5km'
     default:
       return 'Ej: 8-12'

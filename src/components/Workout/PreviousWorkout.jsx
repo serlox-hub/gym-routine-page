@@ -6,7 +6,7 @@ import { formatRelativeDate } from '../../lib/dateUtils.js'
 import { formatSetValueByType } from '../../lib/setUtils.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 
-function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS }) {
+function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, timeUnit = 's', distanceUnit = 'm' }) {
   const { data: previous, isLoading } = usePreviousWorkout(exerciseId)
   const [selectedSet, setSelectedSet] = useState(null)
 
@@ -68,7 +68,7 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
                 />
               </div>
               <div className="text-sm font-medium text-center" style={{ color: '#e6edf3' }}>
-                {formatSetValueByType(set, measurementType)}
+                {formatSetValueByType(set, measurementType, { timeUnit, distanceUnit })}
               </div>
             </div>
           )

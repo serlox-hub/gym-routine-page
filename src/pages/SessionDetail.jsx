@@ -135,7 +135,7 @@ function SessionDetail() {
                     {set.set_number}
                   </span>
                   <div className="flex-1 text-sm">
-                    {formatSetValue(set)}
+                    {formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}
                   </div>
                   <NotesBadge
                     rir={set.rir_actual}

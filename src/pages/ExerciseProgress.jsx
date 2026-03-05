@@ -108,7 +108,7 @@ function ExerciseProgress() {
                     >
                       {set.set_number}
                     </span>
-                    <span className="flex-1">{formatSetValue(set)}</span>
+                    <span className="flex-1">{formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}</span>
                     {set.rir_actual !== null && (
                       <span
                         className="text-xs font-bold px-1 rounded"

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { NotesBadge } from '../ui/index.js'
 import SetDetailsModal from './SetDetailsModal.jsx'
-import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs } from './SetInputs.jsx'
-import { isSetDataValid, buildCompletedSetData } from '../../lib/setUtils.js'
+import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs.jsx'
+import { isSetDataValid, buildCompletedSetData, metersToDistanceUnit } from '../../lib/setUtils.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -16,6 +16,8 @@ function SetRow({
   exerciseId,
   measurementType = MeasurementType.WEIGHT_REPS,
   weightUnit = 'kg',
+  timeUnit = 's',
+  distanceUnit = 'm',
   descansoSeg,
   previousSet,
   onComplete,
@@ -48,6 +50,7 @@ function SetRow({
   const [distance, setDistance] = useState(setData?.distanceMeters ?? '')
   const [calories, setCalories] = useState(setData?.caloriesBurned ?? '')
   const [level, setLevel] = useState(setData?.level ?? '')
+  const [pace, setPace] = useState(setData?.paceSeconds ?? '')
   const [showModal, setShowModal] = useState(false)
   const [modalMode, setModalMode] = useState('complete')
 
@@ -57,13 +60,14 @@ function SetRow({
       if (previousSet.weight != null) setWeight(previousSet.weight)
       if (previousSet.reps != null) setReps(previousSet.reps)
       if (previousSet.timeSeconds != null) setTime(previousSet.timeSeconds)
-      if (previousSet.distanceMeters != null) setDistance(previousSet.distanceMeters)
+      if (previousSet.distanceMeters != null) setDistance(metersToDistanceUnit(previousSet.distanceMeters, distanceUnit))
       if (previousSet.caloriesBurned != null) setCalories(previousSet.caloriesBurned)
       if (previousSet.level != null) setLevel(previousSet.level)
+      if (previousSet.paceSeconds != null) setPace(previousSet.paceSeconds)
     }
   }, [previousSet, setData, cachedData])
 
-  const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level })
+  const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace })
 
   const handleCheckClick = () => {
     if (isCompleted) {
@@ -105,12 +109,16 @@ function SetRow({
     }
   }
 
+  const buildInfo = (rir, notes, videoUrl) => ({
+    sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl,
+  })
+
   const handleModalSubmit = (rir, notes, videoUrl, videoFile) => {
     if (modalMode === 'complete') {
       const data = buildCompletedSetData(
         measurementType,
-        { weight, reps, time, distance, calories, level },
-        { sessionExerciseId, exerciseId, setNumber, weightUnit, rirActual: rir, notes, videoUrl }
+        { weight, reps, time, distance, calories, level, pace },
+        buildInfo(rir, notes, videoUrl)
       )
       onComplete(data, descansoSeg)
     } else {
@@ -133,8 +141,8 @@ function SetRow({
   const handleCompleteSet = (rir, notes, videoUrl) => {
     const data = buildCompletedSetData(
       measurementType,
-      { weight, reps, time, distance, calories, level },
-      { sessionExerciseId, exerciseId, setNumber, weightUnit, rirActual: rir, notes, videoUrl }
+      { weight, reps, time, distance, calories, level, pace },
+      buildInfo(rir, notes, videoUrl)
     )
     onComplete(data, descansoSeg)
   }
@@ -148,23 +156,25 @@ function SetRow({
       case MeasurementType.REPS_ONLY:
         return <RepsOnlyInputs reps={reps} setReps={setReps} {...props} />
       case MeasurementType.TIME:
-        return <TimeInputs time={time} setTime={setTime} {...props} />
+        return <TimeInputs time={time} setTime={setTime} timeUnit={timeUnit} {...props} />
       case MeasurementType.WEIGHT_TIME:
-        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={time} setReps={setTime} weightUnit={weightUnit} repsLabel="seg" {...props} />
+        return <WeightTimeInputs weight={weight} setWeight={setWeight} time={time} setTime={setTime} weightUnit={weightUnit} timeUnit={timeUnit} {...props} />
       case MeasurementType.DISTANCE:
-        return <DistanceInputs weight={null} setWeight={null} distance={distance} setDistance={setDistance} weightUnit={weightUnit} showWeight={false} {...props} />
+        return <DistanceInputs weight={null} setWeight={null} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} showWeight={false} {...props} />
       case MeasurementType.WEIGHT_DISTANCE:
-        return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={weightUnit} {...props} />
+        return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} {...props} />
       case MeasurementType.CALORIES:
         return <RepsOnlyInputs reps={calories} setReps={setCalories} label="kcal" {...props} />
       case MeasurementType.LEVEL_TIME:
-        return <LevelTimeInputs level={level} setLevel={setLevel} time={time} setTime={setTime} {...props} />
+        return <LevelTimeInputs level={level} setLevel={setLevel} time={time} setTime={setTime} timeUnit={timeUnit} {...props} />
       case MeasurementType.LEVEL_DISTANCE:
-        return <LevelDistanceInputs level={level} setLevel={setLevel} distance={distance} setDistance={setDistance} {...props} />
+        return <LevelDistanceInputs level={level} setLevel={setLevel} distance={distance} setDistance={setDistance} distanceUnit={distanceUnit} {...props} />
       case MeasurementType.LEVEL_CALORIES:
         return <LevelCaloriesInputs level={level} setLevel={setLevel} calories={calories} setCalories={setCalories} {...props} />
       case MeasurementType.DISTANCE_TIME:
-        return <DistanceTimeInputs distance={distance} setDistance={setDistance} time={time} setTime={setTime} {...props} />
+        return <DistanceTimeInputs distance={distance} setDistance={setDistance} time={time} setTime={setTime} distanceUnit={distanceUnit} timeUnit={timeUnit} {...props} />
+      case MeasurementType.DISTANCE_PACE:
+        return <DistancePaceInputs distance={distance} setDistance={setDistance} pace={pace} setPace={setPace} distanceUnit={distanceUnit} {...props} />
       default:
         return null
     }

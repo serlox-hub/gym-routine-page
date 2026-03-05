@@ -13,6 +13,50 @@ function formatNumber(value) {
 }
 
 /**
+ * Formatea segundos como mm:ss
+ */
+export function formatSecondsAsMMSS(totalSeconds) {
+  if (!totalSeconds && totalSeconds !== 0) return ''
+  const s = Math.round(Number(totalSeconds))
+  const min = Math.floor(s / 60)
+  const sec = s % 60
+  return `${min}:${String(sec).padStart(2, '0')}`
+}
+
+/**
+ * Formatea segundos según la unidad de tiempo del ejercicio
+ */
+export function formatTimeInUnit(seconds, timeUnit) {
+  if (!seconds) return '0'
+  if (timeUnit === 'min') return formatSecondsAsMMSS(seconds)
+  return `${seconds}`
+}
+
+/**
+ * Etiqueta de unidad de tiempo para display
+ */
+export function getTimeUnitLabel(timeUnit) {
+  return timeUnit === 'min' ? 'min' : 's'
+}
+
+/**
+ * Convierte un valor de distancia a metros según la unidad
+ */
+export function distanceToMeters(value, distanceUnit) {
+  const num = parseFloat(value)
+  if (isNaN(num)) return 0
+  return distanceUnit === 'km' ? Math.round(num * 1000) : num
+}
+
+/**
+ * Convierte metros a la unidad indicada
+ */
+export function metersToDistanceUnit(meters, distanceUnit) {
+  if (!meters) return 0
+  return distanceUnit === 'km' ? +(meters / 1000).toFixed(3) : meters
+}
+
+/**
  * Crea una clave única para identificar una serie
  * @param {string|number} routineExerciseId - ID del ejercicio de rutina
  * @param {number} setNumber - Número de serie
@@ -45,7 +89,7 @@ export function generateExtraExerciseId() {
  * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number}} data - Datos de la serie
  * @returns {boolean}
  */
-export function isSetDataValid(measurementType, { weight, reps, time, distance, calories, level }) {
+export function isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace }) {
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
       return weight !== '' && weight !== undefined && reps !== '' && reps !== undefined
@@ -69,6 +113,8 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance, 
       return level !== '' && level !== undefined && calories !== '' && calories !== undefined
     case MeasurementType.DISTANCE_TIME:
       return distance !== '' && distance !== undefined && time !== '' && time !== undefined
+    case MeasurementType.DISTANCE_PACE:
+      return distance !== '' && distance !== undefined && pace !== '' && pace !== undefined && pace > 0
     default:
       return false
   }
@@ -82,8 +128,8 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance, 
  * @returns {Object} Datos para guardar la serie
  */
 export function buildCompletedSetData(measurementType, formData, info) {
-  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, weightUnit = 'kg', rirActual, notes, videoUrl } = info
-  const { weight, reps, time, distance, calories, level } = formData
+  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, weightUnit = 'kg', distanceUnit = 'm', rirActual, notes, videoUrl } = info
+  const { weight, reps, time, distance, calories, level, pace } = formData
 
   const data = {
     exerciseId,
@@ -115,12 +161,12 @@ export function buildCompletedSetData(measurementType, formData, info) {
       data.timeSeconds = parseInt(time)
       break
     case MeasurementType.DISTANCE:
-      data.distanceMeters = parseFloat(distance)
+      data.distanceMeters = distanceToMeters(distance, distanceUnit)
       break
     case MeasurementType.WEIGHT_DISTANCE:
       data.weight = parseFloat(weight)
       data.weightUnit = weightUnit
-      data.distanceMeters = parseFloat(distance)
+      data.distanceMeters = distanceToMeters(distance, distanceUnit)
       break
     case MeasurementType.CALORIES:
       data.caloriesBurned = parseInt(calories)
@@ -131,15 +177,19 @@ export function buildCompletedSetData(measurementType, formData, info) {
       break
     case MeasurementType.LEVEL_DISTANCE:
       data.level = parseInt(level)
-      data.distanceMeters = parseFloat(distance)
+      data.distanceMeters = distanceToMeters(distance, distanceUnit)
       break
     case MeasurementType.LEVEL_CALORIES:
       data.level = parseInt(level)
       data.caloriesBurned = parseInt(calories)
       break
     case MeasurementType.DISTANCE_TIME:
-      data.distanceMeters = parseFloat(distance)
+      data.distanceMeters = distanceToMeters(distance, distanceUnit)
       data.timeSeconds = parseInt(time)
+      break
+    case MeasurementType.DISTANCE_PACE:
+      data.distanceMeters = distanceToMeters(distance, distanceUnit)
+      data.paceSeconds = parseInt(pace)
       break
   }
 
@@ -151,7 +201,7 @@ export function buildCompletedSetData(measurementType, formData, info) {
  * @param {{weight?: number, weight_unit?: string, reps_completed?: number, time_seconds?: number, distance_meters?: number}} set - Datos de la serie
  * @returns {string}
  */
-export function formatSetValue(set) {
+export function formatSetValue(set, { timeUnit = 's', distanceUnit = 'm' } = {}) {
   const parts = []
   if (set.level) {
     parts.push(`Nv${set.level}`)
@@ -163,10 +213,14 @@ export function formatSetValue(set) {
     parts.push(`${set.reps_completed} reps`)
   }
   if (set.time_seconds) {
-    parts.push(`${set.time_seconds}s`)
+    parts.push(timeUnit === 'min' ? formatSecondsAsMMSS(set.time_seconds) : `${set.time_seconds}s`)
   }
   if (set.distance_meters) {
-    parts.push(`${formatNumber(set.distance_meters)}m`)
+    const val = metersToDistanceUnit(set.distance_meters, distanceUnit)
+    parts.push(`${formatNumber(val)}${distanceUnit}`)
+  }
+  if (set.pace_seconds) {
+    parts.push(`${formatSecondsAsMMSS(set.pace_seconds)}/${distanceUnit}`)
   }
   if (set.calories_burned) {
     parts.push(`${set.calories_burned}kcal`)
@@ -180,33 +234,37 @@ export function formatSetValue(set) {
  * @param {string} measurementType - Tipo de medición
  * @returns {string}
  */
-export function formatSetValueByType(set, measurementType) {
-  const unit = set.weightUnit || 'kg'
+export function formatSetValueByType(set, measurementType, { timeUnit = 's', distanceUnit = 'm' } = {}) {
+  const wUnit = set.weightUnit || 'kg'
+  const fmtTime = (s) => timeUnit === 'min' ? formatSecondsAsMMSS(s) : `${s}s`
+  const dVal = set.distanceMeters ? metersToDistanceUnit(set.distanceMeters, distanceUnit) : 0
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
-      return `${formatNumber(set.weight)}${unit} × ${set.reps}`
+      return `${formatNumber(set.weight)}${wUnit} × ${set.reps}`
     case MeasurementType.REPS_ONLY:
       return `${set.reps} reps`
     case MeasurementType.TIME:
-      return `${set.timeSeconds}s`
+      return fmtTime(set.timeSeconds)
     case MeasurementType.WEIGHT_TIME:
-      return `${formatNumber(set.weight)}${unit} × ${set.timeSeconds}s`
+      return `${formatNumber(set.weight)}${wUnit} × ${fmtTime(set.timeSeconds)}`
     case MeasurementType.DISTANCE:
-      return `${formatNumber(set.distanceMeters)}m`
+      return `${formatNumber(dVal)}${distanceUnit}`
     case MeasurementType.WEIGHT_DISTANCE:
-      return `${formatNumber(set.weight)}${unit} × ${formatNumber(set.distanceMeters)}m`
+      return `${formatNumber(set.weight)}${wUnit} × ${formatNumber(dVal)}${distanceUnit}`
     case MeasurementType.CALORIES:
       return `${set.caloriesBurned}kcal`
     case MeasurementType.LEVEL_TIME:
-      return `Nv${set.level} × ${set.timeSeconds}s`
+      return `Nv${set.level} × ${fmtTime(set.timeSeconds)}`
     case MeasurementType.LEVEL_DISTANCE:
-      return `Nv${set.level} × ${formatNumber(set.distanceMeters)}m`
+      return `Nv${set.level} × ${formatNumber(dVal)}${distanceUnit}`
     case MeasurementType.LEVEL_CALORIES:
       return `Nv${set.level} × ${set.caloriesBurned}kcal`
     case MeasurementType.DISTANCE_TIME:
-      return `${formatNumber(set.distanceMeters)}m × ${set.timeSeconds}s`
+      return `${formatNumber(dVal)}${distanceUnit} × ${fmtTime(set.timeSeconds)}`
+    case MeasurementType.DISTANCE_PACE:
+      return `${formatNumber(dVal)}${distanceUnit} @ ${formatSecondsAsMMSS(set.paceSeconds)}/${distanceUnit}`
     default:
-      return set.weight ? `${formatNumber(set.weight)}${unit} × ${set.reps}` : `${set.reps}`
+      return set.weight ? `${formatNumber(set.weight)}${wUnit} × ${set.reps}` : `${set.reps}`
   }
 }
 

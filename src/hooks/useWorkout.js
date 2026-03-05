@@ -64,7 +64,7 @@ export function useCompleteSet() {
   const rollbackSet = useWorkoutStore(state => state.rollbackSet)
 
   return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, rirActual, notes, videoUrl }) => {
+    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl }) => {
       const { data, error } = await supabase
         .from('completed_sets')
         .upsert({
@@ -76,6 +76,7 @@ export function useCompleteSet() {
           reps_completed: repsCompleted,
           time_seconds: timeSeconds,
           distance_meters: distanceMeters,
+          pace_seconds: paceSeconds,
           rir_actual: rirActual,
           notes,
           video_url: videoUrl,
@@ -97,6 +98,7 @@ export function useCompleteSet() {
         repsCompleted: variables.repsCompleted,
         timeSeconds: variables.timeSeconds,
         distanceMeters: variables.distanceMeters,
+        paceSeconds: variables.paceSeconds,
         rirActual: variables.rirActual,
         notes: variables.notes,
         videoUrl: variables.videoUrl,
@@ -313,6 +315,8 @@ export function useSessionExercises(sessionId) {
             instructions,
             measurement_type,
             weight_unit,
+            time_unit,
+            distance_unit,
             muscle_group:muscle_groups (
               id,
               name
@@ -425,7 +429,9 @@ export function useAddSessionExercise() {
             id,
             name,
             measurement_type,
-            weight_unit
+            weight_unit,
+            time_unit,
+            distance_unit
           )
         `)
         .single()
@@ -606,6 +612,8 @@ export function useSessionDetail(sessionId) {
               id,
               name,
               deleted_at,
+              time_unit,
+              distance_unit,
               muscle_group:muscle_groups (
                 id,
                 name
@@ -619,6 +627,7 @@ export function useSessionDetail(sessionId) {
               reps_completed,
               time_seconds,
               distance_meters,
+              pace_seconds,
               rir_actual,
               notes,
               video_url,
@@ -681,6 +690,7 @@ export function useExerciseHistory(exerciseId, routineDayId = null) {
             reps_completed,
             time_seconds,
             distance_meters,
+            pace_seconds,
             rir_actual,
             notes,
             performed_at
@@ -735,6 +745,7 @@ export function usePreviousWorkout(exerciseId) {
             reps_completed,
             time_seconds,
             distance_meters,
+            pace_seconds,
             rir_actual,
             notes,
             performed_at
@@ -763,6 +774,7 @@ export function usePreviousWorkout(exerciseId) {
             reps: set.reps_completed,
             timeSeconds: set.time_seconds,
             distanceMeters: set.distance_meters,
+            paceSeconds: set.pace_seconds,
             rir: set.rir_actual,
             notes: set.notes
           }))

@@ -28,7 +28,8 @@ describe('measurementTypes', () => {
       expect(MEASUREMENT_TYPES).toContain('level_distance')
       expect(MEASUREMENT_TYPES).toContain('level_calories')
       expect(MEASUREMENT_TYPES).toContain('distance_time')
-      expect(MEASUREMENT_TYPES).toHaveLength(11)
+      expect(MEASUREMENT_TYPES).toContain('distance_pace')
+      expect(MEASUREMENT_TYPES).toHaveLength(12)
     })
   })
 

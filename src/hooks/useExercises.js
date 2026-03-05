@@ -15,6 +15,8 @@ export function useExercisesWithMuscleGroup() {
           name,
           measurement_type,
           weight_unit,
+          time_unit,
+          distance_unit,
           muscle_group_id,
           muscle_group:muscle_groups(id, name)
         `)
@@ -159,6 +161,8 @@ export function useExercise(exerciseId) {
           name,
           measurement_type,
           weight_unit,
+          time_unit,
+          distance_unit,
           instructions,
           deleted_at,
           muscle_group_id,
@@ -187,6 +191,8 @@ export function useCreateExercise() {
           instructions: exercise.instructions || null,
           measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
           weight_unit: exercise.weight_unit || 'kg',
+          time_unit: exercise.time_unit || 's',
+          distance_unit: exercise.distance_unit || 'm',
           muscle_group_id: muscleGroupId || null,
           user_id: userId,
         })
@@ -215,6 +221,8 @@ export function useUpdateExercise() {
           instructions: exercise.instructions || null,
           measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
           weight_unit: exercise.weight_unit || 'kg',
+          time_unit: exercise.time_unit || 's',
+          distance_unit: exercise.distance_unit || 'm',
           muscle_group_id: muscleGroupId || null,
         })
         .eq('id', exerciseId)
