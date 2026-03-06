@@ -75,6 +75,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
             muscleGroups={muscleGroups}
             isLoading={loadingExercises}
             onSelect={handleReplace}
+            initialMuscleGroup={exercise?.muscle_group?.id}
           />
         </>
       ) : (

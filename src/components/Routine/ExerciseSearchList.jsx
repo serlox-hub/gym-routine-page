@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { normalizeSearchText } from '../../lib/textUtils.js'
@@ -8,9 +8,13 @@ import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
 /**
  * Lista de ejercicios con búsqueda y filtro por grupo muscular
  */
-function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, existingExerciseIds = new Set(), search = '', onSearchChange }) {
+function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, existingExerciseIds = new Set(), search = '', onSearchChange, initialMuscleGroup = null }) {
   const [internalSearch, setInternalSearch] = useState(search)
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(initialMuscleGroup)
+
+  useEffect(() => {
+    setSelectedMuscleGroup(initialMuscleGroup)
+  }, [initialMuscleGroup])
 
   const currentSearch = onSearchChange ? search : internalSearch
   const handleSearchChange = onSearchChange || setInternalSearch
