@@ -5,11 +5,12 @@ test.describe('Autenticación', () => {
     await page.goto('/')
   })
 
-  test('redirige a login si no está autenticado', async ({ page }) => {
-    await expect(page).toHaveURL(/\/login/)
+  test('muestra landing si no está autenticado', async ({ page }) => {
+    await expect(page.getByText(/empezar ahora/i)).toBeVisible()
   })
 
   test('valida campos vacíos en login', async ({ page }) => {
+    await page.goto('/login')
     await page.getByRole('button', { name: /entrar/i }).click()
 
     // Debería mostrar error de validación
