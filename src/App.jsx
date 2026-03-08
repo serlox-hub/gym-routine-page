@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
+import Landing from './pages/Landing.jsx'
 import Home from './pages/Home.jsx'
 import RoutineDetail from './pages/RoutineDetail.jsx'
 import WorkoutSession from './pages/WorkoutSession.jsx'
@@ -21,6 +22,23 @@ import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import { ActiveSessionBanner } from './components/ui/index.js'
 import { useAuth } from './hooks/useAuth.js'
+
+function HomeOrLanding() {
+  const { isAuthenticated, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0d1117' }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p style={{ color: '#8b949e' }}>Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return isAuthenticated ? <Home /> : <Landing />
+}
 
 function PasswordRecoveryRedirect({ children }) {
   const { isPasswordRecovery, clearPasswordRecovery } = useAuth()
@@ -50,7 +68,7 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected routes */}
-          <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+          <Route path="/" element={<HomeOrLanding />} />
           <Route path="/routines/new" element={<PrivateRoute><NewRoutine /></PrivateRoute>} />
           <Route path="/routine/:routineId" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
           <Route path="/routine/:routineId/edit" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
