@@ -52,7 +52,7 @@ function Home() {
     setIsLoggingOut(true)
     try {
       await logout()
-      navigate('/login')
+      navigate('/')
     } catch {
       setIsLoggingOut(false)
     }

@@ -352,7 +352,7 @@ function HeroSection() {
       {[...Array(6)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute rounded-full"
+          className="absolute rounded-full pointer-events-none"
           style={{
             width: 4 + i * 2,
             height: 4 + i * 2,
@@ -372,7 +372,7 @@ function HeroSection() {
         />
       ))}
 
-      <motion.div style={{ y, opacity }} className="w-full">
+      <motion.div style={{ y, opacity }} className="w-full relative z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Text */}
