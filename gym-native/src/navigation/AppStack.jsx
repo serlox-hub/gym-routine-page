@@ -1,5 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import HomeScreen from '../screens/HomeScreen'
+import RoutineDetailScreen from '../screens/RoutineDetailScreen'
+import NewRoutineScreen from '../screens/NewRoutineScreen'
 import PlaceholderScreen from '../screens/PlaceholderScreen'
 
 const Stack = createNativeStackNavigator()
@@ -15,8 +17,8 @@ export default function AppStack() {
       <Stack.Screen name="Home" component={HomeScreen} />
 
       {/* Rutinas */}
-      <Stack.Screen name="RoutineDetail" component={PlaceholderScreen} />
-      <Stack.Screen name="NewRoutine" component={PlaceholderScreen} />
+      <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
+      <Stack.Screen name="NewRoutine" component={NewRoutineScreen} />
       <Stack.Screen name="Templates" component={PlaceholderScreen} />
       <Stack.Screen name="ImportRoutine" component={PlaceholderScreen} />
       <Stack.Screen name="ChatbotPrompt" component={PlaceholderScreen} />
