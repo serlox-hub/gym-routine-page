@@ -5,10 +5,14 @@ import { Plus } from 'lucide-react-native'
 import {
   useRoutine, useRoutineDays, useRoutineAllExercises,
   useCreateRoutineDay, useDeleteRoutine, useDeleteRoutineDay,
-  useReorderRoutineDays,
+  useReorderRoutineDays, useAddExerciseToDay, useUpdateRoutineExercise,
+  useDuplicateRoutineExercise, useMoveRoutineExerciseToDay,
 } from '../hooks/useRoutines'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui'
-import { DayCard, AddDayModal, RoutineHeader, MoveToDayModal } from '../components/Routine'
+import {
+  DayCard, AddDayModal, RoutineHeader, MoveToDayModal,
+  AddExerciseModal, EditRoutineExerciseModal,
+} from '../components/Routine'
 import { moveItemToPosition } from '../lib/arrayUtils'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
@@ -26,6 +30,17 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const [exerciseToMove, setExerciseToMove] = useState(null)
   const [movingFromDayId, setMovingFromDayId] = useState(null)
 
+  const [showAddExercise, setShowAddExercise] = useState(false)
+  const [addExerciseDayId, setAddExerciseDayId] = useState(null)
+  const [addExerciseSupersets, setAddExerciseSupersets] = useState([])
+  const [addExerciseIsWarmup, setAddExerciseIsWarmup] = useState(false)
+
+  const [showEditExercise, setShowEditExercise] = useState(false)
+  const [editingExercise, setEditingExercise] = useState(null)
+  const [editExerciseDayId, setEditExerciseDayId] = useState(null)
+  const [editExerciseSupersets, setEditExerciseSupersets] = useState([])
+  const [isReplacingExercise, setIsReplacingExercise] = useState(false)
+
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
   const { data: allRoutineExercises } = useRoutineAllExercises(routineId)
@@ -33,6 +48,10 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const deleteRoutine = useDeleteRoutine()
   const deleteDay = useDeleteRoutineDay()
   const reorderDays = useReorderRoutineDays()
+  const addExercise = useAddExerciseToDay()
+  const updateExercise = useUpdateRoutineExercise()
+  const duplicateExercise = useDuplicateRoutineExercise()
+  const moveExercise = useMoveRoutineExerciseToDay()
 
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
@@ -104,19 +123,35 @@ export default function RoutineDetailScreen({ route, navigation }) {
               routineName={routine?.name}
               isEditing={isEditing}
               onAddExercise={(dayId, supersets) => {
-                // TODO: Abrir AddExerciseModal (Fase 4b)
+                setAddExerciseDayId(dayId)
+                setAddExerciseSupersets(supersets)
+                setAddExerciseIsWarmup(false)
+                setShowAddExercise(true)
               }}
               onAddWarmup={(dayId, supersets) => {
-                // TODO: Abrir AddExerciseModal warmup (Fase 4b)
+                setAddExerciseDayId(dayId)
+                setAddExerciseSupersets(supersets)
+                setAddExerciseIsWarmup(true)
+                setShowAddExercise(true)
               }}
               onEditExercise={(re, dayId, supersets) => {
-                // TODO: Abrir EditRoutineExerciseModal (Fase 4b)
+                setEditingExercise(re)
+                setEditExerciseDayId(dayId)
+                setEditExerciseSupersets(supersets)
+                setIsReplacingExercise(false)
+                setShowEditExercise(true)
               }}
               onReplaceExercise={(re, dayId) => {
-                // TODO: Abrir EditRoutineExerciseModal replace (Fase 4b)
+                setEditingExercise(re)
+                setEditExerciseDayId(dayId)
+                setEditExerciseSupersets([])
+                setIsReplacingExercise(true)
+                setShowEditExercise(true)
               }}
-              onDuplicateExercise={(re, dayId) => {
-                // TODO: Duplicar ejercicio (Fase 4b)
+              onDuplicateExercise={async (re, dayId) => {
+                try {
+                  await duplicateExercise.mutateAsync({ routineExercise: re, dayId })
+                } catch { /* handled by TanStack Query */ }
               }}
               onMoveExerciseToDay={handleOpenMoveModal}
               onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
@@ -176,11 +211,81 @@ export default function RoutineDetailScreen({ route, navigation }) {
           setExerciseToMove(null)
           setMovingFromDayId(null)
         }}
-        onSubmit={() => {}}
+        onSubmit={async (targetDayId) => {
+          try {
+            await moveExercise.mutateAsync({
+              routineExercise: exerciseToMove,
+              sourceDayId: movingFromDayId,
+              targetDayId,
+            })
+            setShowMoveModal(false)
+            setExerciseToMove(null)
+            setMovingFromDayId(null)
+          } catch { /* handled by TanStack Query */ }
+        }}
         days={days}
         currentDayId={movingFromDayId}
         exerciseName={exerciseToMove?.exercise?.name}
-        isPending={false}
+        isPending={moveExercise.isPending}
+      />
+
+      <AddExerciseModal
+        isOpen={showAddExercise}
+        onClose={() => setShowAddExercise(false)}
+        onSubmit={async (data) => {
+          try {
+            await addExercise.mutateAsync({
+              dayId: addExerciseDayId,
+              exerciseId: data.exerciseId,
+              series: data.series,
+              reps: data.reps,
+              rir: data.rir,
+              rest_seconds: data.rest_seconds,
+              notes: data.notes,
+              tempo: data.tempo,
+              tempo_razon: data.tempo_razon,
+              superset_group: data.superset_group,
+              esCalentamiento: addExerciseIsWarmup,
+            })
+            setShowAddExercise(false)
+          } catch { /* handled by TanStack Query */ }
+        }}
+        isPending={addExercise.isPending}
+        isWarmup={addExerciseIsWarmup}
+        existingSupersets={addExerciseSupersets}
+        existingExercises={allRoutineExercises || []}
+      />
+
+      <EditRoutineExerciseModal
+        isOpen={showEditExercise}
+        onClose={() => {
+          setShowEditExercise(false)
+          setEditingExercise(null)
+        }}
+        onSubmit={async (data) => {
+          try {
+            if (isReplacingExercise) {
+              await updateExercise.mutateAsync({
+                exerciseId: data.exerciseId,
+                dayId: editExerciseDayId,
+                data: { exercise_id: data.exercise_id },
+              })
+            } else {
+              const { exerciseId, ...updateData } = data
+              await updateExercise.mutateAsync({
+                exerciseId,
+                dayId: editExerciseDayId,
+                data: updateData,
+              })
+            }
+            setShowEditExercise(false)
+            setEditingExercise(null)
+          } catch { /* handled by TanStack Query */ }
+        }}
+        isPending={updateExercise.isPending}
+        routineExercise={editingExercise}
+        existingSupersets={editExerciseSupersets}
+        isReplacing={isReplacingExercise}
       />
     </SafeAreaView>
   )
