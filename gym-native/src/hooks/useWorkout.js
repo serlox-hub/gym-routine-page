@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -960,51 +961,10 @@ export function useRestTimer() {
 // ============================================
 
 export function useWakeLock() {
-  const [isSupported] = useState(() => 'wakeLock' in navigator)
-  const [isActive, setIsActive] = useState(false)
-  const wakeLockRef = useRef(null)
-
-  const request = useCallback(async () => {
-    if (!isSupported || wakeLockRef.current) return
-
-    try {
-      wakeLockRef.current = await navigator.wakeLock.request('screen')
-      setIsActive(true)
-
-      wakeLockRef.current.addEventListener('release', () => {
-        setIsActive(false)
-        wakeLockRef.current = null
-      })
-    } catch {
-      // Wake lock request failed (e.g., low battery, tab not visible)
-    }
-  }, [isSupported])
-
-  const release = useCallback(async () => {
-    if (wakeLockRef.current) {
-      await wakeLockRef.current.release()
-      wakeLockRef.current = null
-      setIsActive(false)
-    }
+  useEffect(() => {
+    activateKeepAwakeAsync()
+    return () => { deactivateKeepAwake() }
   }, [])
 
-  // Re-acquire wake lock when page becomes visible again
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isSupported && !wakeLockRef.current) {
-        request()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [isSupported, request])
-
-  // Request on mount, release on unmount
-  useEffect(() => {
-    request()
-    return () => { release() }
-  }, [request, release])
-
-  return { isSupported, isActive }
+  return { isSupported: true, isActive: true }
 }

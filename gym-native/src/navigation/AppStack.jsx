@@ -2,6 +2,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import HomeScreen from '../screens/HomeScreen'
 import RoutineDetailScreen from '../screens/RoutineDetailScreen'
 import NewRoutineScreen from '../screens/NewRoutineScreen'
+import WorkoutScreen from '../screens/WorkoutScreen'
+import FreeWorkoutScreen from '../screens/FreeWorkoutScreen'
 import PlaceholderScreen from '../screens/PlaceholderScreen'
 
 const Stack = createNativeStackNavigator()
@@ -25,8 +27,8 @@ export default function AppStack() {
       <Stack.Screen name="AdaptRoutine" component={PlaceholderScreen} />
 
       {/* Workout */}
-      <Stack.Screen name="Workout" component={PlaceholderScreen} />
-      <Stack.Screen name="FreeWorkout" component={PlaceholderScreen} />
+      <Stack.Screen name="Workout" component={WorkoutScreen} />
+      <Stack.Screen name="FreeWorkout" component={FreeWorkoutScreen} />
 
       {/* Navegación secundaria */}
       <Stack.Screen name="Exercises" component={PlaceholderScreen} />
