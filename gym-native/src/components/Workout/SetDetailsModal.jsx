@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, Pressable } from 'react-native'
-import { Check, Save } from 'lucide-react-native'
+import { View, Text, TextInput, Pressable, Alert } from 'react-native'
+import { Check, Save, Video, X } from 'lucide-react-native'
+import * as ImagePicker from 'expo-image-picker'
+import { Video as ExpoVideo, ResizeMode } from 'expo-av'
 import { Modal } from '../ui'
+import { useCanUploadVideo } from '../../hooks/useAuth'
 import { colors, inputStyle } from '../../lib/styles'
 import { formatRestTimeDisplay } from '../../lib/timeUtils'
 import { RIR_OPTIONS } from '../../lib/constants'
 import { usePreference } from '../../hooks/usePreferences'
 import { getEffortLabel } from '../../lib/measurementTypes'
+
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 
 export default function SetDetailsModal({
   isOpen,
@@ -15,37 +20,74 @@ export default function SetDetailsModal({
   mode = 'complete',
   initialRir,
   initialNote,
+  initialVideoUrl,
   descansoSeg = 0,
   measurementType,
 }) {
+  const canUploadVideo = useCanUploadVideo()
   const { value: showRirInput } = usePreference('show_rir_input')
   const { value: showSetNotes } = usePreference('show_set_notes')
+  const { value: showVideoUpload } = usePreference('show_video_upload')
+  const showVideo = canUploadVideo && showVideoUpload
 
   const [rir, setRir] = useState(null)
   const [note, setNote] = useState('')
+  const [videoUri, setVideoUri] = useState(null)
+  const [videoFile, setVideoFile] = useState(null)
   const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       setRir(initialRir ?? null)
       setNote(initialNote ?? '')
+      setVideoUri(initialVideoUrl ?? null)
+      setVideoFile(null)
       setHasChanges(false)
     }
-  }, [isOpen, initialRir, initialNote])
+  }, [isOpen, initialRir, initialNote, initialVideoUrl])
 
   const handleRirChange = (value) => {
     setRir(rir === value ? null : value)
     setHasChanges(true)
   }
 
+  const handleVideoSelect = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      quality: 0.8,
+    })
+
+    if (result.canceled) return
+
+    const asset = result.assets[0]
+    if (asset.fileSize && asset.fileSize > MAX_VIDEO_SIZE) {
+      const sizeMB = Math.round(asset.fileSize / 1024 / 1024)
+      Alert.alert('Video demasiado grande', `El video pesa ${sizeMB}MB. Máximo permitido: 100MB`)
+      return
+    }
+
+    setVideoFile(asset)
+    setVideoUri(asset.uri)
+    setHasChanges(true)
+  }
+
+  const handleRemoveVideo = () => {
+    setVideoFile(null)
+    setVideoUri(null)
+    setHasChanges(true)
+  }
+
   const handleSubmit = () => {
-    onSubmit(rir, note.trim() || null, null, null)
+    const existingVideoUrl = (!videoFile && videoUri) ? initialVideoUrl : null
+    onSubmit(rir, note.trim() || null, existingVideoUrl, videoFile)
     resetState()
   }
 
   const resetState = () => {
     setRir(null)
     setNote('')
+    setVideoUri(null)
+    setVideoFile(null)
     setHasChanges(false)
   }
 
@@ -124,6 +166,45 @@ export default function SetDetailsModal({
               multiline
               style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
             />
+          </View>
+        )}
+
+        {showVideo && (
+          <View>
+            <Text className="text-sm mb-2" style={{ color: colors.textSecondary }}>
+              Video (opcional)
+            </Text>
+            {videoUri ? (
+              <View className="rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
+                <ExpoVideo
+                  source={{ uri: videoUri }}
+                  style={{ width: '100%', height: 160 }}
+                  resizeMode={ResizeMode.CONTAIN}
+                  useNativeControls
+                />
+                <Pressable
+                  onPress={handleRemoveVideo}
+                  className="absolute top-2 right-2 p-1.5 rounded-full"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+                >
+                  <X size={16} color="#ffffff" />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                onPress={handleVideoSelect}
+                className="py-3 rounded-lg flex-row items-center justify-center gap-2"
+                style={{ backgroundColor: colors.bgTertiary }}
+              >
+                <Video size={18} color={colors.textSecondary} />
+                <Text className="text-sm" style={{ color: colors.textSecondary }}>
+                  Añadir video
+                </Text>
+              </Pressable>
+            )}
+            <Text className="text-xs mt-1 text-center" style={{ color: colors.textSecondary }}>
+              Máx. 100MB
+            </Text>
           </View>
         )}
 

@@ -60,8 +60,8 @@ export default function SetRow({
 
   const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace })
 
-  const buildInfo = (rir, notes) => ({
-    sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl: null,
+  const buildInfo = (rir, notes, videoUrl = null, videoFile = null) => ({
+    sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl, videoFile,
   })
 
   const handleCheckPress = () => {
@@ -82,16 +82,16 @@ export default function SetRow({
     setShowModal(true)
   }
 
-  const handleModalSubmit = (rir, notes) => {
+  const handleModalSubmit = (rir, notes, videoUrl, videoFile) => {
     if (modalMode === 'complete') {
       const data = buildCompletedSetData(
         measurementType,
         { weight, reps, time, distance, calories, level, pace },
-        buildInfo(rir, notes),
+        buildInfo(rir, notes, videoUrl, videoFile),
       )
       onComplete(data, descansoSeg)
     } else {
-      updateSetDetails({ sessionExerciseId, setNumber, rirActual: rir, notes })
+      updateSetDetails({ sessionExerciseId, setNumber, rirActual: rir, notes, videoUrl, videoFile })
     }
     setShowModal(false)
   }
@@ -138,6 +138,7 @@ export default function SetRow({
   }
 
   const hasTextNote = !!setData?.notes
+  const hasVideo = !!setData?.videoUrl
   const initialData = modalMode === 'edit' ? setData : cachedData
   const valid = isValid()
 
@@ -158,6 +159,7 @@ export default function SetRow({
         <NotesBadge
           rir={setData?.rirActual}
           hasNotes={hasTextNote}
+          hasVideo={hasVideo}
           onPress={handleEditPress}
         />
       )}
@@ -199,6 +201,7 @@ export default function SetRow({
         descansoSeg={descansoSeg}
         initialRir={initialData?.rirActual}
         initialNote={initialData?.notes}
+        initialVideoUrl={initialData?.videoUrl}
         measurementType={measurementType}
       />
     </View>

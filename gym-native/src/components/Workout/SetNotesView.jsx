@@ -1,9 +1,10 @@
 import { View, Text, Pressable } from 'react-native'
 import { Modal } from '../ui'
+import VideoPlayer from '../ui/VideoPlayer'
 import { RIR_LABELS } from '../../lib/constants'
 import { colors } from '../../lib/styles'
 
-export default function SetNotesView({ isOpen, onClose, rir, notes }) {
+export default function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
   const rirInfo = rir != null ? RIR_LABELS[rir] : null
 
   return (
@@ -46,6 +47,8 @@ export default function SetNotesView({ isOpen, onClose, rir, notes }) {
             <Text className="text-sm" style={{ color: colors.textPrimary }}>{notes}</Text>
           </View>
         )}
+
+        {videoUrl && <VideoPlayer videoKey={videoUrl} />}
       </View>
 
       <Pressable

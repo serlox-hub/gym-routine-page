@@ -158,6 +158,7 @@ export default function SessionDetailScreen({ route, navigation }) {
         onClose={() => setSelectedSet(null)}
         rir={selectedSet?.rir_actual}
         notes={selectedSet?.notes}
+        videoUrl={selectedSet?.video_url}
       />
 
       <ConfirmModal
