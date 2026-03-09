@@ -4,6 +4,8 @@ import RoutineDetailScreen from '../screens/RoutineDetailScreen'
 import NewRoutineScreen from '../screens/NewRoutineScreen'
 import WorkoutScreen from '../screens/WorkoutScreen'
 import FreeWorkoutScreen from '../screens/FreeWorkoutScreen'
+import HistoryScreen from '../screens/HistoryScreen'
+import SessionDetailScreen from '../screens/SessionDetailScreen'
 import PlaceholderScreen from '../screens/PlaceholderScreen'
 
 const Stack = createNativeStackNavigator()
@@ -32,7 +34,8 @@ export default function AppStack() {
 
       {/* Navegación secundaria */}
       <Stack.Screen name="Exercises" component={PlaceholderScreen} />
-      <Stack.Screen name="History" component={PlaceholderScreen} />
+      <Stack.Screen name="History" component={HistoryScreen} />
+      <Stack.Screen name="SessionDetail" component={SessionDetailScreen} />
       <Stack.Screen name="BodyMetrics" component={PlaceholderScreen} />
       <Stack.Screen name="Preferences" component={PlaceholderScreen} />
       <Stack.Screen name="AdminUsers" component={PlaceholderScreen} />
