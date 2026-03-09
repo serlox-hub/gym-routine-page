@@ -10,7 +10,7 @@ import { getMuscleGroupBorderStyle } from '../lib/constants'
 import { colors } from '../lib/styles'
 
 export default function ExercisesScreen({ navigation }) {
-  const { data: exercises, isLoading, error } = useExercisesWithMuscleGroup()
+  const { data: exercises, isLoading, error, refetch, isRefetching } = useExercisesWithMuscleGroup()
   const { data: muscleGroups } = useMuscleGroups()
   const { data: exerciseStats } = useExerciseStats()
   const deleteExercise = useDeleteExercise()
@@ -96,6 +96,8 @@ export default function ExercisesScreen({ navigation }) {
           </Text>
         }
         keyboardShouldPersistTaps="handled"
+        refreshing={isRefetching}
+        onRefresh={refetch}
       />
 
       <View className="px-4 py-3" style={{ backgroundColor: colors.bgSecondary, borderTopWidth: 1, borderTopColor: colors.border }}>

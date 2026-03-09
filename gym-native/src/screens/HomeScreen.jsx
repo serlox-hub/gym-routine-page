@@ -133,7 +133,7 @@ function RoutineItem({ routine, navigation, setFavoriteMutation }) {
 }
 
 export default function HomeScreen({ navigation }) {
-  const { data: routines, isLoading, error } = useRoutines()
+  const { data: routines, isLoading, error, refetch, isRefetching } = useRoutines()
   const { logout } = useAuth()
   const userId = useUserId()
   const { isAdmin } = useIsAdmin()
@@ -309,6 +309,8 @@ export default function HomeScreen({ navigation }) {
         )}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
+        refreshing={isRefetching}
+        onRefresh={refetch}
       />
 
       {/* Modal Nueva Rutina */}
