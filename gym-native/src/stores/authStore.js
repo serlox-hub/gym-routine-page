@@ -8,13 +8,15 @@ const useAuthStore = create((set, get) => ({
   session: null,
   isLoading: true,
   error: null,
+  isPasswordRecovery: false,
 
   initialize: async () => {
     try {
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange((event, session) => {
         set({
           session,
           user: session?.user ?? null,
+          isPasswordRecovery: event === 'PASSWORD_RECOVERY',
         })
       })
 
@@ -80,6 +82,8 @@ const useAuthStore = create((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  clearPasswordRecovery: () => set({ isPasswordRecovery: false }),
 
   resetPassword: async (email) => {
     set({ error: null, isLoading: true })

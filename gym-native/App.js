@@ -1,6 +1,6 @@
 import "./global.css"
-import { useCallback } from 'react'
 import { StatusBar } from 'expo-status-bar'
+import * as Linking from 'expo-linking'
 import * as SplashScreen from 'expo-splash-screen'
 import { NavigationContainer } from '@react-navigation/native'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -10,11 +10,16 @@ import RootNavigator from './src/navigation/RootNavigator'
 
 SplashScreen.preventAutoHideAsync()
 
+const linking = {
+  prefixes: [Linking.createURL('/'), 'diariogym://'],
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <NavigationContainer
+          linking={linking}
           theme={{
             dark: true,
             colors: {

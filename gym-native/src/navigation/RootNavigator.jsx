@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
 import { useAuth } from '../hooks/useAuth'
-import { View, ActivityIndicator, Text } from 'react-native'
+import { View, ActivityIndicator } from 'react-native'
 import AuthStack from './AuthStack'
 import AppStack from './AppStack'
+import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 
 export default function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, isPasswordRecovery, clearPasswordRecovery } = useAuth()
 
   useEffect(() => {
     if (!isLoading) {
@@ -20,6 +21,10 @@ export default function RootNavigator() {
         <ActivityIndicator size="large" color="#3fb950" />
       </View>
     )
+  }
+
+  if (isPasswordRecovery) {
+    return <ResetPasswordScreen onComplete={clearPasswordRecovery} />
   }
 
   return isAuthenticated ? <AppStack /> : <AuthStack />
