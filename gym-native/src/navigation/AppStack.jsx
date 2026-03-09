@@ -9,6 +9,9 @@ import SessionDetailScreen from '../screens/SessionDetailScreen'
 import ExercisesScreen from '../screens/ExercisesScreen'
 import NewExerciseScreen from '../screens/NewExerciseScreen'
 import EditExerciseScreen from '../screens/EditExerciseScreen'
+import BodyMetricsScreen from '../screens/BodyMetricsScreen'
+import PreferencesScreen from '../screens/PreferencesScreen'
+import AdminUsersScreen from '../screens/AdminUsersScreen'
 import PlaceholderScreen from '../screens/PlaceholderScreen'
 
 const Stack = createNativeStackNavigator()
@@ -42,9 +45,9 @@ export default function AppStack() {
       <Stack.Screen name="ExerciseProgress" component={PlaceholderScreen} />
       <Stack.Screen name="History" component={HistoryScreen} />
       <Stack.Screen name="SessionDetail" component={SessionDetailScreen} />
-      <Stack.Screen name="BodyMetrics" component={PlaceholderScreen} />
-      <Stack.Screen name="Preferences" component={PlaceholderScreen} />
-      <Stack.Screen name="AdminUsers" component={PlaceholderScreen} />
+      <Stack.Screen name="BodyMetrics" component={BodyMetricsScreen} />
+      <Stack.Screen name="Preferences" component={PreferencesScreen} />
+      <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
     </Stack.Navigator>
   )
 }
