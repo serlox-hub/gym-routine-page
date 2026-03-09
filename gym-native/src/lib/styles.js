@@ -1,0 +1,54 @@
+// Colores del tema GitHub Dark
+export const colors = {
+  // Fondos
+  bgPrimary: '#0d1117',
+  bgSecondary: '#161b22',
+  bgTertiary: '#21262d',
+  border: '#30363d',
+
+  // Texto
+  textPrimary: '#e6edf3',
+  textSecondary: '#8b949e',
+
+  // Acentos
+  accent: '#58a6ff',
+  success: '#3fb950',
+  warning: '#d29922',
+  danger: '#f85149',
+  purple: '#a371f7',
+  teal: '#88c6be',
+  pink: '#db61a2',
+}
+
+// Estilos reutilizables para React Native
+export const inputStyle = {
+  backgroundColor: colors.bgTertiary,
+  borderWidth: 1,
+  borderColor: colors.border,
+  color: colors.textPrimary,
+  borderRadius: 8,
+  paddingHorizontal: 12,
+  paddingVertical: 10,
+  fontSize: 16,
+}
+
+export const buttonSecondaryStyle = {
+  backgroundColor: colors.bgTertiary,
+}
+
+export const modalOverlayStyle = {
+  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+}
+
+export const modalContentStyle = {
+  backgroundColor: colors.bgSecondary,
+  borderRadius: 12,
+  padding: 20,
+}
+
+export const cardStyle = {
+  backgroundColor: colors.bgSecondary,
+  borderWidth: 1,
+  borderColor: colors.border,
+  borderRadius: 12,
+}
