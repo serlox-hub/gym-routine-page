@@ -12,6 +12,9 @@ import {
   LoadingSpinner, ErrorMessage, Card, ImportOptionsModal,
   TruncatedText, ConfirmModal, PlanBadge, DropdownMenu,
 } from '../components/ui'
+import {
+  TemplatesModal, ImportRoutineModal, ChatbotPromptModal, AdaptRoutineModal,
+} from '../components/Routine'
 import { importRoutine } from '../lib/routineIO'
 import { useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants'
@@ -142,6 +145,10 @@ export default function HomeScreen({ navigation }) {
   const setFavoriteMutation = useSetFavoriteRoutine()
 
   const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [showImportRoutine, setShowImportRoutine] = useState(false)
+  const [showChatbot, setShowChatbot] = useState(false)
+  const [showAdaptRoutine, setShowAdaptRoutine] = useState(false)
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -163,6 +170,16 @@ export default function HomeScreen({ navigation }) {
     } catch {
       setIsLoggingOut(false)
     }
+  }
+
+  const handleTemplateImport = (templateData) => {
+    setPendingImportData(templateData)
+    setShowImportOptions(true)
+  }
+
+  const handleImportData = (data) => {
+    setPendingImportData(data)
+    setShowImportOptions(true)
   }
 
   const handleImportConfirm = async (options) => {
@@ -202,7 +219,7 @@ export default function HomeScreen({ navigation }) {
       description: 'PPL, Upper/Lower, Full Body, 5/3/1',
       onPress: () => {
         setShowNewRoutineModal(false)
-        navigation.navigate('Templates')
+        setShowTemplates(true)
       },
     },
     {
@@ -222,7 +239,7 @@ export default function HomeScreen({ navigation }) {
       description: 'Desde archivo o pegando texto',
       onPress: () => {
         setShowNewRoutineModal(false)
-        navigation.navigate('ImportRoutine')
+        setShowImportRoutine(true)
       },
     },
     {
@@ -232,7 +249,7 @@ export default function HomeScreen({ navigation }) {
       description: 'Genera un prompt para ChatGPT/Claude',
       onPress: () => {
         setShowNewRoutineModal(false)
-        navigation.navigate('ChatbotPrompt')
+        setShowChatbot(true)
       },
     },
     {
@@ -242,7 +259,7 @@ export default function HomeScreen({ navigation }) {
       description: 'Convierte tu rutina actual con IA',
       onPress: () => {
         setShowNewRoutineModal(false)
-        navigation.navigate('AdaptRoutine')
+        setShowAdaptRoutine(true)
       },
     },
   ]
@@ -339,6 +356,30 @@ export default function HomeScreen({ navigation }) {
           setShowImportOptions(false)
           setPendingImportData(null)
         }}
+      />
+
+      <TemplatesModal
+        isOpen={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onSelect={handleTemplateImport}
+      />
+
+      <ImportRoutineModal
+        isOpen={showImportRoutine}
+        onClose={() => setShowImportRoutine(false)}
+        onImport={handleImportData}
+      />
+
+      <ChatbotPromptModal
+        isOpen={showChatbot}
+        onClose={() => setShowChatbot(false)}
+        onImportClick={() => setShowImportRoutine(true)}
+      />
+
+      <AdaptRoutineModal
+        isOpen={showAdaptRoutine}
+        onClose={() => setShowAdaptRoutine(false)}
+        onImportClick={() => setShowImportRoutine(true)}
       />
 
       <ConfirmModal

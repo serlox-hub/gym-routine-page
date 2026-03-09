@@ -9,10 +9,10 @@ import SessionDetailScreen from '../screens/SessionDetailScreen'
 import ExercisesScreen from '../screens/ExercisesScreen'
 import NewExerciseScreen from '../screens/NewExerciseScreen'
 import EditExerciseScreen from '../screens/EditExerciseScreen'
+import ExerciseProgressScreen from '../screens/ExerciseProgressScreen'
 import BodyMetricsScreen from '../screens/BodyMetricsScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import AdminUsersScreen from '../screens/AdminUsersScreen'
-import PlaceholderScreen from '../screens/PlaceholderScreen'
 
 const Stack = createNativeStackNavigator()
 
@@ -29,10 +29,6 @@ export default function AppStack() {
       {/* Rutinas */}
       <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
       <Stack.Screen name="NewRoutine" component={NewRoutineScreen} />
-      <Stack.Screen name="Templates" component={PlaceholderScreen} />
-      <Stack.Screen name="ImportRoutine" component={PlaceholderScreen} />
-      <Stack.Screen name="ChatbotPrompt" component={PlaceholderScreen} />
-      <Stack.Screen name="AdaptRoutine" component={PlaceholderScreen} />
 
       {/* Workout */}
       <Stack.Screen name="Workout" component={WorkoutScreen} />
@@ -42,7 +38,7 @@ export default function AppStack() {
       <Stack.Screen name="Exercises" component={ExercisesScreen} />
       <Stack.Screen name="NewExercise" component={NewExerciseScreen} />
       <Stack.Screen name="EditExercise" component={EditExerciseScreen} />
-      <Stack.Screen name="ExerciseProgress" component={PlaceholderScreen} />
+      <Stack.Screen name="ExerciseProgress" component={ExerciseProgressScreen} />
       <Stack.Screen name="History" component={HistoryScreen} />
       <Stack.Screen name="SessionDetail" component={SessionDetailScreen} />
       <Stack.Screen name="BodyMetrics" component={BodyMetricsScreen} />
