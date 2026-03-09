@@ -10,7 +10,7 @@ import { useStartSession } from '../hooks/useWorkout'
 import { useAuth, useUserId, useIsAdmin, useIsPremium } from '../hooks/useAuth'
 import {
   LoadingSpinner, ErrorMessage, Card, ImportOptionsModal,
-  TruncatedText, ConfirmModal, PlanBadge, DropdownMenu,
+  TruncatedText, ConfirmModal, PlanBadge, DropdownMenu, ActiveSessionBanner,
 } from '../components/ui'
 import {
   TemplatesModal, ImportRoutineModal, ChatbotPromptModal, AdaptRoutineModal,
@@ -383,6 +383,8 @@ export default function HomeScreen({ navigation }) {
         onClose={() => setShowAdaptRoutine(false)}
         onImportClick={() => setShowImportRoutine(true)}
       />
+
+      <ActiveSessionBanner />
 
       <ConfirmModal
         isOpen={showLogoutConfirm}

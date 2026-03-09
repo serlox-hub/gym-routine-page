@@ -3,7 +3,7 @@ import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react-native'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, DropdownMenu, Button } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, DropdownMenu, Button, ActiveSessionBanner } from '../components/ui'
 import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise'
 import { normalizeSearchText } from '../lib/textUtils'
 import { getMuscleGroupBorderStyle } from '../lib/constants'
@@ -119,6 +119,8 @@ export default function ExercisesScreen({ navigation }) {
         exercise={exerciseForUsage}
         onClose={() => setExerciseForUsage(null)}
       />
+
+      <ActiveSessionBanner />
     </SafeAreaView>
   )
 }

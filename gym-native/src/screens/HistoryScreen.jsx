@@ -3,7 +3,7 @@ import { View, Text, ScrollView, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Calendar } from 'lucide-react-native'
 import { useWorkoutHistory } from '../hooks/useWorkout'
-import { LoadingSpinner, ErrorMessage, Card, Modal, PageHeader } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, Card, Modal, PageHeader, ActiveSessionBanner } from '../components/ui'
 import { MonthlyCalendar } from '../components/History'
 import { formatTime } from '../lib/dateUtils'
 import { colors } from '../lib/styles'
@@ -75,6 +75,8 @@ export default function HistoryScreen({ navigation }) {
           ))}
         </View>
       </Modal>
+
+      <ActiveSessionBanner />
     </SafeAreaView>
   )
 }

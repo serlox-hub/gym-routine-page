@@ -8,7 +8,7 @@ import {
   useReorderRoutineDays, useAddExerciseToDay, useUpdateRoutineExercise,
   useDuplicateRoutineExercise, useMoveRoutineExerciseToDay,
 } from '../hooks/useRoutines'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, ActiveSessionBanner } from '../components/ui'
 import {
   DayCard, AddDayModal, RoutineHeader, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal,
@@ -287,6 +287,8 @@ export default function RoutineDetailScreen({ route, navigation }) {
         existingSupersets={editExerciseSupersets}
         isReplacing={isReplacingExercise}
       />
+
+      <ActiveSessionBanner />
     </SafeAreaView>
   )
 }

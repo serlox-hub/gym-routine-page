@@ -3,7 +3,7 @@ import { View, Text, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, Button } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, Button, ActiveSessionBanner } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'
 import { calculateBodyWeightStats, calculateWeightTrend } from '../lib/bodyWeightCalculations'
 import { formatShortDate } from '../lib/dateUtils'
@@ -219,6 +219,8 @@ export default function BodyMetricsScreen({ navigation }) {
 
       {activeTab === 'peso' && <WeightSection />}
       {activeTab === 'medidas' && <MeasurementSection />}
+
+      <ActiveSessionBanner />
     </SafeAreaView>
   )
 }
