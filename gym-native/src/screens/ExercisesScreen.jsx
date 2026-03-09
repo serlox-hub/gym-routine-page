@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
 import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Pencil, Trash2, TrendingUp } from 'lucide-react-native'
+import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react-native'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, DropdownMenu, Button } from '../components/ui'
-import { ExerciseSearchBar } from '../components/Exercise'
+import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise'
 import { normalizeSearchText } from '../lib/textUtils'
 import { getMuscleGroupBorderStyle } from '../lib/constants'
 import { colors } from '../lib/styles'
@@ -18,6 +18,7 @@ export default function ExercisesScreen({ navigation }) {
   const [search, setSearch] = useState('')
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
+  const [exerciseForUsage, setExerciseForUsage] = useState(null)
 
   const filteredExercises = useMemo(() => {
     if (!exercises) return []
@@ -61,6 +62,7 @@ export default function ExercisesScreen({ navigation }) {
         </View>
         <DropdownMenu
           items={[
+            { icon: BarChart3, label: 'Ver usos', onPress: () => setExerciseForUsage(exercise) },
             { icon: TrendingUp, label: 'Progresión', onPress: () => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id, exerciseName: exercise.name }) },
             { icon: Pencil, label: 'Editar', onPress: () => navigation.navigate('EditExercise', { exerciseId: exercise.id }) },
             { icon: Trash2, label: 'Eliminar', onPress: () => setExerciseToDelete(exercise), danger: true },
@@ -111,6 +113,11 @@ export default function ExercisesScreen({ navigation }) {
         confirmText="Eliminar"
         onConfirm={handleDelete}
         onCancel={() => setExerciseToDelete(null)}
+      />
+
+      <ExerciseUsageModal
+        exercise={exerciseForUsage}
+        onClose={() => setExerciseForUsage(null)}
       />
     </SafeAreaView>
   )

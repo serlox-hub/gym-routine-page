@@ -4,6 +4,7 @@ import { Info, Plus, Trash2 } from 'lucide-react-native'
 import { Card, Badge, ConfirmModal, DropdownMenu } from '../ui'
 import SetRow from './SetRow'
 import PreviousWorkout from './PreviousWorkout'
+import ExerciseHistoryModal from './ExerciseHistoryModal'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
@@ -72,6 +73,7 @@ export default function WorkoutExerciseCard({
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
   const tempoRazon = routine_exercise?.tempo_razon
   const [showNotes, setShowNotes] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
@@ -107,6 +109,7 @@ export default function WorkoutExerciseCard({
   }
 
   const menuItems = [
+    { label: 'Ver historial', icon: Info, onPress: () => setShowHistory(true) },
     { label: 'Añadir serie', icon: Plus, onPress: addSet },
     onRemove && { type: 'separator' },
     onRemove && { label: 'Quitar ejercicio', icon: Trash2, onPress: () => setShowRemoveConfirm(true), danger: true },
@@ -201,6 +204,18 @@ export default function WorkoutExerciseCard({
           )
         })}
       </View>
+
+      <ExerciseHistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        exerciseId={exercise.id}
+        exerciseName={exercise.name}
+        measurementType={measurementType}
+        weightUnit={weightUnit}
+        timeUnit={timeUnit}
+        distanceUnit={distanceUnit}
+        routineDayId={routine_exercise?.routine_day_id}
+      />
 
       <ConfirmModal
         isOpen={showRemoveConfirm}
