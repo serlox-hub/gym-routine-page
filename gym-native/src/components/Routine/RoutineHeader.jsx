@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { View, Text, TextInput } from 'react-native'
+import { View, Text, TextInput, Alert } from 'react-native'
 import { Pencil, Download, Trash2, Copy } from 'lucide-react-native'
+import * as FileSystem from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
 import { useUpdateRoutine, useDuplicateRoutine } from '../../hooks/useRoutines'
+import { exportRoutine } from '../../lib/routineIO'
+import { sanitizeFilename } from '../../lib/textUtils'
 import { inputStyle } from '../../lib/styles'
 import { PageHeader } from '../ui'
 
@@ -57,10 +61,24 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
     }
   }
 
+  const handleExport = async () => {
+    try {
+      const data = await exportRoutine(parseInt(routineId))
+      const json = JSON.stringify(data, null, 2)
+      const filename = sanitizeFilename(routine?.name || 'rutina') + '.json'
+      const fileUri = FileSystem.cacheDirectory + filename
+
+      await FileSystem.writeAsStringAsync(fileUri, json, { encoding: FileSystem.EncodingType.UTF8 })
+      await Sharing.shareAsync(fileUri, { mimeType: 'application/json', dialogTitle: 'Exportar rutina' })
+    } catch {
+      Alert.alert('Error', 'No se pudo exportar la rutina')
+    }
+  }
+
   const menuItems = [
     { icon: Pencil, label: 'Editar', onClick: onEditStart },
     { icon: Copy, label: 'Duplicar', onClick: handleDuplicate },
-    { icon: Download, label: 'Exportar', onClick: () => {} },
+    { icon: Download, label: 'Exportar', onClick: handleExport },
     { icon: Trash2, label: 'Eliminar', onClick: onDelete, danger: true },
   ]
 
