@@ -1,13 +1,139 @@
-import { View, Text, Pressable } from 'react-native'
+import { useState } from 'react'
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useAuth } from '../hooks/useAuth'
+import { validateSignupForm } from '../lib/validation'
+import { Button, Card } from '../components/ui'
 
 export default function SignupScreen({ navigation }) {
+  const { signup, isLoading, error, clearError } = useAuth()
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [localError, setLocalError] = useState('')
+  const [success, setSuccess] = useState(false)
+
+  const handleSignup = async () => {
+    setLocalError('')
+    clearError()
+
+    const validation = validateSignupForm({ email, password, confirmPassword })
+    if (!validation.valid) {
+      setLocalError(validation.error)
+      return
+    }
+
+    const result = await signup(email, password)
+    if (result.success) {
+      setSuccess(true)
+    }
+  }
+
+  const displayError = localError || error
+
+  if (success) {
+    return (
+      <SafeAreaView className="flex-1 bg-surface">
+        <View className="flex-1 items-center justify-center px-4">
+          <Card className="w-full p-6 items-center">
+            <Text className="text-success text-4xl mb-4">✓</Text>
+            <Text className="text-success text-2xl font-bold mb-4">Registro exitoso</Text>
+            <Text className="text-secondary text-center mb-6">
+              Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.
+            </Text>
+            <Button onPress={() => navigation.navigate('Login')} className="w-full">
+              Ir a Iniciar Sesión
+            </Button>
+          </Card>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
   return (
-    <View className="flex-1 items-center justify-center bg-surface px-6">
-      <Text className="text-primary text-2xl font-bold mb-2">Crear Cuenta</Text>
-      <Text className="text-secondary mb-8">(Pantalla de registro - Fase 1)</Text>
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text className="text-accent">Volver al login</Text>
-      </Pressable>
-    </View>
+    <SafeAreaView className="flex-1 bg-surface">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          keyboardShouldPersistTaps="handled"
+          className="px-4"
+        >
+          <Card className="p-6">
+            <Text className="text-primary text-2xl font-bold text-center mb-6">
+              Crear Cuenta
+            </Text>
+
+            <View className="mb-4">
+              <Text className="text-primary text-sm font-medium mb-1">Email</Text>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="tu@email.com"
+                placeholderTextColor="#6e7681"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                className="w-full px-3 py-2.5 rounded-lg bg-surface border border-border text-primary"
+              />
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-primary text-sm font-medium mb-1">Contraseña</Text>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Mínimo 6 caracteres"
+                placeholderTextColor="#6e7681"
+                secureTextEntry
+                autoComplete="new-password"
+                className="w-full px-3 py-2.5 rounded-lg bg-surface border border-border text-primary"
+              />
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-primary text-sm font-medium mb-1">Confirmar Contraseña</Text>
+              <TextInput
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Repite la contraseña"
+                placeholderTextColor="#6e7681"
+                secureTextEntry
+                autoComplete="new-password"
+                className="w-full px-3 py-2.5 rounded-lg bg-surface border border-border text-primary"
+              />
+            </View>
+
+            {displayError && (
+              <Text className="text-danger text-sm text-center mb-4">
+                {displayError}
+              </Text>
+            )}
+
+            <Button onPress={handleSignup} loading={isLoading} className="mb-4">
+              Crear Cuenta
+            </Button>
+
+            <Pressable onPress={() => navigation.navigate('Login')}>
+              <Text className="text-secondary text-sm text-center">
+                ¿Ya tienes cuenta?{' '}
+                <Text className="text-accent">Inicia sesión</Text>
+              </Text>
+            </Pressable>
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }
