@@ -8,6 +8,7 @@ import { formatSetValue } from '../lib/setUtils'
 import { calculateExerciseStats } from '../lib/workoutCalculations'
 import { colors } from '../lib/styles'
 import { MeasurementType } from '../lib/measurementTypes'
+import { ExerciseProgressChart } from '../components/Charts'
 
 function StatCard({ label, value, color }) {
   return (
@@ -89,13 +90,9 @@ export default function ExerciseProgressScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Chart placeholder */}
       {sessions && sessions.length >= 2 ? (
         <Card className="p-4 mb-4">
-          <Text className="text-sm font-medium text-secondary mb-2">Progresión</Text>
-          <Text className="text-secondary text-center py-4 text-sm">
-            Gráfica de progresión disponible próximamente
-          </Text>
+          <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
         </Card>
       ) : (
         <Card className="p-4 mb-4">

@@ -5,6 +5,7 @@ import { Calendar } from 'lucide-react-native'
 import { useWorkoutHistory } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, Modal, PageHeader, ActiveSessionBanner } from '../components/ui'
 import { MonthlyCalendar } from '../components/History'
+import { DurationChart } from '../components/Charts'
 import { formatTime } from '../lib/dateUtils'
 import { colors } from '../lib/styles'
 
@@ -44,12 +45,15 @@ export default function HistoryScreen({ navigation }) {
             <Text className="text-secondary mt-4">No hay sesiones registradas</Text>
           </View>
         ) : (
-          <MonthlyCalendar
-            sessions={sessions}
-            onDayPress={handleDayPress}
-            currentDate={currentDate}
-            onDateChange={setCurrentDate}
-          />
+          <>
+            <MonthlyCalendar
+              sessions={sessions}
+              onDayPress={handleDayPress}
+              currentDate={currentDate}
+              onDateChange={setCurrentDate}
+            />
+            <DurationChart sessions={sessions} currentDate={currentDate} />
+          </>
         )}
       </ScrollView>
 

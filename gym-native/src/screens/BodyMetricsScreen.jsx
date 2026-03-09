@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-re
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, Button, ActiveSessionBanner } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'
+import { BodyWeightChart } from '../components/Charts'
 import { calculateBodyWeightStats, calculateWeightTrend } from '../lib/bodyWeightCalculations'
 import { formatShortDate } from '../lib/dateUtils'
 import { colors } from '../lib/styles'
@@ -128,6 +129,13 @@ function WeightSection() {
             </Card>
           </View>
         </View>
+      )}
+
+      {/* Chart */}
+      {records && records.length >= 2 && (
+        <Card className="p-3 mb-4">
+          <BodyWeightChart records={records} />
+        </Card>
       )}
 
       {/* Add Button */}

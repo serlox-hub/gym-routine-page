@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus, Settings, Chevro
 import { useBodyMeasurementHistory, useRecordBodyMeasurement, useUpdateBodyMeasurement, useDeleteBodyMeasurement } from '../../hooks/useBodyMeasurements'
 import { usePreferences, useUpdatePreference } from '../../hooks/usePreferences'
 import { Card, Button, LoadingSpinner, Modal, ConfirmModal } from '../ui'
+import { MeasurementChart } from '../Charts'
 import MeasurementModal from './MeasurementModal'
 import MeasurementConfigModal from './MeasurementConfigModal'
 import { calculateMeasurementStats, calculateMeasurementTrend } from '../../lib/bodyMeasurementCalculations'
@@ -199,6 +200,15 @@ export default function MeasurementSection() {
                   </Text>
                 </Card>
               </View>
+            </View>
+          )}
+
+          {/* Chart */}
+          {records && records.length >= 2 && (
+            <View className="px-4 mb-4">
+              <Card className="p-3">
+                <MeasurementChart records={records} measurementType={selectedType} unit={unit} />
+              </Card>
             </View>
           )}
 

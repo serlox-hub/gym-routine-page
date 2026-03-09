@@ -9,6 +9,7 @@ import { formatShortDate } from '../../lib/dateUtils'
 import { formatSetValue } from '../../lib/setUtils'
 import { calculateExerciseStats } from '../../lib/workoutCalculations'
 import { MeasurementType } from '../../lib/measurementTypes'
+import { ExerciseProgressChart } from '../Charts'
 
 const RIR_LABELS = { [-1]: 'F', 0: '0', 1: '1', 2: '2', 3: '3+' }
 
@@ -49,11 +50,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
       )}
 
       {sessions.length >= 2 ? (
-        <Card className="p-4">
-          <Text className="text-secondary text-center py-4 text-sm">
-            Gráfica de progresión disponible próximamente
-          </Text>
-        </Card>
+        <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
       ) : (
         <Text className="text-secondary text-center py-4 text-sm">
           Necesitas al menos 2 sesiones para ver la gráfica
