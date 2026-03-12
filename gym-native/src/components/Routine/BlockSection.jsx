@@ -16,6 +16,7 @@ export default function BlockSection({
   onDeleteExercise,
   onDuplicateExercise,
   onMoveExerciseToDay,
+  onReorderExercise,
 }) {
   const { name, duration_min, routine_exercises } = block
   const isWarmup = name.toLowerCase() === 'calentamiento'
@@ -60,6 +61,9 @@ export default function BlockSection({
               onDelete={() => onDeleteExercise?.(group.exercise)}
               onDuplicate={() => onDuplicateExercise?.(group.exercise)}
               onMoveToDay={() => onMoveExerciseToDay?.(group.exercise)}
+              onReorderToPosition={(newIndex) => onReorderExercise?.(group.exercise.id, newIndex)}
+              currentIndex={routine_exercises.findIndex(e => e.id === group.exercise.id)}
+              totalExercises={routine_exercises.length}
             />
           )
         }
@@ -95,6 +99,9 @@ export default function BlockSection({
                 onDelete={() => onDeleteExercise?.(exercise)}
                 onDuplicate={() => onDuplicateExercise?.(exercise)}
                 onMoveToDay={() => onMoveExerciseToDay?.(exercise)}
+                onReorderToPosition={(newIndex) => onReorderExercise?.(exercise.id, newIndex)}
+                currentIndex={routine_exercises.findIndex(e => e.id === exercise.id)}
+                totalExercises={routine_exercises.length}
               />
             ))}
           </Card>

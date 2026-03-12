@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
   useSessionExercises, useAddSessionExercise, useRemoveSessionExercise,
-  useWakeLock,
+  useReorderSessionExercises, useWakeLock,
 } from '../../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui'
 import RestTimer from './RestTimer'
@@ -40,6 +40,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
   const abandonSessionMutation = useAbandonSession()
   const addSessionExerciseMutation = useAddSessionExercise()
   const removeSessionExerciseMutation = useRemoveSessionExercise()
+  const reorderSessionExercisesMutation = useReorderSessionExercises()
 
   const { exercisesByBlock, flatExercises } = useMemo(
     () => transformSessionExercises(sessionExercises),
@@ -116,6 +117,15 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
     removeSessionExerciseMutation.mutate(sessionExerciseId)
   }
 
+  const handleReorderExercise = (currentIndex, newIndex) => {
+    if (currentIndex === newIndex) return
+    const newOrder = [...flatExercises]
+    const [removed] = newOrder.splice(currentIndex, 1)
+    newOrder.splice(newIndex, 0, removed)
+    const orderedIds = newOrder.map(e => e.sessionExerciseId)
+    reorderSessionExercisesMutation.mutate(orderedIds)
+  }
+
   const hasExercises = flatExercises.length > 0
   const titleWithProgress = progress.total > 0
     ? `${title}  ${progress.completed}/${progress.total}`
@@ -147,6 +157,9 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
             onCompleteSet={handleCompleteSet}
             onUncompleteSet={handleUncompleteSet}
             onRemove={handleRemoveExercise}
+            flatExercises={flatExercises}
+            onReorder={handleReorderExercise}
+            isReordering={reorderSessionExercisesMutation.isPending}
           />
         )}
       </ScrollView>

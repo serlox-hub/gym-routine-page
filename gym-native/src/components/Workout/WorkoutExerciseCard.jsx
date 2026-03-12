@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
-import { View, Text, Pressable } from 'react-native'
-import { Info, Plus, Trash2 } from 'lucide-react-native'
+import { View, Text, Pressable, Modal } from 'react-native'
+import { Info, Plus, Trash2, ArrowUpDown } from 'lucide-react-native'
 import { Card, Badge, ConfirmModal, DropdownMenu } from '../ui'
 import SetRow from './SetRow'
 import PreviousWorkout from './PreviousWorkout'
@@ -62,6 +62,30 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
   )
 }
 
+function ReorderModal({ visible, onClose, totalExercises, currentIndex, onSelect }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <Pressable onPress={e => e.stopPropagation()} className="bg-surface-block border border-border rounded-t-2xl py-2 pb-8">
+          <Text className="text-base font-semibold text-primary px-5 py-3">Mover a posición</Text>
+          {Array.from({ length: totalExercises }, (_, i) => (
+            <Pressable
+              key={i}
+              onPress={() => onSelect(i)}
+              disabled={i === currentIndex}
+              className={`px-5 py-3 ${i === currentIndex ? 'opacity-30' : ''}`}
+            >
+              <Text style={{ color: i === currentIndex ? '#8b949e' : '#e6edf3' }} className="text-base">
+                Posición {i + 1}{i === currentIndex ? ' (actual)' : ''}
+              </Text>
+            </Pressable>
+          ))}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  )
+}
+
 export default function WorkoutExerciseCard({
   sessionExercise,
   onCompleteSet,
@@ -69,12 +93,17 @@ export default function WorkoutExerciseCard({
   isWarmup = false,
   onRemove,
   isSuperset = false,
+  onReorderToPosition,
+  currentIndex = 0,
+  totalExercises = 1,
+  isReordering = false,
 }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
   const tempoRazon = routine_exercise?.tempo_razon
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  const [showReorder, setShowReorder] = useState(false)
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
   const weightUnit = exercise.weight_unit || 'kg'
@@ -111,6 +140,8 @@ export default function WorkoutExerciseCard({
   const menuItems = [
     { label: 'Ver historial', icon: Info, onPress: () => setShowHistory(true) },
     { label: 'Añadir serie', icon: Plus, onPress: addSet },
+    onReorderToPosition && totalExercises > 1 && { type: 'separator' },
+    onReorderToPosition && totalExercises > 1 && { label: 'Reordenar', icon: ArrowUpDown, onPress: () => setShowReorder(true), disabled: isReordering },
     onRemove && { type: 'separator' },
     onRemove && { label: 'Quitar ejercicio', icon: Trash2, onPress: () => setShowRemoveConfirm(true), danger: true },
   ].filter(Boolean)
@@ -228,6 +259,16 @@ export default function WorkoutExerciseCard({
         }}
         onCancel={() => setShowRemoveConfirm(false)}
       />
+
+      {showReorder && (
+        <ReorderModal
+          visible={showReorder}
+          onClose={() => setShowReorder(false)}
+          totalExercises={totalExercises}
+          currentIndex={currentIndex}
+          onSelect={(i) => { onReorderToPosition(i); setShowReorder(false) }}
+        />
+      )}
     </>
   )
 

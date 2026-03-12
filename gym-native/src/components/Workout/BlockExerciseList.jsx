@@ -4,8 +4,13 @@ import WorkoutExerciseCard from './WorkoutExerciseCard'
 import SupersetCard from './SupersetCard'
 import { colors } from '../../lib/styles'
 import { countExercisesInBlock } from '../../lib/supersetUtils'
+import { getReorderProps } from '../../lib/arrayUtils'
 
-export default function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove }) {
+export default function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, flatExercises = [], onReorder, isReordering = false }) {
+  const getExerciseReorderProps = (exercise) => ({
+    ...getReorderProps(flatExercises, exercise, onReorder),
+    isReordering,
+  })
   return (
     <View className="gap-4">
       {exercisesByBlock.map((block) => {
@@ -49,6 +54,7 @@ export default function BlockExerciseList({ exercisesByBlock, onCompleteSet, onU
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}
                       isWarmup={block.isWarmup}
+                      {...getExerciseReorderProps(group.exercise)}
                     />
                   )
                 }
