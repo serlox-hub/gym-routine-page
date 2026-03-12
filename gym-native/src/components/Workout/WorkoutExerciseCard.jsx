@@ -73,7 +73,7 @@ function ReorderModal({ visible, onClose, totalExercises, currentIndex, onSelect
               key={i}
               onPress={() => onSelect(i)}
               disabled={i === currentIndex}
-              className={`px-5 py-3 ${i === currentIndex ? 'opacity-30' : ''}`}
+              className={`px-5 py-3 ${i === currentIndex ? 'opacity-30' : 'active:bg-surface-card'}`}
             >
               <Text style={{ color: i === currentIndex ? '#8b949e' : '#e6edf3' }} className="text-base">
                 Posición {i + 1}{i === currentIndex ? ' (actual)' : ''}
@@ -111,24 +111,18 @@ function WorkoutExerciseCard({
   const distanceUnit = exercise.distance_unit || 'm'
   const exerciseKey = sessionExerciseId || id
 
-  const completedSets = useWorkoutStore(state => state.completedSets)
-  const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
+  const setsCount = useWorkoutStore(state => state.exerciseSetCounts[exerciseKey] ?? series)
   const setExerciseSetCount = useWorkoutStore(state => state.setExerciseSetCount)
+  const completedCount = useWorkoutStore(state =>
+    Object.values(state.completedSets).filter(s => s.sessionExerciseId === exerciseKey).length
+  )
   const { data: previousWorkout } = usePreviousWorkout(exercise.id)
 
-  const setsCount = exerciseSetCounts[exerciseKey] ?? series
-
   useEffect(() => {
-    if (previousWorkout?.sets?.length && exerciseSetCounts[exerciseKey] === undefined) {
+    if (previousWorkout?.sets?.length && !useWorkoutStore.getState().exerciseSetCounts[exerciseKey]) {
       setExerciseSetCount(exerciseKey, previousWorkout.sets.length)
     }
-  }, [previousWorkout, exerciseKey, exerciseSetCounts, setExerciseSetCount])
-
-  const completedCount = useMemo(() => {
-    return Object.values(completedSets)
-      .filter(set => set.sessionExerciseId === exerciseKey)
-      .length
-  }, [completedSets, exerciseKey])
+  }, [previousWorkout, exerciseKey, setExerciseSetCount])
 
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
   const removeSet = () => { if (setsCount > 0) setExerciseSetCount(exerciseKey, setsCount - 1) }
@@ -178,7 +172,7 @@ function WorkoutExerciseCard({
         {(exercise.instructions || notes || tempoRazon) && (
           <Pressable
             onPress={() => setShowNotes(!showNotes)}
-            className="px-2 py-1 rounded"
+            className="px-2 py-1 rounded active:opacity-70"
             style={{ backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary }}
           >
             <Text className="text-xs" style={{ color: showNotes ? '#88c6be' : colors.textSecondary }}>
