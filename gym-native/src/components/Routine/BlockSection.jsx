@@ -21,6 +21,7 @@ export default function BlockSection({
   const { name, duration_min, routine_exercises } = block
   const isWarmup = name.toLowerCase() === 'calentamiento'
   const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
+  const positionLabels = routine_exercises.map(re => re.exercise?.name)
 
   const accentColor = isWarmup ? colors.warning : colors.purple
 
@@ -64,6 +65,7 @@ export default function BlockSection({
               onReorderToPosition={(newIndex) => onReorderExercise?.(group.exercise.id, newIndex)}
               currentIndex={routine_exercises.findIndex(e => e.id === group.exercise.id)}
               totalExercises={routine_exercises.length}
+              positionLabels={positionLabels}
             />
           )
         }

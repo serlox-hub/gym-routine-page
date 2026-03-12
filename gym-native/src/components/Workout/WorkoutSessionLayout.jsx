@@ -103,6 +103,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
   }
 
   const handleConfirmEnd = ({ overallFeeling, notes }) => {
+    navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'History' }] })
     endSessionMutation.mutate({ overallFeeling, notes })
   }
 

@@ -9,6 +9,7 @@ import { findExerciseIndex } from '../../lib/arrayUtils'
 
 function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, flatExercises = [], onReorder, isReordering = false }) {
   const totalFlat = flatExercises.length
+  const positionLabels = flatExercises.map(e => e.exercise?.name)
 
   return (
     <View className="gap-4">
@@ -56,6 +57,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onReorder={onReorder}
                       currentIndex={findExerciseIndex(flatExercises, group.exercise)}
                       totalExercises={totalFlat}
+                      positionLabels={positionLabels}
                       isReordering={isReordering}
                     />
                   )

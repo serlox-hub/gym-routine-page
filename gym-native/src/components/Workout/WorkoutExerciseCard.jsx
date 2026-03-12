@@ -1,7 +1,7 @@
 import { memo, useMemo, useState, useEffect } from 'react'
-import { View, Text, Pressable, Modal } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { Info, Plus, Trash2, ArrowUpDown } from 'lucide-react-native'
-import { Card, Badge, ConfirmModal, DropdownMenu } from '../ui'
+import { Card, Badge, ConfirmModal, DropdownMenu, ReorderModal } from '../ui'
 import SetRow from './SetRow'
 import PreviousWorkout from './PreviousWorkout'
 import ExerciseHistoryModal from './ExerciseHistoryModal'
@@ -62,29 +62,6 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
   )
 }
 
-function ReorderModal({ visible, onClose, totalExercises, currentIndex, onSelect }) {
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <Pressable onPress={e => e.stopPropagation()} className="bg-surface-block border border-border rounded-t-2xl py-2 pb-8">
-          <Text className="text-base font-semibold text-primary px-5 py-3">Mover a posición</Text>
-          {Array.from({ length: totalExercises }, (_, i) => (
-            <Pressable
-              key={i}
-              onPress={() => onSelect(i)}
-              disabled={i === currentIndex}
-              className={`px-5 py-3 ${i === currentIndex ? 'opacity-30' : 'active:bg-surface-card'}`}
-            >
-              <Text style={{ color: i === currentIndex ? '#8b949e' : '#e6edf3' }} className="text-base">
-                Posición {i + 1}{i === currentIndex ? ' (actual)' : ''}
-              </Text>
-            </Pressable>
-          ))}
-        </Pressable>
-      </Pressable>
-    </Modal>
-  )
-}
 
 function WorkoutExerciseCard({
   sessionExercise,
@@ -96,6 +73,7 @@ function WorkoutExerciseCard({
   onReorder,
   currentIndex = 0,
   totalExercises = 1,
+  positionLabels = [],
   isReordering = false,
 }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
@@ -260,10 +238,11 @@ function WorkoutExerciseCard({
 
       {showReorder && (
         <ReorderModal
-          visible={showReorder}
+          visible
           onClose={() => setShowReorder(false)}
-          totalExercises={totalExercises}
+          totalItems={totalExercises}
           currentIndex={currentIndex}
+          positionLabels={positionLabels}
           onSelect={(i) => { onReorder(currentIndex, i); setShowReorder(false) }}
         />
       )}
