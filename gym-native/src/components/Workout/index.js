@@ -1,4 +1,5 @@
 export { default as WorkoutSessionLayout } from './WorkoutSessionLayout'
+export { default as WorkoutLoadingScreen } from './WorkoutLoadingScreen'
 export { default as WorkoutExerciseCard } from './WorkoutExerciseCard'
 export { default as SetRow } from './SetRow'
 export { default as RestTimer } from './RestTimer'

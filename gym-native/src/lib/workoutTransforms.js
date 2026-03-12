@@ -160,6 +160,53 @@ export function buildSessionExercisesFromBlocks(blocks) {
   return sessionExercises
 }
 
+/**
+ * Construye datos de cache para session_exercises combinando IDs de la RPC con info de bloques.
+ * Usa sort_order como clave de correspondencia (1:1 con buildSessionExercisesFromBlocks).
+ */
+export function buildSessionExercisesCache(sessionExercises, blocks) {
+  // Construir lista plana en el mismo orden que buildSessionExercisesFromBlocks
+  const flatFromBlocks = []
+  blocks?.forEach(block => {
+    const sorted = [...(block.routine_exercises || [])].sort((a, b) => a.sort_order - b.sort_order)
+    sorted.forEach(re => {
+      flatFromBlocks.push({ ...re, block_name: block.name })
+    })
+  })
+
+  return sessionExercises.map(se => {
+    const re = flatFromBlocks[se.sort_order - 1]
+    const exercise = re?.exercise || {}
+
+    return {
+      id: se.id,
+      exercise_id: se.exercise_id,
+      routine_exercise_id: re?.id || null,
+      sort_order: se.sort_order,
+      series: re?.series || 3,
+      reps: re?.reps || '10',
+      rir: re?.rir ?? null,
+      rest_seconds: re?.rest_seconds ?? null,
+      tempo: re?.tempo || null,
+      notes: re?.notes || null,
+      superset_group: re?.superset_group ?? null,
+      is_extra: false,
+      block_name: re?.block_name || 'Principal',
+      exercise: {
+        id: exercise.id,
+        name: exercise.name,
+        instructions: exercise.instructions || null,
+        measurement_type: exercise.measurement_type || 'weight_reps',
+        weight_unit: exercise.weight_unit || 'kg',
+        time_unit: exercise.time_unit || null,
+        distance_unit: exercise.distance_unit || null,
+        muscle_group: exercise.muscle_group || null,
+      },
+      routine_exercise: re ? { tempo_razon: re.tempo_razon || null } : null,
+    }
+  })
+}
+
 // ============================================
 // ROUTINE EXERCISES (funciones legacy para rutinas)
 // ============================================

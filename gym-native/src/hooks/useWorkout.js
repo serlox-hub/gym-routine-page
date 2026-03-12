@@ -4,8 +4,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
-import { useUserId } from './useAuth.js'
-import { buildSessionExercisesFromBlocks } from '../lib/workoutTransforms.js'
+import { buildSessionExercisesFromBlocks, buildSessionExercisesCache } from '../lib/workoutTransforms.js'
 
 // ============================================
 // SESSION MUTATIONS
@@ -14,45 +13,34 @@ import { buildSessionExercisesFromBlocks } from '../lib/workoutTransforms.js'
 export function useStartSession() {
   const queryClient = useQueryClient()
   const startSession = useWorkoutStore(state => state.startSession)
-  const userId = useUserId()
 
   return useMutation({
     mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [] } = {}) => {
-      const { data: session, error: sessionError } = await supabase
-        .from('workout_sessions')
-        .insert({
-          routine_day_id: routineDayId,
-          routine_name: routineName,
-          day_name: dayName,
-          status: 'in_progress',
-          user_id: userId,
-        })
-        .select()
-        .single()
+      const exercises = buildSessionExercisesFromBlocks(blocks)
 
-      if (sessionError) throw sessionError
+      const { data, error } = await supabase.rpc('start_workout_session', {
+        p_routine_day_id: routineDayId,
+        p_routine_name: routineName,
+        p_day_name: dayName,
+        p_exercises: exercises,
+      })
 
-      const sessionExercisesData = buildSessionExercisesFromBlocks(blocks)
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data, { routineDayId = null, routineId = null, blocks = [] } = {}) => {
+      startSession(data.id, routineDayId, routineId)
 
-      if (sessionExercisesData.length > 0) {
-        const { error: exercisesError } = await supabase
-          .from('session_exercises')
-          .insert(
-            sessionExercisesData.map(se => ({
-              ...se,
-              session_id: session.id,
-            }))
-          )
-
-        if (exercisesError) throw exercisesError
+      // Pre-popular cache de session_exercises para evitar segundo fetch
+      if (data.session_exercises?.length > 0) {
+        const cacheData = buildSessionExercisesCache(data.session_exercises, blocks)
+        queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, data.id], cacheData)
       }
 
-      return session
-    },
-    onSuccess: (data, { routineDayId = null, routineId = null } = {}) => {
-      startSession(data.id, routineDayId, routineId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES] })
+    },
+    onError: () => {
+      useWorkoutStore.getState().hideWorkout()
     },
   })
 }
