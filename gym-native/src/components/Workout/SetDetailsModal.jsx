@@ -5,12 +5,40 @@ import * as ImagePicker from 'expo-image-picker'
 import { useVideoPlayer, VideoView } from 'expo-video'
 import { Modal } from '../ui'
 import { useCanUploadVideo } from '../../hooks/useAuth'
+import { getVideoUrl } from '../../lib/videoStorage'
 import { colors, inputStyle } from '../../lib/styles'
 import { formatRestTimeDisplay } from '../../lib/timeUtils'
 import { RIR_OPTIONS } from '../../lib/constants'
 
 function SetVideoPreview({ uri }) {
-  const player = useVideoPlayer(uri, (p) => { p.loop = false })
+  const [resolvedUri, setResolvedUri] = useState(uri)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!uri) return
+    if (uri.startsWith('file://') || uri.startsWith('content://')) {
+      setResolvedUri(uri)
+      return
+    }
+    setLoading(true)
+    getVideoUrl(uri)
+      .then(setResolvedUri)
+      .catch(() => setResolvedUri(null))
+      .finally(() => setLoading(false))
+  }, [uri])
+
+  const player = useVideoPlayer(resolvedUri, (p) => { p.loop = false })
+
+  if (loading) {
+    return (
+      <View style={{ width: '100%', height: 160, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bgTertiary }}>
+        <Text style={{ color: colors.textSecondary }}>Cargando video...</Text>
+      </View>
+    )
+  }
+
+  if (!resolvedUri) return null
+
   return (
     <VideoView
       player={player}

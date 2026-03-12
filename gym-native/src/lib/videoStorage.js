@@ -1,4 +1,5 @@
-import * as FileSystem from 'expo-file-system'
+import { File } from 'expo-file-system'
+import { createUploadTask } from 'expo-file-system/legacy'
 import { supabase } from './supabase'
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
@@ -10,13 +11,13 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
  * @returns {Promise<string>} Key del video subido
  */
 export async function uploadVideo(fileUri, onProgress) {
-  const fileInfo = await FileSystem.getInfoAsync(fileUri)
+  const file = new File(fileUri)
 
-  if (!fileInfo.exists) {
+  if (!file.exists) {
     throw new Error('El archivo no existe')
   }
 
-  if (fileInfo.size > MAX_FILE_SIZE) {
+  if (file.size > MAX_FILE_SIZE) {
     throw new Error('El video no puede superar los 100MB')
   }
 
@@ -36,7 +37,9 @@ export async function uploadVideo(fileUri, onProgress) {
 
   const { uploadUrl, key } = data
 
-  const uploadTask = FileSystem.createUploadTask(uploadUrl, fileUri, {
+  if (onProgress) onProgress(0)
+
+  const uploadTask = createUploadTask(uploadUrl, fileUri, {
     httpMethod: 'PUT',
     headers: { 'Content-Type': contentType },
   }, (progress) => {

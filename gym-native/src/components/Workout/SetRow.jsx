@@ -7,7 +7,9 @@ import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, Distanc
 import { isSetDataValid, buildCompletedSetData, metersToDistanceUnit } from '../../lib/setUtils'
 import { MeasurementType } from '../../lib/measurementTypes'
 import { usePreferences } from '../../hooks/usePreferences'
-import { useUpdateSetDetails } from '../../hooks/useWorkout'
+import { useCanUploadVideo } from '../../hooks/useAuth'
+import { useUpdateSetVideo, useUpdateSetDetails } from '../../hooks/useWorkout'
+import { uploadVideo } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
 
 function SetRow({
@@ -31,11 +33,19 @@ function SetRow({
   const cachedData = useWorkoutStore(state => state.cachedSetData[setKey])
 
   const { data: preferences } = usePreferences()
+  const canUploadVideo = useCanUploadVideo()
+  const { mutate: updateSetVideo } = useUpdateSetVideo()
   const { mutate: updateSetDetails } = useUpdateSetDetails()
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [videoUploadError, setVideoUploadError] = useState(false)
+  const [pendingVideoFile, setPendingVideoFile] = useState(null)
 
   const showRirInput = preferences?.show_rir_input ?? true
   const showSetNotes = preferences?.show_set_notes ?? true
-  const shouldShowModal = showRirInput || showSetNotes
+  const showVideoUpload = preferences?.show_video_upload ?? true
+  const showVideo = canUploadVideo && showVideoUpload
+  const shouldShowModal = showRirInput || showSetNotes || showVideo
 
   const [weight, setWeight] = useState(setData?.weight ?? '')
   const [reps, setReps] = useState(setData?.repsCompleted ?? '')
@@ -64,6 +74,28 @@ function SetRow({
   const buildInfo = (rir, notes, videoUrl = null, videoFile = null) => ({
     sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl, videoFile,
   })
+
+  const uploadVideoInBackground = async (file) => {
+    setIsUploadingVideo(true)
+    setUploadProgress(0)
+    setVideoUploadError(false)
+    setPendingVideoFile(file)
+    try {
+      const uploadedUrl = await uploadVideo(file, setUploadProgress)
+      updateSetVideo({ sessionExerciseId, setNumber, videoUrl: uploadedUrl })
+      setPendingVideoFile(null)
+    } catch {
+      setVideoUploadError(true)
+    } finally {
+      setIsUploadingVideo(false)
+    }
+  }
+
+  const handleRetryVideoUpload = () => {
+    if (pendingVideoFile) {
+      uploadVideoInBackground(pendingVideoFile)
+    }
+  }
 
   const handleCheckPress = () => {
     if (isCompleted) {
@@ -95,6 +127,10 @@ function SetRow({
       updateSetDetails({ sessionExerciseId, setNumber, rirActual: rir, notes, videoUrl, videoFile })
     }
     setShowModal(false)
+
+    if (videoFile) {
+      uploadVideoInBackground(videoFile.uri)
+    }
   }
 
   const handleCompleteSet = (rir, notes) => {
@@ -156,12 +192,16 @@ function SetRow({
         {renderInputs()}
       </View>
 
-      {isCompleted && (
+      {(isCompleted || isUploadingVideo || videoUploadError) && (
         <NotesBadge
           rir={setData?.rirActual}
           hasNotes={hasTextNote}
           hasVideo={hasVideo}
-          onPress={handleEditPress}
+          isUploadingVideo={isUploadingVideo}
+          uploadProgress={uploadProgress}
+          videoUploadError={videoUploadError}
+          onRetryUpload={handleRetryVideoUpload}
+          onPress={isCompleted ? handleEditPress : null}
         />
       )}
 
