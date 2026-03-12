@@ -111,7 +111,7 @@ export default function DayCard({
               color={colors.textSecondary}
               style={{ transform: [{ rotate: isExpanded ? '90deg' : '0deg' }] }}
             />
-            <Text className="text-primary font-medium" numberOfLines={1}>{name}</Text>
+            <Text className="text-primary font-medium shrink" numberOfLines={1}>{name}</Text>
           </View>
           <View className="flex-row items-center gap-2">
             {!isEditing && (
