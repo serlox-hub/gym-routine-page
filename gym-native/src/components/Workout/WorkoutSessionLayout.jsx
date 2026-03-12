@@ -17,6 +17,7 @@ import useWorkoutStore from '../../stores/workoutStore'
 import { transformSessionExercises } from '../../lib/workoutTransforms'
 import { getExistingSupersetIds } from '../../lib/supersetUtils'
 import { calculateExerciseProgress } from '../../lib/workoutCalculations'
+import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { colors } from '../../lib/styles'
 
 export default function WorkoutSessionLayout({ title, navigation, fallbackRoute = 'Home' }) {
@@ -57,6 +58,32 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
     [flatExercises, completedSets, exerciseSetCounts],
   )
 
+  const handlers = useStableHandlers({
+    onCompleteSet: (setData, descansoSeg) => {
+      completeSetMutation.mutate(setData, {
+        onSuccess: () => {
+          if (descansoSeg && descansoSeg > 0) {
+            startRestTimer(descansoSeg)
+          }
+        },
+      })
+    },
+    onUncompleteSet: (setData) => {
+      uncompleteSetMutation.mutate(setData)
+    },
+    onRemove: (sessionExerciseId) => {
+      removeSessionExerciseMutation.mutate(sessionExerciseId)
+    },
+    onReorder: (currentIndex, newIndex) => {
+      if (currentIndex === newIndex) return
+      const newOrder = [...flatExercises]
+      const [removed] = newOrder.splice(currentIndex, 1)
+      newOrder.splice(newIndex, 0, removed)
+      const orderedIds = newOrder.map(e => e.sessionExerciseId)
+      reorderSessionExercisesMutation.mutate(orderedIds)
+    },
+  })
+
   if (!sessionId) return null
 
   if (isLoading && !sessionExercises) return <LoadingSpinner />
@@ -73,20 +100,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
         </Button>
       </SafeAreaView>
     )
-  }
-
-  const handleCompleteSet = (setData, descansoSeg) => {
-    completeSetMutation.mutate(setData, {
-      onSuccess: () => {
-        if (descansoSeg && descansoSeg > 0) {
-          startRestTimer(descansoSeg)
-        }
-      },
-    })
-  }
-
-  const handleUncompleteSet = (setData) => {
-    uncompleteSetMutation.mutate(setData)
   }
 
   const handleConfirmEnd = ({ overallFeeling, notes }) => {
@@ -111,19 +124,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
     }, {
       onSuccess: () => setShowAddExercise(false),
     })
-  }
-
-  const handleRemoveExercise = (sessionExerciseId) => {
-    removeSessionExerciseMutation.mutate(sessionExerciseId)
-  }
-
-  const handleReorderExercise = (currentIndex, newIndex) => {
-    if (currentIndex === newIndex) return
-    const newOrder = [...flatExercises]
-    const [removed] = newOrder.splice(currentIndex, 1)
-    newOrder.splice(newIndex, 0, removed)
-    const orderedIds = newOrder.map(e => e.sessionExerciseId)
-    reorderSessionExercisesMutation.mutate(orderedIds)
   }
 
   const hasExercises = flatExercises.length > 0
@@ -154,11 +154,11 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
         ) : (
           <BlockExerciseList
             exercisesByBlock={exercisesByBlock}
-            onCompleteSet={handleCompleteSet}
-            onUncompleteSet={handleUncompleteSet}
-            onRemove={handleRemoveExercise}
+            onCompleteSet={handlers.onCompleteSet}
+            onUncompleteSet={handlers.onUncompleteSet}
+            onRemove={handlers.onRemove}
             flatExercises={flatExercises}
-            onReorder={handleReorderExercise}
+            onReorder={handlers.onReorder}
             isReordering={reorderSessionExercisesMutation.isPending}
           />
         )}

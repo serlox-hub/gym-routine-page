@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { memo, useMemo, useState, useEffect } from 'react'
 import { View, Text, Pressable, Modal } from 'react-native'
 import { Info, Plus, Trash2, ArrowUpDown } from 'lucide-react-native'
 import { Card, Badge, ConfirmModal, DropdownMenu } from '../ui'
@@ -86,14 +86,14 @@ function ReorderModal({ visible, onClose, totalExercises, currentIndex, onSelect
   )
 }
 
-export default function WorkoutExerciseCard({
+function WorkoutExerciseCard({
   sessionExercise,
   onCompleteSet,
   onUncompleteSet,
   isWarmup = false,
   onRemove,
   isSuperset = false,
-  onReorderToPosition,
+  onReorder,
   currentIndex = 0,
   totalExercises = 1,
   isReordering = false,
@@ -140,8 +140,8 @@ export default function WorkoutExerciseCard({
   const menuItems = [
     { label: 'Ver historial', icon: Info, onPress: () => setShowHistory(true) },
     { label: 'Añadir serie', icon: Plus, onPress: addSet },
-    onReorderToPosition && totalExercises > 1 && { type: 'separator' },
-    onReorderToPosition && totalExercises > 1 && { label: 'Reordenar', icon: ArrowUpDown, onPress: () => setShowReorder(true), disabled: isReordering },
+    onReorder && totalExercises > 1 && { type: 'separator' },
+    onReorder && totalExercises > 1 && { label: 'Reordenar', icon: ArrowUpDown, onPress: () => setShowReorder(true), disabled: isReordering },
     onRemove && { type: 'separator' },
     onRemove && { label: 'Quitar ejercicio', icon: Trash2, onPress: () => setShowRemoveConfirm(true), danger: true },
   ].filter(Boolean)
@@ -266,7 +266,7 @@ export default function WorkoutExerciseCard({
           onClose={() => setShowReorder(false)}
           totalExercises={totalExercises}
           currentIndex={currentIndex}
-          onSelect={(i) => { onReorderToPosition(i); setShowReorder(false) }}
+          onSelect={(i) => { onReorder(currentIndex, i); setShowReorder(false) }}
         />
       )}
     </>
@@ -282,3 +282,5 @@ export default function WorkoutExerciseCard({
     </Card>
   )
 }
+
+export default memo(WorkoutExerciseCard)

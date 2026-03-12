@@ -1,16 +1,15 @@
+import { memo } from 'react'
 import { View, Text } from 'react-native'
 import { Flame } from 'lucide-react-native'
 import WorkoutExerciseCard from './WorkoutExerciseCard'
 import SupersetCard from './SupersetCard'
 import { colors } from '../../lib/styles'
 import { countExercisesInBlock } from '../../lib/supersetUtils'
-import { getReorderProps } from '../../lib/arrayUtils'
+import { findExerciseIndex } from '../../lib/arrayUtils'
 
-export default function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, flatExercises = [], onReorder, isReordering = false }) {
-  const getExerciseReorderProps = (exercise) => ({
-    ...getReorderProps(flatExercises, exercise, onReorder),
-    isReordering,
-  })
+function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, flatExercises = [], onReorder, isReordering = false }) {
+  const totalFlat = flatExercises.length
+
   return (
     <View className="gap-4">
       {exercisesByBlock.map((block) => {
@@ -54,7 +53,10 @@ export default function BlockExerciseList({ exercisesByBlock, onCompleteSet, onU
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}
                       isWarmup={block.isWarmup}
-                      {...getExerciseReorderProps(group.exercise)}
+                      onReorder={onReorder}
+                      currentIndex={findExerciseIndex(flatExercises, group.exercise)}
+                      totalExercises={totalFlat}
+                      isReordering={isReordering}
                     />
                   )
                 }
@@ -76,3 +78,5 @@ export default function BlockExerciseList({ exercisesByBlock, onCompleteSet, onU
     </View>
   )
 }
+
+export default memo(BlockExerciseList)
