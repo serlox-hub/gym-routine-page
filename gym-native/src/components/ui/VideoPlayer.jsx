@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
-import { View, Text, Pressable } from 'react-native'
-import { Video, ResizeMode } from 'expo-av'
-import { Play, Pause } from 'lucide-react-native'
-import { LoadingSpinner } from './index'
+import { useState, useEffect } from 'react'
+import { View, Text } from 'react-native'
+import { useVideoPlayer, VideoView } from 'expo-video'
+import LoadingSpinner from './LoadingSpinner'
 import { getVideoUrl } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
 
@@ -10,8 +9,6 @@ export default function VideoPlayer({ videoKey }) {
   const [url, setUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const videoRef = useRef(null)
 
   useEffect(() => {
     if (!videoKey) return
@@ -30,15 +27,9 @@ export default function VideoPlayer({ videoKey }) {
       .finally(() => setLoading(false))
   }, [videoKey])
 
-  const togglePlayback = async () => {
-    if (!videoRef.current) return
-    const status = await videoRef.current.getStatusAsync()
-    if (status.isPlaying) {
-      await videoRef.current.pauseAsync()
-    } else {
-      await videoRef.current.playAsync()
-    }
-  }
+  const player = useVideoPlayer(url, (p) => {
+    p.loop = false
+  })
 
   if (loading) {
     return (
@@ -64,15 +55,11 @@ export default function VideoPlayer({ videoKey }) {
 
   return (
     <View className="rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
-      <Video
-        ref={videoRef}
-        source={{ uri: url }}
+      <VideoView
+        player={player}
         style={{ width: '100%', height: 200 }}
-        resizeMode={ResizeMode.CONTAIN}
-        useNativeControls
-        onPlaybackStatusUpdate={(status) => {
-          setIsPlaying(status.isPlaying)
-        }}
+        contentFit="contain"
+        nativeControls
       />
     </View>
   )

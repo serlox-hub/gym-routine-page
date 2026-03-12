@@ -2,12 +2,24 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, Alert } from 'react-native'
 import { Check, Save, Video, X } from 'lucide-react-native'
 import * as ImagePicker from 'expo-image-picker'
-import { Video as ExpoVideo, ResizeMode } from 'expo-av'
+import { useVideoPlayer, VideoView } from 'expo-video'
 import { Modal } from '../ui'
 import { useCanUploadVideo } from '../../hooks/useAuth'
 import { colors, inputStyle } from '../../lib/styles'
 import { formatRestTimeDisplay } from '../../lib/timeUtils'
 import { RIR_OPTIONS } from '../../lib/constants'
+
+function SetVideoPreview({ uri }) {
+  const player = useVideoPlayer(uri, (p) => { p.loop = false })
+  return (
+    <VideoView
+      player={player}
+      style={{ width: '100%', height: 160 }}
+      contentFit="contain"
+      nativeControls
+    />
+  )
+}
 import { usePreference } from '../../hooks/usePreferences'
 import { getEffortLabel } from '../../lib/measurementTypes'
 
@@ -176,12 +188,7 @@ export default function SetDetailsModal({
             </Text>
             {videoUri ? (
               <View className="rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
-                <ExpoVideo
-                  source={{ uri: videoUri }}
-                  style={{ width: '100%', height: 160 }}
-                  resizeMode={ResizeMode.CONTAIN}
-                  useNativeControls
-                />
+                <SetVideoPreview uri={videoUri} />
                 <Pressable
                   onPress={handleRemoveVideo}
                   className="absolute top-2 right-2 p-1.5 rounded-full"
