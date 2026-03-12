@@ -159,7 +159,7 @@ export default function MeasurementSection() {
       </View>
 
       {isLoading ? (
-        <LoadingSpinner />
+        <LoadingSpinner fullScreen={false} />
       ) : (
         <>
           {/* Stats */}

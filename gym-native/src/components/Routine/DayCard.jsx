@@ -53,6 +53,7 @@ export default function DayCard({
   }
 
   const handleStartWorkout = () => {
+    useWorkoutStore.getState().showWorkout()
     startSessionMutation.mutate(
       { routineDayId: id, routineId: parseInt(routineId), routineName, dayName: name, blocks }
     )
@@ -151,7 +152,7 @@ export default function DayCard({
       {isExpanded && (
         <View className="mt-3 pt-3 border-t border-border gap-4">
           {loadingBlocks ? (
-            <LoadingSpinner />
+            <LoadingSpinner fullScreen={false} />
           ) : isEditing ? (
             <>
               {(warmupBlock || true) && (

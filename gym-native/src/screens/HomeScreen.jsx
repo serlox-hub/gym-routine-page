@@ -27,6 +27,7 @@ function QuickAccessSection({ navigation, routines, startSessionMutation, hasAct
   const favoriteRoutine = routines?.find(r => r.is_favorite)
 
   const handleStartFreeWorkout = () => {
+    useWorkoutStore.getState().showWorkout()
     startSessionMutation.mutate(undefined)
   }
 
@@ -344,7 +345,7 @@ export default function HomeScreen({ navigation }) {
           className="absolute inset-0 z-50 items-center justify-center"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
         >
-          <LoadingSpinner />
+          <LoadingSpinner fullScreen={false} />
           <Text className="text-primary mt-2">Importando rutina...</Text>
         </View>
       )}

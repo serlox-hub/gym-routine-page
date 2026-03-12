@@ -46,7 +46,7 @@ export default function VideoPlayer({ videoKey }) {
         className="items-center justify-center py-8 rounded-lg"
         style={{ backgroundColor: colors.bgTertiary }}
       >
-        <LoadingSpinner />
+        <LoadingSpinner fullScreen={false} />
       </View>
     )
   }

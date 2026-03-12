@@ -215,7 +215,7 @@ export default function ExerciseHistoryModal({
       {/* Content */}
       <ScrollView className="p-4" style={{ maxHeight: 400 }}>
         {isLoading ? (
-          <LoadingSpinner />
+          <LoadingSpinner fullScreen={false} />
         ) : activeTab === 'progress' ? (
           <ProgressTab
             sessions={sessions}

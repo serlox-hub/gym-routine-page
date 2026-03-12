@@ -16,7 +16,7 @@ export default function ExerciseUsageModal({ exercise, onClose }) {
 
       <ScrollView className="p-4" style={{ maxHeight: 400 }}>
         {isLoading ? (
-          <LoadingSpinner />
+          <LoadingSpinner fullScreen={false} />
         ) : error ? (
           <ErrorMessage message="No se pudieron cargar los datos" />
         ) : (
