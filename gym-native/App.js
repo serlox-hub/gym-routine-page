@@ -6,8 +6,10 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GoogleSignin } from '@react-native-google-signin/google-signin'
+import Toast from 'react-native-toast-message'
 import { queryClient } from './src/lib/queryClient'
 import RootNavigator from './src/navigation/RootNavigator'
+import { toastConfig } from './src/components/ui/toastConfig'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -41,6 +43,7 @@ export default function App() {
           <StatusBar style="light" />
           <RootNavigator />
         </NavigationContainer>
+        <Toast config={toastConfig} position="bottom" bottomOffset={50} />
       </QueryClientProvider>
     </SafeAreaProvider>
   )

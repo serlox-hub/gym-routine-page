@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { View, Text, TextInput, Alert } from 'react-native'
+import { View, Text, TextInput } from 'react-native'
 import { Pencil, Download, Trash2, Copy } from 'lucide-react-native'
-import * as FileSystem from 'expo-file-system'
+import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
+import Toast from 'react-native-toast-message'
 import { useUpdateRoutine, useDuplicateRoutine } from '../../hooks/useRoutines'
 import { exportRoutine } from '../../lib/routineIO'
 import { sanitizeFilename } from '../../lib/textUtils'
@@ -53,11 +54,13 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
   }, [])
 
   const handleDuplicate = async () => {
+    Toast.show({ type: 'loading', text1: 'Duplicando rutina...', autoHide: false })
     try {
       const newRoutine = await duplicateRoutine.mutateAsync({ routineId: parseInt(routineId) })
+      Toast.show({ type: 'success', text1: 'Rutina duplicada' })
       navigation.replace('RoutineDetail', { routineId: newRoutine.id })
     } catch {
-      // Silent fail
+      Toast.show({ type: 'error', text1: 'No se pudo duplicar la rutina' })
     }
   }
 
@@ -66,12 +69,11 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
       const data = await exportRoutine(parseInt(routineId))
       const json = JSON.stringify(data, null, 2)
       const filename = sanitizeFilename(routine?.name || 'rutina') + '.json'
-      const fileUri = FileSystem.cacheDirectory + filename
-
-      await FileSystem.writeAsStringAsync(fileUri, json, { encoding: FileSystem.EncodingType.UTF8 })
-      await Sharing.shareAsync(fileUri, { mimeType: 'application/json', dialogTitle: 'Exportar rutina' })
+      const file = new File(Paths.cache, filename)
+      file.write(json)
+      await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Exportar rutina' })
     } catch {
-      Alert.alert('Error', 'No se pudo exportar la rutina')
+      Toast.show({ type: 'error', text1: 'No se pudo exportar la rutina' })
     }
   }
 

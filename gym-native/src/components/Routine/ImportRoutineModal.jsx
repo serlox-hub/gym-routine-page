@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, TextInput, Pressable, Alert } from 'react-native'
 import { FileText } from 'lucide-react-native'
 import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system'
+import { File } from 'expo-file-system'
 import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 
@@ -22,7 +22,8 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport }) {
       }
 
       const uri = result.assets[0].uri
-      const content = await FileSystem.readAsStringAsync(uri)
+      const file = new File(uri)
+      const content = await file.text()
       const data = JSON.parse(content)
       onImport(data)
       handleClose()
