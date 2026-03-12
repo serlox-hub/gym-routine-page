@@ -50,7 +50,7 @@ export default function ExerciseCard({
         ) : (
           <Pressable
             onPress={onPress}
-            className="p-1 rounded bg-surface-block"
+            className="p-1 rounded bg-surface-block active:opacity-70"
           >
             <Info size={14} color={colors.textSecondary} />
           </Pressable>
@@ -75,7 +75,7 @@ export default function ExerciseCard({
         <Pressable onPress={e => e.stopPropagation()} className="bg-surface-block border border-border rounded-t-2xl py-2 pb-8">
           <Text className="text-base font-semibold text-primary px-5 py-3">Mover a posición</Text>
           {Array.from({ length: totalExercises }, (_, i) => (
-            <Pressable key={i} onPress={() => { onReorderToPosition(i); setShowReorder(false) }} disabled={i === currentIndex} className={`px-5 py-3 ${i === currentIndex ? 'opacity-30' : ''}`}>
+            <Pressable key={i} onPress={() => { onReorderToPosition(i); setShowReorder(false) }} disabled={i === currentIndex} className={`px-5 py-3 ${i === currentIndex ? 'opacity-30' : 'active:bg-surface-card'}`}>
               <Text style={{ color: i === currentIndex ? '#8b949e' : '#e6edf3' }} className="text-base">
                 Posición {i + 1}{i === currentIndex ? ' (actual)' : ''}
               </Text>

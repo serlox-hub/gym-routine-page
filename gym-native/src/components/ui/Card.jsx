@@ -6,7 +6,7 @@ export default function Card({ children, className = '', onPress, style = {} }) 
   return (
     <Component
       onPress={onPress}
-      className={`rounded-lg bg-surface-card border border-border ${className}`}
+      className={`rounded-lg bg-surface-card border border-border ${onPress ? 'active:opacity-80' : ''} ${className}`}
       style={style}
     >
       {children}

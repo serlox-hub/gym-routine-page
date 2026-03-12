@@ -63,7 +63,7 @@ export default function ExecutionTimer({ seconds }) {
       <Pressable
         onPress={handleStart}
         disabled={seconds === 0}
-        className="px-3 py-1 rounded"
+        className="px-3 py-1 rounded active:scale-95"
         style={{
           backgroundColor: colors.success,
           opacity: seconds === 0 ? 0.5 : 1,
@@ -102,7 +102,7 @@ export default function ExecutionTimer({ seconds }) {
         />
       </View>
 
-      <Pressable onPress={handleStop}>
+      <Pressable onPress={handleStop} className="active:opacity-70">
         <Text className="text-xs" style={{ color: colors.textSecondary }}>✕</Text>
       </Pressable>
     </View>

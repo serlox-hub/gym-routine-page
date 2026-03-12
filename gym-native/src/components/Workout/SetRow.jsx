@@ -167,7 +167,7 @@ export default function SetRow({
       <Pressable
         onPress={handleCheckPress}
         disabled={!isCompleted && !valid}
-        className="w-8 h-8 rounded-full items-center justify-center"
+        className="w-8 h-8 rounded-full items-center justify-center active:scale-90"
         style={{
           backgroundColor: isCompleted ? colors.success : colors.border,
           opacity: (!isCompleted && !valid) ? 0.5 : 1,
@@ -186,7 +186,7 @@ export default function SetRow({
       {canRemove && !isCompleted && onRemove && (
         <Pressable
           onPress={onRemove}
-          className="w-6 h-6 rounded-full items-center justify-center"
+          className="w-6 h-6 rounded-full items-center justify-center active:scale-90"
           style={{ backgroundColor: colors.bgTertiary }}
         >
           <Text style={{ color: colors.danger }}>×</Text>

@@ -20,7 +20,7 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
       <View className="flex-row items-center justify-between mb-4">
         <Pressable
           onPress={() => onDateChange(getPreviousMonth(currentDate))}
-          className="p-2 rounded"
+          className="p-2 rounded active:opacity-70"
           style={{ backgroundColor: colors.bgTertiary }}
         >
           <ChevronLeft size={18} color={colors.textSecondary} />
@@ -32,7 +32,7 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
           </Text>
           <Pressable
             onPress={() => onDateChange(new Date())}
-            className="px-2 py-1 rounded"
+            className="px-2 py-1 rounded active:opacity-70"
             style={{ backgroundColor: colors.bgTertiary }}
           >
             <Text className="text-xs" style={{ color: colors.textSecondary }}>Hoy</Text>
@@ -41,7 +41,7 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
 
         <Pressable
           onPress={() => onDateChange(getNextMonth(currentDate))}
-          className="p-2 rounded"
+          className="p-2 rounded active:opacity-70"
           style={{ backgroundColor: colors.bgTertiary }}
         >
           <ChevronRight size={18} color={colors.textSecondary} />

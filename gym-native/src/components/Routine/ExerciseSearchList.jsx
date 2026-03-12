@@ -40,7 +40,7 @@ export default function ExerciseSearchList({
     return (
       <Pressable
         onPress={() => onSelect(exercise)}
-        className="p-3 rounded-lg flex-row items-center justify-between gap-2"
+        className="p-3 rounded-lg flex-row items-center justify-between gap-2 active:bg-surface-block"
       >
         <View className="flex-row items-center gap-2 flex-1">
           <View

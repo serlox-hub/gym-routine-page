@@ -52,7 +52,7 @@ export default function MeasurementConfigModal({ isOpen, onClose, enabledMeasure
               <Pressable
                 key={type}
                 onPress={() => toggleMeasurement(type)}
-                className="flex-row items-center gap-3 p-3 rounded-lg"
+                className="flex-row items-center gap-3 p-3 rounded-lg active:opacity-80"
                 style={{
                   backgroundColor: isSelected ? 'rgba(63, 185, 80, 0.15)' : colors.bgTertiary,
                   borderWidth: 1,

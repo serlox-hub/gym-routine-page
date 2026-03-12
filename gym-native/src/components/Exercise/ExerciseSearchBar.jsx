@@ -38,7 +38,7 @@ export default function ExerciseSearchBar({
 
       <Pressable
         onPress={() => setShowPicker(true)}
-        className="flex-row items-center gap-2 p-3 rounded-lg mb-3"
+        className="flex-row items-center gap-2 p-3 rounded-lg mb-3 active:opacity-80"
         style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
       >
         {selectedGroup && (
@@ -71,7 +71,7 @@ export default function ExerciseSearchBar({
             <ScrollView style={{ maxHeight: 400 }}>
               <Pressable
                 onPress={() => handleSelect(null)}
-                className="px-4 py-3 flex-row items-center gap-2"
+                className="px-4 py-3 flex-row items-center gap-2 active:bg-surface-card"
                 style={!selectedMuscleGroup ? { backgroundColor: 'rgba(88, 166, 255, 0.1)' } : {}}
               >
                 <Text style={{ color: !selectedMuscleGroup ? colors.accent : colors.textSecondary }}>
@@ -84,7 +84,7 @@ export default function ExerciseSearchBar({
                   <Pressable
                     key={group.id}
                     onPress={() => handleSelect(group.id)}
-                    className="px-4 py-3 flex-row items-center gap-2"
+                    className="px-4 py-3 flex-row items-center gap-2 active:bg-surface-card"
                     style={isSelected ? { backgroundColor: 'rgba(88, 166, 255, 0.1)' } : {}}
                   >
                     <View

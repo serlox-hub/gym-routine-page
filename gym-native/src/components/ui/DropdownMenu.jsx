@@ -13,7 +13,7 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
     <View>
       <Pressable
         onPress={() => setIsOpen(true)}
-        className="p-1.5 rounded-lg bg-surface-block"
+        className="p-1.5 rounded-lg bg-surface-block active:opacity-70"
       >
         <MoreVertical size={triggerSize} color="#8b949e" />
       </Pressable>
@@ -44,7 +44,7 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
                     handleClose()
                   }}
                   disabled={item.disabled}
-                  className={`flex-row items-center gap-3 px-5 py-3 ${item.disabled ? 'opacity-30' : ''}`}
+                  className={`flex-row items-center gap-3 px-5 py-3 ${item.disabled ? 'opacity-30' : 'active:bg-surface-card'}`}
                 >
                   {item.icon && (
                     <item.icon

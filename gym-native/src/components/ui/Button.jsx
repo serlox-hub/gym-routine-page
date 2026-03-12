@@ -41,7 +41,7 @@ export default function Button({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      className={`rounded-lg items-center justify-center flex-row ${v.bg} ${v.border} ${s.container} ${disabled || loading ? 'opacity-50' : ''} ${className}`}
+      className={`rounded-lg items-center justify-center flex-row ${v.bg} ${v.border} ${s.container} ${disabled || loading ? 'opacity-50' : 'active:opacity-70'} ${className}`}
     >
       {loading ? (
         <ActivityIndicator size="small" color={variant === 'primary' ? '#ffffff' : '#e6edf3'} />

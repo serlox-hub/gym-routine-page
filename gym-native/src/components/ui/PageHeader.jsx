@@ -29,7 +29,7 @@ export default function PageHeader({
     >
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-row items-center gap-2 flex-1">
-          <Pressable onPress={handleBack} className="p-1 -ml-1">
+          <Pressable onPress={handleBack} className="p-1 -ml-1 active:opacity-70">
             <ChevronLeft size={24} color="#8b949e" />
           </Pressable>
           <Text className="text-primary text-xl font-bold flex-shrink" numberOfLines={1}>

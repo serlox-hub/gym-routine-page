@@ -111,7 +111,7 @@ export default function BlockSection({
       {isEditing && (
         <Pressable
           onPress={onAddExercise}
-          className="w-full py-2 rounded-lg flex-row items-center justify-center gap-2"
+          className="w-full py-2 rounded-lg flex-row items-center justify-center gap-2 active:opacity-70"
           style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}
         >
           <Plus size={14} color={accentColor} />

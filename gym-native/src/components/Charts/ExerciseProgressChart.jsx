@@ -48,7 +48,7 @@ export default function ExerciseProgressChart({ sessions, measurementType }) {
             <Pressable
               key={key}
               onPress={() => setActiveTab(key)}
-              className="px-3 py-1.5 rounded"
+              className="px-3 py-1.5 rounded active:opacity-70"
               style={{
                 backgroundColor: activeTab === key
                   ? `${config.color}25`

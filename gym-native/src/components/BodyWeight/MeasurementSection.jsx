@@ -119,12 +119,12 @@ export default function MeasurementSection() {
           )}
         </View>
         <View className="flex-row gap-1">
-          <Pressable onPress={() => handleEdit(record)} className="p-2">
+          <Pressable onPress={() => handleEdit(record)} className="p-2 active:opacity-70">
             <Pencil size={16} color={colors.textSecondary} />
           </Pressable>
           <Pressable
             onPress={() => setRecordToDelete(record.id)}
-            className="p-2"
+            className="p-2 active:opacity-70"
             disabled={deleteMutation.isPending}
           >
             <Trash2 size={16} color={colors.danger} />
@@ -140,7 +140,7 @@ export default function MeasurementSection() {
       <View className="flex-row items-center gap-2 px-4 mb-4">
         <Pressable
           onPress={() => setShowTypeSelector(true)}
-          className="flex-1 flex-row items-center justify-between p-3 rounded-lg"
+          className="flex-1 flex-row items-center justify-between p-3 rounded-lg active:opacity-80"
           style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
         >
           <Text className="font-medium text-primary">
@@ -151,7 +151,7 @@ export default function MeasurementSection() {
 
         <Pressable
           onPress={() => setShowConfigModal(true)}
-          className="p-3 rounded-lg"
+          className="p-3 rounded-lg active:opacity-70"
           style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
         >
           <Settings size={18} color={colors.textSecondary} />
@@ -248,7 +248,7 @@ export default function MeasurementSection() {
                 setSelectedType(type)
                 setShowTypeSelector(false)
               }}
-              className="px-4 py-3 rounded-lg"
+              className="px-4 py-3 rounded-lg active:opacity-80"
               style={{
                 backgroundColor: type === selectedType ? 'rgba(88, 166, 255, 0.1)' : 'transparent',
               }}

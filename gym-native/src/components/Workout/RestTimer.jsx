@@ -24,7 +24,7 @@ export default function RestTimer() {
       <View className="absolute left-0 right-0 items-center" style={{ zIndex: 50, top: insets.top + 8 }}>
         <Pressable
           onPress={() => setMinimized(false)}
-          className="flex-row items-center gap-2 px-4 py-2 rounded-full"
+          className="flex-row items-center gap-2 px-4 py-2 rounded-full active:opacity-70"
           style={{ backgroundColor: colors.bgSecondary, borderWidth: 2, borderColor: timerColor }}
         >
           <Text
@@ -47,7 +47,7 @@ export default function RestTimer() {
       >
         <Pressable
           onPress={() => setMinimized(true)}
-          className="absolute top-14 right-4 p-3 rounded-lg"
+          className="absolute top-14 right-4 p-3 rounded-lg active:opacity-70"
           style={{ backgroundColor: colors.bgTertiary }}
         >
           <Minimize2 size={20} color={colors.textSecondary} />
@@ -80,7 +80,7 @@ export default function RestTimer() {
         <View className="flex-row gap-4">
           <Pressable
             onPress={() => addTime(-30)}
-            className="px-6 py-3 rounded-lg"
+            className="px-6 py-3 rounded-lg active:opacity-70"
             style={{ backgroundColor: colors.bgTertiary }}
           >
             <Text className="text-lg font-medium" style={{ color: colors.textSecondary }}>
@@ -90,7 +90,7 @@ export default function RestTimer() {
 
           <Pressable
             onPress={skip}
-            className="px-8 py-3 rounded-lg"
+            className="px-8 py-3 rounded-lg active:opacity-70"
             style={{ backgroundColor: colors.success }}
           >
             <Text className="text-lg font-bold" style={{ color: '#ffffff' }}>
@@ -100,7 +100,7 @@ export default function RestTimer() {
 
           <Pressable
             onPress={() => addTime(30)}
-            className="px-6 py-3 rounded-lg"
+            className="px-6 py-3 rounded-lg active:opacity-70"
             style={{ backgroundColor: colors.bgTertiary }}
           >
             <Text className="text-lg font-medium" style={{ color: colors.textSecondary }}>

@@ -77,7 +77,7 @@ export default function ActiveSessionBanner() {
         )}
         <Pressable
           onPress={handleContinue}
-          className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-md"
+          className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-md active:opacity-70"
           style={{ backgroundColor: 'rgba(35, 134, 54, 0.95)' }}
         >
           <Play size={14} color="#ffffff" fill="#ffffff" />
