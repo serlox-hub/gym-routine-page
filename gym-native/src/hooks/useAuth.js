@@ -1,26 +1,29 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useShallow } from 'zustand/react/shallow'
 import useAuthStore from '../stores/authStore'
 import { supabase } from '../lib/supabase'
 import { QUERY_KEYS } from '../lib/constants'
 
 export function useAuth() {
-  const {
-    user,
-    session,
-    isLoading,
-    error,
-    initialize,
-    login,
-    loginWithGoogle,
-    signup,
-    logout,
-    clearError,
-    resetPassword,
-    isAuthenticated,
-    isPasswordRecovery,
-    clearPasswordRecovery,
-  } = useAuthStore()
+  const { user, session, isLoading, error, isPasswordRecovery } = useAuthStore(
+    useShallow(state => ({
+      user: state.user,
+      session: state.session,
+      isLoading: state.isLoading,
+      error: state.error,
+      isPasswordRecovery: state.isPasswordRecovery,
+    }))
+  )
+  const initialize = useAuthStore(state => state.initialize)
+  const login = useAuthStore(state => state.login)
+  const loginWithGoogle = useAuthStore(state => state.loginWithGoogle)
+  const signup = useAuthStore(state => state.signup)
+  const logout = useAuthStore(state => state.logout)
+  const clearError = useAuthStore(state => state.clearError)
+  const resetPassword = useAuthStore(state => state.resetPassword)
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated)
+  const clearPasswordRecovery = useAuthStore(state => state.clearPasswordRecovery)
 
   useEffect(() => {
     initialize()
@@ -44,8 +47,7 @@ export function useAuth() {
 }
 
 export function useUserId() {
-  const { user } = useAuthStore()
-  return user?.id ?? null
+  return useAuthStore(state => state.user?.id ?? null)
 }
 
 export function useUserSettings() {

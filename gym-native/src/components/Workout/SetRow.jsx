@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import useWorkoutStore from '../../stores/workoutStore'
 import { NotesBadge } from '../ui'
@@ -10,7 +10,7 @@ import { usePreferences } from '../../hooks/usePreferences'
 import { useUpdateSetDetails } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
 
-export default function SetRow({
+function SetRow({
   setNumber,
   sessionExerciseId,
   exerciseId,
@@ -25,9 +25,10 @@ export default function SetRow({
   canRemove = false,
   onRemove,
 }) {
-  const isCompleted = useWorkoutStore(state => state.isSetCompleted(sessionExerciseId, setNumber))
-  const setData = useWorkoutStore(state => state.getSetData(sessionExerciseId, setNumber))
-  const cachedData = useWorkoutStore(state => state.getCachedSetData(sessionExerciseId, setNumber))
+  const setKey = `${sessionExerciseId}-${setNumber}`
+  const isCompleted = useWorkoutStore(state => !!state.completedSets[setKey])
+  const setData = useWorkoutStore(state => state.completedSets[setKey])
+  const cachedData = useWorkoutStore(state => state.cachedSetData[setKey])
 
   const { data: preferences } = usePreferences()
   const { mutate: updateSetDetails } = useUpdateSetDetails()
@@ -207,3 +208,5 @@ export default function SetRow({
     </View>
   )
 }
+
+export default memo(SetRow)
