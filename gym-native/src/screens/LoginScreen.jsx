@@ -10,10 +10,10 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../hooks/useAuth'
-import { Button, Card } from '../components/ui'
+import { Button, Card, GoogleIcon } from '../components/ui'
 
 export default function LoginScreen({ navigation }) {
-  const { login, isLoading, error, clearError } = useAuth()
+  const { login, loginWithGoogle, isLoading, error, clearError } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -92,6 +92,24 @@ export default function LoginScreen({ navigation }) {
             <Button onPress={handleLogin} loading={isLoading} className="mb-4">
               Entrar
             </Button>
+
+            <View className="flex-row items-center gap-3 mb-4">
+              <View className="flex-1 h-px bg-border" />
+              <Text className="text-secondary text-xs">o</Text>
+              <View className="flex-1 h-px bg-border" />
+            </View>
+
+            <Pressable
+              onPress={loginWithGoogle}
+              disabled={isLoading}
+              className="flex-row items-center justify-center gap-2 py-2.5 rounded-lg mb-4 border border-border"
+              style={{ backgroundColor: '#fff', opacity: isLoading ? 0.5 : 1 }}
+            >
+              <GoogleIcon size={20} />
+              <Text className="text-base font-medium" style={{ color: '#1f1f1f' }}>
+                Continuar con Google
+              </Text>
+            </Pressable>
 
             <Pressable onPress={() => navigation.navigate('Signup')}>
               <Text className="text-secondary text-sm text-center">

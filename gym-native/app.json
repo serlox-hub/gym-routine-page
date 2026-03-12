@@ -57,7 +57,8 @@
         {
           "microphonePermission": "Diario Gym necesita acceso al micrófono para grabar audio en los videos."
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {

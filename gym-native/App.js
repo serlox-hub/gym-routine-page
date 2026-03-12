@@ -5,10 +5,15 @@ import * as SplashScreen from 'expo-splash-screen'
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import { queryClient } from './src/lib/queryClient'
 import RootNavigator from './src/navigation/RootNavigator'
 
 SplashScreen.preventAutoHideAsync()
+
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+})
 
 const linking = {
   prefixes: [Linking.createURL('/'), 'diariogym://'],
