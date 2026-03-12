@@ -2,7 +2,7 @@ import "./global.css"
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
 import * as SplashScreen from 'expo-splash-screen'
-import { NavigationContainer } from '@react-navigation/native'
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { queryClient } from './src/lib/queryClient'
@@ -21,6 +21,7 @@ export default function App() {
         <NavigationContainer
           linking={linking}
           theme={{
+            ...DefaultTheme,
             dark: true,
             colors: {
               primary: '#58a6ff',

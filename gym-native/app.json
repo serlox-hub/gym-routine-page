@@ -32,9 +32,11 @@
       "package": "com.diariogym.app",
       "versionCode": 1,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "VIBRATE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -59,15 +61,8 @@
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "73c5f9e1-8637-4f59-9872-60e7aedad44f"
       }
-    },
-    "owner": "diariogym",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/"
     }
   }
 }

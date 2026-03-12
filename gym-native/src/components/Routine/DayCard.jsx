@@ -4,6 +4,7 @@ import { Trash2, ChevronRight, Pencil } from 'lucide-react-native'
 import { Card, ConfirmModal, DropdownMenu, LoadingSpinner } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
+import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
 import { moveItemToPosition } from '../../lib/arrayUtils'
 import { getExistingSupersetIds } from '../../lib/supersetUtils'
@@ -53,13 +54,12 @@ export default function DayCard({
 
   const handleStartWorkout = () => {
     startSessionMutation.mutate(
-      { routineDayId: id, routineId: parseInt(routineId), routineName, dayName: name, blocks },
-      { onSuccess: () => navigation.navigate('Workout', { routineId, dayId: id }) }
+      { routineDayId: id, routineId: parseInt(routineId), routineName, dayName: name, blocks }
     )
   }
 
   const handleContinueWorkout = () => {
-    navigation.navigate('Workout', { routineId, dayId: id })
+    useWorkoutStore.getState().showWorkout()
   }
 
   const handleReorderWarmup = (exerciseId, newIndex) => {

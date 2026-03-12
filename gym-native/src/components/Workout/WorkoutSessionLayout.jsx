@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Plus } from 'lucide-react-native'
@@ -56,15 +56,9 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
     [flatExercises, completedSets, exerciseSetCounts],
   )
 
-  useEffect(() => {
-    if (!sessionId) {
-      navigation.goBack()
-    }
-  }, [sessionId, navigation])
-
   if (!sessionId) return null
 
-  if (isLoading) return <LoadingSpinner />
+  if (isLoading && !sessionExercises) return <LoadingSpinner />
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-surface p-4">
@@ -133,7 +127,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
 
       <PageHeader
         title={titleWithProgress}
-        onBack={() => navigation.goBack()}
+        onBack={() => useWorkoutStore.getState().hideWorkout()}
         menuItems={[
           { icon: Plus, label: 'Añadir ejercicio', onPress: () => setShowAddExercise(true) },
         ]}

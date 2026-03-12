@@ -16,6 +16,11 @@ const useWorkoutStore = create(
       cachedSetData: {},
       exerciseSetCounts: {},
 
+      // Workout screen visibility
+      workoutVisible: false,
+      showWorkout: () => set({ workoutVisible: true }),
+      hideWorkout: () => set({ workoutVisible: false }),
+
       // Rest timer state
       restTimerActive: false,
       restTimerEndTime: null,
@@ -30,6 +35,7 @@ const useWorkoutStore = create(
         completedSets: {},
         cachedSetData: {},
         exerciseSetCounts: {},
+        workoutVisible: true,
       }),
 
       endSession: () => set({
@@ -40,6 +46,7 @@ const useWorkoutStore = create(
         completedSets: {},
         cachedSetData: {},
         exerciseSetCounts: {},
+        workoutVisible: false,
       }),
 
       completeSet: (sessionExerciseId, setNumber, data) => set(state => {

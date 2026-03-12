@@ -40,7 +40,7 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
                 <Pressable
                   key={index}
                   onPress={() => {
-                    item.onClick?.()
+                    ;(item.onPress || item.onClick)?.()
                     handleClose()
                   }}
                   disabled={item.disabled}

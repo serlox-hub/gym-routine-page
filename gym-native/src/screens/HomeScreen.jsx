@@ -27,9 +27,7 @@ function QuickAccessSection({ navigation, routines, startSessionMutation, hasAct
   const favoriteRoutine = routines?.find(r => r.is_favorite)
 
   const handleStartFreeWorkout = () => {
-    startSessionMutation.mutate(undefined, {
-      onSuccess: () => navigation.navigate('FreeWorkout'),
-    })
+    startSessionMutation.mutate(undefined)
   }
 
   return (
@@ -40,7 +38,7 @@ function QuickAccessSection({ navigation, routines, startSessionMutation, hasAct
         className="p-3 mb-2"
         onPress={
           isFreeSessionActive
-            ? () => navigation.navigate('FreeWorkout')
+            ? () => useWorkoutStore.getState().showWorkout()
             : isRoutineSessionActive
               ? undefined
               : !startSessionMutation.isPending

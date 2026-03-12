@@ -39,7 +39,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
     onClose()
   }
 
-  const label = getMeasurementLabel(measurementType)
+  const label = getMeasurementLabel(measurementType) || 'medida'
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="p-5">

@@ -1,4 +1,5 @@
 import { View, Text, Pressable, Modal } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Minimize2, Maximize2 } from 'lucide-react-native'
 import { useRestTimer } from '../../hooks/useWorkout'
 import { formatSecondsToMMSS } from '../../lib/timeUtils'
@@ -7,6 +8,7 @@ import { colors } from '../../lib/styles'
 
 export default function RestTimer() {
   const { isActive, timeRemaining, progress, skip, addTime } = useRestTimer()
+  const insets = useSafeAreaInsets()
   const minimized = useWorkoutStore(state => state.restTimerMinimized)
   const setMinimized = useWorkoutStore(state => state.setRestTimerMinimized)
 
@@ -19,7 +21,7 @@ export default function RestTimer() {
 
   if (minimized) {
     return (
-      <View className="absolute top-2 left-0 right-0 items-center" style={{ zIndex: 50 }}>
+      <View className="absolute left-0 right-0 items-center" style={{ zIndex: 50, top: insets.top + 8 }}>
         <Pressable
           onPress={() => setMinimized(false)}
           className="flex-row items-center gap-2 px-4 py-2 rounded-full"
