@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { View, Text, Pressable, Animated, PanResponder } from 'react-native'
+import { View, Text, Pressable, Animated, PanResponder, Dimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Play } from 'lucide-react-native'
 import useWorkoutStore from '../../stores/workoutStore'
@@ -21,6 +21,8 @@ export default function ActiveSessionBanner() {
 
   const pan = useRef(new Animated.ValueXY()).current
   const lastOffset = useRef({ x: 0, y: 0 })
+  const insetsRef = useRef(insets)
+  insetsRef.current = insets
 
   const panResponder = useRef(
     PanResponder.create({
@@ -33,11 +35,19 @@ export default function ActiveSessionBanner() {
       },
       onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
       onPanResponderRelease: (_, gesture) => {
-        lastOffset.current = {
-          x: lastOffset.current.x + gesture.dx,
-          y: lastOffset.current.y + gesture.dy,
-        }
+        const { width, height } = Dimensions.get('window')
+        const rawX = lastOffset.current.x + gesture.dx
+        const rawY = lastOffset.current.y + gesture.dy
+        const clampX = Math.max(-width / 2 + 60, Math.min(width / 2 - 60, rawX))
+        const { top, bottom } = insetsRef.current
+        const clampY = Math.max(0, Math.min(height - top - bottom - 120, rawY))
         pan.flattenOffset()
+        if (clampX !== rawX || clampY !== rawY) {
+          lastOffset.current = { x: clampX, y: clampY }
+          Animated.spring(pan, { toValue: { x: clampX, y: clampY }, useNativeDriver: false, friction: 7 }).start()
+        } else {
+          lastOffset.current = { x: rawX, y: rawY }
+        }
       },
     })
   ).current

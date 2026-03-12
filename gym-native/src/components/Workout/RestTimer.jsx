@@ -1,4 +1,5 @@
-import { View, Text, Pressable, Modal } from 'react-native'
+import { useRef } from 'react'
+import { View, Text, Pressable, Modal, Animated, PanResponder, Dimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Minimize2, Maximize2 } from 'lucide-react-native'
 import { useRestTimer } from '../../hooks/useWorkout'
@@ -12,6 +13,39 @@ export default function RestTimer() {
   const minimized = useWorkoutStore(state => state.restTimerMinimized)
   const setMinimized = useWorkoutStore(state => state.setRestTimerMinimized)
 
+  const pan = useRef(new Animated.ValueXY()).current
+  const lastOffset = useRef({ x: 0, y: 0 })
+  const insetsRef = useRef(insets)
+  insetsRef.current = insets
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gesture) =>
+        Math.abs(gesture.dx) > 5 || Math.abs(gesture.dy) > 5,
+      onPanResponderGrant: () => {
+        pan.setOffset({ x: lastOffset.current.x, y: lastOffset.current.y })
+        pan.setValue({ x: 0, y: 0 })
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
+      onPanResponderRelease: (_, gesture) => {
+        const { width, height } = Dimensions.get('window')
+        const rawX = lastOffset.current.x + gesture.dx
+        const rawY = lastOffset.current.y + gesture.dy
+        const clampX = Math.max(-width / 2 + 60, Math.min(width / 2 - 60, rawX))
+        const { top, bottom } = insetsRef.current
+        const clampY = Math.max(0, Math.min(height - top - bottom - 100, rawY))
+        pan.flattenOffset()
+        if (clampX !== rawX || clampY !== rawY) {
+          lastOffset.current = { x: clampX, y: clampY }
+          Animated.spring(pan, { toValue: { x: clampX, y: clampY }, useNativeDriver: false, friction: 7 }).start()
+        } else {
+          lastOffset.current = { x: rawX, y: rawY }
+        }
+      },
+    })
+  ).current
+
   if (!isActive) return null
 
   const timeDisplay = formatSecondsToMMSS(timeRemaining)
@@ -21,7 +55,11 @@ export default function RestTimer() {
 
   if (minimized) {
     return (
-      <View className="absolute left-0 right-0 items-center" style={{ zIndex: 50, top: insets.top + 8 }}>
+      <Animated.View
+        {...panResponder.panHandlers}
+        className="absolute self-center z-50"
+        style={{ top: insets.top + 8, transform: pan.getTranslateTransform() }}
+      >
         <Pressable
           onPress={() => setMinimized(false)}
           className="flex-row items-center gap-2 px-4 py-2 rounded-full active:opacity-70"
@@ -35,7 +73,7 @@ export default function RestTimer() {
           </Text>
           <Maximize2 size={14} color={colors.textSecondary} />
         </Pressable>
-      </View>
+      </Animated.View>
     )
   }
 
