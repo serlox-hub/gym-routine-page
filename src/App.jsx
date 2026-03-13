@@ -22,6 +22,7 @@ import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import { ActiveSessionBanner } from './components/ui/index.js'
 import { useAuth } from './hooks/useAuth.js'
+import { useRestoreActiveSession } from './hooks/useWorkout.js'
 
 function HomeOrLanding() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -54,10 +55,16 @@ function PasswordRecoveryRedirect({ children }) {
   return children
 }
 
+function SessionRestorer() {
+  useRestoreActiveSession()
+  return null
+}
+
 function App() {
   return (
     <BrowserRouter>
       <PasswordRecoveryRedirect>
+        <SessionRestorer />
         <div className="min-h-screen bg-surface text-primary">
           <ActiveSessionBanner />
           <Routes>

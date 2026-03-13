@@ -37,6 +37,16 @@ const useWorkoutStore = create(
         exerciseSetCounts: {},
       }),
 
+      // Restore session from backend
+      restoreSession: ({ sessionId, routineDayId, routineId, startedAt, completedSets, cachedSetData }) => set({
+        sessionId,
+        routineDayId,
+        routineId,
+        startedAt,
+        completedSets,
+        cachedSetData,
+      }),
+
       // End current session
       endSession: () => set({
         sessionId: null,

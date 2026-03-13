@@ -7,6 +7,86 @@ import { useUserId } from './useAuth.js'
 import { buildSessionExercisesFromBlocks } from '../lib/workoutTransforms.js'
 
 // ============================================
+// SESSION RESTORATION
+// ============================================
+
+async function fetchActiveSession() {
+  const { data, error } = await supabase
+    .from('workout_sessions')
+    .select('id, routine_day_id, started_at, routine_days(routine_id)')
+    .eq('status', 'in_progress')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return data
+}
+
+async function fetchCompletedSets(sessionId) {
+  const { data } = await supabase
+    .from('completed_sets')
+    .select('session_exercise_id, set_number, weight, weight_unit, reps_completed, time_seconds, distance_meters, pace_seconds, rir_actual, notes, video_url')
+    .eq('session_id', sessionId)
+
+  const setsMap = {}
+  for (const set of (data || [])) {
+    const key = `${set.session_exercise_id}-${set.set_number}`
+    setsMap[key] = {
+      sessionExerciseId: set.session_exercise_id,
+      setNumber: set.set_number,
+      weight: set.weight,
+      weightUnit: set.weight_unit,
+      repsCompleted: set.reps_completed,
+      timeSeconds: set.time_seconds,
+      distanceMeters: set.distance_meters,
+      paceSeconds: set.pace_seconds,
+      rirActual: set.rir_actual,
+      notes: set.notes,
+      videoUrl: set.video_url,
+    }
+  }
+  return setsMap
+}
+
+export function useRestoreActiveSession() {
+  const restoreSession = useWorkoutStore(state => state.restoreSession)
+  const endSession = useWorkoutStore(state => state.endSession)
+
+  const syncRef = useRef()
+  syncRef.current = async () => {
+    const activeSession = await fetchActiveSession()
+    const localSessionId = useWorkoutStore.getState().sessionId
+
+    if (!localSessionId) {
+      if (!activeSession) return
+      const completedSets = await fetchCompletedSets(activeSession.id)
+      restoreSession({
+        sessionId: activeSession.id,
+        routineDayId: activeSession.routine_day_id,
+        routineId: activeSession.routine_days?.routine_id || null,
+        startedAt: activeSession.started_at,
+        completedSets,
+        cachedSetData: completedSets,
+      })
+    } else if (!activeSession || activeSession.id !== localSessionId) {
+      endSession()
+    }
+  }
+
+  useEffect(() => {
+    syncRef.current()
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') syncRef.current()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+}
+
+// ============================================
 // SESSION MUTATIONS
 // ============================================
 

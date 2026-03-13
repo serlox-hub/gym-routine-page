@@ -38,6 +38,16 @@ const useWorkoutStore = create(
         workoutVisible: true,
       }),
 
+      restoreSession: ({ sessionId, routineDayId, routineId, startedAt, completedSets, cachedSetData }) => set({
+        sessionId,
+        routineDayId,
+        routineId,
+        startedAt,
+        completedSets,
+        cachedSetData,
+        workoutVisible: false,
+      }),
+
       endSession: () => set({
         sessionId: null,
         routineDayId: null,
