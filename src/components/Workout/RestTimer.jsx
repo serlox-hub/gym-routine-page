@@ -1,5 +1,6 @@
 import { Minimize2, Maximize2 } from 'lucide-react'
 import { useRestTimer } from '../../hooks/useWorkout.js'
+import { useDraggable } from '../../hooks/useDrag.js'
 import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 
@@ -7,6 +8,7 @@ function RestTimer() {
   const { isActive, timeRemaining, progress, skip, addTime } = useRestTimer()
   const minimized = useWorkoutStore(state => state.restTimerMinimized)
   const setMinimized = useWorkoutStore(state => state.setRestTimerMinimized)
+  const { dragProps, dragStyle, wasDragged } = useDraggable()
 
   if (!isActive) return null
 
@@ -16,11 +18,20 @@ function RestTimer() {
   const timerColor = isCritical ? '#f85149' : isWarning ? '#d29922' : '#3fb950'
 
   if (minimized) {
+    const handleExpand = () => {
+      if (wasDragged.current) return
+      setMinimized(false)
+    }
+
     return (
-      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
+      <div
+        className="fixed z-50 select-none"
+        style={{ top: 8, left: '50%', ...dragStyle }}
+        {...dragProps}
+      >
         <button
-          onClick={() => setMinimized(false)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg"
+          onClick={handleExpand}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg cursor-grab active:cursor-grabbing"
           style={{ backgroundColor: '#161b22', border: `2px solid ${timerColor}` }}
           title="Expandir"
         >
