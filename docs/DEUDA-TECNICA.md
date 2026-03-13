@@ -595,14 +595,42 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 
 ---
 
+## Progreso
+
+### Sprint 1 — Seguridad y Base de Datos
+- [x] **1.1 Fuga de datos en useExerciseStats** — Resuelto: se eliminaron políticas RLS permisivas `"Allow all for anon" USING (true)` en producción que anulaban las políticas restrictivas. Migración `014_remove_permissive_anon_policies.sql`. Verificado con curl: 0 filas accesibles sin auth.
+- [ ] 1.2 RLS con JOINs anidados (rendimiento) — Desnormalizar `user_id` en `routine_blocks` y `routine_exercises`
+- [ ] 1.3 Índices compuestos faltantes
+- [ ] 1.4 Sin paginación en historial
+- [ ] 1.5 Soft delete inconsistente
+
+### Sprint 2 — Arquitectura de Código
+- [ ] 2.1 Partir useWorkout.js (1090 líneas)
+- [ ] 2.2 Timer global con side effects a nivel de módulo
+- [ ] 2.3 Sin Error Boundary
+- [ ] 2.4 Sin code splitting (bundle 1.2MB)
+- [ ] 2.5 Supabase directo en hooks (sin capa API)
+- [ ] 2.6 Páginas que exceden 150 líneas
+
+### Sprint 3 — Sistema de Diseño
+- [ ] 3.1 Duplicación de tokens de color
+- [ ] 3.2 Primitivos UI faltantes
+- [ ] 3.3 Responsive para desktop
+
+### Sprint 4 — Código Compartido Web / React Native
+- [ ] 4.1 Utilidades duplicadas
+- [ ] 4.2 Hooks duplicados
+
+---
+
 ## Checklist de Verificación por Sprint
 
 ### Sprint 1
-- [ ] `useExerciseStats` filtra por usuario — verificar con 2 cuentas de test
+- [x] Políticas RLS permisivas eliminadas — verificado con curl (anon y autenticado devuelven 0 filas)
+- [x] App funciona con normalidad tras el fix — verificado manualmente
 - [ ] RLS simplificado — `EXPLAIN ANALYZE` muestra Index Scan, no Seq Scan
 - [ ] Índices creados — verificar con `\di` en psql
 - [ ] Historial paginado — cargar más de 30 sesiones funciona
-- [ ] Sin regresiones — app funciona igual que antes
 
 ### Sprint 2
 - [ ] useWorkout.js dividido — cada archivo < 250 líneas
