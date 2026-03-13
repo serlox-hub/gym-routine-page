@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
-import { Trash2, ChevronRight, Pencil } from 'lucide-react-native'
-import { Card, ConfirmModal, DropdownMenu, LoadingSpinner } from '../ui'
+import { Trash2, ChevronRight, Pencil, ArrowUpDown } from 'lucide-react-native'
+import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
@@ -23,6 +23,10 @@ export default function DayCard({
   onDuplicateExercise,
   onMoveExerciseToDay,
   onDelete,
+  onReorderToPosition,
+  currentIndex,
+  totalDays,
+  dayNames,
   hasActiveSession,
   activeRoutineDayId,
   navigation,
@@ -38,6 +42,7 @@ export default function DayCard({
   const [editingDay, setEditingDay] = useState(false)
   const [dayForm, setDayForm] = useState({ name, duration: estimated_duration_min || '' })
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
+  const [showReorderDay, setShowReorderDay] = useState(false)
 
   const warmupBlock = blocks?.find(b => b.name === 'Calentamiento')
   const mainBlock = blocks?.find(b => b.name === 'Principal')
@@ -141,6 +146,11 @@ export default function DayCard({
                       setEditingDay(true)
                     },
                   },
+                  ...(totalDays > 1 ? [{
+                    icon: ArrowUpDown,
+                    label: 'Reordenar',
+                    onClick: () => setShowReorderDay(true),
+                  }] : []),
                   { icon: Trash2, label: 'Eliminar', onClick: () => onDelete(id), danger: true },
                 ]}
               />
@@ -205,6 +215,18 @@ export default function DayCard({
         confirmText="Eliminar"
         onConfirm={handleDeleteExercise}
         onCancel={() => setExerciseToDelete(null)}
+      />
+
+      <ReorderModal
+        visible={showReorderDay}
+        onClose={() => setShowReorderDay(false)}
+        totalItems={totalDays}
+        currentIndex={currentIndex}
+        positionLabels={dayNames}
+        onSelect={(newIndex) => {
+          onReorderToPosition(newIndex)
+          setShowReorderDay(false)
+        }}
       />
     </Card>
   )

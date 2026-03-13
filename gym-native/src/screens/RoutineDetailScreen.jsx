@@ -155,8 +155,10 @@ export default function RoutineDetailScreen({ route, navigation }) {
               }}
               onMoveExerciseToDay={handleOpenMoveModal}
               onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
+              onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
               currentIndex={index}
               totalDays={days.length}
+              dayNames={days.map(d => d.name)}
               hasActiveSession={hasActiveSession}
               activeRoutineDayId={activeRoutineDayId}
               navigation={navigation}

@@ -327,7 +327,7 @@ export function useReorderRoutineDays() {
       if (error) throw error
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, variables.routineId] })
     },
   })
 }
