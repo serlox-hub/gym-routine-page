@@ -603,9 +603,14 @@ export function useDeleteSession() {
 // HISTORY QUERIES
 // ============================================
 
-export function useWorkoutHistory() {
+export function useWorkoutHistory(currentDate) {
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+  const from = new Date(year, month, 1).toISOString()
+  const to = new Date(year, month + 1, 0, 23, 59, 59).toISOString()
+
   return useQuery({
-    queryKey: [QUERY_KEYS.WORKOUT_HISTORY],
+    queryKey: [QUERY_KEYS.WORKOUT_HISTORY, year, month],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('workout_sessions')
@@ -639,8 +644,9 @@ export function useWorkoutHistory() {
           )
         `)
         .eq('status', 'completed')
+        .gte('started_at', from)
+        .lte('started_at', to)
         .order('started_at', { ascending: false })
-        .limit(200)
 
       if (error) throw error
 

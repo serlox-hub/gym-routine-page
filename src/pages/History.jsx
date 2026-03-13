@@ -8,8 +8,8 @@ import { formatTime } from '../lib/dateUtils.js'
 
 function History() {
   const navigate = useNavigate()
-  const { data: sessions, isLoading, error } = useWorkoutHistory()
   const [currentDate, setCurrentDate] = useState(new Date())
+  const { data: sessions, isLoading, error } = useWorkoutHistory(currentDate)
   const [selectedDay, setSelectedDay] = useState(null)
 
   if (isLoading) return <LoadingSpinner />

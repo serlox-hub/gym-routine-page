@@ -601,7 +601,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] **1.1 Fuga de datos en useExerciseStats** — Resuelto: se eliminaron políticas RLS permisivas `"Allow all for anon" USING (true)` en producción que anulaban las políticas restrictivas. Migración `014_remove_permissive_anon_policies.sql`. Verificado con curl: 0 filas accesibles sin auth.
 - [ ] 1.2 RLS con JOINs anidados (rendimiento) — Desnormalizar `user_id` en `routine_blocks` y `routine_exercises`
 - [x] **1.3 Índices compuestos** — Migración `015_add_composite_indexes.sql`. Añadidos `(user_id, started_at DESC)` y `(user_id, status)` en `workout_sessions`. EXPLAIN ANALYZE: 0.129ms con Index Scan.
-- [x] **1.4 Limitar queries sin límite** — `useWorkoutHistory` limitado a 200 sesiones, `useLatestBodyMeasurements` a 100 registros. `useExerciseHistory` ya tenía `.limit(50)`. Aplicado en web y RN.
+- [x] **1.4 Paginación en historial** — `useWorkoutHistory` ahora filtra por mes visible (`.gte`/`.lte` por fecha), con cache por mes en TanStack Query. `useLatestBodyMeasurements` limitado a 100 registros. `useExerciseHistory` ya tenía `.limit(50)`. Aplicado en web y RN.
 - [ ] 1.5 Soft delete inconsistente
 
 ### Sprint 2 — Arquitectura de Código
@@ -630,7 +630,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] App funciona con normalidad tras el fix — verificado manualmente
 - [ ] RLS simplificado — `EXPLAIN ANALYZE` muestra Index Scan, no Seq Scan
 - [x] Índices compuestos creados — verificado con EXPLAIN ANALYZE (0.129ms, Index Scan)
-- [x] Queries limitadas — `useWorkoutHistory` (.limit(200)), `useLatestBodyMeasurements` (.limit(100))
+- [x] Historial paginado por mes — query filtrada por rango de fechas, cache por mes
 
 ### Sprint 2
 - [ ] useWorkout.js dividido — cada archivo < 250 líneas

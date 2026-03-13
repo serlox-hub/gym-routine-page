@@ -10,8 +10,8 @@ import { formatTime } from '../lib/dateUtils'
 import { colors } from '../lib/styles'
 
 export default function HistoryScreen({ navigation }) {
-  const { data: sessions, isLoading, error, refetch, isRefetching } = useWorkoutHistory()
   const [currentDate, setCurrentDate] = useState(new Date())
+  const { data: sessions, isLoading, error, refetch, isRefetching } = useWorkoutHistory(currentDate)
   const [selectedDay, setSelectedDay] = useState(null)
 
   if (isLoading) return <LoadingSpinner />
