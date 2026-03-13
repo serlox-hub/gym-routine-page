@@ -251,6 +251,7 @@ describe('useWorkout hooks - structure', () => {
 
     // Exercise history
     expect(module.useExerciseHistory).toBeDefined()
+    expect(module.useExerciseHistorySummary).toBeDefined()
     expect(module.usePreviousWorkout).toBeDefined()
 
     // Timer

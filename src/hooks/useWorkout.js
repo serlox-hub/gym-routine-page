@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -738,12 +738,11 @@ export function useSessionDetail(sessionId) {
 // EXERCISE HISTORY QUERIES
 // ============================================
 
-export function useExerciseHistory(exerciseId, routineDayId = null) {
+export function useExerciseHistorySummary(exerciseId, routineDayId = null) {
   return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId, routineDayId],
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'summary', exerciseId, routineDayId],
     queryFn: async () => {
-      // Buscar session_exercises que tengan este ejercicio en sesiones completadas
-      const query = supabase
+      let query = supabase
         .from('session_exercises')
         .select(`
           id,
@@ -753,7 +752,57 @@ export function useExerciseHistory(exerciseId, routineDayId = null) {
             status,
             routine_day_id
           ),
-          completed_sets (
+          completed_sets!inner (
+            weight,
+            reps_completed,
+            time_seconds,
+            distance_meters,
+            pace_seconds,
+            set_number
+          )
+        `)
+        .eq('exercise_id', exerciseId)
+        .eq('session.status', 'completed')
+        .order('session(started_at)', { ascending: false })
+
+      if (routineDayId) {
+        query = query.eq('session.routine_day_id', routineDayId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      return data.map(se => ({
+        sessionId: se.session.id,
+        date: se.session.started_at,
+        sets: se.completed_sets.sort((a, b) => a.set_number - b.set_number)
+      }))
+    },
+    enabled: !!exerciseId,
+  })
+}
+
+const EXERCISE_HISTORY_PAGE_SIZE = 30
+
+export function useExerciseHistory(exerciseId, routineDayId = null) {
+  return useInfiniteQuery({
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId, routineDayId],
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = pageParam * EXERCISE_HISTORY_PAGE_SIZE
+      const to = from + EXERCISE_HISTORY_PAGE_SIZE - 1
+
+      let query = supabase
+        .from('session_exercises')
+        .select(`
+          id,
+          session:workout_sessions!inner (
+            id,
+            started_at,
+            status,
+            routine_day_id
+          ),
+          completed_sets!inner (
             id,
             set_number,
             weight,
@@ -770,26 +819,26 @@ export function useExerciseHistory(exerciseId, routineDayId = null) {
         .eq('exercise_id', exerciseId)
         .eq('session.status', 'completed')
         .order('session(started_at)', { ascending: false })
-        .limit(50)
+        .range(from, to)
+
+      if (routineDayId) {
+        query = query.eq('session.routine_day_id', routineDayId)
+      }
 
       const { data, error } = await query
 
       if (error) throw error
 
-      // Filtrar por routine_day_id si se especifica
-      let filteredData = data
-      if (routineDayId) {
-        filteredData = data.filter(se => se.session.routine_day_id === routineDayId)
-      }
-
-      // Transformar a formato esperado
-      return filteredData
-        .filter(se => se.completed_sets && se.completed_sets.length > 0)
-        .map(se => ({
-          sessionId: se.session.id,
-          date: se.session.started_at,
-          sets: se.completed_sets.sort((a, b) => a.set_number - b.set_number)
-        }))
+      return data.map(se => ({
+        sessionId: se.session.id,
+        date: se.session.started_at,
+        sets: se.completed_sets.sort((a, b) => a.set_number - b.set_number)
+      }))
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < EXERCISE_HISTORY_PAGE_SIZE) return undefined
+      return allPages.length
     },
     enabled: !!exerciseId,
   })

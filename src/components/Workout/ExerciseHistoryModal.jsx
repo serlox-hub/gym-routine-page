@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, FileText, ChevronRight } from 'lucide-react'
-import { useExerciseHistory } from '../../hooks/useWorkout.js'
+import { useExerciseHistory, useExerciseHistorySummary } from '../../hooks/useWorkout.js'
 import { LoadingSpinner, Card, Modal } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'
@@ -36,7 +36,10 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
   const [scope, setScope] = useState(routineDayId ? SCOPE.DAY : SCOPE.GLOBAL)
 
   const filterByDayId = scope === SCOPE.DAY ? routineDayId : null
-  const { data: sessions, isLoading } = useExerciseHistory(exerciseId, filterByDayId)
+  const { data: summarySessions, isLoading: loadingSummary } = useExerciseHistorySummary(exerciseId, filterByDayId)
+  const { data: historyPages, isLoading: loadingHistory, fetchNextPage, hasNextPage, isFetchingNextPage } = useExerciseHistory(exerciseId, filterByDayId)
+  const historySessions = historyPages?.pages.flat() ?? []
+  const isLoading = loadingSummary || loadingHistory
 
   const handleSessionClick = (sessionId) => {
     onClose()
@@ -44,8 +47,8 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
   }
 
   const stats = useMemo(() => {
-    return calculateExerciseStats(sessions, measurementType)
-  }, [sessions, measurementType])
+    return calculateExerciseStats(summarySessions, measurementType)
+  }, [summarySessions, measurementType])
 
   return (
     <Modal
@@ -142,18 +145,21 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
           <LoadingSpinner />
         ) : activeTab === TABS.PROGRESS ? (
           <ProgressTab
-            sessions={sessions}
+            sessions={summarySessions}
             stats={stats}
             measurementType={measurementType}
             weightUnit={weightUnit}
           />
         ) : (
           <HistoryTab
-            sessions={sessions}
+            sessions={historySessions}
             timeUnit={timeUnit}
             distanceUnit={distanceUnit}
             onSelectSet={setSelectedSet}
             onSessionClick={handleSessionClick}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            onLoadMore={fetchNextPage}
           />
         )}
       </div>
@@ -241,7 +247,7 @@ function StatCard({ label, value, color }) {
   )
 }
 
-function HistoryTab({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSet, onSessionClick }) {
+function HistoryTab({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
   if (!sessions || sessions.length === 0) {
     return (
       <p className="text-center text-secondary py-8">
@@ -303,6 +309,17 @@ function HistoryTab({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSet,
           </div>
         </div>
       ))}
+
+      {hasNextPage && (
+        <button
+          onClick={onLoadMore}
+          disabled={isFetchingNextPage}
+          className="w-full py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50"
+          style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
+        >
+          {isFetchingNextPage ? 'Cargando...' : 'Cargar más'}
+        </button>
+      )}
     </div>
   )
 }

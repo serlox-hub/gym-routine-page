@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useExercise } from '../hooks/useExercises.js'
-import { useExerciseHistory } from '../hooks/useWorkout.js'
+import { useExerciseHistory, useExerciseHistorySummary } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import ExerciseProgressChart from '../components/Workout/ExerciseProgressChart.jsx'
 import { formatShortDate } from '../lib/dateUtils.js'
@@ -12,14 +12,17 @@ import { MeasurementType } from '../lib/measurementTypes.js'
 function ExerciseProgress() {
   const { exerciseId } = useParams()
   const { data: exercise, isLoading: loadingExercise, error: exerciseError } = useExercise(exerciseId)
-  const { data: sessions, isLoading: loadingSessions } = useExerciseHistory(exerciseId)
+  const { data: summarySessions, isLoading: loadingSummary } = useExerciseHistorySummary(exerciseId)
+  const { data: historyData, isLoading: loadingHistory, fetchNextPage, hasNextPage, isFetchingNextPage } = useExerciseHistory(exerciseId)
+  const historySessions = historyData?.pages.flat() ?? []
+  const loadingSessions = loadingSummary || loadingHistory
 
   if (loadingExercise || loadingSessions) return <LoadingSpinner />
   if (exerciseError) return <ErrorMessage message={exerciseError.message} className="m-4" />
   if (!exercise) return <ErrorMessage message="Ejercicio no encontrado" className="m-4" />
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
-  const stats = calculateExerciseStats(sessions, measurementType)
+  const stats = calculateExerciseStats(summarySessions, measurementType)
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
@@ -65,12 +68,12 @@ function ExerciseProgress() {
       )}
 
       {/* Chart */}
-      {sessions && sessions.length >= 2 ? (
+      {summarySessions && summarySessions.length >= 2 ? (
         <Card className="p-4 mb-6">
           <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
             Progresión
           </h2>
-          <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
+          <ExerciseProgressChart sessions={summarySessions} measurementType={measurementType} />
         </Card>
       ) : (
         <Card className="p-4 mb-6">
@@ -82,13 +85,13 @@ function ExerciseProgress() {
 
       {/* History */}
       <h2 className="text-lg font-bold mb-3">Historial</h2>
-      {!sessions || sessions.length === 0 ? (
+      {historySessions.length === 0 ? (
         <p className="text-center text-secondary py-8">
           Sin registros anteriores
         </p>
       ) : (
         <div className="space-y-3">
-          {sessions.map(session => (
+          {historySessions.map(session => (
             <Card
               key={session.sessionId}
               className="p-4"
@@ -122,6 +125,17 @@ function ExerciseProgress() {
               </div>
             </Card>
           ))}
+
+          {hasNextPage && (
+            <button
+              onClick={fetchNextPage}
+              disabled={isFetchingNextPage}
+              className="w-full py-3 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
+            >
+              {isFetchingNextPage ? 'Cargando...' : 'Cargar más'}
+            </button>
+          )}
         </div>
       )}
     </div>
