@@ -123,7 +123,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
               <button
                 onClick={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
                 disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
-                className="px-4 py-1 rounded-full text-xs font-semibold uppercase tracking-wide transition-all disabled:opacity-40"
+                className="px-5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all disabled:opacity-40"
                 style={{
                   backgroundColor: isThisDayActive ? colors.success : colors.accent,
                   color: isThisDayActive ? '#fff' : '#000',

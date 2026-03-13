@@ -124,7 +124,7 @@ export default function DayCard({
               <Pressable
                 onPress={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
                 disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
-                className="px-4 py-1 rounded-full active:scale-95"
+                className="px-5 py-1.5 rounded-full active:scale-95"
                 style={{
                   backgroundColor: isThisDayActive ? colors.success : colors.accent,
                   opacity: (hasActiveSession && !isThisDayActive) ? 0.4 : 1,
