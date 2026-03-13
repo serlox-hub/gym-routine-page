@@ -829,7 +829,7 @@ export function usePreviousWorkout(exerciseId) {
             started_at,
             status
           ),
-          completed_sets (
+          completed_sets!inner (
             set_number,
             weight,
             weight_unit,
@@ -845,14 +845,12 @@ export function usePreviousWorkout(exerciseId) {
         .eq('exercise_id', exerciseId)
         .eq('session.status', 'completed')
         .order('session(started_at)', { ascending: false })
-        .limit(5)
+        .limit(1)
 
       if (error) throw error
       if (!data || data.length === 0) return null
 
-      // Buscar la primera sesión que tenga sets completados
-      const lastSession = data.find(se => se.completed_sets?.length > 0)
-      if (!lastSession) return null
+      const lastSession = data[0]
 
       return {
         date: lastSession.session.started_at,
