@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const useWorkoutStore = create(
   persist(
@@ -11,22 +12,21 @@ const useWorkoutStore = create(
       startedAt: null,
 
       // Completed sets during this session (optimistic UI cache)
-      // Key: `${sessionExerciseId}-${setNumber}` -> setData
       completedSets: {},
-      // Cached set data (for re-checking after uncomplete)
       cachedSetData: {},
-      // Current set count per exercise (for tracking added/removed sets)
-      // Key: sessionExerciseId -> number of sets
       exerciseSetCounts: {},
+
+      // Workout screen visibility
+      workoutVisible: false,
+      showWorkout: () => set({ workoutVisible: true }),
+      hideWorkout: () => set({ workoutVisible: false }),
 
       // Rest timer state
       restTimerActive: false,
-      restTimerEndTime: null,  // Timestamp cuando termina el timer
+      restTimerEndTime: null,
       restTimeInitial: 0,
       restTimerMinimized: false,
 
-      // Start a new workout session
-      // routineId and routineDayId can be null for free sessions
       startSession: (sessionId, routineDayId, routineId = null) => set({
         sessionId,
         routineDayId,
@@ -35,9 +35,9 @@ const useWorkoutStore = create(
         completedSets: {},
         cachedSetData: {},
         exerciseSetCounts: {},
+        workoutVisible: true,
       }),
 
-      // Restore session from backend
       restoreSession: ({ sessionId, routineDayId, routineId, startedAt, completedSets, cachedSetData }) => set({
         sessionId,
         routineDayId,
@@ -45,9 +45,9 @@ const useWorkoutStore = create(
         startedAt,
         completedSets,
         cachedSetData,
+        workoutVisible: false,
       }),
 
-      // End current session
       endSession: () => set({
         sessionId: null,
         routineDayId: null,
@@ -56,9 +56,9 @@ const useWorkoutStore = create(
         completedSets: {},
         cachedSetData: {},
         exerciseSetCounts: {},
+        workoutVisible: false,
       }),
 
-      // Mark a set as completed (optimistic update)
       completeSet: (sessionExerciseId, setNumber, data) => set(state => {
         const key = `${sessionExerciseId}-${setNumber}`
         const setData = {
@@ -79,20 +79,17 @@ const useWorkoutStore = create(
         }
       }),
 
-      // Uncheck a completed set (keeps data in cache for re-checking)
       uncompleteSet: (sessionExerciseId, setNumber) => set(state => {
         const newCompletedSets = { ...state.completedSets }
         delete newCompletedSets[`${sessionExerciseId}-${setNumber}`]
         return { completedSets: newCompletedSets }
       }),
 
-      // Get cached data for a set (even if uncompleted)
       getCachedSetData: (sessionExerciseId, setNumber) => {
         const state = get()
         return state.cachedSetData[`${sessionExerciseId}-${setNumber}`]
       },
 
-      // Get completed sets for an exercise
       getSetsForExercise: (sessionExerciseId) => {
         const state = get()
         return Object.values(state.completedSets)
@@ -100,19 +97,16 @@ const useWorkoutStore = create(
           .sort((a, b) => a.setNumber - b.setNumber)
       },
 
-      // Check if a specific set is completed
       isSetCompleted: (sessionExerciseId, setNumber) => {
         const state = get()
         return !!state.completedSets[`${sessionExerciseId}-${setNumber}`]
       },
 
-      // Get data for a specific set
       getSetData: (sessionExerciseId, setNumber) => {
         const state = get()
         return state.completedSets[`${sessionExerciseId}-${setNumber}`]
       },
 
-      // Update dbId after server confirms (for optimistic updates)
       updateSetDbId: (sessionExerciseId, setNumber, dbId) => set(state => {
         const key = `${sessionExerciseId}-${setNumber}`
         const existing = state.completedSets[key]
@@ -129,7 +123,6 @@ const useWorkoutStore = create(
         }
       }),
 
-      // Update videoUrl for a set (used for background uploads)
       updateSetVideo: (sessionExerciseId, setNumber, videoUrl) => set(state => {
         const key = `${sessionExerciseId}-${setNumber}`
         const existing = state.completedSets[key]
@@ -146,7 +139,6 @@ const useWorkoutStore = create(
         }
       }),
 
-      // Update RIR and notes for a completed set (without uncompleting)
       updateSetDetails: (sessionExerciseId, setNumber, { rirActual, notes }) => set(state => {
         const key = `${sessionExerciseId}-${setNumber}`
         const existing = state.completedSets[key]
@@ -164,7 +156,6 @@ const useWorkoutStore = create(
         }
       }),
 
-      // Rollback a set (remove from completedSets, for error handling)
       rollbackSet: (sessionExerciseId, setNumber) => set(state => {
         const key = `${sessionExerciseId}-${setNumber}`
         const { [key]: _removed, ...restCompleted } = state.completedSets
@@ -175,27 +166,23 @@ const useWorkoutStore = create(
         }
       }),
 
-      // Check if session is active
       hasActiveSession: () => {
         const state = get()
         return !!state.sessionId
       },
 
-      // Rest timer actions
       startRestTimer: (seconds) => set({
         restTimerActive: true,
         restTimerEndTime: Date.now() + seconds * 1000,
         restTimeInitial: seconds,
       }),
 
-      // Calcula tiempo restante basado en timestamp real
       getTimeRemaining: () => {
         const state = get()
         if (!state.restTimerActive || !state.restTimerEndTime) return 0
         return Math.max(0, Math.ceil((state.restTimerEndTime - Date.now()) / 1000))
       },
 
-      // Tick solo verifica si el timer debe parar
       tickTimer: () => {
         const state = get()
         if (!state.restTimerActive) return
@@ -216,7 +203,6 @@ const useWorkoutStore = create(
 
       setRestTimerMinimized: (minimized) => set({ restTimerMinimized: minimized }),
 
-      // Exercise set count actions
       setExerciseSetCount: (sessionExerciseId, count) => set(state => ({
         exerciseSetCounts: {
           ...state.exerciseSetCounts,
@@ -244,6 +230,7 @@ const useWorkoutStore = create(
     }),
     {
       name: 'workout-session',
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 )

@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { AppState } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
-import { useUserId } from './useAuth.js'
-import { buildSessionExercisesFromBlocks } from '../lib/workoutTransforms.js'
+import { buildSessionExercisesFromBlocks, buildSessionExercisesCache } from '../lib/workoutTransforms.js'
 
 // ============================================
 // SESSION RESTORATION
@@ -50,8 +51,6 @@ async function fetchCompletedSets(sessionId) {
 }
 
 export function useRestoreActiveSession() {
-  const restoreSession = useWorkoutStore(state => state.restoreSession)
-  const endSession = useWorkoutStore(state => state.endSession)
 
   const syncRef = useRef()
   syncRef.current = async () => {
@@ -77,12 +76,11 @@ export function useRestoreActiveSession() {
   useEffect(() => {
     syncRef.current()
 
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') syncRef.current()
-    }
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') syncRef.current()
+    })
 
-    document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
+    return () => subscription.remove()
   }, [])
 }
 
@@ -93,45 +91,34 @@ export function useRestoreActiveSession() {
 export function useStartSession() {
   const queryClient = useQueryClient()
   const startSession = useWorkoutStore(state => state.startSession)
-  const userId = useUserId()
 
   return useMutation({
     mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [] } = {}) => {
-      const { data: session, error: sessionError } = await supabase
-        .from('workout_sessions')
-        .insert({
-          routine_day_id: routineDayId,
-          routine_name: routineName,
-          day_name: dayName,
-          status: 'in_progress',
-          user_id: userId,
-        })
-        .select()
-        .single()
+      const exercises = buildSessionExercisesFromBlocks(blocks)
 
-      if (sessionError) throw sessionError
+      const { data, error } = await supabase.rpc('start_workout_session', {
+        p_routine_day_id: routineDayId,
+        p_routine_name: routineName,
+        p_day_name: dayName,
+        p_exercises: exercises,
+      })
 
-      const sessionExercisesData = buildSessionExercisesFromBlocks(blocks)
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data, { routineDayId = null, routineId = null, blocks = [] } = {}) => {
+      startSession(data.id, routineDayId, routineId)
 
-      if (sessionExercisesData.length > 0) {
-        const { error: exercisesError } = await supabase
-          .from('session_exercises')
-          .insert(
-            sessionExercisesData.map(se => ({
-              ...se,
-              session_id: session.id,
-            }))
-          )
-
-        if (exercisesError) throw exercisesError
+      // Pre-popular cache de session_exercises para evitar segundo fetch
+      if (data.session_exercises?.length > 0) {
+        const cacheData = buildSessionExercisesCache(data.session_exercises, blocks)
+        queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, data.id], cacheData)
       }
 
-      return session
-    },
-    onSuccess: (data, { routineDayId = null, routineId = null } = {}) => {
-      startSession(data.id, routineDayId, routineId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES] })
+    },
+    onError: () => {
+      useWorkoutStore.getState().hideWorkout()
     },
   })
 }
@@ -565,7 +552,24 @@ export function useReorderSessionExercises() {
 
       if (error) throw error
     },
-    onSuccess: () => {
+    onMutate: async (orderedExerciseIds) => {
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
+      const previous = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, sessionId])
+      queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, sessionId], (old) => {
+        if (!old) return old
+        const orderMap = Object.fromEntries(orderedExerciseIds.map((id, i) => [id, i + 1]))
+        return [...old]
+          .map(item => ({ ...item, sort_order: orderMap[item.id] ?? item.sort_order }))
+          .sort((a, b) => a.sort_order - b.sort_order)
+      })
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, sessionId], context.previous)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
     },
   })
@@ -1040,51 +1044,10 @@ export function useRestTimer() {
 // ============================================
 
 export function useWakeLock() {
-  const [isSupported] = useState(() => 'wakeLock' in navigator)
-  const [isActive, setIsActive] = useState(false)
-  const wakeLockRef = useRef(null)
-
-  const request = useCallback(async () => {
-    if (!isSupported || wakeLockRef.current) return
-
-    try {
-      wakeLockRef.current = await navigator.wakeLock.request('screen')
-      setIsActive(true)
-
-      wakeLockRef.current.addEventListener('release', () => {
-        setIsActive(false)
-        wakeLockRef.current = null
-      })
-    } catch {
-      // Wake lock request failed (e.g., low battery, tab not visible)
-    }
-  }, [isSupported])
-
-  const release = useCallback(async () => {
-    if (wakeLockRef.current) {
-      await wakeLockRef.current.release()
-      wakeLockRef.current = null
-      setIsActive(false)
-    }
+  useEffect(() => {
+    activateKeepAwakeAsync()
+    return () => { deactivateKeepAwake() }
   }, [])
 
-  // Re-acquire wake lock when page becomes visible again
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isSupported && !wakeLockRef.current) {
-        request()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [isSupported, request])
-
-  // Request on mount, release on unmount
-  useEffect(() => {
-    request()
-    return () => { release() }
-  }, [request, release])
-
-  return { isSupported, isActive }
+  return { isSupported: true, isActive: true }
 }

@@ -1,0 +1,71 @@
+{
+  "expo": {
+    "name": "Diario Gym",
+    "slug": "diario-gym",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "diariogym",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0d1117"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.diariogym.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.246036060296-opq2u7hhokevlka2bj4ma7mpunurbojk"
+            ]
+          }
+        ],
+        "NSCameraUsageDescription": "Diario Gym necesita acceso a la cámara para grabar videos de tus ejercicios.",
+        "NSMicrophoneUsageDescription": "Diario Gym necesita acceso al micrófono para grabar audio en los videos.",
+        "NSPhotoLibraryUsageDescription": "Diario Gym necesita acceso a tus fotos para seleccionar videos de ejercicios."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0d1117",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.diariogym.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-splash-screen",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Diario Gym necesita acceso a tus fotos para seleccionar videos de ejercicios.",
+          "cameraPermission": "Diario Gym necesita acceso a la cámara para grabar videos de tus ejercicios."
+        }
+      ],
+      "@react-native-google-signin/google-signin",
+      "expo-video"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "73c5f9e1-8637-4f59-9872-60e7aedad44f"
+      }
+    }
+  }
+}
