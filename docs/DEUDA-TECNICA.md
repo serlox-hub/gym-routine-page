@@ -600,7 +600,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 ### Sprint 1 — Seguridad y Base de Datos
 - [x] **1.1 Fuga de datos en useExerciseStats** — Resuelto: se eliminaron políticas RLS permisivas `"Allow all for anon" USING (true)` en producción que anulaban las políticas restrictivas. Migración `014_remove_permissive_anon_policies.sql`. Verificado con curl: 0 filas accesibles sin auth.
 - [ ] 1.2 RLS con JOINs anidados (rendimiento) — Desnormalizar `user_id` en `routine_blocks` y `routine_exercises`
-- [ ] 1.3 Índices compuestos faltantes
+- [x] **1.3 Índices compuestos** — Migración `015_add_composite_indexes.sql`. Añadidos `(user_id, started_at DESC)` y `(user_id, status)` en `workout_sessions`. EXPLAIN ANALYZE: 0.129ms con Index Scan.
 - [ ] 1.4 Sin paginación en historial
 - [ ] 1.5 Soft delete inconsistente
 
@@ -629,7 +629,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] Políticas RLS permisivas eliminadas — verificado con curl (anon y autenticado devuelven 0 filas)
 - [x] App funciona con normalidad tras el fix — verificado manualmente
 - [ ] RLS simplificado — `EXPLAIN ANALYZE` muestra Index Scan, no Seq Scan
-- [ ] Índices creados — verificar con `\di` en psql
+- [x] Índices compuestos creados — verificado con EXPLAIN ANALYZE (0.129ms, Index Scan)
 - [ ] Historial paginado — cargar más de 30 sesiones funciona
 
 ### Sprint 2
