@@ -268,15 +268,17 @@ function MeasurementSection() {
       )}
 
       {/* Modals */}
-      <MeasurementModal
-        isOpen={showRecordModal}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmit}
-        measurementType={selectedType}
-        unit={unit}
-        record={editingRecord}
-        isPending={recordMutation.isPending || updateMutation.isPending}
-      />
+      {selectedType && (
+        <MeasurementModal
+          isOpen={showRecordModal}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          measurementType={selectedType}
+          unit={unit}
+          record={editingRecord}
+          isPending={recordMutation.isPending || updateMutation.isPending}
+        />
+      )}
 
       <MeasurementConfigModal
         isOpen={showConfigModal}

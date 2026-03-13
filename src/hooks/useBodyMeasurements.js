@@ -27,34 +27,6 @@ export function useBodyMeasurementHistory(measurementType) {
   })
 }
 
-export function useLatestBodyMeasurements() {
-  const userId = useUserId()
-
-  return useQuery({
-    queryKey: [QUERY_KEYS.BODY_MEASUREMENTS_LATEST, userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('body_measurements')
-        .select('id, measurement_type, value, unit, recorded_at')
-        .eq('user_id', userId)
-        .order('recorded_at', { ascending: false })
-        .limit(100)
-
-      if (error) throw error
-
-      // Agrupar por tipo y tomar el más reciente
-      const latestByType = {}
-      data?.forEach(record => {
-        if (!latestByType[record.measurement_type]) {
-          latestByType[record.measurement_type] = record
-        }
-      })
-      return latestByType
-    },
-    enabled: !!userId,
-  })
-}
-
 // ============================================
 // MUTATIONS
 // ============================================
@@ -85,7 +57,6 @@ export function useRecordBodyMeasurement() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.BODY_MEASUREMENT_HISTORY, userId, data.measurement_type]
       })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BODY_MEASUREMENTS_LATEST] })
     },
   })
 }
@@ -116,7 +87,6 @@ export function useUpdateBodyMeasurement() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.BODY_MEASUREMENT_HISTORY, userId, data.measurement_type]
       })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BODY_MEASUREMENTS_LATEST] })
     },
   })
 }
@@ -139,7 +109,6 @@ export function useDeleteBodyMeasurement() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.BODY_MEASUREMENT_HISTORY, userId, measurementType]
       })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BODY_MEASUREMENTS_LATEST] })
     },
   })
 }
