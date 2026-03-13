@@ -38,6 +38,7 @@ export function useLatestBodyMeasurements() {
         .select('id, measurement_type, value, unit, recorded_at')
         .eq('user_id', userId)
         .order('recorded_at', { ascending: false })
+        .limit(100)
 
       if (error) throw error
 

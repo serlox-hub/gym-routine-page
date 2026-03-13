@@ -640,6 +640,7 @@ export function useWorkoutHistory() {
         `)
         .eq('status', 'completed')
         .order('started_at', { ascending: false })
+        .limit(200)
 
       if (error) throw error
 
