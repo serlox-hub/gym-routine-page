@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { Platform } from 'react-native'
 import { GoogleSignin, isSuccessResponse, statusCodes } from '@react-native-google-signin/google-signin'
 import { supabase } from '../lib/supabase'
 import useWorkoutStore from './workoutStore'
@@ -72,7 +73,9 @@ const useAuthStore = create((set, get) => ({
   loginWithGoogle: async () => {
     set({ error: null, isLoading: true })
     try {
-      await GoogleSignin.hasPlayServices()
+      if (Platform.OS === 'android') {
+        await GoogleSignin.hasPlayServices()
+      }
       const response = await GoogleSignin.signIn()
 
       if (!isSuccessResponse(response)) {

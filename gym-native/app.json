@@ -17,6 +17,13 @@
       "bundleIdentifier": "com.diariogym.app",
       "buildNumber": "1",
       "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.246036060296-opq2u7hhokevlka2bj4ma7mpunurbojk"
+            ]
+          }
+        ],
         "NSCameraUsageDescription": "Diario Gym necesita acceso a la cámara para grabar videos de tus ejercicios.",
         "NSMicrophoneUsageDescription": "Diario Gym necesita acceso al micrófono para grabar audio en los videos.",
         "NSPhotoLibraryUsageDescription": "Diario Gym necesita acceso a tus fotos para seleccionar videos de ejercicios."
