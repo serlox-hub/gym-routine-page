@@ -3,8 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
-import { useUserId } from './useAuth.js'
-import { buildSessionExercisesFromBlocks } from '../lib/workoutTransforms.js'
+import { buildSessionExercisesFromBlocks, buildSessionExercisesCache } from '../lib/workoutTransforms.js'
 
 // ============================================
 // SESSION RESTORATION
@@ -93,45 +92,30 @@ export function useRestoreActiveSession() {
 export function useStartSession() {
   const queryClient = useQueryClient()
   const startSession = useWorkoutStore(state => state.startSession)
-  const userId = useUserId()
 
   return useMutation({
     mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [] } = {}) => {
-      const { data: session, error: sessionError } = await supabase
-        .from('workout_sessions')
-        .insert({
-          routine_day_id: routineDayId,
-          routine_name: routineName,
-          day_name: dayName,
-          status: 'in_progress',
-          user_id: userId,
-        })
-        .select()
-        .single()
+      const exercises = buildSessionExercisesFromBlocks(blocks)
 
-      if (sessionError) throw sessionError
+      const { data, error } = await supabase.rpc('start_workout_session', {
+        p_routine_day_id: routineDayId,
+        p_routine_name: routineName,
+        p_day_name: dayName,
+        p_exercises: exercises,
+      })
 
-      const sessionExercisesData = buildSessionExercisesFromBlocks(blocks)
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data, { routineDayId = null, routineId = null, blocks = [] } = {}) => {
+      startSession(data.id, routineDayId, routineId)
 
-      if (sessionExercisesData.length > 0) {
-        const { error: exercisesError } = await supabase
-          .from('session_exercises')
-          .insert(
-            sessionExercisesData.map(se => ({
-              ...se,
-              session_id: session.id,
-            }))
-          )
-
-        if (exercisesError) throw exercisesError
+      if (data.session_exercises?.length > 0) {
+        const cacheData = buildSessionExercisesCache(data.session_exercises, blocks)
+        queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, data.id], cacheData)
       }
 
-      return session
-    },
-    onSuccess: (data, { routineDayId = null, routineId = null } = {}) => {
-      startSession(data.id, routineDayId, routineId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES] })
     },
   })
 }
@@ -815,7 +799,6 @@ export function usePreviousWorkout(exerciseId) {
   return useQuery({
     queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT, exerciseId],
     queryFn: async () => {
-      // Buscar la sesión más reciente con este ejercicio
       const { data, error } = await supabase
         .from('session_exercises')
         .select(`
@@ -841,15 +824,14 @@ export function usePreviousWorkout(exerciseId) {
         .eq('exercise_id', exerciseId)
         .eq('session.status', 'completed')
         .order('session(started_at)', { ascending: false })
-        .limit(1)
+        .limit(5)
 
       if (error) throw error
       if (!data || data.length === 0) return null
 
-      const lastSession = data[0]
-      if (!lastSession.completed_sets || lastSession.completed_sets.length === 0) {
-        return null
-      }
+      // Buscar la primera sesión que tenga sets completados
+      const lastSession = data.find(se => se.completed_sets?.length > 0)
+      if (!lastSession) return null
 
       return {
         date: lastSession.session.started_at,
