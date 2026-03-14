@@ -10,6 +10,7 @@ import Toast from 'react-native-toast-message'
 import { queryClient } from './src/lib/queryClient'
 import RootNavigator from './src/navigation/RootNavigator'
 import { toastConfig } from './src/components/ui/toastConfig'
+import ErrorBoundary from './src/components/ErrorBoundary'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -25,6 +26,7 @@ const linking = {
 export default function App() {
   return (
     <SafeAreaProvider>
+      <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <NavigationContainer
           linking={linking}
@@ -46,6 +48,7 @@ export default function App() {
         </NavigationContainer>
         <Toast config={toastConfig} position="bottom" bottomOffset={50} />
       </QueryClientProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   )
 }

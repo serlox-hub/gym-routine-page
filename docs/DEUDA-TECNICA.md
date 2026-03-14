@@ -605,8 +605,8 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] **1.5 Soft delete inconsistente** — Decisión: Opción C. Solo `exercises` necesita soft delete (referenciados en sesiones pasadas). Rutinas/días/bloques se eliminan con CASCADE sin impacto en historial. Documentado en CLAUDE.md.
 
 ### Sprint 2 — Arquitectura de Código
-- [ ] 2.1 Partir useWorkout.js (1090 líneas)
-- [ ] 2.2 Timer global con side effects a nivel de módulo
+- [x] **2.1 Partir useWorkout.js** — Dividido en 5 archivos por dominio: useSession, useCompletedSets, useSessionExercises, useWorkoutHistory, useRestTimer. Barrel re-export en useWorkout.js. Fix APIs web en RN useRestTimer (expo-haptics + Vibration). Web y RN.
+- [x] **2.2 Timer global con side effects** — Encapsulado en `useTimerEngine` hook con refs y cleanup. Sin variables globales mutables ni suscripciones al importar. Web y RN.
 - [ ] 2.3 Sin Error Boundary
 - [ ] 2.4 Sin code splitting (bundle 1.2MB)
 - [ ] 2.5 Supabase directo en hooks (sin capa API)
