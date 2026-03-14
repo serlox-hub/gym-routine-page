@@ -1,6 +1,13 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
+import {
+  fetchWorkoutHistory,
+  fetchSessionDetail,
+  fetchExerciseHistorySummary,
+  fetchExerciseHistory,
+  fetchPreviousWorkout,
+  deleteWorkoutSession,
+} from '../lib/api/workoutApi.js'
 
 // ============================================
 // HISTORY QUERIES
@@ -15,43 +22,7 @@ export function useWorkoutHistory(currentDate) {
   return useQuery({
     queryKey: [QUERY_KEYS.WORKOUT_HISTORY, year, month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workout_sessions')
-        .select(`
-          id,
-          started_at,
-          completed_at,
-          duration_minutes,
-          status,
-          overall_feeling,
-          notes,
-          routine_name,
-          day_name,
-          routine_day:routine_days (
-            id,
-            name,
-            routine:routines (
-              id,
-              name
-            )
-          ),
-          session_exercises (
-            id,
-            exercise:exercises (
-              id,
-              muscle_group:muscle_groups (
-                id,
-                name
-              )
-            )
-          )
-        `)
-        .eq('status', 'completed')
-        .gte('started_at', from)
-        .lte('started_at', to)
-        .order('started_at', { ascending: false })
-
-      if (error) throw error
+      const data = await fetchWorkoutHistory({ from, to })
 
       // Extraer grupos musculares únicos de cada sesión
       return data.map(session => {
@@ -74,65 +45,7 @@ export function useSessionDetail(sessionId) {
   return useQuery({
     queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId],
     queryFn: async () => {
-      // Obtener sesión con info del día y ejercicios
-      const { data: session, error: sessionError } = await supabase
-        .from('workout_sessions')
-        .select(`
-          id,
-          started_at,
-          completed_at,
-          duration_minutes,
-          status,
-          overall_feeling,
-          notes,
-          routine_name,
-          day_name,
-          routine_day:routine_days (
-            id,
-            name,
-            routine:routines (
-              id,
-              name
-            )
-          ),
-          session_exercises (
-            id,
-            sort_order,
-            series,
-            reps,
-            is_extra,
-            block_name,
-            exercise:exercises (
-              id,
-              name,
-              deleted_at,
-              time_unit,
-              distance_unit,
-              muscle_group:muscle_groups (
-                id,
-                name
-              )
-            ),
-            completed_sets (
-              id,
-              set_number,
-              weight,
-              weight_unit,
-              reps_completed,
-              time_seconds,
-              distance_meters,
-              pace_seconds,
-              rir_actual,
-              notes,
-              video_url,
-              performed_at
-            )
-          )
-        `)
-        .eq('id', sessionId)
-        .single()
-
-      if (sessionError) throw sessionError
+      const session = await fetchSessionDetail(sessionId)
 
       // Transformar a formato esperado por los componentes
       const exercises = (session.session_exercises || [])
@@ -165,36 +78,7 @@ export function useExerciseHistorySummary(exerciseId, routineDayId = null) {
   return useQuery({
     queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'summary', exerciseId, routineDayId],
     queryFn: async () => {
-      let query = supabase
-        .from('session_exercises')
-        .select(`
-          id,
-          session:workout_sessions!inner (
-            id,
-            started_at,
-            status,
-            routine_day_id
-          ),
-          completed_sets!inner (
-            weight,
-            reps_completed,
-            time_seconds,
-            distance_meters,
-            pace_seconds,
-            set_number
-          )
-        `)
-        .eq('exercise_id', exerciseId)
-        .eq('session.status', 'completed')
-        .order('session(started_at)', { ascending: false })
-
-      if (routineDayId) {
-        query = query.eq('session.routine_day_id', routineDayId)
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
+      const data = await fetchExerciseHistorySummary({ exerciseId, routineDayId })
 
       return data.map(se => ({
         sessionId: se.session.id,
@@ -215,42 +99,7 @@ export function useExerciseHistory(exerciseId, routineDayId = null) {
       const from = pageParam * EXERCISE_HISTORY_PAGE_SIZE
       const to = from + EXERCISE_HISTORY_PAGE_SIZE - 1
 
-      let query = supabase
-        .from('session_exercises')
-        .select(`
-          id,
-          session:workout_sessions!inner (
-            id,
-            started_at,
-            status,
-            routine_day_id
-          ),
-          completed_sets!inner (
-            id,
-            set_number,
-            weight,
-            weight_unit,
-            reps_completed,
-            time_seconds,
-            distance_meters,
-            pace_seconds,
-            rir_actual,
-            notes,
-            performed_at
-          )
-        `)
-        .eq('exercise_id', exerciseId)
-        .eq('session.status', 'completed')
-        .order('session(started_at)', { ascending: false })
-        .range(from, to)
-
-      if (routineDayId) {
-        query = query.eq('session.routine_day_id', routineDayId)
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
+      const data = await fetchExerciseHistory({ exerciseId, routineDayId, from, to })
 
       return data.map(se => ({
         sessionId: se.session.id,
@@ -271,34 +120,7 @@ export function usePreviousWorkout(exerciseId) {
   return useQuery({
     queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT, exerciseId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('session_exercises')
-        .select(`
-          id,
-          session:workout_sessions!inner (
-            id,
-            started_at,
-            status
-          ),
-          completed_sets!inner (
-            set_number,
-            weight,
-            weight_unit,
-            reps_completed,
-            time_seconds,
-            distance_meters,
-            pace_seconds,
-            rir_actual,
-            notes,
-            performed_at
-          )
-        `)
-        .eq('exercise_id', exerciseId)
-        .eq('session.status', 'completed')
-        .order('session(started_at)', { ascending: false })
-        .limit(1)
-
-      if (error) throw error
+      const data = await fetchPreviousWorkout(exerciseId)
       if (!data || data.length === 0) return null
 
       const lastSession = data[0]
@@ -334,12 +156,7 @@ export function useDeleteSession() {
 
   return useMutation({
     mutationFn: async (sessionId) => {
-      const { error } = await supabase
-        .from('workout_sessions')
-        .delete()
-        .eq('id', sessionId)
-
-      if (error) throw error
+      await deleteWorkoutSession(sessionId)
       return sessionId
     },
     onSuccess: (sessionId) => {

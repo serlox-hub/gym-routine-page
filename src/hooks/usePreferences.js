@@ -1,9 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { useUserId } from './useAuth.js'
+import { fetchPreferences, upsertPreference } from '../lib/api/preferencesApi.js'
 
-// Valores por defecto para cada preferencia
 const DEFAULT_VALUES = {
   show_rir_input: true,
   show_set_notes: true,
@@ -23,14 +22,7 @@ export function usePreferences() {
   return useQuery({
     queryKey: [QUERY_KEYS.USER_PREFERENCES, userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('key, value')
-        .eq('user_id', userId)
-
-      if (error) throw error
-
-      // Convertir array de {key, value} a objeto
+      const data = await fetchPreferences(userId)
       const prefs = { ...DEFAULT_VALUES }
       data?.forEach(row => {
         prefs[row.key] = row.value
@@ -38,7 +30,7 @@ export function usePreferences() {
       return prefs
     },
     enabled: !!userId,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5,
   })
 }
 
@@ -51,19 +43,8 @@ export function useUpdatePreference() {
   const userId = useUserId()
 
   return useMutation({
-    mutationFn: async ({ key, value }) => {
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert(
-          { user_id: userId, key, value },
-          { onConflict: 'user_id,key' }
-        )
-
-      if (error) throw error
-      return { key, value }
-    },
+    mutationFn: (params) => upsertPreference({ userId, ...params }),
     onSuccess: ({ key, value }) => {
-      // Actualizar cache
       queryClient.setQueryData([QUERY_KEYS.USER_PREFERENCES, userId], (old) => ({
         ...old,
         [key]: value,
@@ -76,7 +57,6 @@ export function useUpdatePreference() {
 // HELPERS
 // ============================================
 
-// Hook simplificado para leer una preferencia específica
 export function usePreference(key) {
   const { data: preferences, isLoading } = usePreferences()
   return {

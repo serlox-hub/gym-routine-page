@@ -1,8 +1,13 @@
 import { useRef, useCallback, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import useWorkoutStore from '../stores/workoutStore.js'
+import {
+  upsertCompletedSet,
+  updateSetVideo,
+  updateSetDetails as updateSetDetailsApi,
+  deleteCompletedSet,
+} from '../lib/api/workoutApi.js'
 
 // ============================================
 // SET MUTATIONS
@@ -17,30 +22,20 @@ export function useCompleteSet() {
 
   return useMutation({
     mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl }) => {
-      const { data, error } = await supabase
-        .from('completed_sets')
-        .upsert({
-          session_id: sessionId,
-          session_exercise_id: sessionExerciseId,
-          set_number: setNumber,
-          weight,
-          weight_unit: weightUnit,
-          reps_completed: repsCompleted,
-          time_seconds: timeSeconds,
-          distance_meters: distanceMeters,
-          pace_seconds: paceSeconds,
-          rir_actual: rirActual,
-          notes,
-          video_url: videoUrl,
-          completed: true,
-        }, {
-          onConflict: 'session_id,session_exercise_id,set_number',
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-      return data
+      return upsertCompletedSet({
+        sessionId,
+        sessionExerciseId,
+        setNumber,
+        weight,
+        weightUnit,
+        repsCompleted,
+        timeSeconds,
+        distanceMeters,
+        paceSeconds,
+        rirActual,
+        notes,
+        videoUrl,
+      })
     },
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
@@ -101,32 +96,23 @@ export function useSyncPendingSets() {
 
     for (const [_key, payload] of Object.entries(pending)) {
       try {
-        const { data, error } = await supabase
-          .from('completed_sets')
-          .upsert({
-            session_id: payload.sessionId,
-            session_exercise_id: payload.sessionExerciseId,
-            set_number: payload.setNumber,
-            weight: payload.weight,
-            weight_unit: payload.weightUnit,
-            reps_completed: payload.repsCompleted,
-            time_seconds: payload.timeSeconds,
-            distance_meters: payload.distanceMeters,
-            pace_seconds: payload.paceSeconds,
-            rir_actual: payload.rirActual,
-            notes: payload.notes,
-            video_url: payload.videoUrl,
-            completed: true,
-          }, {
-            onConflict: 'session_id,session_exercise_id,set_number',
-          })
-          .select()
-          .single()
+        const data = await upsertCompletedSet({
+          sessionId: payload.sessionId,
+          sessionExerciseId: payload.sessionExerciseId,
+          setNumber: payload.setNumber,
+          weight: payload.weight,
+          weightUnit: payload.weightUnit,
+          repsCompleted: payload.repsCompleted,
+          timeSeconds: payload.timeSeconds,
+          distanceMeters: payload.distanceMeters,
+          paceSeconds: payload.paceSeconds,
+          rirActual: payload.rirActual,
+          notes: payload.notes,
+          videoUrl: payload.videoUrl,
+        })
 
-        if (!error && data) {
-          updateSetDbId(payload.sessionExerciseId, payload.setNumber, data.id)
-          removePendingSet(payload.sessionExerciseId, payload.setNumber)
-        }
+        updateSetDbId(payload.sessionExerciseId, payload.setNumber, data.id)
+        removePendingSet(payload.sessionExerciseId, payload.setNumber)
       } catch {
         // Seguirá en la cola para el próximo intento
       }
@@ -157,24 +143,14 @@ export function useSyncPendingSets() {
 export function useUpdateSetVideo() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
-  const updateSetVideo = useWorkoutStore(state => state.updateSetVideo)
+  const updateSetVideoStore = useWorkoutStore(state => state.updateSetVideo)
 
   return useMutation({
     mutationFn: async ({ sessionExerciseId, setNumber, videoUrl }) => {
-      const { data, error } = await supabase
-        .from('completed_sets')
-        .update({ video_url: videoUrl })
-        .eq('session_id', sessionId)
-        .eq('session_exercise_id', sessionExerciseId)
-        .eq('set_number', setNumber)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data
+      return updateSetVideo({ sessionId, sessionExerciseId, setNumber, videoUrl })
     },
     onSuccess: (data, variables) => {
-      updateSetVideo(variables.sessionExerciseId, variables.setNumber, variables.videoUrl)
+      updateSetVideoStore(variables.sessionExerciseId, variables.setNumber, variables.videoUrl)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
     },
   })
@@ -187,22 +163,7 @@ export function useUpdateSetDetails() {
 
   return useMutation({
     mutationFn: async ({ sessionExerciseId, setNumber, rirActual, notes, videoUrl }) => {
-      const updateData = {
-        rir_actual: rirActual,
-        notes,
-      }
-      if (videoUrl !== undefined) {
-        updateData.video_url = videoUrl
-      }
-
-      const { error } = await supabase
-        .from('completed_sets')
-        .update(updateData)
-        .eq('session_id', sessionId)
-        .eq('session_exercise_id', sessionExerciseId)
-        .eq('set_number', setNumber)
-
-      if (error) throw error
+      return updateSetDetailsApi({ sessionId, sessionExerciseId, setNumber, rirActual, notes, videoUrl })
     },
     onSuccess: (_result, variables) => {
       updateSetDetails(variables.sessionExerciseId, variables.setNumber, {
@@ -221,14 +182,7 @@ export function useUncompleteSet() {
 
   return useMutation({
     mutationFn: async ({ sessionExerciseId, setNumber }) => {
-      const { error } = await supabase
-        .from('completed_sets')
-        .delete()
-        .eq('session_id', sessionId)
-        .eq('session_exercise_id', sessionExerciseId)
-        .eq('set_number', setNumber)
-
-      if (error) throw error
+      return deleteCompletedSet({ sessionId, sessionExerciseId, setNumber })
     },
     onSuccess: (_, variables) => {
       uncompleteSet(variables.sessionExerciseId, variables.setNumber)

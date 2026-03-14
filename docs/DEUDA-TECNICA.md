@@ -607,10 +607,10 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 ### Sprint 2 — Arquitectura de Código
 - [x] **2.1 Partir useWorkout.js** — Dividido en 5 archivos por dominio: useSession, useCompletedSets, useSessionExercises, useWorkoutHistory, useRestTimer. Barrel re-export en useWorkout.js. Fix APIs web en RN useRestTimer (expo-haptics + Vibration). Web y RN.
 - [x] **2.2 Timer global con side effects** — Encapsulado en `useTimerEngine` hook con refs y cleanup. Sin variables globales mutables ni suscripciones al importar. Web y RN.
-- [ ] 2.3 Sin Error Boundary
-- [ ] 2.4 Sin code splitting (bundle 1.2MB)
+- [x] **2.3 Error Boundary** — Creado en web y RN. Montado envolviendo `<App />`. Muestra pantalla de fallback con reintentar.
+- [x] **2.4 Code splitting** — Lazy loading de 18 páginas + vendor chunks (react, query, supabase). Bundle inicial ~260KB (antes 1,217KB).
 - [ ] 2.5 Supabase directo en hooks (sin capa API)
-- [ ] 2.6 Páginas que exceden 150 líneas
+- [x] **2.6 Páginas grandes** — Landing.jsx (718→21), Home.jsx (419→89), HomeScreen RN (401→98). Extraídas secciones con estado propio a components/Landing/ y components/Home/.
 
 ### Sprint 3 — Sistema de Diseño
 - [ ] 3.1 Duplicación de tokens de color
