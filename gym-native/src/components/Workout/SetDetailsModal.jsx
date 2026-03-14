@@ -180,6 +180,7 @@ export default function SetDetailsModal({
                   </Text>
                   <Text
                     className="text-xs"
+                    numberOfLines={1}
                     style={{
                       color: rir === option.value ? colors.bgPrimary : colors.textSecondary,
                       opacity: 0.75,

@@ -3,7 +3,7 @@ export const RIR_OPTIONS = [
   { value: -1, label: 'F', description: 'Fallo' },
   { value: 0, label: '0', description: 'Última rep' },
   { value: 1, label: '1', description: 'Muy cerca' },
-  { value: 2, label: '2', description: 'Controlado' },
+  { value: 2, label: '2', description: 'Control' },
   { value: 3, label: '3+', description: 'Cómodo' },
 ]
 
