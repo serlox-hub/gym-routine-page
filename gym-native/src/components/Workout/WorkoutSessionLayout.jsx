@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Plus } from 'lucide-react-native'
 import {
@@ -144,26 +144,32 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
         ]}
       />
 
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
-        {!hasExercises ? (
-          <View className="items-center py-12 px-4">
-            <Text className="text-secondary text-sm mb-6">
-              No hay ejercicios. Añade los que quieras hacer.
-            </Text>
-            <Button onPress={() => setShowAddExercise(true)}>Añadir ejercicio</Button>
-          </View>
-        ) : (
-          <BlockExerciseList
-            exercisesByBlock={exercisesByBlock}
-            onCompleteSet={handlers.onCompleteSet}
-            onUncompleteSet={handlers.onUncompleteSet}
-            onRemove={handlers.onRemove}
-            flatExercises={flatExercises}
-            onReorder={handlers.onReorder}
-            isReordering={reorderSessionExercisesMutation.isPending}
-          />
-        )}
-      </ScrollView>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+          {!hasExercises ? (
+            <View className="items-center py-12 px-4">
+              <Text className="text-secondary text-sm mb-6">
+                No hay ejercicios. Añade los que quieras hacer.
+              </Text>
+              <Button onPress={() => setShowAddExercise(true)}>Añadir ejercicio</Button>
+            </View>
+          ) : (
+            <BlockExerciseList
+              exercisesByBlock={exercisesByBlock}
+              onCompleteSet={handlers.onCompleteSet}
+              onUncompleteSet={handlers.onUncompleteSet}
+              onRemove={handlers.onRemove}
+              flatExercises={flatExercises}
+              onReorder={handlers.onReorder}
+              isReordering={reorderSessionExercisesMutation.isPending}
+            />
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <View
         className="flex-row items-center gap-3 px-4 py-3"
