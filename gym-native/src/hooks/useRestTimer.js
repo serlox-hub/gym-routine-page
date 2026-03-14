@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Vibration } from 'react-native'
 import * as Haptics from 'expo-haptics'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
@@ -6,20 +6,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 // ============================================
-// REST TIMER HOOK
+// AUDIO & VIBRATION
 // ============================================
 
-// Singleton para el intervalo del timer
-let globalTimerInterval = null
-// Set de funciones para notificar a los componentes suscritos
-const timerUpdateCallbacks = new Set()
-
-// Cache de preferencia de sonido para evitar lecturas async en el intervalo
 let timerSoundEnabled = true
-
-AsyncStorage.getItem('timer_sound_enabled').then(val => {
-  timerSoundEnabled = val === null || val === 'true'
-})
 
 function playTimerBeep() {
   if (!timerSoundEnabled) return
@@ -31,72 +21,81 @@ function vibrateDevice() {
   Vibration.vibrate([0, 200, 100, 200])
 }
 
-// Track del último segundo en que sonó beep para evitar repetir
-let lastBeepSecond = -1
+// ============================================
+// TIMER ENGINE HOOK (montar una sola vez)
+// ============================================
 
-function startGlobalTimerInterval() {
-  if (globalTimerInterval) return
-  lastBeepSecond = -1
+const timerUpdateCallbacks = new Set()
 
-  // Refrescar preferencia al iniciar timer
-  AsyncStorage.getItem('timer_sound_enabled').then(val => {
-    timerSoundEnabled = val === null || val === 'true'
-  })
+export function useTimerEngine() {
+  const intervalRef = useRef(null)
+  const lastBeepRef = useRef(-1)
 
-  globalTimerInterval = setInterval(() => {
-    const wasActive = useWorkoutStore.getState().restTimerActive
-    useWorkoutStore.getState().tickTimer()
+  const startInterval = useCallback(() => {
+    if (intervalRef.current) return
+    lastBeepRef.current = -1
 
-    const currentState = useWorkoutStore.getState()
-    const remaining = currentState.getTimeRemaining()
+    // Refrescar preferencia al iniciar timer
+    AsyncStorage.getItem('timer_sound_enabled').then(val => {
+      timerSoundEnabled = val === null || val === 'true'
+    })
 
-    // Notificar a todos los componentes suscritos
-    timerUpdateCallbacks.forEach(cb => cb(remaining))
+    intervalRef.current = setInterval(() => {
+      const wasActive = useWorkoutStore.getState().restTimerActive
+      useWorkoutStore.getState().tickTimer()
 
-    // Beep en los últimos 2 segundos (2, 1)
-    if (currentState.restTimerActive && remaining <= 2 && remaining > 0 && remaining !== lastBeepSecond) {
-      lastBeepSecond = remaining
-      playTimerBeep()
+      const currentState = useWorkoutStore.getState()
+      const remaining = currentState.getTimeRemaining()
+
+      timerUpdateCallbacks.forEach(cb => cb(remaining))
+
+      if (currentState.restTimerActive && remaining <= 2 && remaining > 0 && remaining !== lastBeepRef.current) {
+        lastBeepRef.current = remaining
+        playTimerBeep()
+      }
+
+      if (wasActive && !currentState.restTimerActive && remaining === 0) {
+        playTimerBeep()
+        vibrateDevice()
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+        lastBeepRef.current = -1
+      }
+    }, 250)
+  }, [])
+
+  const stopInterval = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
     }
+  }, [])
 
-    // Detectar cuando el timer termina naturalmente
-    if (wasActive && !currentState.restTimerActive && remaining === 0) {
-      playTimerBeep()
-      vibrateDevice()
-      clearInterval(globalTimerInterval)
-      globalTimerInterval = null
-      lastBeepSecond = -1
+  useEffect(() => {
+    const unsubscribe = useWorkoutStore.subscribe((state, prevState) => {
+      if (state.restTimerActive && !prevState.restTimerActive) {
+        startInterval()
+      } else if (!state.restTimerActive && prevState.restTimerActive) {
+        stopInterval()
+      }
+
+      if (state.restTimerEndTime !== prevState.restTimerEndTime &&
+          state.restTimerEndTime && state.restTimerActive) {
+        stopInterval()
+        startInterval()
+      }
+    })
+
+    return () => {
+      unsubscribe()
+      stopInterval()
     }
-  }, 250)
+  }, [startInterval, stopInterval])
 }
 
-function stopGlobalTimerInterval() {
-  if (globalTimerInterval) {
-    clearInterval(globalTimerInterval)
-    globalTimerInterval = null
-  }
-}
-
-// Suscribirse a cambios del store para iniciar/detener el intervalo automáticamente
-let prevRestTimerActive = useWorkoutStore.getState().restTimerActive
-let prevRestTimerEndTime = useWorkoutStore.getState().restTimerEndTime
-
-useWorkoutStore.subscribe((state) => {
-  if (state.restTimerActive !== prevRestTimerActive) {
-    prevRestTimerActive = state.restTimerActive
-    if (state.restTimerActive) {
-      startGlobalTimerInterval()
-    }
-  }
-
-  if (state.restTimerEndTime !== prevRestTimerEndTime) {
-    prevRestTimerEndTime = state.restTimerEndTime
-    if (state.restTimerEndTime && state.restTimerActive) {
-      stopGlobalTimerInterval()
-      startGlobalTimerInterval()
-    }
-  }
-})
+// ============================================
+// REST TIMER HOOK (consumir desde componentes)
+// ============================================
 
 export function useRestTimer() {
   const restTimerActive = useWorkoutStore(state => state.restTimerActive)
@@ -112,14 +111,10 @@ export function useRestTimer() {
     const updateCallback = (remaining) => setTimeRemaining(remaining)
     timerUpdateCallbacks.add(updateCallback)
 
-    if (restTimerActive && !globalTimerInterval) {
-      startGlobalTimerInterval()
-    }
-
     return () => {
       timerUpdateCallbacks.delete(updateCallback)
     }
-  }, [restTimerActive])
+  }, [])
 
   useEffect(() => {
     if (restTimerActive) {

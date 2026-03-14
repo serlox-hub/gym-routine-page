@@ -2,14 +2,10 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 // ============================================
-// REST TIMER HOOK
+// AUDIO & VIBRATION
 // ============================================
 
-// Singleton para el intervalo del timer
-let globalTimerInterval = null
 let audioContext = null
-// Set de funciones para notificar a los componentes suscritos
-const timerUpdateCallbacks = new Set()
 
 function playTimerBeep() {
   try {
@@ -40,85 +36,87 @@ function vibrateDevice() {
   }
 }
 
-// Track del último segundo en que sonó beep para evitar repetir
-let lastBeepSecond = -1
+function isSoundEnabled() {
+  try {
+    const pref = localStorage.getItem('timer_sound_enabled')
+    return pref === null || pref === 'true'
+  } catch {
+    return true
+  }
+}
 
-function startGlobalTimerInterval() {
-  if (globalTimerInterval) return
-  lastBeepSecond = -1
+// ============================================
+// TIMER ENGINE HOOK (montar una sola vez)
+// ============================================
 
-  globalTimerInterval = setInterval(() => {
-    const wasActive = useWorkoutStore.getState().restTimerActive
-    useWorkoutStore.getState().tickTimer()
+const timerUpdateCallbacks = new Set()
 
-    const currentState = useWorkoutStore.getState()
-    const remaining = currentState.getTimeRemaining()
+export function useTimerEngine() {
+  const intervalRef = useRef(null)
+  const lastBeepRef = useRef(-1)
 
-    // Notificar a todos los componentes suscritos
-    timerUpdateCallbacks.forEach(cb => cb(remaining))
+  const startInterval = useCallback(() => {
+    if (intervalRef.current) return
+    lastBeepRef.current = -1
 
-    // Beep en los últimos 2 segundos (2, 1) y al terminar (0)
-    if (currentState.restTimerActive && remaining <= 2 && remaining > 0 && remaining !== lastBeepSecond) {
-      lastBeepSecond = remaining
-      try {
-        const pref = localStorage.getItem('timer_sound_enabled')
-        if (pref === null || pref === 'true') {
-          playTimerBeep()
-        }
-      } catch {
-        playTimerBeep()
+    intervalRef.current = setInterval(() => {
+      const wasActive = useWorkoutStore.getState().restTimerActive
+      useWorkoutStore.getState().tickTimer()
+
+      const currentState = useWorkoutStore.getState()
+      const remaining = currentState.getTimeRemaining()
+
+      timerUpdateCallbacks.forEach(cb => cb(remaining))
+
+      if (currentState.restTimerActive && remaining <= 2 && remaining > 0 && remaining !== lastBeepRef.current) {
+        lastBeepRef.current = remaining
+        if (isSoundEnabled()) playTimerBeep()
       }
-    }
 
-    // Detectar cuando el timer termina naturalmente
-    if (wasActive && !currentState.restTimerActive && remaining === 0) {
-      try {
-        const pref = localStorage.getItem('timer_sound_enabled')
-        if (pref === null || pref === 'true') {
+      if (wasActive && !currentState.restTimerActive && remaining === 0) {
+        if (isSoundEnabled()) {
           playTimerBeep()
           vibrateDevice()
         }
-      } catch {
-        playTimerBeep()
-        vibrateDevice()
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+        lastBeepRef.current = -1
       }
-      // Limpiar el intervalo cuando termine
-      clearInterval(globalTimerInterval)
-      globalTimerInterval = null
-      lastBeepSecond = -1
+    }, 250)
+  }, [])
+
+  const stopInterval = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
     }
-  }, 250)
+  }, [])
+
+  useEffect(() => {
+    const unsubscribe = useWorkoutStore.subscribe((state, prevState) => {
+      if (state.restTimerActive && !prevState.restTimerActive) {
+        startInterval()
+      } else if (!state.restTimerActive && prevState.restTimerActive) {
+        stopInterval()
+      }
+
+      if (state.restTimerEndTime !== prevState.restTimerEndTime &&
+          state.restTimerEndTime && state.restTimerActive) {
+        stopInterval()
+        startInterval()
+      }
+    })
+
+    return () => {
+      unsubscribe()
+      stopInterval()
+    }
+  }, [startInterval, stopInterval])
 }
 
-function stopGlobalTimerInterval() {
-  if (globalTimerInterval) {
-    clearInterval(globalTimerInterval)
-    globalTimerInterval = null
-  }
-}
-
-// Suscribirse a cambios del store para iniciar/detener el intervalo automáticamente
-let prevRestTimerActive = useWorkoutStore.getState().restTimerActive
-let prevRestTimerEndTime = useWorkoutStore.getState().restTimerEndTime
-
-useWorkoutStore.subscribe((state) => {
-  // Detectar cambio en restTimerActive
-  if (state.restTimerActive !== prevRestTimerActive) {
-    prevRestTimerActive = state.restTimerActive
-    if (state.restTimerActive) {
-      startGlobalTimerInterval()
-    }
-  }
-
-  // Detectar cambio en restTimerEndTime (nuevo timer iniciado)
-  if (state.restTimerEndTime !== prevRestTimerEndTime) {
-    prevRestTimerEndTime = state.restTimerEndTime
-    if (state.restTimerEndTime && state.restTimerActive) {
-      stopGlobalTimerInterval()
-      startGlobalTimerInterval()
-    }
-  }
-})
+// ============================================
+// REST TIMER HOOK (consumir desde componentes)
+// ============================================
 
 export function useRestTimer() {
   const restTimerActive = useWorkoutStore(state => state.restTimerActive)
@@ -130,22 +128,15 @@ export function useRestTimer() {
 
   const [timeRemaining, setTimeRemaining] = useState(() => getTimeRemaining())
 
-  // Suscribirse a actualizaciones del timer global
   useEffect(() => {
     const updateCallback = (remaining) => setTimeRemaining(remaining)
     timerUpdateCallbacks.add(updateCallback)
 
-    // Si el timer está activo, asegurar que el intervalo esté corriendo
-    if (restTimerActive && !globalTimerInterval) {
-      startGlobalTimerInterval()
-    }
-
     return () => {
       timerUpdateCallbacks.delete(updateCallback)
     }
-  }, [restTimerActive])
+  }, [])
 
-  // Sincronizar timeRemaining cuando cambia el timer (inicio o nuevo timer)
   useEffect(() => {
     if (restTimerActive) {
       setTimeRemaining(getTimeRemaining())
@@ -154,7 +145,6 @@ export function useRestTimer() {
     }
   }, [restTimerActive, restTimerEndTime, getTimeRemaining])
 
-  // Calcular progreso directamente del store para evitar desincronización
   const currentRemaining = restTimerActive ? getTimeRemaining() : 0
   const progress = restTimeInitial > 0 && restTimerActive
     ? Math.max(0, Math.min(100, ((restTimeInitial - currentRemaining) / restTimeInitial) * 100))
@@ -191,7 +181,7 @@ export function useWakeLock() {
         wakeLockRef.current = null
       })
     } catch {
-      // Wake lock request failed (e.g., low battery, tab not visible)
+      // Wake lock request failed
     }
   }, [isSupported])
 
@@ -203,7 +193,6 @@ export function useWakeLock() {
     }
   }, [])
 
-  // Re-acquire wake lock when page becomes visible again
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && isSupported && !wakeLockRef.current) {
@@ -215,7 +204,6 @@ export function useWakeLock() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [isSupported, request])
 
-  // Request on mount, release on unmount
   useEffect(() => {
     request()
     return () => { release() }

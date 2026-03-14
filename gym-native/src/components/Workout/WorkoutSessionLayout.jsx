@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
   useSessionExercises, useAddSessionExercise, useRemoveSessionExercise,
-  useReplaceSessionExercise, useReorderSessionExercises, useWakeLock,
+  useReplaceSessionExercise, useReorderSessionExercises, useWakeLock, useTimerEngine,
 } from '../../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui'
 import RestTimer from './RestTimer'
@@ -27,6 +27,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
 
   useWakeLock()
+  useTimerEngine()
 
   const hasCompletedSets = Object.keys(completedSets).length > 0
   const { data: sessionExercises, isLoading, error } = useSessionExercises(sessionId)
