@@ -1,3 +1,5 @@
+import { colors } from './src/lib/styles.js'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -7,29 +9,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Backgrounds (GitHub dark theme)
-        'surface': '#0d1117',
-        'surface-card': '#161b22',
+        // Backgrounds
+        'surface': colors.bgPrimary,
+        'surface-card': colors.bgSecondary,
         'surface-alt': '#1c2128',
-        'surface-block': '#21262d',
+        'surface-block': colors.bgTertiary,
         'surface-hover': 'rgba(255, 255, 255, 0.05)',
         // Text
-        'primary': '#e6edf3',
-        'secondary': '#8b949e',
+        'primary': colors.textPrimary,
+        'secondary': colors.textSecondary,
         'muted': '#6e7681',
-        // Semantic colors
-        'accent': '#58a6ff',
+        // Semantic
+        'accent': colors.accent,
         'accent-hover': '#79b8ff',
-        'purple': '#a371f7',
+        'purple': colors.purple,
         'purple-bg': 'rgba(163, 113, 247, 0.15)',
-        'success': '#3fb950',
+        'success': colors.success,
         'success-bg': 'rgba(63, 185, 80, 0.15)',
-        'warning': '#d29922',
+        'warning': colors.warning,
         'warning-bg': 'rgba(210, 153, 34, 0.15)',
-        'danger': '#f85149',
+        'danger': colors.danger,
         'danger-bg': 'rgba(248, 81, 73, 0.1)',
         // Borders
-        'border': '#30363d',
+        'border': colors.border,
       },
       spacing: {
         'safe-bottom': 'env(safe-area-inset-bottom)',

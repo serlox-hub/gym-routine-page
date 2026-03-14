@@ -613,7 +613,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] **2.6 Páginas grandes** — Landing.jsx (718→21), Home.jsx (419→89), HomeScreen RN (401→98). Extraídas secciones con estado propio a components/Landing/ y components/Home/.
 
 ### Sprint 3 — Sistema de Diseño
-- [ ] 3.1 Duplicación de tokens de color
+- [x] **3.1 Tokens de color unificados** — `styles.js` es la fuente única, `tailwind.config.js` importa de ahí. 277 hex hardcodeados pendientes de migrar incrementalmente.
 - [ ] 3.2 Primitivos UI faltantes
 - [ ] 3.3 Responsive para desktop
 
