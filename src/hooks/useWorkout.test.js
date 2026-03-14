@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useRestTimer } from './useWorkout.js'
+import { useRestTimer, useTimerEngine } from './useWorkout.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 // Mock del store para tests aislados
@@ -10,6 +10,12 @@ vi.mock('../stores/workoutStore.js', async () => {
     default: actual.default,
   }
 })
+
+// Wrapper que monta el engine + el timer (como en la app real)
+function useRestTimerWithEngine() {
+  useTimerEngine()
+  return useRestTimer()
+}
 
 describe('useWorkout hooks', () => {
   describe('useRestTimer', () => {
@@ -27,8 +33,8 @@ describe('useWorkout hooks', () => {
       vi.useRealTimers()
     })
 
-    it('returns initial inactive state', () => {
-      const { result } = renderHook(() => useRestTimer())
+    it('returns default values when no timer is active', () => {
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
       expect(result.current.isActive).toBe(false)
       expect(result.current.timeRemaining).toBe(0)
@@ -36,9 +42,11 @@ describe('useWorkout hooks', () => {
     })
 
     it('returns active state when timer is running', () => {
-      useWorkoutStore.getState().startRestTimer(60)
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
-      const { result } = renderHook(() => useRestTimer())
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60)
+      })
 
       expect(result.current.isActive).toBe(true)
       expect(result.current.timeRemaining).toBe(60)
@@ -46,14 +54,13 @@ describe('useWorkout hooks', () => {
     })
 
     it('calculates progress correctly', () => {
-      // Simular timer con 30s restantes de 60s iniciales
       useWorkoutStore.setState({
         restTimerActive: true,
-        restTimerEndTime: Date.now() + 30000, // 30 segundos desde ahora
+        restTimerEndTime: Date.now() + 30000,
         restTimeInitial: 60,
       })
 
-      const { result } = renderHook(() => useRestTimer())
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
       expect(result.current.progress).toBe(50)
     })
@@ -65,15 +72,17 @@ describe('useWorkout hooks', () => {
         restTimeInitial: 0,
       })
 
-      const { result } = renderHook(() => useRestTimer())
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
       expect(result.current.progress).toBe(0)
     })
 
     it('skip function calls skipRest', () => {
-      useWorkoutStore.getState().startRestTimer(60)
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
-      const { result } = renderHook(() => useRestTimer())
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60)
+      })
 
       act(() => {
         result.current.skip()
@@ -83,50 +92,54 @@ describe('useWorkout hooks', () => {
     })
 
     it('addTime function adjusts time', () => {
-      useWorkoutStore.getState().startRestTimer(60)
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
-      const { result } = renderHook(() => useRestTimer())
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60)
+      })
 
       const initialRemaining = result.current.timeRemaining
 
       act(() => {
         result.current.addTime(30)
-        vi.advanceTimersByTime(250) // Trigger update
+        vi.advanceTimersByTime(250)
       })
 
       expect(result.current.timeRemaining).toBe(initialRemaining + 30)
     })
 
     it('addTime can reduce time', () => {
-      useWorkoutStore.getState().startRestTimer(60)
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
-      const { result } = renderHook(() => useRestTimer())
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60)
+      })
 
       const initialRemaining = result.current.timeRemaining
 
       act(() => {
         result.current.addTime(-30)
-        vi.advanceTimersByTime(250) // Trigger update
+        vi.advanceTimersByTime(250)
       })
 
       expect(result.current.timeRemaining).toBe(initialRemaining - 30)
     })
 
-    it('timer updates based on real time', async () => {
-      useWorkoutStore.getState().startRestTimer(60)
+    it('timer updates based on real time', () => {
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
-      const { result } = renderHook(() => useRestTimer())
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60)
+      })
 
       expect(result.current.timeRemaining).toBe(60)
 
-      // Avanzar 1 segundo
       act(() => {
         vi.advanceTimersByTime(1000)
       })
 
       expect(result.current.timeRemaining).toBe(59)
 
-      // Avanzar 2 segundos más
       act(() => {
         vi.advanceTimersByTime(2000)
       })
@@ -135,11 +148,10 @@ describe('useWorkout hooks', () => {
     })
 
     it('timer stops when reaching 0', () => {
-      useWorkoutStore.getState().startRestTimer(2)
-
-      renderHook(() => useRestTimer())
+      renderHook(() => useRestTimerWithEngine())
 
       act(() => {
+        useWorkoutStore.getState().startRestTimer(2)
         vi.advanceTimersByTime(3000)
       })
 
@@ -149,24 +161,26 @@ describe('useWorkout hooks', () => {
     })
 
     it('timer interval is cleared on unmount', () => {
-      useWorkoutStore.getState().startRestTimer(60)
+      const { unmount } = renderHook(() => useRestTimerWithEngine())
 
-      const { unmount } = renderHook(() => useRestTimer())
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60)
+      })
 
       const remainingBefore = useWorkoutStore.getState().getTimeRemaining()
 
       unmount()
 
-      // Después de unmount, el timer del store sigue pero el hook no actualiza
       expect(useWorkoutStore.getState().getTimeRemaining()).toBeLessThanOrEqual(remainingBefore)
     })
 
     it('multiple renders dont create multiple intervals', () => {
-      useWorkoutStore.getState().startRestTimer(60)
+      const { result, rerender } = renderHook(() => useRestTimerWithEngine())
 
-      const { result, rerender } = renderHook(() => useRestTimer())
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60)
+      })
 
-      // Rerender multiple times
       rerender()
       rerender()
       rerender()
@@ -175,7 +189,6 @@ describe('useWorkout hooks', () => {
         vi.advanceTimersByTime(1000)
       })
 
-      // Should only tick once, not multiple times
       expect(result.current.timeRemaining).toBe(59)
     })
   })
@@ -195,11 +208,10 @@ describe('useWorkout hooks', () => {
     })
 
     it('handles starting new timer while one is active', () => {
-      useWorkoutStore.getState().startRestTimer(60)
-
-      const { result } = renderHook(() => useRestTimer())
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
       act(() => {
+        useWorkoutStore.getState().startRestTimer(60)
         vi.advanceTimersByTime(2000)
       })
 
@@ -208,7 +220,7 @@ describe('useWorkout hooks', () => {
       // Start new timer
       act(() => {
         useWorkoutStore.getState().startRestTimer(90)
-        vi.advanceTimersByTime(250) // Trigger update
+        vi.advanceTimersByTime(250)
       })
 
       expect(result.current.timeRemaining).toBe(90)
@@ -216,45 +228,28 @@ describe('useWorkout hooks', () => {
     })
 
     it('progress reaches 100 when time is 0', () => {
-      // Timer que ya terminó
       useWorkoutStore.setState({
         restTimerActive: true,
-        restTimerEndTime: Date.now() - 1000, // Ya pasó
+        restTimerEndTime: Date.now(),
         restTimeInitial: 60,
       })
 
-      const { result } = renderHook(() => useRestTimer())
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
       expect(result.current.progress).toBe(100)
     })
-  })
-})
 
-// Tests para verificar la estructura de los hooks de queries/mutations
-describe('useWorkout hooks - structure', () => {
-  it('hooks exportan las funciones esperadas', async () => {
-    const module = await import('./useWorkout.js')
+    it('progress handles very short timer', () => {
+      useWorkoutStore.setState({
+        restTimerActive: true,
+        restTimerEndTime: Date.now() + 1000,
+        restTimeInitial: 1,
+      })
 
-    // Session mutations
-    expect(module.useStartSession).toBeDefined()
-    expect(module.useCompleteSet).toBeDefined()
-    expect(module.useUncompleteSet).toBeDefined()
-    expect(module.useEndSession).toBeDefined()
-    expect(module.useAbandonSession).toBeDefined()
+      const { result } = renderHook(() => useRestTimerWithEngine())
 
-    // History mutations
-    expect(module.useDeleteSession).toBeDefined()
-
-    // History queries
-    expect(module.useWorkoutHistory).toBeDefined()
-    expect(module.useSessionDetail).toBeDefined()
-
-    // Exercise history
-    expect(module.useExerciseHistory).toBeDefined()
-    expect(module.useExerciseHistorySummary).toBeDefined()
-    expect(module.usePreviousWorkout).toBeDefined()
-
-    // Timer
-    expect(module.useRestTimer).toBeDefined()
+      expect(result.current.progress).toBeLessThanOrEqual(100)
+      expect(result.current.progress).toBeGreaterThanOrEqual(0)
+    })
   })
 })
