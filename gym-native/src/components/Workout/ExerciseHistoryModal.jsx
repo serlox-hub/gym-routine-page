@@ -147,7 +147,41 @@ export default function ExerciseHistoryModal({
     <Modal isOpen={isOpen} onClose={onClose} position="bottom">
       {/* Header */}
       <View className="p-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
-        <Text className="font-bold text-primary mb-3">{exerciseName}</Text>
+        <View className="flex-row items-center gap-2 mb-3">
+          <Text className="font-bold text-primary flex-1" numberOfLines={1}>{exerciseName}</Text>
+          {routineDayId && (
+            <View className="flex-row rounded-full p-0.5" style={{ backgroundColor: colors.bgTertiary }}>
+              <Pressable
+                onPress={() => setScope('day')}
+                className="px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: scope === 'day' ? 'rgba(63, 185, 80, 0.2)' : 'transparent',
+                }}
+              >
+                <Text
+                  className="text-xs font-medium"
+                  style={{ color: scope === 'day' ? colors.success : colors.textSecondary }}
+                >
+                  Rutina
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setScope('global')}
+                className="px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: scope === 'global' ? 'rgba(139, 148, 158, 0.2)' : 'transparent',
+                }}
+              >
+                <Text
+                  className="text-xs font-medium"
+                  style={{ color: scope === 'global' ? colors.textPrimary : colors.textSecondary }}
+                >
+                  Global
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
 
         {/* Tabs */}
         <View className="flex-row p-1 rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
@@ -176,40 +210,6 @@ export default function ExerciseHistoryModal({
             </Text>
           </Pressable>
         </View>
-
-        {/* Scope selector */}
-        {routineDayId && (
-          <View className="flex-row gap-2 mt-2">
-            <Pressable
-              onPress={() => setScope('day')}
-              className="px-3 py-1 rounded"
-              style={{
-                backgroundColor: scope === 'day' ? 'rgba(63, 185, 80, 0.15)' : colors.bgTertiary,
-              }}
-            >
-              <Text
-                className="text-xs font-medium"
-                style={{ color: scope === 'day' ? colors.success : colors.textSecondary }}
-              >
-                Esta rutina
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setScope('global')}
-              className="px-3 py-1 rounded"
-              style={{
-                backgroundColor: scope === 'global' ? 'rgba(139, 148, 158, 0.15)' : colors.bgTertiary,
-              }}
-            >
-              <Text
-                className="text-xs font-medium"
-                style={{ color: scope === 'global' ? colors.textPrimary : colors.textSecondary }}
-              >
-                Todas
-              </Text>
-            </Pressable>
-          </View>
-        )}
       </View>
 
       {/* Content */}

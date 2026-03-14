@@ -65,14 +65,41 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
         style={{ borderBottom: `1px solid ${colors.border}` }}
       >
         <div className="flex justify-between items-center mb-3">
-          <div>
-            <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <h3 className="font-bold truncate" style={{ color: colors.textPrimary }}>
               {exerciseName}
             </h3>
+            {routineDayId && (
+              <div
+                className="shrink-0 flex rounded-full p-0.5"
+                style={{ backgroundColor: colors.bgTertiary }}
+              >
+                <button
+                  onClick={() => setScope(SCOPE.DAY)}
+                  className="px-2 py-0.5 rounded-full text-xs font-medium transition-colors"
+                  style={{
+                    backgroundColor: scope === SCOPE.DAY ? 'rgba(63, 185, 80, 0.2)' : 'transparent',
+                    color: scope === SCOPE.DAY ? colors.success : colors.textSecondary,
+                  }}
+                >
+                  Rutina
+                </button>
+                <button
+                  onClick={() => setScope(SCOPE.GLOBAL)}
+                  className="px-2 py-0.5 rounded-full text-xs font-medium transition-colors"
+                  style={{
+                    backgroundColor: scope === SCOPE.GLOBAL ? 'rgba(139, 148, 158, 0.2)' : 'transparent',
+                    color: scope === SCOPE.GLOBAL ? colors.textPrimary : colors.textSecondary,
+                  }}
+                >
+                  Global
+                </button>
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:opacity-80"
+            className="shrink-0 p-2 rounded-lg hover:opacity-80"
             style={buttonSecondaryStyle}
           >
             <X size={20} style={{ color: colors.textSecondary }} />
@@ -111,32 +138,6 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
             Historial
           </button>
         </div>
-
-        {/* Scope selector - solo si hay routineDayId */}
-        {routineDayId && (
-          <div className="flex gap-2 mt-2">
-            <button
-              onClick={() => setScope(SCOPE.DAY)}
-              className="px-3 py-1 rounded text-xs font-medium transition-colors"
-              style={{
-                backgroundColor: scope === SCOPE.DAY ? 'rgba(63, 185, 80, 0.15)' : '#21262d',
-                color: scope === SCOPE.DAY ? colors.success : colors.textSecondary,
-              }}
-            >
-              Esta rutina
-            </button>
-            <button
-              onClick={() => setScope(SCOPE.GLOBAL)}
-              className="px-3 py-1 rounded text-xs font-medium transition-colors"
-              style={{
-                backgroundColor: scope === SCOPE.GLOBAL ? 'rgba(139, 148, 158, 0.15)' : '#21262d',
-                color: scope === SCOPE.GLOBAL ? colors.textPrimary : colors.textSecondary,
-              }}
-            >
-              Todas
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Content */}

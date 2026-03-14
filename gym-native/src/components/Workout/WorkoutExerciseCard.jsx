@@ -89,6 +89,7 @@ function WorkoutExerciseCard({
   const distanceUnit = exercise.distance_unit || 'm'
   const exerciseKey = sessionExerciseId || id
 
+  const routineDayId = useWorkoutStore(state => state.routineDayId)
   const setsCount = useWorkoutStore(state => state.exerciseSetCounts[exerciseKey] ?? series)
   const setExerciseSetCount = useWorkoutStore(state => state.setExerciseSetCount)
   const completedCount = useWorkoutStore(state => {
@@ -221,7 +222,7 @@ function WorkoutExerciseCard({
         weightUnit={weightUnit}
         timeUnit={timeUnit}
         distanceUnit={distanceUnit}
-        routineDayId={routine_exercise?.routine_day_id}
+        routineDayId={routineDayId}
       />
 
       <ConfirmModal
