@@ -5,7 +5,7 @@ import { Card, Badge, ConfirmModal, DropdownMenu, ReorderModal } from '../ui'
 import SetRow from './SetRow'
 import PreviousWorkout from './PreviousWorkout'
 import ExerciseHistoryModal from './ExerciseHistoryModal'
-import ReplaceExerciseModal from './ReplaceExerciseModal'
+import { ExercisePickerModal } from '../Routine'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
@@ -241,11 +241,12 @@ function WorkoutExerciseCard({
         onCancel={() => setShowRemoveConfirm(false)}
       />
 
-      <ReplaceExerciseModal
+      <ExercisePickerModal
         isOpen={showReplace}
         onClose={() => setShowReplace(false)}
-        exerciseName={exercise.name}
-        muscleGroupId={exercise.muscle_group?.id}
+        title="Sustituir ejercicio"
+        subtitle={`Sustituyendo: ${exercise.name}`}
+        initialMuscleGroup={exercise.muscle_group?.id}
         onSelect={(newExercise) => {
           setShowReplace(false)
           onReplace(exerciseKey, newExercise.id)

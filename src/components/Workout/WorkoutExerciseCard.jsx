@@ -4,7 +4,7 @@ import { Card, Badge, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
 import PreviousWorkout from './PreviousWorkout.jsx'
 import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
-import ReplaceExerciseModal from './ReplaceExerciseModal.jsx'
+import ExercisePickerModal from '../Routine/ExercisePickerModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
@@ -204,11 +204,12 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         routineDayId={routineDayId}
       />
 
-      <ReplaceExerciseModal
+      <ExercisePickerModal
         isOpen={showReplace}
         onClose={() => setShowReplace(false)}
-        exerciseName={exercise.name}
-        muscleGroupId={exercise.muscle_group?.id}
+        title="Sustituir ejercicio"
+        subtitle={`Sustituyendo: ${exercise.name}`}
+        initialMuscleGroup={exercise.muscle_group?.id}
         onSelect={(newExercise) => {
           setShowReplace(false)
           onReplace(exerciseKey, newExercise.id)

@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useCreateExercise } from '../../hooks/useExercises.js'
 import { Modal, Button } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import ExerciseForm from '../Exercise/ExerciseForm.jsx'
-import ExerciseSearchList from '../Routine/ExerciseSearchList.jsx'
+import ExerciseSearchList from './ExerciseSearchList.jsx'
 
-export default function ReplaceExerciseModal({
+export default function ExercisePickerModal({
   isOpen,
   onClose,
-  exerciseName,
-  muscleGroupId,
   onSelect,
+  title = 'Seleccionar ejercicio',
+  subtitle,
+  initialMuscleGroup,
+  existingExerciseIds,
 }) {
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -18,11 +20,12 @@ export default function ReplaceExerciseModal({
   const { data: muscleGroups } = useMuscleGroups()
   const createExercise = useCreateExercise()
 
-  const handleClose = () => {
-    setIsCreatingNew(false)
-    setSearchTerm('')
-    onClose()
-  }
+  useEffect(() => {
+    if (isOpen) {
+      setIsCreatingNew(false)
+      setSearchTerm('')
+    }
+  }, [isOpen])
 
   const handleCreateExercise = async (exerciseData, muscleGroupId) => {
     const newExercise = await createExercise.mutateAsync({ exercise: exerciseData, muscleGroupId })
@@ -32,12 +35,12 @@ export default function ReplaceExerciseModal({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={handleClose}
+      onClose={onClose}
       maxWidth="max-w-md"
       className="p-6 max-h-[85vh] flex flex-col"
     >
       <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-        {isCreatingNew ? 'Nuevo ejercicio' : 'Sustituir ejercicio'}
+        {isCreatingNew ? 'Nuevo ejercicio' : title}
       </h3>
 
       {isCreatingNew ? (
@@ -56,21 +59,22 @@ export default function ReplaceExerciseModal({
         </>
       ) : (
         <>
-          <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-            Sustituyendo: <strong style={{ color: colors.textPrimary }}>{exerciseName}</strong>
-          </p>
+          {subtitle && (
+            <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>{subtitle}</p>
+          )}
           <ExerciseSearchList
             exercises={exercises}
             muscleGroups={muscleGroups}
             isLoading={isLoading}
             onSelect={onSelect}
-            initialMuscleGroup={muscleGroupId}
+            initialMuscleGroup={initialMuscleGroup}
+            existingExerciseIds={existingExerciseIds}
             search={searchTerm}
             onSearchChange={setSearchTerm}
           />
           <div className="flex gap-2 pt-3 mt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
             <Button onClick={() => setIsCreatingNew(true)} className="flex-1">Crear nuevo</Button>
-            <Button variant="secondary" onClick={handleClose}>Cancelar</Button>
+            <Button variant="secondary" onClick={onClose}>Cancelar</Button>
           </div>
         </>
       )}

@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useCreateExercise } from '../../hooks/useExercises'
 import { Modal, Button } from '../ui'
 import ExerciseForm from '../Exercise/ExerciseForm'
-import { ExerciseSearchList } from '../Routine'
+import ExerciseSearchList from './ExerciseSearchList'
 
-export default function ReplaceExerciseModal({
+export default function ExercisePickerModal({
   isOpen,
   onClose,
-  exerciseName,
-  muscleGroupId,
   onSelect,
+  title = 'Seleccionar ejercicio',
+  subtitle,
+  initialMuscleGroup,
+  existingExerciseIds,
 }) {
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -18,11 +20,12 @@ export default function ReplaceExerciseModal({
   const { data: muscleGroups } = useMuscleGroups()
   const createExercise = useCreateExercise()
 
-  const handleClose = () => {
-    setIsCreatingNew(false)
-    setSearchTerm('')
-    onClose()
-  }
+  useEffect(() => {
+    if (isOpen) {
+      setIsCreatingNew(false)
+      setSearchTerm('')
+    }
+  }, [isOpen])
 
   const handleCreateExercise = async (exerciseData, muscleGroupId) => {
     const newExercise = await createExercise.mutateAsync({ exercise: exerciseData, muscleGroupId })
@@ -30,9 +33,9 @@ export default function ReplaceExerciseModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} className="p-6" position="bottom">
+    <Modal isOpen={isOpen} onClose={onClose} className="p-6" position="bottom">
       <Text className="text-primary text-lg font-semibold mb-4">
-        {isCreatingNew ? 'Nuevo ejercicio' : 'Sustituir ejercicio'}
+        {isCreatingNew ? 'Nuevo ejercicio' : title}
       </Text>
 
       {isCreatingNew ? (
@@ -59,21 +62,22 @@ export default function ReplaceExerciseModal({
         </>
       ) : (
         <>
-          <Text className="text-secondary text-sm mb-3">
-            Sustituyendo: <Text className="text-primary font-semibold">{exerciseName}</Text>
-          </Text>
+          {subtitle && (
+            <Text className="text-secondary text-sm mb-3">{subtitle}</Text>
+          )}
           <ExerciseSearchList
             exercises={exercises}
             muscleGroups={muscleGroups}
             isLoading={isLoading}
             onSelect={onSelect}
-            initialMuscleGroup={muscleGroupId}
+            initialMuscleGroup={initialMuscleGroup}
+            existingExerciseIds={existingExerciseIds}
             search={searchTerm}
             onSearchChange={setSearchTerm}
           />
           <View className="flex-row gap-2 pt-3 mt-3 border-t border-border">
             <Button onPress={() => setIsCreatingNew(true)} className="flex-1">Crear nuevo</Button>
-            <Button variant="secondary" onPress={handleClose}>Cancelar</Button>
+            <Button variant="secondary" onPress={onClose}>Cancelar</Button>
           </View>
         </>
       )}
