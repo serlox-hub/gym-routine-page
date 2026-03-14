@@ -495,7 +495,7 @@ export function useDuplicateRoutineExercise() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ routineExercise, dayId }) => {
+    mutationFn: async ({ routineExercise, dayId: _dayId }) => {
       const blockId = routineExercise.routine_block_id
 
       const { data: maxOrderExercises } = await supabase
@@ -538,7 +538,7 @@ export function useMoveRoutineExerciseToDay() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ routineExercise, sourceDayId, targetDayId, esCalentamiento = false }) => {
+    mutationFn: async ({ routineExercise, sourceDayId: _sourceDayId, targetDayId, esCalentamiento = false }) => {
       const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
 
       const { data: existingBlock, error: blockFetchError } = await supabase

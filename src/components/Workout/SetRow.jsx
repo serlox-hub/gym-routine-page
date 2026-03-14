@@ -65,7 +65,7 @@ function SetRow({
       if (previousSet.level != null) setLevel(previousSet.level)
       if (previousSet.paceSeconds != null) setPace(previousSet.paceSeconds)
     }
-  }, [previousSet, setData, cachedData])
+  }, [previousSet, setData, cachedData, distanceUnit])
 
   const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace })
 
