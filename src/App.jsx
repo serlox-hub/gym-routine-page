@@ -22,7 +22,7 @@ import ForgotPassword from './pages/ForgotPassword.jsx'
 import ResetPassword from './pages/ResetPassword.jsx'
 import { ActiveSessionBanner } from './components/ui/index.js'
 import { useAuth } from './hooks/useAuth.js'
-import { useRestoreActiveSession } from './hooks/useWorkout.js'
+import { useRestoreActiveSession, useSyncPendingSets } from './hooks/useWorkout.js'
 
 function HomeOrLanding() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -57,6 +57,7 @@ function PasswordRecoveryRedirect({ children }) {
 
 function SessionRestorer() {
   useRestoreActiveSession()
+  useSyncPendingSets()
   return null
 }
 

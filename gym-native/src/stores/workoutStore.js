@@ -15,6 +15,8 @@ const useWorkoutStore = create(
       completedSets: {},
       cachedSetData: {},
       exerciseSetCounts: {},
+      // Sets pending sync (failed to save to server)
+      pendingSets: {},
 
       // Workout screen visibility
       workoutVisible: false,
@@ -35,6 +37,7 @@ const useWorkoutStore = create(
         completedSets: {},
         cachedSetData: {},
         exerciseSetCounts: {},
+        pendingSets: {},
         workoutVisible: true,
       }),
 
@@ -56,6 +59,7 @@ const useWorkoutStore = create(
         completedSets: {},
         cachedSetData: {},
         exerciseSetCounts: {},
+        pendingSets: {},
         workoutVisible: false,
       }),
 
@@ -164,6 +168,18 @@ const useWorkoutStore = create(
           completedSets: restCompleted,
           cachedSetData: restCached,
         }
+      }),
+
+      addPendingSet: (sessionExerciseId, setNumber, payload) => set(state => ({
+        pendingSets: {
+          ...state.pendingSets,
+          [`${sessionExerciseId}-${setNumber}`]: payload,
+        },
+      })),
+
+      removePendingSet: (sessionExerciseId, setNumber) => set(state => {
+        const { [`${sessionExerciseId}-${setNumber}`]: _, ...rest } = state.pendingSets
+        return { pendingSets: rest }
       }),
 
       hasActiveSession: () => {

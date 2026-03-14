@@ -18,6 +18,9 @@ const useWorkoutStore = create(
       // Current set count per exercise (for tracking added/removed sets)
       // Key: sessionExerciseId -> number of sets
       exerciseSetCounts: {},
+      // Sets pending sync (failed to save to server)
+      // Key: `${sessionExerciseId}-${setNumber}` -> mutation payload
+      pendingSets: {},
 
       // Rest timer state
       restTimerActive: false,
@@ -35,6 +38,7 @@ const useWorkoutStore = create(
         completedSets: {},
         cachedSetData: {},
         exerciseSetCounts: {},
+        pendingSets: {},
       }),
 
       // Restore session from backend
@@ -56,6 +60,7 @@ const useWorkoutStore = create(
         completedSets: {},
         cachedSetData: {},
         exerciseSetCounts: {},
+        pendingSets: {},
       }),
 
       // Mark a set as completed (optimistic update)
@@ -173,6 +178,20 @@ const useWorkoutStore = create(
           completedSets: restCompleted,
           cachedSetData: restCached,
         }
+      }),
+
+      // Add a set to the pending sync queue
+      addPendingSet: (sessionExerciseId, setNumber, payload) => set(state => ({
+        pendingSets: {
+          ...state.pendingSets,
+          [`${sessionExerciseId}-${setNumber}`]: payload,
+        },
+      })),
+
+      // Remove a set from the pending sync queue
+      removePendingSet: (sessionExerciseId, setNumber) => set(state => {
+        const { [`${sessionExerciseId}-${setNumber}`]: _, ...rest } = state.pendingSets
+        return { pendingSets: rest }
       }),
 
       // Check if session is active

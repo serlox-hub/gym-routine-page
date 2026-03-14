@@ -1,6 +1,6 @@
 import { View } from 'react-native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { useRestoreActiveSession } from '../hooks/useWorkout'
+import { useRestoreActiveSession, useSyncPendingSets } from '../hooks/useWorkout'
 import HomeScreen from '../screens/HomeScreen'
 import RoutineDetailScreen from '../screens/RoutineDetailScreen'
 import NewRoutineScreen from '../screens/NewRoutineScreen'
@@ -25,6 +25,7 @@ const screenOptions = {
 
 export default function AppStack() {
   useRestoreActiveSession()
+  useSyncPendingSets()
 
   return (
     <View style={{ flex: 1 }}>
