@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { Info, Plus, Trash2, ArrowUpDown, Repeat2 } from 'lucide-react'
 import { Card, Badge, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetRow from './SetRow.jsx'
@@ -19,7 +19,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
-  const [manualExpand, setManualExpand] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   // Determinar tipo de medición del ejercicio
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
@@ -55,10 +55,17 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   }, [completedSets, exerciseKey])
 
   const isCompleted = completedCount === setsCount && setsCount > 0
-  const isCollapsed = isCompleted && !manualExpand
+  const prevCompletedRef = useRef(isCompleted)
 
   useEffect(() => {
-    if (isCompleted) setManualExpand(false)
+    if (isCompleted && !prevCompletedRef.current) {
+      const timer = setTimeout(() => setCollapsed(true), 1000)
+      return () => clearTimeout(timer)
+    }
+    if (!isCompleted && prevCompletedRef.current) {
+      setCollapsed(false)
+    }
+    prevCompletedRef.current = isCompleted
   }, [isCompleted])
 
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
@@ -83,21 +90,25 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
     )
   }
 
+  const justCompleted = isCompleted && !collapsed
+
   // Si está dentro de un superset, no usar Card (ya tiene contenedor)
   const Wrapper = isSuperset ? 'div' : Card
+  const baseStyle = isSuperset ? {} : getMuscleGroupBorderStyle(exercise.muscle_group?.name)
   const wrapperProps = isSuperset
-    ? {}
-    : { className: 'p-4', style: getMuscleGroupBorderStyle(exercise.muscle_group?.name) }
+    ? { style: justCompleted ? { backgroundColor: 'rgba(63, 185, 80, 0.08)' } : undefined }
+    : { className: 'p-4', style: { ...baseStyle, ...(justCompleted ? { backgroundColor: 'rgba(63, 185, 80, 0.08)' } : {}) } }
 
   return (
     <Wrapper {...wrapperProps}>
       <div
         className="flex justify-between items-start gap-2"
-        onClick={isCollapsed ? () => setManualExpand(true) : undefined}
-        style={isCollapsed ? { cursor: 'pointer' } : undefined}
+        onClick={() => setCollapsed(c => !c)}
+        style={{ cursor: 'pointer' }}
       >
+        <span className="text-xs" style={{ color: colors.textSecondary }}>{collapsed ? '▶' : '▼'}</span>
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium" style={isCollapsed ? { opacity: 0.7 } : undefined}>{exercise.name}</h4>
+          <h4 className="font-medium" style={collapsed ? { opacity: 0.7 } : undefined}>{exercise.name}</h4>
         </div>
         <div className="flex items-center gap-1.5">
           <span
@@ -109,7 +120,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
           >
             {completedCount}/{setsCount}
           </span>
-          {!isCollapsed && (
+          {!collapsed && (
             <DropdownMenu
               triggerSize={16}
               items={[
@@ -136,7 +147,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         </div>
       </div>
 
-      {!isCollapsed && (
+      {!collapsed && (
         <>
           <div className="my-3 pt-3 border-t border-border flex flex-wrap items-center gap-2">
             <Badge variant="accent">{series}×{reps}</Badge>

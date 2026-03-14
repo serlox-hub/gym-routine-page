@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useEffect } from 'react'
+import { memo, useState, useEffect, useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { Info, Plus, Trash2, ArrowUpDown, Repeat2 } from 'lucide-react-native'
 import { Card, Badge, ConfirmModal, DropdownMenu, ReorderModal } from '../ui'
@@ -85,7 +85,7 @@ function WorkoutExerciseCard({
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
   const [showReorder, setShowReorder] = useState(false)
-  const [manualExpand, setManualExpand] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
   const weightUnit = exercise.weight_unit || 'kg'
@@ -119,11 +119,19 @@ function WorkoutExerciseCard({
   }
 
   const isCompleted = completedCount === setsCount && setsCount > 0
-  const isCollapsed = isCompleted && !manualExpand
+  const prevCompletedRef = useRef(isCompleted)
 
-  // Colapsar automáticamente cuando se completa
+  // Auto-colapsar 1s después de completar todas las series
   useEffect(() => {
-    if (isCompleted) setManualExpand(false)
+    if (isCompleted && !prevCompletedRef.current) {
+      const timer = setTimeout(() => setCollapsed(true), 1000)
+      return () => clearTimeout(timer)
+    }
+    // Auto-expandir si se descompleta una serie
+    if (!isCompleted && prevCompletedRef.current) {
+      setCollapsed(false)
+    }
+    prevCompletedRef.current = isCompleted
   }, [isCompleted])
 
   const menuItems = [
@@ -139,11 +147,12 @@ function WorkoutExerciseCard({
   const content = (
     <>
       <Pressable
-        onPress={isCollapsed ? () => setManualExpand(true) : undefined}
+        onPress={() => setCollapsed(c => !c)}
         className="flex-row justify-between items-start gap-2"
       >
+        <Text className="text-xs" style={{ color: colors.textSecondary }}>{collapsed ? '▶' : '▼'}</Text>
         <View className="flex-1">
-          <Text className="text-primary font-medium" style={isCollapsed ? { opacity: 0.7 } : undefined}>{exercise.name}</Text>
+          <Text className="text-primary font-medium" style={collapsed ? { opacity: 0.7 } : undefined}>{exercise.name}</Text>
         </View>
         <View className="flex-row items-center gap-1.5">
           <View
@@ -159,11 +168,11 @@ function WorkoutExerciseCard({
               {completedCount}/{setsCount}
             </Text>
           </View>
-          {!isCollapsed && <DropdownMenu triggerSize={16} items={menuItems} />}
+          {!collapsed && <DropdownMenu triggerSize={16} items={menuItems} />}
         </View>
       </Pressable>
 
-      {!isCollapsed && (
+      {!collapsed && (
         <>
           <View className="my-3 pt-3 flex-row flex-wrap items-center gap-2" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
             <Badge variant="accent">{series}×{reps}</Badge>
@@ -282,12 +291,18 @@ function WorkoutExerciseCard({
     </>
   )
 
+  const justCompleted = isCompleted && !collapsed
+  const cardStyle = {
+    ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
+    ...(justCompleted ? { backgroundColor: 'rgba(63, 185, 80, 0.08)' } : {}),
+  }
+
   if (isSuperset) {
-    return <View>{content}</View>
+    return <View style={justCompleted ? { backgroundColor: 'rgba(63, 185, 80, 0.08)' } : undefined}>{content}</View>
   }
 
   return (
-    <Card className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
+    <Card className="p-4" style={cardStyle}>
       {content}
     </Card>
   )
