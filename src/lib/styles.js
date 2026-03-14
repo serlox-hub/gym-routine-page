@@ -3,21 +3,31 @@ export const colors = {
   // Fondos
   bgPrimary: '#0d1117',
   bgSecondary: '#161b22',
+  bgAlt: '#1c2128',
   bgTertiary: '#21262d',
+  bgHover: 'rgba(255, 255, 255, 0.05)',
   border: '#30363d',
 
   // Texto
   textPrimary: '#e6edf3',
   textSecondary: '#8b949e',
+  textMuted: '#6e7681',
 
   // Acentos
   accent: '#58a6ff',
+  accentHover: '#79b8ff',
   success: '#3fb950',
   warning: '#d29922',
   danger: '#f85149',
   purple: '#a371f7',
   teal: '#88c6be',
   pink: '#db61a2',
+
+  // Fondos semánticos (alpha)
+  purpleBg: 'rgba(163, 113, 247, 0.15)',
+  successBg: 'rgba(63, 185, 80, 0.15)',
+  warningBg: 'rgba(210, 153, 34, 0.15)',
+  dangerBg: 'rgba(248, 81, 73, 0.1)',
 }
 
 // Estilos reutilizables para elementos de formulario

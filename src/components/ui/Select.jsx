@@ -9,7 +9,7 @@ function Select({ label, error, children, className = '', ...props }) {
         </label>
       )}
       <select
-        className="w-full px-3 py-2 rounded-lg text-sm appearance-none focus:outline-none transition-colors"
+        className="w-full px-3 py-2 rounded-lg text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
         style={selectStyle}
         {...props}
       >

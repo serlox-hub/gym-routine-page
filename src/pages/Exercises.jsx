@@ -117,6 +117,7 @@ function Exercises() {
 
       <BottomActions
         primary={{ label: 'Nuevo', onClick: handleCreate }}
+        maxWidth="max-w-4xl"
       />
     </div>
   )

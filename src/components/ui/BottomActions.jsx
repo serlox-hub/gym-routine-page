@@ -4,6 +4,7 @@ function BottomActions({
   primary,
   secondary,
   center,
+  maxWidth = 'max-w-2xl',
 }) {
   const hasSecondary = !!secondary
 
@@ -12,7 +13,7 @@ function BottomActions({
       className="fixed bottom-0 left-0 right-0 p-4"
       style={{ backgroundColor: colors.bgPrimary, borderTop: `1px solid ${colors.border}` }}
     >
-      <div className={`max-w-2xl mx-auto ${hasSecondary ? 'flex gap-3 items-center' : ''}`}>
+      <div className={`${maxWidth} mx-auto ${hasSecondary ? 'flex gap-3 items-center' : ''}`}>
         {secondary && (
           <button
             onClick={secondary.onClick}
