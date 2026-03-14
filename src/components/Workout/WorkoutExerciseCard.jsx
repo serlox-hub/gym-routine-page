@@ -19,6 +19,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
+  const [manualExpand, setManualExpand] = useState(false)
 
   // Determinar tipo de medición del ejercicio
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
@@ -53,6 +54,13 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       .length
   }, [completedSets, exerciseKey])
 
+  const isCompleted = completedCount === setsCount && setsCount > 0
+  const isCollapsed = isCompleted && !manualExpand
+
+  useEffect(() => {
+    if (isCompleted) setManualExpand(false)
+  }, [isCompleted])
+
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
 
   const removeSet = () => {
@@ -83,114 +91,124 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   return (
     <Wrapper {...wrapperProps}>
-      <div className="flex justify-between items-start gap-2">
+      <div
+        className="flex justify-between items-start gap-2"
+        onClick={isCollapsed ? () => setManualExpand(true) : undefined}
+        style={isCollapsed ? { cursor: 'pointer' } : undefined}
+      >
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium">{exercise.name}</h4>
+          <h4 className="font-medium" style={isCollapsed ? { opacity: 0.7 } : undefined}>{exercise.name}</h4>
         </div>
         <div className="flex items-center gap-1.5">
           <span
             className="text-sm font-medium px-2 py-0.5 rounded"
             style={{
-              backgroundColor: completedCount === setsCount ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
-              color: completedCount === setsCount ? colors.success : colors.accent,
+              backgroundColor: isCompleted ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
+              color: isCompleted ? colors.success : colors.accent,
             }}
           >
             {completedCount}/{setsCount}
           </span>
-          <DropdownMenu
-            triggerSize={16}
-            items={[
-              { label: 'Ver historial', icon: Info, onClick: () => setShowHistory(true) },
-              { label: 'Añadir serie', icon: Plus, onClick: addSet },
-              onReplace && { label: 'Sustituir', icon: Repeat2, onClick: () => setShowReplace(true) },
-              onReorderToPosition && totalExercises > 1 && { type: 'separator' },
-              onReorderToPosition && totalExercises > 1 && {
-                icon: ArrowUpDown,
-                label: 'Reordenar',
-                disabled: isReordering,
-                children: Array.from({ length: totalExercises }, (_, i) => ({
-                  label: `${i + 1}. ${positionLabels[i] || ''}`,
-                  onClick: () => onReorderToPosition(i),
-                  active: i === currentIndex,
-                  disabled: i === currentIndex || isReordering,
-                })),
-              },
-              onRemove && { type: 'separator' },
-              onRemove && { label: 'Quitar ejercicio', icon: Trash2, onClick: () => setShowRemoveConfirm(true), danger: true },
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="my-3 pt-3 border-t border-border flex flex-wrap items-center gap-2">
-        <Badge variant="accent">{series}×{reps}</Badge>
-        {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
-        {tempo && <Badge variant="default">{tempo}</Badge>}
-        {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
-        {(exercise.instructions || notes || tempoRazon) && (
-          <button
-            onClick={() => setShowNotes(!showNotes)}
-            className="text-xs px-2 py-1 rounded transition-colors"
-            style={{
-              backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : '#21262d',
-              color: showNotes ? '#88c6be' : '#8b949e',
-            }}
-          >
-            {showNotes ? '▲ Ocultar notas' : '▼ Ver notas'}
-          </button>
-        )}
-      </div>
-
-      {showNotes && (exercise.instructions || notes || tempoRazon) && (
-        <div
-          className="mb-3 p-3 rounded text-sm space-y-2"
-          style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
-        >
-          {exercise.instructions && (
-            <p style={{ color: '#e6edf3' }}>
-              <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
-            </p>
-          )}
-          {tempoRazon && (
-            <p style={{ color: '#e6edf3' }}>
-              <span style={{ color: colors.purple }}>Tempo:</span> {tempoRazon}
-            </p>
-          )}
-          {notes && (
-            <p style={{ color: '#e6edf3' }}>
-              <span style={{ color: colors.warning }}>Nota:</span> {notes}
-            </p>
-          )}
-        </div>
-      )}
-
-      <div className="mb-3">
-        <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} timeUnit={timeUnit} distanceUnit={distanceUnit} />
-      </div>
-
-      <div className="space-y-2">
-        {Array.from({ length: setsCount }, (_, i) => {
-          const previousSet = previousWorkout?.sets?.find(s => s.setNumber === i + 1)
-          return (
-            <SetRow
-              key={i + 1}
-              setNumber={i + 1}
-              sessionExerciseId={exerciseKey}
-              exerciseId={exercise.id}
-              measurementType={measurementType}
-              weightUnit={weightUnit}
-              timeUnit={timeUnit}
-              distanceUnit={distanceUnit}
-              descansoSeg={rest_seconds}
-              previousSet={previousSet}
-              onComplete={onCompleteSet}
-              onUncomplete={onUncompleteSet}
-              canRemove={setsCount > 0}
-              onRemove={removeSet}
+          {!isCollapsed && (
+            <DropdownMenu
+              triggerSize={16}
+              items={[
+                { label: 'Ver historial', icon: Info, onClick: () => setShowHistory(true) },
+                { label: 'Añadir serie', icon: Plus, onClick: addSet },
+                onReplace && { label: 'Sustituir', icon: Repeat2, onClick: () => setShowReplace(true) },
+                onReorderToPosition && totalExercises > 1 && { type: 'separator' },
+                onReorderToPosition && totalExercises > 1 && {
+                  icon: ArrowUpDown,
+                  label: 'Reordenar',
+                  disabled: isReordering,
+                  children: Array.from({ length: totalExercises }, (_, i) => ({
+                    label: `${i + 1}. ${positionLabels[i] || ''}`,
+                    onClick: () => onReorderToPosition(i),
+                    active: i === currentIndex,
+                    disabled: i === currentIndex || isReordering,
+                  })),
+                },
+                onRemove && { type: 'separator' },
+                onRemove && { label: 'Quitar ejercicio', icon: Trash2, onClick: () => setShowRemoveConfirm(true), danger: true },
+              ]}
             />
-          )
-        })}
+          )}
+        </div>
       </div>
+
+      {!isCollapsed && (
+        <>
+          <div className="my-3 pt-3 border-t border-border flex flex-wrap items-center gap-2">
+            <Badge variant="accent">{series}×{reps}</Badge>
+            {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
+            {tempo && <Badge variant="default">{tempo}</Badge>}
+            {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
+            {(exercise.instructions || notes || tempoRazon) && (
+              <button
+                onClick={() => setShowNotes(!showNotes)}
+                className="text-xs px-2 py-1 rounded transition-colors"
+                style={{
+                  backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : '#21262d',
+                  color: showNotes ? '#88c6be' : '#8b949e',
+                }}
+              >
+                {showNotes ? '▲ Ocultar notas' : '▼ Ver notas'}
+              </button>
+            )}
+          </div>
+
+          {showNotes && (exercise.instructions || notes || tempoRazon) && (
+            <div
+              className="mb-3 p-3 rounded text-sm space-y-2"
+              style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
+            >
+              {exercise.instructions && (
+                <p style={{ color: '#e6edf3' }}>
+                  <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
+                </p>
+              )}
+              {tempoRazon && (
+                <p style={{ color: '#e6edf3' }}>
+                  <span style={{ color: colors.purple }}>Tempo:</span> {tempoRazon}
+                </p>
+              )}
+              {notes && (
+                <p style={{ color: '#e6edf3' }}>
+                  <span style={{ color: colors.warning }}>Nota:</span> {notes}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="mb-3">
+            <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+          </div>
+
+          <div className="space-y-2">
+            {Array.from({ length: setsCount }, (_, i) => {
+              const previousSet = previousWorkout?.sets?.find(s => s.setNumber === i + 1)
+              return (
+                <SetRow
+                  key={i + 1}
+                  setNumber={i + 1}
+                  sessionExerciseId={exerciseKey}
+                  exerciseId={exercise.id}
+                  measurementType={measurementType}
+                  weightUnit={weightUnit}
+                  timeUnit={timeUnit}
+                  distanceUnit={distanceUnit}
+                  descansoSeg={rest_seconds}
+                  previousSet={previousSet}
+                  onComplete={onCompleteSet}
+                  onUncomplete={onUncompleteSet}
+                  canRemove={setsCount > 0}
+                  onRemove={removeSet}
+                />
+              )
+            })}
+          </div>
+        </>
+      )}
 
       <ExerciseHistoryModal
         isOpen={showHistory}

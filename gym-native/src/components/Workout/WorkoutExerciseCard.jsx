@@ -85,6 +85,7 @@ function WorkoutExerciseCard({
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
   const [showReorder, setShowReorder] = useState(false)
+  const [manualExpand, setManualExpand] = useState(false)
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
   const weightUnit = exercise.weight_unit || 'kg'
@@ -117,6 +118,14 @@ function WorkoutExerciseCard({
     return <WarmupExerciseCard exercise={exercise} series={series} reps={reps} tempo={tempo} notes={notes} rest_seconds={rest_seconds} />
   }
 
+  const isCompleted = completedCount === setsCount && setsCount > 0
+  const isCollapsed = isCompleted && !manualExpand
+
+  // Colapsar automáticamente cuando se completa
+  useEffect(() => {
+    if (isCompleted) setManualExpand(false)
+  }, [isCompleted])
+
   const menuItems = [
     { label: 'Ver historial', icon: Info, onPress: () => setShowHistory(true) },
     { label: 'Añadir serie', icon: Plus, onPress: addSet },
@@ -129,93 +138,100 @@ function WorkoutExerciseCard({
 
   const content = (
     <>
-      <View className="flex-row justify-between items-start gap-2">
+      <Pressable
+        onPress={isCollapsed ? () => setManualExpand(true) : undefined}
+        className="flex-row justify-between items-start gap-2"
+      >
         <View className="flex-1">
-          <Text className="text-primary font-medium">{exercise.name}</Text>
+          <Text className="text-primary font-medium" style={isCollapsed ? { opacity: 0.7 } : undefined}>{exercise.name}</Text>
         </View>
         <View className="flex-row items-center gap-1.5">
           <View
             className="px-2 py-0.5 rounded"
             style={{
-              backgroundColor: completedCount === setsCount ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
+              backgroundColor: isCompleted ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
             }}
           >
             <Text
               className="text-sm font-medium"
-              style={{ color: completedCount === setsCount ? colors.success : colors.accent }}
+              style={{ color: isCompleted ? colors.success : colors.accent }}
             >
               {completedCount}/{setsCount}
             </Text>
           </View>
-          <DropdownMenu triggerSize={16} items={menuItems} />
+          {!isCollapsed && <DropdownMenu triggerSize={16} items={menuItems} />}
         </View>
-      </View>
+      </Pressable>
 
-      <View className="my-3 pt-3 flex-row flex-wrap items-center gap-2" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
-        <Badge variant="accent">{series}×{reps}</Badge>
-        {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
-        {tempo && <Badge variant="default">{tempo}</Badge>}
-        {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
-        {(exercise.instructions || notes || tempoRazon) && (
-          <Pressable
-            onPress={() => setShowNotes(!showNotes)}
-            className="px-2 py-1 rounded active:opacity-70"
-            style={{ backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary }}
-          >
-            <Text className="text-xs" style={{ color: showNotes ? '#88c6be' : colors.textSecondary }}>
-              {showNotes ? '▲ Ocultar notas' : '▼ Ver notas'}
-            </Text>
-          </Pressable>
-        )}
-      </View>
+      {!isCollapsed && (
+        <>
+          <View className="my-3 pt-3 flex-row flex-wrap items-center gap-2" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Badge variant="accent">{series}×{reps}</Badge>
+            {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
+            {tempo && <Badge variant="default">{tempo}</Badge>}
+            {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
+            {(exercise.instructions || notes || tempoRazon) && (
+              <Pressable
+                onPress={() => setShowNotes(!showNotes)}
+                className="px-2 py-1 rounded active:opacity-70"
+                style={{ backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary }}
+              >
+                <Text className="text-xs" style={{ color: showNotes ? '#88c6be' : colors.textSecondary }}>
+                  {showNotes ? '▲ Ocultar notas' : '▼ Ver notas'}
+                </Text>
+              </Pressable>
+            )}
+          </View>
 
-      {showNotes && (exercise.instructions || notes || tempoRazon) && (
-        <View className="mb-3 p-3 rounded gap-2" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
-          {exercise.instructions && (
-            <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.accent }}>Ejecución: </Text>{exercise.instructions}
-            </Text>
+          {showNotes && (exercise.instructions || notes || tempoRazon) && (
+            <View className="mb-3 p-3 rounded gap-2" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
+              {exercise.instructions && (
+                <Text className="text-sm" style={{ color: colors.textPrimary }}>
+                  <Text style={{ color: colors.accent }}>Ejecución: </Text>{exercise.instructions}
+                </Text>
+              )}
+              {tempoRazon && (
+                <Text className="text-sm" style={{ color: colors.textPrimary }}>
+                  <Text style={{ color: colors.purple }}>Tempo: </Text>{tempoRazon}
+                </Text>
+              )}
+              {notes && (
+                <Text className="text-sm" style={{ color: colors.textPrimary }}>
+                  <Text style={{ color: colors.warning }}>Nota: </Text>{notes}
+                </Text>
+              )}
+            </View>
           )}
-          {tempoRazon && (
-            <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.purple }}>Tempo: </Text>{tempoRazon}
-            </Text>
-          )}
-          {notes && (
-            <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.warning }}>Nota: </Text>{notes}
-            </Text>
-          )}
-        </View>
+
+          <View className="mb-3">
+            <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+          </View>
+
+          <View className="gap-2">
+            {Array.from({ length: setsCount }, (_, i) => {
+              const previousSet = previousWorkout?.sets?.find(s => s.setNumber === i + 1)
+              return (
+                <SetRow
+                  key={i + 1}
+                  setNumber={i + 1}
+                  sessionExerciseId={exerciseKey}
+                  exerciseId={exercise.id}
+                  measurementType={measurementType}
+                  weightUnit={weightUnit}
+                  timeUnit={timeUnit}
+                  distanceUnit={distanceUnit}
+                  descansoSeg={rest_seconds}
+                  previousSet={previousSet}
+                  onComplete={onCompleteSet}
+                  onUncomplete={onUncompleteSet}
+                  canRemove={setsCount > 0}
+                  onRemove={removeSet}
+                />
+              )
+            })}
+          </View>
+        </>
       )}
-
-      <View className="mb-3">
-        <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} timeUnit={timeUnit} distanceUnit={distanceUnit} />
-      </View>
-
-      <View className="gap-2">
-        {Array.from({ length: setsCount }, (_, i) => {
-          const previousSet = previousWorkout?.sets?.find(s => s.setNumber === i + 1)
-          return (
-            <SetRow
-              key={i + 1}
-              setNumber={i + 1}
-              sessionExerciseId={exerciseKey}
-              exerciseId={exercise.id}
-              measurementType={measurementType}
-              weightUnit={weightUnit}
-              timeUnit={timeUnit}
-              distanceUnit={distanceUnit}
-              descansoSeg={rest_seconds}
-              previousSet={previousSet}
-              onComplete={onCompleteSet}
-              onUncomplete={onUncompleteSet}
-              canRemove={setsCount > 0}
-              onRemove={removeSet}
-            />
-          )
-        })}
-      </View>
 
       <ExerciseHistoryModal
         isOpen={showHistory}
