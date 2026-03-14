@@ -1,4 +1,5 @@
 import { Modal as RNModal, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function Modal({
   isOpen,
@@ -7,6 +8,8 @@ export default function Modal({
   position = 'center',
   className = '',
 }) {
+  const insets = useSafeAreaInsets()
+
   if (!isOpen) return null
 
   const isBottom = position === 'bottom'
@@ -25,12 +28,15 @@ export default function Modal({
         <Pressable
           onPress={onClose}
           className={`flex-1 ${isBottom ? 'justify-end' : 'justify-center items-center p-4'}`}
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', paddingTop: insets.top }}
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
             className={`bg-surface-card border border-border ${isBottom ? 'w-full rounded-t-2xl' : 'w-full rounded-lg'} ${className}`}
-            style={{ maxWidth: isBottom ? undefined : 400 }}
+            style={{
+              maxWidth: isBottom ? undefined : 400,
+              maxHeight: isBottom ? '90%' : undefined,
+            }}
           >
             {children}
           </Pressable>
