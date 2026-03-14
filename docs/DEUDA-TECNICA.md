@@ -602,7 +602,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] **1.2 RLS con JOINs anidados (rendimiento)** — Desnormalizado `user_id` en `routine_blocks` y `routine_exercises`. Migración `017_denormalize_user_id_rls.sql`. Triggers BEFORE INSERT/UPDATE propagan user_id automáticamente. RLS simplificado a `user_id = auth.uid()` sin JOINs. EXPLAIN ANALYZE: Index Scan 0.060ms/0.099ms.
 - [x] **1.3 Índices compuestos** — Migración `015_add_composite_indexes.sql`. Añadidos `(user_id, started_at DESC)` y `(user_id, status)` en `workout_sessions`. EXPLAIN ANALYZE: 0.129ms con Index Scan.
 - [x] **1.4 Paginación en historial** — `useWorkoutHistory` ahora filtra por mes visible (`.gte`/`.lte` por fecha), con cache por mes en TanStack Query. `useLatestBodyMeasurements` limitado a 100 registros. `useExerciseHistory` ya tenía `.limit(50)`. Aplicado en web y RN.
-- [ ] 1.5 Soft delete inconsistente
+- [x] **1.5 Soft delete inconsistente** — Decisión: Opción C. Solo `exercises` necesita soft delete (referenciados en sesiones pasadas). Rutinas/días/bloques se eliminan con CASCADE sin impacto en historial. Documentado en CLAUDE.md.
 
 ### Sprint 2 — Arquitectura de Código
 - [ ] 2.1 Partir useWorkout.js (1090 líneas)

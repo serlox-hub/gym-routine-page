@@ -144,6 +144,11 @@ Key relations:
 - `routine_exercises` → Exercise config in a routine (series, reps, tempo, notas)
 - `completed_sets` → Actual performed sets with weight/reps
 
+Deletion strategy:
+- `exercises` → Soft delete (`deleted_at`). Necesario porque sesiones pasadas referencian ejercicios.
+- `routines`, `routine_days`, `routine_blocks` → Hard delete con CASCADE. No hay historial que las referencie directamente (las sesiones guardan copia de nombres).
+- `routine_exercises` → Hard delete con CASCADE desde routine_blocks.
+
 ## Git Commits
 - Spanish commit messages
 - One feature/fix per commit
