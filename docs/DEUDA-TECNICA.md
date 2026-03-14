@@ -609,7 +609,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] **2.2 Timer global con side effects** — Encapsulado en `useTimerEngine` hook con refs y cleanup. Sin variables globales mutables ni suscripciones al importar. Web y RN.
 - [x] **2.3 Error Boundary** — Creado en web y RN. Montado envolviendo `<App />`. Muestra pantalla de fallback con reintentar.
 - [x] **2.4 Code splitting** — Lazy loading de 18 páginas + vendor chunks (react, query, supabase). Bundle inicial ~260KB (antes 1,217KB).
-- [ ] 2.5 Supabase directo en hooks (sin capa API)
+- [x] **2.5 Capa API** — 7 archivos en `src/lib/api/` con funciones puras async. Hooks ya no importan supabase (excepto useAuth). Compartible con RN.
 - [x] **2.6 Páginas grandes** — Landing.jsx (718→21), Home.jsx (419→89), HomeScreen RN (401→98). Extraídas secciones con estado propio a components/Landing/ y components/Home/.
 
 ### Sprint 3 — Sistema de Diseño
