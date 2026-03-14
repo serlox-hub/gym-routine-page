@@ -26,8 +26,6 @@ export default function ExerciseProgressChart({ sessions, measurementType }) {
     [sessions, measurementType]
   )
 
-  if (chartData.length < 2) return null
-
   const { dataKey, color, label } = TAB_CONFIG[activeTab]
   const lineData = chartData.map(d => ({
     value: d[dataKey] || 0,
@@ -35,7 +33,9 @@ export default function ExerciseProgressChart({ sessions, measurementType }) {
     dataPointText: undefined,
   }))
 
-  const values = lineData.map(d => d.value).filter(v => v > 0)
+  if (lineData.length < 2) return null
+
+  const values = lineData.map(d => d.value)
   const minVal = Math.min(...values)
   const maxVal = Math.max(...values)
   const yPadding = Math.max(Math.round((maxVal - minVal) * 0.15), 1)
