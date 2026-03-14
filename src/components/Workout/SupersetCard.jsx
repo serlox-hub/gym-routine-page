@@ -5,7 +5,7 @@ import { colors } from '../../lib/styles.js'
 import { formatSupersetLabel } from '../../lib/supersetUtils.js'
 import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
 
-function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, getReorderProps }) {
+function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, onReplace, getReorderProps }) {
   const supersetLabel = formatSupersetLabel(supersetId)
 
   return (
@@ -52,6 +52,7 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
               onCompleteSet={onCompleteSet}
               onUncompleteSet={onUncompleteSet}
               onRemove={onRemove}
+              onReplace={onReplace}
               reorderProps={getReorderProps?.(sessionExercise) || {}}
             />
           </div>
@@ -61,13 +62,14 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
   )
 }
 
-function SupersetExerciseItem({ sessionExercise, isLast, onCompleteSet, onUncompleteSet, onRemove, reorderProps }) {
+function SupersetExerciseItem({ sessionExercise, isLast, onCompleteSet, onUncompleteSet, onRemove, onReplace, reorderProps }) {
   return (
     <WorkoutExerciseCard
       sessionExercise={sessionExercise}
       onCompleteSet={onCompleteSet}
       onUncompleteSet={onUncompleteSet}
       onRemove={onRemove}
+      onReplace={onReplace}
       isSuperset={true}
       isLastInSuperset={isLast}
       {...reorderProps}

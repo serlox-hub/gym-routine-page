@@ -5,7 +5,7 @@ import { colors } from '../../lib/styles.js'
 import { countExercisesInBlock } from '../../lib/supersetUtils.js'
 import { getReorderProps } from '../../lib/arrayUtils.js'
 
-function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, flatExercises = [], onReorder, isReordering = false }) {
+function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false }) {
   const positionLabels = flatExercises.map(e => e.exercise.name)
   const getExerciseReorderProps = (exercise) => ({
     ...getReorderProps(flatExercises, exercise, onReorder),
@@ -54,6 +54,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onCompleteSet={onCompleteSet}
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}
+                      onReplace={onReplace}
                       isWarmup={block.isWarmup}
                       {...getExerciseReorderProps(group.exercise)}
                     />
@@ -68,6 +69,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onCompleteSet={onCompleteSet}
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}
+                      onReplace={onReplace}
                       getReorderProps={getExerciseReorderProps}
                     />
                   )

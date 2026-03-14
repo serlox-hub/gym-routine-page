@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
   useSessionExercises, useAddSessionExercise, useRemoveSessionExercise,
-  useReorderSessionExercises, useWakeLock,
+  useReplaceSessionExercise, useReorderSessionExercises, useWakeLock,
 } from '../../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui'
 import RestTimer from './RestTimer'
@@ -41,6 +41,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
   const abandonSessionMutation = useAbandonSession()
   const addSessionExerciseMutation = useAddSessionExercise()
   const removeSessionExerciseMutation = useRemoveSessionExercise()
+  const replaceSessionExerciseMutation = useReplaceSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
 
   const { exercisesByBlock, flatExercises } = useMemo(
@@ -73,6 +74,9 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
     },
     onRemove: (sessionExerciseId) => {
       removeSessionExerciseMutation.mutate(sessionExerciseId)
+    },
+    onReplace: (sessionExerciseId, newExerciseId) => {
+      replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExerciseId })
     },
     onReorder: (currentIndex, newIndex) => {
       if (currentIndex === newIndex) return
@@ -163,6 +167,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute 
               onCompleteSet={handlers.onCompleteSet}
               onUncompleteSet={handlers.onUncompleteSet}
               onRemove={handlers.onRemove}
+              onReplace={handlers.onReplace}
               flatExercises={flatExercises}
               onReorder={handlers.onReorder}
               isReordering={reorderSessionExercisesMutation.isPending}

@@ -8,6 +8,7 @@ import {
   useSessionExercises,
   useAddSessionExercise,
   useRemoveSessionExercise,
+  useReplaceSessionExercise,
   useReorderSessionExercises,
   useWakeLock,
 } from '../../hooks/useWorkout.js'
@@ -48,6 +49,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const abandonSessionMutation = useAbandonSession()
   const addSessionExerciseMutation = useAddSessionExercise()
   const removeSessionExerciseMutation = useRemoveSessionExercise()
+  const replaceSessionExerciseMutation = useReplaceSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
 
   const { exercisesByBlock, flatExercises } = useMemo(
@@ -137,6 +139,10 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     removeSessionExerciseMutation.mutate(sessionExerciseId)
   }
 
+  const handleReplaceExercise = (sessionExerciseId, newExerciseId) => {
+    replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExerciseId })
+  }
+
   const handleReorderExercise = (currentIndex, newIndex) => {
     if (currentIndex === newIndex) return
 
@@ -188,6 +194,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             onCompleteSet={handleCompleteSet}
             onUncompleteSet={handleUncompleteSet}
             onRemove={handleRemoveExercise}
+            onReplace={handleReplaceExercise}
             flatExercises={flatExercises}
             onReorder={handleReorderExercise}
             isReordering={reorderSessionExercisesMutation.isPending}

@@ -588,6 +588,39 @@ export function useAddSessionExercise() {
   })
 }
 
+export function useReplaceSessionExercise() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+  const clearExercise = useWorkoutStore(state => state.clearExercise)
+
+  return useMutation({
+    mutationFn: async ({ sessionExerciseId, newExerciseId }) => {
+      // Eliminar series completadas del ejercicio anterior
+      await supabase
+        .from('completed_sets')
+        .delete()
+        .eq('session_id', sessionId)
+        .eq('session_exercise_id', sessionExerciseId)
+
+      // Actualizar el exercise_id
+      const { data, error } = await supabase
+        .from('session_exercises')
+        .update({ exercise_id: newExerciseId })
+        .eq('id', sessionExerciseId)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: (_, { sessionExerciseId }) => {
+      clearExercise(sessionExerciseId)
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+    },
+  })
+}
+
 export function useRemoveSessionExercise() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)

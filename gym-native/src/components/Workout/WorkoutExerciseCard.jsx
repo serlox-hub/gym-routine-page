@@ -1,10 +1,11 @@
 import { memo, useMemo, useState, useEffect } from 'react'
 import { View, Text, Pressable } from 'react-native'
-import { Info, Plus, Trash2, ArrowUpDown } from 'lucide-react-native'
+import { Info, Plus, Trash2, ArrowUpDown, Repeat2 } from 'lucide-react-native'
 import { Card, Badge, ConfirmModal, DropdownMenu, ReorderModal } from '../ui'
 import SetRow from './SetRow'
 import PreviousWorkout from './PreviousWorkout'
 import ExerciseHistoryModal from './ExerciseHistoryModal'
+import ReplaceExerciseModal from './ReplaceExerciseModal'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
@@ -69,6 +70,7 @@ function WorkoutExerciseCard({
   onUncompleteSet,
   isWarmup = false,
   onRemove,
+  onReplace,
   isSuperset = false,
   onReorder,
   currentIndex = 0,
@@ -81,6 +83,7 @@ function WorkoutExerciseCard({
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  const [showReplace, setShowReplace] = useState(false)
   const [showReorder, setShowReorder] = useState(false)
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
@@ -117,6 +120,7 @@ function WorkoutExerciseCard({
   const menuItems = [
     { label: 'Ver historial', icon: Info, onPress: () => setShowHistory(true) },
     { label: 'Añadir serie', icon: Plus, onPress: addSet },
+    onReplace && { label: 'Sustituir', icon: Repeat2, onPress: () => setShowReplace(true) },
     onReorder && totalExercises > 1 && { type: 'separator' },
     onReorder && totalExercises > 1 && { label: 'Reordenar', icon: ArrowUpDown, onPress: () => setShowReorder(true), disabled: isReordering },
     onRemove && { type: 'separator' },
@@ -235,6 +239,17 @@ function WorkoutExerciseCard({
           onRemove(exerciseKey)
         }}
         onCancel={() => setShowRemoveConfirm(false)}
+      />
+
+      <ReplaceExerciseModal
+        isOpen={showReplace}
+        onClose={() => setShowReplace(false)}
+        exerciseName={exercise.name}
+        muscleGroupId={exercise.muscle_group?.id}
+        onSelect={(newExercise) => {
+          setShowReplace(false)
+          onReplace(exerciseKey, newExercise.id)
+        }}
       />
 
       {showReorder && (

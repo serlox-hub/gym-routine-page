@@ -7,7 +7,7 @@ import { colors } from '../../lib/styles'
 import { countExercisesInBlock } from '../../lib/supersetUtils'
 import { findExerciseIndex } from '../../lib/arrayUtils'
 
-function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, flatExercises = [], onReorder, isReordering = false }) {
+function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false }) {
   const totalFlat = flatExercises.length
   const positionLabels = flatExercises.map(e => e.exercise?.name)
 
@@ -53,6 +53,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onCompleteSet={onCompleteSet}
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}
+                      onReplace={onReplace}
                       isWarmup={block.isWarmup}
                       onReorder={onReorder}
                       currentIndex={findExerciseIndex(flatExercises, group.exercise)}
@@ -70,6 +71,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                     onCompleteSet={onCompleteSet}
                     onUncompleteSet={onUncompleteSet}
                     onRemove={onRemove}
+                    onReplace={onReplace}
                   />
                 )
               })}
