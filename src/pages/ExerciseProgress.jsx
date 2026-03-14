@@ -25,7 +25,7 @@ function ExerciseProgress() {
   const stats = calculateExerciseStats(summarySessions, measurementType)
 
   return (
-    <div className="p-4 max-w-2xl mx-auto pb-24">
+    <div className="p-4 max-w-4xl mx-auto pb-24">
       <PageHeader title={exercise.name} onBack={() => history.back()} />
 
       {/* Stats */}

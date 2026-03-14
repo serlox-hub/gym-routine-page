@@ -80,7 +80,7 @@ function AdminUsers() {
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
+    <div className="p-4 max-w-4xl mx-auto">
       <PageHeader title="Gestión de usuarios" backTo="/" />
 
       <div className="space-y-3">

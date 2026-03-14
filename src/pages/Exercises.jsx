@@ -50,7 +50,7 @@ function Exercises() {
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto pb-24">
+    <div className="p-4 max-w-4xl mx-auto pb-24">
       <PageHeader title="Ejercicios" backTo="/" />
 
       <ExerciseSearchBar
