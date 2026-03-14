@@ -96,6 +96,7 @@ function ExerciseProgressChart({ sessions, measurementType }) {
             <YAxis
               tick={{ fontSize: 10, fill: '#8b949e' }}
               stroke="#30363d"
+              domain={['dataMin', 'auto']}
             />
             <Tooltip
               contentStyle={{
