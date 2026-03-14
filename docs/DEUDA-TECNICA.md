@@ -599,7 +599,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 
 ### Sprint 1 — Seguridad y Base de Datos
 - [x] **1.1 Fuga de datos en useExerciseStats** — Resuelto: se eliminaron políticas RLS permisivas `"Allow all for anon" USING (true)` en producción que anulaban las políticas restrictivas. Migración `014_remove_permissive_anon_policies.sql`. Verificado con curl: 0 filas accesibles sin auth.
-- [ ] 1.2 RLS con JOINs anidados (rendimiento) — Desnormalizar `user_id` en `routine_blocks` y `routine_exercises`
+- [x] **1.2 RLS con JOINs anidados (rendimiento)** — Desnormalizado `user_id` en `routine_blocks` y `routine_exercises`. Migración `017_denormalize_user_id_rls.sql`. Triggers BEFORE INSERT/UPDATE propagan user_id automáticamente. RLS simplificado a `user_id = auth.uid()` sin JOINs. EXPLAIN ANALYZE: Index Scan 0.060ms/0.099ms.
 - [x] **1.3 Índices compuestos** — Migración `015_add_composite_indexes.sql`. Añadidos `(user_id, started_at DESC)` y `(user_id, status)` en `workout_sessions`. EXPLAIN ANALYZE: 0.129ms con Index Scan.
 - [x] **1.4 Paginación en historial** — `useWorkoutHistory` ahora filtra por mes visible (`.gte`/`.lte` por fecha), con cache por mes en TanStack Query. `useLatestBodyMeasurements` limitado a 100 registros. `useExerciseHistory` ya tenía `.limit(50)`. Aplicado en web y RN.
 - [ ] 1.5 Soft delete inconsistente
@@ -628,7 +628,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 ### Sprint 1
 - [x] Políticas RLS permisivas eliminadas — verificado con curl (anon y autenticado devuelven 0 filas)
 - [x] App funciona con normalidad tras el fix — verificado manualmente
-- [ ] RLS simplificado — `EXPLAIN ANALYZE` muestra Index Scan, no Seq Scan
+- [x] RLS simplificado — `EXPLAIN ANALYZE` muestra Index Scan (0.060ms routine_blocks, 0.099ms routine_exercises)
 - [x] Índices compuestos creados — verificado con EXPLAIN ANALYZE (0.129ms, Index Scan)
 - [x] Historial paginado por mes — query filtrada por rango de fechas, cache por mes
 
