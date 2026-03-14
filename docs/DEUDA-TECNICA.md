@@ -614,7 +614,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 
 ### Sprint 3 — Sistema de Diseño
 - [x] **3.1 Tokens de color unificados** — `styles.js` es la fuente única, `tailwind.config.js` importa de ahí. 277 hex hardcodeados pendientes de migrar incrementalmente.
-- [ ] 3.2 Primitivos UI faltantes
+- [x] **3.2 Primitivos UI** — Creados `Input`, `Select`, `Textarea` en `components/ui/`. Migración incremental de 36 inputs, 4 selects, 9 textareas existentes.
 - [ ] 3.3 Responsive para desktop
 
 ### Sprint 4 — Código Compartido Web / React Native
