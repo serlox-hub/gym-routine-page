@@ -27,6 +27,9 @@ export * from './api/preferencesApi.js'
 export * from './api/adminApi.js'
 export { initApi } from './api/_client.js'
 
+// QueryClient
+export { queryClient } from './lib/queryClient.js'
+
 // Store factories
 export { createWorkoutStore, workoutStoreState } from './stores/createWorkoutStore.js'
 export { createAuthStore } from './stores/createAuthStore.js'

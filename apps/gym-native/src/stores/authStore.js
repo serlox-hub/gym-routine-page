@@ -1,8 +1,7 @@
 import { Platform } from 'react-native'
 import { GoogleSignin, isSuccessResponse, statusCodes } from '@react-native-google-signin/google-signin'
 import { supabase } from '../lib/supabase'
-import { queryClient } from '../lib/queryClient'
-import { createAuthStore } from '@gym/shared'
+import { createAuthStore, queryClient } from '@gym/shared'
 import useWorkoutStore from './workoutStore'
 
 const useAuthStore = createAuthStore(supabase, {
