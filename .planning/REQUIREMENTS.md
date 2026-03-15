@@ -47,8 +47,8 @@
 
 ### DX / Cleanup
 
-- [ ] **DX-01**: `QUERY_KEYS` and domain constants shared in `packages/shared` (text diff reconciled)
-- [ ] **DX-02**: `queryClient.js` config shared in `packages/shared`
+- [x] **DX-01**: `QUERY_KEYS` and domain constants shared in `packages/shared` (text diff reconciled)
+- [x] **DX-02**: `queryClient.js` config shared in `packages/shared`
 - [ ] **DX-03**: Shared ESLint config package in `packages/eslint-config`
 - [ ] **DX-04**: Zero duplicated files remain between web and RN (except platform-specific exclusions)
 
@@ -101,8 +101,8 @@
 | HOOK-02 | Phase 5 | Complete |
 | HOOK-03 | Phase 5 | Complete |
 | HOOK-04 | Phase 5 | Complete |
-| DX-01 | Phase 6 | Pending |
-| DX-02 | Phase 6 | Pending |
+| DX-01 | Phase 6 | Complete |
+| DX-02 | Phase 6 | Complete |
 | DX-03 | Phase 6 | Pending |
 | DX-04 | Phase 6 | Pending |
 

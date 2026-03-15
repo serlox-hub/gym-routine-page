@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-15T20:42:54.015Z"
-last_activity: 2026-03-15 — Completed plan 05-02 (app hook rewiring with re-exports from @gym/shared)
+stopped_at: Phase 6 context gathered
+last_updated: "2026-03-15T22:16:46.426Z"
+last_activity: 2026-03-15 — Completed plan 06-01 (shared queryClient + rename constants stubs)
 progress:
   total_phases: 6
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  completed_phases: 5
+  total_plans: 16
+  completed_plans: 14
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** Un solo lugar para cada pieza de logica de negocio — un cambio en un archivo se refleja en ambas plataformas sin intervencion manual.
-**Current focus:** Phase 5 — Hooks migration to packages/shared
+**Current focus:** Phase 6 — DX cleanup
 
 ## Current Position
 
-Phase: 5 of 6 (Hooks Migration)
-Plan: 2 of 2 in current phase
+Phase: 6 of 6 (DX Cleanup)
+Plan: 1 of 3 in current phase
 Status: In Progress
-Last activity: 2026-03-15 — Completed plan 05-02 (app hook rewiring with re-exports from @gym/shared)
+Last activity: 2026-03-15 — Completed plan 06-01 (shared queryClient + rename constants stubs)
 
-Progress: [██████████] 100%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 04 P02 | 1min | 2 tasks | 5 files |
 | Phase 05-01 P01 | 3min | 2 tasks | 13 files |
 | Phase 05-02 P02 | 4min | 3 tasks | 22 files |
+| Phase 06-01 P01 | 1min | 2 tasks | 20 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,7 @@ Recent decisions affecting current work:
 - [Phase 05-02]: RN useSessionExercises.js kept local -- uses addSessionExercise (RN-specific API) and optimistic reorder
 - [Phase 05-02]: initStores/initNotifications called at module level in entry files, after initApi
 - [Phase 05-02]: Test files need initStores() call for shared hook compatibility
+- [Phase 06-01]: queryClient identical in both apps, moved to shared as-is
 
 ### Pending Todos
 
@@ -113,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T20:48:43Z
-Stopped at: Completed 05-02-PLAN.md
-Resume file: .planning/phases/05-hooks-migration/05-02-SUMMARY.md
+Last session: 2026-03-15T22:16:13Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: .planning/phases/06-dx-cleanup/06-01-SUMMARY.md
