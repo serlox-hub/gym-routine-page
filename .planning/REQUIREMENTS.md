@@ -50,7 +50,7 @@
 - [x] **DX-01**: `QUERY_KEYS` and domain constants shared in `packages/shared` (text diff reconciled)
 - [x] **DX-02**: `queryClient.js` config shared in `packages/shared`
 - [x] **DX-03**: Shared ESLint config package in `packages/eslint-config`
-- [ ] **DX-04**: Zero duplicated files remain between web and RN (except platform-specific exclusions)
+- [x] **DX-04**: Zero duplicated files remain between web and RN (except platform-specific exclusions)
 
 ## v2 Requirements
 
@@ -104,7 +104,7 @@
 | DX-01 | Phase 6 | Complete |
 | DX-02 | Phase 6 | Complete |
 | DX-03 | Phase 6 | Complete |
-| DX-04 | Phase 6 | Pending |
+| DX-04 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 29 total

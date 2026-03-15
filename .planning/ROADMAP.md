@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: API Layer Migration** - Move 7 API files to `packages/shared`, refactor RN from inline queries to shared API functions (completed 2026-03-15)
 - [x] **Phase 4: Store Factories** - Extract Zustand stores to injectable factory functions, each platform provides its own storage adapter (completed 2026-03-15)
 - [x] **Phase 5: Hooks Migration** - Share TanStack Query hooks with thin platform wrapper hooks in each app (completed 2026-03-15)
-- [ ] **Phase 6: DX Cleanup** - Shared constants, queryClient, ESLint config, zero duplicated files remain
+- [x] **Phase 6: DX Cleanup** - Shared constants, queryClient, ESLint config, zero duplicated files remain (completed 2026-03-15)
 
 ## Phase Details
 
@@ -111,7 +111,7 @@ Plans:
   2. `queryClient.js` config is shared in `packages/shared` with no duplicated copy
   3. A shared ESLint config package exists in `packages/eslint-config` and is extended by both apps
   4. A file audit confirms zero duplicated files between web and RN (excluding declared platform-specific files)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 06-01-PLAN.md — Share queryClient in packages/shared, rename constants.js stubs to muscleGroupStyles.js
@@ -130,4 +130,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. API Layer Migration | 3/4 | Complete    | 2026-03-15 |
 | 4. Store Factories | 1/2 | Complete    | 2026-03-15 |
 | 5. Hooks Migration | 2/2 | Complete    | 2026-03-15 |
-| 6. DX Cleanup | 2/3 | In Progress|  |
+| 6. DX Cleanup | 3/3 | Complete   | 2026-03-15 |
