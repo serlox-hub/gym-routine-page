@@ -3,7 +3,7 @@ import { Card } from '../ui/index.js'
 import WorkoutExerciseCard from './WorkoutExerciseCard.jsx'
 import { colors } from '../../lib/styles.js'
 import { formatSupersetLabel } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
+import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, onReplace, getReorderProps }) {
   const supersetLabel = formatSupersetLabel(supersetId)

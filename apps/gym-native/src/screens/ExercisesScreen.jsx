@@ -6,7 +6,7 @@ import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExe
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, DropdownMenu, Button, ActiveSessionBanner } from '../components/ui'
 import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise'
 import { normalizeSearchText } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../lib/constants'
+import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors } from '../lib/styles'
 
 export default function ExercisesScreen({ navigation }) {

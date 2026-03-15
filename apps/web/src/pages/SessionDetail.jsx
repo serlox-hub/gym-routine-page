@@ -11,7 +11,7 @@ import {
   formatTime,
   getSensationColor
 } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../lib/constants.js'
+import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
 
 function SessionDetail() {

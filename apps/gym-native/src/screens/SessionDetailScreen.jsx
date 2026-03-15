@@ -12,7 +12,7 @@ import {
   formatTime,
   getSensationColor
 } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../lib/constants'
+import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors } from '../lib/styles'
 
 export default function SessionDetailScreen({ route, navigation }) {

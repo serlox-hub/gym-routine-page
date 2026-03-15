@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native'
 import { Info, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
 import { Card, DropdownMenu, ReorderModal } from '../ui'
 import { colors } from '../../lib/styles'
-import { getMuscleGroupBorderStyle } from '../../lib/constants'
+import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 export default function ExerciseCard({
   routineExercise,

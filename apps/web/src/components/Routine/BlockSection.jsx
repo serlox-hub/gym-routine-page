@@ -3,7 +3,7 @@ import ExerciseCard from './ExerciseCard.jsx'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { formatSupersetLabel, groupExercisesBySupersetId } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
+import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function BlockSection({
   block,

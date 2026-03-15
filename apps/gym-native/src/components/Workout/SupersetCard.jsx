@@ -4,7 +4,7 @@ import { Card } from '../ui'
 import WorkoutExerciseCard from './WorkoutExerciseCard'
 import { colors } from '../../lib/styles'
 import { formatSupersetLabel } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../../lib/constants'
+import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 export default function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, onReplace }) {
   const supersetLabel = formatSupersetLabel(supersetId)

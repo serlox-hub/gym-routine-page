@@ -4,7 +4,7 @@ import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
+import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function ExerciseCard({
   routineExercise,

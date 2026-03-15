@@ -5,7 +5,7 @@ import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExe
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
 import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise/index.js'
 import { normalizeSearchText } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../lib/constants.js'
+import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
 
 function Exercises() {

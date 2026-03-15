@@ -10,7 +10,7 @@ import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
 import { MeasurementType } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../../lib/constants'
+import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds }) {
   const [showNotes, setShowNotes] = useState(false)
