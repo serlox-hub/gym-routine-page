@@ -1,0 +1,12 @@
+{
+  "name": "@gym/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.js",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "@tanstack/react-query": "*",
+    "zustand": "*"
+  }
+}
