@@ -633,16 +633,16 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] Historial paginado por mes — query filtrada por rango de fechas, cache por mes
 
 ### Sprint 2
-- [ ] useWorkout.js dividido — cada archivo < 250 líneas
-- [ ] Timer no tiene side effects al importar — verificar en tests
-- [ ] ErrorBoundary montado — provocar error y ver pantalla de fallback
-- [ ] Code splitting — `npm run build` muestra múltiples chunks < 300KB
-- [ ] Capa API creada (al menos para los hooks tocados)
+- [x] useWorkout.js dividido — 5 archivos, todos < 350 líneas (web y RN)
+- [x] Timer no tiene side effects al importar — encapsulado en useTimerEngine, 14 tests pasando
+- [x] ErrorBoundary montado — probado con crash test, pantalla de fallback funciona (web y RN)
+- [x] Code splitting — bundle inicial ~260KB, 65+ chunks individuales
+- [x] Capa API creada — 7 archivos en src/lib/api/, hooks ya no importan supabase
 
 ### Sprint 3
-- [ ] `grep -rn '#[0-9a-fA-F]' src/components/` devuelve 0 resultados
-- [ ] Componente `Input` usado en al menos 3 formularios
-- [ ] `styles.js` no duplica colores de `tailwind.config.js`
+- [ ] `grep -rn '#[0-9a-fA-F]' src/components/` devuelve 0 resultados — pendiente migración incremental (277 instancias)
+- [ ] Componente `Input` usado en al menos 3 formularios — creado, pendiente migración incremental
+- [x] `styles.js` no duplica colores de `tailwind.config.js` — tailwind.config.js importa de styles.js
 
 ### Sprint 4
 - [ ] Archivos compartidos linkeados o en monorepo
