@@ -2,8 +2,7 @@ import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useShallow } from 'zustand/react/shallow'
 import useAuthStore from '../stores/authStore'
-import { supabase } from '../lib/supabase'
-import { QUERY_KEYS } from '@gym/shared'
+import { QUERY_KEYS, fetchUserSettings } from '@gym/shared'
 
 export function useAuth() {
   const { user, session, isLoading, error, isPasswordRecovery } = useAuthStore(
@@ -55,20 +54,7 @@ export function useUserSettings() {
 
   return useQuery({
     queryKey: [QUERY_KEYS.USER_SETTINGS, userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('key, value')
-        .eq('user_id', userId)
-
-      if (error) throw error
-
-      // Convertir array a objeto { key: value }
-      return (data || []).reduce((acc, { key, value }) => {
-        acc[key] = value
-        return acc
-      }, {})
-    },
+    queryFn: () => fetchUserSettings(userId),
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutos
   })

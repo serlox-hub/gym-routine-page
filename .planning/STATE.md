@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-15T19:03:00Z"
+status: executing
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-03-15T19:07:56.673Z"
 last_activity: 2026-03-15 — Completed plan 03-02 (web hook imports migrated to @gym/shared)
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
   percent: 78
 ---
 
@@ -52,6 +52,7 @@ Progress: [████████░░] 78%
 - Trend: stable
 
 *Updated after each plan completion*
+| Phase 03-04 P04 | 2min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Recent decisions affecting current work:
 - [Phase 3-01]: initApi/getClient pattern for supabase injection -- keeps API files platform-agnostic
 - [Phase 3-01]: exerciseApi uses relative import for MeasurementType to avoid circular @gym/shared self-import
 - [Phase 3-02]: useAuth.js inline Supabase query for user_settings left as-is -- no fetchUserSettings API function exists yet
+- [Phase 03-04]: addSessionExercise coexists with insertSessionExercise -- RN computes sort order, web uses pre-computed
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T19:03:00Z
-Stopped at: Completed 03-02-PLAN.md
-Resume file: .planning/phases/03-api-layer-migration/03-02-SUMMARY.md
+Last session: 2026-03-15T19:07:56.671Z
+Stopped at: Completed 03-04-PLAN.md
+Resume file: None

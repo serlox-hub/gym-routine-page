@@ -28,7 +28,7 @@
 - [x] **API-01**: 7 API files live in `packages/shared/src/api/`
 - [x] **API-02**: API functions receive Supabase client as parameter (no direct import of supabase.js)
 - [x] **API-03**: Web hooks updated to import API from `@gym/shared`
-- [ ] **API-04**: RN hooks refactored from inline Supabase queries to shared API functions
+- [x] **API-04**: RN hooks refactored from inline Supabase queries to shared API functions
 
 ### Stores
 
@@ -91,7 +91,7 @@
 | API-01 | Phase 3 | Complete |
 | API-02 | Phase 3 | Complete |
 | API-03 | Phase 3 | Complete |
-| API-04 | Phase 3 | Pending |
+| API-04 | Phase 3 | Complete |
 | STOR-01 | Phase 4 | Pending |
 | STOR-02 | Phase 4 | Pending |
 | STOR-03 | Phase 4 | Pending |

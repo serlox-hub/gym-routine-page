@@ -25,6 +25,19 @@ export async function fetchAllUsers() {
   }))
 }
 
+export async function fetchUserSettings(userId) {
+  const { data, error } = await getClient()
+    .from('user_settings')
+    .select('key, value')
+    .eq('user_id', userId)
+
+  if (error) throw error
+  return (data || []).reduce((acc, { key, value }) => {
+    acc[key] = value
+    return acc
+  }, {})
+}
+
 export async function updateUserSetting({ userId, key, value }) {
   if (value === null || value === undefined) {
     const { error } = await getClient()

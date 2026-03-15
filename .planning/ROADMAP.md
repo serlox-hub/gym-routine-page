@@ -63,7 +63,7 @@ Plans:
   2. API functions receive the Supabase client as a parameter — no direct `supabase.js` import inside `packages/shared`
   3. Web hooks import API functions from `@gym/shared` and produce identical data to pre-migration behavior
   4. RN hooks produce identical data to web hooks for the same operations
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [ ] 03-01-PLAN.md — Create _client.js injection, move 7 API files to shared, wire initApi in both apps
@@ -114,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Monorepo Scaffold | 3/3 | Complete    | 2026-03-15 |
 | 2. Utils Migration | 2/2 | Complete    | 2026-03-15 |
-| 3. API Layer Migration | 2/4 | In Progress|  |
+| 3. API Layer Migration | 3/4 | In Progress|  |
 | 4. Store Factories | 0/? | Not started | - |
 | 5. Hooks Migration | 0/? | Not started | - |
 | 6. DX Cleanup | 0/? | Not started | - |

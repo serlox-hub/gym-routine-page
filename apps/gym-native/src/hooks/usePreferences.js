@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase.js'
-import { QUERY_KEYS } from '@gym/shared'
+import { QUERY_KEYS, fetchPreferences, upsertPreference } from '@gym/shared'
 import { useUserId } from './useAuth.js'
 
 // Valores por defecto para cada preferencia
@@ -23,12 +22,7 @@ export function usePreferences() {
   return useQuery({
     queryKey: [QUERY_KEYS.USER_PREFERENCES, userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('key, value')
-        .eq('user_id', userId)
-
-      if (error) throw error
+      const data = await fetchPreferences(userId)
 
       // Convertir array de {key, value} a objeto
       const prefs = { ...DEFAULT_VALUES }
@@ -51,17 +45,7 @@ export function useUpdatePreference() {
   const userId = useUserId()
 
   return useMutation({
-    mutationFn: async ({ key, value }) => {
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert(
-          { user_id: userId, key, value },
-          { onConflict: 'user_id,key' }
-        )
-
-      if (error) throw error
-      return { key, value }
-    },
+    mutationFn: ({ key, value }) => upsertPreference({ userId, key, value }),
     onSuccess: ({ key, value }) => {
       // Actualizar cache
       queryClient.setQueryData([QUERY_KEYS.USER_PREFERENCES, userId], (old) => ({
