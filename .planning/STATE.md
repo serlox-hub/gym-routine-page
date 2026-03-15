@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-15T20:00:06.502Z"
-last_activity: 2026-03-15 — Completed plan 04-01 (store factories created in packages/shared)
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-15T20:42:54.015Z"
+last_activity: 2026-03-15 — Completed plan 05-01 (shared hooks with store injection and notifications)
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
-  percent: 83
+  total_plans: 13
+  completed_plans: 12
+  percent: 92
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** Un solo lugar para cada pieza de logica de negocio — un cambio en un archivo se refleja en ambas plataformas sin intervencion manual.
-**Current focus:** Phase 4 — Stores migration to packages/shared
+**Current focus:** Phase 5 — Hooks migration to packages/shared
 
 ## Current Position
 
-Phase: 4 of 6 (Stores Migration)
-Plan: 2 of 2 in current phase
+Phase: 5 of 6 (Hooks Migration)
+Plan: 1 of 1 in current phase
 Status: In Progress
-Last activity: 2026-03-15 — Completed plan 04-01 (store factories created in packages/shared)
+Last activity: 2026-03-15 — Completed plan 05-01 (shared hooks with store injection and notifications)
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [████████░░] 83%
 | Phase 03-04 P04 | 2min | 3 tasks | 4 files |
 | Phase 04-01 P01 | 10min | 2 tasks | 3 files |
 | Phase 04 P02 | 1min | 2 tasks | 5 files |
+| Phase 05-01 P01 | 3min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,11 @@ Recent decisions affecting current work:
 - [Phase 04]: Web workoutStore reducido a 3 lineas con createWorkoutStore() sin args
 - [Phase 04]: RN workoutStore usa workoutStoreState spread + overrides para workoutVisible
 - [Phase 04]: loginWithGoogle inyectado via setState post-creacion en ambas plataformas
+- [Phase 05-01]: duplicateRoutine stays per-app -- exportRoutine/importRoutine not in shared
+- [Phase 05-01]: Store injection via _stores.js with initStores/useAuthStore/useWorkoutStore/getWorkoutStore
+- [Phase 05-01]: Notification service via initNotifications/getNotifier -- no-op when not initialized
+- [Phase 05-01]: useTimerEngine accepts { playSound, vibrateDevice, onTimerStart, onTimerEnd, isSoundEnabled } callbacks
+- [Phase 05-01]: useWakeLock excluded from shared -- platform-specific
 
 ### Pending Todos
 
@@ -103,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T20:00:06.500Z
-Stopped at: Completed 04-02-PLAN.md
-Resume file: None
+Last session: 2026-03-15T20:42:54Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: .planning/phases/05-hooks-migration/05-01-SUMMARY.md

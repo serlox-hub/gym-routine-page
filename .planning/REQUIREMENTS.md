@@ -40,10 +40,10 @@
 
 ### Hooks
 
-- [ ] **HOOK-01**: Shared TanStack Query hooks in `packages/shared/src/hooks/`
+- [x] **HOOK-01**: Shared TanStack Query hooks in `packages/shared/src/hooks/`
 - [ ] **HOOK-02**: Platform wrapper hooks in each app inject navigation/notification adapters
 - [ ] **HOOK-03**: All hook-dependent components work on both platforms
-- [ ] **HOOK-04**: Platform-exclusive hooks (`useDrag`, `useStableHandlers`) stay in their respective apps
+- [x] **HOOK-04**: Platform-exclusive hooks (`useDrag`, `useStableHandlers`) stay in their respective apps
 
 ### DX / Cleanup
 
@@ -97,10 +97,10 @@
 | STOR-03 | Phase 4 | Complete |
 | STOR-04 | Phase 4 | Complete |
 | STOR-05 | Phase 4 | Complete |
-| HOOK-01 | Phase 5 | Pending |
+| HOOK-01 | Phase 5 | Complete |
 | HOOK-02 | Phase 5 | Pending |
 | HOOK-03 | Phase 5 | Pending |
-| HOOK-04 | Phase 5 | Pending |
+| HOOK-04 | Phase 5 | Complete |
 | DX-01 | Phase 6 | Pending |
 | DX-02 | Phase 6 | Pending |
 | DX-03 | Phase 6 | Pending |
