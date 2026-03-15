@@ -1,84 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { readJsonFile, buildChatbotPrompt, buildAdaptRoutinePrompt, ROUTINE_JSON_FORMAT, ROUTINE_JSON_RULES, duplicateRoutine } from './routineIO.js'
+import { describe, it, expect } from 'vitest'
+import { buildChatbotPrompt, buildAdaptRoutinePrompt, ROUTINE_JSON_FORMAT, ROUTINE_JSON_RULES } from './routineIO.js'
 
-describe('routineIO - funciones puras', () => {
-  describe('readJsonFile', () => {
-    beforeEach(() => {
-      vi.restoreAllMocks()
-    })
-
-    it('lee y parsea un archivo JSON válido', async () => {
-      const jsonContent = { routine: { name: 'Test' } }
-      const file = new Blob([JSON.stringify(jsonContent)], { type: 'application/json' })
-
-      const result = await readJsonFile(file)
-      expect(result).toEqual(jsonContent)
-    })
-
-    it('rechaza con error si el JSON es inválido', async () => {
-      const file = new Blob(['not valid json'], { type: 'application/json' })
-
-      await expect(readJsonFile(file)).rejects.toThrow('Error al leer el archivo JSON')
-    })
-  })
-
-  describe('formato de export', () => {
-    it('estructura esperada del formato de export', () => {
-      const expectedFormat = {
-        version: expect.any(Number),
-        exportedAt: expect.any(String),
-        exercises: expect.any(Array),
-        routine: {
-          name: expect.any(String),
-          description: expect.any(String),
-          goal: expect.any(String),
-          days: expect.any(Array),
-        },
-      }
-
-      const sampleExport = {
-        version: 4,
-        exportedAt: '2024-01-15T10:00:00Z',
-        exercises: [
-          {
-            name: 'Press banca',
-            measurement_type: 'weight_reps',
-            weight_unit: 'kg',
-            instructions: null,
-            muscle_group_name: 'Pecho',
-          },
-        ],
-        routine: {
-          name: 'Mi rutina',
-          description: 'Descripción',
-          goal: 'Hipertrofia',
-          days: [],
-        },
-      }
-
-      expect(sampleExport).toMatchObject(expectedFormat)
-    })
-  })
-
-  describe('helpers', () => {
-    it('crea blob con tipo correcto', () => {
-      const data = { routine: { name: 'Test' } }
-      const json = JSON.stringify(data, null, 2)
-      const blob = new Blob([json], { type: 'application/json' })
-
-      expect(blob.type).toBe('application/json')
-      expect(blob.size).toBeGreaterThan(0)
-    })
-
-    it('genera nombre de archivo válido', () => {
-      const routineName = 'Mi Rutina PPL'
-      const filename = `${routineName.replace(/\s+/g, '_')}.json`
-
-      expect(filename).toBe('Mi_Rutina_PPL.json')
-      expect(filename).not.toContain(' ')
-    })
-  })
-
+describe('routineIO - funciones puras (shared)', () => {
   describe('buildChatbotPrompt', () => {
     it('genera prompt con todos los campos completos', () => {
       const params = {
@@ -146,7 +69,6 @@ describe('routineIO - funciones puras', () => {
 
       const prompt = buildChatbotPrompt(params)
 
-      // El formato JSON usa un placeholder, el objetivo real va en los requisitos del cliente
       expect(prompt).toContain('"goal": "Objetivo"')
       expect(prompt).toContain('- Objetivo: Hipertrofia')
     })
@@ -250,24 +172,11 @@ describe('routineIO - funciones puras', () => {
       const chatbotPrompt = buildChatbotPrompt({ objetivo: 'Test', diasPorSemana: '3' })
       const adaptPrompt = buildAdaptRoutinePrompt()
 
-      // Ambos deben contener el formato JSON
       expect(chatbotPrompt).toContain('"tempo_razon"')
       expect(adaptPrompt).toContain('"tempo_razon"')
 
-      // Ambos deben contener las reglas
       expect(chatbotPrompt).toContain('CAMPOS DE EJERCICIOS')
       expect(adaptPrompt).toContain('CAMPOS DE EJERCICIOS')
-    })
-  })
-
-  describe('duplicateRoutine', () => {
-    it('está exportada como función', () => {
-      expect(typeof duplicateRoutine).toBe('function')
-    })
-
-    it('requiere routineId y userId como parámetros', () => {
-      // La función es async y usa Supabase, solo verificamos la firma
-      expect(duplicateRoutine.length).toBeGreaterThanOrEqual(2)
     })
   })
 })
