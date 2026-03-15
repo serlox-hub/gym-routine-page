@@ -26,3 +26,7 @@ export * from './api/bodyMeasurementsApi.js'
 export * from './api/preferencesApi.js'
 export * from './api/adminApi.js'
 export { initApi } from './api/_client.js'
+
+// Store factories
+export { createWorkoutStore, workoutStoreState } from './stores/createWorkoutStore.js'
+export { createAuthStore } from './stores/createAuthStore.js'
