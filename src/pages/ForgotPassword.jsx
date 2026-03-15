@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { Card, Button } from '@/components/ui'
+import { Card, Button, Input } from '@/components/ui'
 import { colors } from '../lib/styles.js'
 
 function ForgotPassword() {
@@ -70,25 +70,15 @@ function ForgotPassword() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1" style={{ color: '#c9d1d9' }}>
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              style={{
-                backgroundColor: colors.bgPrimary,
-                border: `1px solid ${colors.border}`,
-                color: '#c9d1d9'
-              }}
-              placeholder="tu@email.com"
-              autoComplete="email"
-            />
-          </div>
+          <Input
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@email.com"
+            autoComplete="email"
+          />
 
           {displayError && (
             <p className="text-sm text-center" style={{ color: colors.danger }}>

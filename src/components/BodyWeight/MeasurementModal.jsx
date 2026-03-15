@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Button, Modal } from '../ui/index.js'
-import { colors, inputStyle } from '../../lib/styles.js'
+import { Button, Modal, Input, Textarea } from '../ui/index.js'
+import { colors } from '../../lib/styles.js'
 import { getMeasurementLabel } from '../../lib/measurementConstants.js'
 
 function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = 'cm', record = null, isPending }) {
@@ -52,37 +52,25 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
       </h3>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-            {label} ({unit}) *
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            min="0.1"
-            max="500"
-            value={form.value}
-            onChange={(e) => setForm(prev => ({ ...prev, value: e.target.value }))}
-            placeholder={`Ej: ${unit === 'cm' ? '85.5' : '33.5'}`}
-            className="w-full p-3 rounded-lg text-base"
-            style={inputStyle}
-            autoFocus
-          />
-        </div>
+        <Input
+          label={`${label} (${unit}) *`}
+          type="number"
+          step="0.1"
+          min="0.1"
+          max="500"
+          value={form.value}
+          onChange={(e) => setForm(prev => ({ ...prev, value: e.target.value }))}
+          placeholder={`Ej: ${unit === 'cm' ? '85.5' : '33.5'}`}
+          autoFocus
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-            Notas (opcional)
-          </label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-            placeholder="Ej: En ayunas"
-            rows={2}
-            className="w-full p-3 rounded-lg text-base resize-none"
-            style={inputStyle}
-          />
-        </div>
+        <Textarea
+          label="Notas (opcional)"
+          value={form.notes}
+          onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+          placeholder="Ej: En ayunas"
+          rows={2}
+        />
 
         <div className="flex gap-3 justify-end pt-2">
           <Button variant="secondary" type="button" onClick={handleClose}>

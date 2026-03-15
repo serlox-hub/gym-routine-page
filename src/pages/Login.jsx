@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { Card, Button } from '@/components/ui'
+import { Card, Button, Input } from '@/components/ui'
 import { colors } from '../lib/styles.js'
 
 function Login() {
@@ -45,41 +45,23 @@ function Login() {
         <h1 className="text-2xl font-bold text-center mb-6">Iniciar Sesión</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1" style={{ color: '#c9d1d9' }}>
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              style={{
-                backgroundColor: colors.bgPrimary,
-                border: `1px solid ${colors.border}`,
-                color: '#c9d1d9'
-              }}
-              placeholder="tu@email.com"
-              autoComplete="email"
-            />
-          </div>
+          <Input
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@email.com"
+            autoComplete="email"
+          />
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1" style={{ color: '#c9d1d9' }}>
-              Contraseña
-            </label>
-            <input
+            <Input
               id="password"
+              label="Contraseña"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              style={{
-                backgroundColor: colors.bgPrimary,
-                border: `1px solid ${colors.border}`,
-                color: '#c9d1d9'
-              }}
               placeholder="••••••••"
               autoComplete="current-password"
             />

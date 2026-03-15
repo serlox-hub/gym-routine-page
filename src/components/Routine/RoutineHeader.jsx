@@ -2,10 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Pencil, Download, Trash2, Copy } from 'lucide-react'
 import { useUpdateRoutine, useDuplicateRoutine } from '../../hooks/useRoutines.js'
-import { colors, inputStyle } from '../../lib/styles.js'
 import { exportRoutine, downloadRoutineAsJson } from '../../lib/routineIO.js'
 import { sanitizeFilename } from '../../lib/textUtils.js'
-import { PageHeader } from '../ui/index.js'
+import { PageHeader, Input, Textarea } from '../ui/index.js'
 
 const DEBOUNCE_MS = 500
 
@@ -97,46 +96,28 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
       >
         {isEditing && (
           <div className="mt-4 space-y-3">
-            <div>
-              <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
-                Nombre
-              </label>
-              <input
-                type="text"
-                value={editForm.name}
-                onChange={(e) => handleFieldChange('name', e.target.value)}
-                className="w-full p-2 rounded-lg text-sm"
-                style={inputStyle}
-                placeholder="Nombre de la rutina"
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
-                Descripción
-              </label>
-              <textarea
-                value={editForm.description}
-                onChange={(e) => handleFieldChange('description', e.target.value)}
-                className="w-full p-2 rounded-lg text-sm resize-none"
-                style={inputStyle}
-                placeholder="Descripción de la rutina..."
-                rows={2}
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: colors.textSecondary }}>
-                Objetivo
-              </label>
-              <input
-                type="text"
-                value={editForm.goal}
-                onChange={(e) => handleFieldChange('goal', e.target.value)}
-                className="w-full p-2 rounded-lg text-sm"
-                style={inputStyle}
-                placeholder="Ej: Hipertrofia, Fuerza..."
-              />
-            </div>
+            <Input
+              label="Nombre"
+              type="text"
+              value={editForm.name}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+              placeholder="Nombre de la rutina"
+              autoFocus
+            />
+            <Textarea
+              label="Descripción"
+              value={editForm.description}
+              onChange={(e) => handleFieldChange('description', e.target.value)}
+              placeholder="Descripción de la rutina..."
+              rows={2}
+            />
+            <Input
+              label="Objetivo"
+              type="text"
+              value={editForm.goal}
+              onChange={(e) => handleFieldChange('goal', e.target.value)}
+              placeholder="Ej: Hipertrofia, Fuerza..."
+            />
           </div>
         )}
       </PageHeader>

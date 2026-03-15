@@ -1,5 +1,5 @@
-import { Button } from '../ui/index.js'
-import { colors, inputStyle } from '../../lib/styles.js'
+import { Button, Input, Select } from '../ui/index.js'
+import { colors } from '../../lib/styles.js'
 import { getRepsLabel, getRepsPlaceholder } from '../../lib/measurementTypes.js'
 import { formatSupersetLabel } from '../../lib/supersetUtils.js'
 
@@ -29,32 +29,20 @@ function ExerciseConfigForm({
 
       {/* Campos obligatorios */}
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
-            Series <span style={{ color: colors.danger }}>*</span>
-          </label>
-          <input
-            type="number"
-            min="1"
-            value={form.series}
-            onChange={(e) => setForm(prev => ({ ...prev, series: e.target.value }))}
-            className="w-full p-3 rounded-lg text-base"
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
-            {getRepsLabel(exercise.measurement_type)} <span style={{ color: colors.danger }}>*</span>
-          </label>
-          <input
-            type="text"
-            value={form.reps}
-            onChange={(e) => setForm(prev => ({ ...prev, reps: e.target.value }))}
-            placeholder={getRepsPlaceholder(exercise.measurement_type)}
-            className="w-full p-3 rounded-lg text-base"
-            style={inputStyle}
-          />
-        </div>
+        <Input
+          label={<>Series <span style={{ color: colors.danger }}>*</span></>}
+          type="number"
+          min="1"
+          value={form.series}
+          onChange={(e) => setForm(prev => ({ ...prev, series: e.target.value }))}
+        />
+        <Input
+          label={<>{getRepsLabel(exercise.measurement_type)} <span style={{ color: colors.danger }}>*</span></>}
+          type="text"
+          value={form.reps}
+          onChange={(e) => setForm(prev => ({ ...prev, reps: e.target.value }))}
+          placeholder={getRepsPlaceholder(exercise.measurement_type)}
+        />
       </div>
 
       {/* Campos opcionales */}
@@ -67,94 +55,60 @@ function ExerciseConfigForm({
         </p>
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-              RIR
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="5"
-              value={form.rir}
-              onChange={(e) => setForm(prev => ({ ...prev, rir: e.target.value }))}
-              placeholder="Ej: 2"
-              className="w-full p-3 rounded-lg text-base"
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-              Descanso (seg)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={form.rest_seconds}
-              onChange={(e) => setForm(prev => ({ ...prev, rest_seconds: e.target.value }))}
-              placeholder="Ej: 90"
-              className="w-full p-3 rounded-lg text-base"
-              style={inputStyle}
-            />
-          </div>
+          <Input
+            label="RIR"
+            type="number"
+            min="0"
+            max="5"
+            value={form.rir}
+            onChange={(e) => setForm(prev => ({ ...prev, rir: e.target.value }))}
+            placeholder="Ej: 2"
+          />
+          <Input
+            label="Descanso (seg)"
+            type="number"
+            min="0"
+            value={form.rest_seconds}
+            onChange={(e) => setForm(prev => ({ ...prev, rest_seconds: e.target.value }))}
+            placeholder="Ej: 90"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-              Tempo
-            </label>
-            <input
-              type="text"
-              value={form.tempo}
-              onChange={(e) => setForm(prev => ({ ...prev, tempo: e.target.value }))}
-              placeholder="Ej: 3-1-2-0"
-              className="w-full p-3 rounded-lg text-base"
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: form.tempo ? colors.textSecondary : colors.border }}>
-              Razón
-            </label>
-            <input
-              type="text"
-              value={form.tempo_razon}
-              onChange={(e) => setForm(prev => ({ ...prev, tempo_razon: e.target.value }))}
-              placeholder="Ej: Más tensión"
-              className="w-full p-3 rounded-lg text-base"
-              style={inputStyle}
-              disabled={!form.tempo}
-            />
-          </div>
+          <Input
+            label="Tempo"
+            type="text"
+            value={form.tempo}
+            onChange={(e) => setForm(prev => ({ ...prev, tempo: e.target.value }))}
+            placeholder="Ej: 3-1-2-0"
+          />
+          <Input
+            label="Razón"
+            type="text"
+            value={form.tempo_razon}
+            onChange={(e) => setForm(prev => ({ ...prev, tempo_razon: e.target.value }))}
+            placeholder="Ej: Más tensión"
+            disabled={!form.tempo}
+          />
         </div>
         <p className="text-xs -mt-2" style={{ color: colors.textSecondary }}>
           Concéntrica - Pausa arriba - Excéntrica - Pausa abajo
         </p>
 
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-            Notas
-          </label>
-          <input
-            type="text"
-            value={form.notes}
-            onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-            placeholder={isSessionMode ? "Notas para este ejercicio..." : "Notas específicas para esta rutina..."}
-            className="w-full p-3 rounded-lg text-base"
-            style={inputStyle}
-          />
-        </div>
+        <Input
+          label="Notas"
+          type="text"
+          value={form.notes}
+          onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+          placeholder={isSessionMode ? "Notas para este ejercicio..." : "Notas específicas para esta rutina..."}
+        />
 
         {showSupersetField && (
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: colors.textSecondary }}>
-              Superset
-            </label>
-            <select
+            <Select
+              label="Superset"
               value={form.superset_group || ''}
               onChange={(e) => setForm(prev => ({ ...prev, superset_group: e.target.value }))}
-              className="w-full p-3 rounded-lg text-base"
-              style={inputStyle}
             >
               <option value="">Sin superset</option>
               {existingSupersets.map(id => (
@@ -165,7 +119,7 @@ function ExerciseConfigForm({
               <option value={nextSupersetId}>
                 + Nuevo {formatSupersetLabel(nextSupersetId)}
               </option>
-            </select>
+            </Select>
             <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
               Ejercicios en el mismo superset se hacen sin descanso entre ellos
             </p>

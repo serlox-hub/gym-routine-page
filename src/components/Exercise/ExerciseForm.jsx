@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Card, BottomActions } from '../ui/index.js'
+import { Card, BottomActions, Input, Select, Textarea } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
-import { colors, inputStyle, selectStyle } from '../../lib/styles.js'
+import { colors } from '../../lib/styles.js'
 import { MEASUREMENT_TYPE_OPTIONS, measurementTypeUsesWeight, measurementTypeUsesTime, measurementTypeUsesDistance, MeasurementType } from '../../lib/measurementTypes.js'
 import { getMuscleGroupColor } from '../../lib/constants.js'
 
@@ -151,16 +151,12 @@ function ExerciseForm({
 
       {/* Nombre */}
       <Wrapper className={compact ? '' : 'p-4'}>
-        <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-          Nombre <span style={{ color: colors.danger }}>*</span>
-        </label>
-        <input
+        <Input
+          label={<>Nombre <span style={{ color: colors.danger }}>*</span></>}
           type="text"
           value={form.name}
           onChange={(e) => handleChange('name', e.target.value)}
           placeholder="Ej: Press banca con barra (Agarre Prono Medio)"
-          className="w-full p-3 rounded-lg text-base"
-          style={inputStyle}
         />
         <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
           Incluye equipamiento y tipo de agarre en el nombre si aplica
@@ -169,19 +165,15 @@ function ExerciseForm({
 
       {/* Tipo de medición */}
       <Wrapper className={compact ? '' : 'p-4'}>
-        <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-          Tipo de medición <span style={{ color: colors.danger }}>*</span>
-        </label>
-        <select
+        <Select
+          label={<>Tipo de medición <span style={{ color: colors.danger }}>*</span></>}
           value={form.measurement_type}
           onChange={(e) => handleChange('measurement_type', e.target.value)}
-          className="w-full p-3 rounded-lg text-base appearance-none"
-          style={selectStyle}
         >
           {MEASUREMENT_TYPE_OPTIONS.map(type => (
             <option key={type.value} value={type.value}>{type.label}</option>
           ))}
-        </select>
+        </Select>
       </Wrapper>
 
       {/* Unidad de peso (solo si usa peso) */}
@@ -201,7 +193,7 @@ function ExerciseForm({
 
       {/* Grupo muscular */}
       <Wrapper className={compact ? '' : 'p-4'}>
-        <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
+        <label className="text-sm text-secondary mb-1 block">
           Grupo muscular <span style={{ color: colors.danger }}>*</span>
         </label>
         <div className="flex items-center gap-2">
@@ -215,17 +207,15 @@ function ExerciseForm({
               }}
             />
           )}
-          <select
+          <Select
             value={selectedMuscleGroupId || ''}
             onChange={(e) => setSelectedMuscleGroupId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full p-3 rounded-lg text-base appearance-none"
-            style={selectStyle}
           >
             <option value="">Seleccionar grupo muscular</option>
             {muscleGroups?.map(group => (
               <option key={group.id} value={group.id}>{group.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
       </Wrapper>
 
@@ -240,16 +230,12 @@ function ExerciseForm({
 
         {/* Instrucciones */}
         <Wrapper className={compact ? '' : 'p-4'}>
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
-            Instrucciones de ejecución
-          </label>
-          <textarea
+          <Textarea
+            label="Instrucciones de ejecución"
             value={form.instructions}
             onChange={(e) => handleChange('instructions', e.target.value)}
             placeholder="Cómo ejecutar el ejercicio correctamente... (incluye altura de polea si aplica)"
             rows={3}
-            className="w-full p-3 rounded-lg text-base resize-none"
-            style={inputStyle}
           />
         </Wrapper>
       </div>

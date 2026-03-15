@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { validateResetPasswordForm } from '@/lib/validation'
-import { Card, Button } from '@/components/ui'
+import { Card, Button, Input } from '@/components/ui'
 import { colors } from '../lib/styles.js'
 
 function ResetPassword() {
@@ -60,45 +60,25 @@ function ResetPassword() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1" style={{ color: '#c9d1d9' }}>
-              Nueva contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              style={{
-                backgroundColor: colors.bgPrimary,
-                border: `1px solid ${colors.border}`,
-                color: '#c9d1d9'
-              }}
-              placeholder="Mínimo 6 caracteres"
-              autoComplete="new-password"
-            />
-          </div>
+          <Input
+            id="password"
+            label="Nueva contraseña"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Mínimo 6 caracteres"
+            autoComplete="new-password"
+          />
 
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1" style={{ color: '#c9d1d9' }}>
-              Confirmar contraseña
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              style={{
-                backgroundColor: colors.bgPrimary,
-                border: `1px solid ${colors.border}`,
-                color: '#c9d1d9'
-              }}
-              placeholder="Repite tu contraseña"
-              autoComplete="new-password"
-            />
-          </div>
+          <Input
+            id="confirmPassword"
+            label="Confirmar contraseña"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Repite tu contraseña"
+            autoComplete="new-password"
+          />
 
           {error && (
             <p className="text-sm text-center" style={{ color: colors.danger }}>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Copy, Check, X, ChevronLeft } from 'lucide-react'
-import { Button } from '../ui/index.js'
+import { Button, Input } from '../ui/index.js'
 import { buildChatbotPrompt } from '../../lib/routineIO.js'
 import { colors } from '../../lib/styles.js'
 
@@ -157,19 +157,12 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
                   ]}
                   customPlaceholder="Ej: 120 minutos, variable..."
                 />
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>
-                    Equipamiento disponible
-                  </label>
-                  <input
-                    type="text"
-                    value={form.equipamiento}
-                    onChange={e => setForm(f => ({ ...f, equipamiento: e.target.value }))}
-                    placeholder="Ej: gimnasio completo, solo mancuernas..."
-                    className="w-full p-2 rounded-lg text-sm"
-                    style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
-                  />
-                </div>
+                <Input
+                  label="Equipamiento disponible"
+                  value={form.equipamiento}
+                  onChange={e => setForm(f => ({ ...f, equipamiento: e.target.value }))}
+                  placeholder="Ej: gimnasio completo, solo mancuernas..."
+                />
                 <div>
                   <label className="block text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>
                     Notas adicionales
@@ -254,13 +247,11 @@ function FormField({ label, value, onChange, customValue, onCustomChange, option
         <option value="custom">Otro...</option>
       </select>
       {value === 'custom' && (
-        <input
-          type="text"
+        <Input
           value={customValue}
           onChange={e => onCustomChange(e.target.value)}
           placeholder={customPlaceholder}
-          className="w-full p-2 rounded-lg text-sm mt-2"
-          style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
+          className="mt-2"
           autoFocus
         />
       )}

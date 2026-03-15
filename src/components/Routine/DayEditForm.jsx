@@ -1,16 +1,16 @@
-import { colors, inputStyle } from '../../lib/styles.js'
+import { colors } from '../../lib/styles.js'
+import { Input } from '../ui/index.js'
 
 function DayEditForm({ dayNumber, form, setForm, onSave }) {
   return (
     <div className="space-y-2" onClick={e => e.stopPropagation()}>
       <div className="flex items-center gap-3">
         <span className="text-accent font-semibold shrink-0">{dayNumber}</span>
-        <input
+        <Input
           type="text"
           value={form.name}
           onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-          className="flex-1 font-medium p-1 rounded min-w-0"
-          style={inputStyle}
+          className="flex-1 min-w-0"
           placeholder="Nombre del día"
           autoFocus
         />
@@ -19,12 +19,11 @@ function DayEditForm({ dayNumber, form, setForm, onSave }) {
         <label className="text-sm" style={{ color: colors.textSecondary }}>
           Duración estimada:
         </label>
-        <input
+        <Input
           type="number"
           value={form.duration}
           onChange={(e) => setForm(prev => ({ ...prev, duration: e.target.value }))}
-          className="w-16 p-1 rounded text-sm text-center"
-          style={inputStyle}
+          className="w-16"
           placeholder="--"
           min="1"
         />

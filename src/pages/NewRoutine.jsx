@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
+import { ErrorMessage, Card, PageHeader, Input, Textarea } from '../components/ui/index.js'
 import { useCreateRoutine } from '../hooks/useRoutines.js'
-import { colors, inputStyle } from '../lib/styles.js'
+import { colors } from '../lib/styles.js'
 import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
 
 function NewRoutine() {
@@ -49,44 +49,32 @@ function NewRoutine() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-            Nombre *
-          </label>
-          <input
+          <Input
+            label="Nombre *"
             type="text"
             value={form.name}
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Ej: Push Pull Legs"
-            className="w-full p-3 rounded-lg text-base"
-            style={inputStyle}
           />
         </Card>
 
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-            Descripción (opcional)
-          </label>
-          <textarea
+          <Textarea
+            label="Descripción (opcional)"
             value={form.description}
             onChange={(e) => handleChange('description', e.target.value)}
             placeholder="Descripción de la rutina..."
             rows={2}
-            className="w-full p-3 rounded-lg text-base resize-none"
-            style={inputStyle}
           />
         </Card>
 
         <Card className="p-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-            Objetivo (opcional)
-          </label>
-          <input
+          <Input
+            label="Objetivo (opcional)"
             type="text"
             value={form.goal}
             onChange={(e) => handleChange('goal', e.target.value)}
             placeholder="Ej: Hipertrofia, Fuerza, Recomposición..."
-            className="w-full p-3 rounded-lg text-base"
-            style={inputStyle}
           />
         </Card>
 

@@ -640,7 +640,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 - [x] Capa API creada — 7 archivos en src/lib/api/, hooks ya no importan supabase
 
 ### Sprint 3
-- [ ] `grep -rn '#[0-9a-fA-F]' src/components/` devuelve 0 resultados — pendiente migración incremental (277 instancias)
+- [x] `grep` de hex mapeados en src/ devuelve 0 resultados — 277 instancias migradas a `colors.X`
 - [ ] Componente `Input` usado en al menos 3 formularios — creado, pendiente migración incremental
 - [x] `styles.js` no duplica colores de `tailwind.config.js` — tailwind.config.js importa de styles.js
 
