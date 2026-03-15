@@ -48,7 +48,11 @@ Plans:
   3. `npm test` from monorepo root passes all 18 test files co-located with their utils
   4. `supabase.js`, `styles.js`, and `videoStorage.js` are absent from `packages/shared` (confirmed platform-specific)
   5. Both apps build and run without errors after the migration
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Move 16+18 files to packages/shared via git mv, handle borderline files (constants.js, routineIO.js), update barrel and vitest config
+- [ ] 02-02-PLAN.md — Bulk find-replace all shared util imports in both apps, verify builds and tests, atomic commit
 
 ### Phase 3: API Layer Migration
 **Goal**: The 7 Supabase API files live in `packages/shared`, web imports them from `@gym/shared`, and RN hooks are refactored from inline queries to the shared API functions
@@ -102,8 +106,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo Scaffold | 3/3 | Complete   | 2026-03-15 |
-| 2. Utils Migration | 0/? | Not started | - |
+| 1. Monorepo Scaffold | 3/3 | Complete    | 2026-03-15 |
+| 2. Utils Migration | 0/2 | Planned | - |
 | 3. API Layer Migration | 0/? | Not started | - |
 | 4. Store Factories | 0/? | Not started | - |
 | 5. Hooks Migration | 0/? | Not started | - |
