@@ -25,8 +25,8 @@
 
 ### API Layer
 
-- [ ] **API-01**: 7 API files live in `packages/shared/src/api/`
-- [ ] **API-02**: API functions receive Supabase client as parameter (no direct import of supabase.js)
+- [x] **API-01**: 7 API files live in `packages/shared/src/api/`
+- [x] **API-02**: API functions receive Supabase client as parameter (no direct import of supabase.js)
 - [ ] **API-03**: Web hooks updated to import API from `@gym/shared`
 - [ ] **API-04**: RN hooks refactored from inline Supabase queries to shared API functions
 
@@ -88,8 +88,8 @@
 | UTIL-02 | Phase 2 | Complete |
 | UTIL-03 | Phase 2 | Complete |
 | UTIL-04 | Phase 2 | Complete |
-| API-01 | Phase 3 | Pending |
-| API-02 | Phase 3 | Pending |
+| API-01 | Phase 3 | Complete |
+| API-02 | Phase 3 | Complete |
 | API-03 | Phase 3 | Pending |
 | API-04 | Phase 3 | Pending |
 | STOR-01 | Phase 4 | Pending |
