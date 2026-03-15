@@ -30,3 +30,20 @@ export { initApi } from './api/_client.js'
 // Store factories
 export { createWorkoutStore, workoutStoreState } from './stores/createWorkoutStore.js'
 export { createAuthStore } from './stores/createAuthStore.js'
+
+// Notifications
+export { initNotifications } from './notifications.js'
+
+// Hooks
+export * from './hooks/useAdmin.js'
+export * from './hooks/useAuth.js'
+export * from './hooks/useBodyMeasurements.js'
+export * from './hooks/useBodyWeight.js'
+export * from './hooks/useExercises.js'
+export * from './hooks/usePreferences.js'
+export * from './hooks/useRoutines.js'
+export * from './hooks/useSessionExercises.js'
+export { useTimerEngine, useRestTimer } from './hooks/useRestTimer.js'
+
+// Store injection for hooks
+export { initStores } from './hooks/_stores.js'
