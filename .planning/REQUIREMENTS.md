@@ -12,7 +12,7 @@
 - [x] **SETUP-03**: `packages/core` declares React, TanStack Query, and Zustand as `peerDependencies`
 - [x] **SETUP-04**: Vite config includes `resolve.dedupe` for `react`, `react-dom`
 - [x] **SETUP-05**: Metro auto-config (Expo SDK 55) resolves imports from `@gym/core` without manual `watchFolders`
-- [ ] **SETUP-06**: EAS cloud build passes with a trivial import from `@gym/core`
+- [x] **SETUP-06**: EAS cloud build passes with a trivial import from `@gym/core`
 - [x] **SETUP-07**: Root-level scripts: `npm run dev`, `npm run native`, `npm test`
 - [x] **SETUP-08**: Both apps start and run correctly after directory restructure
 
@@ -81,7 +81,7 @@
 | SETUP-03 | Phase 1 | Complete |
 | SETUP-04 | Phase 1 | Complete |
 | SETUP-05 | Phase 1 | Complete |
-| SETUP-06 | Phase 1 | Pending |
+| SETUP-06 | Phase 1 | Complete |
 | SETUP-07 | Phase 1 | Complete |
 | SETUP-08 | Phase 1 | Complete |
 | UTIL-01 | Phase 2 | Pending |

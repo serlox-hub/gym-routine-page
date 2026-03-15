@@ -12,7 +12,7 @@ Incremental migration from two near-identical codebases into an npm workspaces m
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Monorepo Scaffold** - Prove both bundlers and EAS Build resolve `@gym/shared` imports before any production code migrates
+- [x] **Phase 1: Monorepo Scaffold** - Prove both bundlers and EAS Build resolve `@gym/shared` imports before any production code migrates (completed 2026-03-15)
 - [ ] **Phase 2: Utils Migration** - Move 16 pure utility files and 18 tests to `packages/shared`, both apps import from `@gym/shared`
 - [ ] **Phase 3: API Layer Migration** - Move 7 API files to `packages/shared`, refactor RN from inline queries to shared API functions
 - [ ] **Phase 4: Store Factories** - Extract Zustand stores to injectable factory functions, each platform provides its own storage adapter
@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. EAS cloud build passes with the trivial shared import in place
   4. `npm why react` in each app resolves to a single path (no duplicate React instances)
   5. Root-level `npm run dev`, `npm run native`, and `npm test` all execute the correct app or test suite
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md — Restructure repo into monorepo layout with git mv, create package.json files, npm install
@@ -102,7 +102,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo Scaffold | 2/3 | In Progress|  |
+| 1. Monorepo Scaffold | 3/3 | Complete   | 2026-03-15 |
 | 2. Utils Migration | 0/? | Not started | - |
 | 3. API Layer Migration | 0/? | Not started | - |
 | 4. Store Factories | 0/? | Not started | - |
