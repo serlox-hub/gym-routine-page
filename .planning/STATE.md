@@ -45,13 +45,14 @@ Progress: [████████░░] 78%
 |-------|-------|-------|----------|
 | 01-monorepo-scaffold | 3/3 | 12min | 4min |
 | 02-utils-migration | 2/2 | 11min | 5.5min |
-| 03-api-layer-migration | 2/2 | 3min | 1.5min |
+| 03-api-layer-migration | 4/4 | 8min | 2min |
 
 **Recent Trend:**
 - Last 5 plans: 01-03 (2min), 02-01 (7min), 02-02 (4min), 03-01 (2min), 03-02 (1min)
 - Trend: stable
 
 *Updated after each plan completion*
+| Phase 03-03 P03 | 3min | 2 tasks | 10 files |
 | Phase 03-04 P04 | 2min | 3 tasks | 4 files |
 
 ## Accumulated Context
@@ -79,6 +80,8 @@ Recent decisions affecting current work:
 - [Phase 3-01]: initApi/getClient pattern for supabase injection -- keeps API files platform-agnostic
 - [Phase 3-01]: exerciseApi uses relative import for MeasurementType to avoid circular @gym/shared self-import
 - [Phase 3-02]: useAuth.js inline Supabase query for user_settings left as-is -- no fetchUserSettings API function exists yet
+- [Phase 3-03]: fetchUserSettings added to shared adminApi -- eliminates last inline supabase query in useAuth for both platforms
+- [Phase 3-03]: View-layer transforms kept in hook queryFn, not in shared API
 - [Phase 03-04]: addSessionExercise coexists with insertSessionExercise -- RN computes sort order, web uses pre-computed
 
 ### Pending Todos
