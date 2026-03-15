@@ -63,7 +63,13 @@ Plans:
   2. API functions receive the Supabase client as a parameter — no direct `supabase.js` import inside `packages/shared`
   3. Web hooks import API functions from `@gym/shared` and produce identical data to pre-migration behavior
   4. RN hooks produce identical data to web hooks for the same operations
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Create _client.js injection, move 7 API files to shared, wire initApi in both apps
+- [ ] 03-02-PLAN.md — Update web hook imports from ../lib/api/ to @gym/shared, delete old api/
+- [ ] 03-03-PLAN.md — Refactor 8 direct-map RN hooks to shared API calls
+- [ ] 03-04-PLAN.md — Refactor 3 complex RN hooks (session, completedSets, sessionExercises) + add addSessionExercise
 
 ### Phase 4: Store Factories
 **Goal**: Zustand stores are factory functions in `packages/shared`, each platform instantiates them with its own storage adapter, and state persists correctly on both platforms
@@ -107,8 +113,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo Scaffold | 3/3 | Complete    | 2026-03-15 |
-| 2. Utils Migration | 2/2 | Complete   | 2026-03-15 |
-| 3. API Layer Migration | 0/? | Not started | - |
+| 2. Utils Migration | 2/2 | Complete    | 2026-03-15 |
+| 3. API Layer Migration | 0/4 | Not started | - |
 | 4. Store Factories | 0/? | Not started | - |
 | 5. Hooks Migration | 0/? | Not started | - |
 | 6. DX Cleanup | 0/? | Not started | - |
