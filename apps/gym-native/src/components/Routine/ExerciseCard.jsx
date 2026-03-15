@@ -9,7 +9,7 @@ export default function ExerciseCard({
   routineExercise,
   isSuperset = false,
   isEditing = false,
-  isReordering = false,
+  isReordering: _isReordering = false,
   onEdit,
   onDelete,
   onDuplicate,

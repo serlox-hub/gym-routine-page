@@ -18,7 +18,7 @@ import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExer
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { colors } from '../../lib/styles'
 
-export default function WorkoutSessionLayout({ title, navigation, fallbackRoute = 'Home' }) {
+export default function WorkoutSessionLayout({ title, navigation, fallbackRoute: _fallbackRoute = 'Home' }) {
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
   const completedSets = useWorkoutStore(state => state.completedSets)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { Modal, Button } from '../ui'
-import { colors, inputStyle } from '../../lib/styles'
+import { inputStyle } from '../../lib/styles'
 import { usePreference } from '../../hooks/usePreferences'
 
 export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {

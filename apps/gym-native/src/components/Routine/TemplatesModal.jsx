@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, FlatList, Pressable } from 'react-native'
+import { View, Text, FlatList } from 'react-native'
 import { Check } from 'lucide-react-native'
 import { Modal, Card, Button } from '../ui'
 import { colors } from '../../lib/styles'

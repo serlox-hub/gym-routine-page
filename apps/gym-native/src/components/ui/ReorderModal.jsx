@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Modal, ScrollView } from 'react-native'
+import { Text, Pressable, Modal, ScrollView } from 'react-native'
 import { colors } from '../../lib/styles'
 
 export default function ReorderModal({ visible, onClose, totalItems, currentIndex, positionLabels = [], onSelect }) {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { Button, Modal } from '../ui'
-import { colors, inputStyle } from '../../lib/styles'
+import { inputStyle } from '../../lib/styles'
 
 export default function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
   const [form, setForm] = useState({ name: '', estimated_duration_min: '' })

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native'
+import { Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, Button, ActiveSessionBanner } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'

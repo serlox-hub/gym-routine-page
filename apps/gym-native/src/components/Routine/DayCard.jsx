@@ -28,7 +28,7 @@ export default function DayCard({
   dayNames,
   hasActiveSession,
   activeRoutineDayId,
-  navigation,
+  navigation: _navigation,
 }) {
   const { id, sort_order, name, estimated_duration_min } = day
   const [isExpanded, setIsExpanded] = useState(false)

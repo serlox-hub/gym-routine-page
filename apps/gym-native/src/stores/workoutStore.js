@@ -34,7 +34,7 @@ const useWorkoutStore = create(
       name: 'workout-session',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => {
-        const { workoutVisible, showWorkout, hideWorkout, ...rest } = state
+        const { workoutVisible: _wv, showWorkout: _sw, hideWorkout: _hw, ...rest } = state
         return rest
       },
     }

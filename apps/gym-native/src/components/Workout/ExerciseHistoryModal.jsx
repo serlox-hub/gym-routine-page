@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { View, Text, FlatList, Pressable, ScrollView } from 'react-native'
+import { View, Text, Pressable, ScrollView } from 'react-native'
 import { ChevronRight, FileText } from 'lucide-react-native'
 import { useExerciseHistory } from '../../hooks/useWorkout'
 import { LoadingSpinner, Card, Modal } from '../ui'
@@ -94,7 +94,7 @@ function HistoryTab({ sessions, timeUnit, distanceUnit, onSelectSet, onSessionCl
                 </Text>
                 {(set.rir_actual !== null || set.notes) && (
                   <Pressable
-                    onPress={(e) => {
+                    onPress={() => {
                       if (set.notes) onSelectSet(set)
                     }}
                     className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"

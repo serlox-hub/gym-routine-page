@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import { Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Plus } from 'lucide-react-native'
 import { ErrorMessage, Card, PageHeader, Button } from '../components/ui'
 import { useCreateRoutine } from '../hooks/useRoutines'
-import { colors, inputStyle } from '../lib/styles'
+import { inputStyle } from '../lib/styles'
 import { prepareRoutineData, validateRoutineForm } from '@gym/shared'
 
 export default function NewRoutineScreen({ navigation }) {

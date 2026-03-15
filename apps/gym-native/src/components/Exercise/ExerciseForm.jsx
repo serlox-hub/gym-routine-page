@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, Modal as RNModal } from 'react-native'
 import { ChevronDown } from 'lucide-react-native'
-import { Card, Button } from '../ui'
+import { Button } from '../ui'
 import { useMuscleGroups } from '../../hooks/useExercises'
 import { colors, inputStyle } from '../../lib/styles'
 import {
@@ -97,7 +97,7 @@ export default function ExerciseForm({
   initialData = null,
   onSubmit,
   isSubmitting = false,
-  compact = false,
+  compact: _compact = false,
   hideSubmitButton = false,
 }) {
   const { data: muscleGroups, isLoading } = useMuscleGroups()

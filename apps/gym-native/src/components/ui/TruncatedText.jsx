@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Text, Pressable, View } from 'react-native'
+import { Text, View } from 'react-native'
 
 const MAX_CHARS = 80
 

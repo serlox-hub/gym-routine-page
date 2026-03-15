@@ -1,4 +1,4 @@
-import { Modal as RNModal, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
+import { Modal as RNModal, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function Modal({

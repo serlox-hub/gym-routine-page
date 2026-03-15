@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, Pressable } from 'react-native'
+import { View, Text, ScrollView } from 'react-native'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { NotesBadge } from '../ui'
 import SetNotesView from './SetNotesView'

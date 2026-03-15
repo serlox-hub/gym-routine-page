@@ -1,4 +1,4 @@
-import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import { ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useCreateExercise } from '../hooks/useExercises'
 import { PageHeader } from '../components/ui'

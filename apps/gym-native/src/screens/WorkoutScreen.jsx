@@ -2,7 +2,7 @@ import { useRoutineDay } from '../hooks/useRoutines'
 import { WorkoutSessionLayout } from '../components/Workout'
 
 export default function WorkoutScreen({ route, navigation }) {
-  const { routineId, dayId } = route.params
+  const { dayId } = route.params
   const { data: day } = useRoutineDay(dayId)
 
   return (

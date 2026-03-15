@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { View, Text, FlatList, Pressable } from 'react-native'
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus, Settings, ChevronDown } from 'lucide-react-native'
+import { Pencil, Trash2, TrendingUp, TrendingDown, Minus, Settings, ChevronDown } from 'lucide-react-native'
 import { useBodyMeasurementHistory, useRecordBodyMeasurement, useUpdateBodyMeasurement, useDeleteBodyMeasurement } from '../../hooks/useBodyMeasurements'
 import { usePreferences, useUpdatePreference } from '../../hooks/usePreferences'
 import { Card, Button, LoadingSpinner, Modal, ConfirmModal } from '../ui'
