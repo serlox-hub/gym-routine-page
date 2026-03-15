@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
+stopped_at: Completed 05-02-PLAN.md
 last_updated: "2026-03-15T20:42:54.015Z"
-last_activity: 2026-03-15 — Completed plan 05-01 (shared hooks with store injection and notifications)
+last_activity: 2026-03-15 — Completed plan 05-02 (app hook rewiring with re-exports from @gym/shared)
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 13
-  completed_plans: 12
-  percent: 92
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 5 of 6 (Hooks Migration)
-Plan: 1 of 1 in current phase
+Plan: 2 of 2 in current phase
 Status: In Progress
-Last activity: 2026-03-15 — Completed plan 05-01 (shared hooks with store injection and notifications)
+Last activity: 2026-03-15 — Completed plan 05-02 (app hook rewiring with re-exports from @gym/shared)
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [█████████░] 92%
 | Phase 04-01 P01 | 10min | 2 tasks | 3 files |
 | Phase 04 P02 | 1min | 2 tasks | 5 files |
 | Phase 05-01 P01 | 3min | 2 tasks | 13 files |
+| Phase 05-02 P02 | 4min | 3 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,9 @@ Recent decisions affecting current work:
 - [Phase 05-01]: Notification service via initNotifications/getNotifier -- no-op when not initialized
 - [Phase 05-01]: useTimerEngine accepts { playSound, vibrateDevice, onTimerStart, onTimerEnd, isSoundEnabled } callbacks
 - [Phase 05-01]: useWakeLock excluded from shared -- platform-specific
+- [Phase 05-02]: RN useSessionExercises.js kept local -- uses addSessionExercise (RN-specific API) and optimistic reorder
+- [Phase 05-02]: initStores/initNotifications called at module level in entry files, after initApi
+- [Phase 05-02]: Test files need initStores() call for shared hook compatibility
 
 ### Pending Todos
 
@@ -109,6 +113,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T20:42:54Z
-Stopped at: Completed 05-01-PLAN.md
-Resume file: .planning/phases/05-hooks-migration/05-01-SUMMARY.md
+Last session: 2026-03-15T20:48:43Z
+Stopped at: Completed 05-02-PLAN.md
+Resume file: .planning/phases/05-hooks-migration/05-02-SUMMARY.md
