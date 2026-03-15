@@ -6,7 +6,7 @@ import { useWorkoutHistory } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, Modal, PageHeader, ActiveSessionBanner } from '../components/ui'
 import { MonthlyCalendar } from '../components/History'
 import { DurationChart } from '../components/Charts'
-import { formatTime } from '../lib/dateUtils'
+import { formatTime } from '@gym/shared'
 import { colors } from '../lib/styles'
 
 export default function HistoryScreen({ navigation }) {

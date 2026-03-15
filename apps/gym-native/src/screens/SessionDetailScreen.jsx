@@ -5,9 +5,14 @@ import { Clock, Calendar, Trash2 } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui'
 import { SetNotesView } from '../components/Workout'
-import { SENSATION_LABELS, getSensationColor, getMuscleGroupBorderStyle } from '../lib/constants'
-import { formatFullDate, formatTime } from '../lib/dateUtils'
-import { formatSetValue } from '../lib/setUtils'
+import {
+  SENSATION_LABELS,
+  formatFullDate,
+  formatSetValue,
+  formatTime,
+  getSensationColor
+} from '@gym/shared'
+import { getMuscleGroupBorderStyle } from '../lib/constants'
 import { colors } from '../lib/styles'
 
 export default function SessionDetailScreen({ route, navigation }) {

@@ -4,7 +4,7 @@ import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { useRestTimer } from '../../hooks/useWorkout.js'
 import { useDraggable } from '../../hooks/useDrag.js'
-import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
+import { formatSecondsToMMSS } from '@gym/shared'
 
 function ActiveSessionBanner() {
   const navigate = useNavigate()

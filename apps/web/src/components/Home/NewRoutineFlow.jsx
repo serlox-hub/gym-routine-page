@@ -4,9 +4,9 @@ import { LayoutTemplate, FileText, Upload, Bot, RefreshCw } from 'lucide-react'
 import { useUserId } from '../../hooks/useAuth.js'
 import { Card, ImportOptionsModal, LoadingSpinner } from '../ui/index.js'
 import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal, ImportRoutineModal } from '../Routine/index.js'
+import { QUERY_KEYS } from '@gym/shared'
 import { importRoutine } from '../../lib/routineIO.js'
 import { useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '../../lib/constants.js'
 import { colors } from '../../lib/styles.js'
 
 function NewRoutineFlow({ isOpen, onClose }) {

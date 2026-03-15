@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, Linking } from 'react-native'
 import { Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 import { Modal, Button } from '../ui'
-import { buildAdaptRoutinePrompt } from '../../lib/routineIO'
+import { buildAdaptRoutinePrompt } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 const TOTAL_STEPS = 4

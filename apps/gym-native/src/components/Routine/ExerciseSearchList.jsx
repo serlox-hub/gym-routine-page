@@ -2,8 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { View, Text, Pressable, FlatList } from 'react-native'
 import { Check } from 'lucide-react-native'
 import { colors } from '../../lib/styles'
-import { normalizeSearchText } from '../../lib/textUtils'
-import { getMuscleGroupColor } from '../../lib/constants'
+import { getMuscleGroupColor, normalizeSearchText } from '@gym/shared'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar'
 
 export default function ExerciseSearchList({

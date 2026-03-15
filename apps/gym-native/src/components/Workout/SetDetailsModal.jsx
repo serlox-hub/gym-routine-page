@@ -7,8 +7,7 @@ import { Modal } from '../ui'
 import { useCanUploadVideo } from '../../hooks/useAuth'
 import { getVideoUrl } from '../../lib/videoStorage'
 import { colors, inputStyle } from '../../lib/styles'
-import { formatRestTimeDisplay } from '../../lib/timeUtils'
-import { RIR_OPTIONS } from '../../lib/constants'
+import { RIR_OPTIONS, formatRestTimeDisplay, getEffortLabel } from '@gym/shared'
 
 function SetVideoPreview({ uri }) {
   const [resolvedUri, setResolvedUri] = useState(uri)
@@ -49,7 +48,6 @@ function SetVideoPreview({ uri }) {
   )
 }
 import { usePreference } from '../../hooks/usePreferences'
-import { getEffortLabel } from '../../lib/measurementTypes'
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 

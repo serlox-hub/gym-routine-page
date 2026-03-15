@@ -4,8 +4,12 @@ import useWorkoutStore from '../../stores/workoutStore.js'
 import { NotesBadge } from '../ui/index.js'
 import SetDetailsModal from './SetDetailsModal.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs.jsx'
-import { isSetDataValid, buildCompletedSetData, metersToDistanceUnit } from '../../lib/setUtils.js'
-import { MeasurementType } from '../../lib/measurementTypes.js'
+import {
+  MeasurementType,
+  buildCompletedSetData,
+  isSetDataValid,
+  metersToDistanceUnit
+} from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { useUpdateSetVideo, useUpdateSetDetails } from '../../hooks/useWorkout.js'

@@ -2,9 +2,8 @@ import { useRef, useEffect } from 'react'
 import { AppState } from 'react-native'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
-import { QUERY_KEYS } from '../lib/constants.js'
+import { QUERY_KEYS, buildSessionExercisesCache, buildSessionExercisesFromBlocks } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
-import { buildSessionExercisesFromBlocks, buildSessionExercisesCache } from '../lib/workoutTransforms.js'
 
 // ============================================
 // SESSION RESTORATION

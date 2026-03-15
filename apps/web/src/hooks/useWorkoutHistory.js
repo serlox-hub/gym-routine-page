@@ -1,5 +1,5 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '../lib/constants.js'
+import { QUERY_KEYS } from '@gym/shared'
 import {
   fetchWorkoutHistory,
   fetchSessionDetail,

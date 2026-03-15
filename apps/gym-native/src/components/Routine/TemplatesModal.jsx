@@ -3,7 +3,7 @@ import { View, Text, FlatList, Pressable } from 'react-native'
 import { Check } from 'lucide-react-native'
 import { Modal, Card, Button } from '../ui'
 import { colors } from '../../lib/styles'
-import { ROUTINE_TEMPLATES } from '../../lib/routineTemplates'
+import { ROUTINE_TEMPLATES } from '@gym/shared'
 
 function TemplateCard({ template, isSelected, onSelect }) {
   const daysCount = template.data.routine.days.length

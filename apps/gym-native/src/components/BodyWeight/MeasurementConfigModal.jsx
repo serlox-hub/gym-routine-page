@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native'
 import { Check } from 'lucide-react-native'
 import { Modal, Button } from '../ui'
 import { colors } from '../../lib/styles'
-import { getOrderedMeasurementTypes, getMeasurementLabel } from '../../lib/measurementConstants'
+import { getMeasurementLabel, getOrderedMeasurementTypes } from '@gym/shared'
 
 export default function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onSave, isPending }) {
   const [selected, setSelected] = useState(new Set())

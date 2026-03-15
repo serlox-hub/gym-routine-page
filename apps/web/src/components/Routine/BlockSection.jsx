@@ -2,8 +2,7 @@ import { Flame, Link2, Dumbbell, Plus } from 'lucide-react'
 import ExerciseCard from './ExerciseCard.jsx'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { groupExercisesBySupersetId } from '../../lib/workoutTransforms.js'
-import { formatSupersetLabel } from '../../lib/supersetUtils.js'
+import { formatSupersetLabel, groupExercisesBySupersetId } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
 
 function BlockSection({

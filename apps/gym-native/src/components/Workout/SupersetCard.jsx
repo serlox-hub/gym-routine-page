@@ -3,7 +3,7 @@ import { Link2 } from 'lucide-react-native'
 import { Card } from '../ui'
 import WorkoutExerciseCard from './WorkoutExerciseCard'
 import { colors } from '../../lib/styles'
-import { formatSupersetLabel } from '../../lib/supersetUtils'
+import { formatSupersetLabel } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/constants'
 
 export default function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, onReplace }) {

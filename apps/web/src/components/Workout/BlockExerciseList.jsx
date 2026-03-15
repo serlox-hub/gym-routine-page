@@ -2,8 +2,7 @@ import { Flame } from 'lucide-react'
 import { WorkoutExerciseCard } from './index.js'
 import SupersetCard from './SupersetCard.jsx'
 import { colors } from '../../lib/styles.js'
-import { countExercisesInBlock } from '../../lib/supersetUtils.js'
-import { getReorderProps } from '../../lib/arrayUtils.js'
+import { countExercisesInBlock, getReorderProps } from '@gym/shared'
 
 function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false }) {
   const positionLabels = flatExercises.map(e => e.exercise.name)

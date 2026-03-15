@@ -13,7 +13,7 @@ import {
   DayCard, AddDayModal, RoutineHeader, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal,
 } from '../components/Routine'
-import { moveItemToPosition } from '../lib/arrayUtils'
+import { moveItemToPosition } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
 

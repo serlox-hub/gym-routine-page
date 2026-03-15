@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { transformSessionsToDurationChartData, calculateAverageDuration } from '../../lib/workoutCalculations.js'
+import { calculateAverageDuration, transformSessionsToDurationChartData } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function DurationChart({ sessions, currentDate }) {

@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react-native'
 import { ErrorMessage, Card, PageHeader, Button } from '../components/ui'
 import { useCreateRoutine } from '../hooks/useRoutines'
 import { colors, inputStyle } from '../lib/styles'
-import { validateRoutineForm, prepareRoutineData } from '../lib/validation'
+import { prepareRoutineData, validateRoutineForm } from '@gym/shared'
 
 export default function NewRoutineScreen({ navigation }) {
   const createRoutine = useCreateRoutine()

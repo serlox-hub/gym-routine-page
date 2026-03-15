@@ -3,11 +3,13 @@ import { useExercise } from '../hooks/useExercises.js'
 import { useExerciseHistory, useExerciseHistorySummary } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import ExerciseProgressChart from '../components/Workout/ExerciseProgressChart.jsx'
-import { formatShortDate } from '../lib/dateUtils.js'
-import { formatSetValue } from '../lib/setUtils.js'
-import { calculateExerciseStats } from '../lib/workoutCalculations.js'
+import {
+  MeasurementType,
+  calculateExerciseStats,
+  formatSetValue,
+  formatShortDate
+} from '@gym/shared'
 import { colors } from '../lib/styles.js'
-import { MeasurementType } from '../lib/measurementTypes.js'
 
 function ExerciseProgress() {
   const { exerciseId } = useParams()

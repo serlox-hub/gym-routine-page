@@ -3,9 +3,7 @@ import { colors } from '../../lib/styles.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { NotesBadge } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
-import { formatRelativeDate } from '../../lib/dateUtils.js'
-import { formatSetValueByType } from '../../lib/setUtils.js'
-import { MeasurementType } from '../../lib/measurementTypes.js'
+import { MeasurementType, formatRelativeDate, formatSetValueByType } from '@gym/shared'
 
 function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, timeUnit = 's', distanceUnit = 'm' }) {
   const { data: previous, isLoading } = usePreviousWorkout(exerciseId)

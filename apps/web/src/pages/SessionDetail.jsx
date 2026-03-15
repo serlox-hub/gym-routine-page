@@ -4,9 +4,14 @@ import { Clock, Calendar, Trash2, TrendingUp } from 'lucide-react'
 import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui/index.js'
 import SetNotesView from '../components/Workout/SetNotesView.jsx'
-import { SENSATION_LABELS, getSensationColor, getMuscleGroupBorderStyle } from '../lib/constants.js'
-import { formatFullDate, formatTime } from '../lib/dateUtils.js'
-import { formatSetValue } from '../lib/setUtils.js'
+import {
+  SENSATION_LABELS,
+  formatFullDate,
+  formatSetValue,
+  formatTime,
+  getSensationColor
+} from '@gym/shared'
+import { getMuscleGroupBorderStyle } from '../lib/constants.js'
 import { colors } from '../lib/styles.js'
 
 function SessionDetail() {

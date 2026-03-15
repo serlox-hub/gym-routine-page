@@ -5,8 +5,7 @@ import { Card, ConfirmModal, DropdownMenu, LoadingSpinner } from '../ui/index.js
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
-import { moveItemToPosition } from '../../lib/arrayUtils.js'
-import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
+import { getExistingSupersetIds, moveItemToPosition } from '@gym/shared'
 import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
 

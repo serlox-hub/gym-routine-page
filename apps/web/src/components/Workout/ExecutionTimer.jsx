@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
+import { formatSecondsToMMSS } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function ExecutionTimer({ seconds }) {

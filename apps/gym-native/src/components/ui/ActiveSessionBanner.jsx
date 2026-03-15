@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated, PanResponder, Dimensions } from 'react
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Play } from 'lucide-react-native'
 import useWorkoutStore from '../../stores/workoutStore'
-import { formatSecondsToMMSS } from '../../lib/timeUtils'
+import { formatSecondsToMMSS } from '@gym/shared'
 
 export default function ActiveSessionBanner() {
   const insets = useSafeAreaInsets()

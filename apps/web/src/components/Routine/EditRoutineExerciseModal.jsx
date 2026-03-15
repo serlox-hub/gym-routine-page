@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { getNextSupersetId } from '../../lib/supersetUtils.js'
-import { parseExerciseConfigForm } from '../../lib/routineExerciseForm.js'
+import { getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
 import ExercisePickerModal from './ExercisePickerModal.jsx'
 

@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
-import { QUERY_KEYS } from '../lib/constants.js'
-import { MeasurementType } from '../lib/measurementTypes.js'
+import { MeasurementType, QUERY_KEYS } from '@gym/shared'
 import { useUserId } from './useAuth.js'
 
 export function useExercisesWithMuscleGroup() {

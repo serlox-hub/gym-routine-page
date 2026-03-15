@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, Modal } from 'react-native'
 import { Search, ChevronDown } from 'lucide-react-native'
 import { colors, inputStyle } from '../../lib/styles'
-import { getMuscleGroupColor } from '../../lib/constants'
+import { getMuscleGroupColor } from '@gym/shared'
 
 export default function ExerciseSearchBar({
   search,

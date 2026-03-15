@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react'
 import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useMoveRoutineExerciseToDay } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
 import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, MoveToDayModal } from '../components/Routine/index.js'
-import { moveItemToPosition } from '../lib/arrayUtils.js'
+import { moveItemToPosition } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { colors } from '../lib/styles.js'
 

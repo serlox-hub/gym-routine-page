@@ -2,11 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { Check, Video, X, Save, Loader2 } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import { colors, inputStyle } from '../../lib/styles.js'
-import { formatRestTimeDisplay } from '../../lib/timeUtils.js'
+import { RIR_OPTIONS, formatRestTimeDisplay, getEffortLabel } from '@gym/shared'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
-import { RIR_OPTIONS } from '../../lib/constants.js'
 import { usePreference } from '../../hooks/usePreferences.js'
-import { getEffortLabel } from '../../lib/measurementTypes.js'
 import { getVideoUrl } from '../../lib/videoStorage.js'
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB

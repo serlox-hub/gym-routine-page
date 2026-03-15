@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Search, ChevronDown } from 'lucide-react'
 import { colors, inputStyle } from '../../lib/styles.js'
-import { getMuscleGroupColor } from '../../lib/constants.js'
+import { getMuscleGroupColor } from '@gym/shared'
 
 function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscleGroup, onMuscleGroupChange, autoFocus = false }) {
   const [isOpen, setIsOpen] = useState(false)

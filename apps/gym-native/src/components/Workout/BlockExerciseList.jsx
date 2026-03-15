@@ -4,8 +4,7 @@ import { Flame } from 'lucide-react-native'
 import WorkoutExerciseCard from './WorkoutExerciseCard'
 import SupersetCard from './SupersetCard'
 import { colors } from '../../lib/styles'
-import { countExercisesInBlock } from '../../lib/supersetUtils'
-import { findExerciseIndex } from '../../lib/arrayUtils'
+import { countExercisesInBlock, findExerciseIndex } from '@gym/shared'
 
 function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false }) {
   const totalFlat = flatExercises.length

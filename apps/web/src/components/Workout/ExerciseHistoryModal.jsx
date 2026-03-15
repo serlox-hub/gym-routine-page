@@ -6,10 +6,12 @@ import { LoadingSpinner, Card, Modal } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'
 import { colors, buttonSecondaryStyle } from '../../lib/styles.js'
-import { formatShortDate } from '../../lib/dateUtils.js'
-import { formatSetValue } from '../../lib/setUtils.js'
-import { calculateExerciseStats } from '../../lib/workoutCalculations.js'
-import { MeasurementType } from '../../lib/measurementTypes.js'
+import {
+  MeasurementType,
+  calculateExerciseStats,
+  formatSetValue,
+  formatShortDate
+} from '@gym/shared'
 
 const RIR_LABELS = {
   [-1]: 'F',

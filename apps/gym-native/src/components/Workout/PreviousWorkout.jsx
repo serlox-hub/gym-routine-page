@@ -3,9 +3,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { NotesBadge } from '../ui'
 import SetNotesView from './SetNotesView'
-import { formatRelativeDate } from '../../lib/dateUtils'
-import { formatSetValueByType } from '../../lib/setUtils'
-import { MeasurementType } from '../../lib/measurementTypes'
+import { MeasurementType, formatRelativeDate, formatSetValueByType } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, timeUnit = 's', distanceUnit = 'm' }) {

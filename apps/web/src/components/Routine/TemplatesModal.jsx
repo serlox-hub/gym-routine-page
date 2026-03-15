@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { X, ChevronRight, Check } from 'lucide-react'
 import { Button, Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { ROUTINE_TEMPLATES } from '../../lib/routineTemplates.js'
+import { ROUTINE_TEMPLATES } from '@gym/shared'
 
 function TemplatesModal({ onClose, onSelect }) {
   const [selectedTemplate, setSelectedTemplate] = useState(null)

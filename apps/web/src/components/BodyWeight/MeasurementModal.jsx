@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button, Modal, Input, Textarea } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { getMeasurementLabel } from '../../lib/measurementConstants.js'
+import { getMeasurementLabel } from '@gym/shared'
 
 function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = 'cm', record = null, isPending }) {
   const [form, setForm] = useState({

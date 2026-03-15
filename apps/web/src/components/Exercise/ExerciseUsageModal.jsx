@@ -2,7 +2,7 @@ import { X, Dumbbell, Calendar } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { Modal, LoadingSpinner, ErrorMessage } from '../ui/index.js'
 import { useExerciseUsageDetail } from '../../hooks/useExercises.js'
-import { formatShortDate } from '../../lib/dateUtils.js'
+import { formatShortDate } from '@gym/shared'
 
 function ExerciseUsageModal({ exercise, onClose }) {
   const { data, isLoading, error } = useExerciseUsageDetail(exercise?.id)

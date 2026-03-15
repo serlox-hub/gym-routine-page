@@ -8,8 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { transformSessionsToChartData } from '../../lib/workoutCalculations.js'
-import { MeasurementType } from '../../lib/measurementTypes.js'
+import { MeasurementType, transformSessionsToChartData } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 const TABS = {

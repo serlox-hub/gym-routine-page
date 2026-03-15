@@ -3,7 +3,7 @@ import { Info, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType } from '../../lib/measurementTypes.js'
+import { MeasurementType } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
 
 function ExerciseCard({

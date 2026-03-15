@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Copy, Check, X, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Button } from '../ui/index.js'
-import { buildAdaptRoutinePrompt } from '../../lib/routineIO.js'
+import { buildAdaptRoutinePrompt } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function AdaptRoutineModal({ onClose, onImportClick }) {

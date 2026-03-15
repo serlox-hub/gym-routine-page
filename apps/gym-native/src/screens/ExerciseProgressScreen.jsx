@@ -3,11 +3,13 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useExercise } from '../hooks/useExercises'
 import { useExerciseHistory } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui'
-import { formatShortDate } from '../lib/dateUtils'
-import { formatSetValue } from '../lib/setUtils'
-import { calculateExerciseStats } from '../lib/workoutCalculations'
+import {
+  MeasurementType,
+  calculateExerciseStats,
+  formatSetValue,
+  formatShortDate
+} from '@gym/shared'
 import { colors } from '../lib/styles'
-import { MeasurementType } from '../lib/measurementTypes'
 import { ExerciseProgressChart } from '../components/Charts'
 
 function StatCard({ label, value, color }) {

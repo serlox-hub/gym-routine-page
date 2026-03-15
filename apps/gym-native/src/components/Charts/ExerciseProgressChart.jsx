@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { LineChart } from 'react-native-gifted-charts'
-import { transformSessionsToChartData } from '../../lib/workoutCalculations'
-import { MeasurementType } from '../../lib/measurementTypes'
+import { MeasurementType, transformSessionsToChartData } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 const TABS = {

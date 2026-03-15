@@ -5,10 +5,12 @@ import { useExerciseHistory } from '../../hooks/useWorkout'
 import { LoadingSpinner, Card, Modal } from '../ui'
 import SetNotesView from './SetNotesView'
 import { colors } from '../../lib/styles'
-import { formatShortDate } from '../../lib/dateUtils'
-import { formatSetValue } from '../../lib/setUtils'
-import { calculateExerciseStats } from '../../lib/workoutCalculations'
-import { MeasurementType } from '../../lib/measurementTypes'
+import {
+  MeasurementType,
+  calculateExerciseStats,
+  formatSetValue,
+  formatShortDate
+} from '@gym/shared'
 import { ExerciseProgressChart } from '../Charts'
 
 const RIR_LABELS = { [-1]: 'F', 0: '0', 1: '1', 2: '2', 3: '3+' }

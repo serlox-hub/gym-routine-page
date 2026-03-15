@@ -4,8 +4,12 @@ import useWorkoutStore from '../../stores/workoutStore'
 import { NotesBadge } from '../ui'
 import SetDetailsModal from './SetDetailsModal'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs'
-import { isSetDataValid, buildCompletedSetData, metersToDistanceUnit } from '../../lib/setUtils'
-import { MeasurementType } from '../../lib/measurementTypes'
+import {
+  MeasurementType,
+  buildCompletedSetData,
+  isSetDataValid,
+  metersToDistanceUnit
+} from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
 import { useCanUploadVideo } from '../../hooks/useAuth'
 import { useUpdateSetVideo, useUpdateSetDetails } from '../../hooks/useWorkout'

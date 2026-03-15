@@ -8,8 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { transformMeasurementToChartData } from '../../lib/bodyMeasurementCalculations.js'
-import { getMeasurementLabel } from '../../lib/measurementConstants.js'
+import { getMeasurementLabel, transformMeasurementToChartData } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function MeasurementChart({ records, measurementType, unit = 'cm' }) {

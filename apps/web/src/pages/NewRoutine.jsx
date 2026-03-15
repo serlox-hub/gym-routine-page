@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react'
 import { ErrorMessage, Card, PageHeader, Input, Textarea } from '../components/ui/index.js'
 import { useCreateRoutine } from '../hooks/useRoutines.js'
 import { colors } from '../lib/styles.js'
-import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
+import { prepareRoutineData, validateRoutineForm } from '@gym/shared'
 
 function NewRoutine() {
   const navigate = useNavigate()

@@ -5,7 +5,7 @@ import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react-native'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, DropdownMenu, Button, ActiveSessionBanner } from '../components/ui'
 import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise'
-import { normalizeSearchText } from '../lib/textUtils'
+import { normalizeSearchText } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/constants'
 import { colors } from '../lib/styles'
 

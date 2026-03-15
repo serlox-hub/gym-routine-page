@@ -3,7 +3,7 @@ import { View, Text, Pressable, Modal, Animated, PanResponder, Dimensions } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Minimize2, Maximize2 } from 'lucide-react-native'
 import { useRestTimer } from '../../hooks/useWorkout'
-import { formatSecondsToMMSS } from '../../lib/timeUtils'
+import { formatSecondsToMMSS } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
 

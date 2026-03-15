@@ -6,8 +6,7 @@ import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise,
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
-import { moveItemToPosition } from '../../lib/arrayUtils'
-import { getExistingSupersetIds } from '../../lib/supersetUtils'
+import { getExistingSupersetIds, moveItemToPosition } from '@gym/shared'
 import DayEditForm from './DayEditForm'
 import BlockSection from './BlockSection'
 

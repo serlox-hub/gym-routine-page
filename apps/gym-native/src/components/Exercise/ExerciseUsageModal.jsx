@@ -2,7 +2,7 @@ import { View, Text, ScrollView } from 'react-native'
 import { Dumbbell, Calendar } from 'lucide-react-native'
 import { Modal, LoadingSpinner, ErrorMessage } from '../ui'
 import { useExerciseUsageDetail } from '../../hooks/useExercises'
-import { formatShortDate } from '../../lib/dateUtils'
+import { formatShortDate } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function ExerciseUsageModal({ exercise, onClose }) {

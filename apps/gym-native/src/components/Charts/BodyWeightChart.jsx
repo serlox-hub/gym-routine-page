@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { View, Text } from 'react-native'
 import { LineChart } from 'react-native-gifted-charts'
-import { transformBodyWeightToChartData } from '../../lib/bodyWeightCalculations'
+import { transformBodyWeightToChartData } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function BodyWeightChart({ records, unit = 'kg' }) {

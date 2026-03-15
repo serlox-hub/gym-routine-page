@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { View, Text } from 'react-native'
 import { BarChart } from 'react-native-gifted-charts'
-import { transformSessionsToDurationChartData, calculateAverageDuration } from '../../lib/workoutCalculations'
+import { calculateAverageDuration, transformSessionsToDurationChartData } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function DurationChart({ sessions, currentDate }) {

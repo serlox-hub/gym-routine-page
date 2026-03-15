@@ -1,7 +1,12 @@
 import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { generateCalendarDays, getMonthName, getPreviousMonth, getNextMonth } from '../../lib/calendarUtils.js'
-import { MUSCLE_GROUP_COLORS } from '../../lib/constants.js'
+import {
+  MUSCLE_GROUP_COLORS,
+  generateCalendarDays,
+  getMonthName,
+  getNextMonth,
+  getPreviousMonth
+} from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']

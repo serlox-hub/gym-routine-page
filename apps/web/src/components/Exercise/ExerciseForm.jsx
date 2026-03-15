@@ -2,8 +2,14 @@ import { useState, useEffect } from 'react'
 import { Card, BottomActions, Input, Select, Textarea } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
 import { colors } from '../../lib/styles.js'
-import { MEASUREMENT_TYPE_OPTIONS, measurementTypeUsesWeight, measurementTypeUsesTime, measurementTypeUsesDistance, MeasurementType } from '../../lib/measurementTypes.js'
-import { getMuscleGroupColor } from '../../lib/constants.js'
+import {
+  MEASUREMENT_TYPE_OPTIONS,
+  MeasurementType,
+  getMuscleGroupColor,
+  measurementTypeUsesDistance,
+  measurementTypeUsesTime,
+  measurementTypeUsesWeight
+} from '@gym/shared'
 
 const WEIGHT_UNITS = [
   { value: 'kg', label: 'Kilogramos (kg)' },

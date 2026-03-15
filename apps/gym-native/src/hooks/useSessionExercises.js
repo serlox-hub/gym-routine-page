@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
-import { QUERY_KEYS } from '../lib/constants.js'
+import { QUERY_KEYS } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 // ============================================

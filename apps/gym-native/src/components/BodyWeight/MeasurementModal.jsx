@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
-import { getMeasurementLabel } from '../../lib/measurementConstants'
+import { getMeasurementLabel } from '@gym/shared'
 
 export default function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = 'cm', record = null, isPending }) {
   const [form, setForm] = useState({ value: '', notes: '' })

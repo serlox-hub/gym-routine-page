@@ -7,9 +7,12 @@ import { Card, Button, LoadingSpinner, Modal, ConfirmModal } from '../ui'
 import { MeasurementChart } from '../Charts'
 import MeasurementModal from './MeasurementModal'
 import MeasurementConfigModal from './MeasurementConfigModal'
-import { calculateMeasurementStats, calculateMeasurementTrend } from '../../lib/bodyMeasurementCalculations'
-import { getMeasurementLabel } from '../../lib/measurementConstants'
-import { formatShortDate } from '../../lib/dateUtils'
+import {
+  calculateMeasurementStats,
+  calculateMeasurementTrend,
+  formatShortDate,
+  getMeasurementLabel
+} from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function MeasurementSection() {

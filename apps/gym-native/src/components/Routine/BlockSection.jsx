@@ -3,8 +3,7 @@ import { Flame, Link2, Dumbbell, Plus } from 'lucide-react-native'
 import ExerciseCard from './ExerciseCard'
 import { Card } from '../ui'
 import { colors } from '../../lib/styles'
-import { groupExercisesBySupersetId } from '../../lib/workoutTransforms'
-import { formatSupersetLabel } from '../../lib/supersetUtils'
+import { formatSupersetLabel, groupExercisesBySupersetId } from '@gym/shared'
 
 export default function BlockSection({
   block,

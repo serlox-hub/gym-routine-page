@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { transformBodyWeightToChartData } from '../../lib/bodyWeightCalculations.js'
+import { transformBodyWeightToChartData } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function BodyWeightChart({ records, unit = 'kg' }) {

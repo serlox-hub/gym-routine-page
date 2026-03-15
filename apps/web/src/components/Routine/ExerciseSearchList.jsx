@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import { normalizeSearchText } from '../../lib/textUtils.js'
-import { getMuscleGroupColor } from '../../lib/constants.js'
+import { getMuscleGroupColor, normalizeSearchText } from '@gym/shared'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
 
 /**

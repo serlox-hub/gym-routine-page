@@ -3,7 +3,7 @@ import { View, Text, TextInput, ScrollView, Pressable } from 'react-native'
 import { Copy, Check, ChevronLeft } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 import { Modal, Button } from '../ui'
-import { buildChatbotPrompt } from '../../lib/routineIO'
+import { buildChatbotPrompt } from '@gym/shared'
 import { colors, inputStyle } from '../../lib/styles'
 
 const OBJECTIVES = [

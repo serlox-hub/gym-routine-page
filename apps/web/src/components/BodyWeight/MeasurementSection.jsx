@@ -6,9 +6,12 @@ import { Card, Button, LoadingSpinner } from '../ui/index.js'
 import MeasurementChart from './MeasurementChart.jsx'
 import MeasurementModal from './MeasurementModal.jsx'
 import MeasurementConfigModal from './MeasurementConfigModal.jsx'
-import { calculateMeasurementStats, calculateMeasurementTrend } from '../../lib/bodyMeasurementCalculations.js'
-import { getMeasurementLabel } from '../../lib/measurementConstants.js'
-import { formatShortDate } from '../../lib/dateUtils.js'
+import {
+  calculateMeasurementStats,
+  calculateMeasurementTrend,
+  formatShortDate,
+  getMeasurementLabel
+} from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function MeasurementSection() {

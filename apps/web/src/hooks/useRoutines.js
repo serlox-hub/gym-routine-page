@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '../lib/constants.js'
-import { useUserId } from './useAuth.js'
+import { QUERY_KEYS } from '@gym/shared'
 import { duplicateRoutine } from '../lib/routineIO.js'
+import { useUserId } from './useAuth.js'
 import {
   fetchRoutines,
   fetchRoutine,

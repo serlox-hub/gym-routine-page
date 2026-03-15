@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Text } from 'react-native'
 import { Modal } from '../ui'
-import { getDefaultReps } from '../../lib/measurementTypes'
-import { getNextSupersetId } from '../../lib/supersetUtils'
-import { parseExerciseConfigForm } from '../../lib/routineExerciseForm'
+import { getDefaultReps, getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
 import ExercisePickerModal from './ExercisePickerModal'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm'
 

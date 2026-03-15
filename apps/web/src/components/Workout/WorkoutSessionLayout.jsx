@@ -22,9 +22,7 @@ import EndSessionModal from './EndSessionModal.jsx'
 import SessionTimer from './SessionTimer.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { transformSessionExercises } from '../../lib/workoutTransforms.js'
-import { getExistingSupersetIds } from '../../lib/supersetUtils.js'
-import { calculateExerciseProgress } from '../../lib/workoutCalculations.js'
+import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()

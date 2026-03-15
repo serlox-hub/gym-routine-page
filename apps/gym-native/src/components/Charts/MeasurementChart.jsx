@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import { View, Text } from 'react-native'
 import { LineChart } from 'react-native-gifted-charts'
-import { transformMeasurementToChartData } from '../../lib/bodyMeasurementCalculations'
-import { getMeasurementLabel } from '../../lib/measurementConstants'
+import { getMeasurementLabel, transformMeasurementToChartData } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function MeasurementChart({ records, measurementType, unit = 'cm' }) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import * as Haptics from 'expo-haptics'
-import { formatSecondsToMMSS } from '../../lib/timeUtils'
+import { formatSecondsToMMSS } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function ExecutionTimer({ seconds }) {

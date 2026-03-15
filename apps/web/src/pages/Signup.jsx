@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button, Input } from '@/components/ui'
-import { validateSignupForm } from '../lib/validation.js'
+import { validateSignupForm } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
 function Signup() {

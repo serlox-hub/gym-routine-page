@@ -6,8 +6,7 @@ import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDele
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, Button, ActiveSessionBanner } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'
 import { BodyWeightChart } from '../components/Charts'
-import { calculateBodyWeightStats, calculateWeightTrend } from '../lib/bodyWeightCalculations'
-import { formatShortDate } from '../lib/dateUtils'
+import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate } from '@gym/shared'
 import { colors } from '../lib/styles'
 
 function WeightSection() {

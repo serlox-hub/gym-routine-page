@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '../lib/constants.js'
+import { QUERY_KEYS } from '@gym/shared'
 import { useUserId } from './useAuth.js'
 import {
   fetchExercisesWithMuscleGroup,

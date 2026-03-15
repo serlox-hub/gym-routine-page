@@ -2,7 +2,7 @@ import { Minimize2, Maximize2 } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { useRestTimer } from '../../hooks/useWorkout.js'
 import { useDraggable } from '../../hooks/useDrag.js'
-import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
+import { formatSecondsToMMSS } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
 
 function RestTimer() {

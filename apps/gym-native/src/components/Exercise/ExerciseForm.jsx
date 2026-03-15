@@ -6,12 +6,12 @@ import { useMuscleGroups } from '../../hooks/useExercises'
 import { colors, inputStyle } from '../../lib/styles'
 import {
   MEASUREMENT_TYPE_OPTIONS,
-  measurementTypeUsesWeight,
-  measurementTypeUsesTime,
-  measurementTypeUsesDistance,
   MeasurementType,
-} from '../../lib/measurementTypes'
-import { getMuscleGroupColor } from '../../lib/constants'
+  getMuscleGroupColor,
+  measurementTypeUsesDistance,
+  measurementTypeUsesTime,
+  measurementTypeUsesWeight
+} from '@gym/shared'
 
 const UNIT_OPTIONS = {
   weight: [

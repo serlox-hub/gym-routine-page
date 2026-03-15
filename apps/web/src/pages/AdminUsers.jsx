@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom'
 import { useIsAdmin } from '../hooks/useAuth.js'
 import { useAllUsers, useUpdateUserSetting } from '../hooks/useAdmin.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
-import { formatFullDate } from '../lib/dateUtils.js'
+import { formatFullDate } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
 const FEATURE_FLAGS = [

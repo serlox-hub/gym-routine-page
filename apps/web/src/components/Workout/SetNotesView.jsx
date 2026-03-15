@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import { getVideoUrl } from '../../lib/videoStorage.js'
-import { RIR_LABELS } from '../../lib/constants.js'
+import { RIR_LABELS } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function VideoPlayer({ videoKey }) {

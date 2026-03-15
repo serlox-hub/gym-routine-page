@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from 'react-native'
 import { Modal } from '../ui'
 import VideoPlayer from '../ui/VideoPlayer'
-import { RIR_LABELS } from '../../lib/constants'
+import { RIR_LABELS } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {

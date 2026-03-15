@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../lib/supabase'
-import { validateResetPasswordForm } from '../lib/validation'
+import { validateResetPasswordForm } from '@gym/shared'
 import { Button, Card } from '../components/ui'
 import { inputStyle } from '../lib/styles'
 

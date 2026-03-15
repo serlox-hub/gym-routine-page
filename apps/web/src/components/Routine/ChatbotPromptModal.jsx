@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Copy, Check, X, ChevronLeft } from 'lucide-react'
 import { Button, Input } from '../ui/index.js'
-import { buildChatbotPrompt } from '../../lib/routineIO.js'
+import { buildChatbotPrompt } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 const INITIAL_FORM_STATE = {

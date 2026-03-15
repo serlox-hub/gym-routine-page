@@ -4,7 +4,7 @@ import { Calendar, X } from 'lucide-react'
 import { useWorkoutHistory } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import { MonthlyCalendar, DurationChart } from '../components/History/index.js'
-import { formatTime } from '../lib/dateUtils.js'
+import { formatTime } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
 function History() {

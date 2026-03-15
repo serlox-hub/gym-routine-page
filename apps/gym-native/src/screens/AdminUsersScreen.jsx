@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useIsAdmin } from '../hooks/useAuth'
 import { useAllUsers, useUpdateUserSetting } from '../hooks/useAdmin'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui'
-import { formatFullDate } from '../lib/dateUtils'
+import { formatFullDate } from '@gym/shared'
 import { colors } from '../lib/styles'
 
 const FEATURE_FLAGS = [

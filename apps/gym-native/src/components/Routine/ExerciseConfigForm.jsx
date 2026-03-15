@@ -3,8 +3,7 @@ import { useState } from 'react'
 import { ChevronDown } from 'lucide-react-native'
 import { Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
-import { getRepsLabel, getRepsPlaceholder } from '../../lib/measurementTypes'
-import { formatSupersetLabel } from '../../lib/supersetUtils'
+import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder } from '@gym/shared'
 
 function FormField({ label, required, secondary, children }) {
   return (

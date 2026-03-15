@@ -8,7 +8,7 @@ import ExercisePickerModal from '../Routine/ExercisePickerModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType } from '../../lib/measurementTypes.js'
+import { MeasurementType } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/constants.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [] }) {

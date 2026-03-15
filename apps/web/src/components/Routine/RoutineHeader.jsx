@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Pencil, Download, Trash2, Copy } from 'lucide-react'
 import { useUpdateRoutine, useDuplicateRoutine } from '../../hooks/useRoutines.js'
-import { exportRoutine, downloadRoutineAsJson } from '../../lib/routineIO.js'
-import { sanitizeFilename } from '../../lib/textUtils.js'
+import { sanitizeFilename } from '@gym/shared'
+import { downloadRoutineAsJson, exportRoutine } from '../../lib/routineIO.js'
 import { PageHeader, Input, Textarea } from '../ui/index.js'
 
 const DEBOUNCE_MS = 500

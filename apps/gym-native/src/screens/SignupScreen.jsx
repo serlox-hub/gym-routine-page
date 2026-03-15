@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../hooks/useAuth'
-import { validateSignupForm } from '../lib/validation'
+import { validateSignupForm } from '@gym/shared'
 import { Button, Card, GoogleIcon } from '../components/ui'
 
 export default function SignupScreen({ navigation }) {

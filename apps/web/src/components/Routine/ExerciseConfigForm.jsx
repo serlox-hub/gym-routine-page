@@ -1,7 +1,6 @@
 import { Button, Input, Select } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { getRepsLabel, getRepsPlaceholder } from '../../lib/measurementTypes.js'
-import { formatSupersetLabel } from '../../lib/supersetUtils.js'
+import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder } from '@gym/shared'
 
 /**
  * Formulario para configurar series, reps, tempo, notas de un ejercicio

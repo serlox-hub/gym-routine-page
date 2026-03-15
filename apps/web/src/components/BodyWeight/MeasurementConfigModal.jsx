@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Check } from 'lucide-react'
 import { Button, Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { getOrderedMeasurementTypes, getMeasurementLabel } from '../../lib/measurementConstants.js'
+import { getMeasurementLabel, getOrderedMeasurementTypes } from '@gym/shared'
 
 function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onSave, isPending }) {
   const [selected, setSelected] = useState(new Set())

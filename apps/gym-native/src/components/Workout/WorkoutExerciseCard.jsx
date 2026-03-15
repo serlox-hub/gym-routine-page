@@ -9,7 +9,7 @@ import { ExercisePickerModal } from '../Routine'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
-import { MeasurementType } from '../../lib/measurementTypes'
+import { MeasurementType } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/constants'
 
 function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds }) {

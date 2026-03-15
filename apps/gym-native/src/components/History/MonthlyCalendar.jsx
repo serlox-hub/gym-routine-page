@@ -1,8 +1,13 @@
 import { useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { ChevronLeft, ChevronRight } from 'lucide-react-native'
-import { generateCalendarDays, getMonthName, getPreviousMonth, getNextMonth } from '../../lib/calendarUtils'
-import { MUSCLE_GROUP_COLORS } from '../../lib/constants'
+import {
+  MUSCLE_GROUP_COLORS,
+  generateCalendarDays,
+  getMonthName,
+  getNextMonth,
+  getPreviousMonth
+} from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
