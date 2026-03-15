@@ -1,12 +1,12 @@
-import { supabase } from '../supabase.js'
+import { getClient } from './_client.js'
 
 export async function fetchAllUsers() {
-  const { data: users, error: usersError } = await supabase
+  const { data: users, error: usersError } = await getClient()
     .rpc('get_all_users')
 
   if (usersError) throw usersError
 
-  const { data: settings, error: settingsError } = await supabase
+  const { data: settings, error: settingsError } = await getClient()
     .from('user_settings')
     .select('user_id, key, value')
 
@@ -27,7 +27,7 @@ export async function fetchAllUsers() {
 
 export async function updateUserSetting({ userId, key, value }) {
   if (value === null || value === undefined) {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('user_settings')
       .delete()
       .eq('user_id', userId)
@@ -35,7 +35,7 @@ export async function updateUserSetting({ userId, key, value }) {
 
     if (error) throw error
   } else {
-    const { error } = await supabase
+    const { error } = await getClient()
       .from('user_settings')
       .upsert({
         user_id: userId,

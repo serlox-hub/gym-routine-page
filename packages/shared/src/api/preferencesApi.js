@@ -1,7 +1,7 @@
-import { supabase } from '../supabase.js'
+import { getClient } from './_client.js'
 
 export async function fetchPreferences(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('user_preferences')
     .select('key, value')
     .eq('user_id', userId)
@@ -11,7 +11,7 @@ export async function fetchPreferences(userId) {
 }
 
 export async function upsertPreference({ userId, key, value }) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('user_preferences')
     .upsert(
       { user_id: userId, key, value },

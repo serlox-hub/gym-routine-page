@@ -1,7 +1,7 @@
-import { supabase } from '../supabase.js'
+import { getClient } from './_client.js'
 
 export async function fetchBodyWeightHistory(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('body_weight_records')
     .select('id, weight, weight_unit, recorded_at, notes')
     .eq('user_id', userId)
@@ -12,7 +12,7 @@ export async function fetchBodyWeightHistory(userId) {
 }
 
 export async function fetchLatestBodyWeight(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('body_weight_records')
     .select('id, weight, weight_unit, recorded_at')
     .eq('user_id', userId)
@@ -25,7 +25,7 @@ export async function fetchLatestBodyWeight(userId) {
 }
 
 export async function createBodyWeight({ userId, weight, weightUnit = 'kg', notes = null, recordedAt = null }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('body_weight_records')
     .insert({
       user_id: userId,
@@ -48,7 +48,7 @@ export async function updateBodyWeight({ id, weight, weightUnit, notes, recorded
   if (notes !== undefined) updates.notes = notes || null
   if (recordedAt !== undefined) updates.recorded_at = recordedAt
 
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('body_weight_records')
     .update(updates)
     .eq('id', id)
@@ -60,7 +60,7 @@ export async function updateBodyWeight({ id, weight, weightUnit, notes, recorded
 }
 
 export async function deleteBodyWeight(id) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('body_weight_records')
     .delete()
     .eq('id', id)

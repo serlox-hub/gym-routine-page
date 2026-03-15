@@ -1,11 +1,11 @@
-import { supabase } from '../supabase.js'
+import { getClient } from './_client.js'
 
 // ============================================
 // SESSION - RESTORE
 // ============================================
 
 export async function fetchActiveSession() {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('workout_sessions')
     .select('id, routine_day_id, started_at, routine_days(routine_id)')
     .eq('status', 'in_progress')
@@ -18,7 +18,7 @@ export async function fetchActiveSession() {
 }
 
 export async function fetchCompletedSetsForSession(sessionId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('completed_sets')
     .select('session_exercise_id, set_number, weight, weight_unit, reps_completed, time_seconds, distance_meters, pace_seconds, rir_actual, notes, video_url')
     .eq('session_id', sessionId)
@@ -32,7 +32,7 @@ export async function fetchCompletedSetsForSession(sessionId) {
 // ============================================
 
 export async function startWorkoutSession({ routineDayId, routineName, dayName, exercises }) {
-  const { data, error } = await supabase.rpc('start_workout_session', {
+  const { data, error } = await getClient().rpc('start_workout_session', {
     p_routine_day_id: routineDayId,
     p_routine_name: routineName,
     p_day_name: dayName,
@@ -44,7 +44,7 @@ export async function startWorkoutSession({ routineDayId, routineName, dayName, 
 }
 
 export async function fetchExerciseIdsWithSets(sessionId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('completed_sets')
     .select('session_exercise_id')
     .eq('session_id', sessionId)
@@ -54,7 +54,7 @@ export async function fetchExerciseIdsWithSets(sessionId) {
 }
 
 export async function deleteSessionExercisesWithoutSets(sessionId, exerciseIdsWithSets) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('session_exercises')
     .delete()
     .eq('session_id', sessionId)
@@ -64,7 +64,7 @@ export async function deleteSessionExercisesWithoutSets(sessionId, exerciseIdsWi
 }
 
 export async function completeWorkoutSession({ sessionId, completedAt, durationMinutes, overallFeeling, notes }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('workout_sessions')
     .update({
       completed_at: completedAt,
@@ -82,7 +82,7 @@ export async function completeWorkoutSession({ sessionId, completedAt, durationM
 }
 
 export async function deleteWorkoutSession(sessionId) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('workout_sessions')
     .delete()
     .eq('id', sessionId)
@@ -95,7 +95,7 @@ export async function deleteWorkoutSession(sessionId) {
 // ============================================
 
 export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('completed_sets')
     .upsert({
       session_id: sessionId,
@@ -122,7 +122,7 @@ export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumb
 }
 
 export async function updateSetVideo({ sessionId, sessionExerciseId, setNumber, videoUrl }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('completed_sets')
     .update({ video_url: videoUrl })
     .eq('session_id', sessionId)
@@ -144,7 +144,7 @@ export async function updateSetDetails({ sessionId, sessionExerciseId, setNumber
     updateData.video_url = videoUrl
   }
 
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('completed_sets')
     .update(updateData)
     .eq('session_id', sessionId)
@@ -155,7 +155,7 @@ export async function updateSetDetails({ sessionId, sessionExerciseId, setNumber
 }
 
 export async function deleteCompletedSet({ sessionId, sessionExerciseId, setNumber }) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('completed_sets')
     .delete()
     .eq('session_id', sessionId)
@@ -170,7 +170,7 @@ export async function deleteCompletedSet({ sessionId, sessionExerciseId, setNumb
 // ============================================
 
 export async function fetchSessionExercises(sessionId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('session_exercises')
     .select(`
       id,
@@ -211,7 +211,7 @@ export async function fetchSessionExercises(sessionId) {
 }
 
 export async function fetchSessionExercisesSortOrder(sessionId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('session_exercises')
     .select('id, sort_order, superset_group')
     .eq('session_id', sessionId)
@@ -222,7 +222,7 @@ export async function fetchSessionExercisesSortOrder(sessionId) {
 }
 
 export async function fetchSessionExerciseBlockName(sessionExerciseId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('session_exercises')
     .select('block_name')
     .eq('id', sessionExerciseId)
@@ -233,7 +233,7 @@ export async function fetchSessionExerciseBlockName(sessionExerciseId) {
 }
 
 export async function updateSessionExerciseSortOrder(id, sortOrder) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('session_exercises')
     .update({ sort_order: sortOrder })
     .eq('id', id)
@@ -242,7 +242,7 @@ export async function updateSessionExerciseSortOrder(id, sortOrder) {
 }
 
 export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, series, reps, rir, restSeconds, tempo, notes, supersetGroup, blockName }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('session_exercises')
     .insert({
       session_id: sessionId,
@@ -292,7 +292,7 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
 // ============================================
 
 export async function deleteCompletedSetsByExercise({ sessionId, sessionExerciseId }) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('completed_sets')
     .delete()
     .eq('session_id', sessionId)
@@ -302,7 +302,7 @@ export async function deleteCompletedSetsByExercise({ sessionId, sessionExercise
 }
 
 export async function updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('session_exercises')
     .update({ exercise_id: newExerciseId })
     .eq('id', sessionExerciseId)
@@ -314,7 +314,7 @@ export async function updateSessionExerciseExerciseId({ sessionExerciseId, newEx
 }
 
 export async function deleteSessionExercise(sessionExerciseId) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('session_exercises')
     .delete()
     .eq('id', sessionExerciseId)
@@ -328,7 +328,7 @@ export async function reorderSessionExercises(orderedExerciseIds) {
     sort_order: index + 1
   }))
 
-  const { error } = await supabase.rpc('reorder_session_exercises', {
+  const { error } = await getClient().rpc('reorder_session_exercises', {
     exercise_orders: exerciseOrders
   })
 
@@ -340,7 +340,7 @@ export async function reorderSessionExercises(orderedExerciseIds) {
 // ============================================
 
 export async function fetchWorkoutHistory({ from, to }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('workout_sessions')
     .select(`
       id,
@@ -381,7 +381,7 @@ export async function fetchWorkoutHistory({ from, to }) {
 }
 
 export async function fetchSessionDetail(sessionId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('workout_sessions')
     .select(`
       id,
@@ -443,7 +443,7 @@ export async function fetchSessionDetail(sessionId) {
 }
 
 export async function fetchExerciseHistorySummary({ exerciseId, routineDayId }) {
-  let query = supabase
+  let query = getClient()
     .from('session_exercises')
     .select(`
       id,
@@ -477,7 +477,7 @@ export async function fetchExerciseHistorySummary({ exerciseId, routineDayId }) 
 }
 
 export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to }) {
-  let query = supabase
+  let query = getClient()
     .from('session_exercises')
     .select(`
       id,
@@ -517,7 +517,7 @@ export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to 
 }
 
 export async function fetchPreviousWorkout(exerciseId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('session_exercises')
     .select(`
       id,

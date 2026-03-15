@@ -1,11 +1,11 @@
-import { supabase } from '../supabase.js'
+import { getClient } from './_client.js'
 
 // ============================================
 // QUERIES
 // ============================================
 
 export async function fetchRoutines() {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routines')
     .select('*')
     .order('id')
@@ -15,7 +15,7 @@ export async function fetchRoutines() {
 }
 
 export async function fetchRoutine(routineId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routines')
     .select('*')
     .eq('id', routineId)
@@ -26,7 +26,7 @@ export async function fetchRoutine(routineId) {
 }
 
 export async function fetchRoutineDays(routineId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routine_days')
     .select('*')
     .eq('routine_id', routineId)
@@ -37,7 +37,7 @@ export async function fetchRoutineDays(routineId) {
 }
 
 export async function fetchRoutineDay(dayId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routine_days')
     .select(`
       *,
@@ -51,7 +51,7 @@ export async function fetchRoutineDay(dayId) {
 }
 
 export async function fetchRoutineBlocks(dayId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routine_blocks')
     .select(`
       *,
@@ -89,7 +89,7 @@ export async function fetchRoutineBlocks(dayId) {
 }
 
 export async function fetchRoutineAllExercises(routineId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routine_exercises')
     .select(`
       *,
@@ -110,7 +110,7 @@ export async function fetchRoutineAllExercises(routineId) {
 // ============================================
 
 export async function createRoutine({ userId, routine }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routines')
     .insert({
       name: routine.name,
@@ -126,7 +126,7 @@ export async function createRoutine({ userId, routine }) {
 }
 
 export async function createRoutineDay({ routineId, day }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routine_days')
     .insert({
       routine_id: routineId,
@@ -142,7 +142,7 @@ export async function createRoutineDay({ routineId, day }) {
 }
 
 export async function updateRoutine({ routineId, data }) {
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await getClient()
     .from('routines')
     .update(data)
     .eq('id', routineId)
@@ -154,7 +154,7 @@ export async function updateRoutine({ routineId, data }) {
 }
 
 export async function deleteRoutine(routineId) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('routines')
     .delete()
     .eq('id', routineId)
@@ -163,7 +163,7 @@ export async function deleteRoutine(routineId) {
 }
 
 export async function deleteRoutines(routineIds) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('routines')
     .delete()
     .in('id', routineIds)
@@ -173,7 +173,7 @@ export async function deleteRoutines(routineIds) {
 
 export async function setFavoriteRoutine({ routineId, isFavorite }) {
   if (isFavorite) {
-    const { error: clearError } = await supabase
+    const { error: clearError } = await getClient()
       .from('routines')
       .update({ is_favorite: false })
       .neq('id', routineId)
@@ -181,7 +181,7 @@ export async function setFavoriteRoutine({ routineId, isFavorite }) {
     if (clearError) throw clearError
   }
 
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('routines')
     .update({ is_favorite: isFavorite })
     .eq('id', routineId)
@@ -190,7 +190,7 @@ export async function setFavoriteRoutine({ routineId, isFavorite }) {
 }
 
 export async function updateRoutineDay({ dayId, data }) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('routine_days')
     .update(data)
     .eq('id', dayId)
@@ -199,7 +199,7 @@ export async function updateRoutineDay({ dayId, data }) {
 }
 
 export async function deleteRoutineDay(dayId) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('routine_days')
     .delete()
     .eq('id', dayId)
@@ -213,7 +213,7 @@ export async function reorderRoutineDays(days) {
     sort_order: index + 1
   }))
 
-  const { error } = await supabase.rpc('reorder_routine_days', {
+  const { error } = await getClient().rpc('reorder_routine_days', {
     day_orders: dayOrders
   })
 
@@ -221,7 +221,7 @@ export async function reorderRoutineDays(days) {
 }
 
 export async function deleteRoutineExercise(exerciseId) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('routine_exercises')
     .delete()
     .eq('id', exerciseId)
@@ -230,7 +230,7 @@ export async function deleteRoutineExercise(exerciseId) {
 }
 
 export async function updateRoutineExercise({ exerciseId, data }) {
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('routine_exercises')
     .update(data)
     .eq('id', exerciseId)
@@ -244,7 +244,7 @@ export async function reorderRoutineExercises(exercises) {
     sort_order: index + 1
   }))
 
-  const { error } = await supabase.rpc('reorder_routine_exercises', {
+  const { error } = await getClient().rpc('reorder_routine_exercises', {
     exercise_orders: exerciseOrders
   })
 
@@ -255,7 +255,7 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
   const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
 
   // Buscar o crear el bloque correspondiente
-  const { data: existingBlock, error: blockFetchError } = await supabase
+  const { data: existingBlock, error: blockFetchError } = await getClient()
     .from('routine_blocks')
     .select('id, sort_order')
     .eq('routine_day_id', dayId)
@@ -270,7 +270,7 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
   if (!existingBlock) {
     let nextOrder = 1
     if (!esCalentamiento) {
-      const { data: maxOrderBlocks } = await supabase
+      const { data: maxOrderBlocks } = await getClient()
         .from('routine_blocks')
         .select('sort_order')
         .eq('routine_day_id', dayId)
@@ -279,7 +279,7 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
       nextOrder = (maxOrderBlocks?.[0]?.sort_order || 0) + 1
     }
 
-    const { data: newBlock, error: blockCreateError } = await supabase
+    const { data: newBlock, error: blockCreateError } = await getClient()
       .from('routine_blocks')
       .insert({
         routine_day_id: dayId,
@@ -296,7 +296,7 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
   }
 
   // Obtener el maximo orden de ejercicios en el bloque
-  const { data: maxOrderExercises } = await supabase
+  const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')
     .select('sort_order')
     .eq('routine_block_id', blockId)
@@ -305,7 +305,7 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
 
   const nextExerciseOrder = (maxOrderExercises?.[0]?.sort_order || 0) + 1
 
-  const { data: newExercise, error: exerciseError } = await supabase
+  const { data: newExercise, error: exerciseError } = await getClient()
     .from('routine_exercises')
     .insert({
       routine_block_id: blockId,
@@ -330,7 +330,7 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
 export async function duplicateRoutineExercise({ routineExercise }) {
   const blockId = routineExercise.routine_block_id
 
-  const { data: maxOrderExercises } = await supabase
+  const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')
     .select('sort_order')
     .eq('routine_block_id', blockId)
@@ -339,7 +339,7 @@ export async function duplicateRoutineExercise({ routineExercise }) {
 
   const nextOrder = (maxOrderExercises?.[0]?.sort_order || 0) + 1
 
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routine_exercises')
     .insert({
       routine_block_id: blockId,
@@ -364,7 +364,7 @@ export async function duplicateRoutineExercise({ routineExercise }) {
 export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, esCalentamiento = false }) {
   const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
 
-  const { data: existingBlock, error: blockFetchError } = await supabase
+  const { data: existingBlock, error: blockFetchError } = await getClient()
     .from('routine_blocks')
     .select('id')
     .eq('routine_day_id', targetDayId)
@@ -377,7 +377,7 @@ export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, e
 
   let targetBlockId
   if (!existingBlock) {
-    const { data: maxOrderBlocks } = await supabase
+    const { data: maxOrderBlocks } = await getClient()
       .from('routine_blocks')
       .select('sort_order')
       .eq('routine_day_id', targetDayId)
@@ -386,7 +386,7 @@ export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, e
 
     const nextBlockOrder = (maxOrderBlocks?.[0]?.sort_order || 0) + 1
 
-    const { data: newBlock, error: blockCreateError } = await supabase
+    const { data: newBlock, error: blockCreateError } = await getClient()
       .from('routine_blocks')
       .insert({
         routine_day_id: targetDayId,
@@ -402,7 +402,7 @@ export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, e
     targetBlockId = existingBlock.id
   }
 
-  const { data: maxOrderExercises } = await supabase
+  const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')
     .select('sort_order')
     .eq('routine_block_id', targetBlockId)
@@ -411,7 +411,7 @@ export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, e
 
   const nextOrder = (maxOrderExercises?.[0]?.sort_order || 0) + 1
 
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('routine_exercises')
     .update({
       routine_block_id: targetBlockId,

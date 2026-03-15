@@ -1,8 +1,8 @@
-import { supabase } from '../supabase.js'
-import { MeasurementType } from '@gym/shared'
+import { getClient } from './_client.js'
+import { MeasurementType } from '../lib/measurementTypes.js'
 
 export async function fetchExercisesWithMuscleGroup() {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('exercises')
     .select(`
       id, name, measurement_type, weight_unit, time_unit, distance_unit,
@@ -16,7 +16,7 @@ export async function fetchExercisesWithMuscleGroup() {
 }
 
 export async function fetchMuscleGroups() {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('muscle_groups')
     .select('id, name')
     .order('name')
@@ -27,8 +27,8 @@ export async function fetchMuscleGroups() {
 
 export async function fetchExerciseStats() {
   const [sessionRes, routineRes] = await Promise.all([
-    supabase.from('session_exercises').select('exercise_id'),
-    supabase.from('routine_exercises').select('exercise_id, routine_block:routine_blocks(routine_day:routine_days(routine_id))'),
+    getClient().from('session_exercises').select('exercise_id'),
+    getClient().from('routine_exercises').select('exercise_id, routine_block:routine_blocks(routine_day:routine_days(routine_id))'),
   ])
 
   if (sessionRes.error) throw sessionRes.error
@@ -55,7 +55,7 @@ export async function fetchExerciseStats() {
 
 export async function fetchExerciseUsageDetail(exerciseId) {
   const [routineRes, sessionRes] = await Promise.all([
-    supabase
+    getClient()
       .from('routine_exercises')
       .select(`
         id,
@@ -67,7 +67,7 @@ export async function fetchExerciseUsageDetail(exerciseId) {
         )
       `)
       .eq('exercise_id', exerciseId),
-    supabase
+    getClient()
       .from('session_exercises')
       .select(`
         id,
@@ -117,7 +117,7 @@ export async function fetchExerciseUsageDetail(exerciseId) {
 }
 
 export async function fetchExercise(exerciseId) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('exercises')
     .select(`
       id, name, measurement_type, weight_unit, time_unit, distance_unit,
@@ -131,7 +131,7 @@ export async function fetchExercise(exerciseId) {
 }
 
 export async function createExercise({ userId, exercise, muscleGroupId }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('exercises')
     .insert({
       name: exercise.name,
@@ -151,7 +151,7 @@ export async function createExercise({ userId, exercise, muscleGroupId }) {
 }
 
 export async function updateExercise({ exerciseId, exercise, muscleGroupId }) {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('exercises')
     .update({
       name: exercise.name,
@@ -171,7 +171,7 @@ export async function updateExercise({ exerciseId, exercise, muscleGroupId }) {
 }
 
 export async function deleteExercise(exerciseId) {
-  const { data: usedInRoutines, error: checkError } = await supabase
+  const { data: usedInRoutines, error: checkError } = await getClient()
     .from('routine_exercises')
     .select('id')
     .eq('exercise_id', exerciseId)
@@ -183,7 +183,7 @@ export async function deleteExercise(exerciseId) {
     throw new Error('Este ejercicio está siendo usado en una rutina. Elimínalo de la rutina primero.')
   }
 
-  const { error } = await supabase
+  const { error } = await getClient()
     .from('exercises')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', exerciseId)
