@@ -11,6 +11,10 @@ import { queryClient } from './src/lib/queryClient'
 import RootNavigator from './src/navigation/RootNavigator'
 import { toastConfig } from './src/components/ui/toastConfig'
 import ErrorBoundary from './src/components/ErrorBoundary'
+import { supabase } from './src/lib/supabase'
+import { initApi } from '@gym/shared'
+
+initApi(supabase)
 
 SplashScreen.preventAutoHideAsync()
 

@@ -16,3 +16,13 @@ export * from './lib/timeUtils.js'
 export * from './lib/validation.js'
 export * from './lib/workoutCalculations.js'
 export * from './lib/workoutTransforms.js'
+
+// API layer
+export * from './api/exerciseApi.js'
+export * from './api/routineApi.js'
+export * from './api/workoutApi.js'
+export * from './api/bodyWeightApi.js'
+export * from './api/bodyMeasurementsApi.js'
+export * from './api/preferencesApi.js'
+export * from './api/adminApi.js'
+export { initApi } from './api/_client.js'
