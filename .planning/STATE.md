@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-03-15T19:19:59.117Z"
-last_activity: 2026-03-15 — Completed plan 03-02 (web hook imports migrated to @gym/shared)
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-15T20:00:06.502Z"
+last_activity: 2026-03-15 — Completed plan 04-01 (store factories created in packages/shared)
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 10
+  completed_phases: 4
+  total_plans: 11
+  completed_plans: 11
   percent: 83
 ---
 
@@ -55,6 +55,7 @@ Progress: [████████░░] 83%
 | Phase 03-03 P03 | 3min | 2 tasks | 10 files |
 | Phase 03-04 P04 | 2min | 3 tasks | 4 files |
 | Phase 04-01 P01 | 10min | 2 tasks | 3 files |
+| Phase 04 P02 | 1min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase 04-01]: Persist test reemplazado por factory isolation tests -- zustand v5 removio persist API publica
 - [Phase 04-01]: onBeforeLogout async para soportar GoogleSignin.signOut en RN
 - [Phase 04-01]: loginWithGoogle excluido del factory -- cada plataforma implementa localmente
+- [Phase 04]: Web workoutStore reducido a 3 lineas con createWorkoutStore() sin args
+- [Phase 04]: RN workoutStore usa workoutStoreState spread + overrides para workoutVisible
+- [Phase 04]: loginWithGoogle inyectado via setState post-creacion en ambas plataformas
 
 ### Pending Todos
 
@@ -99,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T19:55:46Z
-Stopped at: Completed 04-01-PLAN.md
-Resume file: .planning/phases/04-store-factories/04-01-SUMMARY.md
+Last session: 2026-03-15T20:00:06.500Z
+Stopped at: Completed 04-02-PLAN.md
+Resume file: None

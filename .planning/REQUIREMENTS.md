@@ -34,9 +34,9 @@
 
 - [x] **STOR-01**: `createWorkoutStore(storage)` factory in `packages/shared/src/stores/`
 - [x] **STOR-02**: `createAuthStore(supabase, storage)` factory in `packages/shared/src/stores/`
-- [ ] **STOR-03**: Web instantiates stores with default localStorage
-- [ ] **STOR-04**: RN instantiates stores with AsyncStorage adapter
-- [ ] **STOR-05**: Workout and auth state persists correctly on both platforms
+- [x] **STOR-03**: Web instantiates stores with default localStorage
+- [x] **STOR-04**: RN instantiates stores with AsyncStorage adapter
+- [x] **STOR-05**: Workout and auth state persists correctly on both platforms
 
 ### Hooks
 
@@ -94,9 +94,9 @@
 | API-04 | Phase 3 | Complete |
 | STOR-01 | Phase 4 | Complete |
 | STOR-02 | Phase 4 | Complete |
-| STOR-03 | Phase 4 | Pending |
-| STOR-04 | Phase 4 | Pending |
-| STOR-05 | Phase 4 | Pending |
+| STOR-03 | Phase 4 | Complete |
+| STOR-04 | Phase 4 | Complete |
+| STOR-05 | Phase 4 | Complete |
 | HOOK-01 | Phase 5 | Pending |
 | HOOK-02 | Phase 5 | Pending |
 | HOOK-03 | Phase 5 | Pending |
