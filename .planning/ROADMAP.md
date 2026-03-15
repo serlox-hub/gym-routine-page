@@ -13,7 +13,7 @@ Incremental migration from two near-identical codebases into an npm workspaces m
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Monorepo Scaffold** - Prove both bundlers and EAS Build resolve `@gym/shared` imports before any production code migrates (completed 2026-03-15)
-- [ ] **Phase 2: Utils Migration** - Move 16 pure utility files and 18 tests to `packages/shared`, both apps import from `@gym/shared`
+- [x] **Phase 2: Utils Migration** - Move 16 pure utility files and 18 tests to `packages/shared`, both apps import from `@gym/shared` (completed 2026-03-15)
 - [ ] **Phase 3: API Layer Migration** - Move 7 API files to `packages/shared`, refactor RN from inline queries to shared API functions
 - [ ] **Phase 4: Store Factories** - Extract Zustand stores to injectable factory functions, each platform provides its own storage adapter
 - [ ] **Phase 5: Hooks Migration** - Share TanStack Query hooks with thin platform wrapper hooks in each app
@@ -48,7 +48,7 @@ Plans:
   3. `npm test` from monorepo root passes all 18 test files co-located with their utils
   4. `supabase.js`, `styles.js`, and `videoStorage.js` are absent from `packages/shared` (confirmed platform-specific)
   5. Both apps build and run without errors after the migration
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md — Move 16+18 files to packages/shared via git mv, handle borderline files (constants.js, routineIO.js), update barrel and vitest config
@@ -107,7 +107,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo Scaffold | 3/3 | Complete    | 2026-03-15 |
-| 2. Utils Migration | 1/2 | In Progress|  |
+| 2. Utils Migration | 2/2 | Complete   | 2026-03-15 |
 | 3. API Layer Migration | 0/? | Not started | - |
 | 4. Store Factories | 0/? | Not started | - |
 | 5. Hooks Migration | 0/? | Not started | - |
