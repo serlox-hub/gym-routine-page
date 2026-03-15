@@ -1,0 +1,52 @@
+{
+  "name": "@gym/web",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "check": "npm run lint && npm run test:run && npm run test:e2e"
+  },
+  "dependencies": {
+    "@gym/shared": "*",
+    "@supabase/supabase-js": "^2.49.1",
+    "@tanstack/react-query": "^5.62.0",
+    "framer-motion": "^12.35.1",
+    "lucide-react": "^0.555.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-router-dom": "^7.0.2",
+    "recharts": "^3.5.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.57.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "baseline-browser-mapping": "^2.10.8",
+    "dotenv": "^17.2.3",
+    "eruda": "^3.4.3",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^16.5.0",
+    "jsdom": "^27.2.0",
+    "postcss": "^8.4.49",
+    "supabase": "^2.63.1",
+    "tailwindcss": "^3.4.16",
+    "vite": "^6.0.3",
+    "vitest": "^4.0.15"
+  }
+}

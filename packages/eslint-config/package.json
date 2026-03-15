@@ -1,0 +1,13 @@
+{
+  "name": "@gym/eslint-config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./index.js",
+  "type": "module",
+  "peerDependencies": {
+    "@eslint/js": "*",
+    "eslint": "*",
+    "eslint-plugin-react": "*",
+    "eslint-plugin-react-hooks": "*"
+  }
+}

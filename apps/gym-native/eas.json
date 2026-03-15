@@ -1,0 +1,48 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "node": "22.12.0",
+      "env": {
+        "EAS_PROJECT_ROOT": "../.."
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "node": "22.12.0",
+      "env": {
+        "EAS_PROJECT_ROOT": "../.."
+      },
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "node": "22.12.0",
+      "env": {
+        "EAS_PROJECT_ROOT": "../.."
+      },
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "image": "latest"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
