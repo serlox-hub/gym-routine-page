@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Monorepo Scaffold** - Prove both bundlers and EAS Build resolve `@gym/shared` imports before any production code migrates (completed 2026-03-15)
 - [x] **Phase 2: Utils Migration** - Move 16 pure utility files and 18 tests to `packages/shared`, both apps import from `@gym/shared` (completed 2026-03-15)
 - [x] **Phase 3: API Layer Migration** - Move 7 API files to `packages/shared`, refactor RN from inline queries to shared API functions (completed 2026-03-15)
-- [ ] **Phase 4: Store Factories** - Extract Zustand stores to injectable factory functions, each platform provides its own storage adapter
+- [x] **Phase 4: Store Factories** - Extract Zustand stores to injectable factory functions, each platform provides its own storage adapter (completed 2026-03-15)
 - [ ] **Phase 5: Hooks Migration** - Share TanStack Query hooks with thin platform wrapper hooks in each app
 - [ ] **Phase 6: DX Cleanup** - Shared constants, queryClient, ESLint config, zero duplicated files remain
 
@@ -81,7 +81,7 @@ Plans:
   3. RN instantiates stores with `AsyncStorage` adapter and state persists across app restarts
   4. Auth flow (login, logout, session restore) works correctly on both platforms
   5. No Zustand store file is duplicated between web and RN
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 04-01-PLAN.md — Create createWorkoutStore + createAuthStore factories in packages/shared, migrate test
@@ -96,7 +96,11 @@ Plans:
   2. Each app has thin wrapper hooks that inject any navigation or notification adapters required
   3. All hook-dependent screens and components on both platforms function correctly end-to-end
   4. `useDrag` (web) and `useStableHandlers` (RN) remain in their respective apps and are not in `packages/shared`
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Create store injection + notification service, move 8 hooks to shared, update barrel
+- [ ] 05-02-PLAN.md — Wire initStores/initNotifications in both apps, replace hook files with thin re-exports
 
 ### Phase 6: DX Cleanup
 **Goal**: `QUERY_KEYS`, domain constants, and `queryClient` config are shared; a shared ESLint config prevents rule drift; zero duplicated non-platform-specific files remain between web and RN
@@ -119,6 +123,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Monorepo Scaffold | 3/3 | Complete    | 2026-03-15 |
 | 2. Utils Migration | 2/2 | Complete    | 2026-03-15 |
 | 3. API Layer Migration | 3/4 | Complete    | 2026-03-15 |
-| 4. Store Factories | 1/2 | In Progress|  |
-| 5. Hooks Migration | 0/? | Not started | - |
+| 4. Store Factories | 1/2 | Complete    | 2026-03-15 |
+| 5. Hooks Migration | 0/2 | Not started | - |
 | 6. DX Cleanup | 0/? | Not started | - |
