@@ -12,9 +12,15 @@ import RootNavigator from './src/navigation/RootNavigator'
 import { toastConfig } from './src/components/ui/toastConfig'
 import ErrorBoundary from './src/components/ErrorBoundary'
 import { supabase } from './src/lib/supabase'
-import { initApi } from '@gym/shared'
+import { initApi, initStores, initNotifications } from '@gym/shared'
+import useAuthStore from './src/stores/authStore'
+import useWorkoutStore from './src/stores/workoutStore'
 
 initApi(supabase)
+initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
+initNotifications((message, type = 'success') =>
+  Toast.show({ type, text1: message })
+)
 
 SplashScreen.preventAutoHideAsync()
 

@@ -5,10 +5,13 @@ import { queryClient } from './lib/queryClient'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { supabase } from './lib/supabase.js'
-import { initApi } from '@gym/shared'
+import { initApi, initStores } from '@gym/shared'
+import useAuthStore from './stores/authStore'
+import useWorkoutStore from './stores/workoutStore'
 import './index.css'
 
 initApi(supabase)
+initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
 
 // Consola de desarrollo para móvil
 if (import.meta.env.DEV) {
