@@ -268,7 +268,7 @@ export function workoutStoreState(set, get) {
 
 /**
  * Factory that creates a workout Zustand store with persist middleware.
- * @param {object} [storage] - Optional storage adapter. Web: omit (defaults to localStorage). RN: pass createJSONStorage(() => AsyncStorage).
+ * @param {object} [storage] - Optional Zustand storage adapter. Omit for default. Pass custom adapter for other environments.
  * @returns {object} Zustand store instance
  */
 export function createWorkoutStore(storage) {
