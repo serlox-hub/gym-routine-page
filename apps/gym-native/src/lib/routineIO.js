@@ -330,7 +330,7 @@ export async function duplicateRoutine(routineId, userId, newName) {
  */
 export function readJsonFile(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader() // eslint-disable-line no-undef
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result)

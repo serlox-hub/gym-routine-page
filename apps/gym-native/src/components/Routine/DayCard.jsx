@@ -164,8 +164,7 @@ export default function DayCard({
             <LoadingSpinner fullScreen={false} />
           ) : isEditing ? (
             <>
-              {(warmupBlock || true) && (
-                <BlockSection
+              <BlockSection
                   block={warmupBlock || { name: 'Calentamiento', routine_exercises: [] }}
                   isEditing
                   isReordering={reorderExercises.isPending}
@@ -177,9 +176,7 @@ export default function DayCard({
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                 />
-              )}
-              {(mainBlock || true) && (
-                <BlockSection
+              <BlockSection
                   block={mainBlock || { name: 'Principal', routine_exercises: [] }}
                   isEditing
                   isReordering={reorderExercises.isPending}
@@ -191,7 +188,6 @@ export default function DayCard({
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                 />
-              )}
             </>
           ) : (
             <>

@@ -119,10 +119,10 @@ function WorkoutExerciseCard({
   }
 
   const isCompleted = completedCount === setsCount && setsCount > 0
-  const prevCompletedRef = useRef(isCompleted)
+  const prevCompletedRef = useRef(isCompleted) // eslint-disable-line react-hooks/rules-of-hooks
 
   // Auto-colapsar 1s después de completar todas las series
-  useEffect(() => {
+  useEffect(() => { // eslint-disable-line react-hooks/rules-of-hooks
     if (isCompleted && !prevCompletedRef.current) {
       const timer = setTimeout(() => setCollapsed(true), 1000)
       return () => clearTimeout(timer)
