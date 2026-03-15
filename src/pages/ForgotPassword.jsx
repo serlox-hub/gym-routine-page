@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button } from '@/components/ui'
+import { colors } from '../lib/styles.js'
 
 function ForgotPassword() {
   const { resetPassword, isLoading, error, clearError, isAuthenticated } = useAuth()
@@ -12,13 +13,13 @@ function ForgotPassword() {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
         <Card className="w-full max-w-md p-6 text-center">
           <h1 className="text-2xl font-bold mb-4">Enlace abierto en otra pestaña</h1>
-          <p className="mb-6" style={{ color: '#8b949e' }}>
+          <p className="mb-6" style={{ color: colors.textSecondary }}>
             Continúa el proceso de cambio de contraseña en la pestaña que se abrió con el enlace del correo.
           </p>
-          <p className="text-sm" style={{ color: '#8b949e' }}>
+          <p className="text-sm" style={{ color: colors.textSecondary }}>
             Puedes cerrar esta pestaña.
           </p>
         </Card>
@@ -46,10 +47,10 @@ function ForgotPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
         <Card className="w-full max-w-md p-6 text-center">
           <h1 className="text-2xl font-bold mb-4">Revisa tu email</h1>
-          <p className="mb-6" style={{ color: '#8b949e' }}>
+          <p className="mb-6" style={{ color: colors.textSecondary }}>
             Te hemos enviado un enlace para restablecer tu contraseña a <strong style={{ color: '#c9d1d9' }}>{email}</strong>
           </p>
           <Link to="/login">
@@ -61,10 +62,10 @@ function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
       <Card className="w-full max-w-md p-6">
         <h1 className="text-2xl font-bold text-center mb-2">Recuperar contraseña</h1>
-        <p className="text-center mb-6" style={{ color: '#8b949e' }}>
+        <p className="text-center mb-6" style={{ color: colors.textSecondary }}>
           Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña
         </p>
 
@@ -80,8 +81,8 @@ function ForgotPassword() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgPrimary,
+                border: `1px solid ${colors.border}`,
                 color: '#c9d1d9'
               }}
               placeholder="tu@email.com"
@@ -90,7 +91,7 @@ function ForgotPassword() {
           </div>
 
           {displayError && (
-            <p className="text-sm text-center" style={{ color: '#f85149' }}>
+            <p className="text-sm text-center" style={{ color: colors.danger }}>
               {displayError}
             </p>
           )}
@@ -104,8 +105,8 @@ function ForgotPassword() {
           </Button>
         </form>
 
-        <p className="text-center mt-4 text-sm" style={{ color: '#8b949e' }}>
-          <Link to="/login" className="hover:underline" style={{ color: '#58a6ff' }}>
+        <p className="text-center mt-4 text-sm" style={{ color: colors.textSecondary }}>
+          <Link to="/login" className="hover:underline" style={{ color: colors.accent }}>
             Volver al inicio de sesión
           </Link>
         </p>

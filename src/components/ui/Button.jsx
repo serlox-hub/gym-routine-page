@@ -1,16 +1,18 @@
+import { colors } from '../../lib/styles.js'
+
 const VARIANTS = {
   primary: {
     backgroundColor: '#238636',
     color: '#ffffff',
   },
   secondary: {
-    backgroundColor: '#21262d',
+    backgroundColor: colors.bgTertiary,
     color: '#c9d1d9',
-    border: '1px solid #30363d',
+    border: `1px solid ${colors.border}`,
   },
   danger: {
-    backgroundColor: 'rgba(248, 81, 73, 0.1)',
-    color: '#f85149',
+    backgroundColor: colors.dangerBg,
+    color: colors.danger,
     border: '1px solid rgba(248, 81, 73, 0.4)',
   },
 }

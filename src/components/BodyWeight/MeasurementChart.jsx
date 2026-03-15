@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { transformMeasurementToChartData } from '../../lib/bodyMeasurementCalculations.js'
 import { getMeasurementLabel } from '../../lib/measurementConstants.js'
+import { colors } from '../../lib/styles.js'
 
 function MeasurementChart({ records, measurementType, unit = 'cm' }) {
   const chartData = useMemo(
@@ -25,40 +26,40 @@ function MeasurementChart({ records, measurementType, unit = 'cm' }) {
 
   return (
     <div>
-      <h4 className="text-xs font-medium mb-2" style={{ color: '#8b949e' }}>
+      <h4 className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
         Evolución
       </h4>
       <div style={{ height: 180 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: '#8b949e' }}
-              stroke="#30363d"
+              tick={{ fontSize: 10, fill: colors.textSecondary }}
+              stroke={colors.border}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: '#8b949e' }}
-              stroke="#30363d"
+              tick={{ fontSize: 10, fill: colors.textSecondary }}
+              stroke={colors.border}
               domain={['dataMin - 2', 'dataMax + 2']}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#161b22',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgSecondary,
+                border: `1px solid ${colors.border}`,
                 borderRadius: 8,
                 fontSize: 12,
               }}
-              labelStyle={{ color: '#e6edf3' }}
+              labelStyle={{ color: colors.textPrimary }}
               labelFormatter={(_, payload) => payload[0]?.payload?.fullDate || ''}
               formatter={(value) => [`${value} ${unit}`, label]}
             />
             <Line
               type="monotone"
               dataKey="value"
-              stroke="#a371f7"
+              stroke={colors.purple}
               strokeWidth={2}
-              dot={{ fill: '#a371f7', r: 3 }}
+              dot={{ fill: colors.purple, r: 3 }}
               activeDot={{ r: 5 }}
             />
           </LineChart>

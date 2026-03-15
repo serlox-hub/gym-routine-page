@@ -159,8 +159,8 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
                 onClick={() => setShowNotes(!showNotes)}
                 className="text-xs px-2 py-1 rounded transition-colors"
                 style={{
-                  backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : '#21262d',
-                  color: showNotes ? '#88c6be' : '#8b949e',
+                  backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary,
+                  color: showNotes ? colors.teal : colors.textSecondary,
                 }}
               >
                 {showNotes ? '▲ Ocultar notas' : '▼ Ver notas'}
@@ -171,20 +171,20 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
           {showNotes && (exercise.instructions || notes || tempoRazon) && (
             <div
               className="mb-3 p-3 rounded text-sm space-y-2"
-              style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
+              style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
             >
               {exercise.instructions && (
-                <p style={{ color: '#e6edf3' }}>
+                <p style={{ color: colors.textPrimary }}>
                   <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
                 </p>
               )}
               {tempoRazon && (
-                <p style={{ color: '#e6edf3' }}>
+                <p style={{ color: colors.textPrimary }}>
                   <span style={{ color: colors.purple }}>Tempo:</span> {tempoRazon}
                 </p>
               )}
               {notes && (
-                <p style={{ color: '#e6edf3' }}>
+                <p style={{ color: colors.textPrimary }}>
                   <span style={{ color: colors.warning }}>Nota:</span> {notes}
                 </p>
               )}
@@ -291,8 +291,8 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
             onClick={() => setShowNotes(!showNotes)}
             className="text-xs px-2 py-0.5 rounded transition-colors"
             style={{
-              backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : '#21262d',
-              color: showNotes ? '#88c6be' : '#8b949e',
+              backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary,
+              color: showNotes ? colors.teal : colors.textSecondary,
             }}
           >
             {showNotes ? '▲' : '▼'} Notas
@@ -303,15 +303,15 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
       {showNotes && hasNotes && (
         <div
           className="mt-2 p-2 rounded text-xs space-y-1"
-          style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
+          style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
         >
           {exercise.instructions && (
-            <p style={{ color: '#e6edf3' }}>
+            <p style={{ color: colors.textPrimary }}>
               <span style={{ color: colors.accent }}>Ejecución:</span> {exercise.instructions}
             </p>
           )}
           {notes && (
-            <p style={{ color: '#e6edf3' }}>
+            <p style={{ color: colors.textPrimary }}>
               <span style={{ color: colors.warning }}>Nota:</span> {notes}
             </p>
           )}

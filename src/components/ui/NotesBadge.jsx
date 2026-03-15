@@ -1,4 +1,5 @@
 import { FileText, Video, AlertCircle } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 
 const RIR_LABELS = {
   [-1]: 'F',
@@ -25,19 +26,19 @@ function NotesBadge({ rir, hasNotes, hasVideo, isUploadingVideo, uploadProgress 
           className="flex items-center hover:opacity-80"
           title="Error al subir. Toca para reintentar"
         >
-          <AlertCircle size={12} style={{ color: '#f85149' }} />
+          <AlertCircle size={12} style={{ color: colors.danger }} />
         </button>
       )
     }
     if (isUploadingVideo) {
       return (
-        <span className="text-xs font-medium" style={{ color: '#a371f7' }}>
+        <span className="text-xs font-medium" style={{ color: colors.purple }}>
           {uploadProgress}%
         </span>
       )
     }
     if (hasVideo) {
-      return <Video size={12} style={{ color: '#a371f7' }} />
+      return <Video size={12} style={{ color: colors.purple }} />
     }
     return null
   }
@@ -45,18 +46,18 @@ function NotesBadge({ rir, hasNotes, hasVideo, isUploadingVideo, uploadProgress 
   const content = (
     <>
       {hasRir && (
-        <span className="text-xs font-bold" style={{ color: '#a371f7' }}>
+        <span className="text-xs font-bold" style={{ color: colors.purple }}>
           {RIR_LABELS[rir] ?? rir}
         </span>
       )}
-      {hasNotes && <FileText size={12} style={{ color: '#a371f7' }} />}
+      {hasNotes && <FileText size={12} style={{ color: colors.purple }} />}
       {renderVideoIcon()}
     </>
   )
 
   const bgColor = videoUploadError
     ? 'rgba(248, 81, 73, 0.15)'
-    : 'rgba(163, 113, 247, 0.15)'
+    : colors.purpleBg
 
   if ((hasRir || hasNotes || hasVideo) && onClick) {
     return (

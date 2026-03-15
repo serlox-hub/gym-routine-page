@@ -77,10 +77,10 @@ function ExerciseCard({
         )}
       </div>
       <div className="flex flex-wrap gap-2 mt-1">
-        <span className="text-xs" style={{ color: '#8b949e' }}>{series}×{reps}</span>
-        {rir !== null && rir !== undefined && <span className="text-xs" style={{ color: '#a371f7' }}>RIR {rir}</span>}
-        {rest_seconds > 0 && <span className="text-xs" style={{ color: '#d29922' }}>{rest_seconds}s</span>}
-        {tempo && <span className="text-xs" style={{ color: '#8b949e' }}>{tempo}</span>}
+        <span className="text-xs" style={{ color: colors.textSecondary }}>{series}×{reps}</span>
+        {rir !== null && rir !== undefined && <span className="text-xs" style={{ color: colors.purple }}>RIR {rir}</span>}
+        {rest_seconds > 0 && <span className="text-xs" style={{ color: colors.warning }}>{rest_seconds}s</span>}
+        {tempo && <span className="text-xs" style={{ color: colors.textSecondary }}>{tempo}</span>}
       </div>
 
       <ExerciseHistoryModal

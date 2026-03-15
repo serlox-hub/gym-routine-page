@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { transformSessionsToChartData } from '../../lib/workoutCalculations.js'
 import { MeasurementType } from '../../lib/measurementTypes.js'
+import { colors } from '../../lib/styles.js'
 
 const TABS = {
   WEIGHT: 'weight',
@@ -33,11 +34,11 @@ function ExerciseProgressChart({ sessions, measurementType }) {
   const getChartConfig = () => {
     switch (activeTab) {
       case TABS.VOLUME:
-        return { dataKey: 'volume', color: '#3fb950', label: 'Volumen' }
+        return { dataKey: 'volume', color: colors.success, label: 'Volumen' }
       case TABS.E1RM:
-        return { dataKey: 'e1rm', color: '#a371f7', label: '1RM Est.' }
+        return { dataKey: 'e1rm', color: colors.purple, label: '1RM Est.' }
       default:
-        return { dataKey: 'best', color: '#58a6ff', label: 'Peso máx' }
+        return { dataKey: 'best', color: colors.accent, label: 'Peso máx' }
     }
   }
 
@@ -51,8 +52,8 @@ function ExerciseProgressChart({ sessions, measurementType }) {
             onClick={() => setActiveTab(TABS.WEIGHT)}
             className="px-3 py-1 rounded text-xs font-medium transition-colors"
             style={{
-              backgroundColor: activeTab === TABS.WEIGHT ? 'rgba(88, 166, 255, 0.15)' : '#21262d',
-              color: activeTab === TABS.WEIGHT ? '#58a6ff' : '#8b949e',
+              backgroundColor: activeTab === TABS.WEIGHT ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+              color: activeTab === TABS.WEIGHT ? colors.accent : colors.textSecondary,
             }}
           >
             Peso máx
@@ -61,8 +62,8 @@ function ExerciseProgressChart({ sessions, measurementType }) {
             onClick={() => setActiveTab(TABS.VOLUME)}
             className="px-3 py-1 rounded text-xs font-medium transition-colors"
             style={{
-              backgroundColor: activeTab === TABS.VOLUME ? 'rgba(63, 185, 80, 0.15)' : '#21262d',
-              color: activeTab === TABS.VOLUME ? '#3fb950' : '#8b949e',
+              backgroundColor: activeTab === TABS.VOLUME ? colors.successBg : colors.bgTertiary,
+              color: activeTab === TABS.VOLUME ? colors.success : colors.textSecondary,
             }}
           >
             Volumen
@@ -71,15 +72,15 @@ function ExerciseProgressChart({ sessions, measurementType }) {
             onClick={() => setActiveTab(TABS.E1RM)}
             className="px-3 py-1 rounded text-xs font-medium transition-colors"
             style={{
-              backgroundColor: activeTab === TABS.E1RM ? 'rgba(163, 113, 247, 0.15)' : '#21262d',
-              color: activeTab === TABS.E1RM ? '#a371f7' : '#8b949e',
+              backgroundColor: activeTab === TABS.E1RM ? colors.purpleBg : colors.bgTertiary,
+              color: activeTab === TABS.E1RM ? colors.purple : colors.textSecondary,
             }}
           >
             1RM Est.
           </button>
         </div>
       ) : (
-        <h4 className="text-xs font-medium mb-2" style={{ color: '#8b949e' }}>
+        <h4 className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
           Progresión
         </h4>
       )}
@@ -87,25 +88,25 @@ function ExerciseProgressChart({ sessions, measurementType }) {
       <div style={{ height: 150 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: '#8b949e' }}
-              stroke="#30363d"
+              tick={{ fontSize: 10, fill: colors.textSecondary }}
+              stroke={colors.border}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: '#8b949e' }}
-              stroke="#30363d"
+              tick={{ fontSize: 10, fill: colors.textSecondary }}
+              stroke={colors.border}
               domain={['dataMin', 'auto']}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#161b22',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgSecondary,
+                border: `1px solid ${colors.border}`,
                 borderRadius: 8,
                 fontSize: 12,
               }}
-              labelStyle={{ color: '#e6edf3' }}
+              labelStyle={{ color: colors.textPrimary }}
               formatter={(value) => {
                 if (activeTab === TABS.WEIGHT || activeTab === TABS.E1RM) {
                   return [`${value} ${chartData[0]?.unit || ''}`, label]

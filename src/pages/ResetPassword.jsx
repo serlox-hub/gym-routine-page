@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { validateResetPasswordForm } from '@/lib/validation'
 import { Card, Button } from '@/components/ui'
+import { colors } from '../lib/styles.js'
 
 function ResetPassword() {
   const navigate = useNavigate()
@@ -36,10 +37,10 @@ function ResetPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
         <Card className="w-full max-w-md p-6 text-center">
           <h1 className="text-2xl font-bold mb-4">Contraseña actualizada</h1>
-          <p className="mb-6" style={{ color: '#8b949e' }}>
+          <p className="mb-6" style={{ color: colors.textSecondary }}>
             Tu contraseña ha sido actualizada correctamente.
           </p>
           <Button className="w-full" onClick={() => navigate('/')}>
@@ -51,10 +52,10 @@ function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
       <Card className="w-full max-w-md p-6">
         <h1 className="text-2xl font-bold text-center mb-2">Nueva contraseña</h1>
-        <p className="text-center mb-6" style={{ color: '#8b949e' }}>
+        <p className="text-center mb-6" style={{ color: colors.textSecondary }}>
           Ingresa tu nueva contraseña
         </p>
 
@@ -70,8 +71,8 @@ function ResetPassword() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgPrimary,
+                border: `1px solid ${colors.border}`,
                 color: '#c9d1d9'
               }}
               placeholder="Mínimo 6 caracteres"
@@ -90,8 +91,8 @@ function ResetPassword() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgPrimary,
+                border: `1px solid ${colors.border}`,
                 color: '#c9d1d9'
               }}
               placeholder="Repite tu contraseña"
@@ -100,7 +101,7 @@ function ResetPassword() {
           </div>
 
           {error && (
-            <p className="text-sm text-center" style={{ color: '#f85149' }}>
+            <p className="text-sm text-center" style={{ color: colors.danger }}>
               {error}
             </p>
           )}

@@ -7,6 +7,7 @@ import {
   Timer,
   Activity,
 } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 
 const FEATURES = [
@@ -14,37 +15,37 @@ const FEATURES = [
     icon: Dumbbell,
     title: 'Rutinas personalizadas',
     description: 'Crea rutinas con días, bloques y ejercicios. Configura series, repeticiones, tempo y más.',
-    color: '#58a6ff',
+    color: colors.accent,
   },
   {
     icon: Timer,
     title: 'Seguimiento en vivo',
     description: 'Registra cada serie en tiempo real con temporizador de descanso y alertas de audio.',
-    color: '#3fb950',
+    color: colors.success,
   },
   {
     icon: TrendingUp,
     title: 'Progreso visual',
     description: 'Gráficos de evolución por ejercicio, estimación de 1RM y volumen total de entrenamiento.',
-    color: '#a371f7',
+    color: colors.purple,
   },
   {
     icon: Sparkles,
     title: 'Generación con IA',
     description: 'Genera rutinas completas con ChatGPT o Claude. Importa y exporta en JSON.',
-    color: '#d29922',
+    color: colors.warning,
   },
   {
     icon: CalendarDays,
     title: 'Historial completo',
     description: 'Calendario mensual con todas tus sesiones. Revisa cualquier entrenamiento pasado al detalle.',
-    color: '#db61a2',
+    color: colors.pink,
   },
   {
     icon: Activity,
     title: 'Métricas corporales',
     description: 'Registra tu peso y medidas. Visualiza tendencias y evolución en el tiempo.',
-    color: '#88c6be',
+    color: colors.teal,
   },
 ]
 
@@ -56,14 +57,14 @@ function FeaturesSection() {
         <AnimatedSection className="text-center mb-16">
           <span
             className="inline-block text-xs font-semibold tracking-widest mb-4 px-3 py-1 rounded-full"
-            style={{ color: '#3fb950', backgroundColor: 'rgba(63, 185, 80, 0.1)', border: '1px solid rgba(63, 185, 80, 0.2)' }}
+            style={{ color: colors.success, backgroundColor: 'rgba(63, 185, 80, 0.1)', border: '1px solid rgba(63, 185, 80, 0.2)' }}
           >
             FUNCIONALIDADES
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: '#e6edf3' }}>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: colors.textPrimary }}>
             Todo lo que necesitas para entrenar
           </h2>
-          <p className="text-lg max-w-2xl mx-auto" style={{ color: '#8b949e' }}>
+          <p className="text-lg max-w-2xl mx-auto" style={{ color: colors.textSecondary }}>
             Desde la planificación hasta el análisis, cada herramienta diseñada para ayudarte a progresar.
           </p>
         </AnimatedSection>
@@ -74,8 +75,8 @@ function FeaturesSection() {
               <motion.div
                 className="group h-full rounded-xl p-6 transition-all duration-300 cursor-default"
                 style={{
-                  backgroundColor: '#161b22',
-                  border: '1px solid #30363d',
+                  backgroundColor: colors.bgSecondary,
+                  border: `1px solid ${colors.border}`,
                 }}
                 whileHover={{
                   y: -4,
@@ -89,8 +90,8 @@ function FeaturesSection() {
                 >
                   <feature.icon size={22} style={{ color: feature.color }} />
                 </div>
-                <h3 className="text-base font-bold mb-2" style={{ color: '#e6edf3' }}>{feature.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: '#8b949e' }}>{feature.description}</p>
+                <h3 className="text-base font-bold mb-2" style={{ color: colors.textPrimary }}>{feature.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>{feature.description}</p>
               </motion.div>
             </AnimatedSection>
           ))}

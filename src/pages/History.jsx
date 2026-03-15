@@ -5,6 +5,7 @@ import { useWorkoutHistory } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import { MonthlyCalendar, DurationChart } from '../components/History/index.js'
 import { formatTime } from '../lib/dateUtils.js'
+import { colors } from '../lib/styles.js'
 
 function History() {
   const navigate = useNavigate()
@@ -35,7 +36,7 @@ function History() {
       <main>
         {!sessions || sessions.length === 0 ? (
           <div className="text-center py-12">
-            <Calendar size={48} className="mx-auto mb-4" style={{ color: '#8b949e' }} />
+            <Calendar size={48} className="mx-auto mb-4" style={{ color: colors.textSecondary }} />
             <p className="text-secondary">No hay sesiones registradas</p>
           </div>
         ) : (
@@ -60,7 +61,7 @@ function History() {
         >
           <div
             className="w-full max-w-sm rounded-lg p-4"
-            style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
+            style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -70,9 +71,9 @@ function History() {
               <button
                 onClick={() => setSelectedDay(null)}
                 className="p-1 rounded hover:opacity-80"
-                style={{ backgroundColor: '#21262d' }}
+                style={{ backgroundColor: colors.bgTertiary }}
               >
-                <X size={18} style={{ color: '#8b949e' }} />
+                <X size={18} style={{ color: colors.textSecondary }} />
               </button>
             </div>
             <div className="space-y-2">

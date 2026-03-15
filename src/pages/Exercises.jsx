@@ -6,6 +6,7 @@ import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomAct
 import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise/index.js'
 import { normalizeSearchText } from '../lib/textUtils.js'
 import { getMuscleGroupBorderStyle } from '../lib/constants.js'
+import { colors } from '../lib/styles.js'
 
 function Exercises() {
   const navigate = useNavigate()
@@ -72,7 +73,7 @@ function Exercises() {
             <Card key={exercise.id} className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm truncate" style={{ color: '#e6edf3' }}>
+                  <h3 className="font-medium text-sm truncate" style={{ color: colors.textPrimary }}>
                     {exercise.name}
                   </h3>
                   <p className="text-xs text-secondary">

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
 import { ActiveSessionBanner, LoadingSpinner } from './components/ui/index.js'
 import { useAuth } from './hooks/useAuth.js'
+import { colors } from './lib/styles.js'
 import { useRestoreActiveSession, useSyncPendingSets } from './hooks/useWorkout.js'
 
 const Landing = lazy(() => import('./pages/Landing.jsx'))
@@ -30,10 +31,10 @@ function HomeOrLanding() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0d1117' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bgPrimary }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p style={{ color: '#8b949e' }}>Cargando...</p>
+          <p style={{ color: colors.textSecondary }}>Cargando...</p>
         </div>
       </div>
     )

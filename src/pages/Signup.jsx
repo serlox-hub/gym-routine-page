@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button } from '@/components/ui'
 import { validateSignupForm } from '../lib/validation.js'
+import { colors } from '../lib/styles.js'
 
 function Signup() {
   const navigate = useNavigate()
@@ -35,11 +36,11 @@ function Signup() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
         <Card className="w-full max-w-md p-6 text-center">
           <div className="mb-4 text-4xl">✓</div>
-          <h1 className="text-2xl font-bold mb-4" style={{ color: '#3fb950' }}>Registro exitoso</h1>
-          <p className="mb-6" style={{ color: '#8b949e' }}>
+          <h1 className="text-2xl font-bold mb-4" style={{ color: colors.success }}>Registro exitoso</h1>
+          <p className="mb-6" style={{ color: colors.textSecondary }}>
             Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.
           </p>
           <Button onClick={() => navigate('/login')} className="w-full">
@@ -51,7 +52,7 @@ function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
       <Card className="w-full max-w-md p-6">
         <h1 className="text-2xl font-bold text-center mb-6">Crear Cuenta</h1>
 
@@ -67,8 +68,8 @@ function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgPrimary,
+                border: `1px solid ${colors.border}`,
                 color: '#c9d1d9'
               }}
               placeholder="tu@email.com"
@@ -87,8 +88,8 @@ function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgPrimary,
+                border: `1px solid ${colors.border}`,
                 color: '#c9d1d9'
               }}
               placeholder="Mínimo 6 caracteres"
@@ -107,8 +108,8 @@ function Signup() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgPrimary,
+                border: `1px solid ${colors.border}`,
                 color: '#c9d1d9'
               }}
               placeholder="Repite la contraseña"
@@ -117,7 +118,7 @@ function Signup() {
           </div>
 
           {displayError && (
-            <p className="text-sm text-center" style={{ color: '#f85149' }}>
+            <p className="text-sm text-center" style={{ color: colors.danger }}>
               {displayError}
             </p>
           )}
@@ -133,10 +134,10 @@ function Signup() {
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t" style={{ borderColor: '#30363d' }} />
+            <div className="w-full border-t" style={{ borderColor: colors.border }} />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2" style={{ backgroundColor: '#161b22', color: '#8b949e' }}>
+            <span className="px-2" style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary }}>
               o continúa con
             </span>
           </div>
@@ -158,9 +159,9 @@ function Signup() {
           Google
         </Button>
 
-        <p className="text-center mt-4 text-sm" style={{ color: '#8b949e' }}>
+        <p className="text-center mt-4 text-sm" style={{ color: colors.textSecondary }}>
           ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="hover:underline" style={{ color: '#58a6ff' }}>
+          <Link to="/login" className="hover:underline" style={{ color: colors.accent }}>
             Inicia sesión
           </Link>
         </p>

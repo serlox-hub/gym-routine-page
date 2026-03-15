@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
+import { colors } from '../../lib/styles.js'
 
 function ExecutionTimer({ seconds }) {
   const [isRunning, setIsRunning] = useState(false)
@@ -102,24 +103,24 @@ function ExecutionTimer({ seconds }) {
   return (
     <div
       className="flex items-center gap-2 px-2 py-1 rounded"
-      style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
+      style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
     >
       <span
         className={`font-mono font-bold ${isCritical || isDone ? 'animate-pulse' : ''}`}
-        style={{ color: isDone ? '#3fb950' : isCritical ? '#f85149' : '#e6edf3' }}
+        style={{ color: isDone ? colors.success : isCritical ? colors.danger : colors.textPrimary }}
       >
         {formatSecondsToMMSS(remaining)}
       </span>
 
       <div
         className="w-12 h-1 rounded-full overflow-hidden"
-        style={{ backgroundColor: '#30363d' }}
+        style={{ backgroundColor: colors.border }}
       >
         <div
           className="h-full transition-all duration-1000"
           style={{
             width: `${progress}%`,
-            backgroundColor: isDone ? '#3fb950' : isCritical ? '#f85149' : '#58a6ff'
+            backgroundColor: isDone ? colors.success : isCritical ? colors.danger : colors.accent
           }}
         />
       </div>
@@ -127,7 +128,7 @@ function ExecutionTimer({ seconds }) {
       <button
         onClick={handleStop}
         className="text-xs transition-opacity hover:opacity-80"
-        style={{ color: '#8b949e' }}
+        style={{ color: colors.textSecondary }}
       >
         ✕
       </button>

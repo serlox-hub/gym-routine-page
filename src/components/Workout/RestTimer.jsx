@@ -1,4 +1,5 @@
 import { Minimize2, Maximize2 } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 import { useRestTimer } from '../../hooks/useWorkout.js'
 import { useDraggable } from '../../hooks/useDrag.js'
 import { formatSecondsToMMSS } from '../../lib/timeUtils.js'
@@ -15,7 +16,7 @@ function RestTimer() {
   const timeDisplay = formatSecondsToMMSS(timeRemaining)
   const isWarning = timeRemaining <= 10 && timeRemaining > 3
   const isCritical = timeRemaining <= 3
-  const timerColor = isCritical ? '#f85149' : isWarning ? '#d29922' : '#3fb950'
+  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : colors.success
 
   if (minimized) {
     const handleExpand = () => {
@@ -32,7 +33,7 @@ function RestTimer() {
         <button
           onClick={handleExpand}
           className="flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg cursor-grab active:cursor-grabbing"
-          style={{ backgroundColor: '#161b22', border: `2px solid ${timerColor}` }}
+          style={{ backgroundColor: colors.bgSecondary, border: `2px solid ${timerColor}` }}
           title="Expandir"
         >
           <span
@@ -41,7 +42,7 @@ function RestTimer() {
           >
             {timeDisplay}
           </span>
-          <Maximize2 size={14} style={{ color: '#8b949e' }} />
+          <Maximize2 size={14} style={{ color: colors.textSecondary }} />
         </button>
       </div>
     )
@@ -55,7 +56,7 @@ function RestTimer() {
       <button
         onClick={() => setMinimized(true)}
         className="absolute top-4 right-4 p-2 rounded-lg"
-        style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+        style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
         title="Minimizar"
       >
         <Minimize2 size={20} />
@@ -63,7 +64,7 @@ function RestTimer() {
 
       <h2
         className="text-xl font-medium mb-8"
-        style={{ color: '#8b949e' }}
+        style={{ color: colors.textSecondary }}
       >
         DESCANSO
       </h2>
@@ -73,7 +74,7 @@ function RestTimer() {
           isCritical ? 'animate-pulse' : ''
         }`}
         style={{
-          color: isCritical ? '#f85149' : isWarning ? '#d29922' : '#e6edf3'
+          color: isCritical ? colors.danger : isWarning ? colors.warning : colors.textPrimary
         }}
       >
         {timeDisplay}
@@ -81,7 +82,7 @@ function RestTimer() {
 
       <div
         className="w-64 h-2 rounded-full mb-8 overflow-hidden"
-        style={{ backgroundColor: '#21262d' }}
+        style={{ backgroundColor: colors.bgTertiary }}
       >
         <div
           className="h-full transition-all duration-1000"
@@ -96,7 +97,7 @@ function RestTimer() {
         <button
           onClick={() => addTime(-30)}
           className="px-6 py-3 rounded-lg text-lg font-medium transition-opacity hover:opacity-80"
-          style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+          style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
         >
           -30s
         </button>
@@ -112,7 +113,7 @@ function RestTimer() {
         <button
           onClick={() => addTime(30)}
           className="px-6 py-3 rounded-lg text-lg font-medium transition-opacity hover:opacity-80"
-          style={{ backgroundColor: '#21262d', color: '#8b949e' }}
+          style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
         >
           +30s
         </button>

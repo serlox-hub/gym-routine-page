@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Dumbbell, ChevronRight } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 import PhoneMockup, { MockupRoutineScreen } from './PhoneMockup'
 
 function HeroSection() {
@@ -55,18 +56,18 @@ function HeroSection() {
               >
                 <div className="flex items-center gap-2 mb-6">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(88, 166, 255, 0.15)' }}>
-                    <Dumbbell size={18} style={{ color: '#58a6ff' }} />
+                    <Dumbbell size={18} style={{ color: colors.accent }} />
                   </div>
-                  <span className="text-sm font-semibold tracking-wide" style={{ color: '#58a6ff' }}>
+                  <span className="text-sm font-semibold tracking-wide" style={{ color: colors.accent }}>
                     DIARIO GYM
                   </span>
                 </div>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-                  <span style={{ color: '#e6edf3' }}>Tu entrenamiento,</span>
+                  <span style={{ color: colors.textPrimary }}>Tu entrenamiento,</span>
                   <br />
                   <span
                     style={{
-                      background: 'linear-gradient(135deg, #58a6ff 0%, #a371f7 100%)',
+                      background: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.purple} 100%)`,
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                     }}
@@ -78,7 +79,7 @@ function HeroSection() {
 
               <motion.p
                 className="text-lg sm:text-xl mb-8 leading-relaxed max-w-lg"
-                style={{ color: '#8b949e' }}
+                style={{ color: colors.textSecondary }}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
@@ -96,7 +97,7 @@ function HeroSection() {
                   to="/signup"
                   className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-base font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg"
                   style={{
-                    background: 'linear-gradient(135deg, #58a6ff 0%, #a371f7 100%)',
+                    background: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.purple} 100%)`,
                     color: '#ffffff',
                     boxShadow: '0 4px 20px rgba(88, 166, 255, 0.3)',
                   }}
@@ -108,9 +109,9 @@ function HeroSection() {
                   to="/login"
                   className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-base font-semibold transition-all duration-300 hover:bg-opacity-80"
                   style={{
-                    backgroundColor: '#21262d',
-                    color: '#e6edf3',
-                    border: '1px solid #30363d',
+                    backgroundColor: colors.bgTertiary,
+                    color: colors.textPrimary,
+                    border: `1px solid ${colors.border}`,
                   }}
                 >
                   Ya tengo cuenta
@@ -139,10 +140,10 @@ function HeroSection() {
         animate={{ y: [0, 8, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        <div className="w-6 h-10 rounded-full flex items-start justify-center p-1.5" style={{ border: '2px solid #30363d' }}>
+        <div className="w-6 h-10 rounded-full flex items-start justify-center p-1.5" style={{ border: `2px solid ${colors.border}` }}>
           <motion.div
             className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: '#58a6ff' }}
+            style={{ backgroundColor: colors.accent }}
             animate={{ y: [0, 12, 0], opacity: [1, 0.3, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           />

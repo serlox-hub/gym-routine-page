@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button } from '@/components/ui'
+import { colors } from '../lib/styles.js'
 
 function Login() {
   const navigate = useNavigate()
@@ -39,7 +40,7 @@ function Login() {
   const displayError = localError || error
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d1117' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
       <Card className="w-full max-w-md p-6">
         <h1 className="text-2xl font-bold text-center mb-6">Iniciar Sesión</h1>
 
@@ -55,8 +56,8 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgPrimary,
+                border: `1px solid ${colors.border}`,
                 color: '#c9d1d9'
               }}
               placeholder="tu@email.com"
@@ -75,22 +76,22 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               style={{
-                backgroundColor: '#0d1117',
-                border: '1px solid #30363d',
+                backgroundColor: colors.bgPrimary,
+                border: `1px solid ${colors.border}`,
                 color: '#c9d1d9'
               }}
               placeholder="••••••••"
               autoComplete="current-password"
             />
             <div className="text-right mt-1">
-              <Link to="/forgot-password" className="text-sm hover:underline" style={{ color: '#58a6ff' }}>
+              <Link to="/forgot-password" className="text-sm hover:underline" style={{ color: colors.accent }}>
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
           </div>
 
           {displayError && (
-            <p className="text-sm text-center" style={{ color: '#f85149' }}>
+            <p className="text-sm text-center" style={{ color: colors.danger }}>
               {displayError}
             </p>
           )}
@@ -106,10 +107,10 @@ function Login() {
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t" style={{ borderColor: '#30363d' }} />
+            <div className="w-full border-t" style={{ borderColor: colors.border }} />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2" style={{ backgroundColor: '#161b22', color: '#8b949e' }}>
+            <span className="px-2" style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary }}>
               o continúa con
             </span>
           </div>
@@ -143,9 +144,9 @@ function Login() {
           Google
         </Button>
 
-        <p className="text-center mt-4 text-sm" style={{ color: '#8b949e' }}>
+        <p className="text-center mt-4 text-sm" style={{ color: colors.textSecondary }}>
           ¿No tienes cuenta?{' '}
-          <Link to="/signup" className="hover:underline" style={{ color: '#58a6ff' }}>
+          <Link to="/signup" className="hover:underline" style={{ color: colors.accent }}>
             Regístrate
           </Link>
         </p>

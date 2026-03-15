@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Play } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { useRestTimer } from '../../hooks/useWorkout.js'
 import { useDraggable } from '../../hooks/useDrag.js'
@@ -32,7 +33,7 @@ function ActiveSessionBanner() {
 
   const isWarning = timeRemaining <= 10 && timeRemaining > 3
   const isCritical = timeRemaining <= 3
-  const timerColor = isCritical ? '#f85149' : isWarning ? '#d29922' : '#ffffff'
+  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : '#ffffff'
 
   return (
     <div
@@ -42,9 +43,9 @@ function ActiveSessionBanner() {
     >
       <div
         className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg shadow-lg"
-        style={{ backgroundColor: '#161b22', border: '2px solid #58a6ff' }}
+        style={{ backgroundColor: colors.bgSecondary, border: `2px solid ${colors.accent}` }}
       >
-        <span className="text-xs font-medium" style={{ color: '#58a6ff' }}>
+        <span className="text-xs font-medium" style={{ color: colors.accent }}>
           Entrenamiento en curso
         </span>
         {restTimerActive && (

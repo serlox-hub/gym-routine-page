@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { transformSessionsToDurationChartData, calculateAverageDuration } from '../../lib/workoutCalculations.js'
+import { colors } from '../../lib/styles.js'
 
 function DurationChart({ sessions, currentDate }) {
   const chartData = useMemo(() => {
@@ -20,11 +21,11 @@ function DurationChart({ sessions, currentDate }) {
       return (
         <div
           className="rounded px-2 py-1 text-xs"
-          style={{ backgroundColor: '#21262d', border: '1px solid #30363d' }}
+          style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
         >
-          <div style={{ color: '#e6edf3' }}>{data.dayName}</div>
-          <div style={{ color: '#8b949e' }}>{data.fullDate}</div>
-          <div style={{ color: '#3fb950' }}>{data.duration} min</div>
+          <div style={{ color: colors.textPrimary }}>{data.dayName}</div>
+          <div style={{ color: colors.textSecondary }}>{data.fullDate}</div>
+          <div style={{ color: colors.success }}>{data.duration} min</div>
         </div>
       )
     }
@@ -34,13 +35,13 @@ function DurationChart({ sessions, currentDate }) {
   return (
     <div
       className="rounded-lg p-4 mt-4"
-      style={{ backgroundColor: '#161b22', border: '1px solid #30363d' }}
+      style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium" style={{ color: '#e6edf3' }}>
+        <h3 className="text-sm font-medium" style={{ color: colors.textPrimary }}>
           Duración de sesiones
         </h3>
-        <span className="text-xs" style={{ color: '#8b949e' }}>
+        <span className="text-xs" style={{ color: colors.textSecondary }}>
           Promedio: {avgDuration} min
         </span>
       </div>
@@ -50,12 +51,12 @@ function DurationChart({ sessions, currentDate }) {
           <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
             <XAxis
               dataKey="date"
-              tick={{ fill: '#8b949e', fontSize: 10 }}
-              axisLine={{ stroke: '#30363d' }}
+              tick={{ fill: colors.textSecondary, fontSize: 10 }}
+              axisLine={{ stroke: colors.border }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: '#8b949e', fontSize: 10 }}
+              tick={{ fill: colors.textSecondary, fontSize: 10 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(value) => `${value}`}
@@ -65,7 +66,7 @@ function DurationChart({ sessions, currentDate }) {
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={entry.duration >= avgDuration ? '#3fb950' : '#58a6ff'}
+                  fill={entry.duration >= avgDuration ? colors.success : colors.accent}
                 />
               ))}
             </Bar>
@@ -75,12 +76,12 @@ function DurationChart({ sessions, currentDate }) {
 
       <div className="flex items-center justify-center gap-4 mt-2">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded" style={{ backgroundColor: '#3fb950' }} />
-          <span className="text-xs" style={{ color: '#8b949e' }}>≥ promedio</span>
+          <div className="w-2 h-2 rounded" style={{ backgroundColor: colors.success }} />
+          <span className="text-xs" style={{ color: colors.textSecondary }}>≥ promedio</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded" style={{ backgroundColor: '#58a6ff' }} />
-          <span className="text-xs" style={{ color: '#8b949e' }}>{'<'} promedio</span>
+          <div className="w-2 h-2 rounded" style={{ backgroundColor: colors.accent }} />
+          <span className="text-xs" style={{ color: colors.textSecondary }}>{'<'} promedio</span>
         </div>
       </div>
     </div>

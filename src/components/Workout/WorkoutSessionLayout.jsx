@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { colors } from '../../lib/styles.js'
 import { useNavigate } from 'react-router-dom'
 import {
   useCompleteSet,
@@ -86,7 +87,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           onClick={() => abandonSessionMutation.mutate()}
           disabled={abandonSessionMutation.isPending}
           className="w-full py-3 rounded-lg font-medium"
-          style={{ backgroundColor: '#f85149', color: '#ffffff' }}
+          style={{ backgroundColor: colors.danger, color: '#ffffff' }}
         >
           {abandonSessionMutation.isPending ? 'Cancelando...' : 'Cancelar sesión'}
         </button>
@@ -166,7 +167,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           title={title}
           titleExtra={
             progress.total > 0 && (
-              <span className="text-sm font-normal" style={{ color: '#8b949e' }}>
+              <span className="text-sm font-normal" style={{ color: colors.textSecondary }}>
                 {progress.completed}/{progress.total}
               </span>
             )

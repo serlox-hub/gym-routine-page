@@ -7,6 +7,7 @@ import SetNotesView from '../components/Workout/SetNotesView.jsx'
 import { SENSATION_LABELS, getSensationColor, getMuscleGroupBorderStyle } from '../lib/constants.js'
 import { formatFullDate, formatTime } from '../lib/dateUtils.js'
 import { formatSetValue } from '../lib/setUtils.js'
+import { colors } from '../lib/styles.js'
 
 function SessionDetail() {
   const { sessionId } = useParams()
@@ -50,14 +51,14 @@ function SessionDetail() {
             </div>
           )}
           <div className="flex items-center gap-2">
-            <Calendar size={16} style={{ color: '#8b949e' }} />
+            <Calendar size={16} style={{ color: colors.textSecondary }} />
             <div>
               <div className="text-xs text-secondary">Fecha</div>
               <div className="text-sm capitalize">{formatFullDate(session.started_at)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Clock size={16} style={{ color: '#8b949e' }} />
+            <Clock size={16} style={{ color: colors.textSecondary }} />
             <div>
               <div className="text-xs text-secondary">Hora</div>
               <div className="text-sm">{formatTime(session.started_at)}</div>
@@ -78,7 +79,7 @@ function SessionDetail() {
                 className="text-xs px-2 py-0.5 rounded inline-block mt-1"
                 style={{
                   backgroundColor: getSensationColor(session.overall_feeling),
-                  color: '#0d1117',
+                  color: colors.bgPrimary,
                 }}
               >
                 {SENSATION_LABELS[session.overall_feeling]}
@@ -87,7 +88,7 @@ function SessionDetail() {
           )}
         </div>
         {session.notes && (
-          <div className="mt-4 pt-4" style={{ borderTop: '1px solid #30363d' }}>
+          <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
             <div className="text-xs text-secondary mb-1">Notas</div>
             <p className="text-sm">{session.notes}</p>
           </div>
@@ -105,7 +106,7 @@ function SessionDetail() {
                   {exercise.name}
                 </h3>
                 {exercise.deleted_at && (
-                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#f8514966', color: '#f85149' }}>
+                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dangerBg, color: colors.danger }}>
                     Eliminado
                   </span>
                 )}
@@ -114,10 +115,10 @@ function SessionDetail() {
                 <button
                   onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
                   className="p-1.5 rounded hover:opacity-80"
-                  style={{ backgroundColor: '#21262d' }}
+                  style={{ backgroundColor: colors.bgTertiary }}
                   title="Ver progresión"
                 >
-                  <TrendingUp size={14} style={{ color: '#a371f7' }} />
+                  <TrendingUp size={14} style={{ color: colors.purple }} />
                 </button>
               )}
             </div>
@@ -126,11 +127,11 @@ function SessionDetail() {
                 <div
                   key={set.id}
                   className="flex items-center gap-3 py-2 px-3 rounded"
-                  style={{ backgroundColor: '#21262d' }}
+                  style={{ backgroundColor: colors.bgTertiary }}
                 >
                   <span
                     className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold"
-                    style={{ backgroundColor: '#3fb950', color: '#0d1117' }}
+                    style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
                   >
                     {set.set_number}
                   </span>

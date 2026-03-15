@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 
 function CTASection() {
@@ -11,22 +12,22 @@ function CTASection() {
         <motion.div
           className="rounded-2xl p-10 sm:p-14"
           style={{
-            backgroundColor: '#161b22',
-            border: '1px solid #30363d',
+            backgroundColor: colors.bgSecondary,
+            border: `1px solid ${colors.border}`,
             boxShadow: '0 0 60px rgba(88, 166, 255, 0.06)',
           }}
         >
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: '#e6edf3' }}>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: colors.textPrimary }}>
             Empieza a entrenar mejor hoy
           </h2>
-          <p className="text-lg mb-8 max-w-lg mx-auto" style={{ color: '#8b949e' }}>
+          <p className="text-lg mb-8 max-w-lg mx-auto" style={{ color: colors.textSecondary }}>
             Únete y lleva tu entrenamiento al siguiente nivel. Gratis, sin compromisos.
           </p>
           <Link
             to="/signup"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg"
             style={{
-              background: 'linear-gradient(135deg, #58a6ff 0%, #a371f7 100%)',
+              background: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.purple} 100%)`,
               color: '#ffffff',
               boxShadow: '0 4px 25px rgba(88, 166, 255, 0.35)',
             }}

@@ -1,9 +1,10 @@
 import ExecutionTimer from './ExecutionTimer.jsx'
+import { colors } from '../../lib/styles.js'
 
 const inputStyle = {
-  backgroundColor: '#161b22',
-  border: '1px solid #30363d',
-  color: '#e6edf3',
+  backgroundColor: colors.bgSecondary,
+  border: `1px solid ${colors.border}`,
+  color: colors.textPrimary,
 }
 
 function NumberInput({ value, onChange, disabled, width = 'w-16', inputMode = 'numeric' }) {

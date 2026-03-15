@@ -1,27 +1,29 @@
+import { colors } from '../../lib/styles.js'
+
 const VARIANTS = {
   default: {
-    backgroundColor: '#21262d',
-    color: '#8b949e'
+    backgroundColor: colors.bgTertiary,
+    color: colors.textSecondary
   },
   accent: {
     backgroundColor: 'rgba(88, 166, 255, 0.15)',
-    color: '#58a6ff'
+    color: colors.accent
   },
   purple: {
-    backgroundColor: 'rgba(163, 113, 247, 0.15)',
-    color: '#a371f7'
+    backgroundColor: colors.purpleBg,
+    color: colors.purple
   },
   success: {
-    backgroundColor: 'rgba(63, 185, 80, 0.15)',
-    color: '#3fb950'
+    backgroundColor: colors.successBg,
+    color: colors.success
   },
   warning: {
-    backgroundColor: 'rgba(210, 153, 34, 0.15)',
-    color: '#d29922'
+    backgroundColor: colors.warningBg,
+    color: colors.warning
   },
   danger: {
-    backgroundColor: 'rgba(248, 81, 73, 0.1)',
-    color: '#f85149'
+    backgroundColor: colors.dangerBg,
+    color: colors.danger
   },
 }
 

@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { colors } from '../../lib/styles.js'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -7,10 +8,10 @@ function PrivateRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0d1117' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bgPrimary }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p style={{ color: '#8b949e' }}>Cargando...</p>
+          <p style={{ color: colors.textSecondary }}>Cargando...</p>
         </div>
       </div>
     )

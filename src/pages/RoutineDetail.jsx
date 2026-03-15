@@ -6,6 +6,7 @@ import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/
 import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, MoveToDayModal } from '../components/Routine/index.js'
 import { moveItemToPosition } from '../lib/arrayUtils.js'
 import useWorkoutStore from '../stores/workoutStore.js'
+import { colors } from '../lib/styles.js'
 
 function RoutineDetail() {
   const { routineId } = useParams()
@@ -236,7 +237,7 @@ function RoutineDetail() {
               className="p-4 border-dashed"
               onClick={() => setShowAddDay(true)}
             >
-              <div className="flex items-center gap-2 justify-center" style={{ color: '#8b949e' }}>
+              <div className="flex items-center gap-2 justify-center" style={{ color: colors.textSecondary }}>
                 <Plus size={20} />
                 <span>Añadir día {nextDayNumber}</span>
               </div>

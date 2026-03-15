@@ -1,4 +1,5 @@
 import { X, Dumbbell, Calendar } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 import { Modal, LoadingSpinner, ErrorMessage } from '../ui/index.js'
 import { useExerciseUsageDetail } from '../../hooks/useExercises.js'
 import { formatShortDate } from '../../lib/dateUtils.js'
@@ -15,8 +16,8 @@ function ExerciseUsageModal({ exercise, onClose }) {
       className="max-h-[80vh] flex flex-col"
       noBorder
     >
-      <div className="flex items-center justify-between p-4 border-b border-[#30363d]">
-        <h2 className="text-base font-semibold" style={{ color: '#e6edf3' }}>
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <h2 className="text-base font-semibold" style={{ color: colors.textPrimary }}>
           {exercise?.name}
         </h2>
         <button onClick={onClose} className="text-secondary p-1">
@@ -34,13 +35,13 @@ function ExerciseUsageModal({ exercise, onClose }) {
             <section>
               <div className="flex items-center gap-2 mb-2">
                 <Dumbbell size={16} className="text-secondary" />
-                <h3 className="text-sm font-medium" style={{ color: '#e6edf3' }}>Rutinas</h3>
+                <h3 className="text-sm font-medium" style={{ color: colors.textPrimary }}>Rutinas</h3>
               </div>
               {data?.routines?.length > 0 ? (
                 <ul className="space-y-1.5">
                   {data.routines.map(r => (
                     <li key={`${r.routineId}-${r.dayName}`} className="text-sm text-secondary">
-                      <span style={{ color: '#e6edf3' }}>{r.routineName}</span>
+                      <span style={{ color: colors.textPrimary }}>{r.routineName}</span>
                       {' · '}
                       {r.dayName}
                     </li>
@@ -54,13 +55,13 @@ function ExerciseUsageModal({ exercise, onClose }) {
             <section>
               <div className="flex items-center gap-2 mb-2">
                 <Calendar size={16} className="text-secondary" />
-                <h3 className="text-sm font-medium" style={{ color: '#e6edf3' }}>Últimas sesiones</h3>
+                <h3 className="text-sm font-medium" style={{ color: colors.textPrimary }}>Últimas sesiones</h3>
               </div>
               {data?.sessions?.length > 0 ? (
                 <ul className="space-y-1.5">
                   {data.sessions.slice(0, 20).map(s => (
                     <li key={s.sessionId} className="text-sm text-secondary">
-                      <span style={{ color: '#e6edf3' }}>{formatShortDate(s.date)}</span>
+                      <span style={{ color: colors.textPrimary }}>{formatShortDate(s.date)}</span>
                       {s.routineName && ` · ${s.routineName}`}
                     </li>
                   ))}

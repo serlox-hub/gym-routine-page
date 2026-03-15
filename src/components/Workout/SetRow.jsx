@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { NotesBadge } from '../ui/index.js'
 import SetDetailsModal from './SetDetailsModal.jsx'
@@ -188,8 +189,8 @@ function SetRow({
     <div
       className="flex items-center gap-3 py-2 px-3 rounded"
       style={{
-        backgroundColor: isCompleted ? 'rgba(63, 185, 80, 0.1)' : '#21262d',
-        borderLeft: isCompleted ? '3px solid #3fb950' : '3px solid transparent',
+        backgroundColor: isCompleted ? 'rgba(63, 185, 80, 0.1)' : colors.bgTertiary,
+        borderLeft: isCompleted ? `3px solid ${colors.success}` : '3px solid transparent',
       }}
     >
       <div className="flex items-center gap-2 flex-1">
@@ -214,8 +215,8 @@ function SetRow({
         disabled={!isCompleted && !isValid()}
         className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
         style={{
-          backgroundColor: isCompleted ? '#3fb950' : '#30363d',
-          color: isCompleted ? '#0d1117' : isValid() ? '#3fb950' : '#484f58',
+          backgroundColor: isCompleted ? colors.success : colors.border,
+          color: isCompleted ? colors.bgPrimary : isValid() ? colors.success : '#484f58',
           cursor: (!isCompleted && !isValid()) ? 'default' : 'pointer',
           opacity: (!isCompleted && !isValid()) ? 0.5 : 1,
         }}
@@ -240,7 +241,7 @@ function SetRow({
         <button
           onClick={onRemove}
           className="w-6 h-6 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
-          style={{ backgroundColor: '#21262d', color: '#f85149' }}
+          style={{ backgroundColor: colors.bgTertiary, color: colors.danger }}
           title="Eliminar serie"
         >
           ×

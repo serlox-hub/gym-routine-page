@@ -101,7 +101,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
                 {menuOption(Upload, colors.success, 'Importar JSON', 'Desde archivo o pegando texto')}
               </Card>
               <Card className="p-3" onClick={() => { onClose(); setShowChatbotModal(true) }}>
-                {menuOption(Bot, '#58a6ff', 'Crear con IA', 'Genera un prompt para ChatGPT/Claude')}
+                {menuOption(Bot, colors.accent, 'Crear con IA', 'Genera un prompt para ChatGPT/Claude')}
               </Card>
               <Card className="p-3" onClick={() => { onClose(); setShowAdaptModal(true) }}>
                 {menuOption(RefreshCw, '#f0883e', 'Adaptar rutina existente', 'Convierte tu rutina actual con IA')}

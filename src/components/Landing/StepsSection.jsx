@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Target, Zap, BarChart3 } from 'lucide-react'
+import { colors } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 
 const STEPS = [
@@ -30,11 +31,11 @@ function StepsSection() {
         <AnimatedSection className="text-center mb-16">
           <span
             className="inline-block text-xs font-semibold tracking-widest mb-4 px-3 py-1 rounded-full"
-            style={{ color: '#a371f7', backgroundColor: 'rgba(163, 113, 247, 0.1)', border: '1px solid rgba(163, 113, 247, 0.2)' }}
+            style={{ color: colors.purple, backgroundColor: 'rgba(163, 113, 247, 0.1)', border: '1px solid rgba(163, 113, 247, 0.2)' }}
           >
             CÓMO FUNCIONA
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: '#e6edf3' }}>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: colors.textPrimary }}>
             En 3 simples pasos
           </h2>
         </AnimatedSection>
@@ -45,11 +46,11 @@ function StepsSection() {
               <motion.div
                 className="flex items-start gap-6 p-6 rounded-xl"
                 style={{
-                  backgroundColor: '#161b22',
-                  border: '1px solid #30363d',
+                  backgroundColor: colors.bgSecondary,
+                  border: `1px solid ${colors.border}`,
                 }}
                 whileHover={{
-                  borderColor: '#a371f740',
+                  borderColor: colors.purple + '40',
                   boxShadow: '0 8px 30px rgba(163, 113, 247, 0.08)',
                 }}
               >
@@ -63,7 +64,7 @@ function StepsSection() {
                     <span
                       className="text-xl font-extrabold"
                       style={{
-                        background: 'linear-gradient(135deg, #58a6ff, #a371f7)',
+                        background: `linear-gradient(135deg, ${colors.accent}, ${colors.purple})`,
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                       }}
@@ -74,10 +75,10 @@ function StepsSection() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <step.icon size={18} style={{ color: '#a371f7' }} />
-                    <h3 className="text-lg font-bold" style={{ color: '#e6edf3' }}>{step.title}</h3>
+                    <step.icon size={18} style={{ color: colors.purple }} />
+                    <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>{step.title}</h3>
                   </div>
-                  <p className="text-sm leading-relaxed" style={{ color: '#8b949e' }}>{step.description}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>{step.description}</p>
                 </div>
               </motion.div>
             </AnimatedSection>

@@ -1,3 +1,5 @@
+import { colors } from '../../lib/styles.js'
+
 function Card({ children, className = '', onClick, style = {} }) {
   const clickableClasses = onClick ? 'cursor-pointer transition-colors' : ''
 
@@ -5,13 +7,13 @@ function Card({ children, className = '', onClick, style = {} }) {
     <div
       className={`rounded-lg ${clickableClasses} ${className}`}
       style={{
-        backgroundColor: '#161b22',
+        backgroundColor: colors.bgSecondary,
         borderWidth: '1px',
-        borderColor: '#30363d',
+        borderColor: colors.border,
         ...style,
       }}
-      onMouseEnter={onClick ? (e) => e.currentTarget.style.backgroundColor = '#1c2128' : undefined}
-      onMouseLeave={onClick ? (e) => e.currentTarget.style.backgroundColor = '#161b22' : undefined}
+      onMouseEnter={onClick ? (e) => e.currentTarget.style.backgroundColor = colors.bgAlt : undefined}
+      onMouseLeave={onClick ? (e) => e.currentTarget.style.backgroundColor = colors.bgSecondary : undefined}
       onClick={onClick}
     >
       {children}
