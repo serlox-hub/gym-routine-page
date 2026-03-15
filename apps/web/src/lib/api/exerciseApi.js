@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js'
-import { MeasurementType } from '../measurementTypes.js'
+import { MeasurementType } from '@gym/shared'
 
 export async function fetchExercisesWithMuscleGroup() {
   const { data, error } = await supabase

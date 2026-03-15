@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import useAuthStore from '@/stores/authStore'
 import { supabase } from '@/lib/supabase'
-import { QUERY_KEYS } from '@/lib/constants'
+import { QUERY_KEYS } from '@gym/shared'
 
 export function useAuth() {
   const {

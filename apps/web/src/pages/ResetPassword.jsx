@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { validateResetPasswordForm } from '@/lib/validation'
+import { validateResetPasswordForm } from '@gym/shared'
 import { Card, Button, Input } from '@/components/ui'
 import { colors } from '../lib/styles.js'
 
