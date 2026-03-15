@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 6 of 6 (DX Cleanup)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In Progress
-Last activity: 2026-03-15 — Completed plan 06-01 (shared queryClient + rename constants stubs)
+Last activity: 2026-03-15 — Completed plan 06-02 (shared ESLint config for both apps)
 
-Progress: [█████████░] 88%
+Progress: [██████████] 93%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [█████████░] 88%
 | Phase 04 P02 | 1min | 2 tasks | 5 files |
 | Phase 05-01 P01 | 3min | 2 tasks | 13 files |
 | Phase 05-02 P02 | 4min | 3 tasks | 22 files |
+| Phase 06-02 P02 | 2min | 2 tasks | 9 files |
 | Phase 06-01 P01 | 1min | 2 tasks | 20 files |
 
 ## Accumulated Context
@@ -102,6 +103,8 @@ Recent decisions affecting current work:
 - [Phase 05-02]: RN useSessionExercises.js kept local -- uses addSessionExercise (RN-specific API) and optimistic reorder
 - [Phase 05-02]: initStores/initNotifications called at module level in entry files, after initApi
 - [Phase 05-02]: Test files need initStores() call for shared hook compatibility
+- [Phase 06-02]: Shared ESLint flat config via @gym/eslint-config -- baseConfig array spread pattern
+- [Phase 06-02]: Pre-existing conditional hooks in WorkoutExerciseCard suppressed, not refactored
 - [Phase 06-01]: queryClient identical in both apps, moved to shared as-is
 
 ### Pending Todos
@@ -115,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T22:16:13Z
-Stopped at: Completed 06-01-PLAN.md
-Resume file: .planning/phases/06-dx-cleanup/06-01-SUMMARY.md
+Last session: 2026-03-15T22:19:00Z
+Stopped at: Completed 06-02-PLAN.md
+Resume file: .planning/phases/06-dx-cleanup/06-02-SUMMARY.md
