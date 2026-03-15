@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-03-15T19:07:56.673Z"
+stopped_at: Phase 4 context gathered
+last_updated: "2026-03-15T19:19:59.117Z"
 last_activity: 2026-03-15 — Completed plan 03-02 (web hook imports migrated to @gym/shared)
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 78
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 4 of 6 (Stores Migration)
-Plan: 1 of 2 in current phase
+Plan: 2 of 2 in current phase
 Status: In Progress
-Last activity: 2026-03-15 — Completed plan 03-02 (web hook imports migrated to @gym/shared)
+Last activity: 2026-03-15 — Completed plan 04-01 (store factories created in packages/shared)
 
-Progress: [████████░░] 78%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [████████░░] 78%
 *Updated after each plan completion*
 | Phase 03-03 P03 | 3min | 2 tasks | 10 files |
 | Phase 03-04 P04 | 2min | 3 tasks | 4 files |
+| Phase 04-01 P01 | 10min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@ Recent decisions affecting current work:
 - [Phase 3-03]: fetchUserSettings added to shared adminApi -- eliminates last inline supabase query in useAuth for both platforms
 - [Phase 3-03]: View-layer transforms kept in hook queryFn, not in shared API
 - [Phase 03-04]: addSessionExercise coexists with insertSessionExercise -- RN computes sort order, web uses pre-computed
+- [Phase 04-01]: Persist test reemplazado por factory isolation tests -- zustand v5 removio persist API publica
+- [Phase 04-01]: onBeforeLogout async para soportar GoogleSignin.signOut en RN
+- [Phase 04-01]: loginWithGoogle excluido del factory -- cada plataforma implementa localmente
 
 ### Pending Todos
 
@@ -95,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T19:07:56.671Z
-Stopped at: Completed 03-04-PLAN.md
-Resume file: None
+Last session: 2026-03-15T19:55:46Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: .planning/phases/04-store-factories/04-01-SUMMARY.md

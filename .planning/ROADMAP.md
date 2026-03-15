@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Monorepo Scaffold** - Prove both bundlers and EAS Build resolve `@gym/shared` imports before any production code migrates (completed 2026-03-15)
 - [x] **Phase 2: Utils Migration** - Move 16 pure utility files and 18 tests to `packages/shared`, both apps import from `@gym/shared` (completed 2026-03-15)
-- [ ] **Phase 3: API Layer Migration** - Move 7 API files to `packages/shared`, refactor RN from inline queries to shared API functions
+- [x] **Phase 3: API Layer Migration** - Move 7 API files to `packages/shared`, refactor RN from inline queries to shared API functions (completed 2026-03-15)
 - [ ] **Phase 4: Store Factories** - Extract Zustand stores to injectable factory functions, each platform provides its own storage adapter
 - [ ] **Phase 5: Hooks Migration** - Share TanStack Query hooks with thin platform wrapper hooks in each app
 - [ ] **Phase 6: DX Cleanup** - Shared constants, queryClient, ESLint config, zero duplicated files remain
@@ -63,7 +63,7 @@ Plans:
   2. API functions receive the Supabase client as a parameter — no direct `supabase.js` import inside `packages/shared`
   3. Web hooks import API functions from `@gym/shared` and produce identical data to pre-migration behavior
   4. RN hooks produce identical data to web hooks for the same operations
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 03-01-PLAN.md — Create _client.js injection, move 7 API files to shared, wire initApi in both apps
@@ -81,7 +81,11 @@ Plans:
   3. RN instantiates stores with `AsyncStorage` adapter and state persists across app restarts
   4. Auth flow (login, logout, session restore) works correctly on both platforms
   5. No Zustand store file is duplicated between web and RN
-**Plans**: TBD
+**Plans:** 1/2 plans executed
+
+Plans:
+- [ ] 04-01-PLAN.md — Create createWorkoutStore + createAuthStore factories in packages/shared, migrate test
+- [ ] 04-02-PLAN.md — Replace web + RN store files with factory instantiation, update barrel
 
 ### Phase 5: Hooks Migration
 **Goal**: Shared TanStack Query hooks live in `packages/shared`, each app wraps them with thin platform-specific hooks, and all hook-dependent UI components work on both platforms
@@ -114,7 +118,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Monorepo Scaffold | 3/3 | Complete    | 2026-03-15 |
 | 2. Utils Migration | 2/2 | Complete    | 2026-03-15 |
-| 3. API Layer Migration | 3/4 | In Progress|  |
-| 4. Store Factories | 0/? | Not started | - |
+| 3. API Layer Migration | 3/4 | Complete    | 2026-03-15 |
+| 4. Store Factories | 1/2 | In Progress|  |
 | 5. Hooks Migration | 0/? | Not started | - |
 | 6. DX Cleanup | 0/? | Not started | - |
