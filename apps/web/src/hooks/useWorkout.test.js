@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useRestTimer, useTimerEngine } from './useWorkout.js'
+import { initStores } from '@gym/shared'
+import useAuthStore from '../stores/authStore.js'
 import useWorkoutStore from '../stores/workoutStore.js'
+import { useRestTimer, useTimerEngine } from './useWorkout.js'
 
 // Mock del store para tests aislados
 vi.mock('../stores/workoutStore.js', async () => {
@@ -10,6 +12,9 @@ vi.mock('../stores/workoutStore.js', async () => {
     default: actual.default,
   }
 })
+
+// Inicializar stores para que shared hooks funcionen
+initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
 
 // Wrapper que monta el engine + el timer (como en la app real)
 function useRestTimerWithEngine() {
