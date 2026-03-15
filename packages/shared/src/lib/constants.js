@@ -104,6 +104,3 @@ export function getMuscleGroupColor(name) {
   return MUSCLE_GROUP_COLORS[name] || '#8b949e'
 }
 
-export function getMuscleGroupBorderStyle(name) {
-  return { borderLeftWidth: '3px', borderLeftColor: getMuscleGroupColor(name) }
-}
