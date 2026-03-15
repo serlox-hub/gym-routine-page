@@ -641,7 +641,7 @@ Prioridad: **MEDIA-BAJA**. Solo si se mantiene activamente la app React Native.
 
 ### Sprint 3
 - [x] `grep` de hex mapeados en src/ devuelve 0 resultados — 277 instancias migradas a `colors.X`
-- [ ] Componente `Input` usado en al menos 3 formularios — creado, pendiente migración incremental
+- [x] Componente `Input` usado en 28 formularios, `Select` en 3, `Textarea` en 5 — migración completada
 - [x] `styles.js` no duplica colores de `tailwind.config.js` — tailwind.config.js importa de styles.js
 
 ### Sprint 4
