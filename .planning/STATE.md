@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-03-15T16:45:00.000Z"
-last_activity: 2026-03-15 — Completed monorepo scaffold plan 3 (phase 1 complete)
+status: in_progress
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-15T17:42:28Z"
+last_activity: 2026-03-15 — Completed plan 02-01 (utils moved to shared package)
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  total_plans: 5
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -25,18 +25,18 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 
 ## Current Position
 
-Phase: 1 of 6 (Monorepo Scaffold) -- COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase Complete
-Last activity: 2026-03-15 — Completed monorepo scaffold plan 3 (phase 1 complete)
+Phase: 2 of 6 (Utils Migration)
+Plan: 1 of 2 in current phase
+Status: In Progress
+Last activity: 2026-03-15 — Completed plan 02-01 (utils moved to shared package)
 
-Progress: [██████████] 100%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 4min
+- Total plans completed: 4
+- Average duration: 5min
 - Total execution time: 0.2 hours
 
 **By Phase:**
@@ -44,10 +44,11 @@ Progress: [██████████] 100%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-monorepo-scaffold | 3/3 | 12min | 4min |
+| 02-utils-migration | 1/2 | 7min | 7min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (7min), 01-02 (3min), 01-03 (2min)
-- Trend: faster
+- Last 5 plans: 01-01 (7min), 01-02 (3min), 01-03 (2min), 02-01 (7min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -67,6 +68,10 @@ Recent decisions affecting current work:
 - [Phase 1-01]: No type:module in packages/shared — Metro/Hermes compatibility
 - [Phase 1-02]: Metro SDK 55 auto-config resolves @gym/shared without explicit watchFolders
 - [Phase 1-03]: EAS cloud build passes with EAS_PROJECT_ROOT: ../.. for monorepo layout
+- [Phase 2-01]: routineIO.js pure parts only to shared; supabase-dependent functions stay in each app
+- [Phase 2-01]: constants.js getMuscleGroupBorderStyle in platform stubs; data constants shared
+- [Phase 2-01]: RIR_OPTIONS uses web's 'Controlado' text
+- [Phase 2-01]: queryClient.js deferred to Phase 6 per DX-02
 
 ### Pending Todos
 
@@ -79,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T16:45:00Z
-Stopped at: Completed 01-03-PLAN.md (Phase 1 complete)
-Resume file: .planning/phases/01-monorepo-scaffold/01-03-SUMMARY.md
+Last session: 2026-03-15T17:42:28Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: .planning/phases/02-utils-migration/02-01-SUMMARY.md

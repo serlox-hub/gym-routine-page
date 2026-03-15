@@ -48,7 +48,7 @@ Plans:
   3. `npm test` from monorepo root passes all 18 test files co-located with their utils
   4. `supabase.js`, `styles.js`, and `videoStorage.js` are absent from `packages/shared` (confirmed platform-specific)
   5. Both apps build and run without errors after the migration
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 02-01-PLAN.md — Move 16+18 files to packages/shared via git mv, handle borderline files (constants.js, routineIO.js), update barrel and vitest config
@@ -107,7 +107,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo Scaffold | 3/3 | Complete    | 2026-03-15 |
-| 2. Utils Migration | 0/2 | Planned | - |
+| 2. Utils Migration | 1/2 | In Progress|  |
 | 3. API Layer Migration | 0/? | Not started | - |
 | 4. Store Factories | 0/? | Not started | - |
 | 5. Hooks Migration | 0/? | Not started | - |
