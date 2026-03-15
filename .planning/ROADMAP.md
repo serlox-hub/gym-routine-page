@@ -111,7 +111,12 @@ Plans:
   2. `queryClient.js` config is shared in `packages/shared` with no duplicated copy
   3. A shared ESLint config package exists in `packages/eslint-config` and is extended by both apps
   4. A file audit confirms zero duplicated files between web and RN (excluding declared platform-specific files)
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Share queryClient in packages/shared, rename constants.js stubs to muscleGroupStyles.js
+- [ ] 06-02-PLAN.md — Create packages/eslint-config shared package, add ESLint to gym-native
+- [ ] 06-03-PLAN.md — File audit verifying zero unexpected duplicates, root scripts verification
 
 ## Progress
 
@@ -124,5 +129,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Utils Migration | 2/2 | Complete    | 2026-03-15 |
 | 3. API Layer Migration | 3/4 | Complete    | 2026-03-15 |
 | 4. Store Factories | 1/2 | Complete    | 2026-03-15 |
-| 5. Hooks Migration | 2/2 | Complete   | 2026-03-15 |
-| 6. DX Cleanup | 0/? | Not started | - |
+| 5. Hooks Migration | 2/2 | Complete    | 2026-03-15 |
+| 6. DX Cleanup | 0/3 | Not started | - |
