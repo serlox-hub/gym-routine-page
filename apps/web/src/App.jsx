@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
+import { GYM_SHARED_VERSION } from '@gym/shared'
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
 import { ActiveSessionBanner, LoadingSpinner } from './components/ui/index.js'
@@ -64,6 +65,9 @@ function SessionRestorer() {
 }
 
 function App() {
+  // Smoke test: remove after Phase 1
+  console.log('GYM_SHARED_VERSION:', GYM_SHARED_VERSION)
+
   return (
     <BrowserRouter>
       <PasswordRecoveryRedirect>

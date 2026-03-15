@@ -1,4 +1,5 @@
 import "./global.css"
+import { GYM_SHARED_VERSION } from '@gym/shared'
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
 import * as SplashScreen from 'expo-splash-screen'
@@ -24,6 +25,9 @@ const linking = {
 }
 
 export default function App() {
+  // Smoke test: remove after Phase 1
+  console.log('GYM_SHARED_VERSION:', GYM_SHARED_VERSION)
+
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
