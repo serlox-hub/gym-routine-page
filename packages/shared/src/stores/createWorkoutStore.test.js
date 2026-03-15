@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { act } from '@testing-library/react'
+import { createWorkoutStore } from './createWorkoutStore.js'
 
-// Importamos el store directamente - Zustand funciona sin React
-import useWorkoutStore from './workoutStore.js'
+let useWorkoutStore
 
-describe('workoutStore', () => {
+describe('createWorkoutStore', () => {
   beforeEach(() => {
+    useWorkoutStore = createWorkoutStore()
     // Reset store state before each test
     act(() => {
       useWorkoutStore.setState({
@@ -285,11 +286,26 @@ describe('workoutStore', () => {
     })
   })
 
-  describe('State Persistence', () => {
-    it('store has persist middleware configured', () => {
-      // Verify the store name for persistence
-      expect(useWorkoutStore.persist).toBeDefined()
-      expect(useWorkoutStore.persist.getOptions().name).toBe('workout-session')
+  describe('Factory', () => {
+    it('creates independent store instances', () => {
+      const store1 = createWorkoutStore()
+      const store2 = createWorkoutStore()
+
+      store1.getState().startSession(1, 2)
+      expect(store1.getState().sessionId).toBe(1)
+      expect(store2.getState().sessionId).toBeNull()
+    })
+
+    it('accepts optional storage parameter', () => {
+      const mockStorage = {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+      }
+      const store = createWorkoutStore(mockStorage)
+      expect(store.getState().sessionId).toBeNull()
+      store.getState().startSession(1, 2)
+      expect(store.getState().sessionId).toBe(1)
     })
   })
 })
