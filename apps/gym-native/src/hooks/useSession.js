@@ -1,35 +1,27 @@
 import { useRef, useEffect } from 'react'
 import { AppState } from 'react-native'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase.js'
-import { QUERY_KEYS, buildSessionExercisesCache, buildSessionExercisesFromBlocks } from '@gym/shared'
+import {
+  QUERY_KEYS,
+  buildSessionExercisesCache,
+  buildSessionExercisesFromBlocks,
+  fetchActiveSession,
+  fetchCompletedSetsForSession,
+  startWorkoutSession,
+  completeWorkoutSession,
+  deleteWorkoutSession,
+  fetchExerciseIdsWithSets,
+  deleteSessionExercisesWithoutSets,
+} from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 // ============================================
 // SESSION RESTORATION
 // ============================================
 
-async function fetchActiveSession() {
-  const { data, error } = await supabase
-    .from('workout_sessions')
-    .select('id, routine_day_id, started_at, routine_days(routine_id)')
-    .eq('status', 'in_progress')
-    .order('started_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (error || !data) return null
-  return data
-}
-
-async function fetchCompletedSets(sessionId) {
-  const { data } = await supabase
-    .from('completed_sets')
-    .select('session_exercise_id, set_number, weight, weight_unit, reps_completed, time_seconds, distance_meters, pace_seconds, rir_actual, notes, video_url')
-    .eq('session_id', sessionId)
-
+function buildSetsMap(rawSets) {
   const setsMap = {}
-  for (const set of (data || [])) {
+  for (const set of rawSets) {
     const key = `${set.session_exercise_id}-${set.set_number}`
     setsMap[key] = {
       sessionExerciseId: set.session_exercise_id,
@@ -56,7 +48,8 @@ export function useRestoreActiveSession() {
 
     if (!localSessionId) {
       if (!activeSession) return
-      const completedSets = await fetchCompletedSets(activeSession.id)
+      const rawSets = await fetchCompletedSetsForSession(activeSession.id)
+      const completedSets = buildSetsMap(rawSets)
       restoreSession({
         sessionId: activeSession.id,
         routineDayId: activeSession.routine_day_id,
@@ -92,21 +85,11 @@ export function useStartSession() {
   return useMutation({
     mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [] } = {}) => {
       const exercises = buildSessionExercisesFromBlocks(blocks)
-
-      const { data, error } = await supabase.rpc('start_workout_session', {
-        p_routine_day_id: routineDayId,
-        p_routine_name: routineName,
-        p_day_name: dayName,
-        p_exercises: exercises,
-      })
-
-      if (error) throw error
-      return data
+      return startWorkoutSession({ routineDayId, routineName, dayName, exercises })
     },
     onSuccess: (data, { routineDayId = null, routineId = null, blocks = [] } = {}) => {
       startSession(data.id, routineDayId, routineId)
 
-      // Pre-popular cache de session_exercises para evitar segundo fetch
       if (data.session_exercises?.length > 0) {
         const cacheData = buildSessionExercisesCache(data.session_exercises, blocks)
         queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, data.id], cacheData)
@@ -128,44 +111,23 @@ export function useEndSession() {
 
   return useMutation({
     mutationFn: async ({ overallFeeling, notes }) => {
-      // Eliminar session_exercises sin series completadas
-      const { data: exercisesWithSets } = await supabase
-        .from('completed_sets')
-        .select('session_exercise_id')
-        .eq('session_id', sessionId)
+      const exerciseIdsWithSets = await fetchExerciseIdsWithSets(sessionId)
 
-      const exerciseIdsWithSets = new Set(
-        (exercisesWithSets || []).map(s => s.session_exercise_id)
-      )
-
-      if (exerciseIdsWithSets.size > 0) {
-        // Eliminar ejercicios sin series completadas
-        await supabase
-          .from('session_exercises')
-          .delete()
-          .eq('session_id', sessionId)
-          .not('id', 'in', `(${Array.from(exerciseIdsWithSets).join(',')})`)
+      if (exerciseIdsWithSets.length > 0) {
+        await deleteSessionExercisesWithoutSets(sessionId, exerciseIdsWithSets)
       }
 
       const completedAt = new Date()
       const startedAtDate = new Date(startedAt)
       const durationMinutes = Math.round((completedAt - startedAtDate) / 60000)
 
-      const { data, error } = await supabase
-        .from('workout_sessions')
-        .update({
-          completed_at: completedAt.toISOString(),
-          duration_minutes: durationMinutes,
-          status: 'completed',
-          overall_feeling: overallFeeling,
-          notes,
-        })
-        .eq('id', sessionId)
-        .select()
-        .single()
-
-      if (error) throw error
-      return data
+      return completeWorkoutSession({
+        sessionId,
+        completedAt: completedAt.toISOString(),
+        durationMinutes,
+        overallFeeling,
+        notes,
+      })
     },
     onSuccess: () => {
       endSession()
@@ -182,13 +144,7 @@ export function useAbandonSession() {
 
   return useMutation({
     mutationFn: async () => {
-      // Eliminar la sesión (session_exercises y completed_sets se eliminan en cascada por FK)
-      const { error } = await supabase
-        .from('workout_sessions')
-        .delete()
-        .eq('id', sessionId)
-
-      if (error) throw error
+      await deleteWorkoutSession(sessionId)
     },
     onSuccess: () => {
       endSession()
