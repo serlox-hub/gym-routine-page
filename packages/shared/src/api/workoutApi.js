@@ -313,6 +313,55 @@ export async function updateSessionExerciseExerciseId({ sessionExerciseId, newEx
   return data
 }
 
+export async function addSessionExercise({ sessionId, exercise, series, reps, rir, rest_seconds, notes, tempo, superset_group }) {
+  const existing = await fetchSessionExercisesSortOrder(sessionId)
+
+  let insertSortOrder
+  let blockName = 'Principal'
+
+  if (superset_group && existing?.length) {
+    const supersetExercises = existing.filter(e => e.superset_group === superset_group)
+
+    if (supersetExercises.length > 0) {
+      const lastSupersetExercise = supersetExercises[supersetExercises.length - 1]
+      insertSortOrder = lastSupersetExercise.sort_order + 1
+
+      const supersetMember = existing.find(e => e.superset_group === superset_group)
+      if (supersetMember) {
+        const memberBlockName = await fetchSessionExerciseBlockName(supersetMember.id)
+        if (memberBlockName) {
+          blockName = memberBlockName
+        }
+      }
+
+      const exercisesToShift = existing.filter(e => e.sort_order >= insertSortOrder)
+      if (exercisesToShift.length > 0) {
+        await Promise.all(
+          exercisesToShift.map(e => updateSessionExerciseSortOrder(e.id, e.sort_order + 1))
+        )
+      }
+    } else {
+      insertSortOrder = (existing[existing.length - 1]?.sort_order || 0) + 1
+    }
+  } else {
+    insertSortOrder = (existing?.[existing.length - 1]?.sort_order || 0) + 1
+  }
+
+  return insertSessionExercise({
+    sessionId,
+    exerciseId: exercise.id,
+    sortOrder: insertSortOrder,
+    series: series || 3,
+    reps: reps || '10',
+    rir,
+    restSeconds: rest_seconds,
+    tempo,
+    notes,
+    supersetGroup: superset_group,
+    blockName,
+  })
+}
+
 export async function deleteSessionExercise(sessionExerciseId) {
   const { error } = await getClient()
     .from('session_exercises')
