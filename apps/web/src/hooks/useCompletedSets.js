@@ -1,13 +1,13 @@
 import { useRef, useCallback, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
-import useWorkoutStore from '../stores/workoutStore.js'
 import {
+  QUERY_KEYS,
   upsertCompletedSet,
   updateSetVideo,
   updateSetDetails as updateSetDetailsApi,
   deleteCompletedSet,
-} from '../lib/api/workoutApi.js'
+} from '@gym/shared'
+import useWorkoutStore from '../stores/workoutStore.js'
 
 // ============================================
 // SET MUTATIONS

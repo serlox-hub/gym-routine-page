@@ -1,13 +1,13 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
 import {
+  QUERY_KEYS,
   fetchWorkoutHistory,
   fetchSessionDetail,
   fetchExerciseHistorySummary,
   fetchExerciseHistory,
   fetchPreviousWorkout,
   deleteWorkoutSession,
-} from '../lib/api/workoutApi.js'
+} from '@gym/shared'
 
 // ============================================
 // HISTORY QUERIES

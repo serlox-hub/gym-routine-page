@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
-import useWorkoutStore from '../stores/workoutStore.js'
 import {
+  QUERY_KEYS,
   fetchSessionExercises,
   fetchSessionExercisesSortOrder,
   fetchSessionExerciseBlockName,
@@ -11,7 +10,8 @@ import {
   updateSessionExerciseExerciseId,
   deleteSessionExercise,
   reorderSessionExercises,
-} from '../lib/api/workoutApi.js'
+} from '@gym/shared'
+import useWorkoutStore from '../stores/workoutStore.js'
 
 // ============================================
 // SESSION EXERCISES QUERIES & MUTATIONS

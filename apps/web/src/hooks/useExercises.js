@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
-import { useUserId } from './useAuth.js'
 import {
+  QUERY_KEYS,
   fetchExercisesWithMuscleGroup,
   fetchMuscleGroups,
   fetchExerciseStats,
@@ -10,7 +9,8 @@ import {
   createExercise,
   updateExercise,
   deleteExercise,
-} from '../lib/api/exerciseApi.js'
+} from '@gym/shared'
+import { useUserId } from './useAuth.js'
 
 export function useExercisesWithMuscleGroup() {
   return useQuery({

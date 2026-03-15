@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
-import { fetchAllUsers, updateUserSetting as apiUpdateUserSetting } from '../lib/api/adminApi.js'
+import { QUERY_KEYS, fetchAllUsers, updateUserSetting as apiUpdateUserSetting } from '@gym/shared'
 
 // ============================================
 // QUERIES

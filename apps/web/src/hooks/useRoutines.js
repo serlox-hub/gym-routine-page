@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
-import { duplicateRoutine } from '../lib/routineIO.js'
-import { useUserId } from './useAuth.js'
 import {
+  QUERY_KEYS,
   fetchRoutines,
   fetchRoutine,
   fetchRoutineDays,
@@ -24,7 +22,9 @@ import {
   addExerciseToDay as apiAddExerciseToDay,
   duplicateRoutineExercise as apiDuplicateRoutineExercise,
   moveRoutineExerciseToDay as apiMoveRoutineExerciseToDay,
-} from '../lib/api/routineApi.js'
+} from '@gym/shared'
+import { duplicateRoutine } from '../lib/routineIO.js'
+import { useUserId } from './useAuth.js'
 
 export function useRoutines() {
   return useQuery({

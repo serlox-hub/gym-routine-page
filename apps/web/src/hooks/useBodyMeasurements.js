@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
-import { useUserId } from './useAuth.js'
 import {
+  QUERY_KEYS,
   fetchBodyMeasurementHistory,
   createBodyMeasurement,
   updateBodyMeasurement,
   deleteBodyMeasurement,
-} from '../lib/api/bodyMeasurementsApi.js'
+} from '@gym/shared'
+import { useUserId } from './useAuth.js'
 
 // ============================================
 // QUERIES

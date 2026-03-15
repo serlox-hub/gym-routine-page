@@ -1,8 +1,9 @@
 import { useRef, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS, buildSessionExercisesCache, buildSessionExercisesFromBlocks } from '@gym/shared'
-import useWorkoutStore from '../stores/workoutStore.js'
 import {
+  QUERY_KEYS,
+  buildSessionExercisesCache,
+  buildSessionExercisesFromBlocks,
   fetchActiveSession,
   fetchCompletedSetsForSession,
   startWorkoutSession,
@@ -10,7 +11,8 @@ import {
   deleteSessionExercisesWithoutSets,
   completeWorkoutSession,
   deleteWorkoutSession,
-} from '../lib/api/workoutApi.js'
+} from '@gym/shared'
+import useWorkoutStore from '../stores/workoutStore.js'
 
 // ============================================
 // SESSION RESTORATION

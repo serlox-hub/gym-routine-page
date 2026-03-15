@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
+import { QUERY_KEYS, fetchPreferences, upsertPreference } from '@gym/shared'
 import { useUserId } from './useAuth.js'
-import { fetchPreferences, upsertPreference } from '../lib/api/preferencesApi.js'
 
 const DEFAULT_VALUES = {
   show_rir_input: true,
