@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-15T18:32:00Z"
-last_activity: 2026-03-15 — Completed plan 03-01 (API layer migration to shared with getClient injection)
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-15T19:03:00Z"
+last_activity: 2026-03-15 — Completed plan 03-02 (web hook imports migrated to @gym/shared)
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 6
-  percent: 67
+  completed_plans: 7
+  percent: 78
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** Un solo lugar para cada pieza de logica de negocio — un cambio en un archivo se refleja en ambas plataformas sin intervencion manual.
-**Current focus:** Phase 3 — API layer migration to packages/shared
+**Current focus:** Phase 4 — Stores migration to packages/shared
 
 ## Current Position
 
-Phase: 3 of 6 (API Layer Migration)
+Phase: 4 of 6 (Stores Migration)
 Plan: 1 of 2 in current phase
 Status: In Progress
-Last activity: 2026-03-15 — Completed plan 03-01 (API layer migration to shared with getClient injection)
+Last activity: 2026-03-15 — Completed plan 03-02 (web hook imports migrated to @gym/shared)
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 78%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 4.5min
-- Total execution time: 0.4 hours
+- Total plans completed: 7
+- Average duration: 4min
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
@@ -45,10 +45,10 @@ Progress: [███████░░░] 67%
 |-------|-------|-------|----------|
 | 01-monorepo-scaffold | 3/3 | 12min | 4min |
 | 02-utils-migration | 2/2 | 11min | 5.5min |
-| 03-api-layer-migration | 1/2 | 2min | 2min |
+| 03-api-layer-migration | 2/2 | 3min | 1.5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (2min), 02-01 (7min), 02-02 (4min), 03-01 (2min)
+- Last 5 plans: 01-03 (2min), 02-01 (7min), 02-02 (4min), 03-01 (2min), 03-02 (1min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -77,6 +77,7 @@ Recent decisions affecting current work:
 - [Phase 2-02]: Split imports for partial modules: shared exports from @gym/shared, platform-specific from relative stubs
 - [Phase 3-01]: initApi/getClient pattern for supabase injection -- keeps API files platform-agnostic
 - [Phase 3-01]: exerciseApi uses relative import for MeasurementType to avoid circular @gym/shared self-import
+- [Phase 3-02]: useAuth.js inline Supabase query for user_settings left as-is -- no fetchUserSettings API function exists yet
 
 ### Pending Todos
 
@@ -89,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T18:32:00Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: .planning/phases/03-api-layer-migration/03-01-SUMMARY.md
+Last session: 2026-03-15T19:03:00Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: .planning/phases/03-api-layer-migration/03-02-SUMMARY.md
