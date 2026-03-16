@@ -33,8 +33,8 @@ Requirements for tech debt elimination. Each maps to roadmap phases.
 
 ### DX y Mantenimiento
 
-- [ ] **DX-01**: Versiones de dependencias sincronizadas entre apps (supabase-js, tanstack-query, zustand)
-- [ ] **DX-02**: CLAUDE.md actualizado para reflejar estructura monorepo, imports de @gym/shared, patrón shared + thin wrappers
+- [x] **DX-01**: Versiones de dependencias sincronizadas entre apps (supabase-js, tanstack-query, zustand)
+- [x] **DX-02**: CLAUDE.md actualizado para reflejar estructura monorepo, imports de @gym/shared, patrón shared + thin wrappers
 - [x] **DX-03**: Root scripts completados — añadir check y test:shared al root package.json
 
 ## v2 Requirements
@@ -80,8 +80,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-03 | Phase 4 | Complete |
 | SIZE-03 | Phase 5 | Pending |
 | SIZE-04 | Phase 5 | Complete |
-| DX-01 | Phase 5 | Pending |
-| DX-02 | Phase 5 | Pending |
+| DX-01 | Phase 5 | Complete |
+| DX-02 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total
