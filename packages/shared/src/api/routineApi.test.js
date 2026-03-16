@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { exportRoutine, importRoutine } from './routineApi.js'
+import { exportRoutine, importRoutine, duplicateRoutine } from './routineApi.js'
 
 // Mock del módulo _client para controlar getClient()
 vi.mock('./_client.js', () => ({
@@ -317,5 +317,180 @@ describe('importRoutine', () => {
     // Retorna la rutina creada
     expect(result).toBeDefined()
     expect(result.name).toBe('Rutina Importada')
+  })
+})
+
+// ============================================
+// TEST: duplicateRoutine — crea copia con sufijo "(copia)"
+// ============================================
+
+describe('duplicateRoutine', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('crea una copia de la rutina con sufijo "(copia)" en el nombre', async () => {
+    const insertedRoutines = []
+
+    // Datos para exportRoutine (fase de lectura)
+    const fakeRoutine = { name: 'Rutina Original', description: null, goal: null }
+    const fakeDays = [
+      { id: 'day-1', name: 'Día 1', estimated_duration_min: 60, sort_order: 1 },
+    ]
+    const fakeBlocks = [
+      {
+        name: 'Principal',
+        sort_order: 1,
+        duration_min: null,
+        routine_exercises: [
+          {
+            series: 3, reps: '10', rir: 2, rest_seconds: 60,
+            tempo: null, tempo_razon: null, notes: null, sort_order: 1,
+            exercise: {
+              id: 'ex-1', name: 'Sentadilla', measurement_type: 'weight_reps',
+              instructions: null, muscle_group: { name: 'Piernas' },
+            },
+          },
+        ],
+      },
+    ]
+    const fakeExercises = [
+      {
+        name: 'Sentadilla', measurement_type: 'weight_reps',
+        weight_unit: 'kg', time_unit: 's', distance_unit: 'm',
+        instructions: null, muscle_group: { name: 'Piernas' },
+      },
+    ]
+
+    let routineIdCounter = 500
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        // --- Fase exportRoutine: reads ---
+        if (table === 'routines') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: fakeRoutine, error: null }),
+            insert: vi.fn((record) => {
+              insertedRoutines.push(record)
+              routineIdCounter++
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: routineIdCounter, ...record }, error: null }),
+              }
+            }),
+          }
+        }
+        if (table === 'routine_days') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({ data: fakeDays, error: null }),
+            insert: vi.fn((record) => ({
+              select: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ data: { id: 'new-day-1', ...record }, error: null }),
+            })),
+          }
+        }
+        if (table === 'routine_blocks') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({ data: fakeBlocks, error: null }),
+            insert: vi.fn((record) => ({
+              select: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ data: { id: 'new-block-1', ...record }, error: null }),
+            })),
+          }
+        }
+        if (table === 'exercises') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({ data: fakeExercises, error: null }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'ex-1' }, error: null }),
+          }
+        }
+        if (table === 'muscle_groups') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'mg-1' }, error: null }),
+          }
+        }
+        if (table === 'routine_exercises') {
+          return {
+            insert: vi.fn().mockResolvedValue({ data: { id: 're-1' }, error: null }),
+          }
+        }
+        return makeQueryMock({ data: null, error: null })
+      },
+    }))
+
+    const result = await duplicateRoutine('routine-1', 'user-1')
+
+    // La nueva rutina debe tener el sufijo "(copia)"
+    expect(insertedRoutines).toHaveLength(1)
+    expect(insertedRoutines[0].name).toBe('Rutina Original (copia)')
+    expect(result).toBeDefined()
+    expect(result.name).toBe('Rutina Original (copia)')
+  })
+
+  it('usa el nombre personalizado si se proporciona', async () => {
+    const insertedRoutines = []
+
+    const fakeRoutine = { name: 'Rutina Original', description: null, goal: null }
+    const fakeDays = [{ id: 'day-1', name: 'Día 1', estimated_duration_min: null, sort_order: 1 }]
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'routines') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: fakeRoutine, error: null }),
+            insert: vi.fn((record) => {
+              insertedRoutines.push(record)
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: 999, ...record }, error: null }),
+              }
+            }),
+          }
+        }
+        if (table === 'routine_days') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({ data: fakeDays, error: null }),
+            insert: vi.fn((record) => ({
+              select: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ data: { id: 'nd-1', ...record }, error: null }),
+            })),
+          }
+        }
+        if (table === 'routine_blocks') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }
+        }
+        if (table === 'exercises') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }
+        }
+        return makeQueryMock({ data: null, error: null })
+      },
+    }))
+
+    const result = await duplicateRoutine('routine-1', 'user-1', 'Mi Copia Personalizada')
+
+    expect(insertedRoutines[0].name).toBe('Mi Copia Personalizada')
+    expect(result.name).toBe('Mi Copia Personalizada')
   })
 })
