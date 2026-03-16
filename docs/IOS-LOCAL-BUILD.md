@@ -21,7 +21,7 @@ Guía para instalar Diario Gym en un iPhone físico sin Apple Developer Program 
 ### 1. Generar proyecto nativo
 
 ```bash
-cd gym-native
+cd apps/gym-native
 npx expo prebuild --platform ios
 ```
 
@@ -83,10 +83,10 @@ Cuando la app expire:
 
 ## Actualizar la app con cambios nuevos
 
-Si has hecho cambios en el código de `gym-native/`:
+Si has hecho cambios en el código de `apps/gym-native/`:
 
 ```bash
-cd gym-native
+cd apps/gym-native
 
 # Si cambiaste app.json, plugins o dependencias nativas:
 npx expo prebuild --platform ios --clean
