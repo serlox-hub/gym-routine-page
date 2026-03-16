@@ -13,7 +13,7 @@ Reducción de deuda técnica en el monorepo Gym Tracker (web + React Native). Ci
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Estabilizar** - Corregir crashes activos y habilitar verificación (completed 2026-03-16)
-- [ ] **Phase 2: Deduplicar** - Mover ~1,400 líneas duplicadas a packages/shared
+- [x] **Phase 2: Deduplicar** - Mover ~1,400 líneas duplicadas a packages/shared (completed 2026-03-16)
 - [ ] **Phase 3: Dividir Archivos API** - Partir monolitos en módulos con bounded scope
 - [ ] **Phase 4: Cobertura de Tests** - Tests sobre código en su forma definitiva
 - [ ] **Phase 5: Housekeeping** - Componentes, dependencias y documentación
@@ -44,7 +44,7 @@ Plans:
   2. `useWorkoutHistory` (funciones idénticas) existe en packages/shared; la divergencia useQuery/useInfiniteQuery está documentada y permanece per-app
   3. `exportRoutine`, `importRoutine` y `duplicateRoutine` (lógica Supabase pura) viven en packages/shared/src/api/routineApi.js; las funciones con APIs de plataforma permanecen per-app
   4. `npm run check` pasa sin errores después de cada tarea de deduplicación (sin leaks de platform API en shared)
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md — Move routineIO functions to shared with N+1 fix (DUP-03)
@@ -92,7 +92,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Estabilizar | 2/2 | Complete    | 2026-03-16 |
-| 2. Deduplicar | 0/3 | Not started | - |
+| 2. Deduplicar | 3/3 | Complete   | 2026-03-16 |
 | 3. Dividir Archivos API | 0/TBD | Not started | - |
 | 4. Cobertura de Tests | 0/TBD | Not started | - |
 | 5. Housekeeping | 0/TBD | Not started | - |

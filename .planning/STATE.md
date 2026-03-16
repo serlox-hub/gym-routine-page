@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Completed 01-estabilizar-01-PLAN.md
-last_updated: "2026-03-16T12:48:22.800Z"
-last_activity: 2026-03-16 — Roadmap created, 15 requirements mapped to 5 phases
+status: executing
+stopped_at: Completed 02-deduplicar 02-03-PLAN.md
+last_updated: "2026-03-16T14:12:01.260Z"
+last_activity: "2026-03-16 — Plan 02-01 completado: exportRoutine/importRoutine/duplicateRoutine movidas a shared con fix N+1"
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 0
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
+  percent: 20
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-16)
 
 ## Current Position
 
-Phase: 1 of 5 (Estabilizar)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-16 — Roadmap created, 15 requirements mapped to 5 phases
+Phase: 2 of 5 (Deduplicar)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-03-16 — Plan 02-01 completado: exportRoutine/importRoutine/duplicateRoutine movidas a shared con fix N+1
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
@@ -50,8 +50,11 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 02-deduplicar P01 | ~25min | 2 tasks | 9 files |
 | Phase 01-estabilizar P02 | 1 | 1 tasks | 1 files |
 | Phase 01-estabilizar P01 | 2 | 2 tasks | 2 files |
+| Phase 02-deduplicar P02 | 6 | 2 tasks | 9 files |
+| Phase 02-deduplicar P03 | 6min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -65,6 +68,13 @@ Recent decisions affecting current work:
 - [Phase 01-estabilizar]: test:shared usa runner vitest de apps/web con filtro glob packages/shared/src en lugar de configurar vitest en packages/shared directamente
 - [Phase 01-estabilizar]: RegularExerciseCard extraído a scope de módulo (no dentro de WorkoutExerciseCard) para identidad de componente estable en React
 - [Phase 01-estabilizar]: WorkoutExerciseCard mantiene solo lógica de delegación: warmup check + pass-through de props
+- [Phase 02-deduplicar P01]: N+1 fix en exportRoutine: añadir id al select de routine_days elimina query extra por día
+- [Phase 02-deduplicar P01]: Re-exports de seguridad mantenidos en routineIO.js de ambas apps aunque consumidores ya importan de @gym/shared directamente
+- [Phase 02-deduplicar]: useSessionExercises.js (web) cambiado de wildcard a named exports para evitar conflictos de namespace con thin wrappers
+- [Phase 02-deduplicar]: Callback injection para eventos de plataforma: onVisibilityChange/onConnectivityChange en useCompletedSets, onVisibilityChange/onStartError en useSession
+- [Phase 02-deduplicar]: useExerciseHistory migrado a useInfiniteQuery en shared (offset-based con PAGE_SIZE=30) — estrategia web adoptada como canónica
+- [Phase 02-deduplicar]: ExerciseHistoryModal usa botón Cargar más en lugar de onEndReached (ScrollView, no FlatList)
+- [Phase 02-deduplicar]: RN consumer pattern: sessions = useMemo(() => data?.pages.flat() ?? [], [data])
 
 ### Pending Todos
 
@@ -78,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T12:48:22.798Z
-Stopped at: Completed 01-estabilizar-01-PLAN.md
+Last session: 2026-03-16T14:12:01.258Z
+Stopped at: Completed 02-deduplicar 02-03-PLAN.md
 Resume file: None
