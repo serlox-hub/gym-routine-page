@@ -93,7 +93,12 @@ Plans:
   2. ExerciseHistoryModal está dividido en HistoryChart, HistoryTable y HistoryFilters, cada sub-componente <150 líneas
   3. supabase-js, tanstack-query y zustand tienen la misma versión en apps/web y apps/gym-native (verificado con syncpack)
   4. CLAUDE.md documenta la estructura monorepo real: @gym/shared imports, patrón shared + thin wrappers, y la capa de inyección (initApi, initStores, initNotifications)
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Split WorkoutExerciseCard into sub-components (web + RN) (SIZE-03)
+- [ ] 05-02-PLAN.md — Split ExerciseHistoryModal into sub-components (SIZE-04)
+- [ ] 05-03-PLAN.md — Sync dependency versions + update CLAUDE.md (DX-01, DX-02)
 
 ## Progress
 
@@ -105,5 +110,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Estabilizar | 2/2 | Complete    | 2026-03-16 |
 | 2. Deduplicar | 3/3 | Complete    | 2026-03-16 |
 | 3. Dividir Archivos API | 2/2 | Complete    | 2026-03-16 |
-| 4. Cobertura de Tests | 5/5 | Complete   | 2026-03-16 |
-| 5. Housekeeping | 0/TBD | Not started | - |
+| 4. Cobertura de Tests | 5/5 | Complete    | 2026-03-16 |
+| 5. Housekeeping | 0/3 | Not started | - |
