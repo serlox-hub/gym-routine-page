@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-03-16T17:55:50.994Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-16T17:56:32.157Z"
 last_activity: "2026-03-16 — Plan 02-01 completado: exportRoutine/importRoutine/duplicateRoutine movidas a shared con fix N+1"
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 12
-  completed_plans: 9
+  completed_plans: 10
   percent: 20
 ---
 
@@ -58,6 +58,7 @@ Progress: [██░░░░░░░░] 20%
 | Phase 03-dividir-archivos-api P02 | 5min | 2 tasks | 4 files |
 | Phase 03-dividir-archivos-api P01 | 2min | 2 tasks | 4 files |
 | Phase 04-cobertura-de-tests P03 | 3min | 2 tasks | 3 files |
+| Phase 04-cobertura-de-tests P01 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,7 @@ Recent decisions affecting current work:
 - [Phase 04-cobertura-de-tests]: makeSupabaseMock incluye todos los métodos auth con defaults sensatos; onAuthStateChange capturada via mockImplementation para tests de callback
 - [Phase 04-03]: useRoutines/useExercises usan useUserId de useAuth.js (no _stores.js) — mock de ./useAuth.js en vez de _stores.js
 - [Phase 04-03]: TanStack Query pasa segundo argumento (meta context) a mutationFn directa — assertions deben usar expect.anything() como segundo parámetro
+- [Phase 04-cobertura-de-tests]: makeQueryMock usa patrón thenable para soportar chains con múltiples .eq() sin romper el chain
 
 ### Pending Todos
 
@@ -96,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T17:55:50.992Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-03-16T17:56:32.155Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
