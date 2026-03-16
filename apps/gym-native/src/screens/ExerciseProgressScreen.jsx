@@ -61,7 +61,8 @@ function SessionCard({ session, exercise }) {
 export default function ExerciseProgressScreen({ route, navigation }) {
   const { exerciseId, exerciseName } = route.params
   const { data: exercise, isLoading: loadingExercise, error: exerciseError } = useExercise(exerciseId)
-  const { data: sessions, isLoading: loadingSessions } = useExerciseHistory(exerciseId)
+  const { data: historyData, isLoading: loadingSessions } = useExerciseHistory(exerciseId)
+  const sessions = historyData?.pages.flat() ?? []
 
   if (loadingExercise || loadingSessions) return <LoadingSpinner />
   if (exerciseError) return <ErrorMessage message={exerciseError.message} className="m-4" />

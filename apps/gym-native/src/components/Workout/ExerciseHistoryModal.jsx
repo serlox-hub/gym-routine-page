@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { View, Text, Pressable, ScrollView } from 'react-native'
+import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native'
 import { ChevronRight, FileText } from 'lucide-react-native'
 import { useExerciseHistory } from '../../hooks/useWorkout'
 import { LoadingSpinner, Card, Modal } from '../ui'
@@ -134,7 +134,8 @@ export default function ExerciseHistoryModal({
   const [scope, setScope] = useState(routineDayId ? 'day' : 'global')
 
   const filterByDayId = scope === 'day' ? routineDayId : null
-  const { data: sessions, isLoading } = useExerciseHistory(exerciseId, filterByDayId)
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useExerciseHistory(exerciseId, filterByDayId)
+  const sessions = useMemo(() => data?.pages.flat() ?? [], [data])
 
   const stats = useMemo(() => {
     return calculateExerciseStats(sessions, measurementType)
@@ -226,13 +227,29 @@ export default function ExerciseHistoryModal({
             weightUnit={weightUnit}
           />
         ) : (
-          <HistoryTab
-            sessions={sessions}
-            timeUnit={timeUnit}
-            distanceUnit={distanceUnit}
-            onSelectSet={setSelectedSet}
-            onSessionClick={handleSessionClick}
-          />
+          <View>
+            <HistoryTab
+              sessions={sessions}
+              timeUnit={timeUnit}
+              distanceUnit={distanceUnit}
+              onSelectSet={setSelectedSet}
+              onSessionClick={handleSessionClick}
+            />
+            {hasNextPage && (
+              <Pressable
+                onPress={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+                className="mt-3 py-2 items-center rounded-lg"
+                style={{ backgroundColor: colors.bgTertiary }}
+              >
+                {isFetchingNextPage ? (
+                  <ActivityIndicator size="small" color={colors.textSecondary} />
+                ) : (
+                  <Text className="text-sm text-secondary">Cargar más</Text>
+                )}
+              </Pressable>
+            )}
+          </View>
         )}
       </ScrollView>
 
