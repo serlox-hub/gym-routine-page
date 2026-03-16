@@ -1,116 +1,93 @@
-# Requirements: Gym Tracker Monorepo
+# Requirements: Gym Tracker — Deuda Técnica v2
 
-**Defined:** 2026-03-15
-**Core Value:** Un solo lugar para cada pieza de lógica de negocio — un cambio se refleja en ambas plataformas sin intervención manual.
+**Defined:** 2026-03-16
+**Core Value:** Poder modificar cualquier parte del código con confianza — sin miedo a romper la otra plataforma, con tests que lo respalden y sin duplicación que mantener en paralelo.
 
 ## v1 Requirements
 
-### Monorepo Setup
+Requirements for tech debt elimination. Each maps to roadmap phases.
 
-- [x] **SETUP-01**: Root `package.json` configures npm workspaces with `apps/web`, `apps/gym-native`, and `packages/shared`
-- [x] **SETUP-02**: `packages/shared/package.json` has `"main": "./src/index.js"` pointing at source, no build step
-- [x] **SETUP-03**: `packages/shared` declares React, TanStack Query, and Zustand as `peerDependencies`
-- [x] **SETUP-04**: Vite config includes `resolve.dedupe` for `react`, `react-dom`
-- [x] **SETUP-05**: Metro auto-config (Expo SDK 55) resolves imports from `@gym/shared` without manual `watchFolders`
-- [x] **SETUP-06**: EAS cloud build passes with a trivial import from `@gym/shared`
-- [x] **SETUP-07**: Root-level scripts: `npm run dev`, `npm run native`, `npm test`
-- [x] **SETUP-08**: Both apps start and run correctly after directory restructure
+### Bug Fixes
 
-### Shared Utils
+- [x] **BUG-01**: Hooks condicionales en WorkoutExerciseCard (RN) corregidos — extraer a componente separado para que useRef/useEffect no se llamen después de un return condicional
+- [x] **BUG-02**: FileReader inexistente en React Native resuelto — verificar si el code path se ejecuta, reemplazar con expo-file-system o eliminar dead code
 
-- [x] **UTIL-01**: 16 pure utility files live in `packages/shared/src/lib/`
-- [x] **UTIL-02**: 18 test files co-located with utils, vitest passes from root
-- [x] **UTIL-03**: Barrel `index.js` re-exports all shared modules
-- [x] **UTIL-04**: `supabase.js`, `styles.js`, `videoStorage.js` excluded from core (platform-specific)
+### Deduplicación
 
-### API Layer
+- [ ] **DUP-01**: useCompletedSets y useSession compartidos en packages/shared con callback injection para visibilidad (onVisibilityChange), apps reducidos a thin wrappers (~700 líneas eliminadas)
+- [ ] **DUP-02**: useWorkoutHistory compartido entre apps — mover funciones query idénticas a shared (~250 líneas eliminadas)
+- [ ] **DUP-03**: exportRoutine, importRoutine, duplicateRoutine movidas a packages/shared/src/api/routineApi.js — dejar en per-app solo funciones con APIs de plataforma (DOM Blob, expo-file-system) (~500 líneas eliminadas)
 
-- [x] **API-01**: 7 API files live in `packages/shared/src/api/`
-- [x] **API-02**: API functions receive Supabase client as parameter (no direct import of supabase.js)
-- [x] **API-03**: Web hooks updated to import API from `@gym/shared`
-- [x] **API-04**: RN hooks refactored from inline Supabase queries to shared API functions
+### Tests
 
-### Stores
+- [ ] **TEST-01**: Tests para capa API shared con mock de getClient() — workoutApi, routineApi, exerciseApi, bodyWeightApi, bodyMeasurementsApi, preferencesApi, adminApi (0% → ~60%)
+- [ ] **TEST-02**: Tests para createAuthStore — initialize, login, logout, signup, callbacks de plataforma
+- [ ] **TEST-03**: Tests para hooks críticos — useRoutines, useExercises, useSessionExercises con @testing-library/react y QueryClientProvider wrapper
 
-- [x] **STOR-01**: `createWorkoutStore(storage)` factory in `packages/shared/src/stores/`
-- [x] **STOR-02**: `createAuthStore(supabase, storage)` factory in `packages/shared/src/stores/`
-- [x] **STOR-03**: Web instantiates stores with default localStorage
-- [x] **STOR-04**: RN instantiates stores with AsyncStorage adapter
-- [x] **STOR-05**: Workout and auth state persists correctly on both platforms
+### Archivos Grandes
 
-### Hooks
+- [ ] **SIZE-01**: workoutApi.js (598 líneas) dividido en workoutSessionApi.js, completedSetsApi.js, sessionExercisesApi.js con barrel re-export
+- [ ] **SIZE-02**: routineApi.js (427 líneas) dividido en routineQueryApi.js y routineMutationApi.js con barrel re-export
+- [ ] **SIZE-03**: WorkoutExerciseCard refactorizado en web y RN — extraer ExerciseCardHeader, SetsList, ExerciseCardActions como sub-componentes
+- [ ] **SIZE-04**: ExerciseHistoryModal (330 líneas) reducido — extraer HistoryChart, HistoryTable, HistoryFilters
 
-- [x] **HOOK-01**: Shared TanStack Query hooks in `packages/shared/src/hooks/`
-- [x] **HOOK-02**: Platform wrapper hooks in each app inject navigation/notification adapters
-- [x] **HOOK-03**: All hook-dependent components work on both platforms
-- [x] **HOOK-04**: Platform-exclusive hooks (`useDrag`, `useStableHandlers`) stay in their respective apps
+### DX y Mantenimiento
 
-### DX / Cleanup
-
-- [x] **DX-01**: `QUERY_KEYS` and domain constants shared in `packages/shared` (text diff reconciled)
-- [x] **DX-02**: `queryClient.js` config shared in `packages/shared`
-- [x] **DX-03**: Shared ESLint config package in `packages/eslint-config`
-- [x] **DX-04**: Zero duplicated files remain between web and RN (except platform-specific exclusions)
+- [ ] **DX-01**: Versiones de dependencias sincronizadas entre apps (supabase-js, tanstack-query, zustand)
+- [ ] **DX-02**: CLAUDE.md actualizado para reflejar estructura monorepo, imports de @gym/shared, patrón shared + thin wrappers
+- [x] **DX-03**: Root scripts completados — añadir check y test:shared al root package.json
 
 ## v2 Requirements
 
-### Advanced Sharing
+Deferred to future release. Tracked but not in current roadmap.
 
-- **ADV-01**: Shared `supabase.js` via `createSupabaseClient(config)` factory
-- **ADV-02**: Shared color tokens extracted from `styles.js` to `colorTokens.js`
-- **ADV-03**: Navigation adapter infrastructure (if hooks evolve to embed navigation)
-- **ADV-04**: Notification/toast adapter infrastructure
+### Testing Avanzado
+
+- **TEST-04**: Coverage report integrado en CI
+- **TEST-05**: E2E tests con Playwright (web) y Detox (RN)
+
+### Optimización
+
+- **OPT-01**: Bundle analysis y tree-shaking audit de @gym/shared
+- **OPT-02**: Lazy loading de rutas en web app
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| TypeScript migration | Project constraint: JavaScript only |
-| Shared UI components / design system | Tailwind (web) vs NativeWind (RN) diverge fundamentally |
-| Build step for packages/shared | Internal-only package, both bundlers resolve source directly |
-| Publishing to npm / semantic versioning | Monorepo-internal, no external consumers |
-| Turborepo / Nx | No build step = no caching benefit; over-engineering for 2-app monorepo |
-| Conditional exports in package.json | Metro breaks `.native.js` platform extensions with exports field |
+| Features nuevas | Este proyecto es solo limpieza y consolidación |
+| Migración a TypeScript | Decisión de proyecto: JavaScript |
+| UI compartida entre apps | Cada app mantiene sus propios componentes |
+| OAuth/Google login en RN | Milestone futuro separado |
+| Refactor de base de datos | Schema funciona bien, no hay deuda ahí |
 
 ## Traceability
 
+Which phases cover which requirements. Updated during roadmap creation.
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SETUP-01 | Phase 1 | Complete |
-| SETUP-02 | Phase 1 | Complete |
-| SETUP-03 | Phase 1 | Complete |
-| SETUP-04 | Phase 1 | Complete |
-| SETUP-05 | Phase 1 | Complete |
-| SETUP-06 | Phase 1 | Complete |
-| SETUP-07 | Phase 1 | Complete |
-| SETUP-08 | Phase 1 | Complete |
-| UTIL-01 | Phase 2 | Complete |
-| UTIL-02 | Phase 2 | Complete |
-| UTIL-03 | Phase 2 | Complete |
-| UTIL-04 | Phase 2 | Complete |
-| API-01 | Phase 3 | Complete |
-| API-02 | Phase 3 | Complete |
-| API-03 | Phase 3 | Complete |
-| API-04 | Phase 3 | Complete |
-| STOR-01 | Phase 4 | Complete |
-| STOR-02 | Phase 4 | Complete |
-| STOR-03 | Phase 4 | Complete |
-| STOR-04 | Phase 4 | Complete |
-| STOR-05 | Phase 4 | Complete |
-| HOOK-01 | Phase 5 | Complete |
-| HOOK-02 | Phase 5 | Complete |
-| HOOK-03 | Phase 5 | Complete |
-| HOOK-04 | Phase 5 | Complete |
-| DX-01 | Phase 6 | Complete |
-| DX-02 | Phase 6 | Complete |
-| DX-03 | Phase 6 | Complete |
-| DX-04 | Phase 6 | Complete |
+| BUG-01 | Phase 1 | Complete |
+| BUG-02 | Phase 1 | Complete |
+| DX-03 | Phase 1 | Complete |
+| DUP-01 | Phase 2 | Pending |
+| DUP-02 | Phase 2 | Pending |
+| DUP-03 | Phase 2 | Pending |
+| SIZE-01 | Phase 3 | Pending |
+| SIZE-02 | Phase 3 | Pending |
+| TEST-01 | Phase 4 | Pending |
+| TEST-02 | Phase 4 | Pending |
+| TEST-03 | Phase 4 | Pending |
+| SIZE-03 | Phase 5 | Pending |
+| SIZE-04 | Phase 5 | Pending |
+| DX-01 | Phase 5 | Pending |
+| DX-02 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 29 total
-- Mapped to phases: 29
-- Unmapped: 0 ✓
+- v1 requirements: 15 total
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
-*Requirements defined: 2026-03-15*
-*Last updated: 2026-03-15 after initial definition*
+*Requirements defined: 2026-03-16*
+*Last updated: 2026-03-16 after roadmap creation*

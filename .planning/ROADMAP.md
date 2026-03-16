@@ -12,7 +12,7 @@ Reducción de deuda técnica en el monorepo Gym Tracker (web + React Native). Ci
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Estabilizar** - Corregir crashes activos y habilitar verificación
+- [x] **Phase 1: Estabilizar** - Corregir crashes activos y habilitar verificación (completed 2026-03-16)
 - [ ] **Phase 2: Deduplicar** - Mover ~1,400 líneas duplicadas a packages/shared
 - [ ] **Phase 3: Dividir Archivos API** - Partir monolitos en módulos con bounded scope
 - [ ] **Phase 4: Cobertura de Tests** - Tests sobre código en su forma definitiva
@@ -29,7 +29,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. El código path de FileReader en gym-native no puede causar un crash en runtime
   3. `npm run check` desde la raíz del monorepo ejecuta lint y build en todas las apps y retorna código de salida correcto
   4. `npm run test:shared` desde la raíz ejecuta los tests de packages/shared en aislamiento
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md — Fix hooks violation and dead code in RN (BUG-01, BUG-02)
@@ -86,7 +86,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Estabilizar | 0/2 | Planned | - |
+| 1. Estabilizar | 2/2 | Complete   | 2026-03-16 |
 | 2. Deduplicar | 0/TBD | Not started | - |
 | 3. Dividir Archivos API | 0/TBD | Not started | - |
 | 4. Cobertura de Tests | 0/TBD | Not started | - |

@@ -2,65 +2,56 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: complete
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-03-15T22:30:18.659Z"
-last_activity: 2026-03-15 — Completed plan 06-03 (file audit and zero duplication verification)
+status: planning
+stopped_at: Completed 01-estabilizar-01-PLAN.md
+last_updated: "2026-03-16T12:48:22.800Z"
+last_activity: 2026-03-16 — Roadmap created, 15 requirements mapped to 5 phases
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 16
-  completed_plans: 16
-  percent: 100
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-15)
+See: .planning/PROJECT.md (updated 2026-03-16)
 
-**Core value:** Un solo lugar para cada pieza de logica de negocio — un cambio en un archivo se refleja en ambas plataformas sin intervencion manual.
-**Current focus:** All phases complete — milestone v1.0 finished
+**Core value:** Poder modificar cualquier parte del código con confianza — sin miedo a romper la otra plataforma, con tests que lo respalden y sin duplicación que mantener en paralelo.
+**Current focus:** Phase 1 — Estabilizar
 
 ## Current Position
 
-Phase: 6 of 6 (DX Cleanup)
-Plan: 3 of 3 in current phase
-Status: Complete
-Last activity: 2026-03-15 — Completed plan 06-03 (file audit and zero duplication verification)
+Phase: 1 of 5 (Estabilizar)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-03-16 — Roadmap created, 15 requirements mapped to 5 phases
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 4min
-- Total execution time: 0.5 hours
+- Total plans completed: 0
+- Average duration: —
+- Total execution time: 0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-monorepo-scaffold | 3/3 | 12min | 4min |
-| 02-utils-migration | 2/2 | 11min | 5.5min |
-| 03-api-layer-migration | 4/4 | 8min | 2min |
+| - | - | - | - |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (2min), 02-01 (7min), 02-02 (4min), 03-01 (2min), 03-02 (1min)
-- Trend: stable
+- Last 5 plans: —
+- Trend: —
 
 *Updated after each plan completion*
-| Phase 03-03 P03 | 3min | 2 tasks | 10 files |
-| Phase 03-04 P04 | 2min | 3 tasks | 4 files |
-| Phase 04-01 P01 | 10min | 2 tasks | 3 files |
-| Phase 04 P02 | 1min | 2 tasks | 5 files |
-| Phase 05-01 P01 | 3min | 2 tasks | 13 files |
-| Phase 05-02 P02 | 4min | 3 tasks | 22 files |
-| Phase 06-02 P02 | 2min | 2 tasks | 9 files |
-| Phase 06-01 P01 | 1min | 2 tasks | 20 files |
-| Phase 06 P03 | 1min | 1 tasks | 0 files |
+| Phase 01-estabilizar P02 | 1 | 1 tasks | 1 files |
+| Phase 01-estabilizar P01 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -69,45 +60,11 @@ Progress: [██████████] 100%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Init]: npm workspaces as monorepo tool — zero config, already in use, SDK 55 auto-detects it
-- [Init]: No build step for packages/core — internal-only package, both bundlers resolve raw .js source directly
-- [Init]: Platform adapters injectable for stores/hooks — shares core logic, each platform injects storage/navigation/notifications
-- [Init]: Incremental migration order (utils → API → stores → hooks) — reduces risk, validates each step before advancing
-- [Phase 1-01]: Upgraded web React from 18 to 19.2.0 pinned — matches gym-native for single hoisted instance
-- [Phase 1-01]: Removed overrides from root package.json — pinned versions achieve deduplication without complexity
-- [Phase 1-01]: No type:module in packages/shared — Metro/Hermes compatibility
-- [Phase 1-02]: Metro SDK 55 auto-config resolves @gym/shared without explicit watchFolders
-- [Phase 1-03]: EAS cloud build passes with EAS_PROJECT_ROOT: ../.. for monorepo layout
-- [Phase 2-01]: routineIO.js pure parts only to shared; supabase-dependent functions stay in each app
-- [Phase 2-01]: constants.js getMuscleGroupBorderStyle in platform stubs; data constants shared
-- [Phase 2-01]: RIR_OPTIONS uses web's 'Controlado' text
-- [Phase 2-01]: queryClient.js deferred to Phase 6 per DX-02
-- [Phase 2-02]: Files with @/lib/ alias and lib/api/ subdirectory imports needed manual fix beyond bulk migration
-- [Phase 2-02]: Split imports for partial modules: shared exports from @gym/shared, platform-specific from relative stubs
-- [Phase 3-01]: initApi/getClient pattern for supabase injection -- keeps API files platform-agnostic
-- [Phase 3-01]: exerciseApi uses relative import for MeasurementType to avoid circular @gym/shared self-import
-- [Phase 3-02]: useAuth.js inline Supabase query for user_settings left as-is -- no fetchUserSettings API function exists yet
-- [Phase 3-03]: fetchUserSettings added to shared adminApi -- eliminates last inline supabase query in useAuth for both platforms
-- [Phase 3-03]: View-layer transforms kept in hook queryFn, not in shared API
-- [Phase 03-04]: addSessionExercise coexists with insertSessionExercise -- RN computes sort order, web uses pre-computed
-- [Phase 04-01]: Persist test reemplazado por factory isolation tests -- zustand v5 removio persist API publica
-- [Phase 04-01]: onBeforeLogout async para soportar GoogleSignin.signOut en RN
-- [Phase 04-01]: loginWithGoogle excluido del factory -- cada plataforma implementa localmente
-- [Phase 04]: Web workoutStore reducido a 3 lineas con createWorkoutStore() sin args
-- [Phase 04]: RN workoutStore usa workoutStoreState spread + overrides para workoutVisible
-- [Phase 04]: loginWithGoogle inyectado via setState post-creacion en ambas plataformas
-- [Phase 05-01]: duplicateRoutine stays per-app -- exportRoutine/importRoutine not in shared
-- [Phase 05-01]: Store injection via _stores.js with initStores/useAuthStore/useWorkoutStore/getWorkoutStore
-- [Phase 05-01]: Notification service via initNotifications/getNotifier -- no-op when not initialized
-- [Phase 05-01]: useTimerEngine accepts { playSound, vibrateDevice, onTimerStart, onTimerEnd, isSoundEnabled } callbacks
-- [Phase 05-01]: useWakeLock excluded from shared -- platform-specific
-- [Phase 05-02]: RN useSessionExercises.js kept local -- uses addSessionExercise (RN-specific API) and optimistic reorder
-- [Phase 05-02]: initStores/initNotifications called at module level in entry files, after initApi
-- [Phase 05-02]: Test files need initStores() call for shared hook compatibility
-- [Phase 06-02]: Shared ESLint flat config via @gym/eslint-config -- baseConfig array spread pattern
-- [Phase 06-02]: Pre-existing conditional hooks in WorkoutExerciseCard suppressed, not refactored
-- [Phase 06-01]: queryClient identical in both apps, moved to shared as-is
-- [Phase 06]: 5 platform-specific exclusions confirmed: supabase.js, styles.js, videoStorage.js, routineIO.js, muscleGroupStyles.js
+- [Init]: Orden de fases derivado del grafo de dependencias: BUG-01 bloquea SIZE-03, DUP tasks deben preceder TEST-03, SIZE-01/02 deben preceder TEST-01
+- [Init]: Granularidad coarse → 5 fases (límite superior permitido)
+- [Phase 01-estabilizar]: test:shared usa runner vitest de apps/web con filtro glob packages/shared/src en lugar de configurar vitest en packages/shared directamente
+- [Phase 01-estabilizar]: RegularExerciseCard extraído a scope de módulo (no dentro de WorkoutExerciseCard) para identidad de componente estable en React
+- [Phase 01-estabilizar]: WorkoutExerciseCard mantiene solo lógica de delegación: warmup check + pass-through de props
 
 ### Pending Todos
 
@@ -115,11 +72,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 1]: Metro + Vite symlink interaction at scale has no authoritative source — must be validated with smoke tests in Phase 1
-- [Phase 1]: Expo SDK 55 auto-config fallback conditions are not fully documented — manual watchFolders config is the documented Plan B
+- [Phase 2]: DUP-02 tiene divergencia useQuery/useInfiniteQuery — confirmar qué funciones son byte-for-byte idénticas antes de ejecutar
+- [Phase 4]: TEST-01 requiere catalogar la profundidad del chain de Supabase por función antes de escribir mocks
+- [Phase 5]: DX-01 (upgrade tanstack-query 5.62→5.90) — revisar changelog de comportamiento antes de ejecutar; hacer solo después de tener TEST-01 y TEST-03
 
 ## Session Continuity
 
-Last session: 2026-03-15T22:30:18.657Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-03-16T12:48:22.798Z
+Stopped at: Completed 01-estabilizar-01-PLAN.md
 Resume file: None
