@@ -7,6 +7,8 @@
     "build": "npm run build -w apps/web",
     "native": "npm run start -w apps/gym-native",
     "test": "npm run test:run -w apps/web",
-    "lint": "npm run lint -w apps/web && npm run lint -w apps/gym-native"
+    "test:shared": "npm run test:run -w apps/web -- packages/shared/src",
+    "lint": "npm run lint -w apps/web && npm run lint -w apps/gym-native",
+    "check": "npm run lint && npm run test && npm run build"
   }
 }
