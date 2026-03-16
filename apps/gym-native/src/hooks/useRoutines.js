@@ -1,10 +1,8 @@
 export * from '@gym/shared'
 
-// useDuplicateRoutine se queda local porque duplicateRoutine usa supabase directo
-import { duplicateRoutine } from '../lib/routineIO.js'
+import { duplicateRoutine, QUERY_KEYS } from '@gym/shared'
 import { useUserId } from './useAuth.js'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '@gym/shared'
 
 export function useDuplicateRoutine() {
   const queryClient = useQueryClient()

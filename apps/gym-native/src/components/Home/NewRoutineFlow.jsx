@@ -6,8 +6,7 @@ import { Card, ImportOptionsModal, LoadingSpinner } from '../ui'
 import {
   TemplatesModal, ImportRoutineModal, ChatbotPromptModal, AdaptRoutineModal,
 } from '../Routine'
-import { QUERY_KEYS } from '@gym/shared'
-import { importRoutine } from '../../lib/routineIO'
+import { QUERY_KEYS, importRoutine } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { colors } from '../../lib/styles'
 
