@@ -26,8 +26,8 @@ Requirements for tech debt elimination. Each maps to roadmap phases.
 
 ### Archivos Grandes
 
-- [ ] **SIZE-01**: workoutApi.js (598 líneas) dividido en workoutSessionApi.js, completedSetsApi.js, sessionExercisesApi.js con barrel re-export
-- [ ] **SIZE-02**: routineApi.js (427 líneas) dividido en routineQueryApi.js y routineMutationApi.js con barrel re-export
+- [x] **SIZE-01**: workoutApi.js (598 líneas) dividido en workoutSessionApi.js, completedSetsApi.js, sessionExercisesApi.js con barrel re-export
+- [x] **SIZE-02**: routineApi.js (427 líneas) dividido en routineQueryApi.js y routineMutationApi.js con barrel re-export
 - [ ] **SIZE-03**: WorkoutExerciseCard refactorizado en web y RN — extraer ExerciseCardHeader, SetsList, ExerciseCardActions como sub-componentes
 - [ ] **SIZE-04**: ExerciseHistoryModal (330 líneas) reducido — extraer HistoryChart, HistoryTable, HistoryFilters
 
@@ -73,8 +73,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DUP-01 | Phase 2 | Complete |
 | DUP-02 | Phase 2 | Complete |
 | DUP-03 | Phase 2 | Complete |
-| SIZE-01 | Phase 3 | Pending |
-| SIZE-02 | Phase 3 | Pending |
+| SIZE-01 | Phase 3 | Complete |
+| SIZE-02 | Phase 3 | Complete |
 | TEST-01 | Phase 4 | Pending |
 | TEST-02 | Phase 4 | Pending |
 | TEST-03 | Phase 4 | Pending |

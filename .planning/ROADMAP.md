@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Estabilizar** - Corregir crashes activos y habilitar verificación (completed 2026-03-16)
 - [x] **Phase 2: Deduplicar** - Mover ~1,400 líneas duplicadas a packages/shared (completed 2026-03-16)
-- [ ] **Phase 3: Dividir Archivos API** - Partir monolitos en módulos con bounded scope
+- [x] **Phase 3: Dividir Archivos API** - Partir monolitos en módulos con bounded scope (completed 2026-03-16)
 - [ ] **Phase 4: Cobertura de Tests** - Tests sobre código en su forma definitiva
 - [ ] **Phase 5: Housekeeping** - Componentes, dependencias y documentación
 
@@ -60,7 +60,11 @@ Plans:
   2. `routineApi.js` está dividido en routineQueryApi.js y routineMutationApi.js, cada uno <300 líneas
   3. El barrel re-export de cada split exporta explícitamente todas las funciones que existían antes del split (cero omisiones silenciosas)
   4. `npm run build -w apps/web` pasa sin errores — ningún caller externo necesitó cambios
-**Plans**: TBD
+**Plans:** 2/2 plans complete
+
+Plans:
+- [ ] 03-01-PLAN.md — Split workoutApi.js into 3 sub-modules with barrel re-export (SIZE-01)
+- [ ] 03-02-PLAN.md — Split routineApi.js into 3 sub-modules with barrel re-export (SIZE-02)
 
 ### Phase 4: Cobertura de Tests
 **Goal**: La capa API, createAuthStore, y los hooks compartidos críticos tienen cobertura de tests sobre su implementación definitiva
@@ -92,7 +96,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Estabilizar | 2/2 | Complete    | 2026-03-16 |
-| 2. Deduplicar | 3/3 | Complete   | 2026-03-16 |
-| 3. Dividir Archivos API | 0/TBD | Not started | - |
+| 2. Deduplicar | 3/3 | Complete    | 2026-03-16 |
+| 3. Dividir Archivos API | 2/2 | Complete   | 2026-03-16 |
 | 4. Cobertura de Tests | 0/TBD | Not started | - |
 | 5. Housekeeping | 0/TBD | Not started | - |
