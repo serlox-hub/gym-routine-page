@@ -65,6 +65,5 @@ export {
   useExerciseHistory,
   useExerciseHistorySummary,
   usePreviousWorkout,
-  useDurationHistory,
   useDeleteWorkout,
 } from '@gym/shared'
