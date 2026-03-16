@@ -15,7 +15,7 @@ Requirements for tech debt elimination. Each maps to roadmap phases.
 ### Deduplicación
 
 - [x] **DUP-01**: useCompletedSets y useSession compartidos en packages/shared con callback injection para visibilidad (onVisibilityChange), apps reducidos a thin wrappers (~700 líneas eliminadas)
-- [ ] **DUP-02**: useWorkoutHistory compartido entre apps — mover funciones query idénticas a shared (~250 líneas eliminadas)
+- [x] **DUP-02**: useWorkoutHistory compartido entre apps — mover funciones query idénticas a shared (~250 líneas eliminadas)
 - [x] **DUP-03**: exportRoutine, importRoutine, duplicateRoutine movidas a packages/shared/src/api/routineApi.js — dejar en per-app solo funciones con APIs de plataforma (DOM Blob, expo-file-system) (~500 líneas eliminadas)
 
 ### Tests
@@ -71,7 +71,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUG-02 | Phase 1 | Complete |
 | DX-03 | Phase 1 | Complete |
 | DUP-01 | Phase 2 | Complete |
-| DUP-02 | Phase 2 | Pending |
+| DUP-02 | Phase 2 | Complete |
 | DUP-03 | Phase 2 | Complete |
 | SIZE-01 | Phase 3 | Pending |
 | SIZE-02 | Phase 3 | Pending |
