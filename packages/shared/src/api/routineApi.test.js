@@ -1,0 +1,321 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { exportRoutine, importRoutine } from './routineApi.js'
+
+// Mock del módulo _client para controlar getClient()
+vi.mock('./_client.js', () => ({
+  getClient: vi.fn(),
+}))
+
+import { getClient } from './_client.js'
+
+// ============================================
+// HELPERS para construir mocks de Supabase
+// ============================================
+
+function makeQueryMock(resolveWith) {
+  const chain = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue(resolveWith),
+    maybeSingle: vi.fn().mockResolvedValue(resolveWith),
+  }
+  // Para llamadas sin .single() al final (e.g. .order() directo)
+  chain.order.mockResolvedValue(resolveWith)
+  chain.in.mockResolvedValue(resolveWith)
+  return chain
+}
+
+// ============================================
+// TEST: exportRoutine — conteo de queries (N+1 fix)
+// ============================================
+
+describe('exportRoutine', () => {
+  it('hace exactamente N+2 queries para una rutina con N días (sin query extra por día)', async () => {
+    const fromCalls = []
+
+    // Datos de prueba: 2 días, cada uno con 1 bloque y 1 ejercicio
+    const fakeRoutine = { name: 'Rutina Test', description: null, goal: null }
+    const fakeDays = [
+      { id: 'day-1', name: 'Día 1', estimated_duration_min: 60, sort_order: 1 },
+      { id: 'day-2', name: 'Día 2', estimated_duration_min: 45, sort_order: 2 },
+    ]
+    const fakeBlocks = (dayId) => [
+      {
+        name: 'Principal',
+        sort_order: 1,
+        duration_min: null,
+        routine_exercises: [
+          {
+            series: 3, reps: '8-12', rir: 2, rest_seconds: 90,
+            tempo: null, tempo_razon: null, notes: null, sort_order: 1,
+            exercise: {
+              id: `ex-${dayId}`,
+              name: `Ejercicio ${dayId}`,
+              measurement_type: 'weight_reps',
+              instructions: null,
+              muscle_group: { name: 'Pecho' },
+            },
+          },
+        ],
+      },
+    ]
+    const fakeExercises = [
+      {
+        name: 'Ejercicio day-1', measurement_type: 'weight_reps',
+        weight_unit: 'kg', time_unit: 's', distance_unit: 'm',
+        instructions: null, muscle_group: { name: 'Pecho' },
+      },
+      {
+        name: 'Ejercicio day-2', measurement_type: 'weight_reps',
+        weight_unit: 'kg', time_unit: 's', distance_unit: 'm',
+        instructions: null, muscle_group: { name: 'Pecho' },
+      },
+    ]
+
+    // Mock de getClient: registra cada llamada .from() y devuelve datos según tabla
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        fromCalls.push(table)
+        if (table === 'routines') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: fakeRoutine, error: null }),
+          }
+        }
+        if (table === 'routine_days') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({ data: fakeDays, error: null }),
+          }
+        }
+        if (table === 'routine_blocks') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockImplementation((col, opts) => {
+              // Determinar qué día según contexto — simplificado: ambos días devuelven bloques
+              return Promise.resolve({ data: fakeBlocks('day-1'), error: null })
+            }),
+          }
+        }
+        if (table === 'exercises') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({ data: fakeExercises, error: null }),
+          }
+        }
+        return makeQueryMock({ data: null, error: null })
+      },
+    }))
+
+    await exportRoutine('routine-123')
+
+    // N = 2 días → esperamos N+2 = 4 queries: 1 routines + 1 routine_days + 2 routine_blocks
+    // NO debe haber queries extra de routine_days para obtener el id de cada día
+    const routinesCount = fromCalls.filter(t => t === 'routines').length
+    const routineDaysCount = fromCalls.filter(t => t === 'routine_days').length
+    const routineBlocksCount = fromCalls.filter(t => t === 'routine_blocks').length
+    const exercisesCount = fromCalls.filter(t => t === 'exercises').length
+
+    expect(routinesCount).toBe(1)
+    expect(routineDaysCount).toBe(1) // Solo 1 query de días — NO una por día adicional
+    expect(routineBlocksCount).toBe(fakeDays.length) // Una por día (N)
+    expect(exercisesCount).toBe(1)
+
+    // Total: 1 + 1 + N + 1 = N+3 (routine + days + N blocks + exercises)
+    expect(fromCalls.length).toBe(fakeDays.length + 3)
+  })
+})
+
+// ============================================
+// TEST: importRoutine — crea registros correctos en BD
+// ============================================
+
+describe('importRoutine', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('inserta rutina, días, bloques y ejercicios con los IDs enlazados correctamente', async () => {
+    const insertCalls = {}
+    let routineIdCounter = 100
+    let dayIdCounter = 200
+    let blockIdCounter = 300
+
+    const sampleJson = {
+      version: 4,
+      exportedAt: '2026-01-01T00:00:00.000Z',
+      exercises: [
+        {
+          name: 'Press Banca',
+          measurement_type: 'weight_reps',
+          weight_unit: 'kg',
+          time_unit: 's',
+          distance_unit: 'm',
+          instructions: null,
+          muscle_group_name: 'Pecho',
+        },
+      ],
+      routine: {
+        name: 'Rutina Importada',
+        description: 'Descripción',
+        goal: 'Fuerza',
+        days: [
+          {
+            name: 'Día 1',
+            estimated_duration_min: 60,
+            sort_order: 1,
+            blocks: [
+              {
+                name: 'Principal',
+                sort_order: 1,
+                duration_min: null,
+                exercises: [
+                  {
+                    exercise_name: 'Press Banca',
+                    series: 4,
+                    reps: '5',
+                    rir: 1,
+                    rest_seconds: 180,
+                    tempo: null,
+                    tempo_razon: null,
+                    notes: null,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    }
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (!insertCalls[table]) insertCalls[table] = []
+
+        // Mock para muscle_groups
+        if (table === 'muscle_groups') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'mg-1' }, error: null }),
+          }
+        }
+
+        // Mock para ejercicios existentes (no existe, hay que crear)
+        if (table === 'exercises') {
+          const mock = {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: 'ex-new-1' }, error: null }),
+              }
+            }),
+          }
+          return mock
+        }
+
+        if (table === 'routines') {
+          return {
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              routineIdCounter++
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: routineIdCounter, ...record }, error: null }),
+              }
+            }),
+          }
+        }
+
+        if (table === 'routine_days') {
+          return {
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              dayIdCounter++
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: dayIdCounter, ...record }, error: null }),
+              }
+            }),
+          }
+        }
+
+        if (table === 'routine_blocks') {
+          return {
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              blockIdCounter++
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: blockIdCounter, ...record }, error: null }),
+              }
+            }),
+          }
+        }
+
+        if (table === 'routine_exercises') {
+          return {
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              return Promise.resolve({ data: { id: 're-1' }, error: null })
+            }),
+          }
+        }
+
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        }
+      },
+    }))
+
+    const result = await importRoutine(sampleJson, 'user-123', {})
+
+    // Rutina creada con user_id correcto
+    expect(insertCalls['routines']).toHaveLength(1)
+    expect(insertCalls['routines'][0]).toMatchObject({
+      name: 'Rutina Importada',
+      user_id: 'user-123',
+    })
+
+    // 1 día creado, referenciando la rutina
+    expect(insertCalls['routine_days']).toHaveLength(1)
+    expect(insertCalls['routine_days'][0]).toMatchObject({
+      name: 'Día 1',
+      sort_order: 1,
+    })
+    expect(insertCalls['routine_days'][0].routine_id).toBeDefined()
+
+    // 1 bloque creado, referenciando el día
+    expect(insertCalls['routine_blocks']).toHaveLength(1)
+    expect(insertCalls['routine_blocks'][0]).toMatchObject({
+      name: 'Principal',
+      sort_order: 1,
+    })
+    expect(insertCalls['routine_blocks'][0].routine_day_id).toBeDefined()
+
+    // 1 ejercicio de rutina creado, referenciando el bloque
+    expect(insertCalls['routine_exercises']).toHaveLength(1)
+    expect(insertCalls['routine_exercises'][0]).toMatchObject({
+      series: 4,
+      reps: '5',
+      sort_order: 1,
+    })
+    expect(insertCalls['routine_exercises'][0].routine_block_id).toBeDefined()
+    expect(insertCalls['routine_exercises'][0].exercise_id).toBeDefined()
+
+    // Retorna la rutina creada
+    expect(result).toBeDefined()
+    expect(result.name).toBe('Rutina Importada')
+  })
+})
