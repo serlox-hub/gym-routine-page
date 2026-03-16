@@ -1,58 +1,104 @@
 # Gym Tracker - Claude Instructions
 
 ## Project Overview
-Workout tracking app built with React + Vite + Supabase. Spanish UI with user authentication.
+Monorepo with web (React + Vite) and mobile (Expo + NativeWind) apps sharing business logic via `@gym/shared`. Spanish UI with user authentication backed by Supabase.
 
 ## Tech Stack
 - React 18 (JavaScript, NO TypeScript)
-- Vite
+- Vite (web), Expo managed workflow (mobile)
 - Supabase (PostgreSQL + JS client + Auth)
-- TanStack Query (data fetching)
-- Zustand (local state)
-- Tailwind CSS
-- React Router DOM
+- TanStack Query (data fetching) — synced version across apps
+- Zustand (local state) — synced version across apps
+- Tailwind CSS (web) / NativeWind v4 (mobile)
+- React Router DOM (web) / React Navigation (mobile)
+- `@gym/shared` — shared business logic package
 
 ## Project Structure
 
 ```
-src/
-├── components/           # UI components grouped by domain
-│   ├── ui/              # Primitives (Button, Card, Modal, etc.)
-│   │   └── index.js     # Re-exports all ui components
-│   ├── Auth/            # Authentication components
-│   │   └── index.js
-│   ├── Exercise/        # Exercise-related components
-│   │   └── index.js
-│   ├── History/         # History/calendar components
-│   │   └── index.js
-│   ├── Routine/         # Routine management components
-│   │   └── index.js
-│   └── Workout/         # Active workout session components
-│       └── index.js
-├── hooks/               # Custom React hooks (one file per domain)
-│   ├── useAuth.js       # Authentication hooks
-│   ├── useExercises.js  # Exercise CRUD + queries
-│   ├── useRoutines.js   # Routine CRUD + queries
-│   └── useWorkout.js    # Session, history, timer hooks
-├── lib/                 # Utilities and configurations
-│   ├── supabase.js      # Supabase client
-│   ├── constants.js     # App-wide constants (QUERY_KEYS, etc.)
-│   ├── styles.js        # Shared style objects
-│   ├── dateUtils.js     # Date formatting functions
-│   ├── timeUtils.js     # Time/duration formatting
-│   ├── setUtils.js      # Set validation and formatting
-│   ├── workoutCalculations.js  # 1RM, volume calculations
-│   ├── workoutTransforms.js    # Session data transformations
-│   ├── calendarUtils.js        # Calendar generation
-│   ├── arrayUtils.js           # Array manipulation
-│   ├── measurementTypes.js     # Exercise measurement types
-│   └── validation.js           # Form validation
-├── pages/               # Route components (one per route)
-├── stores/              # Zustand stores
-│   ├── authStore.js
-│   └── workoutStore.js
-└── main.jsx             # App entry point
+gym-routine-page/
+├── apps/
+│   ├── web/src/                # React + Vite
+│   │   ├── components/         # UI components (same domain structure as before)
+│   │   ├── hooks/              # Thin wrappers over @gym/shared hooks
+│   │   ├── lib/                # Web-specific utilities (supabase.js, styles.js, etc.)
+│   │   ├── pages/              # Route components
+│   │   ├── stores/             # Zustand store instances (thin wrappers)
+│   │   └── main.jsx            # App entry point — calls initApi/initStores
+│   └── gym-native/src/         # Expo + NativeWind
+│       ├── components/
+│       ├── hooks/              # Thin wrappers over @gym/shared hooks
+│       ├── screens/
+│       └── stores/
+└── packages/
+    └── shared/src/             # @gym/shared
+        ├── api/                # Supabase API functions (initApi pattern)
+        │   ├── _client.js      # initApi(supabaseClient) + getClient()
+        │   ├── exerciseApi.js
+        │   ├── routineApi.js
+        │   └── workoutApi.js   # barrel re-exporting sub-modules
+        ├── hooks/              # Shared React hooks
+        │   ├── _stores.js      # initStores() + store accessors
+        │   └── useRoutines.js  # etc.
+        ├── stores/             # Zustand store factories
+        │   ├── createAuthStore.js
+        │   └── createWorkoutStore.js
+        ├── lib/                # Pure utility functions
+        └── index.js            # Barrel — all public exports
 ```
+
+## Monorepo Architecture
+
+### @gym/shared barrel import pattern
+All shared logic is consumed through the barrel:
+```js
+import { useRoutines, exportRoutine, QUERY_KEYS } from '@gym/shared'
+```
+
+### Injection layer (called at app startup in main.jsx / App.js)
+```js
+import { initApi, initStores, initNotifications } from '@gym/shared'
+
+initApi(supabaseClient)           // inject Supabase client before any API call
+initStores({ authStore, workoutStore })  // inject store instances
+initNotifications(showToast)      // inject platform-specific toast function
+```
+
+### Shared + thin wrapper pattern
+Hooks live in `packages/shared`. Per-app thin wrappers re-export them and inject platform-specific callbacks:
+
+```js
+// apps/web/src/hooks/useSession.js  (thin wrapper)
+import { useRestoreActiveSession as _useRestoreActiveSession } from '@gym/shared'
+
+export function useRestoreActiveSession() {
+  return _useRestoreActiveSession({
+    onVisibilityChange: (cb) => {
+      const handler = () => { if (document.visibilityState === 'visible') cb() }
+      document.addEventListener('visibilitychange', handler)
+      return () => document.removeEventListener('visibilitychange', handler)
+    },
+  })
+}
+```
+
+If a hook needs no platform-specific behavior, the wrapper is just a re-export:
+```js
+// apps/web/src/hooks/useRoutines.js
+export * from '@gym/shared'
+```
+
+### Callback injection for platform-specific behavior
+Shared hooks accept optional callback props for browser/native differences:
+- `onVisibilityChange(cb)` — document visibility (web) vs AppState (RN)
+- `onConnectivityChange(cb)` — network status
+- `onStartError(message)` — notification on session start failure
+
+### When modifying shared code
+1. Edit in `packages/shared/src/`
+2. If adding new exports, update `packages/shared/src/index.js` barrel
+3. Run `npm run test:shared` for shared logic tests
+4. Run `npm run check` to verify both apps still build
 
 ## Naming Conventions
 
@@ -97,21 +143,26 @@ export function useCreateRoutine() { ... }
 ```
 
 ### Imports
-- Use index files for cleaner imports:
+- Use `@gym/shared` for all shared logic:
 ```js
 // DO:
-import { Button, Card, Modal } from '../components/ui'
-import { useRoutines, useCreateRoutine } from '../hooks/useRoutines'
+import { useRoutines, exportRoutine, QUERY_KEYS } from '@gym/shared'
 
-// DON'T:
-import Button from '../components/ui/Button'
-import Card from '../components/ui/Card'
+// DO (app-local components):
+import { Button, Card, Modal } from '../components/ui'
+```
+
+- Use app-local thin wrappers (not @gym/shared directly) when platform callbacks are needed:
+```js
+// DO:
+import { useRestoreActiveSession } from '../hooks/useSession'
+// (wrapper injects onVisibilityChange)
 ```
 
 ### State Management
-- **Server state**: TanStack Query (in hooks)
+- **Server state**: TanStack Query (in hooks, via @gym/shared)
 - **UI state**: React useState
-- **Cross-component state**: Zustand stores
+- **Cross-component state**: Zustand stores (instances in apps, factories in @gym/shared)
 
 ### Error Handling
 - Always handle Supabase errors
@@ -119,8 +170,8 @@ import Card from '../components/ui/Card'
 - Use ErrorMessage component for display
 
 ### Styling
-- Use Tailwind CSS classes
-- Use style objects from `lib/styles.js` for consistency
+- Use Tailwind CSS classes (web) / NativeWind classes (mobile)
+- Use style objects from `lib/styles.js` for consistency (web)
 - Design tokens: `colors.textPrimary`, `colors.bgSecondary`, etc.
 
 ## Database Schema
@@ -163,6 +214,7 @@ Deletion strategy:
 - ❌ Inline styles (use Tailwind)
 - ❌ Magic numbers (use constants)
 - ❌ console.log in committed code
+- ❌ Business logic in apps/ (belongs in packages/shared/src/lib/)
 
 ## What TO Do
 - ✅ One component = one file
@@ -171,13 +223,14 @@ Deletion strategy:
 - ✅ Descriptive names without abbreviations
 - ✅ Comments only when logic isn't self-evident
 - ✅ Handle loading/error states in components
-- ✅ Extract business logic to `lib/` utilities
+- ✅ Extract business logic to `packages/shared/src/lib/` utilities
 - ✅ Keep components "dumb" (UI only)
+- ✅ Thin wrappers in apps/ inject platform callbacks, shared hooks do the work
 
 ## Component Architecture: Dumb Components + Testable Utils
 
 ### Principle
-All business logic should be extracted to utility functions in `src/lib/`. Components should only handle:
+All business logic should be extracted to utility functions in `packages/shared/src/lib/`. Components should only handle:
 - UI rendering
 - Event handling (calling utils/hooks)
 - Local UI state (open/closed, hover, etc.)
@@ -207,9 +260,11 @@ Extract when logic:
 | Import/Export rutinas | `routineIO.js` | `importRoutine()`, `exportRoutine()` |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
 
+All these files live in `packages/shared/src/lib/` and are exported via `@gym/shared`.
+
 ### Archivo crítico: routineIO.js
 
-⚠️ **IMPORTANTE**: `src/lib/routineIO.js` contiene la lógica de importación y exportación de rutinas en formato JSON. Este archivo:
+⚠️ **IMPORTANTE**: `packages/shared/src/lib/routineIO.js` contiene la lógica de importación y exportación de rutinas en formato JSON. Este archivo:
 
 - Define el **esquema de exportación** (versión actual: 4)
 - Mapea la estructura de la base de datos al formato JSON y viceversa
@@ -238,7 +293,7 @@ const calendarData = useMemo(() => {
 ✅ **After** - Logic in testable util:
 ```jsx
 // MonthlyCalendar.jsx
-import { generateCalendarDays } from '../lib/calendarUtils.js'
+import { generateCalendarDays } from '@gym/shared'
 
 const calendarData = useMemo(
   () => generateCalendarDays(currentDate, sessions),
@@ -247,7 +302,7 @@ const calendarData = useMemo(
 ```
 
 ```js
-// lib/calendarUtils.js
+// packages/shared/src/lib/calendarUtils.js
 export function generateCalendarDays(currentDate, sessions) {
   // Pure logic, fully testable without React
 }
@@ -256,7 +311,7 @@ export function generateCalendarDays(currentDate, sessions) {
 ### Creating New Components Checklist
 
 1. [ ] Component file has single responsibility (UI only)
-2. [ ] Business logic extracted to `src/lib/` utils
+2. [ ] Business logic extracted to `packages/shared/src/lib/` utils
 3. [ ] Utils are pure functions (no side effects)
 4. [ ] Complex `useMemo`/`useCallback` calls util functions
 5. [ ] Validation logic in `lib/validation.js`
@@ -265,10 +320,11 @@ export function generateCalendarDays(currentDate, sessions) {
 ### Updating Existing Components Checklist
 
 1. [ ] Identify embedded business logic (>5 lines in useMemo/handlers)
-2. [ ] Extract to appropriate util file
-3. [ ] Import util and call from component
-4. [ ] Verify component still works
-5. [ ] Add tests for extracted util
+2. [ ] Extract to appropriate util file in `packages/shared/src/lib/`
+3. [ ] Export from `packages/shared/src/index.js`
+4. [ ] Import via `@gym/shared` and call from component
+5. [ ] Verify component still works
+6. [ ] Add tests for extracted util
 
 ### Utility Function Guidelines
 
@@ -296,18 +352,27 @@ export function calculateEpley1RM(weight, reps) {
 
 ### Test File Structure
 ```
-src/lib/
+packages/shared/src/lib/
 ├── dateUtils.js
 ├── dateUtils.test.js
-├── timeUtils.js
-├── timeUtils.test.js
 ├── workoutCalculations.js
 ├── workoutCalculations.test.js
+└── ...
+
+packages/shared/src/api/
+├── routineApi.test.js
+└── ...
+
+packages/shared/src/hooks/
+├── useRoutines.test.js
 └── ...
 ```
 
 ### Running Tests
 ```bash
-npm run lint     # Check for linting errors
-npm run build    # Verify build works
+npm run check            # lint + test:shared + test:web + e2e + build (root)
+npm run test:shared      # run tests in packages/shared only
+npm run test:run -w apps/web  # run web tests only
+npm run lint             # lint all workspaces
+npm run build            # verify build works
 ```

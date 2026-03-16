@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-03-16T18:01:27.061Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-16T19:02:08.987Z"
 last_activity: "2026-03-16 — Plan 02-01 completado: exportRoutine/importRoutine/duplicateRoutine movidas a shared con fix N+1"
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 15
+  completed_plans: 13
   percent: 20
 ---
 
@@ -61,6 +61,7 @@ Progress: [██░░░░░░░░] 20%
 | Phase 04-cobertura-de-tests P01 | 3min | 2 tasks | 3 files |
 | Phase 04-cobertura-de-tests P05 | 8min | 2 tasks | 6 files |
 | Phase 04-cobertura-de-tests P04 | 3min | 2 tasks | 3 files |
+| Phase 05-housekeeping P02 | 2min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,7 @@ Recent decisions affecting current work:
 - [Phase 04-05]: adminApi.fetchAllUsers requiere mock con .rpc() y .from() en el mismo objeto de cliente (makeClientMock solo tiene .from())
 - [Phase 04-04]: callCount pattern con mockImplementation para operaciones compuestas que llaman getClient múltiples veces con diferentes tablas
 - [Phase 04-04]: PGRST116 simulado como { code: 'PGRST116' } para probar path de bloque no encontrado en addExerciseToDay/moveRoutineExerciseToDay
+- [Phase 05-housekeeping]: HistoryChart y HistoryTable no se exportan en Workout/index.js — son internos a ExerciseHistoryModal
 
 ### Pending Todos
 
@@ -104,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T18:01:27.060Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-03-16T19:02:08.985Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
