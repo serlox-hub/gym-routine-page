@@ -63,20 +63,18 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
   )
 }
 
-
-function WorkoutExerciseCard({
+function RegularExerciseCard({
   sessionExercise,
   onCompleteSet,
   onUncompleteSet,
-  isWarmup = false,
   onRemove,
   onReplace,
-  isSuperset = false,
+  isSuperset,
   onReorder,
-  currentIndex = 0,
-  totalExercises = 1,
-  positionLabels = [],
-  isReordering = false,
+  currentIndex,
+  totalExercises,
+  positionLabels,
+  isReordering,
 }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
   const tempoRazon = routine_exercise?.tempo_razon
@@ -114,15 +112,11 @@ function WorkoutExerciseCard({
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
   const removeSet = () => { if (setsCount > 0) setExerciseSetCount(exerciseKey, setsCount - 1) }
 
-  if (isWarmup) {
-    return <WarmupExerciseCard exercise={exercise} series={series} reps={reps} tempo={tempo} notes={notes} rest_seconds={rest_seconds} />
-  }
-
   const isCompleted = completedCount === setsCount && setsCount > 0
-  const prevCompletedRef = useRef(isCompleted) // eslint-disable-line react-hooks/rules-of-hooks
+  const prevCompletedRef = useRef(isCompleted)
 
   // Auto-colapsar 1s después de completar todas las series
-  useEffect(() => { // eslint-disable-line react-hooks/rules-of-hooks
+  useEffect(() => {
     if (isCompleted && !prevCompletedRef.current) {
       const timer = setTimeout(() => setCollapsed(true), 1000)
       return () => clearTimeout(timer)
@@ -305,6 +299,43 @@ function WorkoutExerciseCard({
     <Card className="p-4" style={cardStyle}>
       {content}
     </Card>
+  )
+}
+
+function WorkoutExerciseCard({
+  sessionExercise,
+  onCompleteSet,
+  onUncompleteSet,
+  isWarmup = false,
+  onRemove,
+  onReplace,
+  isSuperset = false,
+  onReorder,
+  currentIndex = 0,
+  totalExercises = 1,
+  positionLabels = [],
+  isReordering = false,
+}) {
+  const { exercise, series, reps, tempo, notes, rest_seconds } = sessionExercise
+
+  if (isWarmup) {
+    return <WarmupExerciseCard exercise={exercise} series={series} reps={reps} tempo={tempo} notes={notes} rest_seconds={rest_seconds} />
+  }
+
+  return (
+    <RegularExerciseCard
+      sessionExercise={sessionExercise}
+      onCompleteSet={onCompleteSet}
+      onUncompleteSet={onUncompleteSet}
+      onRemove={onRemove}
+      onReplace={onReplace}
+      isSuperset={isSuperset}
+      onReorder={onReorder}
+      currentIndex={currentIndex}
+      totalExercises={totalExercises}
+      positionLabels={positionLabels}
+      isReordering={isReordering}
+    />
   )
 }
 
