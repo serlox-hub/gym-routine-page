@@ -47,13 +47,23 @@ export default function ExercisePickerModal({
         <>
           <div className="flex-1 overflow-y-auto min-h-0">
             <ExerciseForm
+              id="create-exercise-form"
               onSubmit={handleCreateExercise}
               isSubmitting={createExercise.isPending}
               initialData={searchTerm.trim() ? { name: searchTerm.trim() } : null}
               compact
+              hideSubmitButton
             />
           </div>
           <div className="flex gap-2 pt-3 mt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
+            <Button
+              type="submit"
+              form="create-exercise-form"
+              disabled={createExercise.isPending}
+              className="flex-1"
+            >
+              {createExercise.isPending ? 'Guardando...' : 'Guardar'}
+            </Button>
             <Button variant="secondary" onClick={() => setIsCreatingNew(false)}>Cancelar</Button>
           </div>
         </>

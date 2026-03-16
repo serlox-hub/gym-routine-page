@@ -77,6 +77,7 @@ const DEFAULT_FORM = {
  * @param {string} props.className - Additional class names
  */
 function ExerciseForm({
+  id,
   initialData = null,
   onSubmit,
   isSubmitting = false,
@@ -143,7 +144,7 @@ function ExerciseForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={`space-y-4 ${className}`}>
+    <form id={id} onSubmit={handleSubmit} className={`space-y-4 ${className}`}>
       {error && (
         <div
           className="p-3 rounded-lg text-sm"
