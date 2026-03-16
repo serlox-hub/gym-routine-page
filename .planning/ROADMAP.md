@@ -75,7 +75,14 @@ Plans:
   2. `createAuthStore` tiene tests que cubren initialize, login, logout, signup y callbacks de plataforma — a la par con createWorkoutStore (21 tests)
   3. useRoutines, useExercises y useSessionExercises tienen tests con @testing-library/react y QueryClientProvider wrapper, apuntando a las implementaciones en packages/shared
   4. `npm run test:shared` pasa con todos los tests en verde
-**Plans**: TBD
+**Plans:** 5 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Create _testUtils.js + test workoutSessionApi and completedSetsApi (TEST-01)
+- [ ] 04-02-PLAN.md — Test createAuthStore (TEST-02)
+- [ ] 04-03-PLAN.md — Test useRoutines, useExercises, useSessionExercises hooks (TEST-03)
+- [ ] 04-04-PLAN.md — Test sessionExercisesApi, routineQueryApi, routineMutationApi (TEST-01)
+- [ ] 04-05-PLAN.md — Test exerciseApi, smaller APIs, and duplicateRoutine (TEST-01)
 
 ### Phase 5: Housekeeping
 **Goal**: Los componentes grandes están divididos en sub-componentes, las versiones de dependencias están sincronizadas, y CLAUDE.md refleja la arquitectura real del monorepo
@@ -97,6 +104,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Estabilizar | 2/2 | Complete    | 2026-03-16 |
 | 2. Deduplicar | 3/3 | Complete    | 2026-03-16 |
-| 3. Dividir Archivos API | 2/2 | Complete   | 2026-03-16 |
-| 4. Cobertura de Tests | 0/TBD | Not started | - |
+| 3. Dividir Archivos API | 2/2 | Complete    | 2026-03-16 |
+| 4. Cobertura de Tests | 0/5 | Not started | - |
 | 5. Housekeeping | 0/TBD | Not started | - |
