@@ -1,287 +1,215 @@
-# Pitfalls Research
+# Domain Pitfalls — Tech Debt Reduction in a React + React Native Monorepo
 
-**Domain:** React + Vite + React Native/Expo monorepo with npm workspaces — shared code migration
-**Researched:** 2026-03-15
-**Confidence:** HIGH (Metro/Expo docs verified, Vite docs verified, community issues cross-referenced)
+**Domain:** Tech debt reduction — deduplication, testing, file splitting in a cross-platform monorepo
+**Project:** Gym Tracker (web React + Expo React Native, npm workspaces, `@gym/shared`)
+**Researched:** 2026-03-16
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Metro Can't See Files Outside Its `watchFolders`
-
-**What goes wrong:**
-Metro fails silently or throws `"Cannot find module '@gym/shared/...' from '...'"` at runtime. The shared package exists on disk but Metro's file watcher never indexed it because it sits outside the RN app's project root. This also breaks EAS Build (CI), not just local dev — the error appears in production builds even when local worked fine.
-
-**Why it happens:**
-Metro's `watchFolders` is misunderstood as a file-watching-only concern. It is actually Metro's complete visibility boundary: if a file is not within `watchFolders` or `projectRoot`, it simply does not exist to Metro. With `gym-native/` moved to `apps/gym-native/` and the shared package at `packages/shared/`, Metro's default config (projectRoot = `apps/gym-native/`) sees nothing outside that folder.
-
-**How to avoid:**
-In `apps/gym-native/metro.config.js`, explicitly add the monorepo root and the shared package to `watchFolders`, and set `resolver.nodeModulesPaths` to include both the app's own `node_modules` and the root `node_modules`:
-
-```js
-const { getDefaultConfig } = require('expo/metro-config')
-const { withNativeWind } = require('nativewind/metro')
-const path = require('path')
-
-const projectRoot = __dirname
-const monorepoRoot = path.resolve(projectRoot, '../..')
-
-const config = getDefaultConfig(projectRoot)
-config.watchFolders = [monorepoRoot]
-config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, 'node_modules'),
-  path.resolve(monorepoRoot, 'node_modules'),
-]
-
-module.exports = withNativeWind(config, { input: './global.css' })
-```
-
-Note: Expo SDK 55 (used in this project) auto-configures monorepo support when using `expo/metro-config`. Verify this works before adding manual config — manual config can conflict with automatic detection.
-
-**Warning signs:**
-- `expo start` succeeds but app crashes on first import from the shared package
-- Error contains "Haste module map" or "does not exist in the Haste module map"
-- Works locally but fails on EAS Build
-
-**Phase to address:** Phase 0 (Monorepo scaffold) — must be verified as part of the "hello world import" acceptance test before moving any real code.
+Mistakes that cause breakage across both platforms, silent regressions, or invalidate the entire cleanup effort.
 
 ---
 
-### Pitfall 2: Duplicate React / React Native Instances ("Invalid Hook Call")
+### Pitfall 1: Barrel Re-export Breaks Both Apps Silently
 
-**What goes wrong:**
-React throws `"Invalid hook call"` or `"You might have mismatching versions of React and the renderer"`. TanStack Query throws `"No QueryClient set, use QueryClientProvider to set one"` — even though a provider exists. Zustand stores appear to reset unexpectedly. All of these are symptoms of the same root cause: two copies of React loaded at runtime.
+**What goes wrong:** When splitting `workoutApi.js` (SIZE-01) or `routineApi.js` (SIZE-02) into sub-modules, the existing barrel (`packages/shared/src/index.js`) exports directly from those files. If any function is accidentally left out of the new sub-module barrel, every consumer in both `apps/web` and `apps/gym-native` that imports from `@gym/shared` gets `undefined` at runtime — not a build error. JavaScript doesn't throw on missing named exports from barrel re-exports until the function is actually called.
 
-**Why it happens:**
-npm workspaces hoisting is not deterministic when multiple packages in the monorepo declare `react` as a direct dependency. If `packages/shared/package.json` lists `react` as a `dependency` (not `peerDependency`), npm may install a second copy in `packages/shared/node_modules/`. The shared hooks then import from that copy, while the app imports from the root copy. React requires exactly one instance.
+**Why it happens:** The split is done file-by-file, the developer verifies the new file individually, but forgets to update the intermediate barrel (e.g., a new `workoutApi.js` that re-exports from sub-modules). Metro (RN) and Vite (web) bundle silently with holes.
 
-**How to avoid:**
-1. In `packages/shared/package.json`, declare React, React Native, and all peer libs (`@tanstack/react-query`, `zustand`) as `peerDependencies`, not `dependencies`.
-2. Add `overrides` in the root `package.json` to pin a single version:
-```json
-"overrides": {
-  "react": "18.3.1",
-  "@tanstack/react-query": "^5.62.0"
-}
-```
-3. After installing, run `npm why react` to confirm only one copy is resolved.
+**Consequences:** Silent runtime crash during a workout session. The bug may not surface until a specific code path is hit (e.g., ending a session).
 
-**Warning signs:**
-- `npm why react` shows multiple entries with different paths
-- `node_modules` inside `packages/shared/` contains a `react/` folder
-- Hook errors appear only after moving code to the shared package
-- Works in isolation, breaks when imported by the app
+**Prevention:**
+- After any split, run `npm run build -w apps/web` AND `npx expo export -w apps/gym-native` to catch missing re-exports at bundle time.
+- Add a smoke test import: after SIZE-01, write a one-line test that imports every function that was previously exported from `workoutApi.js` and asserts it is a function, not undefined.
+- The intermediate barrel pattern is already in the plan (`workoutApi.js` re-exports from sub-modules) — do not skip creating it.
 
-**Phase to address:** Phase 0 (Monorepo scaffold) — the shared package's `package.json` structure must be validated before any code moves there.
+**Detection:** `undefined is not a function` errors in production; build succeeds but runtime fails on first call to any split function.
+
+**Applies to:** SIZE-01 (workoutApi split), SIZE-02 (routineApi split), DUP-03 (routineIO move to shared API).
 
 ---
 
-### Pitfall 3: The Shared Package Has `"type": "module"` — Metro Breaks
+### Pitfall 2: Platform-Specific Code Leaks Into the Shared Package
 
-**What goes wrong:**
-Metro cannot parse ESM syntax (`import`/`export`) without Babel transformation. If `packages/shared/package.json` sets `"type": "module"`, Metro tries to load files as native ESM modules and fails with transform errors or syntax errors in the Metro bundle.
+**What goes wrong:** When moving hooks to `packages/shared/src/hooks/` (DUP-01, DUP-02), the shared implementation accidentally imports a platform-specific API — `window.addEventListener`, `document`, `AppState`, or `FileReader`. This causes the RN app to crash on import (Metro evaluates the module, hits a web API, throws) or the web app to fail with "AppState is not defined."
 
-**Why it happens:**
-The web project uses `"type": "module"` in its `package.json` (confirmed in this codebase). It's tempting to mirror this in the shared package. However, Metro requires files to be CommonJS-compatible or to go through Babel. Metro uses Hermes, which has its own transform pipeline separate from Node's native ESM loader.
+**Why it happens:** `useSyncPendingSets` in both apps is 95% identical. The only difference is the visibility listener: web uses `window.addEventListener('online', ...)` and RN uses `AppState.addEventListener('change', ...)`. It's easy to copy the web version to shared and miss the RN-specific branch. The existing codebase already has this exact bug in `apps/gym-native/src/lib/routineIO.js:333` (BUG-02: `FileReader` used in RN).
 
-**How to avoid:**
-Do NOT set `"type": "module"` in `packages/shared/package.json`. Omit it entirely (defaults to CommonJS). Write shared files using `module.exports` / `require`, OR rely on Babel (via `babel-preset-expo`) to transpile ES module syntax (`import`/`export`) — Babel handles this fine even without `"type": "module"`. Vite also handles files without `"type": "module"` correctly since it transpiles everything anyway.
+**Consequences:** The RN app crashes at startup or at the import of the affected hook. Both apps are broken until the shared package is fixed and republished/symlinked.
 
-**Warning signs:**
-- Metro error: `"SyntaxError: Cannot use import statement in a module"`
-- Metro error referencing a file inside `packages/shared/`
-- Vite works fine but `expo start` fails immediately on startup
+**Prevention:**
+- The plan's callback injection pattern (`onVisibilityChange(callback)`) is correct — enforce it. Shared hooks must accept all platform-specific behavior as injected callbacks, never import browser or RN globals directly.
+- After moving any hook to shared, run `npm run lint -w apps/gym-native` immediately. The ESLint config for RN should flag `window`, `document`, and `FileReader` as undefined.
+- Pattern to verify: the shared file's import section must contain zero platform-specific imports (`react-native`, `AppState`, `window`, `document`, `FileReader`, `Blob`, `URL.createObjectURL`).
 
-**Phase to address:** Phase 0 (Monorepo scaffold) — the shared package's `package.json` must be reviewed before adding any code.
+**Detection:** Metro bundler error on `npx expo start`; lint error `no-undef` on `window`/`document` in the shared package.
 
----
-
-### Pitfall 4: Vite Doesn't Pre-Bundle the Shared Package — Stale Cache Errors
-
-**What goes wrong:**
-Vite works on first run but after editing a file in `packages/shared/`, the web app continues showing the old version. Or Vite throws `"The file does not exist at node_modules/.vite/deps/..."` and the dev server needs manual restart with `--force`. In production builds, Vite may fail to find the shared package if it's not properly linked.
-
-**Why it happens:**
-Vite treats workspace packages (symlinked via npm workspaces into root `node_modules`) as "source code" (not pre-bundled) because they're not inside `node_modules` of the app. This is usually correct behavior but requires Vite's resolver to be aware of the package. Vite caches aggressively; changes to linked deps don't always invalidate the cache.
-
-**How to avoid:**
-1. Ensure the shared package is referenced via the npm workspace protocol in `apps/web/package.json`: `"@gym/shared": "*"` (or `"workspace:*"` — npm workspaces supports both).
-2. Add the shared package to `vite.config.js` if cache issues persist:
-```js
-optimizeDeps: {
-  include: ['@gym/shared']
-}
-```
-3. For development, document that `vite --force` clears the cache when shared code changes don't reflect.
-
-**Warning signs:**
-- Web app shows stale behavior after editing `packages/shared/`
-- Vite dev server logs show warnings about the linked dependency
-- `vite build` fails with "cannot find module '@gym/shared'"
-
-**Phase to address:** Phase 0 (Monorepo scaffold) — verify the vite resolution works as part of the setup smoke test.
+**Applies to:** DUP-01 (useCompletedSets + useSession), DUP-02 (useWorkoutHistory), DUP-03 (routineIO).
 
 ---
 
-### Pitfall 5: `supabase.js` and `styles.js` Accidentally Shared When They Cannot Be
+### Pitfall 3: Pending Sets Queue Uses Stale Session ID After Zustand Rehydration
 
-**What goes wrong:**
-The app crashes at import time on one platform. For `supabase.js`: web uses `import.meta.env.VITE_*`, React Native uses `process.env.EXPO_PUBLIC_*` and requires an `AsyncStorage` adapter. For `styles.js`: web uses CSS string values like `border: '1px solid #ccc'` which are invalid in React Native's StyleSheet. Sharing these files directly causes silent wrong behavior or runtime crashes.
+**What goes wrong:** The `pendingSets` queue in `createWorkoutStore` is persisted via Zustand's persist middleware (AsyncStorage on RN, localStorage on web). If the user force-kills the app mid-session and reopens it, the persisted state restores a `sessionId` and a non-empty `pendingSets`. If a new session is then started, `useSyncPendingSets` retries the old pending sets against the new `sessionId`, creating orphaned `completed_sets` rows in the database under the wrong session.
 
-**Why it happens:**
-Both files exist in both `src/lib/` (web) and `gym-native/src/lib/` (RN) and have the same name, creating the illusion they're the same file. In reality they diverge significantly (confirmed by diff: `supabase.js` uses different env vars and adds AsyncStorage; `styles.js` has entirely different CSS vs RN property syntax). The temptation is to move one of them to `packages/shared/` without realizing it contains platform-specific code.
+**Why it happens:** The `useSyncPendingSets` hook reads `sessionId` from the store at hook instantiation, not from the pending set payload. The pending set payload does store its own `sessionId` (the correct one), but a new session call to `startSession()` overwrites the store's `sessionId` before the sync loop drains. This is documented in `CONCERNS.md` as a known fragile area.
 
-**How to avoid:**
-These three files must NOT be placed in the shared package:
-- `supabase.js` — platform-specific env vars + AsyncStorage adapter
-- `styles.js` — CSS vs React Native StyleSheet syntax
-- Any part of `authStore.js` involving Google OAuth (RN-only)
+**Consequences:** Silent data corruption — completed sets are written to the wrong workout session. This becomes visible when DUP-01 moves this hook to shared, because the shared implementation will be used by both platforms simultaneously and the bug surface doubles.
 
-Instead, use one of two approaches per file:
-- **Platform entry points**: `supabase.web.js` and `supabase.native.js` in shared, with Metro/Vite resolving the correct one.
-- **Factory function with injected config**: shared creates the Supabase client from injected `url`, `key`, and optional `storageAdapter`, called by each platform's bootstrap code.
+**Prevention:**
+- Before implementing DUP-01, add a guard in `startSession()`: if `pendingSets` is non-empty, either drain it first (await) or clear it with a warning log. The session lifecycle must own the pending queue.
+- The test for `createWorkoutStore` (TEST-02 context) should include a scenario: start session → add pending set → simulate app kill/rehydrate → start new session → assert pending set is not inserted into new session.
+- Use `payload.sessionId` (not store's `sessionId`) when retrying in `useSyncPendingSets`. This is already the case in the current implementation — verify this is preserved when moving to shared.
 
-**Warning signs:**
-- Importing `@gym/shared/supabase` works on web but crashes on RN with `import.meta is not defined`
-- `styles.cardStyle` renders correctly on web but causes `StyleSheet.create` errors on RN
+**Detection:** `completed_sets` rows appearing under a session the user did not complete. Silent; only caught with integration tests or by inspecting the database.
 
-**Phase to address:** Phase 1 (Migrate utils) — before moving any file, audit whether it contains platform-specific APIs. Create a checklist of safe-to-share vs. must-be-platform-split files.
+**Applies to:** DUP-01 (useCompletedSets + useSession shared migration), TEST-02 (createAuthStore tests — same pattern risk).
 
 ---
 
-### Pitfall 6: EAS Build Fails Even When Local Build Passes
+### Pitfall 4: Dependency Version Upgrade Breaks TanStack Query Cache Behavior
 
-**What goes wrong:**
-`expo start` and local `eas build --local` work, but cloud EAS builds fail with errors like "Cannot find module" or "lock file not found." The build succeeds in development but fails in CI because EAS runs from a different working directory and doesn't have the monorepo root in scope.
+**What goes wrong:** DX-01 upgrades `@tanstack/react-query` in `apps/web` from `^5.62.0` to `^5.90.21` — a jump of ~28 minor versions. TanStack Query v5 has had multiple behavioral changes to `staleTime` defaults, `refetchOnWindowFocus` semantics, and `useInfiniteQuery` page structure between 5.62 and 5.90. The upgrade may silently change when queries refetch, causing the workout session or routine list to show stale data, or trigger unexpected refetches during an active workout.
 
-**Why it happens:**
-EAS Build requires explicit configuration to understand the monorepo layout. By default EAS assumes it is running from the app's root, and the `package-lock.json` at the monorepo root is not visible. Additionally, EAS needs to know to install dependencies from the monorepo root, not just the app subfolder.
+**Why it happens:** Minor versions in TanStack Query v5 have introduced opt-in-by-default behavior changes, particularly around `gcTime` (formerly `cacheTime`) and structural sharing. The web app has no query-layer tests (TEST-01, TEST-03 are not yet done), so behavioral regressions are invisible.
 
-**How to avoid:**
-In `apps/gym-native/eas.json`, configure the build to reference the monorepo root:
-```json
-{
-  "build": {
-    "development": {
-      "env": {
-        "EAS_PROJECT_ROOT": "../.."
-      }
-    }
-  }
-}
-```
-Also ensure the root `package.json` has a `workspaces` field and that the lock file is at the monorepo root. Per Expo docs: all EAS config files (`eas.json`, `credentials.json`) must live in the app directory, not the monorepo root.
+**Consequences:** Routine list refetches during active workout (user sees flicker). History hooks behave differently on web vs RN (DUP-02 divergence gets worse). Cache invalidation in `useCompleteSet.onSuccess` may change timing.
 
-**Warning signs:**
-- EAS build logs show "Could not find package.json" or "lock file not found"
-- Local builds pass, CI builds fail for the same commit
-- Error references a path that is correct locally but wrong in the CI container
+**Prevention:**
+- Do DX-01 (version sync) AFTER TEST-01 and TEST-03 are complete, not before. Tests provide a regression net.
+- Before upgrading, check the TanStack Query v5 changelog between 5.62 and 5.90 for breaking changes (specifically: `refetchOnWindowFocus`, `structuralSharing`, `throwOnError` defaults).
+- After upgrading, run the full web test suite and manually test: complete a set, end session, open history. Verify no unexpected refetches.
 
-**Phase to address:** Phase 0 (Monorepo scaffold) — verify EAS Build works with a trivial change before migrating production code. Do not discover this in Phase 3.
+**Detection:** Test failures after DX-01; flicker on workout page during set completion; history not updating immediately after session end.
+
+**Applies to:** DX-01 (version sync), before this: TEST-01 and TEST-03 should already pass.
 
 ---
 
-## Technical Debt Patterns
-
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Copy-paste utils into shared instead of writing platform-split versions | Fast, zero risk of breaking current apps | Silent drift resumes; diverged files pile up again | Never — defeats the purpose of the migration |
-| Skip `peerDependencies` in shared package, use `dependencies` instead | Simpler `package.json`, works most of the time | Duplicate React instances, "invalid hook call" errors that are hard to debug | Never for React and hooks-dependent libs |
-| Keep `gym-native/` in place and add workspace config around it | Zero directory restructuring risk | `watchFolders` config becomes complex; relative paths in RN config need `../../packages/shared` | Acceptable as Phase 0 intermediate if done with explicit cleanup plan |
-| Inline platform-specific logic in shared files with `Platform.OS` checks | One file, less indirection | Metro and Vite both need to import RN's `Platform` module — breaks Vite | Only for truly trivial cases; never for env vars or storage |
-| Skip verifying `npm why react` after setup | Saves 2 minutes | Hours debugging "invalid hook call" later | Never |
+## Moderate Pitfalls
 
 ---
 
-## Integration Gotchas
+### Pitfall 5: Supabase Mock Chain Breaks When API Functions Are Split
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| Supabase | Share the same `createClient` call in shared package | Expose a factory: `createSupabaseClient(url, key, options?)` — each platform calls it with its own env vars and storage adapter |
-| TanStack Query | Put `QueryClient` singleton in shared package | Keep `QueryClient` creation in each app's bootstrap; shared package only exports hooks that use `useQueryClient()` |
-| Zustand | Share stores with hardcoded `createJSONStorage(() => AsyncStorage)` | Share the store factory; each platform passes its storage adapter at initialization |
-| NativeWind | Assume shared CSS classes work on native | NativeWind processes Tailwind for RN — shared package should have zero styling; styling stays in each platform's component layer |
-| Vitest | Run tests from the web app root after restructuring | Update `vite.config.js` `test.exclude` and confirm `src/lib/` paths still resolve; shared package tests need their own vitest config |
+**What goes wrong:** The recommended test pattern for TEST-01 (API tests) mocks `getClient()` and returns a chainable mock: `{ from: vi.fn(() => mockSupabase), select: vi.fn(() => mockSupabase), ... }`. When `workoutApi.js` is split (SIZE-01), the new sub-files also call `getClient()` and use the same chain. However, each sub-file that gets split may have a different chain depth (e.g., `completedSetsApi.js` chains `.from().upsert()` while `sessionExercisesApi.js` chains `.from().select().eq().order()`). A single flat mock object shared across tests will return wrong data for some assertions if `vi.clearAllMocks()` is not called between each test, or if the chain mock doesn't return the right shape.
 
----
+**Prevention:**
+- Write the API tests (TEST-01) AFTER the split (SIZE-01, SIZE-02), not before. Testing pre-split code that will immediately be restructured wastes effort and the tests will need rewriting.
+- Use `beforeEach(() => { vi.clearAllMocks() })` in every API test file without exception.
+- For each test, explicitly mock the chain return value for the specific function under test, not a generic shared mock. The `DEUDA-TECNICA-V2.md` test pattern is correct as a starting point but needs per-function chain depth.
 
-## Performance Traps
+**Detection:** Tests pass individually but fail when run together; mock returns wrong data for second test in a file.
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Metro watches entire monorepo root recursively | `expo start` takes 30-60s; file change detection is slow; HMR lags | Configure `watchFolders` to include only `packages/shared/` and `apps/gym-native/`, not the entire monorepo root including `node_modules` | With any monorepo larger than ~500 files |
-| Vite re-processes entire shared package on every change | Dev server slow; hot reload takes seconds not milliseconds | Ensure shared package does not include test files or large fixtures in its source; use `server.watch.ignored` if needed | When shared package grows beyond ~50 files |
-| Two separate `node_modules` trees (app + root) | Install times double; disk usage increases significantly | Use `npm workspaces` hoisting correctly so most deps land at root; use `npm dedupe` after install | At any scale — it's a disk and install time issue from day 1 |
+**Applies to:** TEST-01 (API layer tests), SIZE-01, SIZE-02.
 
 ---
 
-## Security Mistakes
+### Pitfall 6: Thin Wrapper Pattern Introduces Duplicate TanStack Query Cache Keys
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Committing `.env` files to shared package | Supabase URL/anon key leak into git | Shared package must have zero `.env` files; env vars are injected by each platform at build time |
-| Sharing `supabase.js` with hardcoded fallback values | Fallback values may contain staging credentials that get bundled into production RN app | Never use fallback values for Supabase credentials; throw an explicit error if env vars are missing (already done in this codebase) |
+**What goes wrong:** After DUP-01 moves `useCompletedSets` to shared, both the shared hook and the per-app thin wrapper may register mutations that call `queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })`. If the thin wrapper adds its own `onSuccess` without removing the shared hook's `onSuccess`, the cache invalidation fires twice. With TanStack Query v5, double invalidation is usually harmless but can cause two sequential re-renders and potential flicker on the workout screen.
 
----
+**Prevention:**
+- The thin wrapper must only inject the platform callback (e.g., `onVisibilityChange`) and re-export the shared hook's return value. It must not add any additional `onSuccess`/`onError` logic.
+- After implementing each DUP-*, verify: `grep -r "invalidateQueries" apps/web/src/hooks/useCompletedSets.js apps/gym-native/src/hooks/useCompletedSets.js` should return zero results after the migration (the invalidation lives in shared).
 
-## "Looks Done But Isn't" Checklist
+**Detection:** React DevTools profiler shows double re-render on set completion; TanStack Query DevTools shows the same query being invalidated twice in one mutation cycle.
 
-- [ ] **Metro config**: `watchFolders` configured AND verified with `expo start` + a real import from `packages/shared/`
-- [ ] **Vite resolution**: `@gym/shared` importable AND verified with `npm run dev` + a real import
-- [ ] **No duplicate React**: `npm why react` returns a single resolved path
-- [ ] **EAS Build**: CI build passes for a trivial change before any production code migrates
-- [ ] **Shared package `peerDependencies`**: React, react-native, and all hook libraries listed as `peerDeps`, not `dependencies`
-- [ ] **Platform-split files**: `supabase.js`, `styles.js`, auth-related stores NOT in shared package (or correctly platform-split)
-- [ ] **Vitest still passes**: All 18 existing test files pass after restructuring paths
-- [ ] **`npm run dev` from monorepo root**: Web dev server starts without `vite --force`
-- [ ] **`expo start` from monorepo root**: RN bundler starts and reaches a real device/simulator
+**Applies to:** DUP-01, DUP-02, DUP-03.
 
 ---
 
-## Recovery Strategies
+### Pitfall 7: Component Split Loses Local State (Array Index as React Key)
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Metro can't find shared package | LOW | Add correct `watchFolders` + `nodeModulesPaths` to `metro.config.js`, clear Metro cache with `expo start --clear` |
-| Duplicate React instances | MEDIUM | Remove `react` from shared `dependencies`, add to `peerDependencies`, add `overrides` in root, run `npm install` + `npm dedupe` |
-| `"type": "module"` in shared package breaks Metro | LOW | Remove `"type": "module"` from `packages/shared/package.json`, clear Metro cache |
-| Platform-specific code in shared file crashes one platform | HIGH | Extract platform-split versions (`.web.js` + `.native.js`), update all imports in both apps — touches many files |
-| EAS Build fails after all local tests pass | MEDIUM | Add `EAS_PROJECT_ROOT` env var to `eas.json`, ensure lock file is at monorepo root, verify `npm workspaces` field in root `package.json` |
-| Vitest tests break after path restructuring | LOW | Update `vite.config.js` `test.exclude`, update import paths in test files that reference moved utilities |
+**What goes wrong:** SIZE-03 (WorkoutExerciseCard refactor) and SIZE-04 (ExerciseHistoryModal) involve extracting sub-components. The current `WorkoutExerciseCard` uses `key={i + 1}` for set rows (documented in `CONCERNS.md`). If the sub-component extraction changes the key generation or the component tree structure, React will unmount and remount set rows during renders, causing user-typed weight/reps values in uncontrolled inputs to be lost mid-workout.
+
+**Why it happens:** Extracting `SetsList` as a sub-component changes where the `key` prop lives in the tree. If the key strategy isn't explicitly carried over and documented, the default behavior is React re-creating DOM nodes.
+
+**Consequences:** User types weight into a set input, a re-render occurs (e.g., a set above it is completed), and the input resets. This is a user-visible data loss event during active workout.
+
+**Prevention:**
+- SIZE-03 depends on BUG-01 (already noted in the plan). Do not skip this dependency.
+- Before extracting `SetsList`, audit the current key strategy in `WorkoutExerciseCard.jsx` and document it in a comment. The stable key pattern `${sessionExerciseId}-${setNumber}` should be adopted as part of the refactor, not deferred.
+- After SIZE-03, manually test: start workout → add exercises → type weight into second set → complete first set → verify second set input is unchanged.
+
+**Detection:** Input values disappearing after completing a different set in the same exercise card.
+
+**Applies to:** SIZE-03 (WorkoutExerciseCard), SIZE-04 (ExerciseHistoryModal).
 
 ---
 
-## Pitfall-to-Phase Mapping
+### Pitfall 8: routineIO Move Exposes the N+1 Query Bug in Both Apps
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Metro `watchFolders` missing | Phase 0: Monorepo scaffold | `expo start` + import from shared package succeeds |
-| Duplicate React instances | Phase 0: Monorepo scaffold | `npm why react` shows single instance |
-| `"type": "module"` breaks Metro | Phase 0: Monorepo scaffold | `packages/shared/package.json` has no `"type"` field |
-| Vite stale cache / resolution | Phase 0: Monorepo scaffold | `npm run dev` + import from shared package succeeds |
-| EAS Build failure | Phase 0: Monorepo scaffold | EAS cloud build passes with trivial shared import |
-| Platform-specific files shared accidentally | Phase 1: Migrate utils | Audit checklist reviewed before each file move |
-| `supabase.js` / `styles.js` shared directly | Phase 1: Migrate utils | These files stay out of shared OR use platform-split pattern |
-| QueryClient singleton in wrong location | Phase 2: Migrate API/hooks | Hooks in shared only use `useQueryClient()`; client created in each app |
-| Zustand storage adapter hardcoded | Phase 2: Migrate stores | Store factory pattern verified on both platforms |
-| Vitest paths break | Phase 1: Migrate utils | `npm run test:run` passes after each batch of file moves |
+**What goes wrong:** `DUP-03` moves `exportRoutine`, `importRoutine`, and `duplicateRoutine` to `packages/shared/src/api/routineApi.js`. The current implementation has an N+1 query pattern: for a 5-day routine, it makes 12+ DB round-trips. When this code is moved to shared, both apps use the same implementation. If the N+1 bug is fixed at the same time (the right call), it requires a more complex nested Supabase select. If it is NOT fixed, the shared function propagates the performance problem to both apps and makes it harder to fix later.
+
+**Prevention:**
+- Fix the N+1 query during DUP-03, not after. The fix is to add `id` to the initial days query: `select('id, name, estimated_duration_min, sort_order')`. This eliminates the extra per-day lookup and is a one-line change with high confidence.
+- Do not move broken code to shared without fixing the known bug. The CONCERNS.md performance section documents exactly what to change.
+
+**Detection:** Slow export/import for routines with 4+ days; each day triggers an extra DB query visible in Supabase logs.
+
+**Applies to:** DUP-03 (routineIO to shared API).
+
+---
+
+## Minor Pitfalls
+
+---
+
+### Pitfall 9: CLAUDE.md Update Causes AI to Place New Files in Wrong Locations
+
+**What goes wrong:** DX-02 updates `CLAUDE.md` to reflect the monorepo. If done poorly (e.g., removing the old `src/` structure without adding the new monorepo paths), subsequent AI-assisted sessions may create hooks or components in `apps/web/src/` instead of the correct location in `packages/shared/src/hooks/`.
+
+**Prevention:**
+- DX-02 is the lowest risk item but the highest-leverage one for future AI sessions. Update the "Project Structure" section to show all three workspaces (`apps/web`, `apps/gym-native`, `packages/shared`).
+- Explicitly document the decision rule: "Logic that works identically on both platforms → `packages/shared/`. Platform-specific UI and lifecycle → per-app."
+- Do DX-02 last, after all structural changes are committed, so the documented structure matches the actual final state.
+
+**Applies to:** DX-02.
+
+---
+
+### Pitfall 10: Vitest Fake Timers Conflict With TanStack Query in Hook Tests
+
+**What goes wrong:** TEST-03 tests hooks that use `useQuery` and `useMutation`. If any test uses `vi.useFakeTimers()` to test retry delays or polling intervals (e.g., `useSyncPendingSets`'s 10-second interval), TanStack Query's internal scheduler may stall and never resolve promises, causing tests to time out or hang. This is a known issue between TanStack Query and Vitest's fake timer implementation (sinonjs timers).
+
+**Prevention:**
+- Avoid `vi.useFakeTimers()` in hook tests. Test the timeout behavior via unit tests of the underlying utility, not through the hook.
+- If timers are needed, use `vi.advanceTimersByTimeAsync()` (Vitest 1.x) instead of `vi.advanceTimersByTime()` (synchronous version stalls promises).
+- Wrap hook tests in `renderHook` with a `QueryClientProvider` wrapper, using a fresh `QueryClient` per test with `defaultOptions: { queries: { retry: false } }` to avoid retry delays.
+
+**Applies to:** TEST-03 (hooks), TEST-01 (API functions that have retry logic).
+
+---
+
+## Phase-Specific Warnings
+
+| Task | Likely Pitfall | Mitigation |
+|------|---------------|------------|
+| BUG-01 (hooks conditional) | Splitting into `RegularExerciseCard` copies the array-index key problem | Fix the key strategy during the split, not after |
+| BUG-02 (FileReader in RN) | Deleting "dead" code that is actually reached via a non-obvious UI path | Trace the call site before deleting; add a manual test of the RN import flow |
+| DUP-01 (useCompletedSets shared) | `window.addEventListener('online')` leaks into shared | Inject as `onReconnect` callback; lint check shared imports after |
+| DUP-02 (useWorkoutHistory) | `useInfiniteQuery` vs `useQuery` divergence hidden in shared | Only move identical functions; document the divergence explicitly in the shared file |
+| DUP-03 (routineIO shared) | Moving N+1 bug to shared without fixing it | Fix the days query to include `id` before moving |
+| TEST-01 (API tests) | Writing tests for pre-split code that is immediately restructured | Sequence: SIZE-01/02 first, then TEST-01 |
+| TEST-02 (authStore) | `onAuthStateChange` subscription cleanup not tested | Test that `initialize()` calls `supabase.auth.onAuthStateChange` and that cleanup is returned |
+| TEST-03 (hooks) | Fake timers stalling TanStack Query | Use `retry: false` in test QueryClient; avoid fake timers |
+| SIZE-01/02 (API splits) | Missing function in barrel re-export is invisible until runtime | Enumerate all exported functions before and after split; smoke-test import |
+| SIZE-03 (WorkoutExerciseCard) | Lost input state from React key change | Adopt stable key pattern before extracting sub-components |
+| DX-01 (version sync) | TanStack Query behavior change | Do after TEST-01/03 exist; check changelog for 5.62→5.90 |
+| DX-02 (CLAUDE.md) | Outdated structure confuses future AI sessions | Update after all structural changes are committed |
 
 ---
 
 ## Sources
 
-- [Expo Monorepo Guide](https://docs.expo.dev/guides/monorepos/) — official, HIGH confidence
-- [EAS Build with Monorepos](https://docs.expo.dev/build-reference/build-with-monorepos/) — official, HIGH confidence
-- [Metro Configuring](https://metrobundler.dev/docs/configuration/) — official, HIGH confidence
-- [Vite Dependency Pre-Bundling](https://vite.dev/guide/dep-pre-bundling) — official, HIGH confidence
-- [Metro Haste map symlink issue #286](https://github.com/facebook/metro/issues/286) — community issue, MEDIUM confidence
-- [Expo issues with npm workspaces #30143](https://github.com/expo/expo/issues/30143) — community issue, MEDIUM confidence
-- [TanStack Query no QueryClient in monorepo #6044](https://github.com/TanStack/query/issues/6044) — community issue, MEDIUM confidence
-- [Zustand store in external package #2870](https://github.com/pmndrs/zustand/discussions/2870) — community discussion, MEDIUM confidence
-- [Vite mixing CJS and ESM in monorepo #8726](https://github.com/vitejs/vite/discussions/8726) — community discussion, MEDIUM confidence
-- [EAS Build lock file detection issue #3247](https://github.com/expo/eas-cli/issues/3247) — community issue, MEDIUM confidence
-
----
-*Pitfalls research for: React + Vite + Expo monorepo with npm workspaces — shared code migration*
-*Researched: 2026-03-15*
+- CONCERNS.md (project) — fragile areas: optimistic sets queue, array index as key, exportRoutine N+1 query
+- DEUDA-TECNICA-V2.md (project) — task specifications with known risks per task
+- [The Hidden Costs of Barrel Files](https://articles.wesionary.team/the-hidden-costs-of-barrel-files-25de560b9f63) — barrel file circular dependency and bundle size risks
+- [TanStack Query Testing Strategies (DeepWiki)](https://deepwiki.com/TanStack/query/5.4-testing-strategies) — Vitest fake timer incompatibility with TanStack Query
+- [Query never updates when using Vitest fake timers (GitHub issue)](https://github.com/TanStack/query/issues/6994) — confirmed fake timer issue
+- [Expo monorepo guide](https://docs.expo.dev/guides/monorepos/) — package hoisting pitfalls in npm workspaces + Expo
+- [Zustand persist race condition (pmndrs/zustand)](https://github.com/pmndrs/zustand/issues/394) — rehydration race condition with AsyncStorage
+- [React Native monorepo shared hooks (Medium)](https://medium.com/redmadrobot-mobile/react-native-monorepo-with-shared-code-and-hooks-51cc3b87d795) — platform-specific API leakage into shared packages
