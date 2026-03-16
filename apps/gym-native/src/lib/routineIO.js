@@ -134,15 +134,6 @@ export async function exportRoutine(routineId) {
 }
 
 /**
- * Descarga la rutina como archivo JSON
- */
-export function downloadRoutineAsJson(_data, _filename) {
-  // En React Native, usar expo-file-system + expo-sharing
-  // Esta función no aplica en mobile
-  throw new Error('downloadRoutineAsJson no está disponible en React Native. Usa shareRoutineAsJson en su lugar.')
-}
-
-/**
  * Importa una rutina desde JSON
  * @param {object|string} jsonData - Datos JSON de la rutina
  * @param {string} userId - ID del usuario
@@ -325,21 +316,3 @@ export async function duplicateRoutine(routineId, userId, newName) {
   return importRoutine(exportData, userId, { updateExercises: false })
 }
 
-/**
- * Lee un archivo JSON
- */
-export function readJsonFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader() // eslint-disable-line no-undef
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result)
-        resolve(data)
-      } catch {
-        reject(new Error('Error al leer el archivo JSON'))
-      }
-    }
-    reader.onerror = () => reject(new Error('Error al leer el archivo'))
-    reader.readAsText(file)
-  })
-}
