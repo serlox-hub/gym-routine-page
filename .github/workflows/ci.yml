@@ -21,16 +21,17 @@ jobs:
       - run: npm ci
 
       - name: Run unit tests
-        run: npm run test:run
+        run: npm run test
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
+        working-directory: apps/web
 
       - name: Run e2e tests
-        run: npm run test:e2e
+        run: npm run test:e2e -w apps/web
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
