@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Estabilizar** - Corregir crashes activos y habilitar verificación (completed 2026-03-16)
 - [x] **Phase 2: Deduplicar** - Mover ~1,400 líneas duplicadas a packages/shared (completed 2026-03-16)
 - [x] **Phase 3: Dividir Archivos API** - Partir monolitos en módulos con bounded scope (completed 2026-03-16)
-- [ ] **Phase 4: Cobertura de Tests** - Tests sobre código en su forma definitiva
+- [x] **Phase 4: Cobertura de Tests** - Tests sobre código en su forma definitiva (completed 2026-03-16)
 - [ ] **Phase 5: Housekeeping** - Componentes, dependencias y documentación
 
 ## Phase Details
@@ -75,7 +75,7 @@ Plans:
   2. `createAuthStore` tiene tests que cubren initialize, login, logout, signup y callbacks de plataforma — a la par con createWorkoutStore (21 tests)
   3. useRoutines, useExercises y useSessionExercises tienen tests con @testing-library/react y QueryClientProvider wrapper, apuntando a las implementaciones en packages/shared
   4. `npm run test:shared` pasa con todos los tests en verde
-**Plans:** 3/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 04-01-PLAN.md — Create _testUtils.js + test workoutSessionApi and completedSetsApi (TEST-01)
@@ -105,5 +105,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Estabilizar | 2/2 | Complete    | 2026-03-16 |
 | 2. Deduplicar | 3/3 | Complete    | 2026-03-16 |
 | 3. Dividir Archivos API | 2/2 | Complete    | 2026-03-16 |
-| 4. Cobertura de Tests | 3/5 | In Progress|  |
+| 4. Cobertura de Tests | 5/5 | Complete   | 2026-03-16 |
 | 5. Housekeeping | 0/TBD | Not started | - |

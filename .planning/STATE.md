@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-16T17:56:32.157Z"
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-03-16T18:01:27.061Z"
 last_activity: "2026-03-16 — Plan 02-01 completado: exportRoutine/importRoutine/duplicateRoutine movidas a shared con fix N+1"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 12
   percent: 20
 ---
 
@@ -59,6 +59,8 @@ Progress: [██░░░░░░░░] 20%
 | Phase 03-dividir-archivos-api P01 | 2min | 2 tasks | 4 files |
 | Phase 04-cobertura-de-tests P03 | 3min | 2 tasks | 3 files |
 | Phase 04-cobertura-de-tests P01 | 3min | 2 tasks | 3 files |
+| Phase 04-cobertura-de-tests P05 | 8min | 2 tasks | 6 files |
+| Phase 04-cobertura-de-tests P04 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -85,6 +87,10 @@ Recent decisions affecting current work:
 - [Phase 04-03]: useRoutines/useExercises usan useUserId de useAuth.js (no _stores.js) — mock de ./useAuth.js en vez de _stores.js
 - [Phase 04-03]: TanStack Query pasa segundo argumento (meta context) a mutationFn directa — assertions deben usar expect.anything() como segundo parámetro
 - [Phase 04-cobertura-de-tests]: makeQueryMock usa patrón thenable para soportar chains con múltiples .eq() sin romper el chain
+- [Phase 04-05]: duplicateRoutine testado mockeando _client.js directamente (no vi.mock del módulo) para validar integración exportRoutine+importRoutine
+- [Phase 04-05]: adminApi.fetchAllUsers requiere mock con .rpc() y .from() en el mismo objeto de cliente (makeClientMock solo tiene .from())
+- [Phase 04-04]: callCount pattern con mockImplementation para operaciones compuestas que llaman getClient múltiples veces con diferentes tablas
+- [Phase 04-04]: PGRST116 simulado como { code: 'PGRST116' } para probar path de bloque no encontrado en addExerciseToDay/moveRoutineExerciseToDay
 
 ### Pending Todos
 
@@ -98,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T17:56:32.155Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-16T18:01:27.060Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None
