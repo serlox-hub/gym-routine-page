@@ -64,6 +64,10 @@ export function workoutStoreState(set, get) {
       cachedSetData: {},
       exerciseSetCounts: {},
       pendingSets: {},
+      restTimerActive: false,
+      restTimerEndTime: null,
+      restTimeInitial: 0,
+      restTimerMinimized: false,
     }),
 
     // Mark a set as completed (optimistic update)
