@@ -1,5 +1,4 @@
 import { AppState } from 'react-native'
-import NetInfo from '@react-native-community/netinfo'
 import {
   useSyncPendingSets as _useSyncPendingSets,
   useCompleteSet,
@@ -17,12 +16,6 @@ export function useSyncPendingSets() {
         if (state === 'active') cb()
       })
       return () => sub.remove()
-    },
-    onConnectivityChange: (cb) => {
-      const unsub = NetInfo.addEventListener((state) => {
-        if (state.isConnected) cb()
-      })
-      return unsub
     },
   })
 }
