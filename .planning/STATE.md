@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-16T17:05:57.012Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-16T17:54:13.989Z"
 last_activity: "2026-03-16 — Plan 02-01 completado: exportRoutine/importRoutine/duplicateRoutine movidas a shared con fix N+1"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 12
+  completed_plans: 8
   percent: 20
 ---
 
@@ -79,6 +79,7 @@ Recent decisions affecting current work:
 - [Phase 02-deduplicar]: RN consumer pattern: sessions = useMemo(() => data?.pages.flat() ?? [], [data])
 - [Phase 03-dividir-archivos-api]: workoutApi.js (598 líneas) dividido en 3 sub-módulos con barrel re-export explícito (export {} from) — callers sin cambios
 - [Phase 03-dividir-archivos-api]: routineApi.js convertido a barrel con re-exports nombrados explícitos para preservar tree-shaking y legibilidad
+- [Phase 04-cobertura-de-tests]: makeSupabaseMock incluye todos los métodos auth con defaults sensatos; onAuthStateChange capturada via mockImplementation para tests de callback
 
 ### Pending Todos
 
@@ -92,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T17:05:57.010Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-16T17:54:13.987Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None

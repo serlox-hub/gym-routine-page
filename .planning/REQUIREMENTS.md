@@ -21,7 +21,7 @@ Requirements for tech debt elimination. Each maps to roadmap phases.
 ### Tests
 
 - [ ] **TEST-01**: Tests para capa API shared con mock de getClient() — workoutApi, routineApi, exerciseApi, bodyWeightApi, bodyMeasurementsApi, preferencesApi, adminApi (0% → ~60%)
-- [ ] **TEST-02**: Tests para createAuthStore — initialize, login, logout, signup, callbacks de plataforma
+- [x] **TEST-02**: Tests para createAuthStore — initialize, login, logout, signup, callbacks de plataforma
 - [ ] **TEST-03**: Tests para hooks críticos — useRoutines, useExercises, useSessionExercises con @testing-library/react y QueryClientProvider wrapper
 
 ### Archivos Grandes
@@ -76,7 +76,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SIZE-01 | Phase 3 | Complete |
 | SIZE-02 | Phase 3 | Complete |
 | TEST-01 | Phase 4 | Pending |
-| TEST-02 | Phase 4 | Pending |
+| TEST-02 | Phase 4 | Complete |
 | TEST-03 | Phase 4 | Pending |
 | SIZE-03 | Phase 5 | Pending |
 | SIZE-04 | Phase 5 | Pending |
