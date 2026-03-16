@@ -1,7 +1,7 @@
 import { memo, useState, useEffect, useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { Info, Plus, Trash2, ArrowUpDown, Repeat2 } from 'lucide-react-native'
-import { Card, Badge, ConfirmModal, DropdownMenu, ReorderModal } from '../ui'
+import { Card, Badge, ConfirmModal, ReorderModal } from '../ui'
 import ExerciseHistoryModal from './ExerciseHistoryModal'
 import { ExercisePickerModal } from '../Routine'
 import ExerciseCardHeader from './ExerciseCardHeader'

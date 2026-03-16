@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-03-16T19:03:30.775Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-16T19:04:39.858Z"
 last_activity: "2026-03-16 — Plan 02-01 completado: exportRoutine/importRoutine/duplicateRoutine movidas a shared con fix N+1"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
   percent: 20
 ---
 
@@ -63,6 +63,7 @@ Progress: [██░░░░░░░░] 20%
 | Phase 04-cobertura-de-tests P04 | 3min | 2 tasks | 3 files |
 | Phase 05-housekeeping P02 | 2min | 1 tasks | 3 files |
 | Phase 05-housekeeping P03 | 3min | 2 tasks | 3 files |
+| Phase 05-housekeeping P01 | 4min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ Recent decisions affecting current work:
 - [Phase 05-housekeeping]: HistoryChart y HistoryTable no se exportan en Workout/index.js — son internos a ExerciseHistoryModal
 - [Phase 05-housekeeping]: Web resolvió versiones patch más nuevas que RN (supabase 2.99.2 vs 2.98.0) — dentro del rango ^ semver, compatible
 - [Phase 05-housekeeping]: CLAUDE.md reescrito como actualización aditiva: convenciones existentes preservadas, secciones monorepo añadidas
+- [Phase 05-housekeeping]: WarmupExerciseCard mantenida en WorkoutExerciseCard.jsx con JSX condensado para cumplir límite de 150 líneas
+- [Phase 05-housekeeping]: SetsList usa key compuesto ${exerciseKey}-${i+1} en lugar de índice para evitar re-renders incorrectos
 
 ### Pending Todos
 
@@ -109,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T19:03:30.773Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-03-16T19:04:39.856Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None

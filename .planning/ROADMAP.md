@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Deduplicar** - Mover ~1,400 líneas duplicadas a packages/shared (completed 2026-03-16)
 - [x] **Phase 3: Dividir Archivos API** - Partir monolitos en módulos con bounded scope (completed 2026-03-16)
 - [x] **Phase 4: Cobertura de Tests** - Tests sobre código en su forma definitiva (completed 2026-03-16)
-- [ ] **Phase 5: Housekeeping** - Componentes, dependencias y documentación
+- [x] **Phase 5: Housekeeping** - Componentes, dependencias y documentación (completed 2026-03-16)
 
 ## Phase Details
 
@@ -93,7 +93,7 @@ Plans:
   2. ExerciseHistoryModal está dividido en HistoryChart, HistoryTable y HistoryFilters, cada sub-componente <150 líneas
   3. supabase-js, tanstack-query y zustand tienen la misma versión en apps/web y apps/gym-native (verificado con syncpack)
   4. CLAUDE.md documenta la estructura monorepo real: @gym/shared imports, patrón shared + thin wrappers, y la capa de inyección (initApi, initStores, initNotifications)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 05-01-PLAN.md — Split WorkoutExerciseCard into sub-components (web + RN) (SIZE-03)
@@ -111,4 +111,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Deduplicar | 3/3 | Complete    | 2026-03-16 |
 | 3. Dividir Archivos API | 2/2 | Complete    | 2026-03-16 |
 | 4. Cobertura de Tests | 5/5 | Complete    | 2026-03-16 |
-| 5. Housekeeping | 2/3 | In Progress|  |
+| 5. Housekeeping | 3/3 | Complete   | 2026-03-16 |

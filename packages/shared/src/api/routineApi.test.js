@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { exportRoutine, importRoutine, duplicateRoutine } from './routineApi.js'
+import { makeQueryMock } from './_testUtils.js'
 
 // Mock del módulo _client para controlar getClient()
 vi.mock('./_client.js', () => ({
@@ -8,24 +9,9 @@ vi.mock('./_client.js', () => ({
 
 import { getClient } from './_client.js'
 
-// ============================================
-// HELPERS para construir mocks de Supabase
-// ============================================
-
-function makeQueryMock(resolveWith) {
-  const chain = {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue(resolveWith),
-    maybeSingle: vi.fn().mockResolvedValue(resolveWith),
-  }
-  // Para llamadas sin .single() al final (e.g. .order() directo)
-  chain.order.mockResolvedValue(resolveWith)
-  chain.in.mockResolvedValue(resolveWith)
-  return chain
-}
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 // ============================================
 // TEST: exportRoutine — conteo de queries (N+1 fix)
