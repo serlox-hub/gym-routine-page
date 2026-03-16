@@ -44,7 +44,12 @@ Plans:
   2. `useWorkoutHistory` (funciones idénticas) existe en packages/shared; la divergencia useQuery/useInfiniteQuery está documentada y permanece per-app
   3. `exportRoutine`, `importRoutine` y `duplicateRoutine` (lógica Supabase pura) viven en packages/shared/src/api/routineApi.js; las funciones con APIs de plataforma permanecen per-app
   4. `npm run check` pasa sin errores después de cada tarea de deduplicación (sin leaks de platform API en shared)
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Move routineIO functions to shared with N+1 fix (DUP-03)
+- [ ] 02-02-PLAN.md — Move useCompletedSets and useSession to shared with callback injection (DUP-01)
+- [ ] 02-03-PLAN.md — Move useWorkoutHistory to shared, unify to useInfiniteQuery (DUP-02)
 
 ### Phase 3: Dividir Archivos API
 **Goal**: Los dos archivos API más grandes están divididos en módulos con scope claro, manteniendo la interfaz pública intacta via barrel re-exports
@@ -86,8 +91,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Estabilizar | 2/2 | Complete   | 2026-03-16 |
-| 2. Deduplicar | 0/TBD | Not started | - |
+| 1. Estabilizar | 2/2 | Complete    | 2026-03-16 |
+| 2. Deduplicar | 0/3 | Not started | - |
 | 3. Dividir Archivos API | 0/TBD | Not started | - |
 | 4. Cobertura de Tests | 0/TBD | Not started | - |
 | 5. Housekeeping | 0/TBD | Not started | - |
