@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Clock, Calendar, Trash2, TrendingUp } from 'lucide-react'
+import { Clock, Calendar, Trash2, TrendingUp, Trophy } from 'lucide-react'
 import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout.js'
+import { useSessionPRs } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui/index.js'
 import SetNotesView from '../components/Workout/SetNotesView.jsx'
 import {
@@ -9,7 +10,8 @@ import {
   formatFullDate,
   formatSetValue,
   formatTime,
-  getSensationColor
+  getSensationColor,
+  findPRSetNumbers,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
@@ -18,9 +20,21 @@ function SessionDetail() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
+  const { data: sessionPRs } = useSessionPRs(sessionId)
   const deleteSession = useDeleteSession()
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const prsByExercise = useMemo(() => {
+    if (!sessionPRs) return {}
+    const map = {}
+    for (const pr of sessionPRs) {
+      const hasPR = pr.is_pr_weight || pr.is_pr_reps || pr.is_pr_1rm || pr.is_pr_volume ||
+        pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace
+      if (hasPR) map[pr.exercise_id] = pr
+    }
+    return map
+  }, [sessionPRs])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
@@ -103,13 +117,24 @@ function SessionDetail() {
       {/* Ejercicios */}
       <h2 className="text-lg font-bold mb-3">Ejercicios</h2>
       <div className="space-y-3">
-        {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
+        {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => {
+          const prData = prsByExercise[exercise.id]
+          const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
+          return (
           <Card key={sessionExerciseId} className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>
                   {exercise.name}
                 </h3>
+                {prData && (
+                  <span
+                    className="text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1"
+                    style={{ backgroundColor: 'rgba(210, 153, 34, 0.15)', color: colors.warning }}
+                  >
+                    <Trophy size={10} /> PR
+                  </span>
+                )}
                 {exercise.deleted_at && (
                   <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dangerBg, color: colors.danger }}>
                     Eliminado
@@ -128,15 +153,20 @@ function SessionDetail() {
               )}
             </div>
             <div className="space-y-2">
-              {sets.map(set => (
+              {sets.map(set => {
+                const isSetPR = prSetNums?.has(set.set_number)
+                return (
                 <div
                   key={set.id}
                   className="flex items-center gap-3 py-2 px-3 rounded"
-                  style={{ backgroundColor: colors.bgTertiary }}
+                  style={{
+                    backgroundColor: isSetPR ? 'rgba(210, 153, 34, 0.15)' : colors.bgTertiary,
+                    borderLeft: isSetPR ? `3px solid ${colors.warning}` : '3px solid transparent',
+                  }}
                 >
                   <span
                     className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold"
-                    style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
+                    style={{ backgroundColor: isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
                   >
                     {set.set_number}
                   </span>
@@ -150,10 +180,12 @@ function SessionDetail() {
                     onClick={(set.notes || set.video_url) ? () => setSelectedSet(set) : null}
                   />
                 </div>
-              ))}
+                )
+              })}
             </div>
           </Card>
-        ))}
+          )
+        })}
       </div>
 
       <SetNotesView
@@ -172,7 +204,11 @@ function SessionDetail() {
         loadingText="Eliminando..."
         isLoading={deleteSession.isPending}
         onConfirm={() => {
-          deleteSession.mutate(sessionId, {
+          deleteSession.mutate({
+            sessionId,
+            exerciseIds: session.exercises?.map(e => e.exercise?.id).filter(Boolean) || [],
+            sessionDate: session.started_at,
+          }, {
             onSuccess: () => {
               setShowDeleteConfirm(false)
               navigate('/history')

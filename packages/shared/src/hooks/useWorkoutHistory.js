@@ -8,6 +8,12 @@ import {
   fetchPreviousWorkout,
   deleteWorkoutSession,
 } from '../api/workoutApi.js'
+import {
+  fetchExerciseChartData,
+  fetchExerciseAllTimeStats,
+  fetchSessionPRs,
+  recalculateExercisePRs,
+} from '../api/exerciseStatsApi.js'
 
 // ============================================
 // HISTORY QUERIES
@@ -148,6 +154,34 @@ export function usePreviousWorkout(exerciseId) {
 }
 
 // ============================================
+// EXERCISE STATS QUERIES (from exercise_session_stats)
+// ============================================
+
+export function useExerciseChartData(exerciseId, routineDayId = null) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'chart', exerciseId, routineDayId],
+    queryFn: () => fetchExerciseChartData({ exerciseId, routineDayId }),
+    enabled: !!exerciseId,
+  })
+}
+
+export function useExerciseAllTimeStats(exerciseId) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'alltime', exerciseId],
+    queryFn: () => fetchExerciseAllTimeStats(exerciseId),
+    enabled: !!exerciseId,
+  })
+}
+
+export function useSessionPRs(sessionId) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.SESSION_DETAIL, 'prs', sessionId],
+    queryFn: () => fetchSessionPRs(sessionId),
+    enabled: !!sessionId,
+  })
+}
+
+// ============================================
 // HISTORY MUTATIONS
 // ============================================
 
@@ -155,13 +189,25 @@ export function useDeleteSession() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (sessionId) => {
+    mutationFn: async ({ sessionId, exerciseIds, sessionDate }) => {
       await deleteWorkoutSession(sessionId)
-      return sessionId
+      return { sessionId, exerciseIds, sessionDate }
     },
-    onSuccess: (sessionId) => {
+    onSuccess: async ({ sessionId, exerciseIds, sessionDate }) => {
       queryClient.removeQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
+
+      // Recalcular PRs de los ejercicios afectados
+      if (exerciseIds?.length > 0 && sessionDate) {
+        try {
+          await Promise.all(
+            exerciseIds.map(eid => recalculateExercisePRs(eid, sessionDate))
+          )
+        } catch {
+          // No bloquear si falla la recalculación
+        }
+      }
     },
   })
 }

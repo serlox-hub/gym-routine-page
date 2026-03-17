@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
+import { useIsPRSet } from './PRContext.jsx'
 import { NotesBadge } from '../ui/index.js'
 import SetDetailsModal from './SetDetailsModal.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs.jsx'
@@ -33,6 +34,7 @@ function SetRow({
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(sessionExerciseId, setNumber))
   const setData = useWorkoutStore(state => state.getSetData(sessionExerciseId, setNumber))
   const cachedData = useWorkoutStore(state => state.getCachedSetData(sessionExerciseId, setNumber))
+  const isPR = useIsPRSet(sessionExerciseId, setNumber)
 
   const { data: preferences } = usePreferences()
   const canUploadVideo = useCanUploadVideo()
@@ -193,8 +195,8 @@ function SetRow({
     <div
       className="flex items-center gap-3 py-2 px-3 rounded"
       style={{
-        backgroundColor: isCompleted ? 'rgba(63, 185, 80, 0.1)' : colors.bgTertiary,
-        borderLeft: isCompleted ? `3px solid ${colors.success}` : '3px solid transparent',
+        backgroundColor: isPR ? 'rgba(210, 153, 34, 0.15)' : isCompleted ? 'rgba(63, 185, 80, 0.1)' : colors.bgTertiary,
+        borderLeft: isPR ? `3px solid ${colors.warning}` : isCompleted ? `3px solid ${colors.success}` : '3px solid transparent',
       }}
     >
       <div className="flex items-center gap-2 flex-1">

@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Clock, Calendar, Trash2 } from 'lucide-react-native'
-import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout'
+import { Clock, Calendar, Trash2, Trophy } from 'lucide-react-native'
+import { useSessionDetail, useDeleteSession, useSessionPRs } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui'
 import { SetNotesView } from '../components/Workout'
 import {
@@ -10,7 +10,8 @@ import {
   formatFullDate,
   formatSetValue,
   formatTime,
-  getSensationColor
+  getSensationColor,
+  findPRSetNumbers,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors } from '../lib/styles'
@@ -18,9 +19,21 @@ import { colors } from '../lib/styles'
 export default function SessionDetailScreen({ route, navigation }) {
   const { sessionId } = route.params
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
+  const { data: sessionPRsData } = useSessionPRs(sessionId)
   const deleteSession = useDeleteSession()
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const prsByExercise = useMemo(() => {
+    if (!sessionPRsData) return {}
+    const map = {}
+    for (const pr of sessionPRsData) {
+      const hasPR = pr.is_pr_weight || pr.is_pr_reps || pr.is_pr_1rm || pr.is_pr_volume ||
+        pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace
+      if (hasPR) map[pr.exercise_id] = pr
+    }
+    return map
+  }, [sessionPRsData])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
@@ -110,7 +123,10 @@ export default function SessionDetailScreen({ route, navigation }) {
         <Text className="text-lg font-bold text-primary mb-3">Ejercicios</Text>
 
         <View className="gap-3">
-          {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
+          {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => {
+            const prData = prsByExercise[exercise.id]
+            const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
+            return (
             <Card key={sessionExerciseId} className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
               <View className="flex-row items-start gap-2 mb-3">
                 <Text
@@ -119,6 +135,15 @@ export default function SessionDetailScreen({ route, navigation }) {
                 >
                   {exercise.name}
                 </Text>
+                {prData && (
+                  <View
+                    className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"
+                    style={{ backgroundColor: 'rgba(210, 153, 34, 0.15)' }}
+                  >
+                    <Trophy size={10} color={colors.warning} />
+                    <Text className="text-xs font-bold" style={{ color: colors.warning }}>PR</Text>
+                  </View>
+                )}
                 {exercise.deleted_at && (
                   <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(248,81,73,0.3)' }}>
                     <Text className="text-xs" style={{ color: colors.danger }}>Eliminado</Text>
@@ -127,15 +152,21 @@ export default function SessionDetailScreen({ route, navigation }) {
               </View>
 
               <View className="gap-2">
-                {sets.map(set => (
+                {sets.map(set => {
+                  const isSetPR = prSetNums?.has(set.set_number)
+                  return (
                   <View
                     key={set.id}
                     className="flex-row items-center gap-3 py-2 px-3 rounded"
-                    style={{ backgroundColor: colors.bgTertiary }}
+                    style={{
+                      backgroundColor: isSetPR ? 'rgba(210, 153, 34, 0.15)' : colors.bgTertiary,
+                      borderLeftWidth: 3,
+                      borderLeftColor: isSetPR ? colors.warning : 'transparent',
+                    }}
                   >
                     <View
                       className="w-6 h-6 rounded-full items-center justify-center"
-                      style={{ backgroundColor: colors.success }}
+                      style={{ backgroundColor: isSetPR ? colors.warning : colors.success }}
                     >
                       <Text className="text-xs font-bold" style={{ color: colors.bgPrimary }}>
                         {set.set_number}
@@ -151,10 +182,12 @@ export default function SessionDetailScreen({ route, navigation }) {
                       onPress={(set.notes || set.video_url) ? () => setSelectedSet(set) : null}
                     />
                   </View>
-                ))}
+                  )
+                })}
               </View>
             </Card>
-          ))}
+            )
+          })}
         </View>
       </ScrollView>
 
@@ -172,7 +205,11 @@ export default function SessionDetailScreen({ route, navigation }) {
         message="¿Seguro que quieres eliminar esta sesión? Se eliminarán todas las series registradas."
         confirmText="Eliminar"
         onConfirm={() => {
-          deleteSession.mutate(sessionId, {
+          deleteSession.mutate({
+            sessionId,
+            exerciseIds: session.exercises?.map(e => e.exercise?.id).filter(Boolean) || [],
+            sessionDate: session.started_at,
+          }, {
             onSuccess: () => {
               setShowDeleteConfirm(false)
               navigation.goBack()

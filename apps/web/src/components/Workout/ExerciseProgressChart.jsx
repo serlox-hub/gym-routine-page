@@ -17,13 +17,13 @@ const TABS = {
   E1RM: 'e1rm',
 }
 
-function ExerciseProgressChart({ sessions, measurementType }) {
+function ExerciseProgressChart({ sessions, chartData: chartDataProp, measurementType }) {
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
   const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
 
   const chartData = useMemo(
-    () => transformSessionsToChartData(sessions, measurementType),
-    [sessions, measurementType]
+    () => chartDataProp || transformSessionsToChartData(sessions, measurementType),
+    [chartDataProp, sessions, measurementType]
   )
 
   if (chartData.length < 2) {

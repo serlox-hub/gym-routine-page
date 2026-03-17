@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Plus } from 'lucide-react-native'
@@ -14,7 +14,8 @@ import EndSessionModal from './EndSessionModal'
 import SessionTimer from './SessionTimer'
 import { AddExerciseModal } from '../Routine'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises } from '@gym/shared'
+import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, getNotifier } from '@gym/shared'
+import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { colors } from '../../lib/styles'
 
@@ -36,12 +37,26 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
+  const { checkSetForPR, clearSetPR, prSets, prNotification } = useSessionPRDetection()
   const endSessionMutation = useEndSession()
   const abandonSessionMutation = useAbandonSession()
   const addSessionExerciseMutation = useAddSessionExercise()
   const removeSessionExerciseMutation = useRemoveSessionExercise()
   const replaceSessionExerciseMutation = useReplaceSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
+
+  // Mostrar toast nativo cuando se detecta un PR
+  const lastPRTimestamp = useRef(null)
+  useEffect(() => {
+    if (prNotification && prNotification.timestamp !== lastPRTimestamp.current) {
+      lastPRTimestamp.current = prNotification.timestamp
+      const record = prNotification.records[0]
+      getNotifier()?.show(
+        `Nuevo PR: ${prNotification.exerciseName} — ${record.label} ${record.value} ${record.unit}`,
+        'success',
+      )
+    }
+  }, [prNotification])
 
   const { exercisesByBlock, flatExercises } = useMemo(
     () => transformSessionExercises(sessionExercises),
@@ -65,11 +80,13 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
           if (descansoSeg && descansoSeg > 0) {
             startRestTimer(descansoSeg)
           }
+          checkSetForPR(setData)
         },
       })
     },
     onUncompleteSet: (setData) => {
       uncompleteSetMutation.mutate(setData)
+      clearSetPR(setData.sessionExerciseId, setData.setNumber)
     },
     onRemove: (sessionExerciseId) => {
       removeSessionExerciseMutation.mutate(sessionExerciseId)
@@ -107,7 +124,15 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
 
   const handleConfirmEnd = ({ overallFeeling, notes }) => {
     navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'History' }] })
-    endSessionMutation.mutate({ overallFeeling, notes })
+    endSessionMutation.mutate({ overallFeeling, notes }, {
+      onSuccess: (data) => {
+        if (data?.detectedPRs?.length > 0) {
+          const count = data.detectedPRs.reduce((sum, pr) => sum + pr.details.length, 0)
+          const names = data.detectedPRs.map(pr => pr.exerciseName).join(', ')
+          getNotifier()?.show(`${count} nuevo${count > 1 ? 's' : ''} PR: ${names}`, 'success')
+        }
+      },
+    })
   }
 
   const handleAbandonWorkout = () => {
@@ -152,6 +177,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
+        <PRProvider value={prSets}>
         <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
           {!hasExercises ? (
             <View className="items-center py-12 px-4">
@@ -173,6 +199,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
             />
           )}
         </ScrollView>
+        </PRProvider>
       </KeyboardAvoidingView>
 
       <View

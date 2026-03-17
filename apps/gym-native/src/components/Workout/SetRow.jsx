@@ -1,6 +1,7 @@
 import { useState, useEffect, memo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import useWorkoutStore from '../../stores/workoutStore'
+import { useIsPRSet } from './PRContext'
 import { NotesBadge } from '../ui'
 import SetDetailsModal from './SetDetailsModal'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs'
@@ -35,6 +36,7 @@ function SetRow({
   const isCompleted = useWorkoutStore(state => !!state.completedSets[setKey])
   const setData = useWorkoutStore(state => state.completedSets[setKey])
   const cachedData = useWorkoutStore(state => state.cachedSetData[setKey])
+  const isPR = useIsPRSet(sessionExerciseId, setNumber)
 
   const { data: preferences } = usePreferences()
   const canUploadVideo = useCanUploadVideo()
@@ -187,9 +189,9 @@ function SetRow({
     <View
       className="flex-row items-center gap-3 py-2 px-3 rounded"
       style={{
-        backgroundColor: isCompleted ? 'rgba(63, 185, 80, 0.1)' : colors.bgTertiary,
+        backgroundColor: isPR ? 'rgba(210, 153, 34, 0.15)' : isCompleted ? 'rgba(63, 185, 80, 0.1)' : colors.bgTertiary,
         borderLeftWidth: 3,
-        borderLeftColor: isCompleted ? colors.success : 'transparent',
+        borderLeftColor: isPR ? colors.warning : isCompleted ? colors.success : 'transparent',
       }}
     >
       <View className="flex-row items-center gap-2 flex-1">

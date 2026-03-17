@@ -1,30 +1,72 @@
+import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useExercise } from '../hooks/useExercises.js'
-import { useExerciseHistory, useExerciseHistorySummary } from '../hooks/useWorkout.js'
+import { useExerciseHistory, useExerciseChartData, useExerciseAllTimeStats } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import ExerciseProgressChart from '../components/Workout/ExerciseProgressChart.jsx'
 import {
   MeasurementType,
-  calculateExerciseStats,
   formatSetValue,
   formatShortDate
 } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
+function getBestFromRow(row, measurementType) {
+  switch (measurementType) {
+    case MeasurementType.WEIGHT_REPS:
+    case MeasurementType.WEIGHT_TIME:
+    case MeasurementType.WEIGHT_DISTANCE:
+      return { value: row.best_weight || 0, unit: 'kg' }
+    case MeasurementType.REPS_ONLY:
+      return { value: row.best_reps || 0, unit: 'reps' }
+    case MeasurementType.TIME:
+    case MeasurementType.LEVEL_TIME:
+      return { value: row.best_time_seconds || 0, unit: 's' }
+    case MeasurementType.DISTANCE:
+    case MeasurementType.LEVEL_DISTANCE:
+    case MeasurementType.DISTANCE_TIME:
+    case MeasurementType.DISTANCE_PACE:
+      return { value: row.best_distance_meters || 0, unit: 'm' }
+    default:
+      return { value: row.best_weight || row.best_reps || 0, unit: '' }
+  }
+}
+
+function transformChartDataFromStats(data, measurementType) {
+  if (!data || data.length === 0) return []
+  return data.map(row => {
+    const date = new Date(row.session_date)
+    const dateLabel = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    const { value: best, unit } = getBestFromRow(row, measurementType)
+    return {
+      date: dateLabel,
+      best,
+      volume: Math.round(row.total_volume || 0),
+      e1rm: row.best_1rm || 0,
+      unit,
+      isPR: row.is_pr_weight || row.is_pr_1rm || row.is_pr_reps || row.is_pr_volume,
+    }
+  })
+}
+
 function ExerciseProgress() {
   const { exerciseId } = useParams()
   const { data: exercise, isLoading: loadingExercise, error: exerciseError } = useExercise(exerciseId)
-  const { data: summarySessions, isLoading: loadingSummary } = useExerciseHistorySummary(exerciseId)
+  const { data: chartRawData, isLoading: loadingChart } = useExerciseChartData(exerciseId)
+  const { data: stats, isLoading: loadingStats } = useExerciseAllTimeStats(exerciseId)
   const { data: historyData, isLoading: loadingHistory, fetchNextPage, hasNextPage, isFetchingNextPage } = useExerciseHistory(exerciseId)
   const historySessions = historyData?.pages.flat() ?? []
-  const loadingSessions = loadingSummary || loadingHistory
+  const loadingSessions = loadingChart || loadingStats || loadingHistory
+
+  const measurementType = exercise?.measurement_type || MeasurementType.WEIGHT_REPS
+  const chartData = useMemo(
+    () => transformChartDataFromStats(chartRawData, measurementType),
+    [chartRawData, measurementType]
+  )
 
   if (loadingExercise || loadingSessions) return <LoadingSpinner />
   if (exerciseError) return <ErrorMessage message={exerciseError.message} className="m-4" />
   if (!exercise) return <ErrorMessage message="Ejercicio no encontrado" className="m-4" />
-
-  const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
-  const stats = calculateExerciseStats(summarySessions, measurementType)
 
   return (
     <div className="p-4 max-w-4xl mx-auto pb-24">
@@ -33,10 +75,10 @@ function ExerciseProgress() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 gap-3 mb-6">
-          {stats.best1RM > 0 && (
+          {stats.best1rm > 0 && (
             <StatCard
               label="Mejor 1RM Est."
-              value={`${stats.best1RM.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
+              value={`${stats.best1rm.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
               color={colors.purple}
             />
           )}
@@ -70,12 +112,12 @@ function ExerciseProgress() {
       )}
 
       {/* Chart */}
-      {summarySessions && summarySessions.length >= 2 ? (
+      {chartData.length >= 2 ? (
         <Card className="p-4 mb-6">
           <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
             Progresión
           </h2>
-          <ExerciseProgressChart sessions={summarySessions} measurementType={measurementType} />
+          <ExerciseProgressChart chartData={chartData} measurementType={measurementType} />
         </Card>
       ) : (
         <Card className="p-4 mb-6">

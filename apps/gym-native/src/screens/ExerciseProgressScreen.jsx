@@ -1,11 +1,11 @@
+import { useMemo } from 'react'
 import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useExercise } from '../hooks/useExercises'
-import { useExerciseHistory } from '../hooks/useWorkout'
+import { useExerciseHistory, useExerciseChartData, useExerciseAllTimeStats } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui'
 import {
   MeasurementType,
-  calculateExerciseStats,
   formatSetValue,
   formatShortDate
 } from '@gym/shared'
@@ -61,15 +61,17 @@ function SessionCard({ session, exercise }) {
 export default function ExerciseProgressScreen({ route, navigation }) {
   const { exerciseId, exerciseName } = route.params
   const { data: exercise, isLoading: loadingExercise, error: exerciseError } = useExercise(exerciseId)
-  const { data: historyData, isLoading: loadingSessions } = useExerciseHistory(exerciseId)
+  const { data: chartRawData, isLoading: loadingChart } = useExerciseChartData(exerciseId)
+  const { data: stats, isLoading: loadingStats } = useExerciseAllTimeStats(exerciseId)
+  const { data: historyData, isLoading: loadingHistory } = useExerciseHistory(exerciseId)
   const sessions = historyData?.pages.flat() ?? []
+  const loadingSessions = loadingChart || loadingStats || loadingHistory
 
   if (loadingExercise || loadingSessions) return <LoadingSpinner />
   if (exerciseError) return <ErrorMessage message={exerciseError.message} className="m-4" />
   if (!exercise) return <ErrorMessage message="Ejercicio no encontrado" className="m-4" />
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
-  const stats = calculateExerciseStats(sessions, measurementType)
   const weightUnit = exercise.weight_unit || 'kg'
 
   const ListHeader = () => (
@@ -77,8 +79,8 @@ export default function ExerciseProgressScreen({ route, navigation }) {
       {/* Stats */}
       {stats && (
         <View className="flex-row flex-wrap gap-3 mb-4">
-          {stats.best1RM > 0 && (
-            <StatCard label="Mejor 1RM Est." value={`${stats.best1RM} ${weightUnit}`} color={colors.purple} />
+          {stats.best1rm > 0 && (
+            <StatCard label="Mejor 1RM Est." value={`${stats.best1rm} ${weightUnit}`} color={colors.purple} />
           )}
           {stats.maxWeight > 0 && (
             <StatCard label="Peso máximo" value={`${stats.maxWeight} ${weightUnit}`} color={colors.accent} />
