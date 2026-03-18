@@ -75,11 +75,11 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
 
   const handlers = useStableHandlers({
     onCompleteSet: (setData, descansoSeg) => {
+      if (descansoSeg && descansoSeg > 0) {
+        startRestTimer(descansoSeg)
+      }
       completeSetMutation.mutate(setData, {
         onSuccess: () => {
-          if (descansoSeg && descansoSeg > 0) {
-            startRestTimer(descansoSeg)
-          }
           checkSetForPR(setData)
         },
       })
