@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, Pressable, Alert } from 'react-native'
+import { View, Text, TextInput, Pressable, Alert, ScrollView } from 'react-native'
 import { Check, Save, Video, X } from 'lucide-react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useVideoPlayer, VideoView } from 'expo-video'
@@ -153,7 +153,7 @@ export default function SetDetailsModal({
         </View>
       </View>
 
-      <View className="p-4 gap-5">
+      <ScrollView className="p-4 gap-5" keyboardShouldPersistTaps="handled">
         {showRirInput && (
           <View>
             <Text className="text-sm mb-3" style={{ color: colors.textSecondary }}>
@@ -249,7 +249,7 @@ export default function SetDetailsModal({
             </Text>
           </View>
         )}
-      </View>
+      </ScrollView>
 
       <View className="p-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
         <Pressable
