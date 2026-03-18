@@ -17,8 +17,9 @@ const numericInputStyle = {
 function NumberInput({ value, onChange, disabled, width = 56, inputMode = 'numeric' }) {
   const handleChange = (raw) => {
     if (raw === '') { onChange(''); return }
-    const num = Number(raw)
-    if (!isNaN(num) && num >= 0) onChange(raw)
+    const normalized = raw.replace(',', '.')
+    const num = Number(normalized)
+    if (!isNaN(num) && num >= 0) onChange(normalized)
   }
 
   return (
