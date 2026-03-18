@@ -57,27 +57,37 @@ export function useCompleteSet() {
       return { sessionExerciseId: variables.sessionExerciseId, setNumber: variables.setNumber }
     },
     onSuccess: (data, variables) => {
-      // Actualizar con el dbId real del servidor
-      updateSetDbId(variables.sessionExerciseId, variables.setNumber, data.id)
-      getWorkoutStore().getState().removePendingSet(variables.sessionExerciseId, variables.setNumber)
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+      try {
+        // Actualizar con el dbId real del servidor
+        if (data?.id) {
+          updateSetDbId(variables.sessionExerciseId, variables.setNumber, data.id)
+        }
+        getWorkoutStore().getState().removePendingSet(variables.sessionExerciseId, variables.setNumber)
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+      } catch (err) {
+        console.error('[useCompleteSet] onSuccess error:', err)
+      }
     },
     onError: (_error, variables) => {
-      // No hacer rollback — mantener el optimistic update y encolar para reintentar
-      addPendingSet(variables.sessionExerciseId, variables.setNumber, {
-        sessionId,
-        sessionExerciseId: variables.sessionExerciseId,
-        setNumber: variables.setNumber,
-        weight: variables.weight,
-        weightUnit: variables.weightUnit,
-        repsCompleted: variables.repsCompleted,
-        timeSeconds: variables.timeSeconds,
-        distanceMeters: variables.distanceMeters,
-        paceSeconds: variables.paceSeconds,
-        rirActual: variables.rirActual,
-        notes: variables.notes,
-        videoUrl: variables.videoUrl,
-      })
+      try {
+        // No hacer rollback — mantener el optimistic update y encolar para reintentar
+        addPendingSet(variables.sessionExerciseId, variables.setNumber, {
+          sessionId,
+          sessionExerciseId: variables.sessionExerciseId,
+          setNumber: variables.setNumber,
+          weight: variables.weight,
+          weightUnit: variables.weightUnit,
+          repsCompleted: variables.repsCompleted,
+          timeSeconds: variables.timeSeconds,
+          distanceMeters: variables.distanceMeters,
+          paceSeconds: variables.paceSeconds,
+          rirActual: variables.rirActual,
+          notes: variables.notes,
+          videoUrl: variables.videoUrl,
+        })
+      } catch (err) {
+        console.error('[useCompleteSet] onError error:', err)
+      }
     },
   })
 }

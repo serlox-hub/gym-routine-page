@@ -102,7 +102,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     }
     completeSetMutation.mutate(setData, {
       onSuccess: () => {
-        checkSetForPR(setData)
+        try { checkSetForPR(setData) } catch (err) { console.error('[handleCompleteSet] PR check error:', err) }
       }
     })
   }

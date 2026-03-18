@@ -80,7 +80,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
       }
       completeSetMutation.mutate(setData, {
         onSuccess: () => {
-          checkSetForPR(setData)
+          try { checkSetForPR(setData) } catch (err) { console.error('[onCompleteSet] PR check error:', err) }
         },
       })
     },
