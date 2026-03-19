@@ -36,9 +36,16 @@ npm run check         # lint + tests + build
 
 La app web se despliega en Vercel. Cualquier push a `main` genera un deploy automatico.
 
+### Debug vs Release
+
+Las apps moviles se pueden instalar en dos modos:
+
+- **Debug**: la app necesita un servidor de desarrollo (bundler de Expo) corriendo en tu Mac. El codigo JS se carga desde el servidor, lo que permite hot reload y cambios instantaneos. Se instala desde Xcode (iOS) o `adb` (Android). Ideal para desarrollo.
+- **Release**: la app es autonoma con el bundle JS incluido. No necesita servidor ni conexion al Mac. Se genera con EAS Build y se distribuye via TestFlight/App Store (iOS) o APK/Google Play (Android).
+
 ### iOS — Build de debug (cuenta Apple gratuita)
 
-Instalar la app en un iPhone fisico para desarrollo. Usa Expo Dev Client (no Expo Go).
+Instalar la app en un iPhone fisico conectado al Mac. Requiere que el bundler de Expo este corriendo.
 
 **Limitaciones con cuenta gratuita:**
 - La app expira cada 7 dias (reinstalar desde Xcode)
@@ -79,33 +86,40 @@ Instalar la app en un iPhone fisico para desarrollo. Usa Expo Dev Client (no Exp
 - Provisioning profile error > cambiar bundle identifier en Xcode (ej: `com.diariogym.app.dev`)
 - CocoaPods falla > `cd ios && pod deintegrate && pod install`
 
-### iOS — Build de release (EAS Build)
+### Android — Build de debug
 
-Para generar builds de produccion o preview se usa EAS Build. Requiere cuenta de Expo y Apple Developer Program para distribucion.
+Instalar la app de debug en un dispositivo Android conectado por USB.
+
+1. Activar **Opciones de desarrollador** y **Depuracion USB** en el dispositivo Android.
+
+2. Generar proyecto nativo (solo la primera vez o tras cambios en `app.json`/plugins/dependencias nativas):
+   ```bash
+   cd apps/gym-native
+   npx expo prebuild --platform android
+   ```
+
+3. Arrancar el bundler e instalar en el dispositivo conectado:
+   ```bash
+   cd apps/gym-native
+   npx expo run:android
+   ```
+   Esto compila, instala y conecta al bundler automaticamente. La primera vez tarda varios minutos.
+
+### Builds de release (EAS Build)
+
+Builds autonomas que no necesitan servidor de desarrollo. Se generan en la nube con EAS Build. Requiere cuenta de Expo y para iOS tambien Apple Developer Program.
 
 ```bash
 cd apps/gym-native
 
-# Preview (distribucion interna, dispositivo fisico)
-eas build --platform ios --profile preview
+# iOS
+eas build --platform ios --profile preview      # distribucion interna (TestFlight)
+eas build --platform ios --profile production    # App Store
+eas submit --platform ios                        # enviar a App Store
 
-# Produccion (App Store)
-eas build --platform ios --profile production
-
-# Enviar a App Store
-eas submit --platform ios
+# Android
+eas build --platform android --profile preview   # APK para instalar directamente
+eas build --platform android --profile production # AAB para Google Play
 ```
 
 Los perfiles de build estan en `apps/gym-native/eas.json`.
-
-### Android — Build con EAS
-
-```bash
-cd apps/gym-native
-
-# Preview (APK para instalar directamente)
-eas build --platform android --profile preview
-
-# Produccion (AAB para Google Play)
-eas build --platform android --profile production
-```
