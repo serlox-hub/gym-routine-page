@@ -1,43 +1,40 @@
 # Checklist de produccion
 
 Lista de mejoras pendientes para llevar la app a produccion. Ordenadas por prioridad.
+Items marcados con ~~tachado~~ fueron falsos positivos verificados contra el codigo.
 
 ## Critico
 
-- [x] **Cache invalidation en useRoutines.js** — Verificado: los callers SI pasan `routineId`/`dayId` en el objeto de mutacion. TanStack Query expone todo el objeto como `variables` en `onSuccess`. Era un falso positivo de la auditoria.
-- [x] **N+1 en importRoutine()** — Resuelto: batch de muscle_groups y exercises con `.in()` antes del loop. De ~100 queries a 2+N inserts.
-- [x] **Indexes faltantes en FK** — Migration 020 creada con indices para `routine_exercises.exercise_id` y `routine_days.routine_id`. Los demas ya existian.
+- [x] ~~**Cache invalidation en useRoutines.js**~~ — Falso positivo. Los callers SI pasan `routineId`/`dayId`. TanStack Query expone todo el objeto como `variables` en `onSuccess`.
+- [x] **N+1 en importRoutine()** — Resuelto: batch de muscle_groups y exercises con `.in()` antes del loop.
+- [x] **Indexes faltantes en FK** — Migration 020 creada con indices para `routine_exercises.exercise_id` y `routine_days.routine_id`.
 
 ## Alto
 
-- [ ] **Service Worker para PWA** — PWA declarada en manifest pero sin SW. Sin soporte offline ni cache de assets. Implementar con vite-plugin-pwa. (`apps/web/`)
-- [ ] **Deteccion de red en native** — No hay indicador offline ni retry UI. Integrar `@react-native-community/netinfo` y mostrar banner cuando no hay conexion. (`apps/gym-native/`)
-- [ ] **Memory leak en useRestTimer** — `timerUpdateCallbacks` es un Set a nivel de modulo que acumula callbacks si el componente se monta/desmonta repetidamente. Usar cleanup robusto o WeakRef. (`packages/shared/src/hooks/useRestTimer.js:8-26`)
+- [ ] **Service Worker para PWA** — Manifest existe pero no hay SW ni plugin. Sin soporte offline ni cache de assets. Implementar con vite-plugin-pwa. (`apps/web/`)
 - [ ] **Componentes > 300 lineas con subcomponentes embebidos** — Extraer subcomponentes a archivos propios:
-  - `WorkoutSessionLayout.jsx` (363 lineas): extraer `PRSummaryModal` y `PRNotification`
-  - `Preferences.jsx` (342 lineas): extraer `InstallAppSection`, `PreferenceToggle`, `PremiumFeature`, `TrainingGoalSection`
-  - `SetDetailsModal.jsx` (320 lineas): extraer `VideoPlayer`
-  - `RoutineDetail.jsx` (321 lineas): extraer logica de estado a custom hook
-- [ ] **Reemplazar alert() por toast** — 4 sitios en web usan `alert()` nativo: `NewRoutineFlow.jsx`, `ChatbotPromptModal.jsx`, `AdaptRoutineModal.jsx`, `Exercises.jsx`. Usar el sistema de notificaciones existente.
-- [ ] **Crash analytics** — Integrar Sentry (o similar) en web y native para rastrear errores de produccion.
+  - `WorkoutSessionLayout.jsx` (363 lineas): extraer `PRSummaryModal` (55 lineas)
+  - `Preferences.jsx` (342 lineas): extraer `InstallAppSection` (72 lineas), `PreferenceToggle` (36 lineas), `TrainingGoalSection` (57 lineas)
+  - `SetDetailsModal.jsx` (320 lineas): extraer `VideoPlayer` (52 lineas)
+- [ ] **Reemplazar alert() por toast** — 4 sitios en web usan `alert()` nativo: `NewRoutineFlow.jsx` (x2), `Exercises.jsx`, `ChatbotPromptModal.jsx`. Native ya tiene toast-message. Implementar sistema de notificaciones equivalente en web.
+- [ ] **Crash analytics** — Integrar Sentry (o similar) en web y native. Cero dependencias de tracking actualmente.
+- ~~**Memory leak en useRestTimer**~~ — Falso positivo. El cleanup en useEffect borra correctamente los callbacks del Set al desmontar.
 
 ## Medio
 
-- [ ] **Virtualizacion de listas largas** — Ejercicios y sesiones pueden tener 100+ items. Implementar `react-window` en web para `History.jsx` y `Exercises.jsx`.
-- [ ] **NOT NULL en columnas requeridas** — Crear migration para anadir NOT NULL a: `exercises.name`, `routines.name`, `routine_days.name`, `routine_blocks.name`, `routine_exercises.exercise_id`.
-- [ ] **Eliminar console.error en hooks** — `useCompletedSets.js:68,89` tiene console.error que no deberia estar en produccion. Silenciar o manejar con el sistema de notificaciones.
-- [ ] **Timezone en streakUtils** — `getISOWeekKey()` usa `new Date()` sin manejo explicito de UTC. Puede desfasar 1 dia segun timezone del usuario. Normalizar a hora local del usuario. (`packages/shared/src/lib/streakUtils.js:30-40`)
-- [ ] **Dimensiones hardcodeadas en native** — Reemplazar valores fijos por responsive:
-  - `VideoPlayer.jsx`: altura fija 200px
-  - `ExerciseProgressChart.jsx`: ancho fijo 280px (usar `useWindowDimensions`)
-  - `RestTimer.jsx` y `ActiveSessionBanner.jsx`: offsets magicos (60, 100, 120) a constantes
-- [ ] **Configurar EAS submit** — `eas.json` tiene submit vacio. Rellenar con credenciales de App Store y Google Play antes de publicar. (`apps/gym-native/eas.json:45-47`)
-- [ ] **Paginacion en admin** — `fetchAllUsers()` carga todos los usuarios en memoria. Anadir paginacion al RPC o usar `.range()`. (`packages/shared/src/api/adminApi.js:3-39`)
+- [ ] **Deteccion de red en native** — Falta `@react-native-community/netinfo` y UI de feedback offline. El retry/queue de sets SI funciona (optimistic updates + pendingSets + retry cada 10s), pero el usuario no recibe ningun indicador visual. Prioridad UX, no funcional.
+- [ ] **NOT NULL en exercise_id** — Solo faltan en `routine_exercises.exercise_id` y `session_exercises.exercise_id`. Los campos `name` de exercises/routines/days/blocks YA son NOT NULL.
+- [ ] **Eliminar console.error en useCompletedSets.js** — Lineas 68 y 89 tienen `console.error` que no deberia estar en produccion.
+- [ ] **Timezone en streakUtils** — `getISOWeekKey()` parsea fechas ISO de Supabase y aplica `setHours(0,0,0,0)` en hora local. Edge case: sesiones completadas cerca de medianoche UTC pueden asignarse a la semana equivocada. Impacto bajo.
+- [ ] **EAS submit vacio** — `eas.json` tiene submit como placeholder vacio. Rellenar antes de publicar en stores.
+- [ ] **Documentar env vars de native** — `.env.example` solo tiene vars de Supabase. Faltan `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` y `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (necesarias cuando se implemente Google OAuth en native).
+- ~~**Virtualizacion de listas**~~ — Falso positivo. History filtra por mes (~30 items), Exercises es filtrable y las listas son pequenas. Exercise history usa infinite query con paginacion de 30.
+- ~~**Dimensiones hardcodeadas native**~~ — Falso positivo. Charts usan `adjustToWidth` (responsive), alturas fijas son diseno intencional para mobile.
+- ~~**Paginacion admin**~~ — Falso positivo. Endpoint admin-only con <50 usuarios realistas. Optimizacion prematura.
 
 ## Bajo
 
-- [ ] **Optimizar select en fetchRoutines** — Usa `select('*')`. Para la vista de lista, seleccionar solo `id, name, is_favorite, created_at`. (`packages/shared/src/api/routineQueryApi.js:10`)
-- [ ] **React.memo en componentes de lista** — Anadir `React.memo` a `ExerciseCard`, `DayCard` y filas de sesion para evitar re-renders innecesarios.
-- [ ] **Tests para routineTemplates.js** — Archivo de logica sin test file. (`packages/shared/src/lib/routineTemplates.js`)
-- [ ] **Mostrar version de la app** — Anadir version visible en pantalla de Preferencias para que el usuario pueda reportar que version usa.
-- [ ] **Documentar env vars de native** — `.env.example` no incluye `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` ni `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`.
+- [ ] **Mostrar version de la app** — No se muestra en Preferences de ninguna app. `package.json` tiene 0.0.1 (web) y `app.json` tiene 1.0.0 (native) pero no se renderizan.
+- ~~**select('*') en fetchRoutines**~~ — Insignificante. La tabla routines tiene solo 7 columnas. No justifica optimizar.
+- ~~**React.memo en listas**~~ — Falso positivo. Los handlers inline anulan el beneficio de memo. Las listas son pequenas (5-15 items).
+- ~~**Tests para routineTemplates.js**~~ — Falso positivo. Es data estatica sin logica, no necesita tests.
