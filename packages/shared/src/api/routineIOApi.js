@@ -151,30 +151,45 @@ export async function importRoutine(jsonData, userId, options = {}) {
 
   // Crear o actualizar ejercicios (solo si el export incluye definiciones)
   if (exportedExercises && exportedExercises.length > 0) {
-    for (const ex of exportedExercises) {
-      // Buscar muscle_group_id por nombre
-      let muscleGroupId = null
-      if (ex.muscle_group_name) {
-        const { data: mg } = await getClient()
-          .from('muscle_groups')
-          .select('id')
-          .eq('name', ex.muscle_group_name)
-          .maybeSingle()
-        muscleGroupId = mg?.id
+    // Batch: obtener todos los muscle groups de una vez
+    const muscleGroupNames = [...new Set(
+      exportedExercises.map(ex => ex.muscle_group_name).filter(Boolean)
+    )]
+    const muscleGroupMap = new Map()
+    if (muscleGroupNames.length > 0) {
+      const { data: mgRows } = await getClient()
+        .from('muscle_groups')
+        .select('id, name')
+        .in('name', muscleGroupNames)
+      for (const mg of mgRows || []) {
+        muscleGroupMap.set(mg.name, mg.id)
       }
+    }
 
-      // Buscar ejercicio existente del usuario
-      const { data: existing } = await getClient()
+    // Batch: obtener todos los ejercicios existentes del usuario de una vez
+    const exerciseNames = exportedExercises.map(ex => ex.name)
+    const existingExercisesMap = new Map()
+    if (exerciseNames.length > 0) {
+      const { data: existingRows } = await getClient()
         .from('exercises')
-        .select('id')
-        .eq('name', ex.name)
+        .select('id, name')
         .eq('user_id', userId)
-        .maybeSingle()
+        .in('name', exerciseNames)
+      for (const row of existingRows || []) {
+        existingExercisesMap.set(row.name, row.id)
+      }
+    }
 
-      if (existing) {
-        exerciseMap.set(ex.name, existing.id)
+    for (const ex of exportedExercises) {
+      const muscleGroupId = ex.muscle_group_name
+        ? muscleGroupMap.get(ex.muscle_group_name) || null
+        : null
 
-        // Actualizar ejercicio si la opción está habilitada
+      const existingId = existingExercisesMap.get(ex.name)
+
+      if (existingId) {
+        exerciseMap.set(ex.name, existingId)
+
         if (updateExercises) {
           await getClient()
             .from('exercises')
@@ -186,10 +201,9 @@ export async function importRoutine(jsonData, userId, options = {}) {
               instructions: ex.instructions,
               muscle_group_id: muscleGroupId,
             })
-            .eq('id', existing.id)
+            .eq('id', existingId)
         }
       } else {
-        // Crear el ejercicio
         const { data: newExercise, error: exError } = await getClient()
           .from('exercises')
           .insert({

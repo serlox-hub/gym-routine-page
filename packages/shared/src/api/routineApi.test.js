@@ -183,21 +183,26 @@ describe('importRoutine', () => {
       from: (table) => {
         if (!insertCalls[table]) insertCalls[table] = []
 
-        // Mock para muscle_groups
+        // Mock para muscle_groups (batch query con .in())
         if (table === 'muscle_groups') {
-          return {
+          const mgChain = {
             select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
             maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'mg-1' }, error: null }),
+            then: (resolve) => resolve({ data: [{ id: 'mg-1', name: 'Pecho' }], error: null }),
           }
+          return mgChain
         }
 
-        // Mock para ejercicios existentes (no existe, hay que crear)
+        // Mock para ejercicios (batch query con .in() + insert individual)
         if (table === 'exercises') {
-          const mock = {
+          const exChain = {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
             maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            then: (resolve) => resolve({ data: [], error: null }),
             insert: vi.fn((record) => {
               insertCalls[table].push(record)
               return {
@@ -206,7 +211,7 @@ describe('importRoutine', () => {
               }
             }),
           }
-          return mock
+          return exChain
         }
 
         if (table === 'routines') {
@@ -391,18 +396,29 @@ describe('duplicateRoutine', () => {
           }
         }
         if (table === 'exercises') {
+          // Batch query resuelve como thenable; insert crea ejercicio nuevo
+          const resolved = Promise.resolve({ data: fakeExercises, error: null })
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
-            in: vi.fn().mockResolvedValue({ data: fakeExercises, error: null }),
+            in: vi.fn().mockReturnThis(),
             maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'ex-1' }, error: null }),
+            // Export usa .in() sin .eq(); import usa .eq().in() — ambos terminan en await
+            then: resolved.then.bind(resolved),
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ data: { id: 'ex-1' }, error: null }),
+            }),
           }
         }
         if (table === 'muscle_groups') {
+          const resolved = Promise.resolve({ data: [{ id: 'mg-1', name: 'Piernas' }], error: null })
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
             maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'mg-1' }, error: null }),
+            then: resolved.then.bind(resolved),
           }
         }
         if (table === 'routine_exercises') {

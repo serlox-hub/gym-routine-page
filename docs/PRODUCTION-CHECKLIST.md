@@ -4,9 +4,9 @@ Lista de mejoras pendientes para llevar la app a produccion. Ordenadas por prior
 
 ## Critico
 
-- [ ] **Cache invalidation rota en useRoutines.js** — Mutations como `useUpdateRoutineDay`, `useDeleteRoutineDay`, `useReorderRoutineDays`, `useDeleteRoutineExercise`, `useUpdateRoutineExercise`, `useReorderRoutineExercises`, `useDuplicateRoutineExercise` referencian `variables.routineId` / `variables.dayId` que no existen en los params. La invalidacion usa `undefined` y la UI queda con datos stale. (`packages/shared/src/hooks/useRoutines.js:156-235`)
-- [ ] **N+1 en importRoutine()** — Por cada ejercicio importado hace 2 queries individuales (muscle_group + exercise). Con 50 ejercicios = 100 queries. Solucion: batch con `.in()` y construir mapa antes del loop. (`packages/shared/src/api/routineIOApi.js:154-212`)
-- [ ] **Indexes faltantes en FK** — Crear migration con indices para: `routine_exercises.exercise_id`, `session_exercises.exercise_id`, `session_exercises.routine_exercise_id`, `routine_days.routine_id`, `routine_blocks.routine_day_id`. Afecta rendimiento de joins a escala.
+- [x] **Cache invalidation en useRoutines.js** — Verificado: los callers SI pasan `routineId`/`dayId` en el objeto de mutacion. TanStack Query expone todo el objeto como `variables` en `onSuccess`. Era un falso positivo de la auditoria.
+- [x] **N+1 en importRoutine()** — Resuelto: batch de muscle_groups y exercises con `.in()` antes del loop. De ~100 queries a 2+N inserts.
+- [x] **Indexes faltantes en FK** — Migration 020 creada con indices para `routine_exercises.exercise_id` y `routine_days.routine_id`. Los demas ya existian.
 
 ## Alto
 
