@@ -17,6 +17,7 @@ export * from './lib/validation.js'
 export * from './lib/sessionStatsCalculation.js'
 export * from './lib/workoutCalculations.js'
 export * from './lib/workoutTransforms.js'
+export * from './lib/streakUtils.js'
 
 // API layer
 export * from './api/exerciseApi.js'
@@ -27,6 +28,7 @@ export * from './api/bodyWeightApi.js'
 export * from './api/bodyMeasurementsApi.js'
 export * from './api/preferencesApi.js'
 export * from './api/adminApi.js'
+export * from './api/trainingGoalsApi.js'
 export { initApi } from './api/_client.js'
 
 // QueryClient
@@ -53,6 +55,7 @@ export * from './hooks/usePersonalRecords.js'
 export * from './hooks/useSession.js'
 export * from './hooks/useSessionExercises.js'
 export { useTimerEngine, useRestTimer } from './hooks/useRestTimer.js'
+export * from './hooks/useTrainingGoals.js'
 
 // Store injection for hooks
 export { initStores } from './hooks/_stores.js'

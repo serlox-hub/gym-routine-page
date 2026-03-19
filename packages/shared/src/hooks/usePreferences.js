@@ -10,6 +10,9 @@ const DEFAULT_VALUES = {
   show_video_upload: true,
   enabled_body_measurements: [],
   measurement_unit: 'cm',
+  training_days_per_week: null,
+  training_rest_weeks: [],
+  show_training_goal: true,
 }
 
 // ============================================

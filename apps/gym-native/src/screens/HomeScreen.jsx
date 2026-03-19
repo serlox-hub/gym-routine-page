@@ -9,7 +9,7 @@ import { useAuth, useIsAdmin, useIsPremium } from '../hooks/useAuth'
 import {
   LoadingSpinner, ErrorMessage, ConfirmModal, PlanBadge, DropdownMenu, ActiveSessionBanner,
 } from '../components/ui'
-import { QuickActions, RoutineList, NewRoutineFlow } from '../components/Home'
+import { QuickActions, RoutineList, NewRoutineFlow, WeeklyGoalWidget } from '../components/Home'
 import useWorkoutStore from '../stores/workoutStore'
 
 export default function HomeScreen({ navigation }) {
@@ -68,7 +68,10 @@ export default function HomeScreen({ navigation }) {
         navigation={navigation}
         onNewRoutine={() => setShowNewRoutineModal(true)}
         ListHeaderComponent={
-          <QuickActions navigation={navigation} routines={routines} />
+          <>
+            <QuickActions navigation={navigation} routines={routines} />
+            <WeeklyGoalWidget onOpenSettings={() => navigation.navigate('Preferences')} />
+          </>
         }
         refreshing={isRefetching}
         onRefresh={refetch}

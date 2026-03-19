@@ -4,7 +4,7 @@ import { History, Dumbbell, LogOut, Scale, Users, Settings } from 'lucide-react'
 import { useRoutines } from '../hooks/useRoutines.js'
 import { useAuth, useIsAdmin, useIsPremium } from '../hooks/useAuth.js'
 import { LoadingSpinner, ErrorMessage, ConfirmModal, PlanBadge, PageHeader } from '../components/ui/index.js'
-import { QuickActions, RoutineList, NewRoutineFlow } from '../components/Home/index.js'
+import { QuickActions, RoutineList, NewRoutineFlow, WeeklyGoalWidget } from '../components/Home/index.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 
 function Home() {
@@ -60,6 +60,8 @@ function Home() {
       />
 
       <QuickActions favoriteRoutine={favoriteRoutine} />
+
+      <WeeklyGoalWidget onOpenSettings={() => navigate('/preferences')} />
 
       <RoutineList
         routines={routines}
