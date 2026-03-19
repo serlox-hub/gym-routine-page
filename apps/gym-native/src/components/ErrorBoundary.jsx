@@ -11,8 +11,8 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo })
-    console.error('[ErrorBoundary]', error?.message, error?.stack)
-    console.error('[ErrorBoundary] Component stack:', errorInfo?.componentStack)
+    // eslint-disable-next-line no-console
+    console.error('[ErrorBoundary]', error?.message, error?.stack, errorInfo?.componentStack)
   }
 
   handleReset = () => {

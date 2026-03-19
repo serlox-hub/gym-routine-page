@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useExercise } from '../hooks/useExercises'
@@ -61,7 +60,7 @@ function SessionCard({ session, exercise }) {
 export default function ExerciseProgressScreen({ route, navigation }) {
   const { exerciseId, exerciseName } = route.params
   const { data: exercise, isLoading: loadingExercise, error: exerciseError } = useExercise(exerciseId)
-  const { data: chartRawData, isLoading: loadingChart } = useExerciseChartData(exerciseId)
+  const { isLoading: loadingChart } = useExerciseChartData(exerciseId)
   const { data: stats, isLoading: loadingStats } = useExerciseAllTimeStats(exerciseId)
   const { data: historyData, isLoading: loadingHistory } = useExerciseHistory(exerciseId)
   const sessions = historyData?.pages.flat() ?? []
