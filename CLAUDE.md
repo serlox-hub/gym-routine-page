@@ -121,7 +121,7 @@ Shared hooks accept optional callback props for browser/native differences:
 ### Component Rules
 1. **One component per file** - Always
 2. **Export as default** - `export default ComponentName`
-3. **Max 150 lines** - Split if larger
+3. **Max ~300 lines** - Split if significantly larger
 4. **Props destructuring** - At function signature level
 5. **Index files** - Every component folder has `index.js` for re-exports
 
