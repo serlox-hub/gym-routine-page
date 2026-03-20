@@ -39,7 +39,7 @@ export { createWorkoutStore, workoutStoreState } from './stores/createWorkoutSto
 export { createAuthStore } from './stores/createAuthStore.js'
 
 // Notifications
-export { initNotifications } from './notifications.js'
+export { initNotifications, getNotifier } from './notifications.js'
 
 // Hooks
 export * from './hooks/useWorkoutHistory.js'

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Copy, Check, X, ChevronLeft } from 'lucide-react'
 import { Button, Input } from '../ui/index.js'
-import { buildChatbotPrompt } from '@gym/shared'
+import { buildChatbotPrompt, getNotifier } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 const INITIAL_FORM_STATE = {
@@ -46,7 +46,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      alert('Error al copiar')
+      getNotifier()?.show('Error al copiar', 'error')
     }
   }
 

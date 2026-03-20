@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
 import { ActiveSessionBanner, LoadingSpinner } from './components/ui/index.js'
+import Toast from './components/ui/Toast.jsx'
 import { useAuth } from './hooks/useAuth.js'
 import { colors } from './lib/styles.js'
 import { useRestoreActiveSession, useSyncPendingSets } from './hooks/useWorkout.js'
@@ -98,6 +99,7 @@ function App() {
           </Suspense>
         </div>
       </PasswordRecoveryRedirect>
+      <Toast />
     </BrowserRouter>
   )
 }

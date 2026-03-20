@@ -4,7 +4,7 @@ import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
 import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise/index.js'
-import { normalizeSearchText } from '@gym/shared'
+import { normalizeSearchText, getNotifier } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
 
@@ -39,7 +39,7 @@ function Exercises() {
     deleteExercise.mutate(exerciseToDelete.id, {
       onSuccess: () => setExerciseToDelete(null),
       onError: (err) => {
-        alert(`Error al eliminar: ${err.message}`)
+        getNotifier()?.show(`Error al eliminar: ${err.message}`, 'error')
         setExerciseToDelete(null)
       }
     })

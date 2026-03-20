@@ -4,7 +4,7 @@ import { LayoutTemplate, FileText, Upload, Bot, RefreshCw } from 'lucide-react'
 import { useUserId } from '../../hooks/useAuth.js'
 import { Card, ImportOptionsModal, LoadingSpinner } from '../ui/index.js'
 import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal, ImportRoutineModal } from '../Routine/index.js'
-import { QUERY_KEYS, importRoutine } from '@gym/shared'
+import { QUERY_KEYS, importRoutine, getNotifier } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { colors } from '../../lib/styles.js'
 
@@ -37,7 +37,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
       await importRoutine(pendingImportData, userId, options)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
     } catch (err) {
-      alert(`Error al importar la rutina: ${err.message}`)
+      getNotifier()?.show(`Error al importar: ${err.message}`, 'error')
     } finally {
       setIsImporting(false)
       setImportType(null)
@@ -53,7 +53,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
       await importRoutine(templateData, userId, { updateExercises: false })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
     } catch (err) {
-      alert(`Error al importar la rutina: ${err.message}`)
+      getNotifier()?.show(`Error al importar: ${err.message}`, 'error')
     } finally {
       setIsImporting(false)
       setImportType(null)

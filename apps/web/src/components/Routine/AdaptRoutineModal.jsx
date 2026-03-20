@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Copy, Check, X, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Button } from '../ui/index.js'
-import { buildAdaptRoutinePrompt } from '@gym/shared'
+import { buildAdaptRoutinePrompt, getNotifier } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function AdaptRoutineModal({ onClose, onImportClick }) {
@@ -15,7 +15,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      alert('Error al copiar')
+      getNotifier()?.show('Error al copiar', 'error')
     }
   }
 
