@@ -16,8 +16,8 @@ Items marcados con ~~tachado~~ fueron falsos positivos verificados contra el cod
   - `WorkoutSessionLayout.jsx` 363→279: `PRSummaryModal`, `PRNotification` a archivos separados
   - `Preferences.jsx` 342→173: `InstallAppSection`, `PreferenceToggle`, `TrainingGoalSection` a `components/Preferences/`
   - `SetDetailsModal.jsx` 320→267: `VideoPlayer` a archivo separado
-- [ ] **Reemplazar alert() por toast** — 4 sitios en web usan `alert()` nativo: `NewRoutineFlow.jsx` (x2), `Exercises.jsx`, `ChatbotPromptModal.jsx`. Native ya tiene toast-message. Implementar sistema de notificaciones equivalente en web.
-- [ ] **Crash analytics** — Integrar Sentry (o similar) en web y native. Cero dependencias de tracking actualmente.
+- [x] **Reemplazar alert() por toast** — Componente Toast en web con misma apariencia que native. initNotifications conectado. 5 alert() reemplazados por getNotifier().show().
+- [x] **Crash analytics** — Sentry integrado en web (`@sentry/react`) y native (`@sentry/react-native`). Solo activo en produccion. Requiere configurar `VITE_SENTRY_DSN` (web) y `EXPO_PUBLIC_SENTRY_DSN` (native) con el DSN de sentry.io.
 - ~~**Memory leak en useRestTimer**~~ — Falso positivo. El cleanup en useEffect borra correctamente los callbacks del Set al desmontar.
 
 ## Medio
@@ -27,7 +27,7 @@ Items marcados con ~~tachado~~ fueron falsos positivos verificados contra el cod
 - [ ] **Eliminar console.error en useCompletedSets.js** — Lineas 68 y 89 tienen `console.error` que no deberia estar en produccion.
 - [ ] **Timezone en streakUtils** — `getISOWeekKey()` parsea fechas ISO de Supabase y aplica `setHours(0,0,0,0)` en hora local. Edge case: sesiones completadas cerca de medianoche UTC pueden asignarse a la semana equivocada. Impacto bajo.
 - [ ] **EAS submit vacio** — `eas.json` tiene submit como placeholder vacio. Rellenar antes de publicar en stores.
-- [ ] **Documentar env vars de native** — `.env.example` solo tiene vars de Supabase. Faltan `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` y `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (necesarias cuando se implemente Google OAuth en native).
+- [x] **Documentar env vars** — `.env.example` actualizado en native (Google OAuth + Sentry) y creado en web (Supabase + Sentry).
 - ~~**Virtualizacion de listas**~~ — Falso positivo. History filtra por mes (~30 items), Exercises es filtrable y las listas son pequenas. Exercise history usa infinite query con paginacion de 30.
 - ~~**Dimensiones hardcodeadas native**~~ — Falso positivo. Charts usan `adjustToWidth` (responsive), alturas fijas son diseno intencional para mobile.
 - ~~**Paginacion admin**~~ — Falso positivo. Endpoint admin-only con <50 usuarios realistas. Optimizacion prematura.

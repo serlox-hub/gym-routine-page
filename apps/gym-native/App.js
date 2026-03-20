@@ -2,6 +2,7 @@ import "./global.css"
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
 import * as SplashScreen from 'expo-splash-screen'
+import * as Sentry from '@sentry/react-native'
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -14,6 +15,13 @@ import { supabase } from './src/lib/supabase'
 import { queryClient, initApi, initStores, initNotifications } from '@gym/shared'
 import useAuthStore from './src/stores/authStore'
 import useWorkoutStore from './src/stores/workoutStore'
+
+if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    enabled: !__DEV__,
+  })
+}
 
 initApi(supabase)
 initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
