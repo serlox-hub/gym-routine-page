@@ -6,9 +6,9 @@ apps/web/dist
 apps/gym-native/dist
 
 # Environment
+.env
 .env.local
 .env.*.local
-apps/web/.env.pro
 
 # Editor
 .vscode/*

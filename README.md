@@ -123,3 +123,30 @@ eas build --platform android --profile production # AAB para Google Play
 ```
 
 Los perfiles de build estan en `apps/gym-native/eas.json`.
+
+### Monitoring de errores (Sentry)
+
+Sentry captura errores de produccion en ambas apps. Plan gratuito: 5K errores/mes, 1 usuario.
+
+**Setup inicial:**
+
+1. Crear cuenta en [sentry.io](https://sentry.io)
+2. Crear 2 proyectos: uno React (web) y uno React Native (native)
+3. Copiar el DSN de cada proyecto y ponerlo en las env vars:
+   - Web: `VITE_SENTRY_DSN` en `apps/web/.env`
+   - Native: `EXPO_PUBLIC_SENTRY_DSN` en `apps/gym-native/.env`
+
+**Comportamiento:**
+
+- Solo se activa en produccion (`import.meta.env.PROD` en web, `!__DEV__` en native)
+- En desarrollo no envia nada a Sentry
+- Si no hay DSN configurado, Sentry no se inicializa (sin errores)
+
+**Dashboard:**
+
+Los errores aparecen en el dashboard de Sentry con:
+- Stack trace completo
+- Dispositivo, navegador y version de la app
+- Frecuencia y usuarios afectados
+
+Acceder en `https://<org>.sentry.io` para ver errores, tendencias y alertas.
