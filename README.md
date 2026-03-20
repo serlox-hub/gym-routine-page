@@ -36,50 +36,67 @@ npm run check         # lint + tests + build
 
 La app web se despliega en Vercel. Cualquier push a `main` genera un deploy automatico.
 
-### Debug vs Release
+### Debug vs Release local
 
-Las apps moviles se pueden instalar en dos modos:
+Las apps moviles se pueden instalar en dos modos desde tu Mac (ambos con cuenta Apple gratuita, expiran a los 7 dias):
 
-- **Debug**: la app necesita un servidor de desarrollo (bundler de Expo) corriendo en tu Mac. El codigo JS se carga desde el servidor, lo que permite hot reload y cambios instantaneos. Se instala desde Xcode (iOS) o `adb` (Android). Ideal para desarrollo.
-- **Release**: la app es autonoma con el bundle JS incluido. No necesita servidor ni conexion al Mac. Se genera con EAS Build y se distribuye via TestFlight/App Store (iOS) o APK/Google Play (Android).
-
-### iOS — Build de debug (cuenta Apple gratuita)
-
-Instalar la app en un iPhone fisico conectado al Mac. Requiere que el bundler de Expo este corriendo.
+- **Debug**: necesita el bundler de Expo corriendo. El JS se carga desde el servidor → hot reload instantaneo. Ideal para desarrollo.
+- **Release local**: el bundle JS va incluido en la app. No necesita servidor ni conexion al Mac. Identica a una app de produccion pero firmada con cuenta gratuita.
 
 **Limitaciones con cuenta gratuita:**
-- La app expira cada 7 dias (reinstalar desde Xcode)
+- La app expira cada 7 dias (reinstalar)
 - Maximo 3 apps simultaneas firmadas
 
-**Pasos:**
+### iOS — Prerequisitos (solo la primera vez)
 
-1. Generar proyecto nativo (solo la primera vez o tras cambios en `app.json`/plugins/dependencias nativas):
+1. Generar proyecto nativo (repetir tras cambios en `app.json`, plugins o dependencias nativas):
    ```bash
    cd apps/gym-native
    npx expo prebuild --platform ios
    cd ios && pod install && cd ..
    ```
 
-2. Arrancar el bundler de Expo:
+2. Abrir en Xcode y configurar firma:
+   ```bash
+   open apps/gym-native/ios/DiarioGym.xcworkspace
+   ```
+   - Signing & Capabilities > Automatically manage signing > seleccionar tu Apple ID como Team
+
+3. Primera vez en el dispositivo: Ajustes > General > VPN y gestion de dispositivos > confiar en el perfil de desarrollador.
+
+### iOS — Instalar en modo debug
+
+Requiere el bundler de Expo corriendo. Cambios en JS se reflejan al instante.
+
+1. Arrancar el bundler:
    ```bash
    cd apps/gym-native
    npx expo start --dev-client
    ```
 
-3. Abrir en Xcode (siempre el `.xcworkspace`, NO el `.xcodeproj`):
-   ```bash
-   open apps/gym-native/ios/DiarioGym.xcworkspace
-   ```
+2. En Xcode: seleccionar iPhone, scheme `DiarioGym` en **Debug**, `Cmd+R`.
 
-4. En Xcode:
-   - Conectar iPhone por cable USB
-   - Seleccionar el iPhone como destino (dropdown superior)
-   - Signing & Capabilities > Automatically manage signing > seleccionar tu Apple ID como Team
-   - Pulsar Play (`Cmd+R`)
+3. La app se abre y conecta al bundler automaticamente.
 
-5. Primera vez en el dispositivo: Ajustes > General > VPN y gestion de dispositivos > confiar en el perfil de desarrollador.
+### iOS — Instalar en modo release (sin dev server)
 
-6. La app se abre y conecta al bundler de Expo automaticamente. Si solo cambias JS/JSX, basta con pulsar Play en Xcode — el bundler recarga.
+La app funciona autonoma con el JS empaquetado. Ideal para probar como un usuario real.
+
+```bash
+cd apps/gym-native
+npx expo run:ios --device --configuration Release
+```
+
+Si el comando no detecta el dispositivo automaticamente, obtener el UDID:
+```bash
+xcrun xctrace list devices
+```
+Y pasarlo:
+```bash
+npx expo run:ios --device <UDID> --configuration Release
+```
+
+La primera compilacion tarda varios minutos. Las siguientes son incrementales.
 
 **Solucionar problemas:**
 - "Untrusted Developer" > Ajustes > General > Gestion de dispositivos > Confiar
