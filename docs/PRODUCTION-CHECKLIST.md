@@ -12,10 +12,10 @@ Items marcados con ~~tachado~~ fueron falsos positivos verificados contra el cod
 ## Alto
 
 - [x] **Service Worker para PWA** — Implementado con vite-plugin-pwa. Assets estaticos precacheados, API Supabase con NetworkFirst (cache 5 min, timeout 3s).
-- [ ] **Componentes > 300 lineas con subcomponentes embebidos** — Extraer subcomponentes a archivos propios:
-  - `WorkoutSessionLayout.jsx` (363 lineas): extraer `PRSummaryModal` (55 lineas)
-  - `Preferences.jsx` (342 lineas): extraer `InstallAppSection` (72 lineas), `PreferenceToggle` (36 lineas), `TrainingGoalSection` (57 lineas)
-  - `SetDetailsModal.jsx` (320 lineas): extraer `VideoPlayer` (52 lineas)
+- [x] **Componentes > 300 lineas con subcomponentes embebidos** — Extraidos a archivos propios:
+  - `WorkoutSessionLayout.jsx` 363→279: `PRSummaryModal`, `PRNotification` a archivos separados
+  - `Preferences.jsx` 342→173: `InstallAppSection`, `PreferenceToggle`, `TrainingGoalSection` a `components/Preferences/`
+  - `SetDetailsModal.jsx` 320→267: `VideoPlayer` a archivo separado
 - [ ] **Reemplazar alert() por toast** — 4 sitios en web usan `alert()` nativo: `NewRoutineFlow.jsx` (x2), `Exercises.jsx`, `ChatbotPromptModal.jsx`. Native ya tiene toast-message. Implementar sistema de notificaciones equivalente en web.
 - [ ] **Crash analytics** — Integrar Sentry (o similar) en web y native. Cero dependencias de tracking actualmente.
 - ~~**Memory leak en useRestTimer**~~ — Falso positivo. El cleanup en useEffect borra correctamente los callbacks del Set al desmontar.

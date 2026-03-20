@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, X, Smartphone, Share, MoreVertical } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { Card, LoadingSpinner, PlanBadge, PageHeader } from '../components/ui/index.js'
+import { PreferenceToggle, InstallAppSection, TrainingGoalSection } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
 import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import { colors } from '../lib/styles.js'
@@ -139,117 +140,6 @@ function Preferences() {
   )
 }
 
-function InstallAppSection() {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true
-
-  if (isStandalone) {
-    return (
-      <Card className="p-4">
-        <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
-          Aplicación
-        </h2>
-        <div className="flex items-center gap-2">
-          <Check size={16} style={{ color: colors.success }} />
-          <p className="text-sm" style={{ color: colors.textPrimary }}>
-            App instalada correctamente
-          </p>
-        </div>
-      </Card>
-    )
-  }
-
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-
-  return (
-    <Card className="p-4">
-      <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
-        Aplicación
-      </h2>
-      <div className="flex items-start gap-3">
-        <Smartphone size={20} style={{ color: colors.accent }} className="mt-0.5 flex-shrink-0" />
-        <div className="flex-1">
-          <p className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-            Añadir a pantalla de inicio
-          </p>
-          <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
-            Accede más rápido y úsala como una app nativa
-          </p>
-          {isIOS ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Share size={14} style={{ color: colors.textSecondary }} />
-                <p className="text-xs" style={{ color: colors.textSecondary }}>
-                  Pulsa el botón <strong>Compartir</strong>
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: colors.textSecondary }}>→</span>
-                <p className="text-xs" style={{ color: colors.textSecondary }}>
-                  Selecciona <strong>Añadir a pantalla de inicio</strong>
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <MoreVertical size={14} style={{ color: colors.textSecondary }} />
-                <p className="text-xs" style={{ color: colors.textSecondary }}>
-                  Pulsa el menú del navegador
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: colors.textSecondary }}>→</span>
-                <p className="text-xs" style={{ color: colors.textSecondary }}>
-                  Selecciona <strong>Añadir a pantalla de inicio</strong> o <strong>Instalar</strong>
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </Card>
-  )
-}
-
-function PreferenceToggle({ label, description, checked, onChange, disabled }) {
-  return (
-    <label className={`flex items-start gap-3 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
-      <div className="pt-0.5">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          disabled={disabled}
-          className="sr-only"
-        />
-        <div
-          className="w-10 h-6 rounded-full relative transition-colors"
-          style={{
-            backgroundColor: checked ? colors.success : colors.bgTertiary,
-          }}
-        >
-          <div
-            className="w-4 h-4 rounded-full absolute top-1 transition-all"
-            style={{
-              backgroundColor: colors.textPrimary,
-              left: checked ? '22px' : '4px',
-            }}
-          />
-        </div>
-      </div>
-      <div className="flex-1">
-        <p className="font-medium text-sm" style={{ color: colors.textPrimary }}>
-          {label}
-        </p>
-        <p className="text-xs" style={{ color: colors.textSecondary }}>
-          {description}
-        </p>
-      </div>
-    </label>
-  )
-}
-
 function PremiumFeature({ title, description, enabled, comingSoon }) {
   return (
     <li className="flex items-start gap-3">
@@ -277,65 +167,6 @@ function PremiumFeature({ title, description, enabled, comingSoon }) {
         </p>
       </div>
     </li>
-  )
-}
-
-function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabled }) {
-  const currentDays = preferences?.training_days_per_week
-  const showWidget = preferences?.show_training_goal ?? true
-
-  return (
-    <Card className="p-4">
-      <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
-        Objetivo de entrenamiento
-      </h2>
-
-      <div className="space-y-4">
-        <div>
-          <p className="font-medium text-sm mb-2" style={{ color: colors.textPrimary }}>
-            Dias por semana
-          </p>
-          <div className="flex gap-1">
-            {[1, 2, 3, 4, 5, 6, 7].map(n => (
-              <button
-                key={n}
-                onClick={() => onChangeDays(n)}
-                disabled={disabled}
-                className="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: n === currentDays ? colors.accent : colors.bgTertiary,
-                  color: n === currentDays ? '#fff' : colors.textSecondary,
-                }}
-              >
-                {n}
-              </button>
-            ))}
-            {currentDays && (
-              <button
-                onClick={() => onChangeDays(null)}
-                disabled={disabled}
-                className="w-9 h-9 rounded-lg text-sm transition-colors flex items-center justify-center"
-                style={{
-                  backgroundColor: colors.bgTertiary,
-                  color: colors.textSecondary,
-                }}
-                title="Quitar objetivo"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        <PreferenceToggle
-          label="Mostrar widget en inicio"
-          description="Ver el progreso semanal y racha en la pantalla principal"
-          checked={showWidget}
-          onChange={onToggleWidget}
-          disabled={disabled}
-        />
-      </div>
-    </Card>
   )
 }
 
