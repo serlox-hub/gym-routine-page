@@ -11,7 +11,7 @@ Items marcados con ~~tachado~~ fueron falsos positivos verificados contra el cod
 
 ## Alto
 
-- [ ] **Service Worker para PWA** — Manifest existe pero no hay SW ni plugin. Sin soporte offline ni cache de assets. Implementar con vite-plugin-pwa. (`apps/web/`)
+- [x] **Service Worker para PWA** — Implementado con vite-plugin-pwa. Assets estaticos precacheados, API Supabase con NetworkFirst (cache 5 min, timeout 3s).
 - [ ] **Componentes > 300 lineas con subcomponentes embebidos** — Extraer subcomponentes a archivos propios:
   - `WorkoutSessionLayout.jsx` (363 lineas): extraer `PRSummaryModal` (55 lineas)
   - `Preferences.jsx` (342 lineas): extraer `InstallAppSection` (72 lineas), `PreferenceToggle` (36 lineas), `TrainingGoalSection` (57 lineas)
