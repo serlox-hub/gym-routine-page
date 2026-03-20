@@ -64,8 +64,8 @@ export function useCompleteSet() {
         }
         getWorkoutStore().getState().removePendingSet(variables.sessionExerciseId, variables.setNumber)
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
-      } catch (err) {
-        console.error('[useCompleteSet] onSuccess error:', err)
+      } catch {
+        // No bloquear el flujo si falla la actualizacion post-sync
       }
     },
     onError: (_error, variables) => {
@@ -85,8 +85,8 @@ export function useCompleteSet() {
           notes: variables.notes,
           videoUrl: variables.videoUrl,
         })
-      } catch (err) {
-        console.error('[useCompleteSet] onError error:', err)
+      } catch {
+        // No bloquear si falla encolar el pending set
       }
     },
   })

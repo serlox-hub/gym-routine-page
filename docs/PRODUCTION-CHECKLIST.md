@@ -23,9 +23,9 @@ Items marcados con ~~tachado~~ fueron falsos positivos verificados contra el cod
 ## Medio
 
 - [ ] **Deteccion de red en native** — Falta `@react-native-community/netinfo` y UI de feedback offline. El retry/queue de sets SI funciona (optimistic updates + pendingSets + retry cada 10s), pero el usuario no recibe ningun indicador visual. Prioridad UX, no funcional.
-- [ ] **NOT NULL en exercise_id** — Solo faltan en `routine_exercises.exercise_id` y `session_exercises.exercise_id`. Los campos `name` de exercises/routines/days/blocks YA son NOT NULL.
-- [ ] **Eliminar console.error en useCompletedSets.js** — Lineas 68 y 89 tienen `console.error` que no deberia estar en produccion.
-- [ ] **Timezone en streakUtils** — `getISOWeekKey()` parsea fechas ISO de Supabase y aplica `setHours(0,0,0,0)` en hora local. Edge case: sesiones completadas cerca de medianoche UTC pueden asignarse a la semana equivocada. Impacto bajo.
+- [x] **NOT NULL en exercise_id** — Migration 021 con NOT NULL para `routine_exercises.exercise_id` y `session_exercises.exercise_id`.
+- [x] **Eliminar console.error en useCompletedSets.js** — Reemplazados por catch vacios con comentario explicativo.
+- ~~**Timezone en streakUtils**~~ — Aceptable. JS parsea ISO strings a hora local, que es el comportamiento correcto (la semana se calcula segun cuando entreno el usuario en su timezone).
 - [ ] **EAS submit vacio** — `eas.json` tiene submit como placeholder vacio. Rellenar antes de publicar en stores.
 - [x] **Documentar env vars** — `.env.example` actualizado en native (Google OAuth + Sentry) y creado en web (Supabase + Sentry).
 - ~~**Virtualizacion de listas**~~ — Falso positivo. History filtra por mes (~30 items), Exercises es filtrable y las listas son pequenas. Exercise history usa infinite query con paginacion de 30.
