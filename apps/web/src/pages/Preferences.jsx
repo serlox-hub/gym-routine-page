@@ -135,6 +135,10 @@ function Preferences() {
         />
 
         <InstallAppSection />
+
+        <p className="text-center text-xs mt-2" style={{ color: colors.textMuted }}>
+          v{__APP_VERSION__}
+        </p>
       </main>
     </div>
   )

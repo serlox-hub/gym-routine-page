@@ -7,6 +7,7 @@ import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
 import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
 import { LoadingSpinner, Card, PlanBadge, PageHeader } from '../components/ui'
 import { colors } from '../lib/styles'
+const appVersion = require('../../app.json').expo.version
 
 function PreferenceToggle({ label, description, checked, onChange, disabled }) {
   return (
@@ -160,6 +161,10 @@ export default function PreferencesScreen({ navigation }) {
             </View>
           </Card>
         </View>
+
+        <Text className="text-center text-xs mt-2 mb-4" style={{ color: colors.textSecondary }}>
+          v{appVersion}
+        </Text>
       </ScrollView>
     </SafeAreaView>
   )

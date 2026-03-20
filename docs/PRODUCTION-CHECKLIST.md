@@ -34,7 +34,7 @@ Items marcados con ~~tachado~~ fueron falsos positivos verificados contra el cod
 
 ## Bajo
 
-- [ ] **Mostrar version de la app** — No se muestra en Preferences de ninguna app. `package.json` tiene 0.0.1 (web) y `app.json` tiene 1.0.0 (native) pero no se renderizan.
+- [x] **Mostrar version de la app** — Version visible al final de Preferences en web (desde package.json via Vite define) y native (desde app.json).
 - ~~**select('*') en fetchRoutines**~~ — Insignificante. La tabla routines tiene solo 7 columnas. No justifica optimizar.
 - ~~**React.memo en listas**~~ — Falso positivo. Los handlers inline anulan el beneficio de memo. Las listas son pequenas (5-15 items).
 - ~~**Tests para routineTemplates.js**~~ — Falso positivo. Es data estatica sin logica, no necesita tests.
