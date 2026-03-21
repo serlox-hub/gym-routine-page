@@ -42,6 +42,10 @@ export function workoutStoreState(set, get) {
       cachedSetData: {},
       exerciseSetCounts: {},
       pendingSets: {},
+      restTimerActive: false,
+      restTimerEndTime: null,
+      restTimeInitial: 0,
+      restTimerMinimized: false,
     }),
 
     // Restore session from backend
@@ -52,6 +56,10 @@ export function workoutStoreState(set, get) {
       startedAt,
       completedSets,
       cachedSetData,
+      restTimerActive: false,
+      restTimerEndTime: null,
+      restTimeInitial: 0,
+      restTimerMinimized: false,
     }),
 
     // End current session
