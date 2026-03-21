@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-re
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader, Button } from '../components/ui/index.js'
 import { BodyWeightChart, BodyWeightModal, MeasurementSection } from '../components/BodyWeight/index.js'
-import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate } from '@gym/shared'
+import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate, formatTime } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
 function BodyMetrics() {
@@ -162,7 +162,7 @@ function WeightSection() {
                       {record.weight} kg
                     </span>
                     <span className="text-xs" style={{ color: colors.textSecondary }}>
-                      {formatShortDate(record.recorded_at)}
+                      {formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}
                     </span>
                   </div>
                   {record.notes && (

@@ -6,7 +6,7 @@ import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDele
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, Button, ActiveSessionBanner } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'
 import { BodyWeightChart } from '../components/Charts'
-import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate } from '@gym/shared'
+import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate, formatTime } from '@gym/shared'
 import { colors } from '../lib/styles'
 
 function WeightSection() {
@@ -65,7 +65,7 @@ function WeightSection() {
         <View className="flex-1">
           <View className="flex-row items-baseline gap-2">
             <Text className="text-lg font-bold text-primary">{record.weight} kg</Text>
-            <Text className="text-xs text-secondary">{formatShortDate(record.recorded_at)}</Text>
+            <Text className="text-xs text-secondary">{formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}</Text>
           </View>
           {record.notes && (
             <Text className="text-xs text-secondary mt-1">{record.notes}</Text>

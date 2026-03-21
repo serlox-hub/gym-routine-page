@@ -11,6 +11,7 @@ import {
   calculateMeasurementStats,
   calculateMeasurementTrend,
   formatShortDate,
+  formatTime,
   getMeasurementLabel
 } from '@gym/shared'
 import { colors } from '../../lib/styles'
@@ -115,7 +116,7 @@ export default function MeasurementSection() {
         <View className="flex-1">
           <View className="flex-row items-baseline gap-2">
             <Text className="text-lg font-bold text-primary">{record.value} {record.unit}</Text>
-            <Text className="text-xs text-secondary">{formatShortDate(record.recorded_at)}</Text>
+            <Text className="text-xs text-secondary">{formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}</Text>
           </View>
           {record.notes && (
             <Text className="text-xs text-secondary mt-1">{record.notes}</Text>

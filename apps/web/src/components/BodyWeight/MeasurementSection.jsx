@@ -10,6 +10,7 @@ import {
   calculateMeasurementStats,
   calculateMeasurementTrend,
   formatShortDate,
+  formatTime,
   getMeasurementLabel
 } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
@@ -236,7 +237,7 @@ function MeasurementSection() {
                           {record.value} {record.unit}
                         </span>
                         <span className="text-xs" style={{ color: colors.textSecondary }}>
-                          {formatShortDate(record.recorded_at)}
+                          {formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}
                         </span>
                       </div>
                       {record.notes && (
