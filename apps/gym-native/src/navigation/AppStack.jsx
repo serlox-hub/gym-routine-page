@@ -14,6 +14,7 @@ import BodyMetricsScreen from '../screens/BodyMetricsScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import AdminUsersScreen from '../screens/AdminUsersScreen'
 import WorkoutOverlay from '../screens/WorkoutOverlay'
+import OfflineBanner from '../components/ui/OfflineBanner'
 
 const Stack = createNativeStackNavigator()
 
@@ -29,6 +30,7 @@ export default function AppStack() {
 
   return (
     <View style={{ flex: 1 }}>
+      <OfflineBanner />
       <Stack.Navigator screenOptions={screenOptions}>
         <Stack.Screen name="Home" component={HomeScreen} />
 

@@ -1,0 +1,34 @@
+import { useState, useEffect } from 'react'
+import { View, Text } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { WifiOff } from 'lucide-react-native'
+import NetInfo from '@react-native-community/netinfo'
+import { colors } from '../../lib/styles'
+
+function OfflineBanner() {
+  const [isOnline, setIsOnline] = useState(true)
+  const { top } = useSafeAreaInsets()
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOnline(state.isConnected ?? true)
+    })
+    return unsubscribe
+  }, [])
+
+  if (isOnline) return null
+
+  return (
+    <View
+      className="flex-row items-center justify-center gap-2 px-4"
+      style={{ backgroundColor: colors.danger, paddingTop: top + 4, paddingBottom: 4 }}
+    >
+      <WifiOff size={14} color="#fff" />
+      <Text className="text-xs font-medium" style={{ color: '#fff' }}>
+        Sin conexion. Los cambios se sincronizaran al volver.
+      </Text>
+    </View>
+  )
+}
+
+export default OfflineBanner

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
 import { ActiveSessionBanner, LoadingSpinner } from './components/ui/index.js'
 import Toast from './components/ui/Toast.jsx'
+import OfflineBanner from './components/ui/OfflineBanner.jsx'
 import { useAuth } from './hooks/useAuth.js'
 import { colors } from './lib/styles.js'
 import { useRestoreActiveSession, useSyncPendingSets } from './hooks/useWorkout.js'
@@ -70,6 +71,7 @@ function App() {
       <PasswordRecoveryRedirect>
         <SessionRestorer />
         <div className="min-h-screen bg-surface text-primary">
+          <OfflineBanner />
           <ActiveSessionBanner />
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
