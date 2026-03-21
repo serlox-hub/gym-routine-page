@@ -15,7 +15,7 @@ test.describe('Crear rutina desde template', () => {
     // Verificar que se abre el modal con opciones
     await expect(page.getByText(/rutinas predefinidas/i)).toBeVisible({ timeout: 3000 })
     await expect(page.getByText(/crear manualmente/i)).toBeVisible()
-    await expect(page.getByText(/importar json/i)).toBeVisible()
+    await expect(page.getByText(/importar rutina/i)).toBeVisible()
   })
 
   test('puede ver templates disponibles', async ({ page }) => {
