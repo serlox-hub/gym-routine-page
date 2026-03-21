@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import {
@@ -248,4 +249,55 @@ export function useMoveRoutineExerciseToDay() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.targetDayId)] })
     },
   })
+}
+
+// ============================================
+// HELPERS
+// ============================================
+
+const DEBOUNCE_MS = 500
+
+export function useRoutineEditForm(routine, routineId) {
+  const [editForm, setEditForm] = useState({ name: '', description: '', goal: '', cycle_days: 7 })
+  const debounceRef = useRef(null)
+  const updateRoutine = useUpdateRoutine()
+
+  useEffect(() => {
+    if (routine) {
+      setEditForm({
+        name: routine.name || '',
+        description: routine.description || '',
+        goal: routine.goal || '',
+        cycle_days: routine.cycle_days || 7,
+      })
+    }
+  }, [routine])
+
+  const saveChanges = useCallback((formData) => {
+    if (!formData.name.trim()) return
+    updateRoutine.mutate({
+      routineId: parseInt(routineId),
+      data: {
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        goal: formData.goal.trim() || null,
+        cycle_days: parseInt(formData.cycle_days) || 7,
+      },
+    })
+  }, [routineId, updateRoutine])
+
+  const handleFieldChange = (field, value) => {
+    const newForm = { ...editForm, [field]: value }
+    setEditForm(newForm)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => saveChanges(newForm), DEBOUNCE_MS)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
+
+  return { editForm, handleFieldChange }
 }

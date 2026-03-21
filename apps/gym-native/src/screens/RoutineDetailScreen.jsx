@@ -10,7 +10,7 @@ import {
 } from '../hooks/useRoutines'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, ActiveSessionBanner } from '../components/ui'
 import {
-  DayCard, AddDayModal, RoutineHeader, MoveToDayModal,
+  DayCard, AddDayModal, RoutineHeader, RoutineEditForm, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal, VolumeSummary,
 } from '../components/Routine'
 import { moveItemToPosition } from '@gym/shared'
@@ -112,6 +112,10 @@ export default function RoutineDetailScreen({ route, navigation }) {
       />
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
+        {isEditing && (
+          <RoutineEditForm routine={routine} routineId={routineId} />
+        )}
+
         {days?.length === 0 && !isEditing ? (
           <Text className="text-secondary">No hay días configurados</Text>
         ) : (
