@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, Alert } from 'react-native'
-import { FileText } from 'lucide-react-native'
+import { FileText, RefreshCw } from 'lucide-react-native'
 import * as DocumentPicker from 'expo-document-picker'
 import { File } from 'expo-file-system'
 import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 
-export default function ImportRoutineModal({ isOpen, onClose, onImport }) {
+export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMode = null }) {
   const [mode, setMode] = useState(null)
+
+  useEffect(() => {
+    if (isOpen && defaultMode) setMode(defaultMode)
+  }, [isOpen, defaultMode])
   const [jsonText, setJsonText] = useState('')
   const [error, setError] = useState('')
   const [isReading, setIsReading] = useState(false)
@@ -28,7 +32,7 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport }) {
       onImport(data)
       handleClose()
     } catch {
-      Alert.alert('Error', 'Error al leer el archivo JSON')
+      Alert.alert('Error', 'Error al leer el archivo')
     } finally {
       setIsReading(false)
     }
@@ -41,7 +45,7 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport }) {
       onImport(data)
       handleClose()
     } catch {
-      setError('JSON inválido. Verifica el formato.')
+      setError('Formato inválido. Verifica el contenido.')
     }
   }
 
@@ -77,7 +81,7 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport }) {
                 <Text className="text-sm font-medium text-primary">
                   {isReading ? 'Leyendo archivo...' : 'Desde archivo'}
                 </Text>
-                <Text className="text-xs text-secondary">Seleccionar archivo JSON</Text>
+                <Text className="text-xs text-secondary">Seleccionar archivo de rutina</Text>
               </View>
             </Pressable>
 
@@ -89,13 +93,27 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport }) {
               <FileText size={20} color={colors.accent} />
               <View>
                 <Text className="text-sm font-medium text-primary">Pegar texto</Text>
-                <Text className="text-xs text-secondary">Pegar JSON directamente</Text>
+                <Text className="text-xs text-secondary">Pegar contenido directamente</Text>
               </View>
             </Pressable>
+
+            {onAdaptClick && (
+              <Pressable
+                onPress={() => { handleClose(); onAdaptClick() }}
+                className="flex-row items-center gap-3 p-3 rounded-lg"
+                style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
+              >
+                <RefreshCw size={20} color="#f0883e" />
+                <View>
+                  <Text className="text-sm font-medium text-primary">Desde herramienta externa</Text>
+                  <Text className="text-xs text-secondary">Convierte tu rutina de Excel, PDF u otra app con IA</Text>
+                </View>
+              </Pressable>
+            )}
           </View>
         ) : (
           <View className="gap-3">
-            <Text className="text-sm text-secondary">Pega el JSON de la rutina:</Text>
+            <Text className="text-sm text-secondary">Pega el contenido de la rutina:</Text>
             <TextInput
               value={jsonText}
               onChangeText={(text) => { setJsonText(text); setError('') }}

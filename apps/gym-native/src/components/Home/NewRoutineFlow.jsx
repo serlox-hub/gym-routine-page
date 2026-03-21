@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, Alert } from 'react-native'
-import { LayoutTemplate, FileText, Upload, Bot, RefreshCw } from 'lucide-react-native'
+import { LayoutTemplate, FileText, Upload, Bot } from 'lucide-react-native'
 import { useUserId } from '../../hooks/useAuth'
 import { Card, ImportOptionsModal, LoadingSpinner } from '../ui'
 import {
@@ -15,6 +15,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
   const queryClient = useQueryClient()
   const [showTemplates, setShowTemplates] = useState(false)
   const [showImportRoutine, setShowImportRoutine] = useState(false)
+  const [importDefaultMode, setImportDefaultMode] = useState(null)
   const [showChatbot, setShowChatbot] = useState(false)
   const [showAdaptRoutine, setShowAdaptRoutine] = useState(false)
   const [showImportOptions, setShowImportOptions] = useState(false)
@@ -65,8 +66,8 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
     {
       icon: Upload,
       iconColor: colors.success,
-      label: 'Importar JSON',
-      description: 'Desde archivo o pegando texto',
+      label: 'Importar rutina',
+      description: 'Desde un archivo exportado o generado con IA',
       onPress: () => { onClose(); setShowImportRoutine(true) },
     },
     {
@@ -75,13 +76,6 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
       label: 'Crear con IA',
       description: 'Genera un prompt para ChatGPT/Claude',
       onPress: () => { onClose(); setShowChatbot(true) },
-    },
-    {
-      icon: RefreshCw,
-      iconColor: '#f0883e',
-      label: 'Adaptar rutina existente',
-      description: 'Convierte tu rutina actual con IA',
-      onPress: () => { onClose(); setShowAdaptRoutine(true) },
     },
   ]
 
@@ -141,8 +135,10 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
 
       <ImportRoutineModal
         isOpen={showImportRoutine}
-        onClose={() => setShowImportRoutine(false)}
+        onClose={() => { setShowImportRoutine(false); setImportDefaultMode(null) }}
         onImport={handleImportData}
+        onAdaptClick={() => setShowAdaptRoutine(true)}
+        defaultMode={importDefaultMode}
       />
 
       <ChatbotPromptModal
@@ -154,7 +150,11 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
       <AdaptRoutineModal
         isOpen={showAdaptRoutine}
         onClose={() => setShowAdaptRoutine(false)}
-        onImportClick={() => setShowImportRoutine(true)}
+        onImportClick={() => {
+          setShowAdaptRoutine(false)
+          setImportDefaultMode('text')
+          setShowImportRoutine(true)
+        }}
       />
     </>
   )

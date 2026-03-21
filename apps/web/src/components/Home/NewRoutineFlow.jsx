@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutTemplate, FileText, Upload, Bot, RefreshCw } from 'lucide-react'
+import { LayoutTemplate, FileText, Upload, Bot } from 'lucide-react'
 import { useUserId } from '../../hooks/useAuth.js'
 import { Card, ImportOptionsModal, LoadingSpinner } from '../ui/index.js'
 import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal, ImportRoutineModal } from '../Routine/index.js'
@@ -16,6 +16,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
   const [showAdaptModal, setShowAdaptModal] = useState(false)
   const [showTemplatesModal, setShowTemplatesModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
+  const [importDefaultMode, setImportDefaultMode] = useState(null)
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
   const [isImporting, setIsImporting] = useState(false)
@@ -97,13 +98,10 @@ function NewRoutineFlow({ isOpen, onClose }) {
                 {menuOption(FileText, colors.accent, 'Crear manualmente', 'Configura tu rutina desde cero')}
               </Card>
               <Card className="p-3" onClick={() => { onClose(); setShowImportModal(true) }}>
-                {menuOption(Upload, colors.success, 'Importar JSON', 'Desde archivo o pegando texto')}
+                {menuOption(Upload, colors.success, 'Importar rutina', 'Desde un archivo exportado o generado con IA')}
               </Card>
               <Card className="p-3" onClick={() => { onClose(); setShowChatbotModal(true) }}>
                 {menuOption(Bot, colors.accent, 'Crear con IA', 'Genera un prompt para ChatGPT/Claude')}
-              </Card>
-              <Card className="p-3" onClick={() => { onClose(); setShowAdaptModal(true) }}>
-                {menuOption(RefreshCw, '#f0883e', 'Adaptar rutina existente', 'Convierte tu rutina actual con IA')}
               </Card>
             </div>
           </div>
@@ -120,16 +118,6 @@ function NewRoutineFlow({ isOpen, onClose }) {
         />
       )}
 
-      {showAdaptModal && (
-        <AdaptRoutineModal
-          onClose={() => setShowAdaptModal(false)}
-          onImportClick={() => {
-            setShowAdaptModal(false)
-            setShowImportModal(true)
-          }}
-        />
-      )}
-
       {showTemplatesModal && (
         <TemplatesModal
           onClose={() => setShowTemplatesModal(false)}
@@ -139,9 +127,22 @@ function NewRoutineFlow({ isOpen, onClose }) {
 
       <ImportRoutineModal
         isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
+        onClose={() => { setShowImportModal(false); setImportDefaultMode(null) }}
         onImport={handleImportData}
+        onAdaptClick={() => setShowAdaptModal(true)}
+        defaultMode={importDefaultMode}
       />
+
+      {showAdaptModal && (
+        <AdaptRoutineModal
+          onClose={() => setShowAdaptModal(false)}
+          onImportClick={() => {
+            setShowAdaptModal(false)
+            setImportDefaultMode('text')
+            setShowImportModal(true)
+          }}
+        />
+      )}
 
       <ImportOptionsModal
         isOpen={showImportOptions}

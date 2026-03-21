@@ -127,7 +127,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
             style={{ backgroundColor: 'rgba(46, 160, 67, 0.1)', border: `1px solid ${colors.success}` }}
           >
             <p style={{ color: colors.success }}>
-              La IA te devolverá un JSON. Cópialo para pegarlo en el siguiente paso.
+              La IA te devolverá el resultado. Cópialo para pegarlo en el siguiente paso.
             </p>
           </div>
         </div>
@@ -138,12 +138,12 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
       content: (
         <div className="space-y-3">
           <p style={{ color: colors.textSecondary }}>
-            Una vez tengas el JSON generado por la IA:
+            Una vez tengas el resultado de la IA:
           </p>
           <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: colors.textSecondary }}>
-            <li>Copia el JSON que te devolvió la IA</li>
+            <li>Copia el resultado que te devolvió la IA</li>
             <li>Pulsa el botón de abajo</li>
-            <li>Pega el JSON en el campo de texto</li>
+            <li>Pégalo en el campo de texto</li>
           </ol>
           <Button
             variant="primary"
@@ -153,7 +153,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
               onImportClick()
             }}
           >
-            Pegar JSON
+            Pegar resultado
           </Button>
         </div>
       )
@@ -175,7 +175,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
       >
         <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: colors.border }}>
           <h3 className="font-semibold" style={{ color: colors.textPrimary }}>
-            Adaptar rutina existente
+            Importar desde herramienta externa
           </h3>
           <button
             onClick={onClose}
