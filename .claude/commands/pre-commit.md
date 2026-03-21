@@ -17,8 +17,12 @@ Unir las tres listas (unstaged + staged + untracked nuevos). Si no hay cambios, 
 Ejecutar en paralelo:
 
 1. `npm run lint` — 0 errores Y 0 warnings
-2. `npm run test:shared` — todos los tests pasan
+2. `npm run test:shared` — todos los tests unitarios pasan
 3. `npm run build` — build sin errores
+
+Despues de los 3 anteriores, ejecutar los tests e2e (requieren build):
+
+4. `npm run test:e2e -w apps/web` — todos los tests e2e pasan
 
 Si alguno falla, corregir inmediatamente antes de continuar con el analisis manual.
 
@@ -82,6 +86,8 @@ Para cada archivo de utilidad modificado:
 
 ## Paso 6: Tests
 
+### Tests unitarios
+
 Para cada archivo de logica en `packages/shared/src/lib/` que fue modificado o creado:
 
 1. **Debe existir** `archivo.test.js` junto al archivo.
@@ -92,6 +98,15 @@ Para cada archivo de logica en `packages/shared/src/lib/` que fue modificado o c
    - Si hay branching, al menos un test por rama
 3. **Tests legibles**: nombre describe que se valida, en espanol.
 4. **Sin archivos de test para**: constantes simples, configuracion, clientes (supabase.js, styles.js, queryClient.js).
+
+### Tests e2e
+
+Evaluar si los cambios afectan flujos de usuario que deberian tener cobertura e2e. Si se anadio o modifico:
+- Una nueva pagina/ruta → verificar que existe test e2e para esa ruta
+- Texto de UI visible al usuario (botones, labels, modales) → verificar que los tests e2e que referencian esos textos estan actualizados
+- Un flujo de usuario completo (crear rutina, importar, iniciar sesion, etc.) → evaluar si necesita test e2e nuevo
+
+Los tests e2e estan en `apps/web/e2e/`. No crear tests nuevos a menos que haya un flujo critico sin cobertura.
 
 Verificar con:
 ```bash

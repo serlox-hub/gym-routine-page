@@ -108,7 +108,7 @@ export function useUpdateRoutine() {
     mutationFn: ({ routineId, data }) => apiUpdateRoutine({ routineId, data }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE, variables.routineId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE, String(variables.routineId)] })
     },
   })
 }

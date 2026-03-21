@@ -18,6 +18,8 @@ export * from './lib/sessionStatsCalculation.js'
 export * from './lib/workoutCalculations.js'
 export * from './lib/workoutTransforms.js'
 export * from './lib/streakUtils.js'
+export * from './lib/volumeConstants.js'
+export * from './lib/routineVolumeUtils.js'
 
 // API layer
 export * from './api/exerciseApi.js'

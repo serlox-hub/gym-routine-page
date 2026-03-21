@@ -12,7 +12,7 @@ import { PageHeader } from '../ui'
 const DEBOUNCE_MS = 500
 
 export default function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, onDelete, navigation }) {
-  const [editForm, setEditForm] = useState({ name: '', description: '', goal: '' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', goal: '', cycle_days: '7' })
   const debounceRef = useRef(null)
   const updateRoutine = useUpdateRoutine()
   const duplicateRoutine = useDuplicateRoutine()
@@ -23,6 +23,7 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
         name: routine.name || '',
         description: routine.description || '',
         goal: routine.goal || '',
+        cycle_days: String(routine.cycle_days || 7),
       })
     }
   }, [routine, isEditing])
@@ -35,6 +36,7 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         goal: formData.goal.trim() || null,
+        cycle_days: parseInt(formData.cycle_days) || 7,
       },
     })
   }, [routineId, updateRoutine])
@@ -121,6 +123,17 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
               onChangeText={(v) => handleFieldChange('goal', v)}
               placeholder="Ej: Hipertrofia, Fuerza..."
               placeholderTextColor="#6e7681"
+              style={[inputStyle, { padding: 8, fontSize: 14 }]}
+            />
+          </View>
+          <View>
+            <Text className="text-secondary text-sm mb-1">La rutina se repite cada (días)</Text>
+            <TextInput
+              value={editForm.cycle_days}
+              onChangeText={(v) => handleFieldChange('cycle_days', v)}
+              placeholder="7"
+              placeholderTextColor="#6e7681"
+              keyboardType="number-pad"
               style={[inputStyle, { padding: 8, fontSize: 14 }]}
             />
           </View>

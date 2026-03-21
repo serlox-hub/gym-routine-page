@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 
-config({ path: '.env.local' })
+config({ path: '.env' })
 
 /**
  * Teardown global que limpia los datos creados durante los tests e2e.

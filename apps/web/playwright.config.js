@@ -1,8 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 import { config } from 'dotenv'
 
-// Cargar variables de entorno desde .env.local
-config({ path: '.env.local' })
+// Cargar variables de entorno
+config({ path: '.env' })
 
 export default defineConfig({
   testDir: './e2e',

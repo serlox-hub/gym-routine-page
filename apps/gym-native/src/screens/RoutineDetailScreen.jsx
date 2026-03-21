@@ -11,7 +11,7 @@ import {
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, ActiveSessionBanner } from '../components/ui'
 import {
   DayCard, AddDayModal, RoutineHeader, MoveToDayModal,
-  AddExerciseModal, EditRoutineExerciseModal,
+  AddExerciseModal, EditRoutineExerciseModal, VolumeSummary,
 } from '../components/Routine'
 import { moveItemToPosition } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore'
@@ -177,6 +177,10 @@ export default function RoutineDetailScreen({ route, navigation }) {
               <Text className="text-secondary">Añadir día {nextDayNumber}</Text>
             </View>
           </Card>
+        )}
+
+        {days?.length > 0 && (
+          <VolumeSummary days={days} cycleDays={routine?.cycle_days} />
         )}
       </ScrollView>
 

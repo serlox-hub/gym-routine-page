@@ -18,7 +18,7 @@ setup('authenticate', async ({ page }) => {
   if (!email || !password) {
     throw new Error(
       'Faltan variables de entorno E2E_TEST_EMAIL y E2E_TEST_PASSWORD.\n' +
-      'Crea un archivo .env.local con las credenciales del usuario de test.'
+      'Crea un archivo .env con las credenciales del usuario de test.'
     )
   }
 

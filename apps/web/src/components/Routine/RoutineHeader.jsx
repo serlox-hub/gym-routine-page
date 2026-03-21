@@ -10,7 +10,7 @@ const DEBOUNCE_MS = 500
 
 function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, onDelete }) {
   const navigate = useNavigate()
-  const [editForm, setEditForm] = useState({ name: '', description: '', goal: '' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', goal: '', cycle_days: 7 })
   const debounceRef = useRef(null)
   const updateRoutine = useUpdateRoutine()
   const duplicateRoutine = useDuplicateRoutine()
@@ -21,6 +21,7 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
         name: routine.name || '',
         description: routine.description || '',
         goal: routine.goal || '',
+        cycle_days: routine.cycle_days || 7,
       })
     }
   }, [routine, isEditing])
@@ -34,6 +35,7 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         goal: formData.goal.trim() || null,
+        cycle_days: parseInt(formData.cycle_days) || 7,
       }
     })
   }, [routineId, updateRoutine])
@@ -117,6 +119,15 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
               value={editForm.goal}
               onChange={(e) => handleFieldChange('goal', e.target.value)}
               placeholder="Ej: Hipertrofia, Fuerza..."
+            />
+            <Input
+              label="La rutina se repite cada (días)"
+              type="number"
+              value={editForm.cycle_days}
+              onChange={(e) => handleFieldChange('cycle_days', e.target.value)}
+              min={1}
+              max={30}
+              placeholder="7"
             />
           </div>
         )}

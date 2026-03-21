@@ -2,7 +2,7 @@ import { test as setup } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 
-config({ path: '.env.local' })
+config({ path: '.env' })
 
 /**
  * Setup que crea datos de prueba para los tests e2e.
