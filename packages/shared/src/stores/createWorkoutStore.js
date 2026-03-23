@@ -284,7 +284,17 @@ export function workoutStoreState(set, get) {
  * @returns {object} Zustand store instance
  */
 export function createWorkoutStore(storage) {
-  const persistOptions = { name: 'workout-session' }
+  const persistOptions = {
+    name: 'workout-session',
+    partialize: (state) => {
+      const {
+        restTimerActive: _rta, restTimerEndTime: _rte,
+        restTimeInitial: _rti, restTimerMinimized: _rtm,
+        ...rest
+      } = state
+      return rest
+    },
+  }
   if (storage) {
     persistOptions.storage = storage
   }

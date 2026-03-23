@@ -17,16 +17,22 @@ const useWorkoutStore = create(
         startedAt: new Date().toISOString(),
         completedSets: {}, cachedSetData: {},
         exerciseSetCounts: {}, pendingSets: {},
+        restTimerActive: false, restTimerEndTime: null,
+        restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: true,
       }),
       endSession: () => set({
         sessionId: null, routineDayId: null, routineId: null,
         startedAt: null, completedSets: {}, cachedSetData: {},
         exerciseSetCounts: {}, pendingSets: {},
+        restTimerActive: false, restTimerEndTime: null,
+        restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: false,
       }),
       restoreSession: ({ sessionId, routineDayId, routineId, startedAt, completedSets, cachedSetData }) => set({
         sessionId, routineDayId, routineId, startedAt, completedSets, cachedSetData,
+        restTimerActive: false, restTimerEndTime: null,
+        restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: false,
       }),
     }),
@@ -34,7 +40,12 @@ const useWorkoutStore = create(
       name: 'workout-session',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => {
-        const { workoutVisible: _wv, showWorkout: _sw, hideWorkout: _hw, ...rest } = state
+        const {
+          workoutVisible: _wv, showWorkout: _sw, hideWorkout: _hw,
+          restTimerActive: _rta, restTimerEndTime: _rte,
+          restTimeInitial: _rti, restTimerMinimized: _rtm,
+          ...rest
+        } = state
         return rest
       },
     }
