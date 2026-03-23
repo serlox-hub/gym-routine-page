@@ -17,13 +17,14 @@ import {
   useWakeLock,
   useTimerEngine,
 } from '../../hooks/useWorkout.js'
-import { Plus } from 'lucide-react'
+import { Plus, ArrowRightLeft } from 'lucide-react'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, BottomActions, PageHeader } from '../ui/index.js'
 import RestTimer from './RestTimer.jsx'
 import BlockExerciseList from './BlockExerciseList.jsx'
 import EndSessionModal from './EndSessionModal.jsx'
 import SessionTimer from './SessionTimer.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
+import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, buildWorkoutSummaryFromEndSession } from '@gym/shared'
 
@@ -45,6 +46,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
+  const [showConverter, setShowConverter] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
   const [workoutSummary, setWorkoutSummary] = useState(null)
 
@@ -194,7 +196,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           }
           onBack={() => navigate(-1)}
           menuItems={[
-            { icon: Plus, label: 'Añadir ejercicio', onClick: () => setShowAddExercise(true) }
+            { icon: Plus, label: 'Añadir ejercicio', onClick: () => setShowAddExercise(true) },
+            { icon: ArrowRightLeft, label: 'Conversor lb/kg', onClick: () => setShowConverter(true) },
           ]}
         />
 
@@ -271,6 +274,11 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
       <WorkoutSummaryModal
         summaryData={workoutSummary}
         onClose={handleDismissWorkoutSummary}
+      />
+
+      <WeightConverterModal
+        isOpen={showConverter}
+        onClose={() => setShowConverter(false)}
       />
 
     </div>

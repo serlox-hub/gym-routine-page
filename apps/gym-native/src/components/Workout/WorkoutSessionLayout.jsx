@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Plus } from 'lucide-react-native'
+import { Plus, ArrowRightLeft } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
   useSessionExercises, useAddSessionExercise, useRemoveSessionExercise,
@@ -13,6 +13,7 @@ import BlockExerciseList from './BlockExerciseList'
 import EndSessionModal from './EndSessionModal'
 import SessionTimer from './SessionTimer'
 import { AddExerciseModal } from '../Routine'
+import WeightConverterModal from './WeightConverterModal'
 import useWorkoutStore from '../../stores/workoutStore'
 import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, getNotifier, buildWorkoutSummaryFromEndSession } from '@gym/shared'
 import WorkoutSummaryModal from './WorkoutSummaryModal'
@@ -35,6 +36,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
+  const [showConverter, setShowConverter] = useState(false)
   const [workoutSummary, setWorkoutSummary] = useState(null)
 
   const completeSetMutation = useCompleteSet()
@@ -177,6 +179,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         onBack={() => useWorkoutStore.getState().hideWorkout()}
         menuItems={[
           { icon: Plus, label: 'Añadir ejercicio', onPress: () => setShowAddExercise(true) },
+          { icon: ArrowRightLeft, label: 'Conversor lb/kg', onPress: () => setShowConverter(true) },
         ]}
       />
 
@@ -263,6 +266,11 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         summaryData={workoutSummary}
         isOpen={!!workoutSummary}
         onClose={handleDismissWorkoutSummary}
+      />
+
+      <WeightConverterModal
+        isOpen={showConverter}
+        onClose={() => setShowConverter(false)}
       />
     </SafeAreaView>
   )

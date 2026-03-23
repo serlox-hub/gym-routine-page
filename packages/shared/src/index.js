@@ -20,6 +20,7 @@ export * from './lib/workoutTransforms.js'
 export * from './lib/streakUtils.js'
 export * from './lib/volumeConstants.js'
 export * from './lib/routineVolumeUtils.js'
+export * from './lib/weightConversion.js'
 export * from './lib/workoutSummary.js'
 
 // API layer
