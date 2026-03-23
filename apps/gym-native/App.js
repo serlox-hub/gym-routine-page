@@ -12,7 +12,8 @@ import RootNavigator from './src/navigation/RootNavigator'
 import { toastConfig } from './src/components/ui/toastConfig'
 import ErrorBoundary from './src/components/ErrorBoundary'
 import { supabase } from './src/lib/supabase'
-import { queryClient, initApi, initStores, initNotifications } from '@gym/shared'
+import { queryClient, initApi, initStores, initNotifications, initHaptics } from '@gym/shared'
+import * as Haptics from 'expo-haptics'
 import useAuthStore from './src/stores/authStore'
 import useWorkoutStore from './src/stores/workoutStore'
 
@@ -28,6 +29,11 @@ initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
 initNotifications((message, type = 'success') =>
   Toast.show({ type, text1: message })
 )
+initHaptics({
+  onSetComplete: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+  onExerciseComplete: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+  onPRDetected: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+})
 
 SplashScreen.preventAutoHideAsync()
 

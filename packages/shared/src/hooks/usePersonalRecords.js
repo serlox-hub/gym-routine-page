@@ -4,6 +4,7 @@ import { QUERY_KEYS } from '../lib/constants.js'
 import { evaluateSetForPR } from '../lib/sessionStatsCalculation.js'
 import { fetchExerciseBests } from '../api/exerciseStatsApi.js'
 import { useWorkoutStore } from './_stores.js'
+import { getHaptics } from '../haptics.js'
 
 // ============================================
 // REAL-TIME PR DETECTION DURING SESSION
@@ -83,6 +84,8 @@ export function useSessionPRDetection() {
     runningBestsRef.current[exerciseId] = updatedRunningBests
 
     if (newRecords.length > 0) {
+      getHaptics()?.onPRDetected?.()
+
       const setKey = `${setData.sessionExerciseId}-${setData.setNumber}`
       setPRSets(prev => new Set(prev).add(setKey))
 

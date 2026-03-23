@@ -8,6 +8,7 @@ import {
   deleteCompletedSet,
 } from '../api/workoutApi.js'
 import { useWorkoutStore, getWorkoutStore } from './_stores.js'
+import { getHaptics } from '../haptics.js'
 
 // ============================================
 // SET MUTATIONS
@@ -53,6 +54,8 @@ export function useCompleteSet() {
         videoUrl: variables.videoUrl,
         dbId: null, // Temporal hasta confirmación del servidor
       })
+
+      getHaptics()?.onSetComplete?.()
 
       return { sessionExerciseId: variables.sessionExerciseId, setNumber: variables.setNumber }
     },

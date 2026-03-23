@@ -45,6 +45,9 @@ export { createAuthStore } from './stores/createAuthStore.js'
 // Notifications
 export { initNotifications, getNotifier } from './notifications.js'
 
+// Haptics
+export { initHaptics, getHaptics } from './haptics.js'
+
 // Hooks
 export * from './hooks/useWorkoutHistory.js'
 export * from './hooks/useAdmin.js'

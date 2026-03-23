@@ -10,7 +10,7 @@ import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
-import { MeasurementType } from '@gym/shared'
+import { MeasurementType, getHaptics } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds }) {
@@ -75,6 +75,7 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   useEffect(() => {
     if (isCompleted && !prevCompletedRef.current) {
+      getHaptics()?.onExerciseComplete?.()
       const timer = setTimeout(() => setCollapsed(true), 1000)
       return () => clearTimeout(timer)
     }
