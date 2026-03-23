@@ -62,7 +62,22 @@ Para cada componente (.jsx) modificado:
 7. **Sin magic numbers**. Usar constantes con nombre descriptivo.
 8. **Sin console.log/console.error** salvo ErrorBoundary con eslint-disable.
 
-## Paso 4: Calidad de hooks
+## Paso 4: Safe Area en componentes native
+
+Para cada componente en `apps/gym-native/` modificado o creado:
+
+1. **Elementos con `position: 'absolute'`**: Si usan `top` o `bottom`, DEBEN sumar el inset correspondiente de `useSafeAreaInsets()`. Nunca usar valores fijos de top/bottom sin inset.
+2. **Screens y layouts**: Deben usar `SafeAreaView` de `react-native-safe-area-context` (no el de React Native) con los `edges` apropiados.
+3. **Modales y overlays**: Verificar que el contenido no queda detras del notch/Dynamic Island ni del home indicator.
+
+Buscar violaciones con:
+```bash
+grep -n "position.*absolute" apps/gym-native/src/components/**/*.jsx | grep -v "SafeArea\|insets"
+```
+
+Si se encuentra un `top:` o `bottom:` numerico fijo en un elemento absolute sin usar insets, es un problema que debe corregirse.
+
+## Paso 5: Calidad de hooks
 
 Para cada hook modificado:
 
@@ -74,7 +89,7 @@ Para cada hook modificado:
 6. **Invalidacion correcta** de queries tras mutations.
 7. **Sin logica de negocio** dentro del hook — delegar a funciones de `lib/`.
 
-## Paso 5: Calidad de utilidades (lib/)
+## Paso 6: Calidad de utilidades (lib/)
 
 Para cada archivo de utilidad modificado:
 
@@ -84,7 +99,7 @@ Para cada archivo de utilidad modificado:
 4. **Nombres descriptivos**. `calculateEpley1RM` no `calc1RM`.
 5. **JSDoc** solo en funciones complejas (>10 lineas o parametros no obvios).
 
-## Paso 6: Tests
+## Paso 7: Tests
 
 ### Tests unitarios
 
@@ -120,7 +135,7 @@ for f in packages/shared/src/lib/*.js; do
 done
 ```
 
-## Paso 7: DRY y duplicacion (CRITICO)
+## Paso 8: DRY y duplicacion (CRITICO)
 
 Tolerancia cero con duplicacion. Buscar en TODOS los archivos modificados y compararlos con el resto del codebase:
 
@@ -137,7 +152,7 @@ Para verificar, buscar patrones similares entre los archivos modificados y sus e
 diff <(grep -v 'import\|from\|export' apps/web/src/components/FEATURE/FILE.jsx) <(grep -v 'import\|from\|export' apps/gym-native/src/components/FEATURE/FILE.jsx)
 ```
 
-## Paso 8: Paridad web/native
+## Paso 9: Paridad web/native
 
 Toda funcionalidad debe implementarse tanto en web como en native. Son dos clientes del mismo producto.
 
@@ -146,7 +161,7 @@ Toda funcionalidad debe implementarse tanto en web como en native. Son dos clien
 3. Verificar que el comportamiento es equivalente (misma logica, diferente UI layer).
 4. La logica de negocio nunca debe duplicarse entre apps — siempre en `@gym/shared`.
 
-## Paso 9: routineIO.js
+## Paso 10: routineIO.js
 
 Solo si hay cambios en el modelo de datos (tablas routines, routine_days, routine_blocks, routine_exercises, exercises):
 

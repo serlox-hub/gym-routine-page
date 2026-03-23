@@ -372,3 +372,15 @@ export function findPRSetNumbers(sets, prData) {
 
   return prSetNumbers
 }
+
+// ============================================
+// PR NOTIFICATION FORMATTING
+// ============================================
+
+export function formatPRNotificationText(notification) {
+  const record = notification.records[0]
+  const improvement = record.previousValue
+    ? ` (anterior: ${record.previousValue})`
+    : ''
+  return `${notification.exerciseName}: ${record.label} ${record.value} ${record.unit}${improvement}`
+}

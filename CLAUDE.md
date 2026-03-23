@@ -173,6 +173,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 - Use Tailwind CSS classes (web) / NativeWind classes (mobile)
 - Use style objects from `lib/styles.js` for consistency (web)
 - Design tokens: `colors.textPrimary`, `colors.bgSecondary`, etc.
+- **Safe Area (native)**: Todo contenido visible debe respetar el safe area (notch, Dynamic Island, home indicator). Usar `SafeAreaView` de `react-native-safe-area-context` para layouts, o `useSafeAreaInsets()` para elementos con `position: 'absolute'` que necesitan offset manual. Nunca usar valores fijos de `top`/`bottom` sin sumar el inset correspondiente.
 
 ## Database Schema
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  formatPRNotificationText,
   getTrackableMetrics,
   getPRMetrics,
   calculateSessionExerciseStats,
@@ -681,6 +682,24 @@ describe('sessionStatsCalculation', () => {
       const results = recalculatePRFlags(sessions)
       expect(results[0].sessionId).toBe('abc')
       expect(results[0].exerciseId).toBe('xyz')
+    })
+  })
+
+  describe('formatPRNotificationText', () => {
+    it('formatea notificación con mejora previa', () => {
+      const notification = {
+        exerciseName: 'Press Banca',
+        records: [{ label: 'Peso', value: 100, unit: 'kg', previousValue: '90 kg' }],
+      }
+      expect(formatPRNotificationText(notification)).toBe('Press Banca: Peso 100 kg (anterior: 90 kg)')
+    })
+
+    it('formatea notificación sin valor previo', () => {
+      const notification = {
+        exerciseName: 'Sentadilla',
+        records: [{ label: '1RM', value: 120, unit: 'kg', previousValue: null }],
+      }
+      expect(formatPRNotificationText(notification)).toBe('Sentadilla: 1RM 120 kg')
     })
   })
 })

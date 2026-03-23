@@ -1,12 +1,8 @@
 import { colors } from '../../lib/styles.js'
+import { formatPRNotificationText } from '@gym/shared'
 
 function PRNotification({ notification, onDismiss }) {
   if (!notification) return null
-
-  const record = notification.records[0]
-  const improvementText = record.previousValue
-    ? ` (anterior: ${record.previousValue})`
-    : ''
 
   return (
     <>
@@ -17,7 +13,7 @@ function PRNotification({ notification, onDismiss }) {
       >
         <div className="font-bold text-sm">Nuevo PR</div>
         <div className="text-xs">
-          {notification.exerciseName}: {record.label} {record.value} {record.unit}{improvementText}
+          {formatPRNotificationText(notification)}
         </div>
       </div>
       <style>{`

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Plus, ArrowRightLeft } from 'lucide-react-native'
@@ -14,8 +14,9 @@ import EndSessionModal from './EndSessionModal'
 import SessionTimer from './SessionTimer'
 import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
+import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, getNotifier, buildWorkoutSummaryFromEndSession } from '@gym/shared'
+import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, buildWorkoutSummaryFromEndSession } from '@gym/shared'
 import WorkoutSummaryModal from './WorkoutSummaryModal'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
@@ -41,26 +42,13 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
-  const { checkSetForPR, clearSetPR, prSets, prNotification } = useSessionPRDetection()
+  const { checkSetForPR, clearSetPR, prSets, prNotification, dismissPR } = useSessionPRDetection()
   const endSessionMutation = useEndSession()
   const abandonSessionMutation = useAbandonSession()
   const addSessionExerciseMutation = useAddSessionExercise()
   const removeSessionExerciseMutation = useRemoveSessionExercise()
   const replaceSessionExerciseMutation = useReplaceSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
-
-  // Mostrar toast nativo cuando se detecta un PR
-  const lastPRTimestamp = useRef(null)
-  useEffect(() => {
-    if (prNotification && prNotification.timestamp !== lastPRTimestamp.current) {
-      lastPRTimestamp.current = prNotification.timestamp
-      const record = prNotification.records[0]
-      getNotifier()?.show(
-        `Nuevo PR: ${prNotification.exerciseName} — ${record.label} ${record.value} ${record.unit}`,
-        'success',
-      )
-    }
-  }, [prNotification])
 
   const { exercisesByBlock, flatExercises } = useMemo(
     () => transformSessionExercises(sessionExercises),
@@ -173,6 +161,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <RestTimer />
+      <PRNotification notification={prNotification} onDismiss={dismissPR} />
 
       <PageHeader
         title={titleWithProgress}
