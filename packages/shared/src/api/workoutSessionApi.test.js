@@ -17,6 +17,7 @@ import {
   fetchExerciseHistorySummary,
   fetchExerciseHistory,
   fetchPreviousWorkout,
+  fetchCompletedSessionCount,
 } from './workoutSessionApi.js'
 
 beforeEach(() => {
@@ -290,6 +291,32 @@ describe('fetchWorkoutHistory', () => {
       from: '2026-01-01T00:00:00Z',
       to: '2026-01-31T23:59:59Z',
     })).rejects.toThrow('query error')
+  })
+})
+
+// ============================================
+// fetchCompletedSessionCount
+// ============================================
+
+describe('fetchCompletedSessionCount', () => {
+  it('returns count of completed sessions', async () => {
+    const mock = makeQueryMock({ count: 42, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    const result = await fetchCompletedSessionCount()
+    expect(result).toBe(42)
+  })
+
+  it('returns 0 when count is null', async () => {
+    const mock = makeQueryMock({ count: null, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    const result = await fetchCompletedSessionCount()
+    expect(result).toBe(0)
+  })
+
+  it('throws when Supabase returns error', async () => {
+    const mock = makeQueryMock({ count: null, error: new Error('count error') })
+    getClient.mockReturnValue({ from: () => mock })
+    await expect(fetchCompletedSessionCount()).rejects.toThrow('count error')
   })
 })
 

@@ -14,7 +14,8 @@ import EndSessionModal from './EndSessionModal'
 import SessionTimer from './SessionTimer'
 import { AddExerciseModal } from '../Routine'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, getNotifier } from '@gym/shared'
+import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, getNotifier, buildWorkoutSummaryFromEndSession } from '@gym/shared'
+import WorkoutSummaryModal from './WorkoutSummaryModal'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { colors } from '../../lib/styles'
@@ -34,6 +35,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
+  const [workoutSummary, setWorkoutSummary] = useState(null)
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -123,16 +125,22 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   }
 
   const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'History' }] })
+    const setsSnapshot = { ...completedSets }
+    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
+
     endSessionMutation.mutate({ overallFeeling, notes }, {
       onSuccess: (data) => {
-        if (data?.detectedPRs?.length > 0) {
-          const count = data.detectedPRs.reduce((sum, pr) => sum + pr.details.length, 0)
-          const names = data.detectedPRs.map(pr => pr.exerciseName).join(', ')
-          getNotifier()?.show(`${count} nuevo${count > 1 ? 's' : ''} PR: ${names}`, 'success')
-        }
+        const summary = buildWorkoutSummaryFromEndSession(
+          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot,
+        )
+        setWorkoutSummary(summary)
       },
     })
+  }
+
+  const handleDismissWorkoutSummary = () => {
+    setWorkoutSummary(null)
+    navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'History' }] })
   }
 
   const handleAbandonWorkout = () => {
@@ -249,6 +257,12 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
+      />
+
+      <WorkoutSummaryModal
+        summaryData={workoutSummary}
+        isOpen={!!workoutSummary}
+        onClose={handleDismissWorkoutSummary}
       />
     </SafeAreaView>
   )

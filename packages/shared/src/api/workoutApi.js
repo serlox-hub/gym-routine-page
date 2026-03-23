@@ -14,6 +14,7 @@ export {
   fetchExerciseHistorySummary,
   fetchExerciseHistory,
   fetchPreviousWorkout,
+  fetchCompletedSessionCount,
 } from './workoutSessionApi.js'
 
 export {

@@ -91,6 +91,20 @@ export async function deleteWorkoutSession(sessionId) {
 }
 
 // ============================================
+// SESSION COUNT
+// ============================================
+
+export async function fetchCompletedSessionCount() {
+  const { count, error } = await getClient()
+    .from('workout_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'completed')
+
+  if (error) throw error
+  return count || 0
+}
+
+// ============================================
 // WORKOUT HISTORY
 // ============================================
 

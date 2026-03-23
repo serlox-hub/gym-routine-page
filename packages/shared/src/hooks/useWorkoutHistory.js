@@ -7,6 +7,7 @@ import {
   fetchExerciseHistory,
   fetchPreviousWorkout,
   deleteWorkoutSession,
+  fetchCompletedSessionCount,
 } from '../api/workoutApi.js'
 import {
   fetchExerciseChartData,
@@ -44,6 +45,14 @@ export function useWorkoutHistory(currentDate) {
         }
       })
     },
+  })
+}
+
+export function useCompletedSessionCount() {
+  return useQuery({
+    queryKey: [QUERY_KEYS.WORKOUT_HISTORY, 'count'],
+    queryFn: fetchCompletedSessionCount,
+    staleTime: 60_000,
   })
 }
 

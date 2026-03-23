@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import PRSummaryModal from './PRSummaryModal.jsx'
+import WorkoutSummaryModal from './WorkoutSummaryModal.jsx'
 import PRNotification from './PRNotification.jsx'
 import { colors } from '../../lib/styles.js'
 import { useNavigate } from 'react-router-dom'
@@ -25,7 +25,7 @@ import EndSessionModal from './EndSessionModal.jsx'
 import SessionTimer from './SessionTimer.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection } from '@gym/shared'
+import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, buildWorkoutSummaryFromEndSession } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -46,7 +46,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
-  const [sessionPRSummary, setSessionPRSummary] = useState(null)
+  const [workoutSummary, setWorkoutSummary] = useState(null)
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -74,12 +74,12 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   )
 
   useEffect(() => {
-    if (!sessionId && !sessionPRSummary) {
+    if (!sessionId && !workoutSummary) {
       navigate(navigateToOnEnd || fallbackRoute)
     }
-  }, [sessionId, navigate, fallbackRoute, navigateToOnEnd, sessionPRSummary])
+  }, [sessionId, navigate, fallbackRoute, navigateToOnEnd, workoutSummary])
 
-  if (!sessionId && !sessionPRSummary) return null
+  if (!sessionId && !workoutSummary) return null
 
   if (isLoading) return <LoadingSpinner />
   if (error) {
@@ -119,19 +119,21 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   }
 
   const handleConfirmEnd = ({ overallFeeling, notes }) => {
+    const setsSnapshot = { ...completedSets }
+    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
+
     endSessionMutation.mutate({ overallFeeling, notes }, {
       onSuccess: (data) => {
-        if (data?.detectedPRs?.length > 0) {
-          setSessionPRSummary(data.detectedPRs)
-        } else {
-          setNavigateToOnEnd('/history')
-        }
+        const summary = buildWorkoutSummaryFromEndSession(
+          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot
+        )
+        setWorkoutSummary(summary)
       }
     })
   }
 
-  const handleDismissPRSummary = () => {
-    setSessionPRSummary(null)
+  const handleDismissWorkoutSummary = () => {
+    setWorkoutSummary(null)
     setNavigateToOnEnd('/history')
   }
 
@@ -266,9 +268,9 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         isPending={endSessionMutation.isPending}
       />
 
-      <PRSummaryModal
-        prs={sessionPRSummary}
-        onDismiss={handleDismissPRSummary}
+      <WorkoutSummaryModal
+        summaryData={workoutSummary}
+        onClose={handleDismissWorkoutSummary}
       />
 
     </div>

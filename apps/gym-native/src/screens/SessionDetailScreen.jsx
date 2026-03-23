@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Clock, Calendar, Trash2, Trophy } from 'lucide-react-native'
+import { Clock, Calendar, Trash2, Trophy, Share2 } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui'
-import { SetNotesView } from '../components/Workout'
+import { SetNotesView, WorkoutSummaryModal } from '../components/Workout'
 import {
   SENSATION_LABELS,
   formatFullDate,
@@ -12,6 +12,7 @@ import {
   formatTime,
   getSensationColor,
   findPRSetNumbers,
+  buildWorkoutSummaryFromSession,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors } from '../lib/styles'
@@ -23,6 +24,7 @@ export default function SessionDetailScreen({ route, navigation }) {
   const deleteSession = useDeleteSession()
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showSummary, setShowSummary] = useState(false)
 
   const prsByExercise = useMemo(() => {
     if (!sessionPRsData) return {}
@@ -40,6 +42,7 @@ export default function SessionDetailScreen({ route, navigation }) {
   if (!session) return <ErrorMessage message="Sesión no encontrada" className="m-4" />
 
   const menuItems = [
+    { icon: Share2, label: 'Compartir', onPress: () => setShowSummary(true) },
     { icon: Trash2, label: 'Eliminar', onPress: () => setShowDeleteConfirm(true), danger: true },
   ]
 
@@ -197,6 +200,12 @@ export default function SessionDetailScreen({ route, navigation }) {
         rir={selectedSet?.rir_actual}
         notes={selectedSet?.notes}
         videoUrl={selectedSet?.video_url}
+      />
+
+      <WorkoutSummaryModal
+        summaryData={showSummary ? buildWorkoutSummaryFromSession(session, sessionPRsData) : null}
+        isOpen={showSummary}
+        onClose={() => setShowSummary(false)}
       />
 
       <ConfirmModal

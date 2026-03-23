@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Clock, Calendar, Trash2, TrendingUp, Trophy } from 'lucide-react'
+import { Clock, Calendar, Trash2, TrendingUp, Trophy, Share2 } from 'lucide-react'
 import { useSessionDetail, useDeleteSession } from '../hooks/useWorkout.js'
 import { useSessionPRs } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui/index.js'
 import SetNotesView from '../components/Workout/SetNotesView.jsx'
+import WorkoutSummaryModal from '../components/Workout/WorkoutSummaryModal.jsx'
 import {
   SENSATION_LABELS,
   formatFullDate,
@@ -12,6 +13,7 @@ import {
   formatTime,
   getSensationColor,
   findPRSetNumbers,
+  buildWorkoutSummaryFromSession,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
@@ -24,6 +26,7 @@ function SessionDetail() {
   const deleteSession = useDeleteSession()
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showSummary, setShowSummary] = useState(false)
 
   const prsByExercise = useMemo(() => {
     if (!sessionPRs) return {}
@@ -41,7 +44,8 @@ function SessionDetail() {
   if (!session) return <ErrorMessage message="Sesión no encontrada" className="m-4" />
 
   const menuItems = [
-    { icon: Trash2, label: 'Eliminar', onClick: () => setShowDeleteConfirm(true), danger: true }
+    { icon: Share2, label: 'Compartir', onClick: () => setShowSummary(true) },
+    { icon: Trash2, label: 'Eliminar', onClick: () => setShowDeleteConfirm(true), danger: true },
   ]
 
   return (
@@ -195,6 +199,13 @@ function SessionDetail() {
         notes={selectedSet?.notes}
         videoUrl={selectedSet?.video_url}
       />
+
+      {showSummary && (
+        <WorkoutSummaryModal
+          summaryData={buildWorkoutSummaryFromSession(session, sessionPRs)}
+          onClose={() => setShowSummary(false)}
+        />
+      )}
 
       <ConfirmModal
         isOpen={showDeleteConfirm}

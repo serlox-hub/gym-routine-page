@@ -1,3 +1,10 @@
+// App
+export const APP_NAME = 'Diario Gym'
+export const APP_URL = 'www.diariogym.com'
+
+// Summary Card
+export const SUMMARY_MAX_EXERCISES = 8
+
 // RIR (Reps In Reserve) Options
 export const RIR_OPTIONS = [
   { value: -1, label: 'F', description: 'Fallo' },
