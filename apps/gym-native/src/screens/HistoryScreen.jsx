@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { View, Text, ScrollView, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Calendar } from 'lucide-react-native'
@@ -11,8 +11,14 @@ import { colors } from '../lib/styles'
 
 export default function HistoryScreen({ navigation }) {
   const [currentDate, setCurrentDate] = useState(new Date())
-  const { data: sessions, isLoading, error, refetch, isRefetching } = useWorkoutHistory(currentDate)
+  const { data: sessions, isLoading, error, refetch } = useWorkoutHistory(currentDate)
   const [selectedDay, setSelectedDay] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try { await refetch() } finally { setRefreshing(false) }
+  }, [refetch])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
@@ -37,7 +43,7 @@ export default function HistoryScreen({ navigation }) {
       <ScrollView
         className="flex-1 px-4"
         contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.accent} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
       >
         {!sessions || sessions.length === 0 ? (
           <View className="items-center py-12">
