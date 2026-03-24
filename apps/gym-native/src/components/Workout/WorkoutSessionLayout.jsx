@@ -17,7 +17,7 @@ import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
 import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, buildWorkoutSummaryFromEndSession } from '@gym/shared'
-import WorkoutSummaryModal from './WorkoutSummaryModal'
+import WorkoutSummaryScreen from './WorkoutSummaryScreen'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { colors } from '../../lib/styles'
@@ -96,6 +96,30 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
     },
   })
 
+  const handleConfirmEnd = ({ overallFeeling, notes }) => {
+    const setsSnapshot = { ...completedSets }
+    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
+
+    endSessionMutation.mutate({ overallFeeling, notes }, {
+      onSuccess: (data) => {
+        setShowEndModal(false)
+        const summary = buildWorkoutSummaryFromEndSession(
+          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot,
+        )
+        setWorkoutSummary(summary)
+      },
+    })
+  }
+
+  const handleDismissWorkoutSummary = () => {
+    navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
+    setTimeout(() => useWorkoutStore.getState().endSession(), 100)
+  }
+
+  if (workoutSummary) {
+    return <WorkoutSummaryScreen summaryData={workoutSummary} onDismiss={handleDismissWorkoutSummary} />
+  }
+
   if (!sessionId) return null
 
   if (isLoading && !sessionExercises) return <LoadingSpinner />
@@ -112,25 +136,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         </Button>
       </SafeAreaView>
     )
-  }
-
-  const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    const setsSnapshot = { ...completedSets }
-    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
-
-    endSessionMutation.mutate({ overallFeeling, notes }, {
-      onSuccess: (data) => {
-        const summary = buildWorkoutSummaryFromEndSession(
-          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot,
-        )
-        setWorkoutSummary(summary)
-      },
-    })
-  }
-
-  const handleDismissWorkoutSummary = () => {
-    setWorkoutSummary(null)
-    navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'History' }] })
   }
 
   const handleAbandonWorkout = () => {
@@ -249,12 +254,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
-      />
-
-      <WorkoutSummaryModal
-        summaryData={workoutSummary}
-        isOpen={!!workoutSummary}
-        onClose={handleDismissWorkoutSummary}
       />
 
       <WeightConverterModal

@@ -75,13 +75,43 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     [flatExercises, completedSets, exerciseSetCounts]
   )
 
+  const handleConfirmEnd = ({ overallFeeling, notes }) => {
+    const setsSnapshot = { ...completedSets }
+    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
+
+    endSessionMutation.mutate({ overallFeeling, notes }, {
+      onSuccess: (data) => {
+        setShowEndModal(false)
+        const summary = buildWorkoutSummaryFromEndSession(
+          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot
+        )
+        setWorkoutSummary(summary)
+      }
+    })
+  }
+
+  const handleDismissWorkoutSummary = () => {
+    useWorkoutStore.getState().endSession()
+    setWorkoutSummary(null)
+    setNavigateToOnEnd('/history')
+  }
+
   useEffect(() => {
     if (!sessionId && !workoutSummary) {
       navigate(navigateToOnEnd || fallbackRoute)
     }
   }, [sessionId, navigate, fallbackRoute, navigateToOnEnd, workoutSummary])
 
-  if (!sessionId && !workoutSummary) return null
+  if (workoutSummary) {
+    return (
+      <WorkoutSummaryModal
+        summaryData={workoutSummary}
+        onClose={handleDismissWorkoutSummary}
+      />
+    )
+  }
+
+  if (!sessionId) return null
 
   if (isLoading) return <LoadingSpinner />
   if (error) {
@@ -118,25 +148,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
 
   const handleEndWorkout = () => {
     setShowEndModal(true)
-  }
-
-  const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    const setsSnapshot = { ...completedSets }
-    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
-
-    endSessionMutation.mutate({ overallFeeling, notes }, {
-      onSuccess: (data) => {
-        const summary = buildWorkoutSummaryFromEndSession(
-          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot
-        )
-        setWorkoutSummary(summary)
-      }
-    })
-  }
-
-  const handleDismissWorkoutSummary = () => {
-    setWorkoutSummary(null)
-    setNavigateToOnEnd('/history')
   }
 
   const handleAbandonWorkout = () => {
@@ -269,11 +280,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
-      />
-
-      <WorkoutSummaryModal
-        summaryData={workoutSummary}
-        onClose={handleDismissWorkoutSummary}
       />
 
       <WeightConverterModal

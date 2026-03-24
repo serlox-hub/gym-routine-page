@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import * as Sharing from 'expo-sharing'
-import * as FileSystem from 'expo-file-system'
 import { getNotifier } from '@gym/shared'
 
 export function useShareWorkoutSummary() {
@@ -11,15 +10,11 @@ export function useShareWorkoutSummary() {
     setIsGenerating(true)
     try {
       const uri = await viewShotRef.capture()
-      const uniqueUri = `${FileSystem.cacheDirectory}workout-${Date.now()}.png`
-      await FileSystem.moveAsync({ from: uri, to: uniqueUri })
 
-      await Sharing.shareAsync(uniqueUri, {
+      await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
         dialogTitle: 'Compartir entrenamiento',
       })
-
-      FileSystem.deleteAsync(uniqueUri, { idempotent: true })
     } catch (err) {
       getNotifier()?.show(`Error al compartir: ${err.message}`, 'error')
     } finally {

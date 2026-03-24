@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Share2, Download, X } from 'lucide-react'
 import { useCompletedSessionCount } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
@@ -20,16 +21,16 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
     generateAndDownload(cardRef.current, summaryData.date)
   }
 
-  return (
-    <>
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.95)' }}>
       {/* Copia a tamaño real fuera de pantalla para captura */}
       <div style={{ position: 'fixed', left: -9999, top: 0, zIndex: -1 }}>
         <WorkoutSummaryCard ref={cardRef} summaryData={summaryData} sessionNumber={sessionCount} />
       </div>
 
       <div
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+        className="flex flex-col items-center justify-center"
+        style={{ position: 'absolute', inset: 0 }}
         onClick={onClose}
       >
         {/* Close button */}
@@ -90,7 +91,8 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
           </button>
         </div>
       </div>
-    </>
+    </div>,
+    document.body
   )
 }
 

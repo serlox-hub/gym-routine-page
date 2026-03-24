@@ -123,7 +123,6 @@ export function useEndSession() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startedAt = useWorkoutStore(state => state.startedAt)
-  const endSession = useWorkoutStore(state => state.endSession)
   const userId = useUserId()
 
   return useMutation({
@@ -162,7 +161,6 @@ export function useEndSession() {
       return { session: sessionData, detectedPRs }
     },
     onSuccess: () => {
-      endSession()
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
     },
