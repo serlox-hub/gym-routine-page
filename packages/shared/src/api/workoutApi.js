@@ -33,6 +33,7 @@ export {
   deleteCompletedSetsByExercise,
   updateSessionExerciseExerciseId,
   addSessionExercise,
+  updateSessionExerciseFields,
   deleteSessionExercise,
   reorderSessionExercises,
 } from './sessionExercisesApi.js'

@@ -36,6 +36,7 @@ export default function Modal({
             style={{
               maxWidth: isBottom ? undefined : 400,
               maxHeight: isBottom ? '90%' : undefined,
+              paddingBottom: isBottom ? insets.bottom : undefined,
             }}
           >
             {children}

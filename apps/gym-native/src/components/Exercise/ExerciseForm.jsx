@@ -99,6 +99,7 @@ export default function ExerciseForm({
   isSubmitting = false,
   compact: _compact = false,
   hideSubmitButton = false,
+  minimal = false,
 }) {
   const { data: muscleGroups, isLoading } = useMuscleGroups()
   const [form, setForm] = useState(DEFAULT_FORM)
@@ -162,7 +163,7 @@ export default function ExerciseForm({
 
       <View className="mb-4">
         <Text className="text-primary text-sm font-medium mb-2">
-          Nombre <Text style={{ color: colors.danger }}>*</Text>
+          Nombre{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
         </Text>
         <TextInput
           value={form.name}
@@ -171,14 +172,16 @@ export default function ExerciseForm({
           placeholderTextColor="#6e7681"
           style={inputStyle}
         />
-        <Text className="text-secondary text-xs mt-1">
-          Incluye equipamiento y tipo de agarre si aplica
-        </Text>
+        {!minimal && (
+          <Text className="text-secondary text-xs mt-1">
+            Incluye equipamiento y tipo de agarre si aplica
+          </Text>
+        )}
       </View>
 
       <View className="mb-4">
         <Text className="text-primary text-sm font-medium mb-2">
-          Tipo de medición <Text style={{ color: colors.danger }}>*</Text>
+          Tipo de medición{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
         </Text>
         <Pressable
           onPress={() => setShowMeasurementPicker(true)}
@@ -202,7 +205,7 @@ export default function ExerciseForm({
 
       <View className="mb-4">
         <Text className="text-primary text-sm font-medium mb-2">
-          Grupo muscular <Text style={{ color: colors.danger }}>*</Text>
+          Grupo muscular{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
         </Text>
         <Pressable
           onPress={() => setShowMuscleGroupPicker(true)}
@@ -219,8 +222,8 @@ export default function ExerciseForm({
         </Pressable>
       </View>
 
-      <View className="pt-4 border-t border-border">
-        <Text className="text-secondary text-xs mb-4">Campos opcionales</Text>
+      <View className={minimal ? '' : 'pt-4 border-t border-border'}>
+        {!minimal && <Text className="text-secondary text-xs mb-4">Campos opcionales</Text>}
         <View>
           <Text className="text-secondary text-sm font-medium mb-2">Instrucciones de ejecución</Text>
           <TextInput

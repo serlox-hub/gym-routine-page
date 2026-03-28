@@ -7,8 +7,6 @@ import NewRoutineScreen from '../screens/NewRoutineScreen'
 import HistoryScreen from '../screens/HistoryScreen'
 import SessionDetailScreen from '../screens/SessionDetailScreen'
 import ExercisesScreen from '../screens/ExercisesScreen'
-import NewExerciseScreen from '../screens/NewExerciseScreen'
-import EditExerciseScreen from '../screens/EditExerciseScreen'
 import ExerciseProgressScreen from '../screens/ExerciseProgressScreen'
 import BodyMetricsScreen from '../screens/BodyMetricsScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
@@ -40,8 +38,6 @@ export default function AppStack() {
 
         {/* Navegación secundaria */}
         <Stack.Screen name="Exercises" component={ExercisesScreen} />
-        <Stack.Screen name="NewExercise" component={NewExerciseScreen} />
-        <Stack.Screen name="EditExercise" component={EditExerciseScreen} />
         <Stack.Screen name="ExerciseProgress" component={ExerciseProgressScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />
         <Stack.Screen name="SessionDetail" component={SessionDetailScreen} />

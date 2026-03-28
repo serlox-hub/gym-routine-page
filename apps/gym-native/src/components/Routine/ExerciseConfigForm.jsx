@@ -77,18 +77,21 @@ export default function ExerciseConfigForm({
   existingSupersets = [],
   nextSupersetId = 1,
   showSupersetField = false,
+  hideExerciseName = false,
 }) {
   const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }))
 
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
-      <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(88,166,255,0.1)' }}>
-        <Text className="text-primary font-medium">{exercise.name}</Text>
-      </View>
+      {!hideExerciseName && (
+        <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(88,166,255,0.1)' }}>
+          <Text className="text-primary font-medium">{exercise.name}</Text>
+        </View>
+      )}
 
       <View className="flex-row gap-3 mb-4">
         <View className="flex-1">
-          <FormField label="Series" required>
+          <FormField label="Series" required={!isSessionMode}>
             <TextInput
               value={form.series}
               onChangeText={update('series')}
@@ -98,7 +101,7 @@ export default function ExerciseConfigForm({
           </FormField>
         </View>
         <View className="flex-1">
-          <FormField label={getRepsLabel(exercise.measurement_type)} required>
+          <FormField label={getRepsLabel(exercise.measurement_type)} required={!isSessionMode}>
             <TextInput
               value={form.reps}
               onChangeText={update('reps')}
@@ -110,8 +113,8 @@ export default function ExerciseConfigForm({
         </View>
       </View>
 
-      <View className="pt-3 border-t border-border gap-3">
-        <Text className="text-secondary text-xs">Opcionales</Text>
+      <View className={`gap-3 ${isSessionMode ? '' : 'pt-3 border-t border-border'}`}>
+        {!isSessionMode && <Text className="text-secondary text-xs">Opcionales</Text>}
 
         <View className="flex-row gap-3">
           <View className="flex-1">
@@ -175,7 +178,8 @@ export default function ExerciseConfigForm({
             onChangeText={update('notes')}
             placeholder={isSessionMode ? 'Notas para este ejercicio...' : 'Notas específicas para esta rutina...'}
             placeholderTextColor="#6e7681"
-            style={inputStyle}
+            multiline
+            style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
           />
         </FormField>
 
@@ -201,9 +205,9 @@ export default function ExerciseConfigForm({
 
 export function ExerciseConfigFormButtons({ onBack, onSubmit, isPending, backLabel = 'Volver', submitLabel = 'Añadir', pendingLabel = 'Añadiendo...' }) {
   return (
-    <View className="flex-row gap-3 justify-end pt-3 border-t border-border">
-      <Button variant="secondary" onPress={onBack}>{backLabel}</Button>
-      <Button onPress={onSubmit} disabled={isPending} loading={isPending}>
+    <View className="flex-row gap-3 px-4 py-3 border-t border-border">
+      <Button variant="secondary" className="flex-1" onPress={onBack}>{backLabel}</Button>
+      <Button className="flex-1" onPress={onSubmit} disabled={isPending} loading={isPending}>
         {isPending ? pendingLabel : submitLabel}
       </Button>
     </View>

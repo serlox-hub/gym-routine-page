@@ -197,6 +197,15 @@ export async function addSessionExercise({ sessionId, exercise, series, reps, ri
   })
 }
 
+export async function updateSessionExerciseFields(sessionExerciseId, fields) {
+  const { error } = await getClient()
+    .from('session_exercises')
+    .update(fields)
+    .eq('id', sessionExerciseId)
+
+  if (error) throw error
+}
+
 export async function deleteSessionExercise(sessionExerciseId) {
   const { error } = await getClient()
     .from('session_exercises')

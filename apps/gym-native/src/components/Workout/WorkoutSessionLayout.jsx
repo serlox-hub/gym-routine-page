@@ -201,6 +201,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
               flatExercises={flatExercises}
               onReorder={handlers.onReorder}
               isReordering={reorderSessionExercisesMutation.isPending}
+              existingSupersets={existingSupersets}
             />
           )}
         </ScrollView>

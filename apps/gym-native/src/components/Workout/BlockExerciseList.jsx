@@ -6,7 +6,7 @@ import SupersetCard from './SupersetCard'
 import { colors } from '../../lib/styles'
 import { countExercisesInBlock, findExerciseIndex } from '@gym/shared'
 
-function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false }) {
+function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false, existingSupersets = [] }) {
   const totalFlat = flatExercises.length
   const positionLabels = flatExercises.map(e => e.exercise?.name)
 
@@ -59,6 +59,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       totalExercises={totalFlat}
                       positionLabels={positionLabels}
                       isReordering={isReordering}
+                      existingSupersets={existingSupersets}
                     />
                   )
                 }
@@ -71,6 +72,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                     onUncompleteSet={onUncompleteSet}
                     onRemove={onRemove}
                     onReplace={onReplace}
+                    existingSupersets={existingSupersets}
                   />
                 )
               })}

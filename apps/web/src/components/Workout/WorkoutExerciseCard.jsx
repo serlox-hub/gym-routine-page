@@ -1,24 +1,26 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { Info, Plus, Trash2, ArrowUpDown, Repeat2 } from 'lucide-react'
+import { Info, Plus, Trash2, ArrowUpDown, Repeat2, Pencil } from 'lucide-react'
 import { Card, Badge, ConfirmModal } from '../ui/index.js'
 import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
 import ExercisePickerModal from '../Routine/ExercisePickerModal.jsx'
+import EditSessionExerciseModal from './EditSessionExerciseModal.jsx'
 import ExerciseCardHeader from './ExerciseCardHeader.jsx'
 import ExerciseCardNotes from './ExerciseCardNotes.jsx'
 import SetsList from './SetsList.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { usePreviousWorkout } from '../../hooks/useWorkout.js'
+import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
-function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [] }) {
+function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [], existingSupersets = [] }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
   const tempoRazon = routine_exercise?.tempo_razon
   const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
@@ -53,8 +55,13 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
     prevCompletedRef.current = isCompleted
   }, [isCompleted])
 
+  const updateFieldsMutation = useUpdateSessionExerciseFields()
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
   const removeSet = () => { if (setsCount > 0) setExerciseSetCount(exerciseKey, setsCount - 1) }
+  const handleSaveEdit = (sessionExerciseId, fields, newSeries) => {
+    updateFieldsMutation.mutate({ sessionExerciseId, fields })
+    if (newSeries && newSeries !== setsCount) setExerciseSetCount(exerciseKey, newSeries)
+  }
 
   if (isWarmup) {
     return <WarmupExerciseCard exercise={exercise} series={series} reps={reps} tempo={tempo} notes={notes} rest_seconds={rest_seconds} />
@@ -62,6 +69,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const menuItems = [
     { label: 'Ver historial', icon: Info, onClick: () => setShowHistory(true) },
+    { label: 'Editar', icon: Pencil, onClick: () => setShowEdit(true) },
     { label: 'Añadir serie', icon: Plus, onClick: addSet },
     onReplace && { label: 'Sustituir', icon: Repeat2, onClick: () => setShowReplace(true) },
     onReorderToPosition && totalExercises > 1 && { type: 'separator' },
@@ -95,6 +103,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={exercise.name} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} routineDayId={routineDayId} />
       <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title="Sustituir ejercicio" subtitle={`Sustituyendo: ${exercise.name}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
       <ConfirmModal isOpen={showRemoveConfirm} title="Quitar ejercicio" message={`¿Seguro que quieres quitar "${exercise.name}" de esta sesión?`} confirmText="Quitar" onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
+      <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />
     </Wrapper>
   )
 }

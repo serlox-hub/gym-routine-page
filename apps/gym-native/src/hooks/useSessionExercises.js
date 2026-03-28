@@ -5,6 +5,7 @@ import {
   addSessionExercise,
   deleteCompletedSetsByExercise,
   updateSessionExerciseExerciseId,
+  updateSessionExerciseFields,
   deleteSessionExercise,
   reorderSessionExercises,
 } from '@gym/shared'
@@ -67,6 +68,20 @@ export function useRemoveSessionExercise() {
       clearExerciseFromStore(sessionExerciseId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+    },
+  })
+}
+
+export function useUpdateSessionExerciseFields() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+
+  return useMutation({
+    mutationFn: ({ sessionExerciseId, fields }) => {
+      return updateSessionExerciseFields(sessionExerciseId, fields)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
     },
   })
 }
