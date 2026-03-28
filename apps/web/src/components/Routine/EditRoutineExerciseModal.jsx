@@ -56,7 +56,8 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
   }
 
   const handleReplace = (newExercise) => {
-    onSubmit({ exerciseId: routineExercise.id, exercise_id: newExercise.id, ...parseExerciseConfigForm(form) })
+    const replaceForm = { ...form, rir: '', tempo: '', tempo_razon: '', notes: '' }
+    onSubmit({ exerciseId: routineExercise.id, exercise_id: newExercise.id, ...parseExerciseConfigForm(replaceForm) })
   }
 
   const nextSuperset = getNextSupersetId(existingSupersets)

@@ -102,8 +102,9 @@ export function useReplaceSessionExercise() {
       // Eliminar series completadas del ejercicio anterior
       await deleteCompletedSetsByExercise({ sessionId, sessionExerciseId })
 
-      // Actualizar el exercise_id
-      return updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
+      // Actualizar el exercise_id y limpiar campos específicos del anterior
+      await updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
+      return updateSessionExerciseFields(sessionExerciseId, { rir: null, tempo: null, notes: null })
     },
     onSuccess: (_, { sessionExerciseId }) => {
       clearExercise(sessionExerciseId)

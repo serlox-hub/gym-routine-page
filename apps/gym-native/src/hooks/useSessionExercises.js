@@ -45,7 +45,8 @@ export function useReplaceSessionExercise() {
   return useMutation({
     mutationFn: async ({ sessionExerciseId, newExerciseId }) => {
       await deleteCompletedSetsByExercise({ sessionId, sessionExerciseId })
-      return updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
+      await updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
+      return updateSessionExerciseFields(sessionExerciseId, { rir: null, tempo: null, notes: null })
     },
     onSuccess: (_, { sessionExerciseId }) => {
       clearExercise(sessionExerciseId)
