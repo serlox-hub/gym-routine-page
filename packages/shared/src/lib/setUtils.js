@@ -3,6 +3,7 @@
  */
 
 import { MeasurementType } from './measurementTypes.js'
+import { parseDecimal } from './numberUtils.js'
 
 /**
  * Formatea un número con coma decimal (formato español)
@@ -43,7 +44,7 @@ export function getTimeUnitLabel(timeUnit) {
  * Convierte un valor de distancia a metros según la unidad
  */
 export function distanceToMeters(value, distanceUnit) {
-  const num = parseFloat(value)
+  const num = parseDecimal(value)
   if (isNaN(num)) return 0
   return distanceUnit === 'km' ? Math.round(num * 1000) : num
 }
@@ -145,7 +146,7 @@ export function buildCompletedSetData(measurementType, formData, info) {
 
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
-      data.weight = parseFloat(weight)
+      data.weight = parseDecimal(weight)
       data.weightUnit = weightUnit
       data.repsCompleted = parseInt(reps)
       break
@@ -156,7 +157,7 @@ export function buildCompletedSetData(measurementType, formData, info) {
       data.timeSeconds = parseInt(time)
       break
     case MeasurementType.WEIGHT_TIME:
-      data.weight = parseFloat(weight)
+      data.weight = parseDecimal(weight)
       data.weightUnit = weightUnit
       data.timeSeconds = parseInt(time)
       break
@@ -164,7 +165,7 @@ export function buildCompletedSetData(measurementType, formData, info) {
       data.distanceMeters = distanceToMeters(distance, distanceUnit)
       break
     case MeasurementType.WEIGHT_DISTANCE:
-      data.weight = parseFloat(weight)
+      data.weight = parseDecimal(weight)
       data.weightUnit = weightUnit
       data.distanceMeters = distanceToMeters(distance, distanceUnit)
       break

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
-import { getMeasurementLabel } from '@gym/shared'
+import { getMeasurementLabel, parseDecimal } from '@gym/shared'
 
 export default function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = 'cm', record = null, isPending }) {
   const [form, setForm] = useState({ value: '', notes: '' })
@@ -22,7 +22,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
   }, [isOpen, record])
 
   const handleSubmit = () => {
-    const value = parseFloat(form.value)
+    const value = parseDecimal(form.value)
     if (!value || value <= 0) return
 
     onSubmit({
@@ -78,7 +78,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
           <Button variant="secondary" onPress={handleClose}>Cancelar</Button>
           <Button
             onPress={handleSubmit}
-            disabled={!form.value || parseFloat(form.value) <= 0 || isPending}
+            disabled={!form.value || parseDecimal(form.value) <= 0 || isPending}
             loading={isPending}
           >
             {isEditing ? 'Guardar' : 'Registrar'}

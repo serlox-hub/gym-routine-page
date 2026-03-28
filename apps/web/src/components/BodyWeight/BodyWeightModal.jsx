@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button, Modal, Input, Textarea } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
+import { parseDecimal } from '@gym/shared'
 
 function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }) {
   const [form, setForm] = useState({
@@ -25,7 +26,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const weight = parseFloat(form.weight)
+    const weight = parseDecimal(form.weight)
     if (!weight || weight <= 0) return
 
     onSubmit({
@@ -73,7 +74,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }
           </Button>
           <Button
             type="submit"
-            disabled={!form.weight || parseFloat(form.weight) <= 0 || isPending}
+            disabled={!form.weight || parseDecimal(form.weight) <= 0 || isPending}
           >
             {isPending ? 'Guardando...' : isEditing ? 'Guardar' : 'Registrar'}
           </Button>

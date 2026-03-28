@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { parseDecimal } from '../lib/numberUtils.js'
 
 export async function fetchBodyWeightHistory(userId) {
   const { data, error } = await getClient()
@@ -29,7 +30,7 @@ export async function createBodyWeight({ userId, weight, weightUnit = 'kg', note
     .from('body_weight_records')
     .insert({
       user_id: userId,
-      weight: parseFloat(weight),
+      weight: parseDecimal(weight),
       weight_unit: weightUnit,
       notes: notes || null,
       recorded_at: recordedAt || new Date().toISOString(),
@@ -43,7 +44,7 @@ export async function createBodyWeight({ userId, weight, weightUnit = 'kg', note
 
 export async function updateBodyWeight({ id, weight, weightUnit, notes, recordedAt }) {
   const updates = {}
-  if (weight !== undefined) updates.weight = parseFloat(weight)
+  if (weight !== undefined) updates.weight = parseDecimal(weight)
   if (weightUnit !== undefined) updates.weight_unit = weightUnit
   if (notes !== undefined) updates.notes = notes || null
   if (recordedAt !== undefined) updates.recorded_at = recordedAt

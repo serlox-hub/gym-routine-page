@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
+import { parseDecimal } from '@gym/shared'
 
 export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }) {
   const [form, setForm] = useState({ weight: '', notes: '' })
@@ -21,7 +22,7 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
   }, [isOpen, record])
 
   const handleSubmit = () => {
-    const weight = parseFloat(form.weight)
+    const weight = parseDecimal(form.weight)
     if (!weight || weight <= 0) return
 
     onSubmit({
@@ -73,7 +74,7 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
           <Button variant="secondary" onPress={handleClose}>Cancelar</Button>
           <Button
             onPress={handleSubmit}
-            disabled={!form.weight || parseFloat(form.weight) <= 0 || isPending}
+            disabled={!form.weight || parseDecimal(form.weight) <= 0 || isPending}
             loading={isPending}
           >
             {isEditing ? 'Guardar' : 'Registrar'}

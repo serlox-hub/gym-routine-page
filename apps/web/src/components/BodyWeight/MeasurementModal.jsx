@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button, Modal, Input, Textarea } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { getMeasurementLabel } from '@gym/shared'
+import { getMeasurementLabel, parseDecimal } from '@gym/shared'
 
 function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = 'cm', record = null, isPending }) {
   const [form, setForm] = useState({
@@ -26,7 +26,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const value = parseFloat(form.value)
+    const value = parseDecimal(form.value)
     if (!value || value <= 0) return
 
     onSubmit({
@@ -78,7 +78,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
           </Button>
           <Button
             type="submit"
-            disabled={!form.value || parseFloat(form.value) <= 0 || isPending}
+            disabled={!form.value || parseDecimal(form.value) <= 0 || isPending}
           >
             {isPending ? 'Guardando...' : isEditing ? 'Guardar' : 'Registrar'}
           </Button>

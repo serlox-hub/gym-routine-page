@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { parseDecimal } from '../lib/numberUtils.js'
 
 export async function fetchBodyMeasurementHistory(userId, measurementType) {
   const { data, error } = await getClient()
@@ -18,7 +19,7 @@ export async function createBodyMeasurement({ userId, measurementType, value, un
     .insert({
       user_id: userId,
       measurement_type: measurementType,
-      value: parseFloat(value),
+      value: parseDecimal(value),
       unit,
       notes: notes || null,
       recorded_at: recordedAt || new Date().toISOString(),
@@ -32,7 +33,7 @@ export async function createBodyMeasurement({ userId, measurementType, value, un
 
 export async function updateBodyMeasurement({ id, value, unit, notes, recordedAt }) {
   const updates = {}
-  if (value !== undefined) updates.value = parseFloat(value)
+  if (value !== undefined) updates.value = parseDecimal(value)
   if (unit !== undefined) updates.unit = unit
   if (notes !== undefined) updates.notes = notes || null
   if (recordedAt !== undefined) updates.recorded_at = recordedAt
