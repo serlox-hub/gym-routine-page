@@ -205,7 +205,7 @@ export default function ExerciseConfigForm({
 
 export function ExerciseConfigFormButtons({ onBack, onSubmit, isPending, backLabel = 'Volver', submitLabel = 'Añadir', pendingLabel = 'Añadiendo...' }) {
   return (
-    <View className="flex-row gap-3 px-4 py-3 border-t border-border">
+    <View className="flex-row gap-3 px-4 pt-3 border-t border-border">
       <Button variant="secondary" className="flex-1" onPress={onBack}>{backLabel}</Button>
       <Button className="flex-1" onPress={onSubmit} disabled={isPending} loading={isPending}>
         {isPending ? pendingLabel : submitLabel}

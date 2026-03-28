@@ -102,7 +102,7 @@ export default function EditRoutineExerciseModal({
 
       {view === 'config' ? (
         <>
-          <View className="p-4">
+          <View className="p-4" style={{ flexShrink: 1 }}>
             <ExerciseConfigForm
               exercise={exercise}
               form={form}

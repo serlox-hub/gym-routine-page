@@ -39,7 +39,7 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
 
   return (
     <>
-      <ScrollView className="p-4" style={{ maxHeight: 500 }} keyboardShouldPersistTaps="handled">
+      <ScrollView className="p-4" keyboardShouldPersistTaps="handled">
         <ExerciseForm
           initialData={initialData}
           onSubmit={handleSubmit}

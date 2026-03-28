@@ -98,7 +98,7 @@ export default function EditSessionExerciseModal({
 
       {view === 'session' ? (
         <>
-          <View className="p-4">
+          <View className="p-4" style={{ flexShrink: 1 }}>
             <ExerciseConfigForm
               exercise={exerciseObj}
               form={form}
