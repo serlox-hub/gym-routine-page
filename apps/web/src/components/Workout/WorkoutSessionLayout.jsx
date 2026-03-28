@@ -212,6 +212,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             flatExercises={flatExercises}
             onReorder={handleReorderExercise}
             isReordering={reorderSessionExercisesMutation.isPending}
+            existingSupersets={existingSupersets}
           />
         )}
       </main>

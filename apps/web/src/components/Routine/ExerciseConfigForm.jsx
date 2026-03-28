@@ -14,29 +14,31 @@ function ExerciseConfigForm({
   existingSupersets = [],
   nextSupersetId = 1,
   showSupersetField = false,
+  hideExerciseName = false,
 }) {
   return (
     <div className="space-y-4">
-      <div
-        className="p-3 rounded-lg"
-        style={{ backgroundColor: 'rgba(88, 166, 255, 0.1)' }}
-      >
-        <div className="font-medium" style={{ color: colors.textPrimary }}>
-          {exercise.name}
+      {!hideExerciseName && (
+        <div
+          className="p-3 rounded-lg"
+          style={{ backgroundColor: 'rgba(88, 166, 255, 0.1)' }}
+        >
+          <div className="font-medium" style={{ color: colors.textPrimary }}>
+            {exercise.name}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Campos obligatorios */}
       <div className="grid grid-cols-2 gap-3">
         <Input
-          label={<>Series <span style={{ color: colors.danger }}>*</span></>}
+          label={isSessionMode ? 'Series' : <>Series <span style={{ color: colors.danger }}>*</span></>}
           type="number"
           min="1"
           value={form.series}
           onChange={(e) => setForm(prev => ({ ...prev, series: e.target.value }))}
         />
         <Input
-          label={<>{getRepsLabel(exercise.measurement_type)} <span style={{ color: colors.danger }}>*</span></>}
+          label={isSessionMode ? getRepsLabel(exercise.measurement_type) : <>{getRepsLabel(exercise.measurement_type)} <span style={{ color: colors.danger }}>*</span></>}
           type="text"
           value={form.reps}
           onChange={(e) => setForm(prev => ({ ...prev, reps: e.target.value }))}
@@ -44,14 +46,15 @@ function ExerciseConfigForm({
         />
       </div>
 
-      {/* Campos opcionales */}
       <div
-        className="pt-3 mt-1 border-t space-y-3"
-        style={{ borderColor: colors.border }}
+        className={`space-y-3 ${isSessionMode ? '' : 'pt-3 mt-1 border-t'}`}
+        style={isSessionMode ? undefined : { borderColor: colors.border }}
       >
-        <p className="text-xs" style={{ color: colors.textSecondary }}>
-          Opcionales
-        </p>
+        {!isSessionMode && (
+          <p className="text-xs" style={{ color: colors.textSecondary }}>
+            Opcionales
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Input
@@ -94,13 +97,17 @@ function ExerciseConfigForm({
           Concéntrica - Pausa arriba - Excéntrica - Pausa abajo
         </p>
 
-        <Input
-          label="Notas"
-          type="text"
-          value={form.notes}
-          onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-          placeholder={isSessionMode ? "Notas para este ejercicio..." : "Notas específicas para esta rutina..."}
-        />
+        <div>
+          <label className="text-sm font-medium block mb-1" style={{ color: colors.textSecondary }}>Notas</label>
+          <textarea
+            value={form.notes}
+            onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder={isSessionMode ? "Notas para este ejercicio..." : "Notas específicas para esta rutina..."}
+            rows={2}
+            className="w-full rounded-lg px-3 py-2 text-sm"
+            style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}`, resize: 'vertical' }}
+          />
+        </div>
 
         {showSupersetField && (
           <div>

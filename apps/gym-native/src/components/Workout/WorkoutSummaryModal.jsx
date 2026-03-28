@@ -1,4 +1,4 @@
-import { useRef, Fragment } from 'react'
+import { useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import ViewShot from 'react-native-view-shot'
 import { Share2, X } from 'lucide-react-native'
@@ -17,23 +17,23 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
     generateAndShare(viewShotRef.current, summaryData?.date)
   }
 
+  if (!isOpen) return null
+
   return (
-    <Fragment>
+    <>
       {/* Tarjeta a tamaño real para captura, fuera del viewport */}
-      {isOpen && (
-        <View style={{ position: 'absolute', top: -2000 }} collapsable={false} pointerEvents="none">
-          <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
-            <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
-          </ViewShot>
-        </View>
-      )}
+      <View style={{ position: 'absolute', top: -2000, left: 0, width: 540 }} collapsable={false} pointerEvents="none">
+        <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
+          <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
+        </ViewShot>
+      </View>
 
       <Modal isOpen={isOpen} onClose={onClose} position="center" className="p-0">
         <View className="p-4">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-primary text-lg font-semibold">Resumen</Text>
-            <Pressable onPress={onClose} className="p-1.5">
-              <X size={18} color={colors.textSecondary} />
+            <Pressable onPress={onClose} hitSlop={8} className="p-1.5 active:opacity-60">
+              <X size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
 
@@ -60,6 +60,6 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
           </View>
         </View>
       </Modal>
-    </Fragment>
+    </>
   )
 }

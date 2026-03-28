@@ -81,6 +81,23 @@ export async function completeWorkoutSession({ sessionId, completedAt, durationM
   return data
 }
 
+export async function updateSessionMetadata({ sessionId, completedAt, durationMinutes, overallFeeling, notes }) {
+  const { data, error } = await getClient()
+    .from('workout_sessions')
+    .update({
+      completed_at: completedAt,
+      duration_minutes: durationMinutes,
+      overall_feeling: overallFeeling,
+      notes,
+    })
+    .eq('id', sessionId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
 export async function deleteWorkoutSession(sessionId) {
   const { error } = await getClient()
     .from('workout_sessions')

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react-native'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, DropdownMenu, Button, ActiveSessionBanner } from '../components/ui'
-import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise'
+import { ExerciseSearchBar, ExerciseUsageModal, ExerciseFormModal } from '../components/Exercise'
 import { normalizeSearchText } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors } from '../lib/styles'
@@ -19,6 +19,8 @@ export default function ExercisesScreen({ navigation }) {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
   const [exerciseForUsage, setExerciseForUsage] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editExerciseId, setEditExerciseId] = useState(null)
 
   const filteredExercises = useMemo(() => {
     if (!exercises) return []
@@ -39,9 +41,7 @@ export default function ExercisesScreen({ navigation }) {
     })
   }
 
-  const handleCreate = () => {
-    navigation.navigate('NewExercise', search.trim() ? { name: search.trim() } : {})
-  }
+  const handleCreate = () => setShowCreateModal(true)
 
   const getUsageText = (exerciseId) => {
     const parts = []
@@ -64,7 +64,7 @@ export default function ExercisesScreen({ navigation }) {
           items={[
             { icon: BarChart3, label: 'Ver usos', onPress: () => setExerciseForUsage(exercise) },
             { icon: TrendingUp, label: 'Progresión', onPress: () => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id, exerciseName: exercise.name }) },
-            { icon: Pencil, label: 'Editar', onPress: () => navigation.navigate('EditExercise', { exerciseId: exercise.id }) },
+            { icon: Pencil, label: 'Editar', onPress: () => setEditExerciseId(exercise.id) },
             { icon: Trash2, label: 'Eliminar', onPress: () => setExerciseToDelete(exercise), danger: true },
           ]}
         />
@@ -118,6 +118,18 @@ export default function ExercisesScreen({ navigation }) {
       <ExerciseUsageModal
         exercise={exerciseForUsage}
         onClose={() => setExerciseForUsage(null)}
+      />
+
+      <ExerciseFormModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        initialName={search.trim()}
+      />
+
+      <ExerciseFormModal
+        isOpen={!!editExerciseId}
+        onClose={() => setEditExerciseId(null)}
+        exerciseId={editExerciseId}
       />
 
       <ActiveSessionBanner />

@@ -1,4 +1,4 @@
-import { Modal as RNModal, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Modal as RNModal, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function Modal({
@@ -36,9 +36,13 @@ export default function Modal({
             style={{
               maxWidth: isBottom ? undefined : 400,
               maxHeight: isBottom ? '90%' : undefined,
+              paddingBottom: isBottom ? Math.max(insets.bottom / 2, 8) : undefined,
+              flexShrink: 1,
             }}
           >
-            {children}
+            <View style={{ flexShrink: 1 }}>
+              {children}
+            </View>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

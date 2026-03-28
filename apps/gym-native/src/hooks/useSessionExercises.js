@@ -5,6 +5,7 @@ import {
   addSessionExercise,
   deleteCompletedSetsByExercise,
   updateSessionExerciseExerciseId,
+  updateSessionExerciseFields,
   deleteSessionExercise,
   reorderSessionExercises,
 } from '@gym/shared'
@@ -44,7 +45,8 @@ export function useReplaceSessionExercise() {
   return useMutation({
     mutationFn: async ({ sessionExerciseId, newExerciseId }) => {
       await deleteCompletedSetsByExercise({ sessionId, sessionExerciseId })
-      return updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
+      await updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
+      return updateSessionExerciseFields(sessionExerciseId, { rir: null, tempo: null, notes: null })
     },
     onSuccess: (_, { sessionExerciseId }) => {
       clearExercise(sessionExerciseId)
@@ -67,6 +69,20 @@ export function useRemoveSessionExercise() {
       clearExerciseFromStore(sessionExerciseId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+    },
+  })
+}
+
+export function useUpdateSessionExerciseFields() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+
+  return useMutation({
+    mutationFn: ({ sessionExerciseId, fields }) => {
+      return updateSessionExerciseFields(sessionExerciseId, fields)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
     },
   })
 }

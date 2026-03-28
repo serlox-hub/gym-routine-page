@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
-import { View, Text } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, Pressable } from 'react-native'
+import { Maximize2 } from 'lucide-react-native'
 import { useVideoPlayer, VideoView } from 'expo-video'
 import LoadingSpinner from './LoadingSpinner'
 import { getVideoUrl } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
 
 export default function VideoPlayer({ videoKey }) {
+  const viewRef = useRef(null)
   const [url, setUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -56,11 +58,20 @@ export default function VideoPlayer({ videoKey }) {
   return (
     <View className="rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
       <VideoView
+        ref={viewRef}
         player={player}
         style={{ width: '100%', height: 200 }}
         contentFit="contain"
         nativeControls
+        allowsFullscreen
       />
+      <Pressable
+        onPress={() => viewRef.current?.enterFullscreen()}
+        className="absolute top-2 left-2 p-1.5 rounded-full"
+        style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+      >
+        <Maximize2 size={14} color="#ffffff" />
+      </Pressable>
     </View>
   )
 }

@@ -8,6 +8,7 @@ import {
   insertSessionExercise,
   deleteCompletedSetsByExercise,
   updateSessionExerciseExerciseId,
+  updateSessionExerciseFields,
   deleteSessionExercise,
   reorderSessionExercises,
 } from '../api/workoutApi.js'
@@ -101,8 +102,9 @@ export function useReplaceSessionExercise() {
       // Eliminar series completadas del ejercicio anterior
       await deleteCompletedSetsByExercise({ sessionId, sessionExerciseId })
 
-      // Actualizar el exercise_id
-      return updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
+      // Actualizar el exercise_id y limpiar campos específicos del anterior
+      await updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
+      return updateSessionExerciseFields(sessionExerciseId, { rir: null, tempo: null, notes: null })
     },
     onSuccess: (_, { sessionExerciseId }) => {
       clearExercise(sessionExerciseId)
@@ -126,6 +128,20 @@ export function useRemoveSessionExercise() {
       clearExerciseFromStore(sessionExerciseId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+    },
+  })
+}
+
+export function useUpdateSessionExerciseFields() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+
+  return useMutation({
+    mutationFn: ({ sessionExerciseId, fields }) => {
+      return updateSessionExerciseFields(sessionExerciseId, fields)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
     },
   })
 }

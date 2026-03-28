@@ -8,6 +8,7 @@ export {
   fetchExerciseIdsWithSets,
   deleteSessionExercisesWithoutSets,
   completeWorkoutSession,
+  updateSessionMetadata,
   deleteWorkoutSession,
   fetchWorkoutHistory,
   fetchSessionDetail,
@@ -33,6 +34,7 @@ export {
   deleteCompletedSetsByExercise,
   updateSessionExerciseExerciseId,
   addSessionExercise,
+  updateSessionExerciseFields,
   deleteSessionExercise,
   reorderSessionExercises,
 } from './sessionExercisesApi.js'

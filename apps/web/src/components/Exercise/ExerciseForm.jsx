@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { Card, BottomActions, Input, Select, Textarea } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
 import { colors } from '../../lib/styles.js'
@@ -56,6 +57,53 @@ function UnitSelector({ label, units, field, form, onChange, Wrapper, compact })
   )
 }
 
+function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = muscleGroups?.find(g => g.id === selectedId)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <label className="text-sm text-secondary mb-1 block">
+        Grupo muscular{required && <span style={{ color: colors.danger }}> *</span>}
+      </label>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left"
+        style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}`, color: selected ? colors.textPrimary : colors.textSecondary }}
+      >
+        {selected && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(selected.name) }} />}
+        <span className="flex-1">{selected?.name || 'Seleccionar grupo muscular'}</span>
+        <ChevronDown size={14} style={{ color: colors.textSecondary }} />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-lg py-1 max-h-60 overflow-y-auto shadow-lg" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
+          {muscleGroups?.map(g => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => { onChange(g.id); setOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:opacity-80"
+              style={selectedId === g.id ? { backgroundColor: 'rgba(88,166,255,0.1)' } : undefined}
+            >
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(g.name) }} />
+              <span style={{ color: selectedId === g.id ? colors.accent : colors.textPrimary }}>{g.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const DEFAULT_FORM = {
   name: '',
   measurement_type: MeasurementType.WEIGHT_REPS,
@@ -84,6 +132,7 @@ function ExerciseForm({
   submitLabel = 'Guardar',
   compact = false,
   hideSubmitButton = false,
+  minimal = false,
   className = '',
 }) {
   const { data: muscleGroups, isLoading } = useMuscleGroups()
@@ -91,6 +140,8 @@ function ExerciseForm({
   const [form, setForm] = useState(DEFAULT_FORM)
   const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState(null)
   const [error, setError] = useState(null)
+  const formRef = useRef({ form, selectedMuscleGroupId })
+  formRef.current = { form, selectedMuscleGroupId }
 
   // Populate form with initial data
   useEffect(() => {
@@ -116,21 +167,27 @@ function ExerciseForm({
   }
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     setError(null)
+    const { form: f, selectedMuscleGroupId: mgId } = formRef.current
 
-    if (!form.name.trim()) {
+    if (!f.name.trim()) {
       setError('El nombre es obligatorio')
       return
     }
 
-    if (!selectedMuscleGroupId) {
+    if (!mgId) {
       setError('Selecciona un grupo muscular')
       return
     }
 
-    onSubmit(form, selectedMuscleGroupId)
+    onSubmit(f, mgId)
   }
+
+  // Expose handleSubmit for external use (e.g. ExerciseFormPanel buttons)
+  useEffect(() => {
+    ExerciseForm._submit = handleSubmit
+  })
 
   // Wrapper component based on compact mode
   const Wrapper = compact ? 'div' : Card
@@ -156,24 +213,24 @@ function ExerciseForm({
 
       {/* === CAMPOS OBLIGATORIOS === */}
 
-      {/* Nombre */}
       <Wrapper className={compact ? '' : 'p-4'}>
         <Input
-          label={<>Nombre <span style={{ color: colors.danger }}>*</span></>}
+          label={minimal ? 'Nombre' : <>Nombre <span style={{ color: colors.danger }}>*</span></>}
           type="text"
           value={form.name}
           onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="Ej: Press banca con barra (Agarre Prono Medio)"
+          placeholder="Ej: Press banca con barra"
         />
-        <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-          Incluye equipamiento y tipo de agarre en el nombre si aplica
-        </p>
+        {!minimal && (
+          <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+            Incluye equipamiento y tipo de agarre en el nombre si aplica
+          </p>
+        )}
       </Wrapper>
 
-      {/* Tipo de medición */}
       <Wrapper className={compact ? '' : 'p-4'}>
         <Select
-          label={<>Tipo de medición <span style={{ color: colors.danger }}>*</span></>}
+          label={minimal ? 'Tipo de medición' : <>Tipo de medición <span style={{ color: colors.danger }}>*</span></>}
           value={form.measurement_type}
           onChange={(e) => handleChange('measurement_type', e.target.value)}
         >
@@ -198,44 +255,25 @@ function ExerciseForm({
         <UnitSelector label="Unidad de distancia" units={DISTANCE_UNITS} field="distance_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
       )}
 
-      {/* Grupo muscular */}
       <Wrapper className={compact ? '' : 'p-4'}>
-        <label className="text-sm text-secondary mb-1 block">
-          Grupo muscular <span style={{ color: colors.danger }}>*</span>
-        </label>
-        <div className="flex items-center gap-2">
-          {selectedMuscleGroupId && (
-            <span
-              className="w-3 h-3 rounded-full shrink-0"
-              style={{
-                backgroundColor: getMuscleGroupColor(
-                  muscleGroups?.find(g => g.id === selectedMuscleGroupId)?.name
-                ),
-              }}
-            />
-          )}
-          <Select
-            value={selectedMuscleGroupId || ''}
-            onChange={(e) => setSelectedMuscleGroupId(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">Seleccionar grupo muscular</option>
-            {muscleGroups?.map(group => (
-              <option key={group.id} value={group.id}>{group.name}</option>
-            ))}
-          </Select>
-        </div>
+        <MuscleGroupPicker
+          muscleGroups={muscleGroups}
+          selectedId={selectedMuscleGroupId}
+          onChange={setSelectedMuscleGroupId}
+          required={!minimal}
+        />
       </Wrapper>
 
-      {/* === CAMPOS OPCIONALES === */}
       <div
-        className="pt-4 mt-2 border-t"
-        style={{ borderColor: colors.border }}
+        className={minimal ? '' : 'pt-4 mt-2 border-t'}
+        style={minimal ? undefined : { borderColor: colors.border }}
       >
-        <p className="text-xs mb-4" style={{ color: colors.textSecondary }}>
-          Campos opcionales
-        </p>
+        {!minimal && (
+          <p className="text-xs mb-4" style={{ color: colors.textSecondary }}>
+            Campos opcionales
+          </p>
+        )}
 
-        {/* Instrucciones */}
         <Wrapper className={compact ? '' : 'p-4'}>
           <Textarea
             label="Instrucciones de ejecución"

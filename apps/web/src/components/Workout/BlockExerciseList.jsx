@@ -4,7 +4,7 @@ import SupersetCard from './SupersetCard.jsx'
 import { colors } from '../../lib/styles.js'
 import { countExercisesInBlock, getReorderProps } from '@gym/shared'
 
-function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false }) {
+function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false, existingSupersets = [] }) {
   const positionLabels = flatExercises.map(e => e.exercise.name)
   const getExerciseReorderProps = (exercise) => ({
     ...getReorderProps(flatExercises, exercise, onReorder),
@@ -55,6 +55,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onRemove={onRemove}
                       onReplace={onReplace}
                       isWarmup={block.isWarmup}
+                      existingSupersets={existingSupersets}
                       {...getExerciseReorderProps(group.exercise)}
                     />
                   )
@@ -70,6 +71,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onRemove={onRemove}
                       onReplace={onReplace}
                       getReorderProps={getExerciseReorderProps}
+                      existingSupersets={existingSupersets}
                     />
                   )
                 }

@@ -1,19 +1,33 @@
 import { useState, useEffect } from 'react'
-import { Text } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { Modal } from '../ui'
 import { getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm'
 import ExercisePickerModal from './ExercisePickerModal'
+import { ExerciseFormPanel } from '../Exercise'
+import { colors } from '../../lib/styles'
+
+function ViewToggle({ view, onChangeView, labels }) {
+  return (
+    <View className="flex-row rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
+      {labels.map(({ key, label }) => (
+        <Pressable
+          key={key}
+          onPress={() => onChangeView(key)}
+          className="flex-1 py-2 items-center"
+          style={view === key ? { backgroundColor: colors.accent } : undefined}
+        >
+          <Text className="text-xs font-semibold" style={{ color: view === key ? '#ffffff' : colors.textSecondary }}>
+            {label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  )
+}
 
 const DEFAULT_FORM = {
-  series: '3',
-  reps: '',
-  rir: '',
-  rest_seconds: '',
-  notes: '',
-  tempo: '',
-  tempo_razon: '',
-  superset_group: '',
+  series: '3', reps: '', rir: '', rest_seconds: '', notes: '', tempo: '', tempo_razon: '', superset_group: '',
 }
 
 export default function EditRoutineExerciseModal({
@@ -25,12 +39,14 @@ export default function EditRoutineExerciseModal({
   existingSupersets = [],
   isReplacing = false,
 }) {
+  const [view, setView] = useState('config')
   const [form, setForm] = useState(DEFAULT_FORM)
 
   const exercise = routineExercise?.exercise
 
   useEffect(() => {
     if (routineExercise) {
+      setView('config')
       setForm({
         series: String(routineExercise.series || 3),
         reps: routineExercise.reps || '',
@@ -53,7 +69,8 @@ export default function EditRoutineExerciseModal({
   }
 
   const handleReplace = (newExercise) => {
-    onSubmit({ exerciseId: routineExercise.id, exercise_id: newExercise.id, ...parseExerciseConfigForm(form) })
+    const replaceForm = { ...form, rir: '', tempo: '', tempo_razon: '', notes: '' }
+    onSubmit({ exerciseId: routineExercise.id, exercise_id: newExercise.id, ...parseExerciseConfigForm(replaceForm) })
   }
 
   const nextSuperset = getNextSupersetId(existingSupersets)
@@ -72,25 +89,46 @@ export default function EditRoutineExerciseModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="p-6" position="bottom">
-      <Text className="text-primary text-lg font-semibold mb-4">Editar ejercicio</Text>
+    <Modal isOpen={isOpen} onClose={onClose} position="bottom">
+      <View className="p-4 gap-3" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+        <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+          {exercise?.name || 'Ejercicio'}
+        </Text>
+        <ViewToggle
+          view={view}
+          onChangeView={setView}
+          labels={[{ key: 'config', label: 'En rutina' }, { key: 'exercise', label: 'Ficha' }]}
+        />
+      </View>
 
-      <ExerciseConfigForm
-        exercise={exercise}
-        form={form}
-        setForm={setForm}
-        showSupersetField
-        existingSupersets={existingSupersets}
-        nextSupersetId={nextSuperset}
-      />
-      <ExerciseConfigFormButtons
-        onBack={onClose}
-        onSubmit={handleSubmit}
-        isPending={isPending}
-        backLabel="Cancelar"
-        submitLabel="Guardar"
-        pendingLabel="Guardando..."
-      />
+      {view === 'config' ? (
+        <>
+          <View className="p-4" style={{ flexShrink: 1 }}>
+            <ExerciseConfigForm
+              exercise={exercise}
+              form={form}
+              setForm={setForm}
+              showSupersetField
+              hideExerciseName
+              existingSupersets={existingSupersets}
+              nextSupersetId={nextSuperset}
+            />
+          </View>
+          <ExerciseConfigFormButtons
+            onBack={onClose}
+            onSubmit={handleSubmit}
+            isPending={isPending}
+            backLabel="Cancelar"
+            submitLabel="Guardar"
+            pendingLabel="Guardando..."
+          />
+        </>
+      ) : (
+        <ExerciseFormPanel
+          exerciseId={exercise?.id}
+          onClose={onClose}
+        />
+      )}
     </Modal>
   )
 }

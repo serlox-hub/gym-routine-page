@@ -1,14 +1,15 @@
 import { memo, useState, useEffect, useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
-import { Info, Plus, Trash2, ArrowUpDown, Repeat2 } from 'lucide-react-native'
+import { Info, Plus, Trash2, ArrowUpDown, Repeat2, Pencil } from 'lucide-react-native'
 import { Card, Badge, ConfirmModal, ReorderModal } from '../ui'
 import ExerciseHistoryModal from './ExerciseHistoryModal'
 import { ExercisePickerModal } from '../Routine'
 import ExerciseCardHeader from './ExerciseCardHeader'
 import ExerciseCardNotes from './ExerciseCardNotes'
+import EditSessionExerciseModal from './EditSessionExerciseModal'
 import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
-import { usePreviousWorkout } from '../../hooks/useWorkout'
+import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
 import { MeasurementType, getHaptics } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
@@ -40,7 +41,7 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
   )
 }
 
-function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset, onReorder, currentIndex, totalExercises, positionLabels, isReordering }) {
+function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset, onReorder, currentIndex, totalExercises, positionLabels, isReordering, existingSupersets = [] }) {
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
   const tempoRazon = routine_exercise?.tempo_razon
   const [showNotes, setShowNotes] = useState(false)
@@ -48,8 +49,10 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
   const [showReorder, setShowReorder] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
 
+  const updateFieldsMutation = useUpdateSessionExerciseFields()
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
   const weightUnit = exercise.weight_unit || 'kg'
   const timeUnit = exercise.time_unit || 's'
@@ -70,6 +73,10 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
   const removeSet = () => { if (setsCount > 0) setExerciseSetCount(exerciseKey, setsCount - 1) }
+  const handleSaveEdit = (sessionExerciseId, fields, newSeries) => {
+    updateFieldsMutation.mutate({ sessionExerciseId, fields })
+    if (newSeries && newSeries !== setsCount) setExerciseSetCount(exerciseKey, newSeries)
+  }
   const isCompleted = completedCount === setsCount && setsCount > 0
   const prevCompletedRef = useRef(isCompleted)
 
@@ -85,6 +92,7 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const menuItems = [
     { label: 'Ver historial', icon: Info, onPress: () => setShowHistory(true) },
+    { label: 'Editar', icon: Pencil, onPress: () => setShowEdit(true) },
     { label: 'Añadir serie', icon: Plus, onPress: addSet },
     onReplace && { label: 'Sustituir', icon: Repeat2, onPress: () => setShowReplace(true) },
     onReorder && totalExercises > 1 && { type: 'separator' },
@@ -109,6 +117,7 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       <ConfirmModal isOpen={showRemoveConfirm} title="Quitar ejercicio" message={`¿Seguro que quieres quitar "${exercise.name}" de esta sesión?`} confirmText="Quitar" onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
       <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title="Sustituir ejercicio" subtitle={`Sustituyendo: ${exercise.name}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
       {showReorder && <ReorderModal visible onClose={() => setShowReorder(false)} totalItems={totalExercises} currentIndex={currentIndex} positionLabels={positionLabels} onSelect={(i) => { onReorder(currentIndex, i); setShowReorder(false) }} />}
+      <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />
     </>
   )
 
@@ -116,10 +125,10 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   return <Card className="p-4" style={cardStyle}>{content}</Card>
 }
 
-function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, onReplace, isSuperset = false, onReorder, currentIndex = 0, totalExercises = 1, positionLabels = [], isReordering = false }) {
+function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, onReplace, isSuperset = false, onReorder, currentIndex = 0, totalExercises = 1, positionLabels = [], isReordering = false, existingSupersets = [] }) {
   const { exercise, series, reps, tempo, notes, rest_seconds } = sessionExercise
   if (isWarmup) return <WarmupExerciseCard exercise={exercise} series={series} reps={reps} tempo={tempo} notes={notes} rest_seconds={rest_seconds} />
-  return <RegularExerciseCard sessionExercise={sessionExercise} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemove={onRemove} onReplace={onReplace} isSuperset={isSuperset} onReorder={onReorder} currentIndex={currentIndex} totalExercises={totalExercises} positionLabels={positionLabels} isReordering={isReordering} />
+  return <RegularExerciseCard sessionExercise={sessionExercise} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemove={onRemove} onReplace={onReplace} isSuperset={isSuperset} onReorder={onReorder} currentIndex={currentIndex} totalExercises={totalExercises} positionLabels={positionLabels} isReordering={isReordering} existingSupersets={existingSupersets} />
 }
 
 export default memo(WorkoutExerciseCard)

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, BottomActions, DropdownMenu } from '../components/ui/index.js'
-import { ExerciseSearchBar, ExerciseUsageModal } from '../components/Exercise/index.js'
+import { ExerciseSearchBar, ExerciseUsageModal, ExerciseFormModal } from '../components/Exercise/index.js'
 import { normalizeSearchText, getNotifier } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
@@ -19,6 +19,8 @@ function Exercises() {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
   const [exerciseForUsage, setExerciseForUsage] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editExerciseId, setEditExerciseId] = useState(null)
 
   const filteredExercises = useMemo(() => {
     if (!exercises) return []
@@ -45,10 +47,7 @@ function Exercises() {
     })
   }
 
-  const handleCreate = () => {
-    const state = search.trim() ? { name: search.trim() } : undefined
-    navigate('/exercises/new', { state })
-  }
+  const handleCreate = () => setShowCreateModal(true)
 
   return (
     <div className="p-4 max-w-4xl mx-auto pb-24">
@@ -91,7 +90,7 @@ function Exercises() {
                   items={[
                     { icon: BarChart3, label: 'Ver usos', onClick: () => setExerciseForUsage(exercise) },
                     { icon: TrendingUp, label: 'Progresión', onClick: () => navigate(`/exercises/${exercise.id}/progress`) },
-                    { icon: Pencil, label: 'Editar', onClick: () => navigate(`/exercises/${exercise.id}/edit`) },
+                    { icon: Pencil, label: 'Editar', onClick: () => setEditExerciseId(exercise.id) },
                     { icon: Trash2, label: 'Eliminar', onClick: () => setExerciseToDelete(exercise), danger: true },
                   ]}
                 />
@@ -114,6 +113,18 @@ function Exercises() {
       <ExerciseUsageModal
         exercise={exerciseForUsage}
         onClose={() => setExerciseForUsage(null)}
+      />
+
+      <ExerciseFormModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        initialName={search.trim()}
+      />
+
+      <ExerciseFormModal
+        isOpen={!!editExerciseId}
+        onClose={() => setEditExerciseId(null)}
+        exerciseId={editExerciseId}
       />
 
       <BottomActions

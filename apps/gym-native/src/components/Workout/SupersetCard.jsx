@@ -6,7 +6,7 @@ import { colors } from '../../lib/styles'
 import { formatSupersetLabel } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
-export default function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, onReplace }) {
+export default function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, onReplace, existingSupersets = [] }) {
   const supersetLabel = formatSupersetLabel(supersetId)
 
   return (
@@ -44,6 +44,7 @@ export default function SupersetCard({ exercises, supersetId, onCompleteSet, onU
             onRemove={onRemove}
             onReplace={onReplace}
             isSuperset
+            existingSupersets={existingSupersets}
           />
         </View>
       ))}

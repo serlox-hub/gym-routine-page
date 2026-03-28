@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { View, Text, TextInput, Pressable, Alert, ScrollView } from 'react-native'
-import { Check, Save, Video, X } from 'lucide-react-native'
+import { Check, Save, Video, X, Maximize2 } from 'lucide-react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useVideoPlayer, VideoView } from 'expo-video'
 import { Modal } from '../ui'
@@ -10,6 +10,7 @@ import { colors, inputStyle } from '../../lib/styles'
 import { RIR_OPTIONS, formatRestTimeDisplay, getEffortLabel } from '@gym/shared'
 
 function SetVideoPreview({ uri }) {
+  const viewRef = useRef(null)
   const [resolvedUri, setResolvedUri] = useState(uri)
   const [loading, setLoading] = useState(false)
 
@@ -39,12 +40,23 @@ function SetVideoPreview({ uri }) {
   if (!resolvedUri) return null
 
   return (
-    <VideoView
-      player={player}
-      style={{ width: '100%', height: 160 }}
-      contentFit="contain"
-      nativeControls
-    />
+    <View>
+      <VideoView
+        ref={viewRef}
+        player={player}
+        style={{ width: '100%', height: 160 }}
+        contentFit="contain"
+        nativeControls
+        allowsFullscreen
+      />
+      <Pressable
+        onPress={() => viewRef.current?.enterFullscreen()}
+        className="absolute top-2 left-2 p-1.5 rounded-full"
+        style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+      >
+        <Maximize2 size={14} color="#ffffff" />
+      </Pressable>
+    </View>
   )
 }
 import { usePreference } from '../../hooks/usePreferences'

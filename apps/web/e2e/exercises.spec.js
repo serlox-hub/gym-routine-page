@@ -21,31 +21,33 @@ test.describe('Lista de ejercicios', () => {
   test('navega a crear nuevo ejercicio', async ({ page }) => {
     await page.getByRole('button', { name: /nuevo/i }).click()
 
-    await expect(page).toHaveURL(/\/exercises\/new/)
-    await expect(page.getByRole('heading', { name: /nuevo ejercicio/i })).toBeVisible()
+    // Se abre modal en vez de navegar
+    await expect(page.getByText(/nuevo ejercicio/i)).toBeVisible()
   })
 })
 
 test.describe('Crear nuevo ejercicio', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/exercises/new')
+    await page.goto('/exercises')
+    await expect(page.getByRole('heading', { name: /ejercicios/i })).toBeVisible({ timeout: 10000 })
   })
 
   test('valida campos obligatorios', async ({ page }) => {
-    // Esperar a que cargue el formulario
-    await page.waitForSelector('button:has-text("Crear")', { timeout: 10000 })
+    // Abrir modal de crear
+    await page.getByRole('button', { name: /nuevo/i }).click()
+    await expect(page.getByText(/nuevo ejercicio/i)).toBeVisible()
 
-    // Intentar crear sin llenar campos
-    await page.getByRole('button', { name: /crear/i }).click()
+    // Intentar guardar sin llenar campos
+    await page.getByRole('button', { name: /guardar/i }).click()
 
     // Debería mostrar error
     await expect(page.getByText(/nombre es obligatorio|selecciona un grupo muscular/i)).toBeVisible()
   })
 
   test('puede crear un ejercicio', async ({ page }) => {
-    // Grupo muscular es el segundo select (el primero es tipo de medición)
-    const muscleGroupSelect = page.locator('select').nth(1)
-    await expect(muscleGroupSelect.locator('option')).not.toHaveCount(1, { timeout: 10000 })
+    // Abrir modal de crear
+    await page.getByRole('button', { name: /nuevo/i }).click()
+    await expect(page.getByText(/nuevo ejercicio/i)).toBeVisible()
 
     // Usar timestamp para nombre único
     const exerciseName = `Test E2E Exercise ${Date.now()}`
@@ -53,14 +55,16 @@ test.describe('Crear nuevo ejercicio', () => {
     // Llenar nombre
     await page.getByPlaceholder(/press banca/i).fill(exerciseName)
 
-    // Seleccionar grupo muscular
-    await muscleGroupSelect.selectOption({ label: 'Pecho' })
+    // Seleccionar grupo muscular (ahora es un custom picker, click para abrir)
+    await page.getByText(/seleccionar grupo muscular/i).click()
+    await page.getByRole('button', { name: /pecho/i }).click()
 
-    // Crear ejercicio
-    await page.getByRole('button', { name: /crear/i }).click()
+    // Guardar
+    await page.getByRole('button', { name: /guardar/i }).click()
 
-    // Esperar a que navegue
-    await page.waitForURL(/\/exercises/, { timeout: 10000 })
+    // Modal se cierra y seguimos en /exercises
+    await expect(page.getByText(/nuevo ejercicio/i)).not.toBeVisible({ timeout: 10000 })
+    await expect(page).toHaveURL(/\/exercises/)
   })
 })
 
@@ -80,27 +84,25 @@ test.describe('Editar ejercicio', () => {
     // Esperar a que aparezca el menú y hacer clic en Editar
     await page.getByRole('button', { name: /editar/i }).click()
 
-    // Verificar que estamos en la página de edición
-    await expect(page).toHaveURL(/\/exercises\/\d+\/edit/)
-    await expect(page.getByRole('heading', { name: /editar ejercicio/i })).toBeVisible()
+    // Verificar que se abre el modal de edición
+    await expect(page.getByText(/editar ejercicio/i)).toBeVisible()
   })
 
   test('puede guardar cambios en ejercicio', async ({ page }) => {
-    // Navegar a editar
+    // Abrir menú y editar
     const exerciseCards = page.locator('main button').filter({ has: page.locator('svg') })
     await exerciseCards.first().click()
     await page.getByRole('button', { name: /editar/i }).click()
 
-    await expect(page).toHaveURL(/\/exercises\/\d+\/edit/)
-
-    // Esperar a que cargue el formulario con el selector de grupo muscular
-    await expect(page.locator('select').first()).toBeVisible({ timeout: 10000 })
+    // Verificar que se abre el modal y esperar a que carguen los datos
+    await expect(page.getByText(/editar ejercicio/i)).toBeVisible()
+    await expect(page.getByPlaceholder(/press banca/i)).not.toHaveValue('', { timeout: 10000 })
 
     // Guardar cambios
-    await page.getByRole('button', { name: /guardar cambios/i }).click()
+    await page.getByRole('button', { name: /guardar/i }).click()
 
-    // Debería volver a la lista
-    await expect(page).toHaveURL(/\/exercises$/, { timeout: 10000 })
+    // Modal se cierra
+    await expect(page.getByText(/editar ejercicio/i)).not.toBeVisible({ timeout: 10000 })
   })
 })
 
@@ -141,16 +143,6 @@ test.describe('Protección de rutas de ejercicios', () => {
 
   test('exercises requiere autenticación', async ({ page }) => {
     await page.goto('/exercises')
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
-  })
-
-  test('new exercise requiere autenticación', async ({ page }) => {
-    await page.goto('/exercises/new')
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
-  })
-
-  test('edit exercise requiere autenticación', async ({ page }) => {
-    await page.goto('/exercises/1/edit')
     await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
   })
 
