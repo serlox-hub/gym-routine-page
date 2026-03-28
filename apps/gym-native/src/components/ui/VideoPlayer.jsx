@@ -68,9 +68,9 @@ export default function VideoPlayer({ videoKey }) {
       <Pressable
         onPress={() => viewRef.current?.enterFullscreen()}
         className="absolute top-2 left-2 p-1.5 rounded-full"
-        style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+        style={{ backgroundColor: colors.overlay }}
       >
-        <Maximize2 size={14} color="#ffffff" />
+        <Maximize2 size={14} color={colors.white} />
       </Pressable>
     </View>
   )

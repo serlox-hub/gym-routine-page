@@ -6,7 +6,7 @@ const VARIANTS = {
     color: colors.textSecondary
   },
   accent: {
-    backgroundColor: 'rgba(88, 166, 255, 0.15)',
+    backgroundColor: colors.accentBg,
     color: colors.accent
   },
   purple: {

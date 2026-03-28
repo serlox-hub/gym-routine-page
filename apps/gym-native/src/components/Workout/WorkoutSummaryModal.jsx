@@ -52,8 +52,8 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
               onPress={handleShare}
               disabled={isGenerating}
             >
-              <Share2 size={16} color="#ffffff" />
-              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '500' }}>
+              <Share2 size={16} color={colors.white} />
+              <Text style={{ color: colors.white, fontSize: 14, fontWeight: '500' }}>
                 {isGenerating ? 'Generando...' : 'Compartir'}
               </Text>
             </Pressable>

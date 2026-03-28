@@ -23,8 +23,8 @@ function OfflineBanner() {
       className="flex-row items-center justify-center gap-2 px-4"
       style={{ backgroundColor: colors.danger, paddingTop: top + 4, paddingBottom: 4 }}
     >
-      <WifiOff size={14} color="#fff" />
-      <Text className="text-xs font-medium" style={{ color: '#fff' }}>
+      <WifiOff size={14} color={colors.white} />
+      <Text className="text-xs font-medium" style={{ color: colors.white }}>
         Sin conexion. Los cambios se sincronizaran al volver.
       </Text>
     </View>

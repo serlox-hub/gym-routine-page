@@ -84,7 +84,7 @@ function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscl
                 onClick={() => handleSelect(null)}
                 className="w-full px-3 py-2.5 flex items-center gap-2 text-sm text-left hover:opacity-80"
                 style={{
-                  backgroundColor: !selectedMuscleGroup ? 'rgba(88, 166, 255, 0.1)' : 'transparent',
+                  backgroundColor: !selectedMuscleGroup ? colors.accentBgSubtle : 'transparent',
                   color: !selectedMuscleGroup ? colors.accent : colors.textSecondary,
                 }}
               >
@@ -99,7 +99,7 @@ function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscl
                     onClick={() => handleSelect(group.id)}
                     className="w-full px-3 py-2.5 flex items-center gap-2 text-sm text-left hover:opacity-80"
                     style={{
-                      backgroundColor: isSelected ? 'rgba(88, 166, 255, 0.1)' : 'transparent',
+                      backgroundColor: isSelected ? colors.accentBgSubtle : 'transparent',
                       color: isSelected ? colors.accent : colors.textPrimary,
                     }}
                   >

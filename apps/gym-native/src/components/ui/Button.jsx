@@ -1,8 +1,9 @@
 import { Pressable, Text, ActivityIndicator } from 'react-native'
+import { colors } from '../../lib/styles'
 
 const VARIANTS = {
   primary: {
-    bg: 'bg-[#238636]',
+    bg: 'bg-action-primary',
     text: 'text-white',
     border: '',
   },
@@ -49,7 +50,7 @@ export default function Button({
       className={`rounded-lg items-center justify-center flex-row ${v.bg} ${v.border} ${s.container} ${disabled || loading ? 'opacity-50' : 'active:opacity-70'} ${className}`}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'primary' ? '#ffffff' : '#e6edf3'} />
+        <ActivityIndicator size="small" color={variant === 'primary' ? colors.white : colors.textPrimary} />
       ) : typeof children === 'string' ? (
         <Text className={`font-semibold text-center ${v.text} ${s.text} ${textClassName}`}>
           {children}

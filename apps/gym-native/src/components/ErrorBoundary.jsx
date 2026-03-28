@@ -84,7 +84,7 @@ export default class ErrorBoundary extends Component {
               backgroundColor: colors.accent,
             }}
           >
-            <Text style={{ fontSize: 14, fontWeight: '500', color: '#ffffff' }}>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: colors.white }}>
               Reintentar
             </Text>
           </Pressable>

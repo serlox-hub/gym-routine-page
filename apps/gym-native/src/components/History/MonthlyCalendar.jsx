@@ -82,7 +82,7 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
               <View
                 className="flex-1 rounded p-1"
                 style={{
-                  backgroundColor: dayData.isToday ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+                  backgroundColor: dayData.isToday ? colors.accentBg : colors.bgTertiary,
                   borderWidth: dayData.isToday ? 1 : 0,
                   borderColor: dayData.isToday ? colors.accent : 'transparent',
                 }}

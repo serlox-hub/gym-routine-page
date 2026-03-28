@@ -199,8 +199,8 @@ function SetRow({
       </View>
 
       {isCompleted && setData?.setType === 'dropset' && (
-        <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dropsetBg }}>
-          <Text className="text-xs font-bold" style={{ color: colors.dropset }}>D</Text>
+        <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.orangeBg }}>
+          <Text className="text-xs font-bold" style={{ color: colors.orange }}>D</Text>
         </View>
       )}
 
@@ -229,7 +229,7 @@ function SetRow({
         <Text
           className="text-sm font-bold"
           style={{
-            color: isCompleted ? colors.bgPrimary : valid ? colors.success : '#484f58',
+            color: isCompleted ? colors.bgPrimary : valid ? colors.success : colors.textDisabled,
           }}
         >
           {isCompleted ? '✕' : '✓'}

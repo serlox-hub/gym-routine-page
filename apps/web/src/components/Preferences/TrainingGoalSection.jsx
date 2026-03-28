@@ -28,7 +28,7 @@ function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, o
                 className="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
                 style={{
                   backgroundColor: n === currentCycleLength ? colors.accent : colors.bgTertiary,
-                  color: n === currentCycleLength ? '#fff' : colors.textSecondary,
+                  color: n === currentCycleLength ? colors.white : colors.textSecondary,
                 }}
               >
                 {n}
@@ -50,7 +50,7 @@ function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, o
                 className="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
                 style={{
                   backgroundColor: n === currentDays ? colors.accent : colors.bgTertiary,
-                  color: n === currentDays ? '#fff' : colors.textSecondary,
+                  color: n === currentDays ? colors.white : colors.textSecondary,
                 }}
               >
                 {n}

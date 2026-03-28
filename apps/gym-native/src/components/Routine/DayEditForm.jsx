@@ -10,7 +10,7 @@ export default function DayEditForm({ dayNumber, form, setForm, onSave }) {
           value={form.name}
           onChangeText={(v) => setForm(prev => ({ ...prev, name: v }))}
           placeholder="Nombre del día"
-          placeholderTextColor="#6e7681"
+          placeholderTextColor={colors.textMuted}
           autoFocus
           className="flex-1"
           style={[inputStyle, { padding: 4 }]}
@@ -22,7 +22,7 @@ export default function DayEditForm({ dayNumber, form, setForm, onSave }) {
           value={String(form.duration || '')}
           onChangeText={(v) => setForm(prev => ({ ...prev, duration: v }))}
           placeholder="--"
-          placeholderTextColor="#6e7681"
+          placeholderTextColor={colors.textMuted}
           keyboardType="numeric"
           className="w-16 text-sm text-center"
           style={[inputStyle, { padding: 4 }]}

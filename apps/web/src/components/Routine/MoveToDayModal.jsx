@@ -40,7 +40,7 @@ function MoveToDayModal({ isOpen, onClose, onSubmit, days, currentDayId, exercis
                 onClick={() => setSelectedDayId(day.id)}
                 className="w-full text-left p-3 rounded-lg transition-colors"
                 style={{
-                  backgroundColor: selectedDayId === day.id ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+                  backgroundColor: selectedDayId === day.id ? colors.accentBg : colors.bgTertiary,
                   border: selectedDayId === day.id ? `1px solid ${colors.accent}` : '1px solid transparent',
                   color: colors.textPrimary,
                 }}

@@ -46,7 +46,7 @@ export default class ErrorBoundary extends Component {
             <button
               onClick={this.handleReload}
               className="px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+              style={{ backgroundColor: colors.accent, color: colors.white }}
             >
               Recargar página
             </button>

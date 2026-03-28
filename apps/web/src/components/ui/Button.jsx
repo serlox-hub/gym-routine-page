@@ -2,12 +2,12 @@ import { colors } from '../../lib/styles.js'
 
 const VARIANTS = {
   primary: {
-    backgroundColor: '#238636',
-    color: '#ffffff',
+    backgroundColor: colors.actionPrimary,
+    color: colors.white,
   },
   secondary: {
     backgroundColor: colors.bgTertiary,
-    color: '#c9d1d9',
+    color: colors.textLight,
     border: `1px solid ${colors.border}`,
   },
   danger: {

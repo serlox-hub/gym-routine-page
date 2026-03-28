@@ -110,7 +110,7 @@ function SetDetailsModal({
   const title = isEditMode ? 'Editar serie' : 'Completar serie'
   const buttonDisabled = isEditMode && !hasChanges
   const buttonColor = buttonDisabled ? colors.bgTertiary : (isEditMode ? colors.purple : colors.success)
-  const buttonTextColor = buttonDisabled ? colors.textSecondary : '#ffffff'
+  const buttonTextColor = buttonDisabled ? colors.textSecondary : colors.white
 
   return (
     <Modal
@@ -219,7 +219,7 @@ function SetDetailsModal({
                 <button
                   onClick={handleRemoveVideo}
                   className="absolute top-2 right-2 p-1 rounded-full"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+                  style={{ backgroundColor: colors.overlay }}
                 >
                   <X size={16} style={{ color: colors.textPrimary }} />
                 </button>

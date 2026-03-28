@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from 'react-native'
 import { FileText, Video, AlertCircle } from 'lucide-react-native'
+import { colors } from '../../lib/styles'
 
 const RIR_LABELS = {
   [-1]: 'F',
@@ -24,27 +25,27 @@ export default function NotesBadge({
   if (!hasRir && !hasNotes && !hasVideo && !isUploadingVideo && !videoUploadError) return null
 
   const bgColor = videoUploadError
-    ? 'rgba(248, 81, 73, 0.15)'
-    : 'rgba(163, 113, 247, 0.15)'
+    ? colors.dangerBg
+    : colors.purpleBg
 
   const content = (
     <>
       {hasRir && (
-        <Text className="text-xs font-bold" style={{ color: '#a371f7' }}>
+        <Text className="text-xs font-bold" style={{ color: colors.purple }}>
           {RIR_LABELS[rir] ?? rir}
         </Text>
       )}
-      {hasNotes && <FileText size={12} color="#a371f7" />}
+      {hasNotes && <FileText size={12} color={colors.purple} />}
       {videoUploadError ? (
         <Pressable onPress={onRetryUpload}>
-          <AlertCircle size={12} color="#f85149" />
+          <AlertCircle size={12} color={colors.danger} />
         </Pressable>
       ) : isUploadingVideo ? (
-        <Text className="text-xs font-medium" style={{ color: '#a371f7' }}>
+        <Text className="text-xs font-medium" style={{ color: colors.purple }}>
           {uploadProgress}%
         </Text>
       ) : hasVideo ? (
-        <Video size={12} color="#a371f7" />
+        <Video size={12} color={colors.purple} />
       ) : null}
     </>
   )

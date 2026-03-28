@@ -13,14 +13,14 @@ function ViewToggle({ view, onChangeView }) {
       <button
         onClick={() => onChangeView('session')}
         className="flex-1 py-1.5 text-xs font-semibold transition-colors"
-        style={view === 'session' ? { backgroundColor: colors.accent, color: '#ffffff' } : { color: colors.textSecondary }}
+        style={view === 'session' ? { backgroundColor: colors.accent, color: colors.white } : { color: colors.textSecondary }}
       >
         En sesión
       </button>
       <button
         onClick={() => onChangeView('exercise')}
         className="flex-1 py-1.5 text-xs font-semibold transition-colors"
-        style={view === 'exercise' ? { backgroundColor: colors.accent, color: '#ffffff' } : { color: colors.textSecondary }}
+        style={view === 'exercise' ? { backgroundColor: colors.accent, color: colors.white } : { color: colors.textSecondary }}
       >
         Ficha
       </button>

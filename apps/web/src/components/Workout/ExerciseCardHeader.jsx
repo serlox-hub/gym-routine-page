@@ -24,7 +24,7 @@ function ExerciseCardHeader({
         <span
           className="text-sm font-medium px-2 py-0.5 rounded"
           style={{
-            backgroundColor: isCompleted ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)',
+            backgroundColor: isCompleted ? colors.successBg : colors.accentBg,
             color: isCompleted ? colors.success : colors.accent,
           }}
         >

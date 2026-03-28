@@ -19,7 +19,7 @@ function ToastBase({ type, text1, text2 }) {
         backgroundColor: colors.bgSecondary,
         borderWidth: 1,
         borderColor: colors.border,
-        shadowColor: '#000',
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

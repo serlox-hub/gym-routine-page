@@ -51,7 +51,7 @@ function ExerciseProgressChart({ sessions, chartData: chartDataProp, measurement
             onClick={() => setActiveTab(TABS.WEIGHT)}
             className="px-3 py-1 rounded text-xs font-medium transition-colors"
             style={{
-              backgroundColor: activeTab === TABS.WEIGHT ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+              backgroundColor: activeTab === TABS.WEIGHT ? colors.accentBg : colors.bgTertiary,
               color: activeTab === TABS.WEIGHT ? colors.accent : colors.textSecondary,
             }}
           >

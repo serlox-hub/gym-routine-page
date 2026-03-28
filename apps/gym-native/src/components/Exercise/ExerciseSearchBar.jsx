@@ -30,7 +30,7 @@ export default function ExerciseSearchBar({
           value={search}
           onChangeText={onSearchChange}
           placeholder="Buscar ejercicio..."
-          placeholderTextColor="#6e7681"
+          placeholderTextColor={colors.textMuted}
           autoFocus={autoFocus}
           style={[inputStyle, { paddingLeft: 40 }]}
         />
@@ -72,7 +72,7 @@ export default function ExerciseSearchBar({
               <Pressable
                 onPress={() => handleSelect(null)}
                 className="px-4 py-3 flex-row items-center gap-2 active:bg-surface-card"
-                style={!selectedMuscleGroup ? { backgroundColor: 'rgba(88, 166, 255, 0.1)' } : {}}
+                style={!selectedMuscleGroup ? { backgroundColor: colors.accentBgSubtle } : {}}
               >
                 <Text style={{ color: !selectedMuscleGroup ? colors.accent : colors.textSecondary }}>
                   Todos los grupos musculares
@@ -85,7 +85,7 @@ export default function ExerciseSearchBar({
                     key={group.id}
                     onPress={() => handleSelect(group.id)}
                     className="px-4 py-3 flex-row items-center gap-2 active:bg-surface-card"
-                    style={isSelected ? { backgroundColor: 'rgba(88, 166, 255, 0.1)' } : {}}
+                    style={isSelected ? { backgroundColor: colors.accentBgSubtle } : {}}
                   >
                     <View
                       className="w-2.5 h-2.5 rounded-full"

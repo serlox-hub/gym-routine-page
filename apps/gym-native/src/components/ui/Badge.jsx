@@ -1,12 +1,13 @@
 import { Text } from 'react-native'
+import { colors } from '../../lib/styles'
 
 const VARIANTS = {
-  default: { backgroundColor: '#21262d', color: '#8b949e' },
-  accent: { backgroundColor: 'rgba(88, 166, 255, 0.15)', color: '#58a6ff' },
-  purple: { backgroundColor: 'rgba(163, 113, 247, 0.15)', color: '#a371f7' },
-  success: { backgroundColor: 'rgba(63, 185, 80, 0.15)', color: '#3fb950' },
-  warning: { backgroundColor: 'rgba(210, 153, 34, 0.15)', color: '#d29922' },
-  danger: { backgroundColor: 'rgba(248, 81, 73, 0.1)', color: '#f85149' },
+  default: { backgroundColor: colors.bgTertiary, color: colors.textSecondary },
+  accent: { backgroundColor: colors.accentBg, color: colors.accent },
+  purple: { backgroundColor: colors.purpleBg, color: colors.purple },
+  success: { backgroundColor: colors.successBg, color: colors.success },
+  warning: { backgroundColor: colors.warningBg, color: colors.warning },
+  danger: { backgroundColor: colors.dangerBg, color: colors.danger },
 }
 
 export default function Badge({ children, variant = 'default', className = '' }) {

@@ -36,7 +36,7 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
     >
       <View className="flex-row justify-between items-center mb-2">
         <Text className="text-xs" style={{ color: colors.textSecondary }}>Última vez</Text>
-        <Text className="text-xs" style={{ color: '#6e7681' }}>
+        <Text className="text-xs" style={{ color: colors.textMuted }}>
           {formatRelativeDate(previous.date)}
         </Text>
       </View>
@@ -48,7 +48,7 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
             return (
               <View key={index} className="rounded px-2 py-1" style={{ backgroundColor: colors.bgTertiary }}>
                 <View className="flex-row items-center justify-between gap-2 mb-0.5">
-                  <Text className="text-xs" style={{ color: set.setType === 'dropset' ? colors.dropset : colors.textSecondary }}>
+                  <Text className="text-xs" style={{ color: set.setType === 'dropset' ? colors.orange : colors.textSecondary }}>
                     {set.setType === 'dropset' ? 'D' : `S${set.setNumber}`}
                   </Text>
                   <NotesBadge

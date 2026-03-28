@@ -51,7 +51,7 @@ function ForgotPassword() {
         <Card className="w-full max-w-md p-6 text-center">
           <h1 className="text-2xl font-bold mb-4">Revisa tu email</h1>
           <p className="mb-6" style={{ color: colors.textSecondary }}>
-            Te hemos enviado un enlace para restablecer tu contraseña a <strong style={{ color: '#c9d1d9' }}>{email}</strong>
+            Te hemos enviado un enlace para restablecer tu contraseña a <strong style={{ color: colors.textLight }}>{email}</strong>
           </p>
           <Link to="/login">
             <Button className="w-full">Volver al inicio de sesión</Button>

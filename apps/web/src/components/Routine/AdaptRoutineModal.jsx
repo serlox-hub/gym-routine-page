@@ -73,9 +73,9 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
           </Button>
           <div
             className="p-3 rounded-lg text-sm"
-            style={{ backgroundColor: 'rgba(136, 87, 229, 0.1)', border: `1px solid #8957e5` }}
+            style={{ backgroundColor: colors.purpleAccentBg, border: `1px solid ${colors.purpleAccent}` }}
           >
-            <p style={{ color: '#8957e5' }}>
+            <p style={{ color: colors.purpleAccent }}>
               El prompt termina con "MI RUTINA A CONVERTIR:" — ahí es donde pegarás tu rutina en el siguiente paso
             </p>
           </div>
@@ -165,7 +165,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+      style={{ backgroundColor: colors.overlay }}
       onClick={onClose}
     >
       <div

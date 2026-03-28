@@ -55,7 +55,7 @@ function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) 
                 key={opt.value}
                 onPress={() => { onChange(opt.value); setShowPicker(false) }}
                 className="px-4 py-3"
-                style={(value || '') === opt.value ? { backgroundColor: 'rgba(88,166,255,0.1)' } : {}}
+                style={(value || '') === opt.value ? { backgroundColor: colors.accentBgSubtle } : {}}
               >
                 <Text style={{ color: (value || '') === opt.value ? colors.accent : colors.textPrimary }}>
                   {opt.label}
@@ -84,7 +84,7 @@ export default function ExerciseConfigForm({
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
       {!hideExerciseName && (
-        <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(88,166,255,0.1)' }}>
+        <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: colors.accentBgSubtle }}>
           <Text className="text-primary font-medium">{exercise.name}</Text>
         </View>
       )}
@@ -106,7 +106,7 @@ export default function ExerciseConfigForm({
               value={form.reps}
               onChangeText={update('reps')}
               placeholder={getRepsPlaceholder(exercise.measurement_type)}
-              placeholderTextColor="#6e7681"
+              placeholderTextColor={colors.textMuted}
               style={inputStyle}
             />
           </FormField>
@@ -123,7 +123,7 @@ export default function ExerciseConfigForm({
                 value={form.rir}
                 onChangeText={update('rir')}
                 placeholder="Ej: 2"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="numeric"
                 style={inputStyle}
               />
@@ -135,7 +135,7 @@ export default function ExerciseConfigForm({
                 value={form.rest_seconds}
                 onChangeText={update('rest_seconds')}
                 placeholder="Ej: 90"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="numeric"
                 style={inputStyle}
               />
@@ -150,7 +150,7 @@ export default function ExerciseConfigForm({
                 value={form.tempo}
                 onChangeText={update('tempo')}
                 placeholder="Ej: 3-1-2-0"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 style={inputStyle}
               />
             </FormField>
@@ -161,7 +161,7 @@ export default function ExerciseConfigForm({
                 value={form.tempo_razon}
                 onChangeText={update('tempo_razon')}
                 placeholder="Ej: Más tensión"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 editable={!!form.tempo}
                 style={[inputStyle, !form.tempo && { opacity: 0.4 }]}
               />
@@ -177,7 +177,7 @@ export default function ExerciseConfigForm({
             value={form.notes}
             onChangeText={update('notes')}
             placeholder={isSessionMode ? 'Notas para este ejercicio...' : 'Notas específicas para esta rutina...'}
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
             multiline
             style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
           />

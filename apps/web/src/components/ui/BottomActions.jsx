@@ -35,7 +35,7 @@ function BottomActions({
             className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 ${hasSecondary ? 'flex-1' : 'w-full'}`}
             style={{
               backgroundColor: colors.accent,
-              color: '#ffffff',
+              color: colors.white,
             }}
           >
             {primary.label}

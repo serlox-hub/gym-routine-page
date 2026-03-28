@@ -69,7 +69,7 @@ export default function ExecutionTimer({ seconds }) {
           opacity: seconds === 0 ? 0.5 : 1,
         }}
       >
-        <Text className="text-sm font-medium" style={{ color: '#ffffff' }}>▶</Text>
+        <Text className="text-sm font-medium" style={{ color: colors.white }}>▶</Text>
       </Pressable>
     )
   }

@@ -207,7 +207,7 @@ function SetRow({
       {isCompleted && setData?.setType === 'dropset' && (
         <span
           className="px-1.5 py-0.5 rounded text-xs font-bold"
-          style={{ backgroundColor: colors.dropsetBg, color: colors.dropset }}
+          style={{ backgroundColor: colors.orangeBg, color: colors.orange }}
         >
           D
         </span>
@@ -232,7 +232,7 @@ function SetRow({
         className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
         style={{
           backgroundColor: isCompleted ? colors.success : colors.border,
-          color: isCompleted ? colors.bgPrimary : isValid() ? colors.success : '#484f58',
+          color: isCompleted ? colors.bgPrimary : isValid() ? colors.success : colors.textDisabled,
           cursor: (!isCompleted && !isValid()) ? 'default' : 'pointer',
           opacity: (!isCompleted && !isValid()) ? 0.5 : 1,
         }}

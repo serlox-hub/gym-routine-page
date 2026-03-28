@@ -145,7 +145,7 @@ function MeasurementSection() {
                     className="w-full px-4 py-2.5 text-left text-sm hover:opacity-80"
                     style={{
                       color: type === selectedType ? colors.accent : colors.textPrimary,
-                      backgroundColor: type === selectedType ? 'rgba(88, 166, 255, 0.1)' : 'transparent',
+                      backgroundColor: type === selectedType ? colors.accentBgSubtle : 'transparent',
                     }}
                   >
                     {getMeasurementLabel(type)}

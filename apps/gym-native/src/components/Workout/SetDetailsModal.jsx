@@ -52,9 +52,9 @@ function SetVideoPreview({ uri }) {
       <Pressable
         onPress={() => viewRef.current?.enterFullscreen()}
         className="absolute top-2 left-2 p-1.5 rounded-full"
-        style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+        style={{ backgroundColor: colors.overlay }}
       >
-        <Maximize2 size={14} color="#ffffff" />
+        <Maximize2 size={14} color={colors.white} />
       </Pressable>
     </View>
   )
@@ -154,7 +154,7 @@ export default function SetDetailsModal({
   const title = isEditMode ? 'Editar serie' : 'Completar serie'
   const buttonDisabled = isEditMode && !hasChanges
   const buttonColor = buttonDisabled ? colors.bgTertiary : (isEditMode ? colors.purple : colors.success)
-  const buttonTextColor = buttonDisabled ? colors.textSecondary : '#ffffff'
+  const buttonTextColor = buttonDisabled ? colors.textSecondary : colors.white
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} position="bottom">
@@ -237,7 +237,7 @@ export default function SetDetailsModal({
               value={note}
               onChangeText={(v) => { setNote(v); setHasChanges(true) }}
               placeholder="Ej: Buen pump, molestia en codo..."
-              placeholderTextColor="#6e7681"
+              placeholderTextColor={colors.textMuted}
               multiline
               style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
             />
@@ -255,9 +255,9 @@ export default function SetDetailsModal({
                 <Pressable
                   onPress={handleRemoveVideo}
                   className="absolute top-2 right-2 p-1.5 rounded-full"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+                  style={{ backgroundColor: colors.overlay }}
                 >
-                  <X size={16} color="#ffffff" />
+                  <X size={16} color={colors.white} />
                 </Pressable>
               </View>
             ) : (

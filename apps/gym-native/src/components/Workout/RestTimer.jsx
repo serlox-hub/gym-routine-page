@@ -131,7 +131,7 @@ export default function RestTimer() {
             className="px-8 py-3 rounded-lg active:opacity-70"
             style={{ backgroundColor: colors.success }}
           >
-            <Text className="text-lg font-bold" style={{ color: '#ffffff' }}>
+            <Text className="text-lg font-bold" style={{ color: colors.white }}>
               SALTAR
             </Text>
           </Pressable>

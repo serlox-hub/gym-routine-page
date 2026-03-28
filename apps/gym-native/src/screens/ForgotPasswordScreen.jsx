@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Card } from '../components/ui'
+import { colors } from '../lib/styles'
 
 export default function ForgotPasswordScreen({ navigation }) {
   const { resetPassword, isLoading, error, clearError } = useAuth()
@@ -80,7 +81,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="tu@email.com"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"

@@ -85,7 +85,7 @@ function NewRoutine() {
           className="w-full py-4 rounded-lg font-medium text-lg transition-colors flex items-center justify-center gap-2"
           style={{
             backgroundColor: colors.success,
-            color: '#ffffff',
+            color: colors.white,
             opacity: createRoutine.isPending ? 0.7 : 1,
           }}
         >

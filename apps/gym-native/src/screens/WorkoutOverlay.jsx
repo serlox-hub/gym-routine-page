@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native'
 import useWorkoutStore from '../stores/workoutStore'
 import { useRoutineDay } from '../hooks/useRoutines'
 import { WorkoutSessionLayout, WorkoutLoadingScreen } from '../components/Workout'
+import { colors } from '../lib/styles'
 
 export default function WorkoutOverlay() {
   const navigation = useNavigation()
@@ -36,7 +37,7 @@ export default function WorkoutOverlay() {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0d1117',
+    backgroundColor: colors.bgPrimary,
   },
   visible: {
     zIndex: 100,

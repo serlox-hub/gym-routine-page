@@ -39,12 +39,12 @@ function QuickActions({ favoriteRoutine }) {
           <div className="flex items-center gap-3">
             <div
               className="p-2 rounded-lg"
-              style={{ backgroundColor: 'rgba(136, 87, 229, 0.15)' }}
+              style={{ backgroundColor: colors.purpleAccentBg }}
             >
-              <Zap size={20} style={{ color: '#8957e5' }} />
+              <Zap size={20} style={{ color: colors.purpleAccent }} />
             </div>
             <div className="flex-1">
-              <h3 className="font-medium text-sm" style={{ color: '#8957e5' }}>
+              <h3 className="font-medium text-sm" style={{ color: colors.purpleAccent }}>
                 {startSessionMutation.isPending
                   ? 'Iniciando...'
                   : isFreeSessionActive

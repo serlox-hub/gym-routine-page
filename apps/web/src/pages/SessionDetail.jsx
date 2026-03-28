@@ -70,7 +70,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       <button
         onClick={handleToggleDropset}
         className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0"
-        style={{ backgroundColor: setType === 'dropset' ? colors.dropset : isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
+        style={{ backgroundColor: setType === 'dropset' ? colors.orange : isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
         title={setType === 'dropset' ? 'Quitar dropset' : 'Marcar como dropset'}
       >
         {setType === 'dropset' ? 'D' : set.set_number}
@@ -412,7 +412,7 @@ function SessionDetail() {
                     {set.set_type === 'dropset' && (
                       <span
                         className="px-1.5 py-0.5 rounded text-xs font-bold"
-                        style={{ backgroundColor: colors.dropsetBg, color: colors.dropset }}
+                        style={{ backgroundColor: colors.orangeBg, color: colors.orange }}
                       >
                         D
                       </span>
@@ -484,7 +484,7 @@ function SessionDetail() {
         <button
           onClick={() => setShowSummary(true)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          style={{ backgroundColor: colors.accent, color: '#fff' }}
+          style={{ backgroundColor: colors.accent, color: colors.white }}
         >
           <Share2 size={16} />
           Compartir

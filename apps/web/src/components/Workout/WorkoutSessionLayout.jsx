@@ -90,7 +90,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           onClick={() => abandonSessionMutation.mutate()}
           disabled={abandonSessionMutation.isPending}
           className="w-full py-3 rounded-lg font-medium"
-          style={{ backgroundColor: colors.danger, color: '#ffffff' }}
+          style={{ backgroundColor: colors.danger, color: colors.white }}
         >
           {abandonSessionMutation.isPending ? 'Cancelando...' : 'Cancelar sesión'}
         </button>

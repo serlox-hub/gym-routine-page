@@ -25,7 +25,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      style={{ backgroundColor: colors.overlay }}
       onClick={handleClose}
     >
       <div

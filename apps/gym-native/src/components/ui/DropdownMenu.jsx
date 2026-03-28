@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Pressable, Modal } from 'react-native'
 import { MoreVertical } from 'lucide-react-native'
+import { colors } from '../../lib/styles'
 
 export default function DropdownMenu({ items, triggerSize = 18 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -15,7 +16,7 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
         onPress={() => setIsOpen(true)}
         className="p-1.5 rounded-lg bg-surface-block active:opacity-70"
       >
-        <MoreVertical size={triggerSize} color="#8b949e" />
+        <MoreVertical size={triggerSize} color={colors.textSecondary} />
       </Pressable>
 
       <Modal
@@ -49,12 +50,12 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
                   {item.icon && (
                     <item.icon
                       size={18}
-                      color={item.danger ? '#f85149' : '#8b949e'}
+                      color={item.danger ? colors.danger : colors.textSecondary}
                     />
                   )}
                   <Text
                     className="text-base"
-                    style={{ color: item.danger ? '#f85149' : '#e6edf3' }}
+                    style={{ color: item.danger ? colors.danger : colors.textPrimary }}
                   >
                     {item.label}
                   </Text>

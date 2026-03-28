@@ -14,7 +14,7 @@ function ViewToggle({ view, onChangeView, labels }) {
           key={key}
           onClick={() => onChangeView(key)}
           className="flex-1 py-1.5 text-xs font-semibold transition-colors"
-          style={view === key ? { backgroundColor: colors.accent, color: '#ffffff' } : { color: colors.textSecondary }}
+          style={view === key ? { backgroundColor: colors.accent, color: colors.white } : { color: colors.textSecondary }}
         >
           {label}
         </button>

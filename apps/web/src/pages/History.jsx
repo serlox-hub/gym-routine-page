@@ -56,7 +56,7 @@ function History() {
       {selectedDay && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+          style={{ backgroundColor: colors.overlay }}
           onClick={() => setSelectedDay(null)}
         >
           <div

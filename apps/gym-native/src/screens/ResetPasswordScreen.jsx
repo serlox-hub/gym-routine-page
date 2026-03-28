@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../lib/supabase'
 import { validateResetPasswordForm } from '@gym/shared'
 import { Button, Card } from '../components/ui'
-import { inputStyle } from '../lib/styles'
+import { inputStyle, colors } from '../lib/styles'
 
 export default function ResetPasswordScreen({ navigation, onComplete }) {
   const [password, setPassword] = useState('')
@@ -82,7 +82,7 @@ export default function ResetPasswordScreen({ navigation, onComplete }) {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Mínimo 6 caracteres"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete="new-password"
                 style={inputStyle}
@@ -95,7 +95,7 @@ export default function ResetPasswordScreen({ navigation, onComplete }) {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Repite tu contraseña"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete="new-password"
                 style={inputStyle}

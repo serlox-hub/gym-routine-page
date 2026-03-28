@@ -129,7 +129,7 @@ export default function DayCard({
                   opacity: (hasActiveSession && !isThisDayActive) ? 0.4 : 1,
                 }}
               >
-                <Text className="text-xs font-semibold uppercase" style={{ color: isThisDayActive ? '#fff' : '#000' }}>
+                <Text className="text-xs font-semibold uppercase" style={{ color: isThisDayActive ? colors.white : colors.black }}>
                   {isThisDayActive ? 'Continuar' : 'Iniciar'}
                 </Text>
               </Pressable>

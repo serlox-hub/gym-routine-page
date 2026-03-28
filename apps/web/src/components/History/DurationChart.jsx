@@ -61,7 +61,7 @@ function DurationChart({ sessions, currentDate }) {
               tickLine={false}
               tickFormatter={(value) => `${value}`}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(88, 166, 255, 0.1)' }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: colors.accentBgSubtle }} />
             <Bar dataKey="duration" radius={[4, 4, 0, 0]}>
               {chartData.map((entry, index) => (
                 <Cell

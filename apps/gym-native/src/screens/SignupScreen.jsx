@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../hooks/useAuth'
 import { validateSignupForm } from '@gym/shared'
 import { Button, Card, GoogleIcon } from '../components/ui'
+import { colors } from '../lib/styles'
 
 export default function SignupScreen({ navigation }) {
   const { signup, loginWithGoogle, isLoading, error, clearError } = useAuth()
@@ -81,7 +82,7 @@ export default function SignupScreen({ navigation }) {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="tu@email.com"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
@@ -95,7 +96,7 @@ export default function SignupScreen({ navigation }) {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Mínimo 6 caracteres"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete="new-password"
                 className="w-full px-3 py-2.5 rounded-lg bg-surface border border-border text-primary"
@@ -108,7 +109,7 @@ export default function SignupScreen({ navigation }) {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Repite la contraseña"
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete="new-password"
                 className="w-full px-3 py-2.5 rounded-lg bg-surface border border-border text-primary"
@@ -135,10 +136,10 @@ export default function SignupScreen({ navigation }) {
               onPress={loginWithGoogle}
               disabled={isLoading}
               className="flex-row items-center justify-center gap-2 py-2.5 rounded-lg mb-4 border border-border"
-              style={{ backgroundColor: '#fff', opacity: isLoading ? 0.5 : 1 }}
+              style={{ backgroundColor: colors.white, opacity: isLoading ? 0.5 : 1 }}
             >
               <GoogleIcon size={20} />
-              <Text className="text-base font-medium" style={{ color: '#1f1f1f' }}>
+              <Text className="text-base font-medium" style={{ color: colors.textDark }}>
                 Continuar con Google
               </Text>
             </Pressable>

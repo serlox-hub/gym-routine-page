@@ -49,7 +49,7 @@ function BottomSheetPicker({ visible, onClose, title, options, selected, onSelec
                 key={opt.value}
                 onPress={() => { onSelect(opt.value); onClose() }}
                 className="px-4 py-3 flex-row items-center gap-2"
-                style={selected === opt.value ? { backgroundColor: 'rgba(88,166,255,0.1)' } : {}}
+                style={selected === opt.value ? { backgroundColor: colors.accentBgSubtle } : {}}
               >
                 {opt.color && <View className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: opt.color }} />}
                 <Text style={{ color: selected === opt.value ? colors.accent : colors.textPrimary }}>
@@ -77,7 +77,7 @@ function UnitSelector({ label, units, field, form, onChange }) {
               onPress={() => onChange(field, unit.value)}
               className="flex-1 py-2 px-3 rounded-lg items-center"
               style={{
-                backgroundColor: isSelected ? 'rgba(88,166,255,0.15)' : colors.bgTertiary,
+                backgroundColor: isSelected ? colors.accentBg : colors.bgTertiary,
                 borderWidth: 1,
                 borderColor: isSelected ? colors.accent : colors.border,
               }}
@@ -169,7 +169,7 @@ export default function ExerciseForm({
           value={form.name}
           onChangeText={(v) => handleChange('name', v)}
           placeholder="Ej: Press banca con barra"
-          placeholderTextColor="#6e7681"
+          placeholderTextColor={colors.textMuted}
           style={inputStyle}
         />
         {!minimal && (
@@ -230,7 +230,7 @@ export default function ExerciseForm({
             value={form.instructions}
             onChangeText={(v) => handleChange('instructions', v)}
             placeholder="Cómo ejecutar el ejercicio correctamente..."
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
             style={[inputStyle, { textAlignVertical: 'top', minHeight: 80 }]}

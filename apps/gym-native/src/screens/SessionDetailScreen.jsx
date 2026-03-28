@@ -67,7 +67,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       <Pressable
         onPress={handleToggleDropset}
         className="w-6 h-6 rounded-full items-center justify-center"
-        style={{ backgroundColor: setType === 'dropset' ? colors.dropset : isSetPR ? colors.warning : colors.success }}
+        style={{ backgroundColor: setType === 'dropset' ? colors.orange : isSetPR ? colors.warning : colors.success }}
       >
         <Text className="text-xs font-bold" style={{ color: colors.bgPrimary }}>
           {setType === 'dropset' ? 'D' : set.set_number}
@@ -82,7 +82,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             onBlur={handleSave}
             keyboardType="decimal-pad"
             style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
           />
           <Text className="text-xs" style={{ color: colors.textSecondary }}>{exercise.weight_unit || 'kg'}</Text>
         </View>
@@ -96,7 +96,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             onBlur={handleSave}
             keyboardType="number-pad"
             style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
           />
           <Text className="text-xs" style={{ color: colors.textSecondary }}>reps</Text>
         </View>
@@ -109,7 +109,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             onBlur={handleSave}
             keyboardType="number-pad"
             style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
           />
           <Text className="text-xs" style={{ color: colors.textSecondary }}>{exercise.time_unit || 's'}</Text>
         </View>
@@ -122,7 +122,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             onBlur={handleSave}
             keyboardType="decimal-pad"
             style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
           />
           <Text className="text-xs" style={{ color: colors.textSecondary }}>{exercise.distance_unit || 'm'}</Text>
         </View>
@@ -286,7 +286,7 @@ export default function SessionDetailScreen({ route, navigation }) {
                     onChangeText={setEditTimeText}
                     onBlur={handleTimeBlur}
                     placeholder="HH:MM"
-                    placeholderTextColor="#6e7681"
+                    placeholderTextColor={colors.textMuted}
                     keyboardType="numbers-and-punctuation"
                     style={[inputStyle, { paddingVertical: 6 }]}
                   />
@@ -327,7 +327,7 @@ export default function SessionDetailScreen({ route, navigation }) {
                 value={editNotes}
                 onChangeText={setEditNotes}
                 placeholder="Notas de la sesión..."
-                placeholderTextColor="#6e7681"
+                placeholderTextColor={colors.textMuted}
                 multiline
                 style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
               />
@@ -434,8 +434,8 @@ export default function SessionDetailScreen({ route, navigation }) {
                         {formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}
                       </Text>
                       {set.set_type === 'dropset' && (
-                        <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dropsetBg }}>
-                          <Text className="text-xs font-bold" style={{ color: colors.dropset }}>D</Text>
+                        <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.orangeBg }}>
+                          <Text className="text-xs font-bold" style={{ color: colors.orange }}>D</Text>
                         </View>
                       )}
                       <NotesBadge
@@ -477,8 +477,8 @@ export default function SessionDetailScreen({ route, navigation }) {
             className="flex-row items-center gap-2 px-5 py-2.5 rounded-lg"
             style={{ backgroundColor: colors.accent }}
           >
-            <Share2 size={16} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '500' }}>Compartir</Text>
+            <Share2 size={16} color={colors.white} />
+            <Text style={{ color: colors.white, fontSize: 14, fontWeight: '500' }}>Compartir</Text>
           </Pressable>
         </View>
       )}

@@ -17,7 +17,7 @@ function TemplatesModal({ onClose, onSelect }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+      style={{ backgroundColor: colors.overlay }}
       onClick={onClose}
     >
       <div
@@ -86,7 +86,7 @@ function TemplateCard({ template, isSelected, onSelect }) {
             backgroundColor: isSelected ? colors.accent : 'transparent'
           }}
         >
-          {isSelected && <Check size={12} style={{ color: '#fff' }} />}
+          {isSelected && <Check size={12} style={{ color: colors.white }} />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">

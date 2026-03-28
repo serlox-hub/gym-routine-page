@@ -85,7 +85,7 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
               onClick={() => hasWorkout && onDayClick?.(dayData)}
               className={`aspect-square rounded p-1 flex flex-col ${hasWorkout ? 'cursor-pointer hover:opacity-80' : ''}`}
               style={{
-                backgroundColor: dayData.isToday ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+                backgroundColor: dayData.isToday ? colors.accentBg : colors.bgTertiary,
                 border: dayData.isToday ? `1px solid ${colors.accent}` : '1px solid transparent',
               }}
             >

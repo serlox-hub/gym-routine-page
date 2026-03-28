@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Play } from 'lucide-react-native'
 import useWorkoutStore from '../../stores/workoutStore'
 import { formatSecondsToMMSS } from '@gym/shared'
+import { colors } from '../../lib/styles'
 
 export default function ActiveSessionBanner() {
   const insets = useSafeAreaInsets()
@@ -62,7 +63,7 @@ export default function ActiveSessionBanner() {
 
   const isCritical = timeRemaining <= 3
   const isWarning = timeRemaining <= 10 && timeRemaining > 3
-  const timerColor = isCritical ? '#f85149' : isWarning ? '#d29922' : '#ffffff'
+  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : colors.white
 
   return (
     <Animated.View
@@ -75,9 +76,9 @@ export default function ActiveSessionBanner() {
     >
       <View
         className="items-center gap-1 px-4 py-2 rounded-lg"
-        style={{ backgroundColor: '#161b22', borderWidth: 2, borderColor: '#58a6ff' }}
+        style={{ backgroundColor: colors.bgSecondary, borderWidth: 2, borderColor: colors.accent }}
       >
-        <Text className="text-xs font-medium" style={{ color: '#58a6ff' }}>
+        <Text className="text-xs font-medium" style={{ color: colors.accent }}>
           Entrenamiento en curso
         </Text>
         {restTimerActive && timeRemaining > 0 && (
@@ -88,9 +89,9 @@ export default function ActiveSessionBanner() {
         <Pressable
           onPress={handleContinue}
           className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-md active:opacity-70"
-          style={{ backgroundColor: 'rgba(35, 134, 54, 0.95)' }}
+          style={{ backgroundColor: colors.actionPrimaryBg }}
         >
-          <Play size={14} color="#ffffff" fill="#ffffff" />
+          <Play size={14} color={colors.white} fill={colors.white} />
           <Text className="text-white text-sm font-medium">Volver</Text>
         </Pressable>
       </View>

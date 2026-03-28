@@ -43,7 +43,7 @@ function UnitSelector({ label, units, field, form, onChange, Wrapper, compact })
               onClick={() => onChange(field, unit.value)}
               className="flex-1 py-2 px-3 rounded-lg text-sm transition-colors"
               style={{
-                backgroundColor: isSelected ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+                backgroundColor: isSelected ? colors.accentBg : colors.bgTertiary,
                 color: isSelected ? colors.accent : colors.textPrimary,
                 border: isSelected ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
               }}
@@ -92,7 +92,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
               type="button"
               onClick={() => { onChange(g.id); setOpen(false) }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:opacity-80"
-              style={selectedId === g.id ? { backgroundColor: 'rgba(88,166,255,0.1)' } : undefined}
+              style={selectedId === g.id ? { backgroundColor: colors.accentBgSubtle } : undefined}
             >
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(g.name) }} />
               <span style={{ color: selectedId === g.id ? colors.accent : colors.textPrimary }}>{g.name}</span>
@@ -291,7 +291,7 @@ function ExerciseForm({
             type="submit"
             disabled={isSubmitting}
             className="w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 mt-4"
-            style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+            style={{ backgroundColor: colors.accent, color: colors.white }}
           >
             {isSubmitting ? 'Guardando...' : submitLabel}
           </button>

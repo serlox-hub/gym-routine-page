@@ -93,7 +93,7 @@ function ExecutionTimer({ seconds }) {
         onClick={handleStart}
         disabled={seconds === 0}
         className="px-3 py-1 rounded text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
-        style={{ backgroundColor: '#238636', color: '#ffffff' }}
+        style={{ backgroundColor: colors.actionPrimary, color: colors.white }}
       >
         ▶
       </button>

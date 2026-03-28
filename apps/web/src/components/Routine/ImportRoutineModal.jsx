@@ -56,7 +56,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+      style={{ backgroundColor: colors.overlay }}
       onClick={handleClose}
     >
       <div
@@ -111,7 +111,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
                   className="w-full p-3 rounded-lg flex items-center gap-3 transition-opacity hover:opacity-80"
                   style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
                 >
-                  <RefreshCw size={20} style={{ color: '#f0883e' }} />
+                  <RefreshCw size={20} style={{ color: colors.orange }} />
                   <div className="text-left">
                     <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>Desde herramienta externa</p>
                     <p className="text-xs" style={{ color: colors.textSecondary }}>Convierte tu rutina de Excel, PDF u otra app con IA</p>

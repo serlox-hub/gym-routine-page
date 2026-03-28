@@ -27,7 +27,7 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
         {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
         {hasNotes && (
           <Pressable onPress={() => setShowNotes(!showNotes)} className="px-2 py-0.5 rounded" style={{ backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary }}>
-            <Text className="text-xs" style={{ color: showNotes ? '#88c6be' : colors.textSecondary }}>{showNotes ? '▲' : '▼'} Notas</Text>
+            <Text className="text-xs" style={{ color: showNotes ? colors.teal : colors.textSecondary }}>{showNotes ? '▲' : '▼'} Notas</Text>
           </Pressable>
         )}
       </View>

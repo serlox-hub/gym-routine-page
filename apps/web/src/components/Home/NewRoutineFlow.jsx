@@ -81,7 +81,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
       {isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+          style={{ backgroundColor: colors.overlay }}
           onClick={onClose}
         >
           <div
@@ -153,7 +153,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
       {isImporting && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+          style={{ backgroundColor: colors.overlay }}
         >
           <div className="flex flex-col items-center gap-3">
             <LoadingSpinner />

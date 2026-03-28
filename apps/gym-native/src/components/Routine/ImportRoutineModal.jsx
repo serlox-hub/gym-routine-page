@@ -103,7 +103,7 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptC
                 className="flex-row items-center gap-3 p-3 rounded-lg"
                 style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
               >
-                <RefreshCw size={20} color="#f0883e" />
+                <RefreshCw size={20} color={colors.orange} />
                 <View>
                   <Text className="text-sm font-medium text-primary">Desde herramienta externa</Text>
                   <Text className="text-xs text-secondary">Convierte tu rutina de Excel, PDF u otra app con IA</Text>

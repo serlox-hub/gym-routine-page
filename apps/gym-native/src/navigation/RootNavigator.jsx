@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
 import { useAuth } from '../hooks/useAuth'
 import { View, ActivityIndicator } from 'react-native'
+import { colors } from '../lib/styles'
 import AuthStack from './AuthStack'
 import AppStack from './AppStack'
 import ResetPasswordScreen from '../screens/ResetPasswordScreen'
@@ -18,7 +19,7 @@ export default function RootNavigator() {
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-surface">
-        <ActivityIndicator size="large" color="#3fb950" />
+        <ActivityIndicator size="large" color={colors.success} />
       </View>
     )
   }

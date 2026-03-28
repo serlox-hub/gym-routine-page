@@ -49,7 +49,7 @@ export default function WorkoutSummaryScreen({ summaryData, onDismiss }) {
       >
         <Button onPress={handleShare} loading={isGenerating}>
           <View className="flex-row items-center justify-center gap-2">
-            <Share2 size={16} color="#ffffff" />
+            <Share2 size={16} color={colors.white} />
             <Text className="text-white font-medium text-sm">
               {isGenerating ? 'Generando...' : 'Compartir'}
             </Text>

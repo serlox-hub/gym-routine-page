@@ -21,7 +21,7 @@ function ExerciseConfigForm({
       {!hideExerciseName && (
         <div
           className="p-3 rounded-lg"
-          style={{ backgroundColor: 'rgba(88, 166, 255, 0.1)' }}
+          style={{ backgroundColor: colors.accentBgSubtle }}
         >
           <div className="font-medium" style={{ color: colors.textPrimary }}>
             {exercise.name}

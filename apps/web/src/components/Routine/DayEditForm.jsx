@@ -31,7 +31,7 @@ function DayEditForm({ dayNumber, form, setForm, onSave }) {
         <button
           onClick={onSave}
           className="ml-auto px-3 py-1 rounded text-sm"
-          style={{ backgroundColor: colors.accent, color: '#fff' }}
+          style={{ backgroundColor: colors.accent, color: colors.white }}
         >
           OK
         </button>

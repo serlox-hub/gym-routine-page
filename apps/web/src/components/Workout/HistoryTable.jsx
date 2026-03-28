@@ -42,7 +42,7 @@ function HistoryTable({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSe
               >
                 <span
                   className="w-5 h-5 flex items-center justify-center rounded text-xs font-bold"
-                  style={{ backgroundColor: set.set_type === 'dropset' ? colors.dropsetBg : colors.border, color: set.set_type === 'dropset' ? colors.dropset : colors.textSecondary }}
+                  style={{ backgroundColor: set.set_type === 'dropset' ? colors.orangeBg : colors.border, color: set.set_type === 'dropset' ? colors.orange : colors.textSecondary }}
                 >
                   {set.set_type === 'dropset' ? 'D' : set.set_number}
                 </span>

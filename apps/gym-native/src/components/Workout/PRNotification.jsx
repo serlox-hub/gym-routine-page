@@ -45,17 +45,17 @@ export default function PRNotification({ notification, onDismiss }) {
         className="px-4 py-3 rounded-xl"
         style={{
           backgroundColor: colors.warning,
-          shadowColor: '#000',
+          shadowColor: colors.black,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.3,
           shadowRadius: 8,
           elevation: 6,
         }}
       >
-        <Text className="font-bold text-sm" style={{ color: '#000' }}>
+        <Text className="font-bold text-sm" style={{ color: colors.black }}>
           Nuevo PR
         </Text>
-        <Text className="text-xs" style={{ color: '#000' }}>
+        <Text className="text-xs" style={{ color: colors.black }}>
           {formatPRNotificationText(notification)}
         </Text>
       </Pressable>

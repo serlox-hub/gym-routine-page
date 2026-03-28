@@ -33,7 +33,7 @@ function ActiveSessionBanner() {
 
   const isWarning = timeRemaining <= 10 && timeRemaining > 3
   const isCritical = timeRemaining <= 3
-  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : '#ffffff'
+  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : colors.white
 
   return (
     <div
@@ -59,9 +59,9 @@ function ActiveSessionBanner() {
         <button
           onClick={handleContinue}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer"
-          style={{ backgroundColor: 'rgba(35, 134, 54, 0.95)', color: '#ffffff' }}
+          style={{ backgroundColor: colors.actionPrimaryBg, color: colors.white }}
         >
-          <Play size={14} fill="#ffffff" />
+          <Play size={14} fill={colors.white} />
           Volver
         </button>
       </div>

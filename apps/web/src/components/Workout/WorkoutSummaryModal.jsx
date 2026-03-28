@@ -22,7 +22,7 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
   }
 
   return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(0, 0, 0, 0.95)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: colors.overlay }}>
       {/* Copia a tamaño real fuera de pantalla para captura */}
       <div style={{ position: 'fixed', left: -9999, top: 0, zIndex: -1 }}>
         <WorkoutSummaryCard ref={cardRef} summaryData={summaryData} sessionNumber={sessionCount} />
@@ -83,7 +83,7 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm"
             style={{
               backgroundColor: colors.accent,
-              color: '#ffffff',
+              color: colors.white,
             }}
           >
             <Share2 size={16} />

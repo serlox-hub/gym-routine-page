@@ -23,7 +23,7 @@ function TemplateCard({ template, isSelected, onSelect }) {
             backgroundColor: isSelected ? colors.accent : 'transparent',
           }}
         >
-          {isSelected && <Check size={12} color="#fff" />}
+          {isSelected && <Check size={12} color={colors.white} />}
         </View>
         <View className="flex-1">
           <Text className="font-medium text-sm text-primary">{template.name}</Text>

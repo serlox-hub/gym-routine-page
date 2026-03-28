@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { Modal, Button } from '../ui'
-import { inputStyle } from '../../lib/styles'
+import { inputStyle, colors } from '../../lib/styles'
 import { usePreference } from '../../hooks/usePreferences'
 
 export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
@@ -31,7 +31,7 @@ export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending 
             value={notes}
             onChangeText={setNotes}
             placeholder="¿Algo que quieras recordar de esta sesión?"
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
             style={[inputStyle, { textAlignVertical: 'top', minHeight: 80 }]}

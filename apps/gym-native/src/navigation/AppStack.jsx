@@ -13,12 +13,13 @@ import PreferencesScreen from '../screens/PreferencesScreen'
 import AdminUsersScreen from '../screens/AdminUsersScreen'
 import WorkoutOverlay from '../screens/WorkoutOverlay'
 import OfflineBanner from '../components/ui/OfflineBanner'
+import { colors } from '../lib/styles'
 
 const Stack = createNativeStackNavigator()
 
 const screenOptions = {
   headerShown: false,
-  contentStyle: { backgroundColor: '#0d1117' },
+  contentStyle: { backgroundColor: colors.bgPrimary },
   freezeOnBlur: true,
 }
 

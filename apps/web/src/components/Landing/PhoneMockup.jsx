@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react'
-import { colors } from '../../lib/styles.js'
+import { colors, RGB_ACCENT } from '../../lib/styles.js'
 
 function PhoneMockup({ children, className = '' }) {
   return (
@@ -9,7 +9,7 @@ function PhoneMockup({ children, className = '' }) {
         style={{
           aspectRatio: '71.6 / 147.6',
           background: `linear-gradient(145deg, ${colors.border}, ${colors.bgTertiary})`,
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(88, 166, 255, 0.1)',
+          boxShadow: `0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(${RGB_ACCENT}, 0.1)`,
         }}
       >
         <div className="rounded-[1.6rem] overflow-hidden h-full flex flex-col" style={{ backgroundColor: colors.bgPrimary }}>
@@ -48,9 +48,9 @@ function MockupRoutineScreen() {
             key={day}
             className="px-2 py-0.5 rounded-full text-[9px] font-medium whitespace-nowrap"
             style={{
-              backgroundColor: i === 0 ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+              backgroundColor: i === 0 ? colors.accentBg : colors.bgTertiary,
               color: i === 0 ? colors.accent : colors.textSecondary,
-              border: i === 0 ? '1px solid rgba(88, 166, 255, 0.3)' : '1px solid transparent',
+              border: i === 0 ? `1px solid rgba(${RGB_ACCENT}, 0.3)` : '1px solid transparent',
             }}
           >
             {day}
@@ -142,7 +142,7 @@ function MockupWorkoutScreen() {
         </div>
       </div>
       {/* Rest timer */}
-      <div className="rounded-lg p-2.5 text-center" style={{ backgroundColor: 'rgba(88, 166, 255, 0.08)', border: '1px solid rgba(88, 166, 255, 0.2)' }}>
+      <div className="rounded-lg p-2.5 text-center" style={{ backgroundColor: `rgba(${RGB_ACCENT}, 0.08)`, border: `1px solid rgba(${RGB_ACCENT}, 0.2)` }}>
         <p className="text-[8px] mb-0.5" style={{ color: colors.accent }}>DESCANSO</p>
         <p className="text-xl font-mono font-bold" style={{ color: colors.accent }}>1:23</p>
       </div>

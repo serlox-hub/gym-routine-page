@@ -58,7 +58,7 @@ function StepsSection() {
                   <div
                     className="w-14 h-14 rounded-xl flex items-center justify-center"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(88, 166, 255, 0.15), rgba(163, 113, 247, 0.15))',
+                      background: `linear-gradient(135deg, ${colors.accentBg}, ${colors.purpleBg})`,
                     }}
                   >
                     <span

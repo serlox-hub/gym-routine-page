@@ -85,7 +85,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
         <Pressable
           onPress={onClose}
           className="absolute inset-0 z-50 justify-center items-center p-4"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+          style={{ backgroundColor: colors.overlay }}
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
@@ -111,7 +111,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
       {isImporting && (
         <View
           className="absolute inset-0 z-50 items-center justify-center"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+          style={{ backgroundColor: colors.overlay }}
         >
           <LoadingSpinner fullScreen={false} />
           <Text className="text-primary mt-2">Importando rutina...</Text>

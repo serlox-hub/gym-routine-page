@@ -23,7 +23,7 @@ function ExerciseCardHeader({
       <View className="flex-row items-center gap-1.5">
         <View
           className="px-2 py-0.5 rounded"
-          style={{ backgroundColor: isCompleted ? 'rgba(63, 185, 80, 0.15)' : 'rgba(88, 166, 255, 0.15)' }}
+          style={{ backgroundColor: isCompleted ? colors.successBg : colors.accentBg }}
         >
           <Text
             className="text-sm font-medium"

@@ -3,7 +3,7 @@ import { Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ErrorMessage, Card, PageHeader, Button } from '../components/ui'
 import { useCreateRoutine } from '../hooks/useRoutines'
-import { inputStyle } from '../lib/styles'
+import { inputStyle, colors } from '../lib/styles'
 import { prepareRoutineData, validateRoutineForm } from '@gym/shared'
 
 export default function NewRoutineScreen({ navigation }) {
@@ -58,7 +58,7 @@ export default function NewRoutineScreen({ navigation }) {
               value={form.name}
               onChangeText={(v) => handleChange('name', v)}
               placeholder="Ej: Push Pull Legs"
-              placeholderTextColor="#6e7681"
+              placeholderTextColor={colors.textMuted}
               style={inputStyle}
             />
           </Card>
@@ -69,7 +69,7 @@ export default function NewRoutineScreen({ navigation }) {
               value={form.description}
               onChangeText={(v) => handleChange('description', v)}
               placeholder="Descripción de la rutina..."
-              placeholderTextColor="#6e7681"
+              placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={2}
               style={[inputStyle, { textAlignVertical: 'top', minHeight: 60 }]}
@@ -82,7 +82,7 @@ export default function NewRoutineScreen({ navigation }) {
               value={form.goal}
               onChangeText={(v) => handleChange('goal', v)}
               placeholder="Ej: Hipertrofia, Fuerza, Recomposición..."
-              placeholderTextColor="#6e7681"
+              placeholderTextColor={colors.textMuted}
               style={inputStyle}
             />
           </Card>

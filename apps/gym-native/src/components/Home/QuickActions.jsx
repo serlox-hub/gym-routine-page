@@ -36,11 +36,11 @@ function QuickActions({ navigation, routines }) {
         style={isRoutineSessionActive ? { opacity: 0.5 } : {}}
       >
         <View className="flex-row items-center gap-3">
-          <View className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(136, 87, 229, 0.15)' }}>
-            <Zap size={20} color="#8957e5" />
+          <View className="p-2 rounded-lg" style={{ backgroundColor: colors.purpleAccentBg }}>
+            <Zap size={20} color={colors.purpleAccent} />
           </View>
           <View className="flex-1">
-            <Text className="font-medium text-sm" style={{ color: '#8957e5' }}>
+            <Text className="font-medium text-sm" style={{ color: colors.purpleAccent }}>
               {startSessionMutation.isPending
                 ? 'Iniciando...'
                 : isFreeSessionActive

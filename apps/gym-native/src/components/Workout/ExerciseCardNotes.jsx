@@ -29,7 +29,7 @@ function ExerciseCardNotes({
             className="px-2 py-1 rounded active:opacity-70"
             style={{ backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary }}
           >
-            <Text className="text-xs" style={{ color: showNotes ? '#88c6be' : colors.textSecondary }}>
+            <Text className="text-xs" style={{ color: showNotes ? colors.teal : colors.textSecondary }}>
               {showNotes ? '▲ Ocultar notas' : '▼ Ver notas'}
             </Text>
           </Pressable>

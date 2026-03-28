@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { View, Text, Switch } from 'react-native'
 import Button from './Button'
 import Modal from './Modal'
+import { colors } from '../../lib/styles'
 
 export default function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
   const [updateExercises, setUpdateExercises] = useState(false)
@@ -31,8 +32,8 @@ export default function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
         <Switch
           value={updateExercises}
           onValueChange={setUpdateExercises}
-          trackColor={{ false: '#30363d', true: '#238636' }}
-          thumbColor="#e6edf3"
+          trackColor={{ false: colors.border, true: colors.actionPrimary }}
+          thumbColor={colors.textPrimary}
         />
       </View>
 

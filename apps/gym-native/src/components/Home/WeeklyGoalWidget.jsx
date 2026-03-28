@@ -163,7 +163,7 @@ function DaySlot({ day, onPress }) {
           backgroundColor: filled
             ? colors.success
             : isToday
-              ? 'rgba(88, 166, 255, 0.15)'
+              ? colors.accentBg
               : colors.bgTertiary,
           borderWidth: 2,
           borderStyle: filled ? 'solid' : 'dashed',
@@ -175,7 +175,7 @@ function DaySlot({ day, onPress }) {
           opacity: isFuture && !filled ? 0.4 : 1,
         }}
       >
-        {filled && <Check size={14} color="#fff" strokeWidth={3} />}
+        {filled && <Check size={14} color={colors.white} strokeWidth={3} />}
         {!filled && day.isPast && (
           <Text style={{ color: colors.textMuted, fontSize: 14, fontWeight: '700' }}>–</Text>
         )}
@@ -228,7 +228,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
                     }}
                   >
                     <Text className="text-sm font-medium" style={{
-                      color: n === daysInput ? '#fff' : colors.textSecondary,
+                      color: n === daysInput ? colors.white : colors.textSecondary,
                     }}>
                       {n}
                     </Text>
@@ -245,7 +245,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
                 }}
               >
                 <Text className="text-sm font-medium" style={{
-                  color: daysInput ? '#fff' : colors.textSecondary,
+                  color: daysInput ? colors.white : colors.textSecondary,
                 }}>
                   Guardar
                 </Text>

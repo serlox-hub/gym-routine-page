@@ -48,7 +48,7 @@ function ChipSelector({ options, value, onChange, label }) {
             onPress={() => onChange(opt.value)}
             className="px-3 py-1.5 rounded-lg"
             style={{
-              backgroundColor: value === opt.value ? 'rgba(88, 166, 255, 0.15)' : colors.bgTertiary,
+              backgroundColor: value === opt.value ? colors.accentBg : colors.bgTertiary,
               borderWidth: 1,
               borderColor: value === opt.value ? colors.accent : colors.border,
             }}

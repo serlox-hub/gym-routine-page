@@ -5,7 +5,7 @@ import * as Sharing from 'expo-sharing'
 import Toast from 'react-native-toast-message'
 import { useDuplicateRoutine, useRoutineEditForm } from '../../hooks/useRoutines'
 import { sanitizeFilename, exportRoutine } from '@gym/shared'
-import { inputStyle } from '../../lib/styles'
+import { inputStyle, colors } from '../../lib/styles'
 import { PageHeader } from '../ui'
 
 export function RoutineEditForm({ routine, routineId }) {
@@ -19,7 +19,7 @@ export function RoutineEditForm({ routine, routineId }) {
           value={editForm.name}
           onChangeText={(v) => handleFieldChange('name', v)}
           placeholder="Nombre de la rutina"
-          placeholderTextColor="#6e7681"
+          placeholderTextColor={colors.textMuted}
           autoFocus
           style={[inputStyle, { padding: 8, fontSize: 14 }]}
         />
@@ -30,7 +30,7 @@ export function RoutineEditForm({ routine, routineId }) {
           value={editForm.description}
           onChangeText={(v) => handleFieldChange('description', v)}
           placeholder="Descripción de la rutina..."
-          placeholderTextColor="#6e7681"
+          placeholderTextColor={colors.textMuted}
           multiline
           numberOfLines={2}
           style={[inputStyle, { padding: 8, fontSize: 14, textAlignVertical: 'top', minHeight: 50 }]}
@@ -42,7 +42,7 @@ export function RoutineEditForm({ routine, routineId }) {
           value={editForm.goal}
           onChangeText={(v) => handleFieldChange('goal', v)}
           placeholder="Ej: Hipertrofia, Fuerza..."
-          placeholderTextColor="#6e7681"
+          placeholderTextColor={colors.textMuted}
           style={[inputStyle, { padding: 8, fontSize: 14 }]}
         />
       </View>
@@ -52,7 +52,7 @@ export function RoutineEditForm({ routine, routineId }) {
           value={String(editForm.cycle_days)}
           onChangeText={(v) => handleFieldChange('cycle_days', v)}
           placeholder="7"
-          placeholderTextColor="#6e7681"
+          placeholderTextColor={colors.textMuted}
           keyboardType="number-pad"
           style={[inputStyle, { padding: 8, fontSize: 14 }]}
         />

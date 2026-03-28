@@ -52,7 +52,7 @@ function MMSSInput({ totalSeconds, onChange, disabled }) {
         editable={!disabled}
         keyboardType="number-pad"
         placeholder="mm"
-        placeholderTextColor="#6e7681"
+        placeholderTextColor={colors.textMuted}
         style={[numericInputStyle, { width: 36 }]}
       />
       <Text className="text-xs font-bold" style={{ color: colors.textSecondary }}>:</Text>
@@ -62,7 +62,7 @@ function MMSSInput({ totalSeconds, onChange, disabled }) {
         editable={!disabled}
         keyboardType="number-pad"
         placeholder="ss"
-        placeholderTextColor="#6e7681"
+        placeholderTextColor={colors.textMuted}
         style={[numericInputStyle, { width: 36 }]}
       />
     </View>

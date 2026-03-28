@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { Button, Modal } from '../ui'
-import { inputStyle } from '../../lib/styles'
+import { inputStyle, colors } from '../../lib/styles'
 
 export default function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
   const [form, setForm] = useState({ name: '', estimated_duration_min: '' })
@@ -34,7 +34,7 @@ export default function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, 
             value={form.name}
             onChangeText={(v) => setForm(prev => ({ ...prev, name: v }))}
             placeholder="Ej: Pecho y tríceps"
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
             autoFocus
             style={inputStyle}
           />
@@ -48,7 +48,7 @@ export default function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, 
             value={form.estimated_duration_min}
             onChangeText={(v) => setForm(prev => ({ ...prev, estimated_duration_min: v }))}
             placeholder="Ej: 60"
-            placeholderTextColor="#6e7681"
+            placeholderTextColor={colors.textMuted}
             keyboardType="numeric"
             style={inputStyle}
           />

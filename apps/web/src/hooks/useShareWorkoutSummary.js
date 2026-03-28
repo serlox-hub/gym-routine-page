@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react'
 import html2canvas from 'html2canvas'
 import { buildSummaryFilename } from '@gym/shared'
+import { colors } from '../lib/styles.js'
 
 async function elementToBlob(element) {
   const canvas = await html2canvas(element, {
     scale: 2,
-    backgroundColor: '#0d1117',
+    backgroundColor: colors.bgPrimary,
     useCORS: false,
     logging: false,
   })

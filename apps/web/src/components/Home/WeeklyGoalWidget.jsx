@@ -170,7 +170,7 @@ function DaySlot({ day, onClick }) {
           backgroundColor: filled
             ? colors.success
             : isToday
-              ? 'rgba(88, 166, 255, 0.15)'
+              ? colors.accentBg
               : colors.bgTertiary,
           border: filled
             ? '2px solid transparent'
@@ -181,7 +181,7 @@ function DaySlot({ day, onClick }) {
           opacity: isFuture && !filled ? 0.4 : 1,
         }}
       >
-        {filled && <Check size={14} style={{ color: '#fff' }} strokeWidth={3} />}
+        {filled && <Check size={14} style={{ color: colors.white }} strokeWidth={3} />}
         {!filled && day.isPast && (
           <span style={{ color: colors.textMuted, fontSize: 14, fontWeight: 700, lineHeight: 1 }}>–</span>
         )}
@@ -238,7 +238,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
                     className="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
                     style={{
                       backgroundColor: String(n) === daysInput ? colors.accent : colors.bgTertiary,
-                      color: String(n) === daysInput ? '#fff' : colors.textSecondary,
+                      color: String(n) === daysInput ? colors.white : colors.textSecondary,
                     }}
                   >
                     {n}
@@ -251,7 +251,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
                 className="px-3 h-9 rounded-lg text-sm font-medium transition-colors"
                 style={{
                   backgroundColor: daysInput ? colors.success : colors.bgTertiary,
-                  color: daysInput ? '#fff' : colors.textSecondary,
+                  color: daysInput ? colors.white : colors.textSecondary,
                   opacity: daysInput ? 1 : 0.5,
                 }}
               >

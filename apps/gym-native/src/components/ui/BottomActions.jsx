@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { colors } from '../../lib/styles'
 
 export default function BottomActions({ primary, secondary, center }) {
   const insets = useSafeAreaInsets()
@@ -17,12 +18,12 @@ export default function BottomActions({ primary, secondary, center }) {
             disabled={secondary.disabled}
             className={`flex-1 py-2.5 px-4 rounded-lg items-center ${secondary.disabled ? 'opacity-50' : 'active:opacity-70'}`}
             style={{
-              backgroundColor: secondary.danger ? 'rgba(248, 81, 73, 0.15)' : '#21262d',
+              backgroundColor: secondary.danger ? colors.dangerBg : colors.bgTertiary,
             }}
           >
             <Text
               className="text-sm font-medium"
-              style={{ color: secondary.danger ? '#f85149' : '#e6edf3' }}
+              style={{ color: secondary.danger ? colors.danger : colors.textPrimary }}
             >
               {secondary.label}
             </Text>
@@ -34,7 +35,7 @@ export default function BottomActions({ primary, secondary, center }) {
             onPress={primary.onClick}
             disabled={primary.disabled}
             className={`py-2.5 px-4 rounded-lg items-center ${hasSecondary ? 'flex-1' : 'w-full'} ${primary.disabled ? 'opacity-50' : 'active:opacity-70'}`}
-            style={{ backgroundColor: '#58a6ff' }}
+            style={{ backgroundColor: colors.accent }}
           >
             <Text className="text-sm font-medium text-white">{primary.label}</Text>
           </Pressable>

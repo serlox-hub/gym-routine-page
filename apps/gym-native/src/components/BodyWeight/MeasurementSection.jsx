@@ -254,7 +254,7 @@ export default function MeasurementSection() {
               }}
               className="px-4 py-3 rounded-lg active:opacity-80"
               style={{
-                backgroundColor: type === selectedType ? 'rgba(88, 166, 255, 0.1)' : 'transparent',
+                backgroundColor: type === selectedType ? colors.accentBgSubtle : 'transparent',
               }}
             >
               <Text

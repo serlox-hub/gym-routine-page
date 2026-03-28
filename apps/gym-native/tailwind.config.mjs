@@ -1,11 +1,13 @@
+import nativewindPreset from 'nativewind/preset'
 import { colors } from './src/lib/styles.js'
 
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html",
+    "./App.{js,jsx}",
     "./src/**/*.{js,jsx}",
   ],
+  presets: [nativewindPreset],
   theme: {
     extend: {
       colors: {
@@ -43,9 +45,6 @@ export default {
         'text-dark': colors.textDark,
         // Borders
         'border': colors.border,
-      },
-      spacing: {
-        'safe-bottom': 'env(safe-area-inset-bottom)',
       },
     },
   },

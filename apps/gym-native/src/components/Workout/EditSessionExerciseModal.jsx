@@ -16,7 +16,7 @@ function ViewToggle({ view, onChangeView }) {
         className="flex-1 py-2 items-center"
         style={view === 'session' ? { backgroundColor: colors.accent } : undefined}
       >
-        <Text className="text-xs font-semibold" style={{ color: view === 'session' ? '#ffffff' : colors.textSecondary }}>
+        <Text className="text-xs font-semibold" style={{ color: view === 'session' ? colors.white : colors.textSecondary }}>
           En sesión
         </Text>
       </Pressable>
@@ -25,7 +25,7 @@ function ViewToggle({ view, onChangeView }) {
         className="flex-1 py-2 items-center"
         style={view === 'exercise' ? { backgroundColor: colors.accent } : undefined}
       >
-        <Text className="text-xs font-semibold" style={{ color: view === 'exercise' ? '#ffffff' : colors.textSecondary }}>
+        <Text className="text-xs font-semibold" style={{ color: view === 'exercise' ? colors.white : colors.textSecondary }}>
           Ficha
         </Text>
       </Pressable>

@@ -1,3 +1,7 @@
+// RGB base para derivar variantes con alpha
+export const RGB_ACCENT = '88, 166, 255'
+export const RGB_PURPLE = '163, 113, 247'
+
 // Colores del tema GitHub Dark
 export const colors = {
   // Fondos
@@ -12,6 +16,10 @@ export const colors = {
   textPrimary: '#e6edf3',
   textSecondary: '#8b949e',
   textMuted: '#6e7681',
+  textLight: '#c9d1d9',
+  textDisabled: '#484f58',
+  white: '#ffffff',
+  black: '#000000',
 
   // Acentos
   accent: '#58a6ff',
@@ -20,18 +28,24 @@ export const colors = {
   warning: '#d29922',
   danger: '#f85149',
   purple: '#a371f7',
+  purpleAccent: '#8957e5',
   teal: '#88c6be',
   pink: '#db61a2',
-
-  // Tipos de serie
-  dropset: '#f0883e',
-  dropsetBg: 'rgba(240, 136, 62, 0.15)',
+  orange: '#f0883e',
+  actionPrimary: '#238636',
+  textDark: '#1f1f1f',
 
   // Fondos semánticos (alpha)
+  accentBg: 'rgba(88, 166, 255, 0.15)',
+  accentBgSubtle: 'rgba(88, 166, 255, 0.1)',
   purpleBg: 'rgba(163, 113, 247, 0.15)',
+  purpleAccentBg: 'rgba(136, 87, 229, 0.15)',
   successBg: 'rgba(63, 185, 80, 0.15)',
   warningBg: 'rgba(210, 153, 34, 0.15)',
+  orangeBg: 'rgba(240, 136, 62, 0.15)',
   dangerBg: 'rgba(248, 81, 73, 0.1)',
+  actionPrimaryBg: 'rgba(35, 134, 54, 0.95)',
+  overlay: 'rgba(0, 0, 0, 0.8)',
 }
 
 // Estilos reutilizables para elementos de formulario
@@ -57,7 +71,7 @@ export const buttonSecondaryStyle = {
 
 // Estilos para modales
 export const modalOverlayStyle = {
-  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+  backgroundColor: colors.overlay,
 }
 
 export const modalContentStyle = {

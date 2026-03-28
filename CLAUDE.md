@@ -171,9 +171,26 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 
 ### Styling
 - Use Tailwind CSS classes (web) / NativeWind classes (mobile)
-- Use style objects from `lib/styles.js` for consistency (web)
-- Design tokens: `colors.textPrimary`, `colors.bgSecondary`, etc.
+- Use style objects from `lib/styles.js` for consistency
 - **Safe Area (native)**: Todo contenido visible debe respetar el safe area (notch, Dynamic Island, home indicator). Usar `SafeAreaView` de `react-native-safe-area-context` para layouts, o `useSafeAreaInsets()` para elementos con `position: 'absolute'` que necesitan offset manual. Nunca usar valores fijos de `top`/`bottom` sin sumar el inset correspondiente.
+
+### Color System (CRITICAL)
+
+**Single source of truth**: `apps/web/src/lib/styles.js` y `apps/gym-native/src/lib/styles.js`. Ambos archivos DEBEN tener los mismos tokens de color (objeto `colors` idéntico).
+
+**Rules:**
+1. **NUNCA** usar hex/rgba hardcodeados en componentes. Siempre `colors.X` importado desde `lib/styles.js`
+2. **Nuevo color** → añadirlo a `colors` en AMBOS `styles.js` (web + native) y a AMBOS `tailwind.config` (web + native)
+3. **Tailwind configs** importan desde `styles.js` — nunca hardcodear valores en los configs
+4. **Opacidades decorativas** (gradientes, sombras en Landing) → usar constantes `RGB_ACCENT` / `RGB_PURPLE` exportadas desde `styles.js` con template literals: `` `rgba(${RGB_ACCENT}, 0.08)` ``
+5. **No duplicar tokens semánticos** — si dos tokens tienen el mismo valor hex, usar uno solo (ej: `orange` cubre tanto el acento naranja como el color de dropset)
+
+**Token categories:**
+- Fondos: `bgPrimary`, `bgSecondary`, `bgAlt`, `bgTertiary`, `bgHover`
+- Texto: `textPrimary`, `textSecondary`, `textMuted`, `textLight`, `textDisabled`, `textDark`, `white`, `black`
+- Acentos: `accent`, `accentHover`, `success`, `warning`, `danger`, `purple`, `purpleAccent`, `teal`, `pink`, `orange`, `actionPrimary`
+- Fondos semánticos (alpha): `accentBg`, `accentBgSubtle`, `purpleBg`, `purpleAccentBg`, `successBg`, `warningBg`, `orangeBg`, `dangerBg`, `actionPrimaryBg`, `overlay`
+- Bordes: `border`
 
 ## Database Schema
 
@@ -213,6 +230,7 @@ Deletion strategy:
 - ❌ Generic names (`utils.js`, `helpers.js`)
 - ❌ Deep folder nesting (max 2 levels in components)
 - ❌ Inline styles (use Tailwind)
+- ❌ Hardcoded color values (`#xxx`, `rgba(...)`) in components — use `colors.X` from `styles.js`
 - ❌ Magic numbers (use constants)
 - ❌ console.log in committed code
 - ❌ Business logic in apps/ (belongs in packages/shared/src/lib/)

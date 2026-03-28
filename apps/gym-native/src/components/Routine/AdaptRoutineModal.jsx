@@ -83,9 +83,9 @@ export default function AdaptRoutineModal({ isOpen, onClose, onImportClick }) {
             </Button>
             <View
               className="p-3 rounded-lg"
-              style={{ backgroundColor: 'rgba(136, 87, 229, 0.1)', borderWidth: 1, borderColor: '#8957e5' }}
+              style={{ backgroundColor: colors.purpleAccentBg, borderWidth: 1, borderColor: colors.purpleAccent }}
             >
-              <Text className="text-sm" style={{ color: '#8957e5' }}>
+              <Text className="text-sm" style={{ color: colors.purpleAccent }}>
                 El prompt termina con "MI RUTINA A CONVERTIR:" — ahí es donde pegarás tu rutina
               </Text>
             </View>

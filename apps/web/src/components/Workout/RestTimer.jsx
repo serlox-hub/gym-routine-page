@@ -51,7 +51,7 @@ function RestTimer() {
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-      style={{ backgroundColor: 'rgba(13, 17, 23, 0.95)' }}
+      style={{ backgroundColor: colors.overlay }}
     >
       <button
         onClick={() => setMinimized(true)}
@@ -105,7 +105,7 @@ function RestTimer() {
         <button
           onClick={skip}
           className="px-8 py-3 rounded-lg text-lg font-bold transition-opacity hover:opacity-80"
-          style={{ backgroundColor: '#238636', color: '#ffffff' }}
+          style={{ backgroundColor: colors.actionPrimary, color: colors.white }}
         >
           SALTAR
         </button>

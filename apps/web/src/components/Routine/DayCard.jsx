@@ -125,7 +125,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                 className="px-5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all disabled:opacity-40"
                 style={{
                   backgroundColor: isThisDayActive ? colors.success : colors.accent,
-                  color: isThisDayActive ? '#fff' : '#000',
+                  color: isThisDayActive ? colors.white : colors.textPrimary,
                   boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                 }}
               >
