@@ -116,16 +116,16 @@ function SetRow({
     }
   }
 
-  const buildInfo = (rir, notes, videoUrl) => ({
-    sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl,
+  const buildInfo = (rir, notes, videoUrl, setType = 'normal') => ({
+    sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl, setType,
   })
 
-  const handleModalSubmit = (rir, notes, videoUrl, videoFile) => {
+  const handleModalSubmit = ({ rir, notes, videoUrl, videoFile, setType }) => {
     if (modalMode === 'complete') {
       const data = buildCompletedSetData(
         measurementType,
         { weight, reps, time, distance, calories, level, pace },
-        buildInfo(rir, notes, videoUrl)
+        buildInfo(rir, notes, videoUrl, setType)
       )
       onComplete(data, descansoSeg)
     } else {
@@ -135,6 +135,7 @@ function SetRow({
         rirActual: rir,
         notes,
         videoUrl,
+        setType,
       })
     }
 
@@ -203,6 +204,15 @@ function SetRow({
         {renderInputs()}
       </div>
 
+      {isCompleted && setData?.setType === 'dropset' && (
+        <span
+          className="px-1.5 py-0.5 rounded text-xs font-bold"
+          style={{ backgroundColor: colors.dropsetBg, color: colors.dropset }}
+        >
+          D
+        </span>
+      )}
+
       {(isCompleted || isUploadingVideo || videoUploadError) && (
         <NotesBadge
           rir={setData?.rirActual}
@@ -240,6 +250,7 @@ function SetRow({
         initialRir={initialData?.rirActual}
         initialNote={initialData?.notes}
         initialVideoUrl={initialData?.videoUrl}
+        initialSetType={initialData?.setType}
         measurementType={measurementType}
       />
 

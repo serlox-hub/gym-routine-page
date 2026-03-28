@@ -138,7 +138,8 @@ export function usePreviousWorkout(exerciseId) {
             distanceMeters: set.distance_meters,
             paceSeconds: set.pace_seconds,
             rir: set.rir_actual,
-            notes: set.notes
+            notes: set.notes,
+            setType: set.set_type,
           }))
           .sort((a, b) => a.setNumber - b.setNumber)
       }

@@ -3,7 +3,7 @@ import { Check, Video, X, Save } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import VideoPlayer from './VideoPlayer.jsx'
 import { colors, inputStyle } from '../../lib/styles.js'
-import { RIR_OPTIONS, formatRestTimeDisplay, getEffortLabel } from '@gym/shared'
+import { RIR_OPTIONS, SET_TYPE_LABELS, formatRestTimeDisplay, getEffortLabel } from '@gym/shared'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 
@@ -17,6 +17,7 @@ function SetDetailsModal({
   initialRir,
   initialNote,
   initialVideoUrl,
+  initialSetType = 'normal',
   descansoSeg = 0,
   measurementType
 }) {
@@ -31,6 +32,7 @@ function SetDetailsModal({
   const [videoUrl, setVideoUrl] = useState(null)
   const [videoFile, setVideoFile] = useState(null)
   const [videoError, setVideoError] = useState(null)
+  const [setType, setSetType] = useState('normal')
   const [hasChanges, setHasChanges] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -41,9 +43,10 @@ function SetDetailsModal({
       setVideoUrl(initialVideoUrl ?? null)
       setVideoFile(null)
       setVideoError(null)
+      setSetType(initialSetType ?? 'normal')
       setHasChanges(false)
     }
-  }, [isOpen, initialRir, initialNote, initialVideoUrl])
+  }, [isOpen, initialRir, initialNote, initialVideoUrl, initialSetType])
 
   const handleRirChange = (value) => {
     setRir(rir === value ? null : value)
@@ -84,7 +87,7 @@ function SetDetailsModal({
 
   const handleSubmit = () => {
     const existingVideoUrl = (!videoFile && videoUrl) ? initialVideoUrl : null
-    onSubmit(rir, note.trim() || null, existingVideoUrl, videoFile)
+    onSubmit({ rir, notes: note.trim() || null, videoUrl: existingVideoUrl, videoFile, setType })
     resetState()
   }
 
@@ -94,6 +97,7 @@ function SetDetailsModal({
     setVideoUrl(null)
     setVideoFile(null)
     setVideoError(null)
+    setSetType('normal')
     setHasChanges(false)
   }
 
@@ -134,7 +138,27 @@ function SetDetailsModal({
       </div>
 
       <div className="p-4 space-y-5">
-        {/* RIR / Esfuerzo */}
+        <div>
+          <label className="block text-sm mb-3" style={{ color: colors.textSecondary }}>
+            Tipo de serie
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(SET_TYPE_LABELS).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => { setSetType(key); setHasChanges(true) }}
+                className="p-2 rounded-lg text-sm font-bold transition-colors"
+                style={{
+                  backgroundColor: setType === key ? colors.warning : colors.bgTertiary,
+                  color: setType === key ? colors.bgPrimary : colors.textPrimary,
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {showRirInput && (
           <div>
             <label className="block text-sm mb-3" style={{ color: colors.textSecondary }}>

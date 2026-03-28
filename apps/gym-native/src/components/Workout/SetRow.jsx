@@ -77,8 +77,8 @@ function SetRow({
 
   const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace })
 
-  const buildInfo = (rir, notes, videoUrl = null, videoFile = null) => ({
-    sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl, videoFile,
+  const buildInfo = (rir, notes, videoUrl = null, videoFile = null, setType = 'normal') => ({
+    sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl, videoFile, setType,
   })
 
   const uploadVideoInBackground = async (file) => {
@@ -121,16 +121,16 @@ function SetRow({
     setShowModal(true)
   }
 
-  const handleModalSubmit = (rir, notes, videoUrl, videoFile) => {
+  const handleModalSubmit = ({ rir, notes, videoUrl, videoFile, setType }) => {
     if (modalMode === 'complete') {
       const data = buildCompletedSetData(
         measurementType,
         { weight, reps, time, distance, calories, level, pace },
-        buildInfo(rir, notes, videoUrl, videoFile),
+        buildInfo(rir, notes, videoUrl, videoFile, setType),
       )
       onComplete(data, descansoSeg)
     } else {
-      updateSetDetails({ sessionExerciseId, setNumber, rirActual: rir, notes, videoUrl, videoFile })
+      updateSetDetails({ sessionExerciseId, setNumber, rirActual: rir, notes, videoUrl, videoFile, setType })
     }
     setShowModal(false)
 
@@ -198,6 +198,12 @@ function SetRow({
         {renderInputs()}
       </View>
 
+      {isCompleted && setData?.setType === 'dropset' && (
+        <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dropsetBg }}>
+          <Text className="text-xs font-bold" style={{ color: colors.dropset }}>D</Text>
+        </View>
+      )}
+
       {(isCompleted || isUploadingVideo || videoUploadError) && (
         <NotesBadge
           rir={setData?.rirActual}
@@ -249,6 +255,7 @@ function SetRow({
         initialRir={initialData?.rirActual}
         initialNote={initialData?.notes}
         initialVideoUrl={initialData?.videoUrl}
+        initialSetType={initialData?.setType}
         measurementType={measurementType}
       />
     </View>

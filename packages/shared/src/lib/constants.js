@@ -90,6 +90,18 @@ export function getSensationColor(value) {
   return SENSATION_COLORS[value] || '#8b949e'
 }
 
+// Set Types
+export const SET_TYPES = {
+  NORMAL: 'normal',
+  DROPSET: 'dropset',
+}
+
+export const SET_TYPE_LABELS = {
+  normal: 'Normal',
+  dropset: 'Dropset',
+}
+
+
 // Muscle Group Colors
 export const MUSCLE_GROUP_COLORS = {
   'Pecho': '#f85149',

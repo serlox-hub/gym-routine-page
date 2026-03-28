@@ -23,6 +23,10 @@ export const colors = {
   teal: '#88c6be',
   pink: '#db61a2',
 
+  // Tipos de serie
+  dropset: '#f0883e',
+  dropsetBg: 'rgba(240, 136, 62, 0.15)',
+
   // Fondos semánticos (alpha)
   purpleBg: 'rgba(163, 113, 247, 0.15)',
   successBg: 'rgba(63, 185, 80, 0.15)',

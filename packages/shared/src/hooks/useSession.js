@@ -46,6 +46,7 @@ function buildCompletedSetsMap(rawSets) {
       rirActual: set.rir_actual,
       notes: set.notes,
       videoUrl: set.video_url,
+      setType: set.set_type ?? 'normal',
     }
   }
   return setsMap

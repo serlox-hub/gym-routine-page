@@ -129,7 +129,7 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance, 
  * @returns {Object} Datos para guardar la serie
  */
 export function buildCompletedSetData(measurementType, formData, info) {
-  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, weightUnit = 'kg', distanceUnit = 'm', rirActual, notes, videoUrl } = info
+  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, weightUnit = 'kg', distanceUnit = 'm', rirActual, notes, videoUrl, setType } = info
   const { weight, reps, time, distance, calories, level, pace } = formData
 
   const data = {
@@ -143,6 +143,7 @@ export function buildCompletedSetData(measurementType, formData, info) {
   if (sessionExerciseId !== undefined) data.sessionExerciseId = sessionExerciseId
   if (routineExerciseId !== undefined) data.routineExerciseId = routineExerciseId
   if (videoUrl !== undefined) data.videoUrl = videoUrl
+  if (setType && setType !== 'normal') data.setType = setType
 
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:

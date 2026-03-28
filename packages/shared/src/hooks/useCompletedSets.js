@@ -22,7 +22,7 @@ export function useCompleteSet() {
   const addPendingSet = useWorkoutStore(state => state.addPendingSet)
 
   return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl }) => {
+    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl, setType }) => {
       return upsertCompletedSet({
         sessionId,
         sessionExerciseId,
@@ -36,6 +36,7 @@ export function useCompleteSet() {
         rirActual,
         notes,
         videoUrl,
+        setType,
       })
     },
     retry: 3,
@@ -52,6 +53,7 @@ export function useCompleteSet() {
         rirActual: variables.rirActual,
         notes: variables.notes,
         videoUrl: variables.videoUrl,
+        setType: variables.setType,
         dbId: null, // Temporal hasta confirmación del servidor
       })
 
@@ -87,6 +89,7 @@ export function useCompleteSet() {
           rirActual: variables.rirActual,
           notes: variables.notes,
           videoUrl: variables.videoUrl,
+          setType: variables.setType,
         })
       } catch {
         // No bloquear si falla encolar el pending set
@@ -122,6 +125,7 @@ export function useSyncPendingSets({ onVisibilityChange, onConnectivityChange } 
           rirActual: payload.rirActual,
           notes: payload.notes,
           videoUrl: payload.videoUrl,
+          setType: payload.setType,
         })
 
         updateSetDbId(payload.sessionExerciseId, payload.setNumber, data.id)
@@ -182,13 +186,14 @@ export function useUpdateSetDetails() {
   const updateSetDetails = useWorkoutStore(state => state.updateSetDetails)
 
   return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, rirActual, notes, videoUrl }) => {
-      return updateSetDetailsApi({ sessionId, sessionExerciseId, setNumber, rirActual, notes, videoUrl })
+    mutationFn: async ({ sessionExerciseId, setNumber, rirActual, notes, videoUrl, setType }) => {
+      return updateSetDetailsApi({ sessionId, sessionExerciseId, setNumber, rirActual, notes, videoUrl, setType })
     },
     onSuccess: (_result, variables) => {
       updateSetDetails(variables.sessionExerciseId, variables.setNumber, {
         rirActual: variables.rirActual,
         notes: variables.notes,
+        setType: variables.setType,
       })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
     },

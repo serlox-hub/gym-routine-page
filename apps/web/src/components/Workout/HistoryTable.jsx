@@ -42,9 +42,9 @@ function HistoryTable({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSe
               >
                 <span
                   className="w-5 h-5 flex items-center justify-center rounded text-xs font-bold"
-                  style={{ backgroundColor: colors.border, color: colors.textSecondary }}
+                  style={{ backgroundColor: set.set_type === 'dropset' ? colors.dropsetBg : colors.border, color: set.set_type === 'dropset' ? colors.dropset : colors.textSecondary }}
                 >
-                  {set.set_number}
+                  {set.set_type === 'dropset' ? 'D' : set.set_number}
                 </span>
                 <span className="flex-1">{formatSetValue(set, { timeUnit, distanceUnit })}</span>
                 {(set.rir_actual !== null || set.notes) && (

@@ -85,9 +85,9 @@ function HistoryTab({ sessions, timeUnit, distanceUnit, onSelectSet, onSessionCl
               <View key={set.id} className="flex-row items-center gap-2">
                 <View
                   className="w-5 h-5 rounded items-center justify-center"
-                  style={{ backgroundColor: colors.border }}
+                  style={{ backgroundColor: set.set_type === 'dropset' ? colors.dropsetBg : colors.border }}
                 >
-                  <Text className="text-xs font-bold text-secondary">{set.set_number}</Text>
+                  <Text className="text-xs font-bold" style={{ color: set.set_type === 'dropset' ? colors.dropset : colors.textSecondary }}>{set.set_type === 'dropset' ? 'D' : set.set_number}</Text>
                 </View>
                 <Text className="flex-1 text-sm text-primary">
                   {formatSetValue(set, { timeUnit, distanceUnit })}

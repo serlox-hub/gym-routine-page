@@ -4,7 +4,7 @@ import { getClient } from './_client.js'
 // COMPLETED SETS
 // ============================================
 
-export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl }) {
+export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl, setType }) {
   const { data, error } = await getClient()
     .from('completed_sets')
     .upsert({
@@ -20,6 +20,7 @@ export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumb
       rir_actual: rirActual,
       notes,
       video_url: videoUrl,
+      set_type: setType ?? 'normal',
       completed: true,
     }, {
       onConflict: 'session_id,session_exercise_id,set_number',
@@ -45,13 +46,16 @@ export async function updateSetVideo({ sessionId, sessionExerciseId, setNumber, 
   return data
 }
 
-export async function updateSetDetails({ sessionId, sessionExerciseId, setNumber, rirActual, notes, videoUrl }) {
+export async function updateSetDetails({ sessionId, sessionExerciseId, setNumber, rirActual, notes, videoUrl, setType }) {
   const updateData = {
     rir_actual: rirActual,
     notes,
   }
   if (videoUrl !== undefined) {
     updateData.video_url = videoUrl
+  }
+  if (setType !== undefined) {
+    updateData.set_type = setType
   }
 
   const { error } = await getClient()

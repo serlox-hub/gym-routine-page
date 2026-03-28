@@ -57,8 +57,8 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
               style={{ backgroundColor: colors.bgTertiary }}
             >
               <div className="flex items-center justify-between gap-2 mb-0.5">
-                <span className="text-xs" style={{ color: colors.textSecondary }}>
-                  S{set.setNumber}
+                <span className="text-xs" style={{ color: set.setType === 'dropset' ? colors.dropset : colors.textSecondary }}>
+                  {set.setType === 'dropset' ? 'D' : `S${set.setNumber}`}
                 </span>
                 <NotesBadge
                   rir={set.rir}

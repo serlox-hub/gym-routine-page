@@ -7,7 +7,7 @@ import { Modal } from '../ui'
 import { useCanUploadVideo } from '../../hooks/useAuth'
 import { getVideoUrl } from '../../lib/videoStorage'
 import { colors, inputStyle } from '../../lib/styles'
-import { RIR_OPTIONS, formatRestTimeDisplay, getEffortLabel } from '@gym/shared'
+import { RIR_OPTIONS, SET_TYPE_LABELS, formatRestTimeDisplay, getEffortLabel } from '@gym/shared'
 
 function SetVideoPreview({ uri }) {
   const viewRef = useRef(null)
@@ -71,6 +71,7 @@ export default function SetDetailsModal({
   initialRir,
   initialNote,
   initialVideoUrl,
+  initialSetType = 'normal',
   descansoSeg = 0,
   measurementType,
 }) {
@@ -84,6 +85,7 @@ export default function SetDetailsModal({
   const [note, setNote] = useState('')
   const [videoUri, setVideoUri] = useState(null)
   const [videoFile, setVideoFile] = useState(null)
+  const [setType, setSetType] = useState('normal')
   const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
@@ -92,9 +94,10 @@ export default function SetDetailsModal({
       setNote(initialNote ?? '')
       setVideoUri(initialVideoUrl ?? null)
       setVideoFile(null)
+      setSetType(initialSetType ?? 'normal')
       setHasChanges(false)
     }
-  }, [isOpen, initialRir, initialNote, initialVideoUrl])
+  }, [isOpen, initialRir, initialNote, initialVideoUrl, initialSetType])
 
   const handleRirChange = (value) => {
     setRir(rir === value ? null : value)
@@ -129,7 +132,7 @@ export default function SetDetailsModal({
 
   const handleSubmit = () => {
     const existingVideoUrl = (!videoFile && videoUri) ? initialVideoUrl : null
-    onSubmit(rir, note.trim() || null, existingVideoUrl, videoFile)
+    onSubmit({ rir, notes: note.trim() || null, videoUrl: existingVideoUrl, videoFile, setType })
     resetState()
   }
 
@@ -138,6 +141,7 @@ export default function SetDetailsModal({
     setNote('')
     setVideoUri(null)
     setVideoFile(null)
+    setSetType('normal')
     setHasChanges(false)
   }
 
@@ -166,6 +170,26 @@ export default function SetDetailsModal({
       </View>
 
       <ScrollView className="p-4 gap-5" keyboardShouldPersistTaps="handled">
+        <View>
+          <Text className="text-sm mb-3" style={{ color: colors.textSecondary }}>
+            Tipo de serie
+          </Text>
+          <View className="flex-row gap-2">
+            {Object.entries(SET_TYPE_LABELS).map(([key, label]) => (
+              <Pressable
+                key={key}
+                onPress={() => { setSetType(key); setHasChanges(true) }}
+                className="flex-1 p-2 rounded-lg items-center"
+                style={{ backgroundColor: setType === key ? colors.warning : colors.bgTertiary }}
+              >
+                <Text className="text-sm font-bold" style={{ color: setType === key ? colors.bgPrimary : colors.textPrimary }}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         {showRirInput && (
           <View>
             <Text className="text-sm mb-3" style={{ color: colors.textSecondary }}>

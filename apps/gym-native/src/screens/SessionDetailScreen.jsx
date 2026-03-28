@@ -28,22 +28,31 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   const [reps, setReps] = useState(String(set.reps_completed ?? ''))
   const [timeSeconds, setTimeSeconds] = useState(String(set.time_seconds ?? ''))
   const [distanceMeters, setDistanceMeters] = useState(String(set.distance_meters ?? ''))
+  const [setType, setSetType] = useState(set.set_type ?? 'normal')
 
-  const handleSave = () => {
-    onUpsert({
-      sessionId,
-      sessionExerciseId,
-      setNumber: set.set_number,
-      weight: weight ? parseFloat(weight) : null,
-      weightUnit: set.weight_unit || 'kg',
-      repsCompleted: reps ? parseInt(reps, 10) : null,
-      timeSeconds: timeSeconds ? parseInt(timeSeconds, 10) : null,
-      distanceMeters: distanceMeters ? parseFloat(distanceMeters) : null,
-      paceSeconds: set.pace_seconds,
-      rirActual: set.rir_actual,
-      notes: set.notes,
-      videoUrl: set.video_url,
-    })
+  const buildPayload = (overrides = {}) => ({
+    sessionId,
+    sessionExerciseId,
+    setNumber: set.set_number,
+    weight: weight ? parseFloat(weight) : null,
+    weightUnit: set.weight_unit || 'kg',
+    repsCompleted: reps ? parseInt(reps, 10) : null,
+    timeSeconds: timeSeconds ? parseInt(timeSeconds, 10) : null,
+    distanceMeters: distanceMeters ? parseFloat(distanceMeters) : null,
+    paceSeconds: set.pace_seconds,
+    rirActual: set.rir_actual,
+    notes: set.notes,
+    videoUrl: set.video_url,
+    setType,
+    ...overrides,
+  })
+
+  const handleSave = () => onUpsert(buildPayload())
+
+  const handleToggleDropset = () => {
+    const newType = setType === 'dropset' ? 'normal' : 'dropset'
+    setSetType(newType)
+    onUpsert(buildPayload({ setType: newType }))
   }
 
   return (
@@ -55,14 +64,15 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         borderLeftColor: isSetPR ? colors.warning : 'transparent',
       }}
     >
-      <View
+      <Pressable
+        onPress={handleToggleDropset}
         className="w-6 h-6 rounded-full items-center justify-center"
-        style={{ backgroundColor: isSetPR ? colors.warning : colors.success }}
+        style={{ backgroundColor: setType === 'dropset' ? colors.dropset : isSetPR ? colors.warning : colors.success }}
       >
         <Text className="text-xs font-bold" style={{ color: colors.bgPrimary }}>
-          {set.set_number}
+          {setType === 'dropset' ? 'D' : set.set_number}
         </Text>
-      </View>
+      </Pressable>
 
       {showWeight && (
         <View className="flex-row items-center gap-1 flex-1">
@@ -423,6 +433,11 @@ export default function SessionDetailScreen({ route, navigation }) {
                       <Text className="flex-1 text-sm text-primary">
                         {formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}
                       </Text>
+                      {set.set_type === 'dropset' && (
+                        <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dropsetBg }}>
+                          <Text className="text-xs font-bold" style={{ color: colors.dropset }}>D</Text>
+                        </View>
+                      )}
                       <NotesBadge
                         rir={set.rir_actual}
                         hasNotes={!!set.notes}

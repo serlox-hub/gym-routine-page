@@ -29,22 +29,31 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   const [reps, setReps] = useState(String(set.reps_completed ?? ''))
   const [timeSeconds, setTimeSeconds] = useState(String(set.time_seconds ?? ''))
   const [distanceMeters, setDistanceMeters] = useState(String(set.distance_meters ?? ''))
+  const [setType, setSetType] = useState(set.set_type ?? 'normal')
 
-  const handleSave = () => {
-    onUpsert({
-      sessionId,
-      sessionExerciseId,
-      setNumber: set.set_number,
-      weight: weight ? parseFloat(weight) : null,
-      weightUnit: set.weight_unit || 'kg',
-      repsCompleted: reps ? parseInt(reps, 10) : null,
-      timeSeconds: timeSeconds ? parseInt(timeSeconds, 10) : null,
-      distanceMeters: distanceMeters ? parseFloat(distanceMeters) : null,
-      paceSeconds: set.pace_seconds,
-      rirActual: set.rir_actual,
-      notes: set.notes,
-      videoUrl: set.video_url,
-    })
+  const buildPayload = (overrides = {}) => ({
+    sessionId,
+    sessionExerciseId,
+    setNumber: set.set_number,
+    weight: weight ? parseFloat(weight) : null,
+    weightUnit: set.weight_unit || 'kg',
+    repsCompleted: reps ? parseInt(reps, 10) : null,
+    timeSeconds: timeSeconds ? parseInt(timeSeconds, 10) : null,
+    distanceMeters: distanceMeters ? parseFloat(distanceMeters) : null,
+    paceSeconds: set.pace_seconds,
+    rirActual: set.rir_actual,
+    notes: set.notes,
+    videoUrl: set.video_url,
+    setType,
+    ...overrides,
+  })
+
+  const handleSave = () => onUpsert(buildPayload())
+
+  const handleToggleDropset = () => {
+    const newType = setType === 'dropset' ? 'normal' : 'dropset'
+    setSetType(newType)
+    onUpsert(buildPayload({ setType: newType }))
   }
 
   const inputCls = "w-16 text-center text-sm rounded-lg px-2 py-1"
@@ -58,12 +67,14 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         borderLeft: isSetPR ? `3px solid ${colors.warning}` : '3px solid transparent',
       }}
     >
-      <span
+      <button
+        onClick={handleToggleDropset}
         className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0"
-        style={{ backgroundColor: isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
+        style={{ backgroundColor: setType === 'dropset' ? colors.dropset : isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
+        title={setType === 'dropset' ? 'Quitar dropset' : 'Marcar como dropset'}
       >
-        {set.set_number}
-      </span>
+        {setType === 'dropset' ? 'D' : set.set_number}
+      </button>
 
       {showWeight && (
         <div className="flex items-center gap-1">
@@ -398,6 +409,14 @@ function SessionDetail() {
                     <div className="flex-1 text-sm">
                       {formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}
                     </div>
+                    {set.set_type === 'dropset' && (
+                      <span
+                        className="px-1.5 py-0.5 rounded text-xs font-bold"
+                        style={{ backgroundColor: colors.dropsetBg, color: colors.dropset }}
+                      >
+                        D
+                      </span>
+                    )}
                     <NotesBadge
                       rir={set.rir_actual}
                       hasNotes={!!set.notes}

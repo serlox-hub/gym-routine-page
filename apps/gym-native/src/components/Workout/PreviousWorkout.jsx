@@ -48,8 +48,8 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
             return (
               <View key={index} className="rounded px-2 py-1" style={{ backgroundColor: colors.bgTertiary }}>
                 <View className="flex-row items-center justify-between gap-2 mb-0.5">
-                  <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                    S{set.setNumber}
+                  <Text className="text-xs" style={{ color: set.setType === 'dropset' ? colors.dropset : colors.textSecondary }}>
+                    {set.setType === 'dropset' ? 'D' : `S${set.setNumber}`}
                   </Text>
                   <NotesBadge
                     rir={set.rir}
