@@ -67,13 +67,13 @@ function WeeklyGoalWidget({ onOpenSettings }) {
         </View>
       </View>
 
-      <Card className="p-4">
+      <Card className="p-4 overflow-hidden">
         {isRestWeek ? (
           <View className="flex-row items-center gap-3">
             <View className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(139, 148, 158, 0.15)' }}>
               <Pause size={20} color={colors.textSecondary} />
             </View>
-            <View>
+            <View className="flex-1">
               <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
                 Semana de descanso
               </Text>
@@ -87,24 +87,17 @@ function WeeklyGoalWidget({ onOpenSettings }) {
         ) : (
           <View>
             <View className="flex-row items-center justify-between mb-3">
-              <View className="flex-row items-center gap-2">
-                {streak > 0 && (
-                  <View className="flex-row items-center gap-1">
-                    <Flame size={16} color={colors.warning} />
-                    <Text className="text-sm font-bold" style={{ color: colors.warning }}>
-                      {streak} {streak === 1 ? 'semana en racha' : 'semanas en racha'}
-                    </Text>
-                  </View>
-                )}
-                <Text className="text-sm" style={{ color: colors.textPrimary }}>
-                  {weekProgress.completed}/{weekProgress.target} dias esta semana
-                </Text>
-              </View>
-              {weekProgress.isComplete && (
-                <View className="px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(63, 185, 80, 0.15)' }}>
-                  <Text className="text-xs" style={{ color: colors.success }}>Completado</Text>
+              {streak > 0 && (
+                <View className="flex-row items-center gap-1">
+                  <Flame size={16} color={colors.warning} />
+                  <Text className="text-sm font-bold" style={{ color: colors.warning }}>
+                    {streak} {streak === 1 ? 'semana en racha' : 'semanas en racha'}
+                  </Text>
                 </View>
               )}
+              <Text className="text-sm" style={{ color: colors.textPrimary }}>
+                {weekProgress.completed}/{weekProgress.target} dias esta semana
+              </Text>
             </View>
 
             <View className="w-full rounded-full h-2" style={{ backgroundColor: colors.bgTertiary }}>

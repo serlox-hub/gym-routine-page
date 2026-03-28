@@ -95,25 +95,17 @@ function WeeklyGoalWidget({ onOpenSettings }) {
         ) : (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                {streak > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Flame size={16} style={{ color: colors.warning }} />
-                    <span className="text-sm font-bold" style={{ color: colors.warning }}>
-                      {streak} {streak === 1 ? 'semana en racha' : 'semanas en racha'}
-                    </span>
-                  </div>
-                )}
-                <span className="text-sm" style={{ color: colors.textPrimary }}>
-                  {weekProgress.completed}/{weekProgress.target} dias esta semana
-                </span>
-              </div>
-              {weekProgress.isComplete && (
-                <span className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: colors.successBg, color: colors.success }}>
-                  Completado
-                </span>
+              {streak > 0 && (
+                <div className="flex items-center gap-1">
+                  <Flame size={16} style={{ color: colors.warning }} />
+                  <span className="text-sm font-bold" style={{ color: colors.warning }}>
+                    {streak} {streak === 1 ? 'semana en racha' : 'semanas en racha'}
+                  </span>
+                </div>
               )}
+              <span className="text-sm" style={{ color: colors.textPrimary }}>
+                {weekProgress.completed}/{weekProgress.target} dias esta semana
+              </span>
             </div>
 
             <div className="w-full rounded-full h-2" style={{ backgroundColor: colors.bgTertiary }}>
