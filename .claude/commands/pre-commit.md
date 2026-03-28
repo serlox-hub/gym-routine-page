@@ -152,7 +152,7 @@ Para verificar, buscar patrones similares entre los archivos modificados y sus e
 diff <(grep -v 'import\|from\|export' apps/web/src/components/FEATURE/FILE.jsx) <(grep -v 'import\|from\|export' apps/gym-native/src/components/FEATURE/FILE.jsx)
 ```
 
-## Paso 9: Paridad web/native
+## Paso 9: Paridad web/native (CRITICO)
 
 Toda funcionalidad debe implementarse tanto en web como en native. Son dos clientes del mismo producto.
 
@@ -160,6 +160,29 @@ Toda funcionalidad debe implementarse tanto en web como en native. Son dos clien
 2. Verificar que ambas apps usan el mismo hook/util de `@gym/shared`.
 3. Verificar que el comportamiento es equivalente (misma logica, diferente UI layer).
 4. La logica de negocio nunca debe duplicarse entre apps — siempre en `@gym/shared`.
+
+### Verificacion estructural obligatoria
+
+Para cada componente modificado que exista en ambas apps, comparar activamente:
+
+```bash
+# Listar componentes modificados en web que tienen equivalente native (y viceversa)
+for f in $(git diff --name-only HEAD | grep 'apps/web/src/components/'); do
+  native_equiv=$(echo "$f" | sed 's|apps/web/src/components/|apps/gym-native/src/components/|')
+  if [ -f "$native_equiv" ]; then
+    echo "PAR: $f <-> $native_equiv"
+  fi
+done
+```
+
+Para cada par encontrado, LEER ambos archivos y verificar:
+- **Mismos estados**: los mismos useState, mismos handlers, misma logica condicional
+- **Mismos textos UI**: labels, botones, mensajes deben ser identicos
+- **Mismo layout conceptual**: misma jerarquia visual (header/body/footer), misma disposicion de elementos
+- **Mismos valores**: validaciones (ej. `<= 7`), tamanhos de iconos, colores, constantes
+- **Mismos datos consumidos**: mismos campos del hook/API
+
+Diferencias aceptables: JSX vs View/Text, onClick vs onPress, className vs style, lucide-react vs lucide-react-native, funcionalidad que depende de APIs de plataforma (ej. html2canvas en web).
 
 ## Paso 10: routineIO.js
 

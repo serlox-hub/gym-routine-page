@@ -1,15 +1,27 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
-import { Flame, X, Pause, Play, Settings } from 'lucide-react-native'
-import { useTrainingGoal, useUpdateTrainingGoal } from '@gym/shared'
+import { Flame, X, Pause, Play, Settings, Check, Share2 } from 'lucide-react-native'
+import { useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession } from '@gym/shared'
 import { Card } from '../ui'
+import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal'
 import { colors } from '../../lib/styles'
 
-function WeeklyGoalWidget({ onOpenSettings }) {
+function WeeklyGoalWidget({ onOpenSettings, navigation }) {
   const goal = useTrainingGoal()
   const updatePreference = useUpdateTrainingGoal()
   const [showSetup, setShowSetup] = useState(false)
   const [daysInput, setDaysInput] = useState(null)
+  const [summaryData, setSummaryData] = useState(null)
+  const [loadingShare, setLoadingShare] = useState(false)
+
+  const handleShareLastSession = async (sessionId) => {
+    setLoadingShare(true)
+    try {
+      setSummaryData(await fetchWorkoutSummary(sessionId))
+    } finally {
+      setLoadingShare(false)
+    }
+  }
 
   if (goal.isLoading) return null
 
@@ -35,84 +47,144 @@ function WeeklyGoalWidget({ onOpenSettings }) {
 
   if (!goal.showWidget || !goal.isConfigured) return null
 
-  const { streak, weekProgress, isRestWeek, currentWeekKey, restWeeks } = goal
+  const { streak, cycleProgress, cycleDays, isRestCycle, currentCycleKey, restCycles } = goal
 
-  const handleToggleRestWeek = () => {
-    const newRestWeeks = isRestWeek
-      ? restWeeks.filter(w => w !== currentWeekKey)
-      : [...restWeeks, currentWeekKey]
-    updatePreference.mutate({ key: 'training_rest_weeks', value: newRestWeeks })
+  const handleToggleRestCycle = () => {
+    const newRestCycles = isRestCycle
+      ? restCycles.filter(k => k !== currentCycleKey)
+      : [...restCycles, currentCycleKey]
+    updatePreference.mutate({ key: 'training_rest_weeks', value: newRestCycles })
   }
 
-  const progressPercent = Math.min((weekProgress.completed / weekProgress.target) * 100, 100)
+  const handleDayPress = (day) => {
+    if (!day.hasSession || !navigation) return
+    navigation.navigate('SessionDetail', { sessionId: day.sessions[day.sessions.length - 1].id })
+  }
+
+  const lastSession = !isRestCycle ? getLastCycleSession(cycleDays) : null
 
   return (
     <View className="mb-6">
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-          Objetivo semanal
-        </Text>
-        <View className="flex-row items-center gap-1">
-          <Pressable onPress={handleToggleRestWeek} className="p-1.5">
-            {isRestWeek
-              ? <Play size={14} color={colors.textSecondary} />
-              : <Pause size={14} color={colors.textSecondary} />
-            }
-          </Pressable>
-          {onOpenSettings && (
-            <Pressable onPress={onOpenSettings} className="p-1.5">
-              <Settings size={14} color={colors.textSecondary} />
-            </Pressable>
-          )}
-        </View>
-      </View>
-
-      <Card className="p-4 overflow-hidden">
-        {isRestWeek ? (
-          <View className="flex-row items-center gap-3">
-            <View className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(139, 148, 158, 0.15)' }}>
-              <Pause size={20} color={colors.textSecondary} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-                Semana de descanso
+      <Card className="px-3 py-3 overflow-hidden">
+        {isRestCycle ? (
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <Pause size={14} color={colors.textSecondary} />
+              <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary }}>
+                Descanso
               </Text>
               {streak > 0 && (
-                <Text className="text-xs mt-0.5" style={{ color: colors.textSecondary }}>
-                  Racha de {streak} {streak === 1 ? 'semana' : 'semanas'} protegida
+                <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                  · racha protegida
                 </Text>
+              )}
+            </View>
+            <View className="flex-row items-center gap-1">
+              <Pressable onPress={handleToggleRestCycle} className="p-1">
+                <Play size={12} color={colors.textSecondary} />
+              </Pressable>
+              {onOpenSettings && (
+                <Pressable onPress={onOpenSettings} className="p-1">
+                  <Settings size={12} color={colors.textSecondary} />
+                </Pressable>
               )}
             </View>
           </View>
         ) : (
           <View>
             <View className="flex-row items-center justify-between mb-3">
+              <Text style={{ fontSize: 12, fontWeight: '500', color: cycleProgress.isComplete ? colors.success : colors.textSecondary }}>
+                {cycleProgress.completed}/{cycleProgress.target}
+              </Text>
               {streak > 0 && (
                 <View className="flex-row items-center gap-1">
-                  <Flame size={16} color={colors.warning} />
-                  <Text className="text-sm font-bold" style={{ color: colors.warning }}>
-                    {streak} {streak === 1 ? 'semana en racha' : 'semanas en racha'}
+                  <Flame size={14} color={colors.warning} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.warning }}>
+                    Racha de {streak}
                   </Text>
                 </View>
               )}
-              <Text className="text-sm" style={{ color: colors.textPrimary }}>
-                {weekProgress.completed}/{weekProgress.target} dias esta semana
-              </Text>
+              <View className="flex-row items-center gap-1">
+                <Pressable onPress={handleToggleRestCycle} className="p-1">
+                  <Pause size={12} color={colors.textSecondary} />
+                </Pressable>
+                {onOpenSettings && (
+                  <Pressable onPress={onOpenSettings} className="p-1">
+                    <Settings size={12} color={colors.textSecondary} />
+                  </Pressable>
+                )}
+              </View>
             </View>
 
-            <View className="w-full rounded-full h-2" style={{ backgroundColor: colors.bgTertiary }}>
-              <View
-                className="h-2 rounded-full"
-                style={{
-                  width: `${progressPercent}%`,
-                  backgroundColor: weekProgress.isComplete ? colors.success : colors.accent,
-                }}
-              />
+            <View className="flex-row items-center justify-between gap-1">
+              {cycleDays.map((day) => (
+                <DaySlot key={day.dateStr} day={day} onPress={() => handleDayPress(day)} />
+              ))}
             </View>
+
+            {lastSession && (
+              <Pressable
+                onPress={() => handleShareLastSession(lastSession.id)}
+                disabled={loadingShare}
+                className="flex-row items-center gap-1.5 mt-3 self-center"
+              >
+                <Share2 size={12} color={colors.accent} />
+                <Text style={{ fontSize: 12, color: colors.accent }}>
+                  {loadingShare ? 'Cargando...' : 'Compartir último entrenamiento'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
       </Card>
+
+      <WorkoutSummaryModal
+        summaryData={summaryData}
+        isOpen={!!summaryData}
+        onClose={() => setSummaryData(null)}
+      />
     </View>
+  )
+}
+
+function DaySlot({ day, onPress }) {
+  const filled = day.hasSession
+  const isToday = day.isToday
+  const isFuture = !day.isPast && !day.isToday
+
+  return (
+    <Pressable onPress={onPress} disabled={!filled} className="items-center gap-1 flex-1">
+      <Text style={{ fontSize: 10, fontWeight: '500', color: isToday ? colors.textPrimary : colors.textMuted }}>
+        {day.label}
+      </Text>
+      <View
+        className="w-7 h-7 rounded-md items-center justify-center"
+        style={{
+          backgroundColor: filled
+            ? colors.success
+            : isToday
+              ? 'rgba(88, 166, 255, 0.15)'
+              : colors.bgTertiary,
+          borderWidth: 2,
+          borderStyle: filled ? 'solid' : 'dashed',
+          borderColor: filled
+            ? 'transparent'
+            : isToday
+              ? colors.accent
+              : colors.border,
+          opacity: isFuture && !filled ? 0.4 : 1,
+        }}
+      >
+        {filled && <Check size={14} color="#fff" strokeWidth={3} />}
+        {!filled && day.isPast && (
+          <Text style={{ color: colors.textMuted, fontSize: 14, fontWeight: '700' }}>–</Text>
+        )}
+      </View>
+      <View
+        className="w-1 h-1 rounded-full mt-0.5"
+        style={{ backgroundColor: isToday ? colors.accent : 'transparent' }}
+      />
+    </Pressable>
   )
 }
 
@@ -123,12 +195,12 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
         {!showSetup ? (
           <View className="flex-row items-center justify-between">
             <Pressable className="flex-row items-center gap-3 flex-1" onPress={onToggleSetup}>
-              <View className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(210, 153, 34, 0.15)' }}>
+              <View className="p-2 rounded-lg" style={{ backgroundColor: colors.warningBg }}>
                 <Flame size={20} color={colors.warning} />
               </View>
               <View>
                 <Text className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                  Establece un objetivo semanal
+                  Establece un objetivo de entrenamiento
                 </Text>
                 <Text className="text-xs" style={{ color: colors.textSecondary }}>
                   Lleva el seguimiento de tu constancia
@@ -142,7 +214,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
         ) : (
           <View>
             <Text className="text-sm font-medium mb-3" style={{ color: colors.textPrimary }}>
-              Dias de entrenamiento por semana
+              Dias de entrenamiento por ciclo
             </Text>
             <View className="flex-row items-center gap-2">
               <View className="flex-row gap-1">

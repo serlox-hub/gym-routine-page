@@ -16,8 +16,7 @@ import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, buildWorkoutSummaryFromEndSession } from '@gym/shared'
-import WorkoutSummaryModal from './WorkoutSummaryModal'
+import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection } from '@gym/shared'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { colors } from '../../lib/styles'
@@ -38,7 +37,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [showConverter, setShowConverter] = useState(false)
-  const [workoutSummary, setWorkoutSummary] = useState(null)
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -115,22 +113,11 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   }
 
   const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    const setsSnapshot = { ...completedSets }
-    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
-
     endSessionMutation.mutate({ overallFeeling, notes }, {
-      onSuccess: (data) => {
-        const summary = buildWorkoutSummaryFromEndSession(
-          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot,
-        )
-        setWorkoutSummary(summary)
+      onSuccess: () => {
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
       },
     })
-  }
-
-  const handleDismissWorkoutSummary = () => {
-    setWorkoutSummary(null)
-    navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'History' }] })
   }
 
   const handleAbandonWorkout = () => {
@@ -249,12 +236,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
-      />
-
-      <WorkoutSummaryModal
-        summaryData={workoutSummary}
-        isOpen={!!workoutSummary}
-        onClose={handleDismissWorkoutSummary}
       />
 
       <WeightConverterModal

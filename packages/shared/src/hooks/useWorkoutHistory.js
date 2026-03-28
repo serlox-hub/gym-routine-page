@@ -15,6 +15,7 @@ import {
   fetchSessionPRs,
   recalculateExercisePRs,
 } from '../api/exerciseStatsApi.js'
+import { transformSessionDetailData } from '../lib/workoutTransforms.js'
 
 // ============================================
 // HISTORY QUERIES
@@ -61,25 +62,7 @@ export function useSessionDetail(sessionId) {
     queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId],
     queryFn: async () => {
       const session = await fetchSessionDetail(sessionId)
-
-      // Transformar a formato esperado por los componentes
-      const exercises = (session.session_exercises || [])
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map(se => ({
-          sessionExerciseId: se.id,
-          exercise: se.exercise,
-          series: se.series,
-          reps: se.reps,
-          is_extra: se.is_extra,
-          block_name: se.block_name,
-          sets: (se.completed_sets || []).sort((a, b) => a.set_number - b.set_number)
-        }))
-
-      return {
-        ...session,
-        exercises,
-        session_exercises: undefined // Limpiar campo intermedio
-      }
+      return transformSessionDetailData(session)
     },
     enabled: !!sessionId,
   })

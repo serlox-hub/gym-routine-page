@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Clock, Calendar, Trash2, Trophy, Share2 } from 'lucide-react-native'
+import { Clock, Calendar, Trash2, Trophy, Share2, TrendingUp } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader } from '../components/ui'
 import { SetNotesView, WorkoutSummaryModal } from '../components/Workout'
@@ -13,6 +13,7 @@ import {
   getSensationColor,
   findPRSetNumbers,
   buildWorkoutSummaryFromSession,
+  buildPRsByExerciseMap,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors } from '../lib/styles'
@@ -26,23 +27,13 @@ export default function SessionDetailScreen({ route, navigation }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
 
-  const prsByExercise = useMemo(() => {
-    if (!sessionPRsData) return {}
-    const map = {}
-    for (const pr of sessionPRsData) {
-      const hasPR = pr.is_pr_weight || pr.is_pr_reps || pr.is_pr_1rm || pr.is_pr_volume ||
-        pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace
-      if (hasPR) map[pr.exercise_id] = pr
-    }
-    return map
-  }, [sessionPRsData])
+  const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRsData), [sessionPRsData])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
   if (!session) return <ErrorMessage message="Sesión no encontrada" className="m-4" />
 
   const menuItems = [
-    { icon: Share2, label: 'Compartir', onPress: () => setShowSummary(true) },
     { icon: Trash2, label: 'Eliminar', onPress: () => setShowDeleteConfirm(true), danger: true },
   ]
 
@@ -131,26 +122,37 @@ export default function SessionDetailScreen({ route, navigation }) {
             const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
             return (
             <Card key={sessionExerciseId} className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-              <View className="flex-row items-start gap-2 mb-3">
-                <Text
-                  className={`font-medium flex-1 ${exercise.deleted_at ? 'line-through' : ''}`}
-                  style={{ color: exercise.deleted_at ? colors.textSecondary : colors.textPrimary }}
-                >
-                  {exercise.name}
-                </Text>
-                {prData && (
-                  <View
-                    className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"
-                    style={{ backgroundColor: 'rgba(210, 153, 34, 0.15)' }}
+              <View className="flex-row items-start justify-between gap-2 mb-3">
+                <View className="flex-1 flex-row flex-wrap items-center gap-2">
+                  <Text
+                    className={`font-medium ${exercise.deleted_at ? 'line-through' : ''}`}
+                    style={{ color: exercise.deleted_at ? colors.textSecondary : colors.textPrimary }}
                   >
-                    <Trophy size={10} color={colors.warning} />
-                    <Text className="text-xs font-bold" style={{ color: colors.warning }}>PR</Text>
-                  </View>
-                )}
-                {exercise.deleted_at && (
-                  <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(248,81,73,0.3)' }}>
-                    <Text className="text-xs" style={{ color: colors.danger }}>Eliminado</Text>
-                  </View>
+                    {exercise.name}
+                  </Text>
+                  {prData && (
+                    <View
+                      className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: colors.warningBg }}
+                    >
+                      <Trophy size={10} color={colors.warning} />
+                      <Text className="text-xs font-bold" style={{ color: colors.warning }}>PR</Text>
+                    </View>
+                  )}
+                  {exercise.deleted_at && (
+                    <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dangerBg }}>
+                      <Text className="text-xs" style={{ color: colors.danger }}>Eliminado</Text>
+                    </View>
+                  )}
+                </View>
+                {!exercise.deleted_at && (
+                  <Pressable
+                    onPress={() => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id })}
+                    className="p-1.5 rounded"
+                    style={{ backgroundColor: colors.bgTertiary }}
+                  >
+                    <TrendingUp size={14} color={colors.purple} />
+                  </Pressable>
                 )}
               </View>
 
@@ -194,6 +196,20 @@ export default function SessionDetailScreen({ route, navigation }) {
         </View>
       </ScrollView>
 
+      <View
+        className="items-center px-4 py-3"
+        style={{ borderTopWidth: 1, borderTopColor: colors.border }}
+      >
+        <Pressable
+          onPress={() => setShowSummary(true)}
+          className="flex-row items-center gap-2 px-5 py-2.5 rounded-lg"
+          style={{ backgroundColor: colors.accent }}
+        >
+          <Share2 size={16} color="#fff" />
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '500' }}>Compartir</Text>
+        </Pressable>
+      </View>
+
       <SetNotesView
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
@@ -213,6 +229,8 @@ export default function SessionDetailScreen({ route, navigation }) {
         title="Eliminar sesión"
         message="¿Seguro que quieres eliminar esta sesión? Se eliminarán todas las series registradas."
         confirmText="Eliminar"
+        loadingText="Eliminando..."
+        isLoading={deleteSession.isPending}
         onConfirm={() => {
           deleteSession.mutate({
             sessionId,

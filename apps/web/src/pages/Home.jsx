@@ -59,9 +59,9 @@ function Home() {
         menuItems={menuItems}
       />
 
-      <QuickActions favoriteRoutine={favoriteRoutine} />
-
       <WeeklyGoalWidget onOpenSettings={() => navigate('/preferences')} />
+
+      <QuickActions favoriteRoutine={favoriteRoutine} />
 
       <RoutineList
         routines={routines}

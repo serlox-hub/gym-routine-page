@@ -130,6 +130,7 @@ function Preferences() {
         <TrainingGoalSection
           preferences={preferences}
           onChangeDays={(value) => handleChange('training_days_per_week', value)}
+          onChangeCycleLength={(value) => handleChange('training_cycle_length', value)}
           onToggleWidget={(value) => handleChange('show_training_goal', value)}
           disabled={updatePreference.isPending}
         />

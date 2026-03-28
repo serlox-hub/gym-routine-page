@@ -14,6 +14,7 @@ import {
   getSensationColor,
   findPRSetNumbers,
   buildWorkoutSummaryFromSession,
+  buildPRsByExerciseMap,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
@@ -28,23 +29,13 @@ function SessionDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
 
-  const prsByExercise = useMemo(() => {
-    if (!sessionPRs) return {}
-    const map = {}
-    for (const pr of sessionPRs) {
-      const hasPR = pr.is_pr_weight || pr.is_pr_reps || pr.is_pr_1rm || pr.is_pr_volume ||
-        pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace
-      if (hasPR) map[pr.exercise_id] = pr
-    }
-    return map
-  }, [sessionPRs])
+  const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRs), [sessionPRs])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
   if (!session) return <ErrorMessage message="Sesión no encontrada" className="m-4" />
 
   const menuItems = [
-    { icon: Share2, label: 'Compartir', onClick: () => setShowSummary(true) },
     { icon: Trash2, label: 'Eliminar', onClick: () => setShowDeleteConfirm(true), danger: true },
   ]
 
@@ -52,7 +43,7 @@ function SessionDetail() {
     <div className="p-4 max-w-4xl mx-auto">
       <PageHeader
         title="Detalle de sesión"
-        backTo="/history"
+        onBack={() => navigate(-1)}
         menuItems={menuItems}
       />
 
@@ -228,6 +219,21 @@ function SessionDetail() {
         }}
         onCancel={() => setShowDeleteConfirm(false)}
       />
+
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4 py-3"
+        style={{ backgroundColor: colors.bgPrimary, borderTop: `1px solid ${colors.border}` }}
+      >
+        <button
+          onClick={() => setShowSummary(true)}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          style={{ backgroundColor: colors.accent, color: '#fff' }}
+        >
+          <Share2 size={16} />
+          Compartir
+        </button>
+      </div>
+      <div className="h-16" />
     </div>
   )
 }

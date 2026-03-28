@@ -9,6 +9,7 @@ export const colors = {
   // Texto
   textPrimary: '#e6edf3',
   textSecondary: '#8b949e',
+  textMuted: '#6e7681',
 
   // Acentos
   accent: '#58a6ff',
@@ -18,6 +19,11 @@ export const colors = {
   purple: '#a371f7',
   teal: '#88c6be',
   pink: '#db61a2',
+
+  // Fondos semanticos (alpha)
+  warningBg: 'rgba(210, 153, 34, 0.15)',
+  successBg: 'rgba(63, 185, 80, 0.15)',
+  dangerBg: 'rgba(248, 81, 73, 0.1)',
 }
 
 // Estilos reutilizables para React Native

@@ -206,6 +206,26 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
   })
 }
 
+/**
+ * Transforma una sesion cruda de la BD al formato esperado por componentes y summaries.
+ * Convierte session_exercises + completed_sets en exercises con sets.
+ */
+export function transformSessionDetailData(rawSession) {
+  if (!rawSession) return null
+  const exercises = (rawSession.session_exercises || [])
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(se => ({
+      sessionExerciseId: se.id,
+      exercise: se.exercise,
+      series: se.series,
+      reps: se.reps,
+      is_extra: se.is_extra,
+      block_name: se.block_name,
+      sets: (se.completed_sets || []).sort((a, b) => a.set_number - b.set_number),
+    }))
+  return { ...rawSession, exercises, session_exercises: undefined }
+}
+
 // ============================================
 // ROUTINE EXERCISES (funciones legacy para rutinas)
 // ============================================
