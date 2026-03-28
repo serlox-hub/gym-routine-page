@@ -1,14 +1,28 @@
 import { useState } from 'react'
-import { Flame, X, Pause, Play, Settings } from 'lucide-react'
-import { useTrainingGoal, useUpdateTrainingGoal } from '@gym/shared'
+import { useNavigate } from 'react-router-dom'
+import { Flame, X, Pause, Play, Settings, Check, Share2 } from 'lucide-react'
+import { useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession } from '@gym/shared'
 import { Card } from '../ui/index.js'
+import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal.jsx'
 import { colors } from '../../lib/styles.js'
 
 function WeeklyGoalWidget({ onOpenSettings }) {
+  const navigate = useNavigate()
   const goal = useTrainingGoal()
   const updatePreference = useUpdateTrainingGoal()
   const [showSetup, setShowSetup] = useState(false)
   const [daysInput, setDaysInput] = useState('')
+  const [summaryData, setSummaryData] = useState(null)
+  const [loadingShare, setLoadingShare] = useState(false)
+
+  const handleShareLastSession = async (sessionId) => {
+    setLoadingShare(true)
+    try {
+      setSummaryData(await fetchWorkoutSummary(sessionId))
+    } finally {
+      setLoadingShare(false)
+    }
+  }
 
   if (goal.isLoading) return null
 
@@ -36,91 +50,147 @@ function WeeklyGoalWidget({ onOpenSettings }) {
 
   if (!goal.showWidget || !goal.isConfigured) return null
 
-  const { streak, weekProgress, isRestWeek, currentWeekKey, restWeeks } = goal
+  const { streak, cycleProgress, cycleDays, isRestCycle, currentCycleKey, restCycles } = goal
 
-  const handleToggleRestWeek = () => {
-    const newRestWeeks = isRestWeek
-      ? restWeeks.filter(w => w !== currentWeekKey)
-      : [...restWeeks, currentWeekKey]
-    updatePreference.mutate({ key: 'training_rest_weeks', value: newRestWeeks })
+  const handleToggleRestCycle = () => {
+    const newRestCycles = isRestCycle
+      ? restCycles.filter(k => k !== currentCycleKey)
+      : [...restCycles, currentCycleKey]
+    updatePreference.mutate({ key: 'training_rest_weeks', value: newRestCycles })
   }
 
-  const progressPercent = Math.min((weekProgress.completed / weekProgress.target) * 100, 100)
+  const handleDayClick = (day) => {
+    if (!day.hasSession) return
+    navigate(`/history/${day.sessions[day.sessions.length - 1].id}`)
+  }
+
+  const lastSession = !isRestCycle ? getLastCycleSession(cycleDays) : null
 
   return (
     <section className="mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-          Objetivo semanal
-        </h2>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleToggleRestWeek}
-            className="p-1.5 rounded-md transition-colors"
-            style={{ color: colors.textSecondary }}
-            title={isRestWeek ? 'Quitar semana de descanso' : 'Marcar semana de descanso'}
-          >
-            {isRestWeek ? <Play size={14} /> : <Pause size={14} />}
-          </button>
-          {onOpenSettings && (
-            <button
-              onClick={onOpenSettings}
-              className="p-1.5 rounded-md transition-colors"
-              style={{ color: colors.textSecondary }}
-              title="Configurar objetivo"
-            >
-              <Settings size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <Card className="p-4">
-        {isRestWeek ? (
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(139, 148, 158, 0.15)' }}>
-              <Pause size={20} style={{ color: colors.textSecondary }} />
-            </div>
-            <div>
-              <p className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-                Semana de descanso
-              </p>
+      <Card className="px-3 py-3">
+        {isRestCycle ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Pause size={14} style={{ color: colors.textSecondary }} />
+              <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+                Descanso
+              </span>
               {streak > 0 && (
-                <p className="text-xs mt-0.5" style={{ color: colors.textMuted }}>
-                  Racha de {streak} {streak === 1 ? 'semana' : 'semanas'} protegida
-                </p>
+                <span className="text-xs" style={{ color: colors.textMuted }}>
+                  · racha protegida
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={handleToggleRestCycle} className="p-1" style={{ color: colors.textSecondary }} title="Quitar descanso">
+                <Play size={12} />
+              </button>
+              {onOpenSettings && (
+                <button onClick={onOpenSettings} className="p-1" style={{ color: colors.textSecondary }} title="Configurar">
+                  <Settings size={12} />
+                </button>
               )}
             </div>
           </div>
         ) : (
           <div>
             <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium" style={{ color: cycleProgress.isComplete ? colors.success : colors.textSecondary }}>
+                {cycleProgress.completed}/{cycleProgress.target}
+              </span>
               {streak > 0 && (
                 <div className="flex items-center gap-1">
-                  <Flame size={16} style={{ color: colors.warning }} />
-                  <span className="text-sm font-bold" style={{ color: colors.warning }}>
-                    {streak} {streak === 1 ? 'semana en racha' : 'semanas en racha'}
+                  <Flame size={14} style={{ color: colors.warning }} />
+                  <span className="text-xs font-bold" style={{ color: colors.warning }}>
+                    Racha de {streak}
                   </span>
                 </div>
               )}
-              <span className="text-sm" style={{ color: colors.textPrimary }}>
-                {weekProgress.completed}/{weekProgress.target} dias esta semana
-              </span>
+              <div className="flex items-center gap-1">
+                <button onClick={handleToggleRestCycle} className="p-1" style={{ color: colors.textSecondary }} title="Marcar como descanso">
+                  <Pause size={12} />
+                </button>
+                {onOpenSettings && (
+                  <button onClick={onOpenSettings} className="p-1" style={{ color: colors.textSecondary }} title="Configurar">
+                    <Settings size={12} />
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="w-full rounded-full h-2" style={{ backgroundColor: colors.bgTertiary }}>
-              <div
-                className="h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${progressPercent}%`,
-                  backgroundColor: weekProgress.isComplete ? colors.success : colors.accent,
-                }}
-              />
+            <div className="flex items-center justify-between gap-1">
+              {cycleDays.map((day) => (
+                <DaySlot key={day.dateStr} day={day} onClick={() => handleDayClick(day)} />
+              ))}
             </div>
+
+            {lastSession && (
+              <button
+                onClick={() => handleShareLastSession(lastSession.id)}
+                disabled={loadingShare}
+                className="flex items-center gap-1.5 mt-3 mx-auto text-xs transition-colors"
+                style={{ color: colors.accent }}
+              >
+                <Share2 size={12} />
+                {loadingShare ? 'Cargando...' : 'Compartir último entrenamiento'}
+              </button>
+            )}
           </div>
         )}
       </Card>
+
+      {summaryData && (
+        <WorkoutSummaryModal
+          summaryData={summaryData}
+          onClose={() => setSummaryData(null)}
+        />
+      )}
     </section>
+  )
+}
+
+function DaySlot({ day, onClick }) {
+  const filled = day.hasSession
+  const isToday = day.isToday
+  const isFuture = !day.isPast && !day.isToday
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={!filled}
+      className="flex flex-col items-center gap-1 flex-1 min-w-0"
+    >
+      <span className="text-[10px] font-medium" style={{ color: isToday ? colors.textPrimary : colors.textMuted }}>
+        {day.label}
+      </span>
+      <div
+        className="w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200"
+        style={{
+          backgroundColor: filled
+            ? colors.success
+            : isToday
+              ? 'rgba(88, 166, 255, 0.15)'
+              : colors.bgTertiary,
+          border: filled
+            ? '2px solid transparent'
+            : isToday
+              ? `2px dashed ${colors.accent}`
+              : `2px dashed ${colors.border}`,
+          cursor: filled ? 'pointer' : 'default',
+          opacity: isFuture && !filled ? 0.4 : 1,
+        }}
+      >
+        {filled && <Check size={14} style={{ color: '#fff' }} strokeWidth={3} />}
+        {!filled && day.isPast && (
+          <span style={{ color: colors.textMuted, fontSize: 14, fontWeight: 700, lineHeight: 1 }}>–</span>
+        )}
+      </div>
+      <div
+        className="w-1 h-1 rounded-full mt-0.5"
+        style={{ backgroundColor: isToday ? colors.accent : 'transparent' }}
+      />
+    </button>
   )
 }
 
@@ -139,7 +209,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
               </div>
               <div>
                 <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                  Establece un objetivo semanal
+                  Establece un objetivo de entrenamiento
                 </p>
                 <p className="text-xs" style={{ color: colors.textSecondary }}>
                   Lleva el seguimiento de tu constancia
@@ -157,7 +227,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
         ) : (
           <div>
             <p className="text-sm font-medium mb-3" style={{ color: colors.textPrimary }}>
-              Dias de entrenamiento por semana
+              Dias de entrenamiento por ciclo
             </p>
             <div className="flex items-center gap-2">
               <div className="flex gap-1">

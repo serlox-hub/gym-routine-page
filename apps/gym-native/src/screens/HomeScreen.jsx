@@ -69,8 +69,8 @@ export default function HomeScreen({ navigation }) {
         onNewRoutine={() => setShowNewRoutineModal(true)}
         ListHeaderComponent={
           <>
+            <WeeklyGoalWidget navigation={navigation} onOpenSettings={() => navigation.navigate('Preferences')} />
             <QuickActions navigation={navigation} routines={routines} />
-            <WeeklyGoalWidget onOpenSettings={() => navigation.navigate('Preferences')} />
           </>
         }
         refreshing={isRefetching}

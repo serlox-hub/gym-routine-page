@@ -16,6 +16,11 @@ const VARIANTS = {
     text: 'text-danger',
     border: 'border border-danger/40',
   },
+  ghost: {
+    bg: '',
+    text: 'text-secondary',
+    border: '',
+  },
 }
 
 const SIZES = {
@@ -45,10 +50,12 @@ export default function Button({
     >
       {loading ? (
         <ActivityIndicator size="small" color={variant === 'primary' ? '#ffffff' : '#e6edf3'} />
-      ) : (
+      ) : typeof children === 'string' ? (
         <Text className={`font-semibold text-center ${v.text} ${s.text} ${textClassName}`}>
           {children}
         </Text>
+      ) : (
+        children
       )}
     </Pressable>
   )

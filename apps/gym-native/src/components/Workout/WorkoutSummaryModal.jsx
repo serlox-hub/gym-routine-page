@@ -1,9 +1,9 @@
 import { useRef } from 'react'
-import { View, Text, ScrollView, Pressable } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import ViewShot from 'react-native-view-shot'
 import { Share2, X } from 'lucide-react-native'
 import { useCompletedSessionCount } from '@gym/shared'
-import { Modal, Button } from '../ui'
+import { Modal } from '../ui'
 import { useShareWorkoutSummary } from '../../hooks/useShareWorkoutSummary'
 import WorkoutSummaryCard from './WorkoutSummaryCard'
 import { colors } from '../../lib/styles'
@@ -32,33 +32,31 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
         <View className="p-4">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-primary text-lg font-semibold">Resumen</Text>
-            <Pressable onPress={onClose} hitSlop={8} className="active:opacity-60">
+            <Pressable onPress={onClose} hitSlop={8} className="p-1.5 active:opacity-60">
               <X size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
 
-          <ScrollView
-            contentContainerStyle={{ alignItems: 'center' }}
-            style={{ maxHeight: 420 }}
+          <View
+            style={{ maxHeight: 420, alignItems: 'center', overflow: 'hidden' }}
           >
-            <View style={{ transform: [{ scale: 0.42 }], marginVertical: -280, marginHorizontal: -100 }}>
+            <View style={{ transform: [{ scale: 0.42 }], marginVertical: -280 }}>
               <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
             </View>
-          </ScrollView>
+          </View>
 
           <View className="flex-row gap-3 mt-4">
-            <Button
-              className="flex-1"
+            <Pressable
+              className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-lg"
+              style={{ backgroundColor: colors.accent }}
               onPress={handleShare}
-              loading={isGenerating}
+              disabled={isGenerating}
             >
-              <View className="flex-row items-center gap-2">
-                <Share2 size={16} color="#ffffff" />
-                <Text className="text-white font-medium text-sm">
-                  {isGenerating ? 'Generando...' : 'Compartir'}
-                </Text>
-              </View>
-            </Button>
+              <Share2 size={16} color="#ffffff" />
+              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '500' }}>
+                {isGenerating ? 'Generando...' : 'Compartir'}
+              </Text>
+            </Pressable>
           </View>
         </View>
       </Modal>

@@ -16,8 +16,7 @@ import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, buildWorkoutSummaryFromEndSession } from '@gym/shared'
-import WorkoutSummaryScreen from './WorkoutSummaryScreen'
+import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection } from '@gym/shared'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { colors } from '../../lib/styles'
@@ -38,7 +37,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [showConverter, setShowConverter] = useState(false)
-  const [workoutSummary, setWorkoutSummary] = useState(null)
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -96,30 +94,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
     },
   })
 
-  const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    const setsSnapshot = { ...completedSets }
-    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
-
-    endSessionMutation.mutate({ overallFeeling, notes }, {
-      onSuccess: (data) => {
-        setShowEndModal(false)
-        const summary = buildWorkoutSummaryFromEndSession(
-          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot,
-        )
-        setWorkoutSummary(summary)
-      },
-    })
-  }
-
-  const handleDismissWorkoutSummary = () => {
-    navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
-    setTimeout(() => useWorkoutStore.getState().endSession(), 100)
-  }
-
-  if (workoutSummary) {
-    return <WorkoutSummaryScreen summaryData={workoutSummary} onDismiss={handleDismissWorkoutSummary} />
-  }
-
   if (!sessionId) return null
 
   if (isLoading && !sessionExercises) return <LoadingSpinner />
@@ -136,6 +110,14 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         </Button>
       </SafeAreaView>
     )
+  }
+
+  const handleConfirmEnd = ({ overallFeeling, notes }) => {
+    endSessionMutation.mutate({ overallFeeling, notes }, {
+      onSuccess: () => {
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
+      },
+    })
   }
 
   const handleAbandonWorkout = () => {

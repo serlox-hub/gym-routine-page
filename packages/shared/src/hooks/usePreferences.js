@@ -11,6 +11,7 @@ const DEFAULT_VALUES = {
   enabled_body_measurements: [],
   measurement_unit: 'cm',
   training_days_per_week: null,
+  training_cycle_length: 7,
   training_rest_weeks: [],
   show_training_goal: true,
 }

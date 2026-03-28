@@ -2,11 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { fetchCompletedSessionDates } from '../api/trainingGoalsApi.js'
 import {
-  countSessionsByWeek,
+  countSessionsByCycle,
   calculateStreak,
-  getCurrentWeekProgress,
-  isCurrentWeekRest,
-  getCurrentWeekKey,
+  getCurrentCycleProgress,
+  isCurrentCycleRest,
+  getCurrentCycleKey,
+  getCurrentCycleDays,
 } from '../lib/streakUtils.js'
 import { usePreference, useUpdatePreference } from './usePreferences.js'
 import { useUserId } from './useAuth.js'
@@ -32,37 +33,42 @@ const FROM_DATE = getTwoYearsAgoISO()
  */
 export function useTrainingGoal() {
   const userId = useUserId()
-  const { value: daysPerWeek } = usePreference('training_days_per_week')
-  const { value: restWeeks } = usePreference('training_rest_weeks')
+  const { value: daysPerCycle } = usePreference('training_days_per_week')
+  const { value: cycleLength } = usePreference('training_cycle_length')
+  const { value: restCycles } = usePreference('training_rest_weeks')
   const { value: showWidget } = usePreference('show_training_goal')
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS, userId],
     queryFn: () => fetchCompletedSessionDates({ userId, from: FROM_DATE }),
-    enabled: !!userId && !!daysPerWeek,
+    enabled: !!userId && !!daysPerCycle,
     staleTime: 1000 * 60 * 5,
   })
 
-  if (!daysPerWeek || showWidget === false) {
+  if (!daysPerCycle || showWidget === false) {
     return { isConfigured: false, showWidget: showWidget !== false, isLoading: false }
   }
 
-  const sessionsByWeek = sessions ? countSessionsByWeek(sessions) : {}
-  const streak = sessions ? calculateStreak(sessionsByWeek, daysPerWeek, restWeeks || []) : 0
-  const weekProgress = getCurrentWeekProgress(sessionsByWeek, daysPerWeek)
-  const isRestWeek = isCurrentWeekRest(restWeeks || [])
-  const currentWeekKey = getCurrentWeekKey()
+  const len = cycleLength || 7
+  const sessionsByCycle = sessions ? countSessionsByCycle(sessions, len) : {}
+  const streak = sessions ? calculateStreak(sessionsByCycle, daysPerCycle, restCycles || [], len) : 0
+  const cycleProgress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, len)
+  const isRestCycle = isCurrentCycleRest(restCycles || [], len)
+  const currentCycleKey = getCurrentCycleKey(len)
+  const cycleDays = getCurrentCycleDays(sessions || [], len)
 
   return {
     isConfigured: true,
     showWidget: true,
     isLoading,
-    daysPerWeek,
+    daysPerCycle,
+    cycleLength: len,
     streak,
-    weekProgress,
-    isRestWeek,
-    currentWeekKey,
-    restWeeks: restWeeks || [],
+    cycleProgress,
+    isRestCycle,
+    currentCycleKey,
+    restCycles: restCycles || [],
+    cycleDays,
   }
 }
 

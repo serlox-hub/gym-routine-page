@@ -274,3 +274,19 @@ export function calculateExerciseStats(sessions, measurementType) {
     sessionCount: sessions.length,
   }
 }
+
+/**
+ * Construye un mapa de PRs por exercise_id a partir de los datos de PRs de sesion.
+ * @param {Array} sessionPRs
+ * @returns {Record<string, Object>}
+ */
+export function buildPRsByExerciseMap(sessionPRs) {
+  if (!sessionPRs) return {}
+  const map = {}
+  for (const pr of sessionPRs) {
+    const hasPR = pr.is_pr_weight || pr.is_pr_reps || pr.is_pr_1rm || pr.is_pr_volume ||
+      pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace
+    if (hasPR) map[pr.exercise_id] = pr
+  }
+  return map
+}

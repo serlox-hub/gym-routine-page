@@ -1,4 +1,8 @@
 import { formatSetValue } from './setUtils.js'
+import { buildPRsByExerciseMap } from './workoutCalculations.js'
+import { fetchSessionDetail } from '../api/workoutSessionApi.js'
+import { fetchSessionPRs } from '../api/exerciseStatsApi.js'
+import { transformSessionDetailData } from './workoutTransforms.js'
 
 /**
  * Formatea minutos en formato legible: "1h 05min", "45 min"
@@ -173,12 +177,7 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
 export function buildWorkoutSummaryFromSession(session, sessionPRs) {
   if (!session) return null
 
-  const prMap = {}
-  for (const pr of (sessionPRs || [])) {
-    const hasPR = pr.is_pr_weight || pr.is_pr_reps || pr.is_pr_1rm || pr.is_pr_volume ||
-      pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace
-    if (hasPR) prMap[pr.exercise_id] = pr
-  }
+  const prMap = buildPRsByExerciseMap(sessionPRs)
 
   const exercises = (session.exercises || []).map(({ exercise, sets }) => ({
     name: exercise?.name || 'Ejercicio',
@@ -216,4 +215,16 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs) {
     exercises,
     prs,
   }
+}
+
+/**
+ * Obtiene los datos de resumen de una sesion para compartir.
+ * Fetcha la sesion y sus PRs, transforma y construye el summary.
+ */
+export async function fetchWorkoutSummary(sessionId) {
+  const [rawSession, prs] = await Promise.all([
+    fetchSessionDetail(sessionId),
+    fetchSessionPRs(sessionId),
+  ])
+  return buildWorkoutSummaryFromSession(transformSessionDetailData(rawSession), prs)
 }

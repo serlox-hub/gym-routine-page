@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react'
-import WorkoutSummaryModal from './WorkoutSummaryModal.jsx'
 import PRNotification from './PRNotification.jsx'
 import { colors } from '../../lib/styles.js'
 import { useNavigate } from 'react-router-dom'
@@ -26,7 +25,7 @@ import SessionTimer from './SessionTimer.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, buildWorkoutSummaryFromEndSession } from '@gym/shared'
+import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -48,7 +47,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [showConverter, setShowConverter] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
-  const [workoutSummary, setWorkoutSummary] = useState(null)
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -75,41 +73,11 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     [flatExercises, completedSets, exerciseSetCounts]
   )
 
-  const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    const setsSnapshot = { ...completedSets }
-    const exercisesSnapshot = sessionExercises ? [...sessionExercises] : []
-
-    endSessionMutation.mutate({ overallFeeling, notes }, {
-      onSuccess: (data) => {
-        setShowEndModal(false)
-        const summary = buildWorkoutSummaryFromEndSession(
-          data.session, data.detectedPRs, setsSnapshot, exercisesSnapshot
-        )
-        setWorkoutSummary(summary)
-      }
-    })
-  }
-
-  const handleDismissWorkoutSummary = () => {
-    useWorkoutStore.getState().endSession()
-    setWorkoutSummary(null)
-    setNavigateToOnEnd('/history')
-  }
-
   useEffect(() => {
-    if (!sessionId && !workoutSummary) {
+    if (!sessionId) {
       navigate(navigateToOnEnd || fallbackRoute)
     }
-  }, [sessionId, navigate, fallbackRoute, navigateToOnEnd, workoutSummary])
-
-  if (workoutSummary) {
-    return (
-      <WorkoutSummaryModal
-        summaryData={workoutSummary}
-        onClose={handleDismissWorkoutSummary}
-      />
-    )
-  }
+  }, [sessionId, navigate, fallbackRoute, navigateToOnEnd])
 
   if (!sessionId) return null
 
@@ -148,6 +116,14 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
 
   const handleEndWorkout = () => {
     setShowEndModal(true)
+  }
+
+  const handleConfirmEnd = ({ overallFeeling, notes }) => {
+    endSessionMutation.mutate({ overallFeeling, notes }, {
+      onSuccess: () => {
+        setNavigateToOnEnd('/')
+      }
+    })
   }
 
   const handleAbandonWorkout = () => {
