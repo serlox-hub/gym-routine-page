@@ -33,3 +33,38 @@ export function diffSessionExerciseFields(edited, original) {
 
   return { fields, newSeries: isNaN(newSeries) ? null : newSeries }
 }
+
+/**
+ * Devuelve qué campos de serie aplican según el tipo de medición.
+ */
+export function getSetFieldsForMeasurementType(measurementType) {
+  const mt = measurementType || 'weight_reps'
+  return {
+    showWeight: ['weight_reps', 'weight_time', 'weight_distance'].includes(mt),
+    showReps: ['weight_reps', 'reps_only'].includes(mt),
+    showTime: ['time', 'weight_time', 'level_time', 'distance_time'].includes(mt),
+    showDistance: ['distance', 'weight_distance', 'level_distance', 'distance_time', 'distance_pace'].includes(mt),
+  }
+}
+
+/**
+ * Genera los campos de una serie vacía según el tipo de medición del ejercicio.
+ */
+export function buildEmptySetData({ sessionId, sessionExerciseId, setNumber, exercise }) {
+  const { showWeight: usesWeight, showReps: usesReps, showTime: usesTime, showDistance: usesDistance } = getSetFieldsForMeasurementType(exercise.measurement_type)
+
+  return {
+    sessionId,
+    sessionExerciseId,
+    setNumber,
+    weight: usesWeight ? 0 : null,
+    weightUnit: exercise.weight_unit || 'kg',
+    repsCompleted: usesReps ? 0 : null,
+    timeSeconds: usesTime ? 0 : null,
+    distanceMeters: usesDistance ? 0 : null,
+    paceSeconds: null,
+    rirActual: null,
+    notes: null,
+    videoUrl: null,
+  }
+}

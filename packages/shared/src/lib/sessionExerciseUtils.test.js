@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { diffSessionExerciseFields } from './sessionExerciseUtils.js'
+import { diffSessionExerciseFields, buildEmptySetData } from './sessionExerciseUtils.js'
 
 describe('diffSessionExerciseFields', () => {
   const original = {
@@ -109,5 +109,54 @@ describe('diffSessionExerciseFields', () => {
     const edited = { series: '3', reps: '10', rir: '2', restSeconds: '90', tempo: '3-1-2-0', notes: 'Nota original' }
     const { fields } = diffSessionExerciseFields(edited, original)
     expect(fields.superset_group).toBeUndefined()
+  })
+})
+
+describe('buildEmptySetData', () => {
+  const base = { sessionId: 's1', sessionExerciseId: 'se1', setNumber: 1 }
+
+  it('genera campos correctos para weight_reps', () => {
+    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'weight_reps', weight_unit: 'kg' } })
+    expect(result.weight).toBe(0)
+    expect(result.repsCompleted).toBe(0)
+    expect(result.timeSeconds).toBeNull()
+    expect(result.distanceMeters).toBeNull()
+    expect(result.weightUnit).toBe('kg')
+  })
+
+  it('genera campos correctos para reps_only', () => {
+    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'reps_only' } })
+    expect(result.weight).toBeNull()
+    expect(result.repsCompleted).toBe(0)
+    expect(result.timeSeconds).toBeNull()
+  })
+
+  it('genera campos correctos para time', () => {
+    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'time' } })
+    expect(result.weight).toBeNull()
+    expect(result.repsCompleted).toBeNull()
+    expect(result.timeSeconds).toBe(0)
+  })
+
+  it('genera campos correctos para weight_time', () => {
+    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'weight_time', weight_unit: 'lb' } })
+    expect(result.weight).toBe(0)
+    expect(result.timeSeconds).toBe(0)
+    expect(result.repsCompleted).toBeNull()
+    expect(result.weightUnit).toBe('lb')
+  })
+
+  it('genera campos correctos para distance', () => {
+    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'distance' } })
+    expect(result.distanceMeters).toBe(0)
+    expect(result.weight).toBeNull()
+    expect(result.repsCompleted).toBeNull()
+  })
+
+  it('usa weight_reps por defecto si no hay measurement_type', () => {
+    const result = buildEmptySetData({ ...base, exercise: {} })
+    expect(result.weight).toBe(0)
+    expect(result.repsCompleted).toBe(0)
+    expect(result.weightUnit).toBe('kg')
   })
 })

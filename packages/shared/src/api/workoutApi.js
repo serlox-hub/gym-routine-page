@@ -8,6 +8,7 @@ export {
   fetchExerciseIdsWithSets,
   deleteSessionExercisesWithoutSets,
   completeWorkoutSession,
+  updateSessionMetadata,
   deleteWorkoutSession,
   fetchWorkoutHistory,
   fetchSessionDetail,

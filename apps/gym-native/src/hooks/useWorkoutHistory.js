@@ -7,5 +7,8 @@ export {
   useExerciseAllTimeStats,
   useSessionPRs,
   usePreviousWorkout,
+  useUpdateSessionMetadata,
+  useUpsertCompletedSet,
+  useDeleteCompletedSet,
   useDeleteSession,
 } from '@gym/shared'

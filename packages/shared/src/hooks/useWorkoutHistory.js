@@ -6,8 +6,11 @@ import {
   fetchExerciseHistorySummary,
   fetchExerciseHistory,
   fetchPreviousWorkout,
+  updateSessionMetadata,
   deleteWorkoutSession,
   fetchCompletedSessionCount,
+  upsertCompletedSet,
+  deleteCompletedSet,
 } from '../api/workoutApi.js'
 import {
   fetchExerciseChartData,
@@ -193,6 +196,44 @@ export function useSessionPRs(sessionId) {
 // ============================================
 // HISTORY MUTATIONS
 // ============================================
+
+export function useUpdateSessionMetadata() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ sessionId, completedAt, durationMinutes, overallFeeling, notes }) => {
+      return updateSessionMetadata({ sessionId, completedAt, durationMinutes, overallFeeling, notes })
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+    },
+  })
+}
+
+export function useUpsertCompletedSet() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (setData) => upsertCompletedSet(setData),
+    onSuccess: (_, { sessionId, sessionExerciseId }) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+    },
+  })
+}
+
+export function useDeleteCompletedSet() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ sessionId, sessionExerciseId, setNumber }) => {
+      return deleteCompletedSet({ sessionId, sessionExerciseId, setNumber })
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+    },
+  })
+}
 
 export function useDeleteSession() {
   const queryClient = useQueryClient()
