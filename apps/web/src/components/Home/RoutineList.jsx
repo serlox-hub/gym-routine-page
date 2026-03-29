@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Plus, Star } from 'lucide-react'
 import { useSetFavoriteRoutine } from '../../hooks/useRoutines.js'
 import { Card, TruncatedText } from '../ui/index.js'
@@ -6,11 +7,12 @@ import { colors } from '../../lib/styles.js'
 
 function RoutineList({ routines, onNewRoutine }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const setFavoriteMutation = useSetFavoriteRoutine()
 
   return (
     <main>
-      <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>Mis Rutinas</h2>
+      <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>{t('routine:myRoutines')}</h2>
       <ul className="space-y-2">
         <li>
           <Card
@@ -19,7 +21,7 @@ function RoutineList({ routines, onNewRoutine }) {
           >
             <div className="flex items-center gap-2 justify-center" style={{ color: colors.textSecondary }}>
               <Plus size={18} />
-              <span className="text-sm">Nueva rutina</span>
+              <span className="text-sm">{t('routine:new')}</span>
             </div>
           </Card>
         </li>
@@ -43,7 +45,7 @@ function RoutineList({ routines, onNewRoutine }) {
                   )}
                   {routine.goal && (
                     <p className="text-xs mt-1">
-                      <span style={{ color: colors.success }}>Objetivo:</span>{' '}
+                      <span style={{ color: colors.success }}>{t('routine:goal')}:</span>{' '}
                       <span style={{ color: colors.textSecondary }}>{routine.goal}</span>
                     </p>
                   )}

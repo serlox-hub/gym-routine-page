@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui'
 import { getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm'
@@ -39,6 +40,7 @@ export default function EditRoutineExerciseModal({
   existingSupersets = [],
   isReplacing = false,
 }) {
+  const { t } = useTranslation()
   const [view, setView] = useState('config')
   const [form, setForm] = useState(DEFAULT_FORM)
 
@@ -81,8 +83,8 @@ export default function EditRoutineExerciseModal({
         isOpen={isOpen}
         onClose={onClose}
         onSelect={handleReplace}
-        title="Sustituir ejercicio"
-        subtitle={`Sustituyendo: ${exercise?.name}`}
+        title={t('routine:exercise.replace')}
+        subtitle={`${t('routine:exercise.replacing')}: ${exercise?.name}`}
         initialMuscleGroup={exercise?.muscle_group?.id}
       />
     )
@@ -92,12 +94,12 @@ export default function EditRoutineExerciseModal({
     <Modal isOpen={isOpen} onClose={onClose} position="bottom">
       <View className="p-4 gap-3" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-          {exercise?.name || 'Ejercicio'}
+          {exercise?.name || t('exercise:title')}
         </Text>
         <ViewToggle
           view={view}
           onChangeView={setView}
-          labels={[{ key: 'config', label: 'En rutina' }, { key: 'exercise', label: 'Ficha' }]}
+          labels={[{ key: 'config', label: t('routine:exercise.config') }, { key: 'exercise', label: t('exercise:details') }]}
         />
       </View>
 
@@ -118,9 +120,9 @@ export default function EditRoutineExerciseModal({
             onBack={onClose}
             onSubmit={handleSubmit}
             isPending={isPending}
-            backLabel="Cancelar"
-            submitLabel="Guardar"
-            pendingLabel="Guardando..."
+            backLabel={t('common:buttons.cancel')}
+            submitLabel={t('common:buttons.save')}
+            pendingLabel={t('common:buttons.loading')}
           />
         </>
       ) : (

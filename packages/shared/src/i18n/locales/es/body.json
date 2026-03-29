@@ -1,0 +1,47 @@
+{
+  "title": "Métricas Corporales",
+  "weight": {
+    "title": "Peso Corporal",
+    "tab": "Peso",
+    "record": "Registrar peso",
+    "edit": "Editar peso",
+    "delete": "Eliminar registro",
+    "deleteConfirm": "¿Eliminar este registro de peso?",
+    "kg": "kg",
+    "lb": "lb",
+    "current": "Peso actual",
+    "change": "Cambio",
+    "min": "Mínimo",
+    "max": "Máximo",
+    "submit": "Registrar",
+    "history": "Historial",
+    "noRecords": "No hay registros de peso",
+    "trend": "Tendencia"
+  },
+  "measurements": {
+    "title": "Medidas Corporales",
+    "record": "Registrar medida",
+    "edit": "Editar medida",
+    "delete": "Eliminar registro",
+    "deleteConfirm": "¿Eliminar este registro de medida?",
+    "configure": "Configurar medidas",
+    "configureDescription": "Selecciona qué medidas quieres registrar y hacer seguimiento.",
+    "selectToTrack": "Selecciona las medidas que quieres seguir",
+    "selectType": "Seleccionar tipo de medida",
+    "unit": "cm",
+    "noRecords": "No hay registros de medidas",
+    "types": {
+      "cintura": "Cintura",
+      "pecho": "Pecho",
+      "cadera": "Cadera",
+      "brazo_izquierdo": "Brazo izq.",
+      "brazo_derecho": "Brazo der.",
+      "muslo_izquierdo": "Muslo izq.",
+      "muslo_derecho": "Muslo der.",
+      "pantorrilla_izquierda": "Pantorrilla izq.",
+      "pantorrilla_derecha": "Pantorrilla der.",
+      "cuello": "Cuello",
+      "hombros": "Hombros"
+    }
+  }
+}

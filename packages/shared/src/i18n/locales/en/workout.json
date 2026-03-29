@@ -1,0 +1,108 @@
+{
+  "session": {
+    "active": "Active session",
+    "start": "Start",
+    "end": "End workout",
+    "endConfirm": "Are you sure you want to end the workout?",
+    "resume": "Resume workout",
+    "abandon": "Abandon",
+    "abandonConfirm": "Are you sure you want to abandon the workout? All progress will be lost.",
+    "abandonMessage": "All progress from the current workout will be lost.",
+    "date": "Date",
+    "time": "Time",
+    "endTime": "End time",
+    "inSession": "In session",
+    "routineInProgress": "Routine in progress",
+    "routineSessionActive": "Routine session active",
+    "freeWorkout": "Free Workout",
+    "notFound": "Session not found",
+    "deleteConfirm": "Delete this session? All recorded data will be lost.",
+    "notesPlaceholder": "Anything you want to remember about this session?",
+    "duration": "Duration",
+    "exercises": "Exercises",
+    "volume": "Volume"
+  },
+  "set": {
+    "complete": "Complete set",
+    "edit": "Edit set",
+    "delete": "Delete set",
+    "weight": "Weight",
+    "weightUnit": "kg",
+    "reps": "Reps",
+    "time": "Time",
+    "timeSec": "Time (sec)",
+    "distance": "Distance",
+    "distanceM": "Distance (m)",
+    "level": "Level",
+    "pace": "Pace",
+    "calories": "Calories",
+    "rir": "RIR",
+    "notes": "Notes",
+    "previous": "Previous",
+    "addSet": "Add set",
+    "addVideo": "Add video",
+    "videoTooLarge": "Video too large",
+    "weightConverter": "Weight converter",
+    "setNumber": "Set {{number}}",
+    "type": {
+      "label": "Set type",
+      "normal": "Normal",
+      "dropset": "Dropset"
+    }
+  },
+  "rest": {
+    "title": "Rest",
+    "timer": "Timer",
+    "skip": "Skip",
+    "seconds": "{{seconds}} sec"
+  },
+  "converter": "Converter",
+  "addExercise": {
+    "title": "Add exercise",
+    "toSession": "Add to session",
+    "search": "Search exercise...",
+    "noExercises": "No exercises available"
+  },
+  "summary": {
+    "title": "Summary",
+    "duration": "Duration",
+    "totalExercises": "Exercises",
+    "totalSets": "Completed sets",
+    "totalVolume": "Total volume",
+    "personalRecords": "Personal records",
+    "pr": "PR",
+    "newPR": "New PR",
+    "share": "Share",
+    "download": "Download",
+    "bestSet": "Best set",
+    "maxWeight": "Max Weight",
+    "maxReps": "Max Reps",
+    "best1RM": "Best 1RM",
+    "best1rm": "Best 1RM",
+    "sessions": "Sessions",
+    "noSets": "No completed sets"
+  },
+  "history": {
+    "title": "History",
+    "noSessions": "No sessions recorded",
+    "session": "Session",
+    "date": "Date",
+    "time": "Time",
+    "endTime": "End time",
+    "sessionsThisDay": "sessions on this day",
+    "deleteSession": "Delete session",
+    "viewDetail": "View detail"
+  },
+  "sensation": {
+    "label": "Sensation",
+    "howWasIt": "How was the session?"
+  },
+  "pr": {
+    "weight": "Weight",
+    "reps": "Reps",
+    "oneRM": "1RM",
+    "volume": "Volume",
+    "time": "Time",
+    "distance": "Distance"
+  }
+}

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Clock, Calendar, Trash2, TrendingUp, Trophy, Share2, Pencil, Plus, X } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../hooks/useWorkout.js'
 import { useSessionPRs } from '../hooks/useWorkout.js'
@@ -144,6 +145,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
 function SessionDetail() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
   const { data: sessionPRs } = useSessionPRs(sessionId)
   const deleteSession = useDeleteSession()
@@ -163,7 +165,7 @@ function SessionDetail() {
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
-  if (!session) return <ErrorMessage message="Sesión no encontrada" className="m-4" />
+  if (!session) return <ErrorMessage message={t('workout:session.notFound')} className="m-4" />
 
   const handleStartEdit = () => {
     setIsEditing(true)
@@ -224,14 +226,14 @@ function SessionDetail() {
   }
 
   const menuItems = [
-    !isEditing && { icon: Pencil, label: 'Editar', onClick: handleStartEdit },
-    { icon: Trash2, label: 'Eliminar', onClick: () => setShowDeleteConfirm(true), danger: true },
+    !isEditing && { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
+    { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
   ].filter(Boolean)
 
   return (
     <div className="p-4 max-w-4xl mx-auto pb-24">
       <PageHeader
-        title="Detalle de sesión"
+        title={t('workout:history.viewDetail')}
         onBack={() => navigate(-1)}
         menuItems={menuItems}
       />
@@ -239,14 +241,14 @@ function SessionDetail() {
       <Card className="p-4 mb-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <div className="text-xs text-secondary">Día</div>
+            <div className="text-xs text-secondary">{t('routine:day.title')}</div>
             <div className="text-sm font-medium">
-              {session.day_name || session.routine_day?.name || 'Entrenamiento Libre'}
+              {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
             </div>
           </div>
           {(session.routine_name || session.routine_day?.routine?.name) && (
             <div className="col-span-2">
-              <div className="text-xs text-secondary">Rutina</div>
+              <div className="text-xs text-secondary">{t('routine:title')}</div>
               <div className="text-sm">
                 {session.routine_name || session.routine_day?.routine?.name}
               </div>
@@ -255,14 +257,14 @@ function SessionDetail() {
           <div className="flex items-center gap-2">
             <Calendar size={16} style={{ color: colors.textSecondary }} />
             <div>
-              <div className="text-xs text-secondary">Fecha</div>
+              <div className="text-xs text-secondary">{t('workout:session.date')}</div>
               <div className="text-sm capitalize">{formatFullDate(session.started_at)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Clock size={16} style={{ color: colors.textSecondary }} />
             <div>
-              <div className="text-xs text-secondary">Hora</div>
+              <div className="text-xs text-secondary">{t('workout:session.time')}</div>
               <div className="text-sm">{formatTime(session.started_at)}</div>
             </div>
           </div>
@@ -270,7 +272,7 @@ function SessionDetail() {
           {isEditing ? (
             <>
               <div>
-                <div className="text-xs text-secondary mb-1">Hora de fin</div>
+                <div className="text-xs text-secondary mb-1">{t('workout:session.endTime')}</div>
                 <input
                   type="time"
                   value={formatEditTime(editCompletedAt || session.completed_at)}
@@ -284,15 +286,15 @@ function SessionDetail() {
             <>
               {session.duration_minutes != null && (
                 <div>
-                  <div className="text-xs text-secondary">Duración</div>
+                  <div className="text-xs text-secondary">{t('workout:summary.duration')}</div>
                   <div className="text-sm">
-                    {session.duration_minutes > 0 ? `${session.duration_minutes} minutos` : '< 1 minuto'}
+                    {session.duration_minutes > 0 ? `${session.duration_minutes} ${t('common:time.min')}` : `< 1 ${t('common:time.min')}`}
                   </div>
                 </div>
               )}
               {session.overall_feeling && (
                 <div>
-                  <div className="text-xs text-secondary">Sensación</div>
+                  <div className="text-xs text-secondary">{t('workout:sensation.label')}</div>
                   <span
                     className="text-xs px-2 py-0.5 rounded inline-block mt-1"
                     style={{ backgroundColor: getSensationColor(session.overall_feeling), color: colors.bgPrimary }}
@@ -307,11 +309,11 @@ function SessionDetail() {
 
         {isEditing ? (
           <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
-            <div className="text-xs text-secondary mb-1">Notas</div>
+            <div className="text-xs text-secondary mb-1">{t('common:labels.notes')}</div>
             <textarea
               value={editNotes}
               onChange={e => setEditNotes(e.target.value)}
-              placeholder="Notas de la sesión..."
+              placeholder={t('workout:session.notesPlaceholder')}
               rows={2}
               className="w-full rounded-lg px-3 py-2 text-sm"
               style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
@@ -320,14 +322,14 @@ function SessionDetail() {
         ) : (
           session.notes && (
             <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
-              <div className="text-xs text-secondary mb-1">Notas</div>
+              <div className="text-xs text-secondary mb-1">{t('common:labels.notes')}</div>
               <p className="text-sm">{session.notes}</p>
             </div>
           )
         )}
       </Card>
 
-      <h2 className="text-lg font-bold mb-3">Ejercicios</h2>
+      <h2 className="text-lg font-bold mb-3">{t('workout:session.exercises')}</h2>
       <div className="space-y-3">
         {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => {
           const prData = prsByExercise[exercise.id]
@@ -350,7 +352,7 @@ function SessionDetail() {
                 )}
                 {exercise.deleted_at && (
                   <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dangerBg, color: colors.danger }}>
-                    Eliminado
+                    {t('exercise:deleted')}
                   </span>
                 )}
               </div>
@@ -385,7 +387,7 @@ function SessionDetail() {
                     className="flex items-center justify-center gap-1 w-full py-2 rounded text-xs"
                     style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
                   >
-                    <Plus size={14} /> Añadir serie
+                    <Plus size={14} /> {t('workout:set.addSet')}
                   </button>
                 </>
               ) : (
@@ -435,8 +437,8 @@ function SessionDetail() {
 
       {isEditing && (
         <BottomActions
-          secondary={{ label: 'Cancelar', onClick: handleCancelEdit }}
-          primary={{ label: updateMetadata.isPending ? 'Guardando...' : 'Guardar', onClick: handleSaveMetadata, disabled: updateMetadata.isPending }}
+          secondary={{ label: t('common:buttons.cancel'), onClick: handleCancelEdit }}
+          primary={{ label: updateMetadata.isPending ? t('common:buttons.loading') : t('common:buttons.save'), onClick: handleSaveMetadata, disabled: updateMetadata.isPending }}
         />
       )}
 
@@ -457,10 +459,10 @@ function SessionDetail() {
 
       <ConfirmModal
         isOpen={showDeleteConfirm}
-        title="Eliminar sesión"
-        message="¿Seguro que quieres eliminar esta sesión? Se eliminarán todas las series registradas."
-        confirmText="Eliminar"
-        loadingText="Eliminando..."
+        title={t('workout:history.deleteSession')}
+        message={t('workout:session.deleteConfirm')}
+        confirmText={t('common:buttons.delete')}
+        loadingText={t('common:buttons.loading')}
         isLoading={deleteSession.isPending}
         onConfirm={() => {
           deleteSession.mutate({
@@ -487,7 +489,7 @@ function SessionDetail() {
           style={{ backgroundColor: colors.accent, color: colors.white }}
         >
           <Share2 size={16} />
-          Compartir
+          {t('common:buttons.share')}
         </button>
       </div>
       <div className="h-16" />

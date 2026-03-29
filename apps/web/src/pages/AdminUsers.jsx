@@ -1,14 +1,10 @@
 import { Navigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useIsAdmin } from '../hooks/useAuth.js'
 import { useAllUsers, useUpdateUserSetting } from '../hooks/useAdmin.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import { formatFullDate } from '@gym/shared'
 import { colors } from '../lib/styles.js'
-
-const FEATURE_FLAGS = [
-  { key: 'can_upload_video', label: 'Subir videos', description: 'Permite subir videos de ejercicios' },
-  { key: 'is_admin', label: 'Administrador', description: 'Acceso al panel de administración' },
-]
 
 function FeatureToggle({ userId, settingKey, label, description, currentValue, onToggle, isUpdating }) {
   const isEnabled = currentValue === 'true'
@@ -37,17 +33,18 @@ function FeatureToggle({ userId, settingKey, label, description, currentValue, o
   )
 }
 
-function UserCard({ user, onToggleSetting, isUpdating }) {
+function UserCard({ user, featureFlags, onToggleSetting, isUpdating }) {
+  const { t } = useTranslation()
   return (
     <Card className="p-4">
       <div className="mb-3">
         <div className="font-medium" style={{ color: colors.textPrimary }}>{user.email}</div>
         <div className="text-xs" style={{ color: colors.textSecondary }}>
-          Registrado: {formatFullDate(user.created_at)}
+          {t('admin:registered')}: {formatFullDate(user.created_at)}
         </div>
       </div>
       <div className="space-y-1" style={{ borderTop: `1px solid ${colors.border}`, paddingTop: '12px' }}>
-        {FEATURE_FLAGS.map(flag => (
+        {featureFlags.map(flag => (
           <FeatureToggle
             key={flag.key}
             userId={user.id}
@@ -65,9 +62,15 @@ function UserCard({ user, onToggleSetting, isUpdating }) {
 }
 
 function AdminUsers() {
+  const { t } = useTranslation()
   const { isAdmin, isLoading: isLoadingAdmin } = useIsAdmin()
   const { data: users, isLoading, error } = useAllUsers()
   const updateSetting = useUpdateUserSetting()
+
+  const FEATURE_FLAGS = [
+    { key: 'can_upload_video', label: t('common:preferences.uploadVideos'), description: t('common:preferences.videoDescription') },
+    { key: 'is_admin', label: t('common:nav.admin'), description: t('admin:accessDescription') },
+  ]
 
   const handleToggleSetting = (userId, key, value) => {
     updateSetting.mutate({ userId, key, value })
@@ -81,13 +84,14 @@ function AdminUsers() {
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      <PageHeader title="Gestión de usuarios" backTo="/" />
+      <PageHeader title={t('common:nav.admin')} backTo="/" />
 
       <div className="space-y-3">
         {users?.map(user => (
           <UserCard
             key={user.id}
             user={user}
+            featureFlags={FEATURE_FLAGS}
             onToggleSetting={handleToggleSetting}
             isUpdating={updateSetting.isPending}
           />
@@ -96,7 +100,7 @@ function AdminUsers() {
 
       {users?.length === 0 && (
         <div className="text-center py-8" style={{ color: colors.textSecondary }}>
-          No hay usuarios registrados
+          {t('admin:noUsers')}
         </div>
       )}
     </div>

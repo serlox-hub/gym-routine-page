@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { APP_NAME, APP_URL, SUMMARY_MAX_EXERCISES } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
@@ -129,6 +130,7 @@ function ExerciseRow({ name, setsCompleted, bestSet, hasPR }) {
 }
 
 const WorkoutSummaryCard = forwardRef(function WorkoutSummaryCard({ summaryData, sessionNumber }, ref) {
+  const { t } = useTranslation()
   if (!summaryData) return null
 
   const {
@@ -207,12 +209,12 @@ const WorkoutSummaryCard = forwardRef(function WorkoutSummaryCard({ summaryData,
 
       {/* Stats Grid */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <StatBox value={durationFormatted} label="Duración" />
-        <StatBox value={totalExercises} label="Ejercicios" />
+        <StatBox value={durationFormatted} label={t('workout:summary.duration')} />
+        <StatBox value={totalExercises} label={t('workout:summary.totalExercises')} />
       </div>
       <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-        <StatBox value={totalSetsCompleted} label="Series" />
-        <StatBox value={sessionNumber ? `#${sessionNumber}` : '—'} label="Sesión" />
+        <StatBox value={totalSetsCompleted} label={t('workout:summary.totalSets')} />
+        <StatBox value={sessionNumber ? `#${sessionNumber}` : '—'} label={t('workout:history.session')} />
       </div>
 
       {/* PRs Section */}

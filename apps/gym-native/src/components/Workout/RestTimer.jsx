@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { View, Text, Pressable, Modal, Animated, PanResponder, Dimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { Minimize2, Maximize2 } from 'lucide-react-native'
 import { useRestTimer } from '../../hooks/useWorkout'
 import { formatSecondsToMMSS } from '@gym/shared'
@@ -8,6 +9,7 @@ import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
 
 export default function RestTimer() {
+  const { t } = useTranslation()
   const { isActive, timeRemaining, progress, skip, addTime } = useRestTimer()
   const insets = useSafeAreaInsets()
   const minimized = useWorkoutStore(state => state.restTimerMinimized)
@@ -92,7 +94,7 @@ export default function RestTimer() {
         </Pressable>
 
         <Text className="text-xl font-medium mb-8" style={{ color: colors.textSecondary }}>
-          DESCANSO
+          {t('workout:rest.title').toUpperCase()}
         </Text>
 
         <Text
@@ -132,7 +134,7 @@ export default function RestTimer() {
             style={{ backgroundColor: colors.success }}
           >
             <Text className="text-lg font-bold" style={{ color: colors.white }}>
-              SALTAR
+              {t('workout:rest.skip').toUpperCase()}
             </Text>
           </Pressable>
 

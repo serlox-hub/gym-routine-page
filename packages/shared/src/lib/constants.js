@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js'
+
 // App
 export const APP_NAME = 'Diario Gym'
 export const APP_URL = 'www.diariogym.com'
@@ -5,18 +7,36 @@ export const APP_URL = 'www.diariogym.com'
 // Summary Card
 export const SUMMARY_MAX_EXERCISES = 8
 
+// Block names (DB identifiers — always Spanish in the database)
+export const BLOCK_NAMES = {
+  WARMUP: 'Calentamiento',
+  MAIN: 'Principal',
+  ADDED: 'Añadido',
+}
+
 // RIR (Reps In Reserve) Options
 export const RIR_OPTIONS = [
-  { value: -1, label: 'F', description: 'Fallo' },
-  { value: 0, label: '0', description: 'Última rep' },
-  { value: 1, label: '1', description: 'Muy cerca' },
-  { value: 2, label: '2', description: 'Controlado' },
-  { value: 3, label: '3+', description: 'Cómodo' },
+  { value: -1, label: 'F' },
+  { value: 0, label: '0' },
+  { value: 1, label: '1' },
+  { value: 2, label: '2' },
+  { value: 3, label: '3+' },
 ]
+
+export function getRirDescription(value) {
+  return t(`data:rir.${value}`)
+}
+
+export function getRirOptions() {
+  return RIR_OPTIONS.map(opt => ({
+    ...opt,
+    description: t(`data:rir.${opt.value}`),
+  }))
+}
 
 // RIR Labels lookup (for display)
 export const RIR_LABELS = RIR_OPTIONS.reduce((acc, opt) => {
-  acc[opt.value] = { label: opt.label, description: opt.description }
+  acc[opt.value] = { label: opt.label, get description() { return t(`data:rir.${opt.value}`) } }
   return acc
 }, {})
 
@@ -65,13 +85,26 @@ export const SESSION_STATUS = {
 }
 
 // Sensation Scale (1-5)
-export const SENSATION_LABELS = {
-  1: 'Muy mal',
-  2: 'Mal',
-  3: 'Normal',
-  4: 'Bien',
-  5: 'Muy bien',
+export function getSensationLabel(value) {
+  return t(`data:sensation.${value}`)
 }
+
+export function getSensationLabels() {
+  return {
+    1: t('data:sensation.1'),
+    2: t('data:sensation.2'),
+    3: t('data:sensation.3'),
+    4: t('data:sensation.4'),
+    5: t('data:sensation.5'),
+  }
+}
+
+// Backwards-compatible proxy — keys resolve at access time
+export const SENSATION_LABELS = new Proxy({}, {
+  get(_, key) { return t(`data:sensation.${key}`) },
+  ownKeys() { return ['1', '2', '3', '4', '5'] },
+  getOwnPropertyDescriptor() { return { configurable: true, enumerable: true } },
+})
 
 export const SENSATION_COLORS = {
   1: '#f85149',
@@ -81,11 +114,6 @@ export const SENSATION_COLORS = {
   5: '#58a6ff',
 }
 
-/**
- * Obtiene el color asociado a un valor de sensación
- * @param {number} value - Valor de sensación (1-5)
- * @returns {string} Color hex
- */
 export function getSensationColor(value) {
   return SENSATION_COLORS[value] || '#8b949e'
 }
@@ -96,13 +124,25 @@ export const SET_TYPES = {
   DROPSET: 'dropset',
 }
 
-export const SET_TYPE_LABELS = {
-  normal: 'Normal',
-  dropset: 'Dropset',
+export function getSetTypeLabel(type) {
+  return t(`data:setTypes.${type}`)
 }
 
+export function getSetTypeLabels() {
+  return {
+    normal: t('data:setTypes.normal'),
+    dropset: t('data:setTypes.dropset'),
+  }
+}
 
-// Muscle Group Colors
+// Backwards-compatible proxy
+export const SET_TYPE_LABELS = new Proxy({}, {
+  get(_, key) { return t(`data:setTypes.${key}`) },
+  ownKeys() { return ['normal', 'dropset'] },
+  getOwnPropertyDescriptor() { return { configurable: true, enumerable: true } },
+})
+
+// Muscle Group Colors (keys are DB names — always Spanish)
 export const MUSCLE_GROUP_COLORS = {
   'Pecho': '#f85149',
   'Espalda': '#58a6ff',
@@ -124,3 +164,10 @@ export function getMuscleGroupColor(name) {
   return MUSCLE_GROUP_COLORS[name] || '#8b949e'
 }
 
+export function translateMuscleGroup(dbName) {
+  return t(`data:muscleGroups.${dbName}`, { defaultValue: dbName })
+}
+
+export function translateBlockName(dbName) {
+  return t(`data:blockNames.${dbName}`, { defaultValue: dbName })
+}

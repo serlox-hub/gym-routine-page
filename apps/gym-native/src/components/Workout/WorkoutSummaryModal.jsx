@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import ViewShot from 'react-native-view-shot'
 import { Share2, X } from 'lucide-react-native'
 import { useCompletedSessionCount } from '@gym/shared'
@@ -9,6 +10,7 @@ import WorkoutSummaryCard from './WorkoutSummaryCard'
 import { colors } from '../../lib/styles'
 
 export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
+  const { t } = useTranslation()
   const viewShotRef = useRef(null)
   const { generateAndShare, isGenerating } = useShareWorkoutSummary()
   const { data: sessionCount } = useCompletedSessionCount()
@@ -31,7 +33,7 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
       <Modal isOpen={isOpen} onClose={onClose} position="center" className="p-0">
         <View className="p-4">
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-primary text-lg font-semibold">Resumen</Text>
+            <Text className="text-primary text-lg font-semibold">{t('workout:summary.title')}</Text>
             <Pressable onPress={onClose} hitSlop={8} className="p-1.5 active:opacity-60">
               <X size={20} color={colors.textSecondary} />
             </Pressable>
@@ -54,7 +56,7 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
             >
               <Share2 size={16} color={colors.white} />
               <Text style={{ color: colors.white, fontSize: 14, fontWeight: '500' }}>
-                {isGenerating ? 'Generando...' : 'Compartir'}
+                {isGenerating ? t('common:buttons.loading') : t('common:buttons.share')}
               </Text>
             </Pressable>
           </View>

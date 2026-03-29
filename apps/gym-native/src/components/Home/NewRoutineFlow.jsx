@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, Alert } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { LayoutTemplate, FileText, Upload, Bot } from 'lucide-react-native'
 import { useUserId } from '../../hooks/useAuth'
 import { Card, ImportOptionsModal, LoadingSpinner } from '../ui'
@@ -11,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { colors } from '../../lib/styles'
 
 function NewRoutineFlow({ isOpen, onClose, navigation }) {
+  const { t } = useTranslation()
   const userId = useUserId()
   const queryClient = useQueryClient()
   const [showTemplates, setShowTemplates] = useState(false)
@@ -41,7 +43,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
       await importRoutine(pendingImportData, userId, options)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
     } catch (err) {
-      Alert.alert('Error', `Error al importar la rutina: ${err.message}`)
+      Alert.alert('Error', `${t('common:import.importError')}: ${err.message}`)
     } finally {
       setIsImporting(false)
       setPendingImportData(null)
@@ -52,29 +54,29 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
     {
       icon: LayoutTemplate,
       iconColor: colors.success,
-      label: 'Rutinas predefinidas',
+      label: t('routine:newFlow.predefined'),
       description: 'PPL, Upper/Lower, Full Body, 5/3/1',
       onPress: () => { onClose(); setShowTemplates(true) },
     },
     {
       icon: FileText,
       iconColor: colors.accent,
-      label: 'Crear manualmente',
-      description: 'Configura tu rutina desde cero',
+      label: t('routine:newFlow.createManually'),
+      description: t('routine:newFlow.createManuallyDesc'),
       onPress: () => { onClose(); navigation.navigate('NewRoutine') },
     },
     {
       icon: Upload,
       iconColor: colors.success,
-      label: 'Importar rutina',
-      description: 'Desde un archivo exportado o generado con IA',
+      label: t('routine:newFlow.import'),
+      description: t('routine:newFlow.importDesc'),
       onPress: () => { onClose(); setShowImportRoutine(true) },
     },
     {
       icon: Bot,
       iconColor: colors.accent,
-      label: 'Crear con IA',
-      description: 'Genera un prompt para ChatGPT/Claude',
+      label: t('routine:newFlow.createWithAI'),
+      description: t('routine:newFlow.createWithAIDesc'),
       onPress: () => { onClose(); setShowChatbot(true) },
     },
   ]
@@ -92,7 +94,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
             className="w-full bg-surface-card border border-border rounded-lg p-4"
             style={{ maxWidth: 400 }}
           >
-            <Text className="text-primary font-semibold mb-4">Nueva rutina</Text>
+            <Text className="text-primary font-semibold mb-4">{t('routine:newFlow.title')}</Text>
             {newRoutineOptions.map((opt, i) => (
               <Card key={i} className="p-3 mb-2" onPress={opt.onPress}>
                 <View className="flex-row items-center gap-3">
@@ -114,7 +116,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
           style={{ backgroundColor: colors.overlay }}
         >
           <LoadingSpinner fullScreen={false} />
-          <Text className="text-primary mt-2">Importando rutina...</Text>
+          <Text className="text-primary mt-2">{t('common:import.importing')}</Text>
         </View>
       )}
 

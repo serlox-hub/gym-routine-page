@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus, Settings, ChevronDown } from 'lucide-react'
 import { useBodyMeasurementHistory, useRecordBodyMeasurement, useUpdateBodyMeasurement, useDeleteBodyMeasurement } from '../../hooks/useBodyMeasurements.js'
 import { usePreferences, useUpdatePreference } from '../../hooks/usePreferences.js'
@@ -16,6 +17,7 @@ import {
 import { colors } from '../../lib/styles.js'
 
 function MeasurementSection() {
+  const { t } = useTranslation()
   const { data: preferences } = usePreferences()
   const updatePreference = useUpdatePreference()
 
@@ -75,7 +77,7 @@ function MeasurementSection() {
   }
 
   const handleDelete = (id) => {
-    if (confirm('¿Eliminar este registro?')) {
+    if (confirm(t('body:measurements.deleteConfirm'))) {
       deleteMutation.mutate({ id, measurementType: selectedType })
     }
   }
@@ -90,10 +92,10 @@ function MeasurementSection() {
     return (
       <div className="text-center py-12">
         <p className="text-secondary mb-4">
-          Configura las medidas corporales que quieres trackear
+          {t('body:measurements.configureDescription')}
         </p>
         <Button onClick={() => setShowConfigModal(true)}>
-          Configurar medidas
+          {t('body:measurements.configure')}
         </Button>
 
         <MeasurementConfigModal
@@ -173,14 +175,14 @@ function MeasurementSection() {
           {stats && (
             <div className="grid grid-cols-2 gap-3 mb-6">
               <Card className="p-3">
-                <div className="text-xs text-secondary mb-1">Actual</div>
+                <div className="text-xs text-secondary mb-1">{t('body:weight.current')}</div>
                 <div className="text-lg font-bold" style={{ color: colors.accent }}>
                   {stats.current} {unit}
                 </div>
               </Card>
               <Card className="p-3">
                 <div className="flex items-center gap-1 text-xs text-secondary mb-1">
-                  <span>Cambio</span>
+                  <span>{t('body:weight.change')}</span>
                   <TrendIcon size={12} style={{ color: trendColor }} />
                 </div>
                 <div className="text-lg font-bold" style={{ color: trendColor }}>
@@ -188,13 +190,13 @@ function MeasurementSection() {
                 </div>
               </Card>
               <Card className="p-3">
-                <div className="text-xs text-secondary mb-1">Mínimo</div>
+                <div className="text-xs text-secondary mb-1">{t('common:labels.worst')}</div>
                 <div className="text-lg font-bold" style={{ color: colors.success }}>
                   {stats.min} {unit}
                 </div>
               </Card>
               <Card className="p-3">
-                <div className="text-xs text-secondary mb-1">Máximo</div>
+                <div className="text-xs text-secondary mb-1">{t('common:labels.best')}</div>
                 <div className="text-lg font-bold" style={{ color: colors.warning }}>
                   {stats.max} {unit}
                 </div>
@@ -216,15 +218,15 @@ function MeasurementSection() {
               onClick={() => setShowRecordModal(true)}
             >
               <Plus size={18} />
-              Registrar {selectedType ? getMeasurementLabel(selectedType).toLowerCase() : 'medida'}
+              {t('body:measurements.record')} {selectedType ? getMeasurementLabel(selectedType).toLowerCase() : ''}
             </Button>
           </div>
 
           {/* History */}
-          <h2 className="text-lg font-bold mb-3">Historial</h2>
+          <h2 className="text-lg font-bold mb-3">{t('body:weight.history')}</h2>
           {!records || records.length === 0 ? (
             <p className="text-center text-secondary py-8">
-              Sin registros. Empieza registrando tu primera medida.
+              {t('body:measurements.noRecords')}
             </p>
           ) : (
             <div className="space-y-2">

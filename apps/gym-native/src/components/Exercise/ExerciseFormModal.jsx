@@ -1,4 +1,5 @@
 import { View, Text, ScrollView } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useCreateExercise, useUpdateExercise, useExercise } from '../../hooks/useExercises'
 import { Modal } from '../ui'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm'
@@ -52,22 +53,23 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
         onBack={onClose}
         onSubmit={() => ExerciseForm._submit?.()}
         isPending={mutation.isPending}
-        backLabel="Cancelar"
-        submitLabel="Guardar"
-        pendingLabel="Guardando..."
+        backLabel={undefined}
+        submitLabel={undefined}
+        pendingLabel={undefined}
       />
     </>
   )
 }
 
 export default function ExerciseFormModal({ isOpen, onClose, exerciseId = null, initialName = '' }) {
+  const { t } = useTranslation()
   const isEdit = !!exerciseId
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} position="bottom">
       <View className="p-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <Text className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-          {isEdit ? 'Editar ejercicio' : 'Nuevo ejercicio'}
+          {isEdit ? t('exercise:edit') : t('exercise:new')}
         </Text>
       </View>
       <ExerciseFormPanel exerciseId={exerciseId} initialName={initialName} onClose={onClose} />

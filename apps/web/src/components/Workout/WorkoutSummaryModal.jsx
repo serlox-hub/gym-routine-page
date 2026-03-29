@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { Share2, Download, X } from 'lucide-react'
 import { useCompletedSessionCount } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
@@ -7,6 +8,7 @@ import { useShareWorkoutSummary } from '../../hooks/useShareWorkoutSummary.js'
 import WorkoutSummaryCard from './WorkoutSummaryCard.jsx'
 
 function WorkoutSummaryModal({ summaryData, onClose }) {
+  const { t } = useTranslation()
   const cardRef = useRef(null)
   const { generateAndShare, generateAndDownload, isGenerating } = useShareWorkoutSummary()
   const { data: sessionCount } = useCompletedSessionCount()
@@ -75,7 +77,7 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
             }}
           >
             <Download size={16} />
-            Descargar
+            {t('common:buttons.download')}
           </button>
           <button
             onClick={handleShare}
@@ -87,7 +89,7 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
             }}
           >
             <Share2 size={16} />
-            {isGenerating ? 'Generando...' : 'Compartir'}
+            {isGenerating ? t('common:buttons.loading') : t('common:buttons.share')}
           </button>
         </div>
       </div>

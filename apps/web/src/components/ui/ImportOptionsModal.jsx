@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import Button from './Button.jsx'
 import Modal from './Modal.jsx'
 import { colors } from '../../lib/styles.js'
 
 function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
+  const { t } = useTranslation()
   const [updateExercises, setUpdateExercises] = useState(false)
 
   const handleConfirm = () => {
@@ -13,10 +15,10 @@ function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
   return (
     <Modal isOpen={isOpen} onClose={onCancel} className="p-6">
       <h3 className="text-lg font-semibold mb-2" style={{ color: colors.textPrimary }}>
-        Opciones de importación
+        {t('common:import.optionsTitle')}
       </h3>
       <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-        Configura cómo quieres importar la rutina
+        {t('common:import.configDescription')}
       </p>
 
       <label
@@ -31,20 +33,20 @@ function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
         />
         <div>
           <span className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-            Actualizar ejercicios existentes
+            {t('common:import.updateExisting')}
           </span>
           <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-            Si un ejercicio ya existe, actualiza sus instrucciones y grupo muscular con los datos del archivo
+            {t('common:import.updateExistingDesc')}
           </p>
         </div>
       </label>
 
       <div className="flex gap-3 justify-end">
         <Button variant="secondary" onClick={onCancel}>
-          Cancelar
+          {t('common:buttons.cancel')}
         </Button>
         <Button variant="primary" onClick={handleConfirm}>
-          Importar
+          {t('common:buttons.import')}
         </Button>
       </div>
     </Modal>

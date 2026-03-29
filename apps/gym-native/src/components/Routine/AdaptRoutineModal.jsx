@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, ScrollView, Pressable, Linking } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import * as Clipboard from 'expo-clipboard'
 import { Modal, Button } from '../ui'
 import { buildAdaptRoutinePrompt } from '@gym/shared'
@@ -8,6 +9,7 @@ import { colors } from '../../lib/styles'
 const TOTAL_STEPS = 4
 
 export default function AdaptRoutineModal({ isOpen, onClose, onImportClick }) {
+  const { t } = useTranslation()
   const [step, setStep] = useState(1)
   const [copied, setCopied] = useState(false)
   const adaptPrompt = buildAdaptRoutinePrompt()
@@ -27,7 +29,7 @@ export default function AdaptRoutineModal({ isOpen, onClose, onImportClick }) {
   return (
     <Modal isOpen={isOpen} onClose={handleClose}>
       <View className="p-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
-        <Text className="font-semibold text-primary">Adaptar rutina existente</Text>
+        <Text className="font-semibold text-primary">{t('routine:newFlow.adaptWithAI')}</Text>
       </View>
 
       <ScrollView className="p-4" style={{ maxHeight: 420 }}>
@@ -79,7 +81,7 @@ export default function AdaptRoutineModal({ isOpen, onClose, onImportClick }) {
               </Text>
             </View>
             <Button onPress={handleCopy}>
-              {copied ? 'Copiado' : 'Copiar prompt completo'}
+              {copied ? t('common:errors.copySuccess') : t('routine:chatbot.copyPrompt')}
             </Button>
             <View
               className="p-3 rounded-lg"
@@ -142,7 +144,7 @@ export default function AdaptRoutineModal({ isOpen, onClose, onImportClick }) {
                 onImportClick()
               }}
             >
-              Pegar JSON
+              {t('routine:chatbot.pasteJSON')}
             </Button>
           </View>
         )}
@@ -155,15 +157,15 @@ export default function AdaptRoutineModal({ isOpen, onClose, onImportClick }) {
           onPress={() => setStep(s => s - 1)}
           disabled={step === 1}
         >
-          Anterior
+          {t('common:buttons.back')}
         </Button>
         {step < TOTAL_STEPS ? (
           <Button onPress={() => setStep(s => s + 1)}>
-            Siguiente
+            {t('common:buttons.next')}
           </Button>
         ) : (
           <Button variant="secondary" onPress={handleClose}>
-            Cerrar
+            {t('common:buttons.close')}
           </Button>
         )}
       </View>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, Alert } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { FileText, RefreshCw } from 'lucide-react-native'
 import * as DocumentPicker from 'expo-document-picker'
 import { File } from 'expo-file-system'
@@ -7,6 +8,7 @@ import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 
 export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMode = null }) {
+  const { t } = useTranslation()
   const [mode, setMode] = useState(null)
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptC
       onImport(data)
       handleClose()
     } catch {
-      Alert.alert('Error', 'Error al leer el archivo')
+      Alert.alert('Error', t('common:import.importError'))
     } finally {
       setIsReading(false)
     }
@@ -45,7 +47,7 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptC
       onImport(data)
       handleClose()
     } catch {
-      setError('Formato inválido. Verifica el contenido.')
+      setError(t('common:import.invalidFormat'))
     }
   }
 
@@ -59,7 +61,7 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptC
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="p-0">
       <View className="p-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
-        <Text className="font-semibold text-primary">Importar rutina</Text>
+        <Text className="font-semibold text-primary">{t('routine:newFlow.import')}</Text>
       </View>
 
       <View className="p-4">
@@ -79,9 +81,9 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptC
               <FileText size={20} color={colors.success} />
               <View>
                 <Text className="text-sm font-medium text-primary">
-                  {isReading ? 'Leyendo archivo...' : 'Desde archivo'}
+                  {isReading ? t('common:buttons.loading') : t('common:import.fromFile')}
                 </Text>
-                <Text className="text-xs text-secondary">Seleccionar archivo de rutina</Text>
+                <Text className="text-xs text-secondary">{t('common:import.selectFile')}</Text>
               </View>
             </Pressable>
 
@@ -92,8 +94,8 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptC
             >
               <FileText size={20} color={colors.accent} />
               <View>
-                <Text className="text-sm font-medium text-primary">Pegar texto</Text>
-                <Text className="text-xs text-secondary">Pegar contenido directamente</Text>
+                <Text className="text-sm font-medium text-primary">{t('common:import.pasteText')}</Text>
+                <Text className="text-xs text-secondary">{t('common:import.pasteTextDesc')}</Text>
               </View>
             </Pressable>
 
@@ -105,15 +107,15 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptC
               >
                 <RefreshCw size={20} color={colors.orange} />
                 <View>
-                  <Text className="text-sm font-medium text-primary">Desde herramienta externa</Text>
-                  <Text className="text-xs text-secondary">Convierte tu rutina de Excel, PDF u otra app con IA</Text>
+                  <Text className="text-sm font-medium text-primary">{t('common:import.fromExternal')}</Text>
+                  <Text className="text-xs text-secondary">{t('common:import.fromExternalDesc')}</Text>
                 </View>
               </Pressable>
             )}
           </View>
         ) : (
           <View className="gap-3">
-            <Text className="text-sm text-secondary">Pega el contenido de la rutina:</Text>
+            <Text className="text-sm text-secondary">{t('common:import.pasteContent')}</Text>
             <TextInput
               value={jsonText}
               onChangeText={(text) => { setJsonText(text); setError('') }}
@@ -140,12 +142,12 @@ export default function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptC
                   variant="secondary"
                   onPress={() => { setMode(null); setJsonText(''); setError('') }}
                 >
-                  Atrás
+                  {t('common:buttons.back')}
                 </Button>
               </View>
               <View className="flex-1">
                 <Button onPress={handleTextImport} disabled={!jsonText.trim()}>
-                  Importar
+                  {t('common:buttons.import')}
                 </Button>
               </View>
             </View>

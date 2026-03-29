@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, FlatList, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, Button, ActiveSessionBanner } from '../components/ui'
@@ -10,6 +11,7 @@ import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate, format
 import { colors } from '../lib/styles'
 
 function WeightSection() {
+  const { t } = useTranslation()
   const { data: records, isLoading, error } = useBodyWeightHistory()
   const recordMutation = useRecordBodyWeight()
   const updateMutation = useUpdateBodyWeight()
@@ -94,7 +96,7 @@ function WeightSection() {
         <View className="flex-row flex-wrap gap-3 mb-4">
           <View className="flex-1" style={{ minWidth: '45%' }}>
             <Card className="p-3">
-              <Text className="text-xs text-secondary mb-1">Actual</Text>
+              <Text className="text-xs text-secondary mb-1">{t('body:weight.current')}</Text>
               <Text className="text-lg font-bold" style={{ color: colors.accent }}>
                 {stats.current} kg
               </Text>
@@ -103,7 +105,7 @@ function WeightSection() {
           <View className="flex-1" style={{ minWidth: '45%' }}>
             <Card className="p-3">
               <View className="flex-row items-center gap-1 mb-1">
-                <Text className="text-xs text-secondary">Cambio</Text>
+                <Text className="text-xs text-secondary">{t('body:weight.change')}</Text>
                 <TrendIcon size={12} color={trendColor} />
               </View>
               <Text className="text-lg font-bold" style={{ color: trendColor }}>
@@ -113,7 +115,7 @@ function WeightSection() {
           </View>
           <View className="flex-1" style={{ minWidth: '45%' }}>
             <Card className="p-3">
-              <Text className="text-xs text-secondary mb-1">Mínimo</Text>
+              <Text className="text-xs text-secondary mb-1">{t('body:weight.min')}</Text>
               <Text className="text-lg font-bold" style={{ color: colors.success }}>
                 {stats.min} kg
               </Text>
@@ -121,7 +123,7 @@ function WeightSection() {
           </View>
           <View className="flex-1" style={{ minWidth: '45%' }}>
             <Card className="p-3">
-              <Text className="text-xs text-secondary mb-1">Máximo</Text>
+              <Text className="text-xs text-secondary mb-1">{t('body:weight.max')}</Text>
               <Text className="text-lg font-bold" style={{ color: colors.warning }}>
                 {stats.max} kg
               </Text>
@@ -139,10 +141,10 @@ function WeightSection() {
 
       {/* Add Button */}
       <View className="mb-4">
-        <Button onPress={() => setShowModal(true)}>Registrar peso</Button>
+        <Button onPress={() => setShowModal(true)}>{t('body:weight.record')}</Button>
       </View>
 
-      <Text className="text-lg font-bold text-primary mb-3">Historial</Text>
+      <Text className="text-lg font-bold text-primary mb-3">{t('body:weight.history')}</Text>
     </View>
   )
 
@@ -157,7 +159,7 @@ function WeightSection() {
         contentContainerStyle={{ paddingBottom: 20 }}
         ListEmptyComponent={
           <Text className="text-secondary text-center py-8">
-            Sin registros. Empieza registrando tu peso actual.
+            {t('body:weight.noRecords')}
           </Text>
         }
       />
@@ -172,9 +174,9 @@ function WeightSection() {
 
       <ConfirmModal
         isOpen={!!recordToDelete}
-        title="Eliminar registro"
-        message="¿Eliminar este registro de peso?"
-        confirmText="Eliminar"
+        title={t('body:weight.delete')}
+        message={t('body:weight.deleteConfirm')}
+        confirmText={t('common:buttons.delete')}
         onConfirm={handleDelete}
         onCancel={() => setRecordToDelete(null)}
       />
@@ -183,11 +185,12 @@ function WeightSection() {
 }
 
 export default function BodyMetricsScreen({ navigation }) {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('peso')
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title="Registro Corporal" onBack={() => navigation.goBack()} />
+      <PageHeader title={t('body:title')} onBack={() => navigation.goBack()} />
 
       {/* Tabs */}
       <View
@@ -205,7 +208,7 @@ export default function BodyMetricsScreen({ navigation }) {
             className="text-sm font-medium"
             style={{ color: activeTab === 'peso' ? colors.textPrimary : colors.textSecondary }}
           >
-            Peso
+            {t('body:weight.title')}
           </Text>
         </Pressable>
         <Pressable
@@ -219,7 +222,7 @@ export default function BodyMetricsScreen({ navigation }) {
             className="text-sm font-medium"
             style={{ color: activeTab === 'medidas' ? colors.textPrimary : colors.textSecondary }}
           >
-            Medidas
+            {t('body:measurements.title')}
           </Text>
         </Pressable>
       </View>

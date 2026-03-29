@@ -1,30 +1,33 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { Target, Zap, BarChart3 } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 
-const STEPS = [
-  {
-    number: '01',
-    title: 'Crea tu rutina',
-    description: 'Diseña tu plan de entrenamiento o genera uno con IA. Elige entre plantillas populares como PPL, Upper/Lower o Full Body.',
-    icon: Target,
-  },
-  {
-    number: '02',
-    title: 'Entrena y registra',
-    description: 'Sigue tu rutina ejercicio por ejercicio. Registra peso, repeticiones y descansos en tiempo real.',
-    icon: Zap,
-  },
-  {
-    number: '03',
-    title: 'Analiza tu progreso',
-    description: 'Revisa gráficos de evolución, marcas personales y volumen de entrenamiento. Mejora sesión a sesión.',
-    icon: BarChart3,
-  },
-]
-
 function StepsSection() {
+  const { t } = useTranslation()
+
+  const STEPS = [
+    {
+      number: '01',
+      title: t('landing:steps.create.title'),
+      description: t('landing:steps.create.description'),
+      icon: Target,
+    },
+    {
+      number: '02',
+      title: t('landing:steps.train.title'),
+      description: t('landing:steps.train.description'),
+      icon: Zap,
+    },
+    {
+      number: '03',
+      title: t('landing:steps.analyze.title'),
+      description: t('landing:steps.analyze.description'),
+      icon: BarChart3,
+    },
+  ]
+
   return (
     <section className="py-24 relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -33,10 +36,10 @@ function StepsSection() {
             className="inline-block text-xs font-semibold tracking-widest mb-4 px-3 py-1 rounded-full"
             style={{ color: colors.purple, backgroundColor: 'rgba(163, 113, 247, 0.1)', border: '1px solid rgba(163, 113, 247, 0.2)' }}
           >
-            CÓMO FUNCIONA
+            {t('landing:steps.tag')}
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: colors.textPrimary }}>
-            En 3 simples pasos
+            {t('landing:steps.title')}
           </h2>
         </AnimatedSection>
 

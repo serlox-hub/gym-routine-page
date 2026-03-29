@@ -1,11 +1,13 @@
 import { useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Dumbbell, ChevronRight } from 'lucide-react'
 import { colors, RGB_ACCENT, RGB_PURPLE } from '../../lib/styles.js'
 import PhoneMockup, { MockupRoutineScreen } from './PhoneMockup'
 
 function HeroSection() {
+  const { t } = useTranslation()
   const ref = useRef(null)
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -59,11 +61,11 @@ function HeroSection() {
                     <Dumbbell size={18} style={{ color: colors.accent }} />
                   </div>
                   <span className="text-sm font-semibold tracking-wide" style={{ color: colors.accent }}>
-                    DIARIO GYM
+                    {t('common:appName').toUpperCase()}
                   </span>
                 </div>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-                  <span style={{ color: colors.textPrimary }}>Tu entrenamiento,</span>
+                  <span style={{ color: colors.textPrimary }}>{t('landing:hero.title1')}</span>
                   <br />
                   <span
                     style={{
@@ -72,7 +74,7 @@ function HeroSection() {
                       WebkitTextFillColor: 'transparent',
                     }}
                   >
-                    bajo control total.
+                    {t('landing:hero.title2')}
                   </span>
                 </h1>
               </motion.div>
@@ -84,7 +86,7 @@ function HeroSection() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
               >
-                Planifica rutinas, registra cada serie en tiempo real y visualiza tu progreso con gráficos detallados. Todo en un solo lugar.
+                {t('landing:hero.subtitle')}
               </motion.p>
 
               <motion.div
@@ -102,7 +104,7 @@ function HeroSection() {
                     boxShadow: `0 4px 20px rgba(${RGB_ACCENT}, 0.3)`,
                   }}
                 >
-                  Empezar ahora
+                  {t('landing:hero.cta')}
                   <ChevronRight size={18} />
                 </Link>
                 <Link
@@ -114,7 +116,7 @@ function HeroSection() {
                     border: `1px solid ${colors.border}`,
                   }}
                 >
-                  Ya tengo cuenta
+                  {t('landing:hero.login')}
                 </Link>
               </motion.div>
             </div>

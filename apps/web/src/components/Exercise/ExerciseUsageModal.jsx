@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { X, Dumbbell, Calendar } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { Modal, LoadingSpinner, ErrorMessage } from '../ui/index.js'
@@ -5,6 +6,7 @@ import { useExerciseUsageDetail } from '../../hooks/useExercises.js'
 import { formatShortDate } from '@gym/shared'
 
 function ExerciseUsageModal({ exercise, onClose }) {
+  const { t } = useTranslation()
   const { data, isLoading, error } = useExerciseUsageDetail(exercise?.id)
 
   return (
@@ -29,7 +31,7 @@ function ExerciseUsageModal({ exercise, onClose }) {
         {isLoading ? (
           <LoadingSpinner />
         ) : error ? (
-          <ErrorMessage message="No se pudieron cargar los datos" />
+          <ErrorMessage message={t('common:errors.generic')} />
         ) : (
           <>
             <section>

@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Zap, Star } from 'lucide-react-native'
 import { useStartSession } from '../../hooks/useWorkout'
 import { Card } from '../ui'
@@ -6,6 +7,7 @@ import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
 
 function QuickActions({ navigation, routines }) {
+  const { t } = useTranslation()
   const startSessionMutation = useStartSession()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
@@ -20,7 +22,7 @@ function QuickActions({ navigation, routines }) {
 
   return (
     <View className="mb-6">
-      <Text className="text-secondary text-sm font-medium mb-3">Acceso rápido</Text>
+      <Text className="text-secondary text-sm font-medium mb-3">{t('common:nav.quickAccess')}</Text>
 
       <Card
         className="p-3 mb-2"
@@ -42,14 +44,14 @@ function QuickActions({ navigation, routines }) {
           <View className="flex-1">
             <Text className="font-medium text-sm" style={{ color: colors.purpleAccent }}>
               {startSessionMutation.isPending
-                ? 'Iniciando...'
+                ? t('common:buttons.loading')
                 : isFreeSessionActive
-                  ? 'Continuar Entrenamiento'
-                  : 'Entrenamiento Libre'}
+                  ? t('workout:session.resume')
+                  : t('workout:session.freeWorkout')}
             </Text>
             {isRoutineSessionActive && (
               <Text className="text-secondary text-xs">
-                Tienes un entrenamiento de rutina en curso
+                {t('workout:session.routineSessionActive')}
               </Text>
             )}
           </View>

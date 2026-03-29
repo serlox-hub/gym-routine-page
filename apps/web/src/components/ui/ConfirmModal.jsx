@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import Button from './Button.jsx'
 import Modal from './Modal.jsx'
 import { colors } from '../../lib/styles.js'
@@ -6,14 +7,18 @@ function ConfirmModal({
   isOpen,
   title,
   message,
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
+  confirmText,
+  cancelText,
   loadingText,
   onConfirm,
   onCancel,
   variant = 'danger',
   isLoading = false,
 }) {
+  const { t } = useTranslation()
+  const _confirmText = confirmText || t('common:buttons.confirm')
+  const _cancelText = cancelText || t('common:buttons.cancel')
+
   return (
     <Modal
       isOpen={isOpen}
@@ -28,10 +33,10 @@ function ConfirmModal({
       </p>
       <div className="flex gap-3 justify-end">
         <Button variant="secondary" onClick={onCancel} disabled={isLoading}>
-          {cancelText}
+          {_cancelText}
         </Button>
         <Button variant={variant} onClick={onConfirm} disabled={isLoading}>
-          {isLoading ? (loadingText || 'Procesando...') : confirmText}
+          {isLoading ? (loadingText || t('common:buttons.loading')) : _confirmText}
         </Button>
       </div>
     </Modal>

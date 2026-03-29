@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { LineChart } from 'react-native-gifted-charts'
 import { MeasurementType, transformSessionsToChartData } from '@gym/shared'
 import { colors } from '../../lib/styles'
@@ -10,13 +11,14 @@ const TABS = {
   E1RM: 'e1rm',
 }
 
-const TAB_CONFIG = {
-  [TABS.WEIGHT]: { dataKey: 'best', color: colors.accent, label: 'Peso máx' },
-  [TABS.VOLUME]: { dataKey: 'volume', color: colors.success, label: 'Volumen' },
-  [TABS.E1RM]: { dataKey: 'e1rm', color: colors.purple, label: '1RM Est.' },
-}
-
 export default function ExerciseProgressChart({ sessions, measurementType }) {
+  const { t } = useTranslation()
+
+  const TAB_CONFIG = {
+    [TABS.WEIGHT]: { dataKey: 'best', color: colors.accent, label: t('workout:summary.maxWeight') },
+    [TABS.VOLUME]: { dataKey: 'volume', color: colors.success, label: t('workout:summary.totalVolume') },
+    [TABS.E1RM]: { dataKey: 'e1rm', color: colors.purple, label: t('workout:summary.best1RM') },
+  }
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
   const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
 

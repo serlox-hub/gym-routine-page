@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Calendar, X } from 'lucide-react'
 import { useWorkoutHistory } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
@@ -9,6 +10,7 @@ import { colors } from '../lib/styles.js'
 
 function History() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [currentDate, setCurrentDate] = useState(new Date())
   const { data: sessions, isLoading, error } = useWorkoutHistory(currentDate)
   const [selectedDay, setSelectedDay] = useState(null)
@@ -31,13 +33,13 @@ function History() {
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      <PageHeader title="Histórico" backTo="/" />
+      <PageHeader title={t('workout:history.title')} backTo="/" />
 
       <main>
         {!sessions || sessions.length === 0 ? (
           <div className="text-center py-12">
             <Calendar size={48} className="mx-auto mb-4" style={{ color: colors.textSecondary }} />
-            <p className="text-secondary">No hay sesiones registradas</p>
+            <p className="text-secondary">{t('workout:history.noSessions')}</p>
           </div>
         ) : (
           <>
@@ -66,7 +68,7 @@ function History() {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">
-                {selectedDay.sessions.length} sesiones este día
+                {selectedDay.sessions.length} {t('workout:history.session')}
               </h3>
               <button
                 onClick={() => setSelectedDay(null)}
@@ -86,7 +88,7 @@ function History() {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium">
-                        {session.day_name || session.routine_day?.name || 'Entrenamiento Libre'}
+                        {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
                       </div>
                       <div className="text-sm text-secondary">
                         {formatTime(session.started_at)}

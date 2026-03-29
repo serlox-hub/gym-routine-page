@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Check, Video, X, Save } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import VideoPlayer from './VideoPlayer.jsx'
@@ -21,6 +22,7 @@ function SetDetailsModal({
   descansoSeg = 0,
   measurementType
 }) {
+  const { t } = useTranslation()
   const canUploadVideo = useCanUploadVideo()
   const { value: showRirInput } = usePreference('show_rir_input')
   const { value: showSetNotes } = usePreference('show_set_notes')
@@ -107,7 +109,7 @@ function SetDetailsModal({
   }
 
   const isEditMode = mode === 'edit'
-  const title = isEditMode ? 'Editar serie' : 'Completar serie'
+  const title = isEditMode ? t('workout:set.edit') : t('workout:set.complete')
   const buttonDisabled = isEditMode && !hasChanges
   const buttonColor = buttonDisabled ? colors.bgTertiary : (isEditMode ? colors.purple : colors.success)
   const buttonTextColor = buttonDisabled ? colors.textSecondary : colors.white
@@ -281,7 +283,7 @@ function SetDetailsModal({
           }}
         >
           {isEditMode ? <Save size={20} /> : <Check size={20} />}
-          {isEditMode ? 'Guardar cambios' : 'Completar'}
+          {isEditMode ? t('common:buttons.save') : t('workout:set.complete')}
         </button>
       </div>
     </Modal>

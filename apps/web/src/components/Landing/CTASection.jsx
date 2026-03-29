@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
 import { colors, RGB_ACCENT } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 
 function CTASection() {
+  const { t } = useTranslation()
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 50%, rgba(${RGB_ACCENT}, 0.08) 0%, transparent 60%)` }} />
@@ -18,10 +20,10 @@ function CTASection() {
           }}
         >
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: colors.textPrimary }}>
-            Empieza a entrenar mejor hoy
+            {t('landing:cta.title')}
           </h2>
           <p className="text-lg mb-8 max-w-lg mx-auto" style={{ color: colors.textSecondary }}>
-            Únete y lleva tu entrenamiento al siguiente nivel. Gratis, sin compromisos.
+            {t('landing:cta.subtitle')}
           </p>
           <Link
             to="/signup"
@@ -32,7 +34,7 @@ function CTASection() {
               boxShadow: `0 4px 25px rgba(${RGB_ACCENT}, 0.35)`,
             }}
           >
-            Crear cuenta gratis
+            {t('landing:cta.button')}
             <ChevronRight size={20} />
           </Link>
         </motion.div>

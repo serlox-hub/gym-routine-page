@@ -1,10 +1,5 @@
-/**
- * Utilidades para tipos de medición de ejercicios
- */
+import { t } from '../i18n/index.js'
 
-/**
- * Constantes para tipos de medición
- */
 export const MeasurementType = {
   WEIGHT_REPS: 'weight_reps',
   REPS_ONLY: 'reps_only',
@@ -20,49 +15,52 @@ export const MeasurementType = {
   DISTANCE_PACE: 'distance_pace',
 }
 
-/**
- * Tipos de medición válidos
- */
 export const MEASUREMENT_TYPES = Object.values(MeasurementType)
 
-/**
- * Opciones de tipos de medición para formularios
- */
+export function getMeasurementTypeOptions() {
+  return [
+    { value: MeasurementType.WEIGHT_REPS, label: t('data:measurementTypes.weight_reps') },
+    { value: MeasurementType.REPS_ONLY, label: t('data:measurementTypes.reps_only') },
+    { value: MeasurementType.TIME, label: t('data:measurementTypes.time') },
+    { value: MeasurementType.WEIGHT_TIME, label: t('data:measurementTypes.weight_time') },
+    { value: MeasurementType.DISTANCE, label: t('data:measurementTypes.distance') },
+    { value: MeasurementType.WEIGHT_DISTANCE, label: t('data:measurementTypes.weight_distance') },
+    { value: MeasurementType.CALORIES, label: t('data:measurementTypes.calories') },
+    { value: MeasurementType.LEVEL_TIME, label: t('data:measurementTypes.level_time') },
+    { value: MeasurementType.LEVEL_DISTANCE, label: t('data:measurementTypes.level_distance') },
+    { value: MeasurementType.LEVEL_CALORIES, label: t('data:measurementTypes.level_calories') },
+    { value: MeasurementType.DISTANCE_TIME, label: t('data:measurementTypes.distance_time') },
+    { value: MeasurementType.DISTANCE_PACE, label: t('data:measurementTypes.distance_pace') },
+  ]
+}
+
+// Keep for backwards compatibility — consumers that import the constant directly
 export const MEASUREMENT_TYPE_OPTIONS = [
-  { value: MeasurementType.WEIGHT_REPS, label: 'Peso × Reps' },
-  { value: MeasurementType.REPS_ONLY, label: 'Solo reps' },
-  { value: MeasurementType.TIME, label: 'Tiempo' },
-  { value: MeasurementType.WEIGHT_TIME, label: 'Peso × Tiempo' },
-  { value: MeasurementType.DISTANCE, label: 'Distancia' },
-  { value: MeasurementType.WEIGHT_DISTANCE, label: 'Peso × Distancia' },
-  { value: MeasurementType.CALORIES, label: 'Calorías' },
-  { value: MeasurementType.LEVEL_TIME, label: 'Nivel × Tiempo' },
-  { value: MeasurementType.LEVEL_DISTANCE, label: 'Nivel × Distancia' },
-  { value: MeasurementType.LEVEL_CALORIES, label: 'Nivel × Calorías' },
-  { value: MeasurementType.DISTANCE_TIME, label: 'Distancia × Tiempo' },
-  { value: MeasurementType.DISTANCE_PACE, label: 'Distancia × Ritmo' },
+  { value: MeasurementType.WEIGHT_REPS, get label() { return t('data:measurementTypes.weight_reps') } },
+  { value: MeasurementType.REPS_ONLY, get label() { return t('data:measurementTypes.reps_only') } },
+  { value: MeasurementType.TIME, get label() { return t('data:measurementTypes.time') } },
+  { value: MeasurementType.WEIGHT_TIME, get label() { return t('data:measurementTypes.weight_time') } },
+  { value: MeasurementType.DISTANCE, get label() { return t('data:measurementTypes.distance') } },
+  { value: MeasurementType.WEIGHT_DISTANCE, get label() { return t('data:measurementTypes.weight_distance') } },
+  { value: MeasurementType.CALORIES, get label() { return t('data:measurementTypes.calories') } },
+  { value: MeasurementType.LEVEL_TIME, get label() { return t('data:measurementTypes.level_time') } },
+  { value: MeasurementType.LEVEL_DISTANCE, get label() { return t('data:measurementTypes.level_distance') } },
+  { value: MeasurementType.LEVEL_CALORIES, get label() { return t('data:measurementTypes.level_calories') } },
+  { value: MeasurementType.DISTANCE_TIME, get label() { return t('data:measurementTypes.distance_time') } },
+  { value: MeasurementType.DISTANCE_PACE, get label() { return t('data:measurementTypes.distance_pace') } },
 ]
 
-/**
- * Tipos de medición que usan peso (obligatorio)
- */
 export const WEIGHT_MEASUREMENT_TYPES = [
   MeasurementType.WEIGHT_REPS,
   MeasurementType.WEIGHT_TIME,
   MeasurementType.WEIGHT_DISTANCE,
 ]
 
-/**
- * Tipos de medición que usan repeticiones
- */
 export const REPS_MEASUREMENT_TYPES = [
   MeasurementType.WEIGHT_REPS,
   MeasurementType.REPS_ONLY,
 ]
 
-/**
- * Tipos de medición que usan tiempo
- */
 export const TIME_MEASUREMENT_TYPES = [
   MeasurementType.TIME,
   MeasurementType.WEIGHT_TIME,
@@ -70,9 +68,6 @@ export const TIME_MEASUREMENT_TYPES = [
   MeasurementType.DISTANCE_TIME,
 ]
 
-/**
- * Tipos de medición que usan distancia
- */
 export const DISTANCE_MEASUREMENT_TYPES = [
   MeasurementType.DISTANCE,
   MeasurementType.WEIGHT_DISTANCE,
@@ -89,65 +84,34 @@ export function measurementTypeUsesDistance(measurementType) {
   return DISTANCE_MEASUREMENT_TYPES.includes(measurementType)
 }
 
-/**
- * Tipos de medición que usan nivel (resistencia/inclinación)
- */
 export const LEVEL_MEASUREMENT_TYPES = [
   MeasurementType.LEVEL_TIME,
   MeasurementType.LEVEL_DISTANCE,
   MeasurementType.LEVEL_CALORIES,
 ]
 
-/**
- * Verifica si un tipo de medición usa repeticiones
- * @param {string} measurementType - Tipo de medición
- * @returns {boolean}
- */
 export function measurementTypeUsesReps(measurementType) {
   return REPS_MEASUREMENT_TYPES.includes(measurementType)
 }
 
-/**
- * Verifica si un tipo de medición usa nivel
- * @param {string} measurementType - Tipo de medición
- * @returns {boolean}
- */
 export function measurementTypeUsesLevel(measurementType) {
   return LEVEL_MEASUREMENT_TYPES.includes(measurementType)
 }
 
-/**
- * Obtiene la etiqueta del selector de esfuerzo según el tipo de medición
- * @param {string} measurementType - Tipo de medición
- * @returns {string}
- */
 export function getEffortLabel(measurementType) {
-  return measurementTypeUsesReps(measurementType) ? 'RIR' : 'Esfuerzo'
+  return measurementTypeUsesReps(measurementType)
+    ? t('exercise:effort.rir')
+    : t('exercise:effort.effort')
 }
 
-/**
- * Verifica si un tipo de medición es válido
- * @param {string} type - Tipo de medición
- * @returns {boolean}
- */
 export function isValidMeasurementType(type) {
   return MEASUREMENT_TYPES.includes(type)
 }
 
-/**
- * Verifica si un tipo de medición usa peso
- * @param {string} measurementType - Tipo de medición
- * @returns {boolean}
- */
 export function measurementTypeUsesWeight(measurementType) {
   return WEIGHT_MEASUREMENT_TYPES.includes(measurementType)
 }
 
-/**
- * Obtiene las repeticiones por defecto según el tipo de medición
- * @param {string} measurementType - Tipo de medición
- * @returns {string}
- */
 export function getDefaultReps(measurementType) {
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
@@ -176,23 +140,23 @@ export function getRepsLabel(measurementType) {
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
     case MeasurementType.REPS_ONLY:
-      return 'Repeticiones'
+      return t('exercise:repsLabel.reps')
     case MeasurementType.TIME:
     case MeasurementType.WEIGHT_TIME:
     case MeasurementType.LEVEL_TIME:
-      return 'Tiempo'
+      return t('exercise:repsLabel.time')
     case MeasurementType.DISTANCE:
     case MeasurementType.WEIGHT_DISTANCE:
     case MeasurementType.LEVEL_DISTANCE:
-      return 'Distancia'
+      return t('exercise:repsLabel.distance')
     case MeasurementType.CALORIES:
     case MeasurementType.LEVEL_CALORIES:
-      return 'Calorías'
+      return t('exercise:repsLabel.calories')
     case MeasurementType.DISTANCE_TIME:
     case MeasurementType.DISTANCE_PACE:
-      return 'Distancia'
+      return t('exercise:repsLabel.distance')
     default:
-      return 'Repeticiones'
+      return t('exercise:repsLabel.reps')
   }
 }
 
@@ -200,22 +164,22 @@ export function getRepsPlaceholder(measurementType) {
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
     case MeasurementType.REPS_ONLY:
-      return 'Ej: 8-12'
+      return t('exercise:repsPlaceholder.reps')
     case MeasurementType.TIME:
     case MeasurementType.WEIGHT_TIME:
     case MeasurementType.LEVEL_TIME:
-      return 'Ej: 30s, 1min'
+      return t('exercise:repsPlaceholder.time')
     case MeasurementType.DISTANCE:
     case MeasurementType.WEIGHT_DISTANCE:
     case MeasurementType.LEVEL_DISTANCE:
-      return 'Ej: 40m'
+      return t('exercise:repsPlaceholder.distance')
     case MeasurementType.CALORIES:
     case MeasurementType.LEVEL_CALORIES:
-      return 'Ej: 100kcal'
+      return t('exercise:repsPlaceholder.calories')
     case MeasurementType.DISTANCE_TIME:
     case MeasurementType.DISTANCE_PACE:
-      return 'Ej: 5km'
+      return t('exercise:repsPlaceholder.distanceTime')
     default:
-      return 'Ej: 8-12'
+      return t('exercise:repsPlaceholder.reps')
   }
 }

@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { BLOCK_NAMES } from '../lib/constants.js'
 
 // ============================================
 // QUERIES
@@ -77,8 +78,8 @@ export async function fetchRoutineBlocks(dayId) {
 
   // Ordenar bloques: Calentamiento siempre primero, luego por sort_order
   const sortedBlocks = data.sort((a, b) => {
-    if (a.name === 'Calentamiento') return -1
-    if (b.name === 'Calentamiento') return 1
+    if (a.name === BLOCK_NAMES.WARMUP) return -1
+    if (b.name === BLOCK_NAMES.WARMUP) return 1
     return a.sort_order - b.sort_order
   })
 

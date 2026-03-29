@@ -1,5 +1,6 @@
 import { View, Text, TextInput, Pressable, ScrollView, Modal as RNModal } from 'react-native'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react-native'
 import { Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
@@ -20,12 +21,13 @@ function FormField({ label, required, secondary, children }) {
 }
 
 function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) {
+  const { t } = useTranslation()
   const [showPicker, setShowPicker] = useState(false)
 
   const options = [
-    { value: '', label: 'Sin superset' },
+    { value: '', label: t('routine:superset.noSuperset') },
     ...existingSupersets.map(id => ({ value: String(id), label: formatSupersetLabel(id) })),
-    { value: String(nextSupersetId), label: `+ Nuevo ${formatSupersetLabel(nextSupersetId)}` },
+    { value: String(nextSupersetId), label: `+ ${t('common:labels.new')} ${formatSupersetLabel(nextSupersetId)}` },
   ]
 
   const selected = options.find(o => o.value === (value || ''))
@@ -38,7 +40,7 @@ function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) 
         style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
       >
         <Text style={{ color: value ? colors.textPrimary : colors.textSecondary }}>
-          {selected?.label || 'Sin superset'}
+          {selected?.label || t('routine:superset.noSuperset')}
         </Text>
         <ChevronDown size={16} color={colors.textSecondary} />
       </Pressable>
@@ -49,7 +51,7 @@ function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) 
           style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
         >
           <Pressable onPress={(e) => e.stopPropagation()} className="bg-surface-block rounded-t-2xl pb-8">
-            <Text className="text-primary font-semibold p-4">Superset</Text>
+            <Text className="text-primary font-semibold p-4">{t('routine:superset.title')}</Text>
             {options.map(opt => (
               <Pressable
                 key={opt.value}
@@ -79,6 +81,7 @@ export default function ExerciseConfigForm({
   showSupersetField = false,
   hideExerciseName = false,
 }) {
+  const { t } = useTranslation()
   const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }))
 
   return (
@@ -91,7 +94,7 @@ export default function ExerciseConfigForm({
 
       <View className="flex-row gap-3 mb-4">
         <View className="flex-1">
-          <FormField label="Series" required={!isSessionMode}>
+          <FormField label={t('routine:exercise.series')} required={!isSessionMode}>
             <TextInput
               value={form.series}
               onChangeText={update('series')}
@@ -114,7 +117,7 @@ export default function ExerciseConfigForm({
       </View>
 
       <View className={`gap-3 ${isSessionMode ? '' : 'pt-3 border-t border-border'}`}>
-        {!isSessionMode && <Text className="text-secondary text-xs">Opcionales</Text>}
+        {!isSessionMode && <Text className="text-secondary text-xs">{t('common:labels.optional')}</Text>}
 
         <View className="flex-row gap-3">
           <View className="flex-1">
@@ -130,7 +133,7 @@ export default function ExerciseConfigForm({
             </FormField>
           </View>
           <View className="flex-1">
-            <FormField label="Descanso (seg)" secondary>
+            <FormField label={t('routine:exercise.rest')} secondary>
               <TextInput
                 value={form.rest_seconds}
                 onChangeText={update('rest_seconds')}
@@ -145,7 +148,7 @@ export default function ExerciseConfigForm({
 
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <FormField label="Tempo" secondary>
+            <FormField label={t('routine:exercise.tempo')} secondary>
               <TextInput
                 value={form.tempo}
                 onChangeText={update('tempo')}
@@ -156,7 +159,7 @@ export default function ExerciseConfigForm({
             </FormField>
           </View>
           <View className="flex-1">
-            <FormField label="Razón" secondary>
+            <FormField label={t('routine:exercise.tempoReason')} secondary>
               <TextInput
                 value={form.tempo_razon}
                 onChangeText={update('tempo_razon')}
@@ -169,14 +172,14 @@ export default function ExerciseConfigForm({
           </View>
         </View>
         <Text className="text-secondary text-xs -mt-1">
-          Concéntrica - Pausa arriba - Excéntrica - Pausa abajo
+          {t('routine:exercise.tempoFormat')}
         </Text>
 
-        <FormField label="Notas" secondary>
+        <FormField label={t('routine:exercise.notes')} secondary>
           <TextInput
             value={form.notes}
             onChangeText={update('notes')}
-            placeholder={isSessionMode ? 'Notas para este ejercicio...' : 'Notas específicas para esta rutina...'}
+            placeholder={t('routine:exercise.notesPlaceholder')}
             placeholderTextColor={colors.textMuted}
             multiline
             style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
@@ -185,7 +188,7 @@ export default function ExerciseConfigForm({
 
         {showSupersetField && (
           <View>
-            <FormField label="Superset" secondary>
+            <FormField label={t('routine:superset.title')} secondary>
               <SupersetPicker
                 value={form.superset_group}
                 onChange={update('superset_group')}
@@ -194,7 +197,7 @@ export default function ExerciseConfigForm({
               />
             </FormField>
             <Text className="text-secondary text-xs mt-1">
-              Ejercicios en el mismo superset se hacen sin descanso entre ellos
+              {t('routine:superset.description')}
             </Text>
           </View>
         )}
@@ -203,7 +206,11 @@ export default function ExerciseConfigForm({
   )
 }
 
-export function ExerciseConfigFormButtons({ onBack, onSubmit, isPending, backLabel = 'Volver', submitLabel = 'Añadir', pendingLabel = 'Añadiendo...' }) {
+export function ExerciseConfigFormButtons({ onBack, onSubmit, isPending, backLabel, submitLabel, pendingLabel }) {
+  const { t } = useTranslation()
+  backLabel = backLabel || t('common:buttons.back')
+  submitLabel = submitLabel || t('common:buttons.add')
+  pendingLabel = pendingLabel || t('common:buttons.loading')
   return (
     <View className="flex-row gap-3 px-4 pt-3 border-t border-border">
       <Button variant="secondary" className="flex-1" onPress={onBack}>{backLabel}</Button>

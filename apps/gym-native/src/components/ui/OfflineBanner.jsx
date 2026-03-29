@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { View, Text } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { WifiOff } from 'lucide-react-native'
 import NetInfo from '@react-native-community/netinfo'
 import { colors } from '../../lib/styles'
 
 function OfflineBanner() {
+  const { t } = useTranslation()
   const [isOnline, setIsOnline] = useState(true)
   const { top } = useSafeAreaInsets()
 
@@ -25,7 +27,7 @@ function OfflineBanner() {
     >
       <WifiOff size={14} color={colors.white} />
       <Text className="text-xs font-medium" style={{ color: colors.white }}>
-        Sin conexion. Los cambios se sincronizaran al volver.
+        {t('common:offline.banner')}
       </Text>
     </View>
   )

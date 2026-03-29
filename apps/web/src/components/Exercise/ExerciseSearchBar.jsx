@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Search, ChevronDown } from 'lucide-react'
 import { colors, inputStyle } from '../../lib/styles.js'
-import { getMuscleGroupColor } from '@gym/shared'
+import { getMuscleGroupColor, translateMuscleGroup } from '@gym/shared'
 
 function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscleGroup, onMuscleGroupChange, autoFocus = false }) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
   const selectedGroup = muscleGroups?.find(g => g.id === selectedMuscleGroup)
@@ -36,7 +38,7 @@ function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscl
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Buscar ejercicio..."
+          placeholder={t('exercise:searchPlaceholder')}
           className="w-full p-3 pl-10 rounded-lg text-base"
           style={inputStyle}
           autoFocus={autoFocus}
@@ -61,7 +63,7 @@ function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscl
             />
           )}
           <span className="flex-1 text-left truncate">
-            {selectedGroup ? selectedGroup.name : 'Todos los grupos musculares'}
+            {selectedGroup ? translateMuscleGroup(selectedGroup.name) : t('common:labels.all')}
           </span>
           <ChevronDown
             size={16}
@@ -88,7 +90,7 @@ function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscl
                   color: !selectedMuscleGroup ? colors.accent : colors.textSecondary,
                 }}
               >
-                Todos los grupos musculares
+                {t('common:labels.all')}
               </button>
               {muscleGroups?.map(group => {
                 const isSelected = selectedMuscleGroup === group.id
@@ -107,7 +109,7 @@ function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscl
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: getMuscleGroupColor(group.name) }}
                     />
-                    {group.name}
+                    {translateMuscleGroup(group.name)}
                   </button>
                 )
               })}

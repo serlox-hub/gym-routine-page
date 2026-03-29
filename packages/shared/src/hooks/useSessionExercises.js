@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '../lib/constants.js'
+import { QUERY_KEYS, BLOCK_NAMES } from '../lib/constants.js'
 import {
   fetchSessionExercises,
   fetchSessionExercisesSortOrder,
@@ -36,7 +36,7 @@ export function useAddSessionExercise() {
       const existing = await fetchSessionExercisesSortOrder(sessionId)
 
       let insertSortOrder
-      let blockName = 'Principal'
+      let blockName = BLOCK_NAMES.MAIN
 
       if (superset_group && existing?.length) {
         // Si se asigna a un superset, insertar despues del ultimo ejercicio del superset

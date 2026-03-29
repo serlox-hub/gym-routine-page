@@ -1,10 +1,12 @@
 import { View, Text, Pressable, FlatList } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Plus, Star } from 'lucide-react-native'
 import { useSetFavoriteRoutine } from '../../hooks/useRoutines'
 import { Card, TruncatedText } from '../ui'
 import { colors } from '../../lib/styles'
 
 function RoutineItem({ routine, navigation, setFavoriteMutation }) {
+  const { t } = useTranslation()
   return (
     <Card
       className="p-3 mb-2"
@@ -22,7 +24,7 @@ function RoutineItem({ routine, navigation, setFavoriteMutation }) {
           )}
           {routine.goal && (
             <Text className="text-xs mt-1">
-              <Text style={{ color: colors.success }}>Objetivo: </Text>
+              <Text style={{ color: colors.success }}>{t('routine:goal')}: </Text>
               <Text className="text-secondary">{routine.goal}</Text>
             </Text>
           )}
@@ -48,12 +50,13 @@ function RoutineItem({ routine, navigation, setFavoriteMutation }) {
 }
 
 function RoutineList({ routines, navigation, onNewRoutine, ListHeaderComponent, refreshing, onRefresh }) {
+  const { t } = useTranslation()
   const setFavoriteMutation = useSetFavoriteRoutine()
 
   const renderHeader = () => (
     <>
       {ListHeaderComponent}
-      <Text className="text-secondary text-sm font-medium mb-3">Mis Rutinas</Text>
+      <Text className="text-secondary text-sm font-medium mb-3">{t('routine:myRoutines')}</Text>
       <Card
         className="p-3 mb-2"
         style={{ borderStyle: 'dashed' }}
@@ -61,7 +64,7 @@ function RoutineList({ routines, navigation, onNewRoutine, ListHeaderComponent, 
       >
         <View className="flex-row items-center gap-2 justify-center">
           <Plus size={18} color={colors.textSecondary} />
-          <Text className="text-secondary text-sm">Nueva rutina</Text>
+          <Text className="text-secondary text-sm">{t('routine:new')}</Text>
         </View>
       </Card>
     </>

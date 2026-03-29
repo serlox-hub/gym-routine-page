@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Check } from 'lucide-react'
 import { Button, Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { getMeasurementLabel, getOrderedMeasurementTypes } from '@gym/shared'
 
 function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onSave, isPending }) {
+  const { t } = useTranslation()
   const [selected, setSelected] = useState(new Set())
   const allTypes = getOrderedMeasurementTypes()
 
@@ -37,7 +39,7 @@ function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onS
     <Modal isOpen={isOpen} onClose={onClose} className="overflow-hidden">
       <div className="p-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${colors.border}` }}>
         <h3 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
-          Configurar medidas
+          {t('body:measurements.configure')}
         </h3>
         <button onClick={onClose} className="p-1 rounded hover:opacity-80">
           <X size={20} style={{ color: colors.textSecondary }} />
@@ -46,7 +48,7 @@ function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onS
 
       <div className="p-4 max-h-80 overflow-y-auto">
         <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-          Selecciona las medidas que quieres trackear
+          {t('body:measurements.selectToTrack')}
         </p>
 
         <div className="space-y-2">
@@ -79,14 +81,14 @@ function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onS
 
       <div className="p-4 flex gap-3" style={{ borderTop: `1px solid ${colors.border}` }}>
         <Button variant="secondary" className="flex-1" onClick={onClose}>
-          Cancelar
+          {t('common:buttons.cancel')}
         </Button>
         <Button
           className="flex-1"
           onClick={handleSave}
           disabled={!hasChanges() || isPending}
         >
-          {isPending ? 'Guardando...' : 'Guardar'}
+          {isPending ? t('common:buttons.loading') : t('common:buttons.save')}
         </Button>
       </div>
     </Modal>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Check, X, Globe } from 'lucide-react'
 import { Card, LoadingSpinner, PlanBadge, PageHeader } from '../components/ui/index.js'
 import { PreferenceToggle, InstallAppSection, TrainingGoalSection } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
@@ -9,6 +10,7 @@ import { colors } from '../lib/styles.js'
 
 function Preferences() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { data: preferences, isLoading } = usePreferences()
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
@@ -47,30 +49,61 @@ function Preferences() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <PageHeader title="Preferencias" onBack={() => navigate(-1)} />
+      <PageHeader title={t('common:preferences.title')} onBack={() => navigate(-1)} />
 
       <main className="space-y-4">
         <Card className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Globe size={16} style={{ color: colors.textSecondary }} />
+            <h2 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+              {t('common:preferences.language')}
+            </h2>
+          </div>
+          <div className="flex gap-2">
+            {[
+              { code: 'es', label: t('common:preferences.spanish') },
+              { code: 'en', label: t('common:preferences.english') },
+            ].map(({ code, label }) => {
+              const isActive = (preferences?.language || 'es') === code
+              return (
+                <button
+                  key={code}
+                  onClick={() => handleChange('language', code)}
+                  className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: isActive ? colors.accent : colors.bgTertiary,
+                    color: isActive ? '#fff' : colors.textSecondary,
+                  }}
+                  disabled={updatePreference.isPending}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </Card>
+
+        <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-              Tu plan
+              {t('common:preferences.plan')}
             </h2>
             <PlanBadge isPremium={isPremium} />
           </div>
 
           <div className="space-y-3">
             <h3 className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-              Beneficios Premium
+              {t('common:preferences.premiumBenefits')}
             </h3>
             <ul className="space-y-2">
               <PremiumFeature
-                title="Subir videos"
-                description="Graba y guarda videos de tus series para revisar tu técnica"
+                title={t('common:preferences.uploadVideos')}
+                description={t('common:preferences.videoDescription')}
                 enabled={isPremium}
               />
               <PremiumFeature
-                title="Más funciones próximamente"
-                description="Nuevas características exclusivas en desarrollo"
+                title={t('common:preferences.comingSoon')}
+                description={t('common:preferences.comingSoonDesc')}
                 enabled={isPremium}
                 comingSoon
               />
@@ -80,36 +113,36 @@ function Preferences() {
 
         <Card className="p-4">
           <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
-            Durante el entrenamiento
+            {t('common:preferences.duringWorkout')}
           </h2>
 
           <div className="space-y-4">
             <PreferenceToggle
-              label="Sonido y vibración del timer"
-              description="Reproducir sonido y vibrar cuando termine el descanso"
+              label={t('common:preferences.timerSound')}
+              description={t('common:preferences.timerSoundDesc')}
               checked={timerSoundEnabled}
               onChange={handleTimerSoundChange}
             />
 
             <PreferenceToggle
-              label="Registrar RIR (esfuerzo)"
-              description="Mostrar selector de RIR al completar cada serie"
+              label={t('common:preferences.showRir')}
+              description={t('common:preferences.showRirDesc')}
               checked={preferences?.show_rir_input ?? true}
               onChange={(value) => handleChange('show_rir_input', value)}
               disabled={updatePreference.isPending}
             />
 
             <PreferenceToggle
-              label="Notas por serie"
-              description="Permitir añadir notas a cada serie completada"
+              label={t('common:preferences.showSetNotes')}
+              description={t('common:preferences.showSetNotesDesc')}
               checked={preferences?.show_set_notes ?? true}
               onChange={(value) => handleChange('show_set_notes', value)}
               disabled={updatePreference.isPending}
             />
 
             <PreferenceToggle
-              label="Notas al finalizar"
-              description="Mostrar campo de notas al terminar la sesión"
+              label={t('common:preferences.showSessionNotes')}
+              description={t('common:preferences.showSessionNotesDesc')}
               checked={preferences?.show_session_notes ?? true}
               onChange={(value) => handleChange('show_session_notes', value)}
               disabled={updatePreference.isPending}
@@ -117,8 +150,8 @@ function Preferences() {
 
             {canUploadVideo && (
               <PreferenceToggle
-                label="Grabar video"
-                description="Permitir adjuntar video a cada serie"
+                label={t('common:preferences.showVideoUpload')}
+                description={t('common:preferences.videoDescription')}
                 checked={preferences?.show_video_upload ?? true}
                 onChange={(value) => handleChange('show_video_upload', value)}
                 disabled={updatePreference.isPending}
@@ -146,6 +179,7 @@ function Preferences() {
 }
 
 function PremiumFeature({ title, description, enabled, comingSoon }) {
+  const { t } = useTranslation()
   return (
     <li className="flex items-start gap-3">
       <div className="mt-0.5">
@@ -163,7 +197,7 @@ function PremiumFeature({ title, description, enabled, comingSoon }) {
               className="ml-2 text-xs px-1.5 py-0.5 rounded"
               style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
             >
-              Próximamente
+              {t('common:preferences.comingSoon')}
             </span>
           )}
         </p>

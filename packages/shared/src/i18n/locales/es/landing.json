@@ -1,0 +1,70 @@
+{
+  "hero": {
+    "title1": "Tu diario de",
+    "title2": "entrenamiento",
+    "subtitle": "Planifica rutinas, registra tus entrenamientos y analiza tu progreso. Todo en un solo lugar.",
+    "cta": "Empezar ahora",
+    "login": "Ya tengo cuenta"
+  },
+  "showcase": {
+    "tag": "Así funciona",
+    "title": "Todo lo que necesitas para entrenar mejor",
+    "subtitle": "Desde la planificación hasta el análisis, Diario Gym te acompaña en cada paso.",
+    "planRoutine": "Planifica tu rutina",
+    "trackLive": "Registra en tiempo real",
+    "analyzeProgress": "Analiza tu progreso"
+  },
+  "features": {
+    "tag": "Funcionalidades",
+    "title": "Herramientas para cada aspecto de tu entrenamiento",
+    "subtitle": "Diseñado para ayudarte a ser más consistente y eficiente en el gimnasio.",
+    "routines": {
+      "title": "Rutinas personalizadas",
+      "description": "Crea rutinas con días, bloques, supersets, tempo y notas de ejecución."
+    },
+    "liveTracking": {
+      "title": "Registro en tiempo real",
+      "description": "Registra peso, repeticiones y descanso durante tu entrenamiento."
+    },
+    "progress": {
+      "title": "Seguimiento de progreso",
+      "description": "Visualiza tu evolución con gráficas de peso, volumen y 1RM estimado."
+    },
+    "ai": {
+      "title": "Creación con IA",
+      "description": "Genera rutinas personalizadas con inteligencia artificial según tus objetivos."
+    },
+    "history": {
+      "title": "Histórico de sesiones",
+      "description": "Revisa todas tus sesiones pasadas con detalle completo."
+    },
+    "bodyMetrics": {
+      "title": "Métricas corporales",
+      "description": "Registra tu peso corporal y medidas para seguir tu composición."
+    }
+  },
+  "steps": {
+    "tag": "Cómo empezar",
+    "title": "En 3 pasos estás entrenando",
+    "create": {
+      "title": "Crea tu rutina",
+      "description": "Diseña tu rutina manualmente, usa una plantilla o genera una con IA."
+    },
+    "train": {
+      "title": "Entrena y registra",
+      "description": "Inicia una sesión y registra cada serie con peso, repeticiones y descanso."
+    },
+    "analyze": {
+      "title": "Analiza tu progreso",
+      "description": "Revisa tu historial, récords personales y evolución a lo largo del tiempo."
+    }
+  },
+  "cta": {
+    "title": "Empieza a entrenar mejor hoy",
+    "subtitle": "Gratis, sin tarjeta de crédito. Crea tu cuenta en segundos.",
+    "button": "Crear cuenta gratis"
+  },
+  "footer": {
+    "rights": "Todos los derechos reservados."
+  }
+}

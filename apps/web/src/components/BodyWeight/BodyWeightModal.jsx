@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Modal, Input, Textarea } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { parseDecimal } from '@gym/shared'
 
 function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({
     weight: '',
     notes: '',
@@ -44,12 +46,12 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="p-6">
       <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-        {isEditing ? 'Editar peso' : 'Registrar peso'}
+        {isEditing ? t('body:weight.edit') : t('body:weight.record')}
       </h3>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Peso (kg) *"
+          label={`${t('body:weight.kg')} *`}
           type="number"
           step="0.1"
           min="0.1"
@@ -61,7 +63,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }
         />
 
         <Textarea
-          label="Notas (opcional)"
+          label={`${t('common:labels.notes')} (${t('common:labels.optional')})`}
           value={form.notes}
           onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
           placeholder="Ej: Después de desayunar"
@@ -70,13 +72,13 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }
 
         <div className="flex gap-3 justify-end pt-2">
           <Button variant="secondary" type="button" onClick={handleClose}>
-            Cancelar
+            {t('common:buttons.cancel')}
           </Button>
           <Button
             type="submit"
             disabled={!form.weight || parseDecimal(form.weight) <= 0 || isPending}
           >
-            {isPending ? 'Guardando...' : isEditing ? 'Guardar' : 'Registrar'}
+            {isPending ? t('common:buttons.loading') : isEditing ? t('common:buttons.save') : t('body:weight.submit')}
           </Button>
         </div>
       </form>

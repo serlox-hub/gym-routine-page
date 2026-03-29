@@ -4,12 +4,14 @@ import {
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { validateResetPasswordForm } from '@gym/shared'
 import { Button, Card } from '../components/ui'
 import { inputStyle, colors } from '../lib/styles'
 
 export default function ResetPasswordScreen({ navigation, onComplete }) {
+  const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -43,13 +45,13 @@ export default function ResetPasswordScreen({ navigation, onComplete }) {
         <View className="flex-1 items-center justify-center px-4">
           <Card className="w-full p-6 items-center">
             <Text className="text-primary text-2xl font-bold mb-4">
-              Contraseña actualizada
+              {t('auth:resetPassword.success')}
             </Text>
             <Text className="text-secondary text-center mb-6">
-              Tu contraseña ha sido actualizada correctamente.
+              {t('auth:resetPassword.successDescription')}
             </Text>
             <Button onPress={onComplete || (() => navigation?.navigate('Login'))} className="w-full">
-              Ir al inicio
+              {t('auth:forgotPassword.backToLogin')}
             </Button>
           </Card>
         </View>
@@ -70,18 +72,18 @@ export default function ResetPasswordScreen({ navigation, onComplete }) {
         >
           <Card className="p-6">
             <Text className="text-primary text-2xl font-bold text-center mb-2">
-              Nueva contraseña
+              {t('auth:resetPassword.title')}
             </Text>
             <Text className="text-secondary text-center mb-6">
-              Ingresa tu nueva contraseña
+              {t('auth:resetPassword.description')}
             </Text>
 
             <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">Nueva contraseña</Text>
+              <Text className="text-primary text-sm font-medium mb-1">{t('auth:resetPassword.newPassword')}</Text>
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Mínimo 6 caracteres"
+                placeholder={t('auth:signup.minChars')}
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete="new-password"
@@ -90,11 +92,11 @@ export default function ResetPasswordScreen({ navigation, onComplete }) {
             </View>
 
             <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">Confirmar contraseña</Text>
+              <Text className="text-primary text-sm font-medium mb-1">{t('auth:resetPassword.confirmPassword')}</Text>
               <TextInput
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                placeholder="Repite tu contraseña"
+                placeholder={t('auth:resetPassword.confirmPassword')}
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete="new-password"
@@ -107,7 +109,7 @@ export default function ResetPasswordScreen({ navigation, onComplete }) {
             ) : null}
 
             <Button onPress={handleSubmit} loading={isLoading}>
-              Guardar contraseña
+              {t('auth:resetPassword.submit')}
             </Button>
           </Card>
         </ScrollView>

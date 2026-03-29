@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Play } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
@@ -9,6 +10,7 @@ import { formatSecondsToMMSS } from '@gym/shared'
 function ActiveSessionBanner() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
 
   const sessionId = useWorkoutStore(state => state.sessionId)
   const routineDayId = useWorkoutStore(state => state.routineDayId)
@@ -46,7 +48,7 @@ function ActiveSessionBanner() {
         style={{ backgroundColor: colors.bgSecondary, border: `2px solid ${colors.accent}` }}
       >
         <span className="text-xs font-medium" style={{ color: colors.accent }}>
-          Entrenamiento en curso
+          {t('workout:session.active')}
         </span>
         {restTimerActive && (
           <span
@@ -62,7 +64,7 @@ function ActiveSessionBanner() {
           style={{ backgroundColor: colors.actionPrimaryBg, color: colors.white }}
         >
           <Play size={14} fill={colors.white} />
-          Volver
+          {t('common:buttons.back')}
         </button>
       </div>
     </div>

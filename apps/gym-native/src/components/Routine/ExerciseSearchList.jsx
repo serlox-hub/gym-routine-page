@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { View, Text, Pressable, FlatList } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Check } from 'lucide-react-native'
 import { colors } from '../../lib/styles'
 import { getMuscleGroupColor, normalizeSearchText } from '@gym/shared'
@@ -15,6 +16,7 @@ export default function ExerciseSearchList({
   onSearchChange,
   initialMuscleGroup = null,
 }) {
+  const { t } = useTranslation()
   const [internalSearch, setInternalSearch] = useState(search)
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(initialMuscleGroup)
 
@@ -51,7 +53,7 @@ export default function ExerciseSearchList({
         {isInRoutine && (
           <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(63, 185, 80, 0.15)' }}>
             <Check size={12} color={colors.success} />
-            <Text className="text-xs" style={{ color: colors.success }}>En rutina</Text>
+            <Text className="text-xs" style={{ color: colors.success }}>{t('exercise:usage.inRoutine')}</Text>
           </View>
         )}
       </Pressable>
@@ -69,9 +71,9 @@ export default function ExerciseSearchList({
         autoFocus
       />
       {isLoading ? (
-        <Text className="text-secondary text-center py-4">Cargando...</Text>
+        <Text className="text-secondary text-center py-4">{t('common:buttons.loading')}</Text>
       ) : filteredExercises.length === 0 ? (
-        <Text className="text-secondary text-center py-4">No se encontraron ejercicios</Text>
+        <Text className="text-secondary text-center py-4">{t('exercise:noExercises')}</Text>
       ) : (
         <FlatList
           data={filteredExercises}

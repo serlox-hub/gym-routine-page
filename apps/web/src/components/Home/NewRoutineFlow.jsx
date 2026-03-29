@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { LayoutTemplate, FileText, Upload, Bot } from 'lucide-react'
 import { useUserId } from '../../hooks/useAuth.js'
 import { Card, ImportOptionsModal, LoadingSpinner } from '../ui/index.js'
@@ -10,6 +11,7 @@ import { colors } from '../../lib/styles.js'
 
 function NewRoutineFlow({ isOpen, onClose }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const userId = useUserId()
   const queryClient = useQueryClient()
   const [showChatbotModal, setShowChatbotModal] = useState(false)
@@ -89,19 +91,19 @@ function NewRoutineFlow({ isOpen, onClose }) {
             style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="font-semibold mb-4" style={{ color: colors.textPrimary }}>Nueva rutina</h3>
+            <h3 className="font-semibold mb-4" style={{ color: colors.textPrimary }}>{t('routine:new')}</h3>
             <div className="space-y-2">
               <Card className="p-3" onClick={() => { onClose(); setShowTemplatesModal(true) }}>
-                {menuOption(LayoutTemplate, colors.success, 'Rutinas predefinidas', 'PPL, Upper/Lower, Full Body, 5/3/1')}
+                {menuOption(LayoutTemplate, colors.success, t('routine:newFlow.predefined'), t('routine:newFlow.predefinedDesc'))}
               </Card>
               <Card className="p-3" onClick={() => { onClose(); navigate('/routines/new') }}>
-                {menuOption(FileText, colors.accent, 'Crear manualmente', 'Configura tu rutina desde cero')}
+                {menuOption(FileText, colors.accent, t('routine:newFlow.createManually'), t('routine:newFlow.createManuallyDesc'))}
               </Card>
               <Card className="p-3" onClick={() => { onClose(); setShowImportModal(true) }}>
-                {menuOption(Upload, colors.success, 'Importar rutina', 'Desde un archivo exportado o generado con IA')}
+                {menuOption(Upload, colors.success, t('routine:newFlow.import'), t('routine:newFlow.importDesc'))}
               </Card>
               <Card className="p-3" onClick={() => { onClose(); setShowChatbotModal(true) }}>
-                {menuOption(Bot, colors.accent, 'Crear con IA', 'Genera un prompt para ChatGPT/Claude')}
+                {menuOption(Bot, colors.accent, t('routine:newFlow.createWithAI'), t('routine:newFlow.createWithAIDesc'))}
               </Card>
             </div>
           </div>
@@ -158,7 +160,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
           <div className="flex flex-col items-center gap-3">
             <LoadingSpinner />
             <span style={{ color: colors.textPrimary }}>
-              {importType === 'template' ? 'Creando rutina...' : 'Importando rutina...'}
+              {importType === 'template' ? t('routine:creating') : t('common:import.importing')}
             </span>
           </div>
         </div>

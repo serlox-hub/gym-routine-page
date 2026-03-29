@@ -3,6 +3,7 @@ import { buildPRsByExerciseMap } from './workoutCalculations.js'
 import { fetchSessionDetail } from '../api/workoutSessionApi.js'
 import { fetchSessionPRs } from '../api/exerciseStatsApi.js'
 import { transformSessionDetailData } from './workoutTransforms.js'
+import { t, getCurrentLocale } from '../i18n/index.js'
 
 /**
  * Formatea minutos en formato legible: "1h 05min", "45 min"
@@ -85,7 +86,8 @@ export function buildSummaryFilename(date) {
  */
 function formatShortDate(dateStr) {
   const date = new Date(dateStr)
-  return date.toLocaleDateString('es-ES', {
+  const locale = getCurrentLocale() === 'en' ? 'en-US' : 'es-ES'
+  return date.toLocaleDateString(locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -140,7 +142,7 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
     totalSets += sets.length
 
     exercises.push({
-      name: exercise.name || 'Ejercicio',
+      name: exercise.name || t('exercise:title'),
       setsCompleted: sets.length,
       bestSet: getBestSetFormatted(sets, exercise),
       hasPR: prExerciseIds.has(exercise.id),
@@ -148,7 +150,7 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
   }
 
   return {
-    dayName: session.day_name || 'Entrenamiento Libre',
+    dayName: session.day_name || t('workout:session.freeWorkout'),
     routineName: session.routine_name || null,
     date: formatShortDate(session.started_at || session.completed_at),
     durationMinutes: session.duration_minutes || 0,
@@ -192,19 +194,19 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs) {
     const pr = prMap[exercise?.id]
     if (!pr) continue
     const details = []
-    if (pr.is_pr_weight && pr.best_weight) details.push({ label: 'Peso', newValue: pr.best_weight, unit: 'kg' })
-    if (pr.is_pr_1rm && pr.best_1rm) details.push({ label: '1RM', newValue: pr.best_1rm, unit: 'kg' })
-    if (pr.is_pr_reps && pr.best_reps) details.push({ label: 'Reps', newValue: pr.best_reps, unit: 'reps' })
-    if (pr.is_pr_volume && pr.total_volume) details.push({ label: 'Volumen', newValue: pr.total_volume, unit: 'kg' })
-    if (pr.is_pr_time && pr.best_time_seconds) details.push({ label: 'Tiempo', newValue: pr.best_time_seconds, unit: 's' })
-    if (pr.is_pr_distance && pr.best_distance_meters) details.push({ label: 'Distancia', newValue: pr.best_distance_meters, unit: 'm' })
+    if (pr.is_pr_weight && pr.best_weight) details.push({ label: t('workout:pr.weight'), newValue: pr.best_weight, unit: 'kg' })
+    if (pr.is_pr_1rm && pr.best_1rm) details.push({ label: t('workout:pr.oneRM'), newValue: pr.best_1rm, unit: 'kg' })
+    if (pr.is_pr_reps && pr.best_reps) details.push({ label: t('workout:pr.reps'), newValue: pr.best_reps, unit: 'reps' })
+    if (pr.is_pr_volume && pr.total_volume) details.push({ label: t('workout:pr.volume'), newValue: pr.total_volume, unit: 'kg' })
+    if (pr.is_pr_time && pr.best_time_seconds) details.push({ label: t('workout:pr.time'), newValue: pr.best_time_seconds, unit: 's' })
+    if (pr.is_pr_distance && pr.best_distance_meters) details.push({ label: t('workout:pr.distance'), newValue: pr.best_distance_meters, unit: 'm' })
     if (details.length > 0) {
       prs.push({ exerciseName: exercise.name, details })
     }
   }
 
   return {
-    dayName: session.day_name || session.routine_day?.name || 'Entrenamiento Libre',
+    dayName: session.day_name || session.routine_day?.name || t('workout:session.freeWorkout'),
     routineName: session.routine_name || session.routine_day?.routine?.name || null,
     date: formatShortDate(session.started_at),
     durationMinutes: session.duration_minutes || 0,

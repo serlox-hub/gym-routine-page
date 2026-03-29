@@ -1,0 +1,9 @@
+{
+  "allFieldsRequired": "Por favor completa todos los campos",
+  "invalidEmail": "El email no es válido",
+  "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
+  "passwordsDontMatch": "Las contraseñas no coinciden",
+  "nameRequired": "El nombre es obligatorio",
+  "enterPassword": "Por favor ingresa una contraseña",
+  "invalidFileFormat": "Formato de archivo inválido"
+}

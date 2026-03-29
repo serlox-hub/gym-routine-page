@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from 'lucide-react-native'
 import {
   MUSCLE_GROUP_COLORS,
@@ -10,9 +11,12 @@ import {
 } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
-const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-
 export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onDateChange }) {
+  const { t } = useTranslation()
+  const DAYS_OF_WEEK = [
+    t('common:time.mon'), t('common:time.tue'), t('common:time.wed'),
+    t('common:time.thu'), t('common:time.fri'), t('common:time.sat'), t('common:time.sun'),
+  ]
   const calendarData = useMemo(
     () => generateCalendarDays(currentDate, sessions),
     [currentDate, sessions],

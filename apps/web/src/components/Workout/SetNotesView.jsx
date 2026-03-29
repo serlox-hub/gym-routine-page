@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import { getVideoUrl } from '../../lib/videoStorage.js'
@@ -23,7 +24,7 @@ function VideoPlayer({ videoKey }) {
     setError(null)
     getVideoUrl(videoKey)
       .then(setUrl)
-      .catch(() => setError('Error al cargar video'))
+      .catch(() => setError('Error loading video'))
       .finally(() => setLoading(false))
   }, [videoKey])
 
@@ -64,6 +65,7 @@ function VideoPlayer({ videoKey }) {
 }
 
 function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
+  const { t } = useTranslation()
   const rirInfo = rir !== null && rir !== undefined ? RIR_LABELS[rir] : null
 
   return (
@@ -75,7 +77,7 @@ function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
     >
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-          Notas de la serie
+          {t('workout:set.notes')}
         </h3>
         <button
           onClick={onClose}
@@ -115,7 +117,7 @@ function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
             style={{ backgroundColor: colors.bgTertiary }}
           >
             <div className="text-xs mb-1" style={{ color: colors.textSecondary }}>
-              Nota
+              {t('common:labels.notes')}
             </div>
             <div className="text-sm" style={{ color: colors.textPrimary }}>
               {notes}
@@ -133,7 +135,7 @@ function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
         className="w-full mt-4 py-2 rounded-lg text-sm font-medium"
         style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
       >
-        Cerrar
+        {t('common:buttons.close')}
       </button>
     </Modal>
   )

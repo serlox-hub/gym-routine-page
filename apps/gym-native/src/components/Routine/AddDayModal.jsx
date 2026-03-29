@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { View, Text, TextInput } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Button, Modal } from '../ui'
 import { inputStyle, colors } from '../../lib/styles'
 
 export default function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({ name: '', estimated_duration_min: '' })
 
   const handleSubmit = () => {
@@ -24,12 +26,12 @@ export default function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="p-6">
       <Text className="text-primary text-lg font-semibold mb-4">
-        Añadir día {nextDayNumber}
+        {t('routine:day.add')} {nextDayNumber}
       </Text>
 
       <View className="gap-4">
         <View>
-          <Text className="text-secondary text-sm font-medium mb-1">Nombre *</Text>
+          <Text className="text-secondary text-sm font-medium mb-1">{t('routine:day.name')} *</Text>
           <TextInput
             value={form.name}
             onChangeText={(v) => setForm(prev => ({ ...prev, name: v }))}
@@ -42,7 +44,7 @@ export default function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, 
 
         <View>
           <Text className="text-secondary text-sm font-medium mb-1">
-            Duración estimada en minutos (opcional)
+            {t('routine:day.duration')} ({t('common:labels.optional')})
           </Text>
           <TextInput
             value={form.estimated_duration_min}
@@ -56,14 +58,14 @@ export default function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, 
 
         <View className="flex-row gap-3 justify-end pt-2">
           <Button variant="secondary" onPress={handleClose}>
-            Cancelar
+            {t('common:buttons.cancel')}
           </Button>
           <Button
             onPress={handleSubmit}
             disabled={!form.name.trim() || isPending}
             loading={isPending}
           >
-            Añadir
+            {t('common:buttons.add')}
           </Button>
         </View>
       </View>

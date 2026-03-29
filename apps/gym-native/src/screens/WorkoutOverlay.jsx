@@ -1,5 +1,6 @@
 import { View, StyleSheet } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import useWorkoutStore from '../stores/workoutStore'
 import { useRoutineDay } from '../hooks/useRoutines'
@@ -7,6 +8,7 @@ import { WorkoutSessionLayout, WorkoutLoadingScreen } from '../components/Workou
 import { colors } from '../lib/styles'
 
 export default function WorkoutOverlay() {
+  const { t } = useTranslation()
   const navigation = useNavigation()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const routineDayId = useWorkoutStore(state => state.routineDayId)
@@ -15,7 +17,7 @@ export default function WorkoutOverlay() {
 
   if (!workoutVisible && !sessionId) return null
 
-  const title = routineDayId ? (day?.name || 'Sesión en curso') : 'Entrenamiento Libre'
+  const title = routineDayId ? (day?.name || t('workout:session.active')) : t('workout:session.freeWorkout')
 
   return (
     <View style={[styles.overlay, workoutVisible ? styles.visible : styles.hidden]}>

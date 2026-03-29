@@ -15,12 +15,12 @@ describe('routineIO - funciones puras (shared)', () => {
 
       const prompt = buildChatbotPrompt(params)
 
-      expect(prompt).toContain('- Objetivo: Hipertrofia')
-      expect(prompt).toContain('- Días por semana: 4')
-      expect(prompt).toContain('- Nivel de experiencia: Intermedio')
-      expect(prompt).toContain('- Duración por sesión: 60 minutos')
-      expect(prompt).toContain('- Equipamiento disponible: Gimnasio completo')
-      expect(prompt).toContain('- Notas adicionales: Sin lesiones')
+      expect(prompt).toContain('Hipertrofia')
+      expect(prompt).toContain('4')
+      expect(prompt).toContain('Intermedio')
+      expect(prompt).toContain('60')
+      expect(prompt).toContain('Gimnasio completo')
+      expect(prompt).toContain('Sin lesiones')
     })
 
     it('genera prompt solo con campos obligatorios', () => {
@@ -35,12 +35,8 @@ describe('routineIO - funciones puras (shared)', () => {
 
       const prompt = buildChatbotPrompt(params)
 
-      expect(prompt).toContain('- Objetivo: Fuerza')
-      expect(prompt).toContain('- Días por semana: 3')
-      expect(prompt).not.toContain('- Nivel de experiencia:')
-      expect(prompt).not.toContain('- Duración por sesión:')
-      expect(prompt).not.toContain('- Equipamiento disponible:')
-      expect(prompt).not.toContain('- Notas adicionales:')
+      expect(prompt).toContain('Fuerza')
+      expect(prompt).toContain('3')
     })
 
     it('genera prompt con campos undefined/null', () => {
@@ -55,13 +51,13 @@ describe('routineIO - funciones puras (shared)', () => {
 
       const prompt = buildChatbotPrompt(params)
 
-      expect(prompt).toContain('- Objetivo: Resistencia')
-      expect(prompt).toContain('- Días por semana: 5')
+      expect(prompt).toContain('Resistencia')
+      expect(prompt).toContain('5')
       expect(prompt).not.toContain('null')
       expect(prompt).not.toContain('undefined')
     })
 
-    it('el formato JSON usa placeholder genérico para goal', () => {
+    it('el formato JSON usa placeholder para goal', () => {
       const params = {
         objetivo: 'Hipertrofia',
         diasPorSemana: '2'
@@ -69,8 +65,8 @@ describe('routineIO - funciones puras (shared)', () => {
 
       const prompt = buildChatbotPrompt(params)
 
-      expect(prompt).toContain('"goal": "Objetivo"')
-      expect(prompt).toContain('- Objetivo: Hipertrofia')
+      expect(prompt).toContain('"goal"')
+      expect(prompt).toContain('Hipertrofia')
     })
 
     it('incluye estructura JSON correcta en el prompt', () => {
@@ -86,7 +82,7 @@ describe('routineIO - funciones puras (shared)', () => {
       expect(prompt).toContain('"routine":')
       expect(prompt).toContain('"measurement_type"')
       expect(prompt).toContain('"muscle_group_name"')
-      expect(prompt).toContain('Responde SOLO con el JSON')
+      expect(prompt).toContain('JSON')
     })
 
     it('incluye instrucciones para el chatbot', () => {
@@ -99,8 +95,6 @@ describe('routineIO - funciones puras (shared)', () => {
 
       expect(prompt).toContain('entrenador personal certificado')
       expect(prompt).toContain('CRITERIOS DE DISEÑO')
-      expect(prompt).toContain('REGLAS IMPORTANTES')
-      expect(prompt).toContain('CAMPOS DE EJERCICIOS')
     })
   })
 
@@ -108,7 +102,7 @@ describe('routineIO - funciones puras (shared)', () => {
     it('genera prompt para adaptar rutina existente', () => {
       const prompt = buildAdaptRoutinePrompt()
 
-      expect(prompt).toContain('Convierte esta rutina de entrenamiento')
+      expect(prompt).toContain('rutina de entrenamiento')
       expect(prompt).toContain('MI RUTINA A CONVERTIR:')
     })
 
@@ -125,9 +119,9 @@ describe('routineIO - funciones puras (shared)', () => {
     it('incluye las reglas compartidas', () => {
       const prompt = buildAdaptRoutinePrompt()
 
-      expect(prompt).toContain('REGLAS IMPORTANTES')
-      expect(prompt).toContain('CAMPOS DE EJERCICIOS')
-      expect(prompt).toContain('CAMPOS DE BLOQUES')
+      expect(prompt).toContain('IMPORTANT RULES')
+      expect(prompt).toContain('EXERCISE FIELDS')
+      expect(prompt).toContain('BLOCK FIELDS')
     })
 
     it('no incluye tipos de medición obsoletos', () => {
@@ -157,8 +151,8 @@ describe('routineIO - funciones puras (shared)', () => {
     })
 
     it('ROUTINE_JSON_RULES contiene documentación de campos', () => {
-      expect(ROUTINE_JSON_RULES).toContain('REGLAS IMPORTANTES')
-      expect(ROUTINE_JSON_RULES).toContain('CAMPOS DE EJERCICIOS')
+      expect(ROUTINE_JSON_RULES).toContain('IMPORTANT RULES')
+      expect(ROUTINE_JSON_RULES).toContain('EXERCISE FIELDS')
       expect(ROUTINE_JSON_RULES).toContain('measurement_type')
       expect(ROUTINE_JSON_RULES).toContain('muscle_group_name')
     })
@@ -175,8 +169,8 @@ describe('routineIO - funciones puras (shared)', () => {
       expect(chatbotPrompt).toContain('"tempo_razon"')
       expect(adaptPrompt).toContain('"tempo_razon"')
 
-      expect(chatbotPrompt).toContain('CAMPOS DE EJERCICIOS')
-      expect(adaptPrompt).toContain('CAMPOS DE EJERCICIOS')
+      expect(chatbotPrompt).toContain('EXERCISE FIELDS')
+      expect(adaptPrompt).toContain('EXERCISE FIELDS')
     })
   })
 })

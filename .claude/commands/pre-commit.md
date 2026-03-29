@@ -135,7 +135,57 @@ for f in packages/shared/src/lib/*.js; do
 done
 ```
 
-## Paso 8: DRY y duplicacion (CRITICO)
+## Paso 8: Internacionalizacion (i18n) (CRITICO)
+
+Toda cadena de texto visible al usuario DEBE usar el sistema de i18n. Tolerancia cero con strings hardcodeados.
+
+### Deteccion de strings hardcodeados
+
+Para cada archivo `.jsx` modificado en `apps/web/src/` y `apps/gym-native/src/`, buscar strings en espanol o ingles hardcodeados que deberian estar traducidos:
+
+```bash
+# Buscar strings sospechosos en archivos modificados (excluir imports, comments, route names, classNames)
+for f in $(git diff --name-only HEAD | grep '\.jsx$' | grep -v test); do
+  grep -nE "'[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+[^']*'|\"[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+[^\"]*\"" "$f" | \
+    grep -v "import\|from\|//\|className\|style\|navigate\|console\|key=\|testID\|data-" | \
+    grep -v "Calentamiento\|Principal\|Añadido\|Pecho\|Espalda" || true
+done
+```
+
+**Excepciones aceptables** (NO necesitan i18n):
+- Nombres de rutas de navegacion (`navigate('Home')`, `navigate('Login')`)
+- Valores de DB (`'Calentamiento'`, `'Principal'`, `'Añadido'`, nombres de muscle groups como keys)
+- Constantes tecnicas (measurement types, status values)
+- Contenido decorativo de landing page mockups
+
+**Todo lo demas** debe usar `t('namespace:key')`.
+
+### Verificar que los archivos JSON estan sincronizados
+
+Si se anadieron keys nuevas a los JSON de traduccion:
+
+```bash
+# Comparar keys entre es/ y en/ para cada namespace
+for ns in common auth routine exercise workout body validation data; do
+  es_keys=$(jq -r '[paths(scalars)] | map(join(".")) | sort[]' packages/shared/src/i18n/locales/es/${ns}.json)
+  en_keys=$(jq -r '[paths(scalars)] | map(join(".")) | sort[]' packages/shared/src/i18n/locales/en/${ns}.json)
+  diff <(echo "$es_keys") <(echo "$en_keys") && echo "${ns}: OK" || echo "DESINCRONIZADO: ${ns}.json — faltan keys en alguno de los idiomas"
+done
+```
+
+Si hay keys que existen en un idioma pero no en el otro, es un problema que debe corregirse.
+
+### Verificar uso correcto en componentes
+
+Para cada componente modificado:
+
+1. **useTranslation** importado si tiene strings traducidos
+2. **Namespace correcto** — usar el namespace que corresponde al dominio (routine para rutinas, workout para sesiones, etc.)
+3. **Datos de referencia** — usar helpers: `translateMuscleGroup()`, `translateBlockName()`, `getSensationLabel()`, no `t()` directo para estos
+4. **Shared code** — usar `import { t } from '../i18n/index.js'`, no `useTranslation()` (que es solo para componentes React)
+
+## Paso 9: DRY y duplicacion (CRITICO)
+
 
 Tolerancia cero con duplicacion. Buscar en TODOS los archivos modificados y compararlos con el resto del codebase:
 
@@ -152,7 +202,7 @@ Para verificar, buscar patrones similares entre los archivos modificados y sus e
 diff <(grep -v 'import\|from\|export' apps/web/src/components/FEATURE/FILE.jsx) <(grep -v 'import\|from\|export' apps/gym-native/src/components/FEATURE/FILE.jsx)
 ```
 
-## Paso 9: Paridad web/native (CRITICO)
+## Paso 10: Paridad web/native (CRITICO)
 
 Toda funcionalidad debe implementarse tanto en web como en native. Son dos clientes del mismo producto.
 
@@ -177,14 +227,14 @@ done
 
 Para cada par encontrado, LEER ambos archivos y verificar:
 - **Mismos estados**: los mismos useState, mismos handlers, misma logica condicional
-- **Mismos textos UI**: labels, botones, mensajes deben ser identicos
+- **Mismas claves i18n**: ambos deben usar las mismas `t('namespace:key')` para el mismo texto. Si uno usa `t('routine:delete')` y el otro tiene "Eliminar rutina" hardcodeado, es un error
 - **Mismo layout conceptual**: misma jerarquia visual (header/body/footer), misma disposicion de elementos
 - **Mismos valores**: validaciones (ej. `<= 7`), tamanhos de iconos, colores, constantes
 - **Mismos datos consumidos**: mismos campos del hook/API
 
 Diferencias aceptables: JSX vs View/Text, onClick vs onPress, className vs style, lucide-react vs lucide-react-native, funcionalidad que depende de APIs de plataforma (ej. html2canvas en web).
 
-## Paso 10: routineIO.js
+## Paso 11: routineIO.js
 
 Solo si hay cambios en el modelo de datos (tablas routines, routine_days, routine_blocks, routine_exercises, exercises):
 

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Modal, Input, Textarea } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { getMeasurementLabel, parseDecimal } from '@gym/shared'
 
 function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = 'cm', record = null, isPending }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({
     value: '',
     notes: '',
@@ -48,7 +50,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="p-6">
       <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-        {isEditing ? `Editar ${label.toLowerCase()}` : `Registrar ${label.toLowerCase()}`}
+        {isEditing ? `${t('body:measurements.edit')} ${label.toLowerCase()}` : `${t('body:measurements.record')} ${label.toLowerCase()}`}
       </h3>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,7 +67,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
         />
 
         <Textarea
-          label="Notas (opcional)"
+          label={`${t('common:labels.notes')} (${t('common:labels.optional')})`}
           value={form.notes}
           onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
           placeholder="Ej: En ayunas"
@@ -74,13 +76,13 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
 
         <div className="flex gap-3 justify-end pt-2">
           <Button variant="secondary" type="button" onClick={handleClose}>
-            Cancelar
+            {t('common:buttons.cancel')}
           </Button>
           <Button
             type="submit"
             disabled={!form.value || parseDecimal(form.value) <= 0 || isPending}
           >
-            {isPending ? 'Guardando...' : isEditing ? 'Guardar' : 'Registrar'}
+            {isPending ? t('common:buttons.loading') : isEditing ? t('common:buttons.save') : t('body:measurements.record')}
           </Button>
         </div>
       </form>

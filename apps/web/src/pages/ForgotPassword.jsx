@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button, Input } from '@/components/ui'
 import { colors } from '../lib/styles.js'
 
 function ForgotPassword() {
+  const { t } = useTranslation()
   const { resetPassword, isLoading, error, clearError, isAuthenticated } = useAuth()
 
   const [email, setEmail] = useState('')
@@ -15,12 +17,12 @@ function ForgotPassword() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
         <Card className="w-full max-w-md p-6 text-center">
-          <h1 className="text-2xl font-bold mb-4">Enlace abierto en otra pestaña</h1>
+          <h1 className="text-2xl font-bold mb-4">{t('auth:forgotPassword.openedInTab')}</h1>
           <p className="mb-6" style={{ color: colors.textSecondary }}>
-            Continúa el proceso de cambio de contraseña en la pestaña que se abrió con el enlace del correo.
+            {t('auth:forgotPassword.continueInTab')}
           </p>
           <p className="text-sm" style={{ color: colors.textSecondary }}>
-            Puedes cerrar esta pestaña.
+            {t('auth:forgotPassword.canCloseTab')}
           </p>
         </Card>
       </div>
@@ -33,7 +35,7 @@ function ForgotPassword() {
     clearError()
 
     if (!email) {
-      setLocalError('Por favor ingresa tu email')
+      setLocalError(t('auth:forgotPassword.enterEmail'))
       return
     }
 
@@ -49,12 +51,12 @@ function ForgotPassword() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
         <Card className="w-full max-w-md p-6 text-center">
-          <h1 className="text-2xl font-bold mb-4">Revisa tu email</h1>
+          <h1 className="text-2xl font-bold mb-4">{t('auth:forgotPassword.checkEmail')}</h1>
           <p className="mb-6" style={{ color: colors.textSecondary }}>
-            Te hemos enviado un enlace para restablecer tu contraseña a <strong style={{ color: colors.textLight }}>{email}</strong>
+            {t('auth:forgotPassword.success', { email })}
           </p>
           <Link to="/login">
-            <Button className="w-full">Volver al inicio de sesión</Button>
+            <Button className="w-full">{t('auth:forgotPassword.backToLogin')}</Button>
           </Link>
         </Card>
       </div>
@@ -64,15 +66,15 @@ function ForgotPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
       <Card className="w-full max-w-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-2">Recuperar contraseña</h1>
+        <h1 className="text-2xl font-bold text-center mb-2">{t('auth:forgotPassword.title')}</h1>
         <p className="text-center mb-6" style={{ color: colors.textSecondary }}>
-          Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña
+          {t('auth:forgotPassword.description')}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             id="email"
-            label="Email"
+            label={t('auth:login.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -91,13 +93,13 @@ function ForgotPassword() {
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? 'Enviando...' : 'Enviar enlace'}
+            {isLoading ? t('common:buttons.loading') : t('auth:forgotPassword.submit')}
           </Button>
         </form>
 
         <p className="text-center mt-4 text-sm" style={{ color: colors.textSecondary }}>
           <Link to="/login" className="hover:underline" style={{ color: colors.accent }}>
-            Volver al inicio de sesión
+            {t('auth:forgotPassword.backToLogin')}
           </Link>
         </p>
       </Card>

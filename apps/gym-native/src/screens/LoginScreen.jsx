@@ -9,11 +9,13 @@ import {
   ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Card, GoogleIcon } from '../components/ui'
 import { colors } from '../lib/styles'
 
 export default function LoginScreen({ navigation }) {
+  const { t } = useTranslation()
   const { login, loginWithGoogle, isLoading, error, clearError } = useAuth()
 
   const [email, setEmail] = useState('')
@@ -25,7 +27,7 @@ export default function LoginScreen({ navigation }) {
     clearError()
 
     if (!email || !password) {
-      setLocalError('Por favor completa todos los campos')
+      setLocalError(t('auth:login.fillAllFields'))
       return
     }
 
@@ -47,11 +49,11 @@ export default function LoginScreen({ navigation }) {
         >
           <Card className="p-6">
             <Text className="text-primary text-2xl font-bold text-center mb-6">
-              Iniciar Sesión
+              {t('auth:login.title')}
             </Text>
 
             <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">Email</Text>
+              <Text className="text-primary text-sm font-medium mb-1">{t('auth:login.email')}</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -65,7 +67,7 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             <View className="mb-1">
-              <Text className="text-primary text-sm font-medium mb-1">Contraseña</Text>
+              <Text className="text-primary text-sm font-medium mb-1">{t('auth:login.password')}</Text>
               <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -81,7 +83,7 @@ export default function LoginScreen({ navigation }) {
               onPress={() => navigation.navigate('ForgotPassword')}
               className="self-end mb-4"
             >
-              <Text className="text-accent text-sm">¿Olvidaste tu contraseña?</Text>
+              <Text className="text-accent text-sm">{t('auth:login.forgotPassword')}</Text>
             </Pressable>
 
             {displayError && (
@@ -91,12 +93,12 @@ export default function LoginScreen({ navigation }) {
             )}
 
             <Button onPress={handleLogin} loading={isLoading} className="mb-4">
-              Entrar
+              {t('auth:login.submit')}
             </Button>
 
             <View className="flex-row items-center gap-3 mb-4">
               <View className="flex-1 h-px bg-border" />
-              <Text className="text-secondary text-xs">o</Text>
+              <Text className="text-secondary text-xs">{t('common:labels.or')}</Text>
               <View className="flex-1 h-px bg-border" />
             </View>
 
@@ -108,14 +110,14 @@ export default function LoginScreen({ navigation }) {
             >
               <GoogleIcon size={20} />
               <Text className="text-base font-medium" style={{ color: colors.textDark }}>
-                Continuar con Google
+                {t('auth:login.google')}
               </Text>
             </Pressable>
 
             <Pressable onPress={() => navigation.navigate('Signup')}>
               <Text className="text-secondary text-sm text-center">
-                ¿No tienes cuenta?{' '}
-                <Text className="text-accent">Regístrate</Text>
+                {t('auth:login.noAccount')}{' '}
+                <Text className="text-accent">{t('auth:login.createAccount')}</Text>
               </Text>
             </Pressable>
           </Card>

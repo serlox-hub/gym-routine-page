@@ -1,5 +1,6 @@
 import { getClient } from './_client.js'
 import { MeasurementType } from '../lib/measurementTypes.js'
+import { t } from '../i18n/index.js'
 
 export async function fetchExercisesWithMuscleGroup() {
   const { data, error } = await getClient()
@@ -180,7 +181,7 @@ export async function deleteExercise(exerciseId) {
   if (checkError) throw checkError
 
   if (usedInRoutines && usedInRoutines.length > 0) {
-    throw new Error('Este ejercicio está siendo usado en una rutina. Elimínalo de la rutina primero.')
+    throw new Error(t('exercise:usedInRoutine'))
   }
 
   const { error } = await getClient()

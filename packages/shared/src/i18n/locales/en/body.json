@@ -1,0 +1,47 @@
+{
+  "title": "Body Metrics",
+  "weight": {
+    "title": "Body Weight",
+    "tab": "Weight",
+    "record": "Record weight",
+    "edit": "Edit weight",
+    "delete": "Delete record",
+    "deleteConfirm": "Delete this weight record?",
+    "kg": "kg",
+    "lb": "lb",
+    "current": "Current weight",
+    "change": "Change",
+    "min": "Minimum",
+    "max": "Maximum",
+    "history": "History",
+    "noRecords": "No weight records",
+    "trend": "Trend",
+    "submit": "Record"
+  },
+  "measurements": {
+    "title": "Body Measurements",
+    "record": "Record measurement",
+    "edit": "Edit measurement",
+    "delete": "Delete record",
+    "deleteConfirm": "Delete this measurement record?",
+    "configure": "Configure measurements",
+    "configureDescription": "Select which measurements you want to track.",
+    "selectToTrack": "Select measurements to track",
+    "selectType": "Select measurement type",
+    "unit": "cm",
+    "noRecords": "No measurement records",
+    "types": {
+      "cintura": "Waist",
+      "pecho": "Chest",
+      "cadera": "Hips",
+      "brazo_izquierdo": "Left arm",
+      "brazo_derecho": "Right arm",
+      "muslo_izquierdo": "Left thigh",
+      "muslo_derecho": "Right thigh",
+      "pantorrilla_izquierda": "Left calf",
+      "pantorrilla_derecha": "Right calf",
+      "cuello": "Neck",
+      "hombros": "Shoulders"
+    }
+  }
+}

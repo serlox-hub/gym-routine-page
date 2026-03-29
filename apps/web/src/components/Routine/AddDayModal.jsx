@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Modal, Input } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
 function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({
     name: '',
     estimated_duration_min: '',
@@ -29,12 +31,12 @@ function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="p-6">
       <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-        Añadir día {nextDayNumber}
+        {t('routine:day.add')} {nextDayNumber}
       </h3>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Nombre *"
+          label={`${t('routine:day.name')} *`}
           type="text"
           value={form.name}
           onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
@@ -43,7 +45,7 @@ function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
         />
 
         <Input
-          label="Duración estimada en minutos (opcional)"
+          label={`${t('routine:day.duration')} (${t('common:labels.optional')})`}
           type="number"
           min="1"
           value={form.estimated_duration_min}
@@ -53,13 +55,13 @@ function AddDayModal({ isOpen, onClose, onSubmit, nextDayNumber, isPending }) {
 
         <div className="flex gap-3 justify-end pt-2">
           <Button variant="secondary" type="button" onClick={handleClose}>
-            Cancelar
+            {t('common:buttons.cancel')}
           </Button>
           <Button
             type="submit"
             disabled={!form.name.trim() || isPending}
           >
-            {isPending ? 'Guardando...' : 'Añadir'}
+            {isPending ? t('common:buttons.loading') : t('common:buttons.add')}
           </Button>
         </div>
       </form>

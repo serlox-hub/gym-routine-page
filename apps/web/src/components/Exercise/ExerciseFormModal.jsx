@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useCreateExercise, useUpdateExercise, useExercise } from '../../hooks/useExercises.js'
 import { Modal } from '../ui/index.js'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm.jsx'
@@ -5,6 +6,7 @@ import ExerciseForm from './ExerciseForm.jsx'
 import { colors } from '../../lib/styles.js'
 
 export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose, onSaveSuccess }) {
+  const { t } = useTranslation()
   const isEdit = !!exerciseId
   const { data: exercise } = useExercise(exerciseId)
   const createExercise = useCreateExercise()
@@ -52,22 +54,21 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
         onBack={onClose}
         onSubmit={() => ExerciseForm._submit?.()}
         isPending={mutation.isPending}
-        backLabel="Cancelar"
-        submitLabel="Guardar"
-        pendingLabel="Guardando..."
+        submitLabel={t('common:buttons.save')}
       />
     </div>
   )
 }
 
 export default function ExerciseFormModal({ isOpen, onClose, exerciseId = null, initialName = '' }) {
+  const { t } = useTranslation()
   const isEdit = !!exerciseId
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} position="center" maxWidth="max-w-md">
       <div className="p-4" style={{ borderBottom: `1px solid ${colors.border}` }}>
         <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-          {isEdit ? 'Editar ejercicio' : 'Nuevo ejercicio'}
+          {isEdit ? t('exercise:edit') : t('exercise:new')}
         </p>
       </div>
       <ExerciseFormPanel exerciseId={exerciseId} initialName={initialName} onClose={onClose} />

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Info, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
 import { Card, DropdownMenu, ReorderModal } from '../ui'
 import { colors } from '../../lib/styles'
@@ -21,6 +22,7 @@ export default function ExerciseCard({
   totalExercises = 1,
   positionLabels = [],
 }) {
+  const { t } = useTranslation()
   const { exercise, series, reps, rir, rest_seconds, tempo } = routineExercise
   const [showReorder, setShowReorder] = useState(false)
 
@@ -31,13 +33,13 @@ export default function ExerciseCard({
   }
 
   const menuItems = [
-    { icon: Pencil, label: 'Editar', onPress: onEdit },
-    { icon: Repeat2, label: 'Sustituir', onPress: onReplace },
-    { icon: Copy, label: 'Duplicar', onPress: onDuplicate },
-    { icon: FolderInput, label: 'Mover de día', onPress: onMoveToDay },
+    { icon: Pencil, label: t('common:buttons.edit'), onPress: onEdit },
+    { icon: Repeat2, label: t('routine:exercise.replace'), onPress: onReplace },
+    { icon: Copy, label: t('routine:exercise.duplicateExercise'), onPress: onDuplicate },
+    { icon: FolderInput, label: t('routine:exercise.moveToDay'), onPress: onMoveToDay },
     onReorderToPosition && totalExercises > 1 && { type: 'separator' },
-    onReorderToPosition && totalExercises > 1 && { icon: ArrowUpDown, label: 'Reordenar', onPress: () => setShowReorder(true) },
-    { icon: Trash2, label: 'Eliminar', onPress: onDelete, danger: true },
+    onReorderToPosition && totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onPress: () => setShowReorder(true) },
+    { icon: Trash2, label: t('common:buttons.delete'), onPress: onDelete, danger: true },
   ].filter(Boolean)
 
   const content = (

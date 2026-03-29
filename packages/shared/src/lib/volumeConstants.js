@@ -65,11 +65,24 @@ export const VOLUME_BAR_COLORS = {
   over: 'rgba(248,81,73,0.15)',
 }
 
-// Items de la leyenda
+import { t } from '../i18n/index.js'
+
+// Items de la leyenda — getter for translated descriptions
+export function getVolumeLegendItems() {
+  return [
+    { label: '< MV', description: t('data:volumeLegend.belowMv'), color: 'rgba(139,148,158,0.4)' },
+    { label: 'MV', description: t('data:volumeLegend.mv'), color: 'rgba(210,153,34,0.4)' },
+    { label: 'MEV', description: t('data:volumeLegend.mev'), color: 'rgba(63,185,80,0.4)' },
+    { label: 'MAV', description: t('data:volumeLegend.mav'), color: 'rgba(88,166,255,0.4)' },
+    { label: 'MRV', description: t('data:volumeLegend.mrv'), color: 'rgba(248,81,73,0.4)' },
+  ]
+}
+
+// Keep backwards-compatible static export with lazy getters
 export const VOLUME_LEGEND_ITEMS = [
-  { label: '< MV', description: 'Insuficiente', color: 'rgba(139,148,158,0.4)' },
-  { label: 'MV', description: 'Mantenimiento', color: 'rgba(210,153,34,0.4)' },
-  { label: 'MEV', description: 'Minimo efectivo', color: 'rgba(63,185,80,0.4)' },
-  { label: 'MAV', description: 'Maximo adaptativo', color: 'rgba(88,166,255,0.4)' },
-  { label: 'MRV', description: 'Maximo recuperable', color: 'rgba(248,81,73,0.4)' },
+  { label: '< MV', get description() { return t('data:volumeLegend.belowMv') }, color: 'rgba(139,148,158,0.4)' },
+  { label: 'MV', get description() { return t('data:volumeLegend.mv') }, color: 'rgba(210,153,34,0.4)' },
+  { label: 'MEV', get description() { return t('data:volumeLegend.mev') }, color: 'rgba(63,185,80,0.4)' },
+  { label: 'MAV', get description() { return t('data:volumeLegend.mav') }, color: 'rgba(88,166,255,0.4)' },
+  { label: 'MRV', get description() { return t('data:volumeLegend.mrv') }, color: 'rgba(248,81,73,0.4)' },
 ]

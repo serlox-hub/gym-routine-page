@@ -1,5 +1,6 @@
 import { memo, useState, useEffect, useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Info, Plus, Trash2, ArrowUpDown, Repeat2, Pencil } from 'lucide-react-native'
 import { Card, Badge, ConfirmModal, ReorderModal } from '../ui'
 import ExerciseHistoryModal from './ExerciseHistoryModal'
@@ -15,6 +16,7 @@ import { MeasurementType, getHaptics } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds }) {
+  const { t } = useTranslation()
   const [showNotes, setShowNotes] = useState(false)
   const hasNotes = exercise.instructions || notes
 
@@ -27,14 +29,14 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
         {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
         {hasNotes && (
           <Pressable onPress={() => setShowNotes(!showNotes)} className="px-2 py-0.5 rounded" style={{ backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary }}>
-            <Text className="text-xs" style={{ color: showNotes ? colors.teal : colors.textSecondary }}>{showNotes ? '▲' : '▼'} Notas</Text>
+            <Text className="text-xs" style={{ color: showNotes ? colors.teal : colors.textSecondary }}>{showNotes ? '▲' : '▼'} {t('common:labels.notes')}</Text>
           </Pressable>
         )}
       </View>
       {showNotes && hasNotes && (
         <View className="mt-2 p-2 rounded gap-1" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
-          {exercise.instructions && <Text className="text-xs" style={{ color: colors.textPrimary }}><Text style={{ color: colors.accent }}>Ejecución: </Text>{exercise.instructions}</Text>}
-          {notes && <Text className="text-xs" style={{ color: colors.textPrimary }}><Text style={{ color: colors.warning }}>Nota: </Text>{notes}</Text>}
+          {exercise.instructions && <Text className="text-xs" style={{ color: colors.textPrimary }}><Text style={{ color: colors.accent }}>{t('exercise:instructions')}: </Text>{exercise.instructions}</Text>}
+          {notes && <Text className="text-xs" style={{ color: colors.textPrimary }}><Text style={{ color: colors.warning }}>{t('common:labels.notes')}: </Text>{notes}</Text>}
         </View>
       )}
     </View>
@@ -42,6 +44,7 @@ function WarmupExerciseCard({ exercise, series, reps, tempo, notes, rest_seconds
 }
 
 function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset, onReorder, currentIndex, totalExercises, positionLabels, isReordering, existingSupersets = [] }) {
+  const { t } = useTranslation()
   const { id, sessionExerciseId, exercise, series, reps, rir, tempo, notes, rest_seconds, routine_exercise } = sessionExercise
   const tempoRazon = routine_exercise?.tempo_razon
   const [showNotes, setShowNotes] = useState(false)
@@ -91,14 +94,14 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   }, [isCompleted])
 
   const menuItems = [
-    { label: 'Ver historial', icon: Info, onPress: () => setShowHistory(true) },
-    { label: 'Editar', icon: Pencil, onPress: () => setShowEdit(true) },
-    { label: 'Añadir serie', icon: Plus, onPress: addSet },
-    onReplace && { label: 'Sustituir', icon: Repeat2, onPress: () => setShowReplace(true) },
+    { label: t('workout:history.title'), icon: Info, onPress: () => setShowHistory(true) },
+    { label: t('common:buttons.edit'), icon: Pencil, onPress: () => setShowEdit(true) },
+    { label: t('workout:set.addSet'), icon: Plus, onPress: addSet },
+    onReplace && { label: t('routine:exercise.replace'), icon: Repeat2, onPress: () => setShowReplace(true) },
     onReorder && totalExercises > 1 && { type: 'separator' },
-    onReorder && totalExercises > 1 && { label: 'Reordenar', icon: ArrowUpDown, onPress: () => setShowReorder(true), disabled: isReordering },
+    onReorder && totalExercises > 1 && { label: t('routine:reorder'), icon: ArrowUpDown, onPress: () => setShowReorder(true), disabled: isReordering },
     onRemove && { type: 'separator' },
-    onRemove && { label: 'Quitar ejercicio', icon: Trash2, onPress: () => setShowRemoveConfirm(true), danger: true },
+    onRemove && { label: t('routine:exercise.removeFromRoutine'), icon: Trash2, onPress: () => setShowRemoveConfirm(true), danger: true },
   ].filter(Boolean)
 
   const justCompleted = isCompleted && !collapsed
@@ -114,8 +117,8 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         </>
       )}
       <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={exercise.name} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} routineDayId={routineDayId} />
-      <ConfirmModal isOpen={showRemoveConfirm} title="Quitar ejercicio" message={`¿Seguro que quieres quitar "${exercise.name}" de esta sesión?`} confirmText="Quitar" onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
-      <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title="Sustituir ejercicio" subtitle={`Sustituyendo: ${exercise.name}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
+      <ConfirmModal isOpen={showRemoveConfirm} title={t('routine:exercise.removeFromRoutine')} message={t('routine:exercise.removeConfirm', { name: exercise.name })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
+      <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${exercise.name}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
       {showReorder && <ReorderModal visible onClose={() => setShowReorder(false)} totalItems={totalExercises} currentIndex={currentIndex} positionLabels={positionLabels} onSelect={(i) => { onReorder(currentIndex, i); setShowReorder(false) }} />}
       <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />
     </>

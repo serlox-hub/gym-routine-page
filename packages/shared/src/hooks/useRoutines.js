@@ -25,6 +25,7 @@ import {
   moveRoutineExerciseToDay as apiMoveRoutineExerciseToDay,
 } from '../api/routineApi.js'
 import { getNotifier } from '../notifications.js'
+import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 
 export function useRoutines() {
@@ -86,7 +87,7 @@ export function useCreateRoutine() {
     mutationFn: (routine) => apiCreateRoutine({ userId, routine }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
-      getNotifier()?.show('Rutina creada', 'success')
+      getNotifier()?.show(t('routine:created'), 'success')
     },
   })
 }
@@ -121,7 +122,7 @@ export function useDeleteRoutine() {
     mutationFn: (routineId) => apiDeleteRoutine(routineId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
-      getNotifier()?.show('Rutina eliminada', 'success')
+      getNotifier()?.show(t('routine:deleted'), 'success')
     },
   })
 }

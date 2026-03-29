@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.js'
+
 // Tipos de medidas corporales disponibles
 export const BODY_MEASUREMENT_TYPES = {
   WAIST: 'cintura',
@@ -13,36 +15,36 @@ export const BODY_MEASUREMENT_TYPES = {
   SHOULDERS: 'hombros',
 }
 
-// Metadatos para UI
-export const BODY_MEASUREMENT_INFO = {
-  cintura: { label: 'Cintura', order: 1 },
-  pecho: { label: 'Pecho', order: 2 },
-  cadera: { label: 'Cadera', order: 3 },
-  brazo_izquierdo: { label: 'Brazo izq.', order: 4 },
-  brazo_derecho: { label: 'Brazo der.', order: 5 },
-  muslo_izquierdo: { label: 'Muslo izq.', order: 6 },
-  muslo_derecho: { label: 'Muslo der.', order: 7 },
-  pantorrilla_izquierda: { label: 'Pantorrilla izq.', order: 8 },
-  pantorrilla_derecha: { label: 'Pantorrilla der.', order: 9 },
-  cuello: { label: 'Cuello', order: 10 },
-  hombros: { label: 'Hombros', order: 11 },
+// Order for display
+const MEASUREMENT_ORDER = {
+  cintura: 1,
+  pecho: 2,
+  cadera: 3,
+  brazo_izquierdo: 4,
+  brazo_derecho: 5,
+  muslo_izquierdo: 6,
+  muslo_derecho: 7,
+  pantorrilla_izquierda: 8,
+  pantorrilla_derecha: 9,
+  cuello: 10,
+  hombros: 11,
 }
 
-/**
- * Obtiene los tipos de medidas ordenados por su orden definido
- * @returns {string[]} Array de keys de medidas ordenadas
- */
+// Metadatos para UI — labels are translated dynamically
+export const BODY_MEASUREMENT_INFO = Object.fromEntries(
+  Object.entries(MEASUREMENT_ORDER).map(([key, order]) => [
+    key,
+    { get label() { return t(`body:measurements.types.${key}`) }, order },
+  ])
+)
+
 export function getOrderedMeasurementTypes() {
   return Object.entries(BODY_MEASUREMENT_INFO)
     .sort((a, b) => a[1].order - b[1].order)
     .map(([key]) => key)
 }
 
-/**
- * Obtiene el label de una medida
- * @param {string} type - Tipo de medida
- * @returns {string} Label para mostrar en UI
- */
 export function getMeasurementLabel(type) {
-  return BODY_MEASUREMENT_INFO[type]?.label || type
+  if (!type) return type
+  return t(`body:measurements.types.${type}`, { defaultValue: type })
 }

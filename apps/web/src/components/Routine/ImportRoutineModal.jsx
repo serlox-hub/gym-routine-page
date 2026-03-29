@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Upload, FileText, RefreshCw } from 'lucide-react'
 import { Button } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { readJsonFile } from '../../lib/routineIO.js'
 
 function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMode = null }) {
+  const { t } = useTranslation()
   const [mode, setMode] = useState(null)
   const [jsonText, setJsonText] = useState('')
   const [error, setError] = useState('')
@@ -27,7 +29,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
       onImport(data)
       handleClose()
     } catch {
-      setError('Error al leer el archivo')
+      setError(t('common:import.importError'))
     } finally {
       setIsReading(false)
     }
@@ -42,7 +44,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
       onImport(data)
       handleClose()
     } catch {
-      setError('Formato inválido. Verifica el contenido.')
+      setError(t('common:import.invalidFormat'))
     }
   }
 
@@ -66,7 +68,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
       >
         <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: colors.border }}>
           <h3 className="font-semibold" style={{ color: colors.textPrimary }}>
-            Importar rutina
+            {t('routine:newFlow.import')}
           </h3>
           <button
             onClick={handleClose}
@@ -89,9 +91,9 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
                 <Upload size={20} style={{ color: colors.success }} />
                 <div className="text-left">
                   <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                    {isReading ? 'Leyendo archivo...' : 'Desde archivo'}
+                    {isReading ? t('common:buttons.loading') : t('routine:import.fromFile')}
                   </p>
-                  <p className="text-xs" style={{ color: colors.textSecondary }}>Seleccionar archivo de rutina</p>
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>{t('routine:import.selectFile')}</p>
                 </div>
               </button>
               <button
@@ -101,8 +103,8 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
               >
                 <FileText size={20} style={{ color: colors.accent }} />
                 <div className="text-left">
-                  <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>Pegar texto</p>
-                  <p className="text-xs" style={{ color: colors.textSecondary }}>Pegar contenido directamente</p>
+                  <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>{t('routine:import.pasteText')}</p>
+                  <p className="text-xs" style={{ color: colors.textSecondary }}>{t('routine:import.pasteDirectly')}</p>
                 </div>
               </button>
               {onAdaptClick && (
@@ -113,8 +115,8 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
                 >
                   <RefreshCw size={20} style={{ color: colors.orange }} />
                   <div className="text-left">
-                    <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>Desde herramienta externa</p>
-                    <p className="text-xs" style={{ color: colors.textSecondary }}>Convierte tu rutina de Excel, PDF u otra app con IA</p>
+                    <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>{t('routine:import.fromExternal')}</p>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>{t('routine:import.fromExternalDesc')}</p>
                   </div>
                 </button>
               )}
@@ -122,7 +124,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
           ) : (
             <div className="space-y-3">
               <p className="text-sm" style={{ color: colors.textSecondary }}>
-                Pega el contenido de la rutina:
+                {t('routine:import.pasteContent')}:
               </p>
               <textarea
                 value={jsonText}
@@ -146,7 +148,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
                   className="flex-1"
                   onClick={() => { setMode(null); setJsonText(''); setError('') }}
                 >
-                  Atrás
+                  {t('common:buttons.back')}
                 </Button>
                 <Button
                   variant="primary"
@@ -154,7 +156,7 @@ function ImportRoutineModal({ isOpen, onClose, onImport, onAdaptClick, defaultMo
                   onClick={handleTextImport}
                   disabled={!jsonText.trim()}
                 >
-                  Importar
+                  {t('common:buttons.import')}
                 </Button>
               </div>
             </div>

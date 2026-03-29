@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { BLOCK_NAMES } from '../lib/constants.js'
 
 // ============================================
 // MUTATIONS
@@ -147,7 +148,7 @@ export async function reorderRoutineExercises(exercises) {
 }
 
 export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, esCalentamiento = false, superset_group }) {
-  const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
+  const blockName = esCalentamiento ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN
 
   // Buscar o crear el bloque correspondiente
   const { data: existingBlock, error: blockFetchError } = await getClient()
@@ -257,7 +258,7 @@ export async function duplicateRoutineExercise({ routineExercise }) {
 }
 
 export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, esCalentamiento = false }) {
-  const blockName = esCalentamiento ? 'Calentamiento' : 'Principal'
+  const blockName = esCalentamiento ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN
 
   const { data: existingBlock, error: blockFetchError } = await getClient()
     .from('routine_blocks')

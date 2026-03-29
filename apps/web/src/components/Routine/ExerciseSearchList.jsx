@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import { getMuscleGroupColor, normalizeSearchText } from '@gym/shared'
+import { getMuscleGroupColor, translateMuscleGroup, normalizeSearchText } from '@gym/shared'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
 
 /**
@@ -62,7 +62,7 @@ function ExerciseSearchList({ exercises, muscleGroups, isLoading, onSelect, exis
                   <span
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: getMuscleGroupColor(exercise.muscle_group?.name) }}
-                    title={exercise.muscle_group?.name}
+                    title={exercise.muscle_group?.name ? translateMuscleGroup(exercise.muscle_group.name) : undefined}
                   />
                   {exercise.name}
                 </div>

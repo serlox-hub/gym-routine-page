@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, Modal as RNModal } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react-native'
 import { Button } from '../ui'
 import { useMuscleGroups } from '../../hooks/useExercises'
@@ -8,6 +9,7 @@ import {
   MEASUREMENT_TYPE_OPTIONS,
   MeasurementType,
   getMuscleGroupColor,
+  translateMuscleGroup,
   measurementTypeUsesDistance,
   measurementTypeUsesTime,
   measurementTypeUsesWeight
@@ -101,6 +103,7 @@ export default function ExerciseForm({
   hideSubmitButton = false,
   minimal = false,
 }) {
+  const { t } = useTranslation()
   const { data: muscleGroups, isLoading } = useMuscleGroups()
   const [form, setForm] = useState(DEFAULT_FORM)
   const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState(null)
@@ -132,8 +135,8 @@ export default function ExerciseForm({
   const handleSubmit = () => {
     setError(null)
     const { form: f, selectedMuscleGroupId: mgId } = formRef.current
-    if (!f.name.trim()) { setError('El nombre es obligatorio'); return }
-    if (!mgId) { setError('Selecciona un grupo muscular'); return }
+    if (!f.name.trim()) { setError(t('exercise:nameRequired')); return }
+    if (!mgId) { setError(t('exercise:muscleGroupRequired')); return }
     onSubmit(f, mgId)
   }
 
@@ -142,14 +145,14 @@ export default function ExerciseForm({
     ExerciseForm._submit = handleSubmit
   })
 
-  if (isLoading) return <Text className="text-secondary text-center py-8">Cargando...</Text>
+  if (isLoading) return <Text className="text-secondary text-center py-8">{t('common:buttons.loading')}</Text>
 
   const selectedMeasurement = MEASUREMENT_TYPE_OPTIONS.find(o => o.value === form.measurement_type)
   const selectedGroup = muscleGroups?.find(g => g.id === selectedMuscleGroupId)
 
   const muscleGroupOptions = muscleGroups?.map(g => ({
     value: g.id,
-    label: g.name,
+    label: translateMuscleGroup(g.name),
     color: getMuscleGroupColor(g.name),
   })) || []
 
@@ -163,7 +166,7 @@ export default function ExerciseForm({
 
       <View className="mb-4">
         <Text className="text-primary text-sm font-medium mb-2">
-          Nombre{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
+          {t('exercise:name')}{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
         </Text>
         <TextInput
           value={form.name}
@@ -181,31 +184,31 @@ export default function ExerciseForm({
 
       <View className="mb-4">
         <Text className="text-primary text-sm font-medium mb-2">
-          Tipo de medición{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
+          {t('exercise:measurementType')}{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
         </Text>
         <Pressable
           onPress={() => setShowMeasurementPicker(true)}
           className="flex-row items-center justify-between p-3 rounded-lg"
           style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
         >
-          <Text className="text-primary">{selectedMeasurement?.label || 'Seleccionar'}</Text>
+          <Text className="text-primary">{selectedMeasurement?.label || t('common:buttons.select')}</Text>
           <ChevronDown size={16} color={colors.textSecondary} />
         </Pressable>
       </View>
 
       {measurementTypeUsesWeight(form.measurement_type) && (
-        <UnitSelector label="Unidad de peso" units={UNIT_OPTIONS.weight} field="weight_unit" form={form} onChange={handleChange} />
+        <UnitSelector label={t('exercise:weightUnit')} units={UNIT_OPTIONS.weight} field="weight_unit" form={form} onChange={handleChange} />
       )}
       {measurementTypeUsesTime(form.measurement_type) && (
-        <UnitSelector label="Unidad de tiempo" units={UNIT_OPTIONS.time} field="time_unit" form={form} onChange={handleChange} />
+        <UnitSelector label={t('exercise:timeUnit')} units={UNIT_OPTIONS.time} field="time_unit" form={form} onChange={handleChange} />
       )}
       {measurementTypeUsesDistance(form.measurement_type) && (
-        <UnitSelector label="Unidad de distancia" units={UNIT_OPTIONS.distance} field="distance_unit" form={form} onChange={handleChange} />
+        <UnitSelector label={t('exercise:distanceUnit')} units={UNIT_OPTIONS.distance} field="distance_unit" form={form} onChange={handleChange} />
       )}
 
       <View className="mb-4">
         <Text className="text-primary text-sm font-medium mb-2">
-          Grupo muscular{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
+          {t('exercise:muscleGroup')}{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
         </Text>
         <Pressable
           onPress={() => setShowMuscleGroupPicker(true)}
@@ -216,20 +219,20 @@ export default function ExerciseForm({
             <View className="w-3 h-3 rounded-full" style={{ backgroundColor: getMuscleGroupColor(selectedGroup.name) }} />
           )}
           <Text className="flex-1" style={{ color: selectedGroup ? colors.textPrimary : colors.textSecondary }}>
-            {selectedGroup?.name || 'Seleccionar grupo muscular'}
+            {selectedGroup?.name || t('exercise:selectMuscleGroup')}
           </Text>
           <ChevronDown size={16} color={colors.textSecondary} />
         </Pressable>
       </View>
 
       <View className={minimal ? '' : 'pt-4 border-t border-border'}>
-        {!minimal && <Text className="text-secondary text-xs mb-4">Campos opcionales</Text>}
+        {!minimal && <Text className="text-secondary text-xs mb-4">{t('common:labels.optional')}</Text>}
         <View>
-          <Text className="text-secondary text-sm font-medium mb-2">Instrucciones de ejecución</Text>
+          <Text className="text-secondary text-sm font-medium mb-2">{t('exercise:instructions')}</Text>
           <TextInput
             value={form.instructions}
             onChangeText={(v) => handleChange('instructions', v)}
-            placeholder="Cómo ejecutar el ejercicio correctamente..."
+            placeholder={t('exercise:instructionsPlaceholder')}
             placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
@@ -240,14 +243,14 @@ export default function ExerciseForm({
 
       {!hideSubmitButton && (
         <Button onPress={handleSubmit} loading={isSubmitting} className="w-full mt-4">
-          Guardar
+          {t('common:buttons.save')}
         </Button>
       )}
 
       <BottomSheetPicker
         visible={showMeasurementPicker}
         onClose={() => setShowMeasurementPicker(false)}
-        title="Tipo de medición"
+        title={t('exercise:measurementType')}
         options={MEASUREMENT_TYPE_OPTIONS}
         selected={form.measurement_type}
         onSelect={(v) => handleChange('measurement_type', v)}
@@ -256,7 +259,7 @@ export default function ExerciseForm({
       <BottomSheetPicker
         visible={showMuscleGroupPicker}
         onClose={() => setShowMuscleGroupPicker(false)}
-        title="Grupo muscular"
+        title={t('exercise:muscleGroup')}
         options={muscleGroupOptions}
         selected={selectedMuscleGroupId}
         onSelect={(v) => setSelectedMuscleGroupId(v)}

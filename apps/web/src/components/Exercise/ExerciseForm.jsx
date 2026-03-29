@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import { Card, BottomActions, Input, Select, Textarea } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
@@ -7,6 +8,7 @@ import {
   MEASUREMENT_TYPE_OPTIONS,
   MeasurementType,
   getMuscleGroupColor,
+  translateMuscleGroup,
   measurementTypeUsesDistance,
   measurementTypeUsesTime,
   measurementTypeUsesWeight
@@ -58,6 +60,7 @@ function UnitSelector({ label, units, field, form, onChange, Wrapper, compact })
 }
 
 function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const selected = muscleGroups?.find(g => g.id === selectedId)
@@ -72,7 +75,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
   return (
     <div ref={ref} className="relative">
       <label className="text-sm text-secondary mb-1 block">
-        Grupo muscular{required && <span style={{ color: colors.danger }}> *</span>}
+        {t('exercise:muscleGroup')}{required && <span style={{ color: colors.danger }}> *</span>}
       </label>
       <button
         type="button"
@@ -81,7 +84,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
         style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}`, color: selected ? colors.textPrimary : colors.textSecondary }}
       >
         {selected && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(selected.name) }} />}
-        <span className="flex-1">{selected?.name || 'Seleccionar grupo muscular'}</span>
+        <span className="flex-1">{selected ? translateMuscleGroup(selected.name) : t('exercise:noMuscleGroup')}</span>
         <ChevronDown size={14} style={{ color: colors.textSecondary }} />
       </button>
       {open && (
@@ -95,7 +98,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
               style={selectedId === g.id ? { backgroundColor: colors.accentBgSubtle } : undefined}
             >
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(g.name) }} />
-              <span style={{ color: selectedId === g.id ? colors.accent : colors.textPrimary }}>{g.name}</span>
+              <span style={{ color: selectedId === g.id ? colors.accent : colors.textPrimary }}>{translateMuscleGroup(g.name)}</span>
             </button>
           ))}
         </div>
@@ -129,12 +132,14 @@ function ExerciseForm({
   initialData = null,
   onSubmit,
   isSubmitting = false,
-  submitLabel = 'Guardar',
+  submitLabel,
   compact = false,
   hideSubmitButton = false,
   minimal = false,
   className = '',
 }) {
+  const { t } = useTranslation()
+  const _submitLabel = submitLabel || t('common:buttons.save')
   const { data: muscleGroups, isLoading } = useMuscleGroups()
 
   const [form, setForm] = useState(DEFAULT_FORM)
@@ -172,12 +177,12 @@ function ExerciseForm({
     const { form: f, selectedMuscleGroupId: mgId } = formRef.current
 
     if (!f.name.trim()) {
-      setError('El nombre es obligatorio')
+      setError(t('exercise:nameRequired'))
       return
     }
 
     if (!mgId) {
-      setError('Selecciona un grupo muscular')
+      setError(t('exercise:muscleGroupRequired'))
       return
     }
 
@@ -195,7 +200,7 @@ function ExerciseForm({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <p style={{ color: colors.textSecondary }}>Cargando...</p>
+        <p style={{ color: colors.textSecondary }}>{t('common:buttons.loading')}</p>
       </div>
     )
   }
@@ -215,22 +220,22 @@ function ExerciseForm({
 
       <Wrapper className={compact ? '' : 'p-4'}>
         <Input
-          label={minimal ? 'Nombre' : <>Nombre <span style={{ color: colors.danger }}>*</span></>}
+          label={minimal ? t('exercise:name') : <>{t('exercise:name')} <span style={{ color: colors.danger }}>*</span></>}
           type="text"
           value={form.name}
           onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="Ej: Press banca con barra"
+          placeholder={t('exercise:namePlaceholder')}
         />
         {!minimal && (
           <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-            Incluye equipamiento y tipo de agarre en el nombre si aplica
+            {t('exercise:nameHint')}
           </p>
         )}
       </Wrapper>
 
       <Wrapper className={compact ? '' : 'p-4'}>
         <Select
-          label={minimal ? 'Tipo de medición' : <>Tipo de medición <span style={{ color: colors.danger }}>*</span></>}
+          label={minimal ? t('exercise:measurementType') : <>{t('exercise:measurementType')} <span style={{ color: colors.danger }}>*</span></>}
           value={form.measurement_type}
           onChange={(e) => handleChange('measurement_type', e.target.value)}
         >
@@ -242,17 +247,17 @@ function ExerciseForm({
 
       {/* Unidad de peso (solo si usa peso) */}
       {usesWeight && (
-        <UnitSelector label="Unidad de peso" units={WEIGHT_UNITS} field="weight_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
+        <UnitSelector label={t('exercise:weightUnit')} units={WEIGHT_UNITS} field="weight_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
       )}
 
       {/* Unidad de tiempo (solo si usa tiempo) */}
       {usesTime && (
-        <UnitSelector label="Unidad de tiempo" units={TIME_UNITS} field="time_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
+        <UnitSelector label={t('exercise:timeUnit')} units={TIME_UNITS} field="time_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
       )}
 
       {/* Unidad de distancia (solo si usa distancia) */}
       {usesDistance && (
-        <UnitSelector label="Unidad de distancia" units={DISTANCE_UNITS} field="distance_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
+        <UnitSelector label={t('exercise:distanceUnit')} units={DISTANCE_UNITS} field="distance_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
       )}
 
       <Wrapper className={compact ? '' : 'p-4'}>
@@ -270,16 +275,16 @@ function ExerciseForm({
       >
         {!minimal && (
           <p className="text-xs mb-4" style={{ color: colors.textSecondary }}>
-            Campos opcionales
+            {t('common:labels.optional')}
           </p>
         )}
 
         <Wrapper className={compact ? '' : 'p-4'}>
           <Textarea
-            label="Instrucciones de ejecución"
+            label={t('exercise:instructions')}
             value={form.instructions}
             onChange={(e) => handleChange('instructions', e.target.value)}
-            placeholder="Cómo ejecutar el ejercicio correctamente... (incluye altura de polea si aplica)"
+            placeholder={t('exercise:instructionsPlaceholder')}
             rows={3}
           />
         </Wrapper>
@@ -293,12 +298,12 @@ function ExerciseForm({
             className="w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 mt-4"
             style={{ backgroundColor: colors.accent, color: colors.white }}
           >
-            {isSubmitting ? 'Guardando...' : submitLabel}
+            {isSubmitting ? t('common:buttons.loading') : _submitLabel}
           </button>
         ) : (
           <BottomActions
             primary={{
-              label: isSubmitting ? 'Guardando...' : submitLabel,
+              label: isSubmitting ? t('common:buttons.loading') : _submitLabel,
               onClick: handleSubmit,
               disabled: isSubmitting,
             }}

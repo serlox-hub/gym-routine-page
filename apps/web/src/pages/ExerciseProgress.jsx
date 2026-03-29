@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useExercise } from '../hooks/useExercises.js'
 import { useExerciseHistory, useExerciseChartData, useExerciseAllTimeStats } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
@@ -51,6 +52,7 @@ function transformChartDataFromStats(data, measurementType) {
 
 function ExerciseProgress() {
   const { exerciseId } = useParams()
+  const { t } = useTranslation()
   const { data: exercise, isLoading: loadingExercise, error: exerciseError } = useExercise(exerciseId)
   const { data: chartRawData, isLoading: loadingChart } = useExerciseChartData(exerciseId)
   const { data: stats, isLoading: loadingStats } = useExerciseAllTimeStats(exerciseId)
@@ -66,7 +68,7 @@ function ExerciseProgress() {
 
   if (loadingExercise || loadingSessions) return <LoadingSpinner />
   if (exerciseError) return <ErrorMessage message={exerciseError.message} className="m-4" />
-  if (!exercise) return <ErrorMessage message="Ejercicio no encontrado" className="m-4" />
+  if (!exercise) return <ErrorMessage message={t('common:errors.notFound')} className="m-4" />
 
   return (
     <div className="p-4 max-w-4xl mx-auto pb-24">
@@ -77,34 +79,34 @@ function ExerciseProgress() {
         <div className="grid grid-cols-2 gap-3 mb-6">
           {stats.best1rm > 0 && (
             <StatCard
-              label="Mejor 1RM Est."
+              label={t('workout:summary.best1rm')}
               value={`${stats.best1rm.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
               color={colors.purple}
             />
           )}
           {stats.maxWeight > 0 && (
             <StatCard
-              label="Peso máximo"
+              label={t('workout:summary.maxWeight')}
               value={`${stats.maxWeight.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
               color={colors.accent}
             />
           )}
           {stats.maxReps > 0 && (
             <StatCard
-              label="Máx. repeticiones"
+              label={t('workout:summary.maxReps')}
               value={stats.maxReps}
               color={colors.success}
             />
           )}
           {stats.totalVolume > 0 && (
             <StatCard
-              label="Volumen total"
+              label={t('workout:summary.totalVolume')}
               value={`${stats.totalVolume.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
               color={colors.warning}
             />
           )}
           <StatCard
-            label="Sesiones"
+            label={t('workout:summary.sessions')}
             value={stats.sessionCount}
             color={colors.textSecondary}
           />
@@ -115,23 +117,23 @@ function ExerciseProgress() {
       {chartData.length >= 2 ? (
         <Card className="p-4 mb-6">
           <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
-            Progresión
+            {t('exercise:progression')}
           </h2>
           <ExerciseProgressChart chartData={chartData} measurementType={measurementType} />
         </Card>
       ) : (
         <Card className="p-4 mb-6">
           <p className="text-center text-secondary py-4">
-            Necesitas al menos 2 sesiones para ver la gráfica de progresión
+            {t('exercise:needMoreSessions')}
           </p>
         </Card>
       )}
 
       {/* History */}
-      <h2 className="text-lg font-bold mb-3">Historial</h2>
+      <h2 className="text-lg font-bold mb-3">{t('body:weight.history')}</h2>
       {historySessions.length === 0 ? (
         <p className="text-center text-secondary py-8">
-          Sin registros anteriores
+          {t('workout:history.noSessions')}
         </p>
       ) : (
         <div className="space-y-3">
@@ -177,7 +179,7 @@ function ExerciseProgress() {
               className="w-full py-3 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50"
               style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
             >
-              {isFetchingNextPage ? 'Cargando...' : 'Cargar más'}
+              {isFetchingNextPage ? t('common:buttons.loading') : t('common:buttons.seeMore')}
             </button>
           )}
         </div>

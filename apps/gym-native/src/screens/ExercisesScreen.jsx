@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react-native'
 import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, DropdownMenu, Button, ActiveSessionBanner } from '../components/ui'
@@ -10,6 +11,7 @@ import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors } from '../lib/styles'
 
 export default function ExercisesScreen({ navigation }) {
+  const { t } = useTranslation()
   const { data: exercises, isLoading, error, refetch, isRefetching } = useExercisesWithMuscleGroup()
   const { data: muscleGroups } = useMuscleGroups()
   const { data: exerciseStats } = useExerciseStats()
@@ -47,9 +49,9 @@ export default function ExercisesScreen({ navigation }) {
     const parts = []
     const routineCount = exerciseStats?.routineCounts?.[exerciseId]
     const sessionCount = exerciseStats?.sessionCounts?.[exerciseId]
-    if (routineCount) parts.push(`En ${routineCount} ${routineCount === 1 ? 'rutina' : 'rutinas'}`)
-    if (sessionCount) parts.push(`Usado ${sessionCount} ${sessionCount === 1 ? 'vez' : 'veces'}`)
-    if (parts.length === 0) parts.push('Sin uso')
+    if (routineCount) parts.push(t('exercise:usage.inRoutines', { count: routineCount }))
+    if (sessionCount) parts.push(t('exercise:usage.inSessions', { count: sessionCount }))
+    if (parts.length === 0) parts.push(t('exercise:usage.noUsage'))
     return parts.join(' · ')
   }
 
@@ -62,10 +64,10 @@ export default function ExercisesScreen({ navigation }) {
         </View>
         <DropdownMenu
           items={[
-            { icon: BarChart3, label: 'Ver usos', onPress: () => setExerciseForUsage(exercise) },
-            { icon: TrendingUp, label: 'Progresión', onPress: () => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id, exerciseName: exercise.name }) },
-            { icon: Pencil, label: 'Editar', onPress: () => setEditExerciseId(exercise.id) },
-            { icon: Trash2, label: 'Eliminar', onPress: () => setExerciseToDelete(exercise), danger: true },
+            { icon: BarChart3, label: t('exercise:usage.title'), onPress: () => setExerciseForUsage(exercise) },
+            { icon: TrendingUp, label: t('exercise:progression'), onPress: () => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id, exerciseName: exercise.name }) },
+            { icon: Pencil, label: t('common:buttons.edit'), onPress: () => setEditExerciseId(exercise.id) },
+            { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setExerciseToDelete(exercise), danger: true },
           ]}
         />
       </View>
@@ -74,7 +76,7 @@ export default function ExercisesScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title="Ejercicios" onBack={() => navigation.goBack()} />
+      <PageHeader title={t('exercise:title')} onBack={() => navigation.goBack()} />
 
       <View className="px-4">
         <ExerciseSearchBar
@@ -94,7 +96,7 @@ export default function ExercisesScreen({ navigation }) {
         contentContainerStyle={{ paddingBottom: 100 }}
         ListEmptyComponent={
           <Text className="text-secondary text-center py-8">
-            {search ? 'No se encontraron ejercicios' : 'No hay ejercicios'}
+            {search ? t('exercise:noExercisesSearch') : t('exercise:noExercises')}
           </Text>
         }
         keyboardShouldPersistTaps="handled"
@@ -103,14 +105,14 @@ export default function ExercisesScreen({ navigation }) {
       />
 
       <View className="px-4 py-3" style={{ backgroundColor: colors.bgSecondary, borderTopWidth: 1, borderTopColor: colors.border }}>
-        <Button onPress={handleCreate}>Nuevo</Button>
+        <Button onPress={handleCreate}>{t('common:buttons.create')}</Button>
       </View>
 
       <ConfirmModal
         isOpen={!!exerciseToDelete}
-        title="Eliminar ejercicio"
-        message={`¿Seguro que quieres eliminar "${exerciseToDelete?.name}"? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar"
+        title={t('exercise:delete')}
+        message={t('exercise:deleteConfirm', { name: exerciseToDelete?.name })}
+        confirmText={t('common:buttons.delete')}
         onConfirm={handleDelete}
         onCancel={() => setExerciseToDelete(null)}
       />

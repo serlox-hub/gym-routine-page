@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import ViewShot from 'react-native-view-shot'
 import { Share2 } from 'lucide-react-native'
 import { useCompletedSessionCount } from '@gym/shared'
@@ -10,6 +11,7 @@ import WorkoutSummaryCard from './WorkoutSummaryCard'
 import { colors } from '../../lib/styles'
 
 export default function WorkoutSummaryScreen({ summaryData, onDismiss }) {
+  const { t } = useTranslation()
   const viewShotRef = useRef(null)
   const { generateAndShare, isGenerating } = useShareWorkoutSummary()
   const { data: sessionCount } = useCompletedSessionCount()
@@ -28,7 +30,7 @@ export default function WorkoutSummaryScreen({ summaryData, onDismiss }) {
       </View>
 
       <View className="px-4 pt-2 pb-3">
-        <Text className="text-primary text-xl font-bold text-center">Resumen</Text>
+        <Text className="text-primary text-xl font-bold text-center">{t('workout:summary.title')}</Text>
       </View>
 
       <ScrollView
@@ -51,12 +53,12 @@ export default function WorkoutSummaryScreen({ summaryData, onDismiss }) {
           <View className="flex-row items-center justify-center gap-2">
             <Share2 size={16} color={colors.white} />
             <Text className="text-white font-medium text-sm">
-              {isGenerating ? 'Generando...' : 'Compartir'}
+              {isGenerating ? t('common:buttons.loading') : t('common:buttons.share')}
             </Text>
           </View>
         </Button>
         <Button variant="secondary" onPress={onDismiss}>
-          Ir a inicio
+          {t('common:nav.home')}
         </Button>
       </View>
     </SafeAreaView>

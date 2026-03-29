@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { WifiOff } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 
 function OfflineBanner() {
+  const { t } = useTranslation()
   const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
@@ -25,7 +27,7 @@ function OfflineBanner() {
     >
       <WifiOff size={14} color={colors.white} />
       <span className="text-xs font-medium" style={{ color: colors.white }}>
-        Sin conexion. Los cambios se sincronizaran al volver.
+        {t('common:offline.banner')}
       </span>
     </div>
   )

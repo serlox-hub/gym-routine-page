@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { BLOCK_NAMES } from '../lib/constants.js'
 
 // ============================================
 // SESSION EXERCISES - QUERIES
@@ -152,7 +153,7 @@ export async function addSessionExercise({ sessionId, exercise, series, reps, ri
   const existing = await fetchSessionExercisesSortOrder(sessionId)
 
   let insertSortOrder
-  let blockName = 'Principal'
+  let blockName = BLOCK_NAMES.MAIN
 
   if (superset_group && existing?.length) {
     const supersetExercises = existing.filter(e => e.superset_group === superset_group)

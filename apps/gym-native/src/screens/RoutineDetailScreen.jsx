@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react-native'
 import {
   useRoutine, useRoutineDays, useRoutineAllExercises,
@@ -18,6 +19,7 @@ import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
 
 export default function RoutineDetailScreen({ route, navigation }) {
+  const { t } = useTranslation()
   const { routineId } = route.params
   const [isEditing, setIsEditing] = useState(false)
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
@@ -117,7 +119,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
         )}
 
         {days?.length === 0 && !isEditing ? (
-          <Text className="text-secondary">No hay días configurados</Text>
+          <Text className="text-secondary">{t('routine:day.noDays')}</Text>
         ) : (
           days?.map((day, index) => (
             <DayCard
@@ -178,7 +180,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
           >
             <View className="flex-row items-center gap-2 justify-center">
               <Plus size={20} color={colors.textSecondary} />
-              <Text className="text-secondary">Añadir día {nextDayNumber}</Text>
+              <Text className="text-secondary">{t('routine:day.add')} {nextDayNumber}</Text>
             </View>
           </Card>
         )}
@@ -198,18 +200,18 @@ export default function RoutineDetailScreen({ route, navigation }) {
 
       <ConfirmModal
         isOpen={showDeleteConfirm}
-        title="Eliminar rutina"
-        message={`¿Seguro que quieres eliminar "${routine?.name}"? Se eliminarán todos los días y ejercicios asociados.`}
-        confirmText="Eliminar"
+        title={t('routine:delete')}
+        message={t('routine:deleteConfirm', { name: routine?.name })}
+        confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteRoutine}
         onCancel={() => setShowDeleteConfirm(false)}
       />
 
       <ConfirmModal
         isOpen={!!dayToDelete}
-        title="Eliminar día"
-        message={`¿Seguro que quieres eliminar "${dayToDelete?.name}"? Se eliminarán todos los ejercicios del día.`}
-        confirmText="Eliminar"
+        title={t('routine:day.delete')}
+        message={t('routine:day.deleteConfirm', { name: dayToDelete?.name })}
+        confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteDay}
         onCancel={() => setDayToDelete(null)}
       />

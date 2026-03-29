@@ -5,7 +5,9 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { supabase } from './lib/supabase.js'
-import { queryClient, initApi, initStores, initNotifications } from '@gym/shared'
+import { queryClient, initApi, initStores, initNotifications, i18n, initI18n } from '@gym/shared'
+import { initReactI18next } from 'react-i18next'
+import LanguageDetector from 'i18next-browser-languagedetector'
 import { getShowToast } from './components/ui/Toast.jsx'
 import useAuthStore from './stores/authStore'
 import useWorkoutStore from './stores/workoutStore'
@@ -19,6 +21,8 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   })
 }
 
+i18n.use(initReactI18next).use(LanguageDetector)
+initI18n({ detection: { order: ['localStorage', 'navigator'], caches: ['localStorage'] } })
 initApi(supabase)
 initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
 initNotifications((message, type = 'success') => {

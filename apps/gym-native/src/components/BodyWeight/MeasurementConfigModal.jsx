@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Check } from 'lucide-react-native'
 import { Modal, Button } from '../ui'
 import { colors } from '../../lib/styles'
 import { getMeasurementLabel, getOrderedMeasurementTypes } from '@gym/shared'
 
 export default function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onSave, isPending }) {
+  const { t } = useTranslation()
   const [selected, setSelected] = useState(new Set())
   const allTypes = getOrderedMeasurementTypes()
 
@@ -37,12 +39,12 @@ export default function MeasurementConfigModal({ isOpen, onClose, enabledMeasure
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <View className="p-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
-        <Text className="text-lg font-semibold text-primary">Configurar medidas</Text>
+        <Text className="text-lg font-semibold text-primary">{t('body:measurements.configure')}</Text>
       </View>
 
       <ScrollView className="p-4" style={{ maxHeight: 350 }}>
         <Text className="text-sm text-secondary mb-4">
-          Selecciona las medidas que quieres trackear
+          {t('body:measurements.configureDescription')}
         </Text>
 
         <View className="gap-2">
@@ -80,7 +82,7 @@ export default function MeasurementConfigModal({ isOpen, onClose, enabledMeasure
 
       <View className="p-4 flex-row gap-3" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
         <View className="flex-1">
-          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
+          <Button variant="secondary" onPress={onClose}>{t('common:buttons.cancel')}</Button>
         </View>
         <View className="flex-1">
           <Button
@@ -88,7 +90,7 @@ export default function MeasurementConfigModal({ isOpen, onClose, enabledMeasure
             disabled={!hasChanges() || isPending}
             loading={isPending}
           >
-            Guardar
+            {t('common:buttons.save')}
           </Button>
         </View>
       </View>

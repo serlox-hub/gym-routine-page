@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { ErrorMessage, Card, PageHeader, Input, Textarea } from '../components/ui/index.js'
 import { useCreateRoutine } from '../hooks/useRoutines.js'
@@ -8,6 +9,7 @@ import { prepareRoutineData, validateRoutineForm } from '@gym/shared'
 
 function NewRoutine() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const createRoutine = useCreateRoutine()
 
   const [form, setForm] = useState({
@@ -43,14 +45,14 @@ function NewRoutine() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
-      <PageHeader title="Nueva rutina" onBack={() => navigate(-1)} />
+      <PageHeader title={t('routine:new')} onBack={() => navigate(-1)} />
 
       {error && <ErrorMessage message={error} className="mb-4" />}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="p-4">
           <Input
-            label="Nombre *"
+            label={`${t('routine:name')} *`}
             type="text"
             value={form.name}
             onChange={(e) => handleChange('name', e.target.value)}
@@ -60,21 +62,21 @@ function NewRoutine() {
 
         <Card className="p-4">
           <Textarea
-            label="Descripción (opcional)"
+            label={`${t('routine:description')} (${t('common:labels.optional')})`}
             value={form.description}
             onChange={(e) => handleChange('description', e.target.value)}
-            placeholder="Descripción de la rutina..."
+            placeholder={`${t('routine:description')}...`}
             rows={2}
           />
         </Card>
 
         <Card className="p-4">
           <Input
-            label="Objetivo (opcional)"
+            label={`${t('routine:goal')} (${t('common:labels.optional')})`}
             type="text"
             value={form.goal}
             onChange={(e) => handleChange('goal', e.target.value)}
-            placeholder="Ej: Hipertrofia, Fuerza, Recomposición..."
+            placeholder={t('routine:goalPlaceholder')}
           />
         </Card>
 
@@ -90,11 +92,11 @@ function NewRoutine() {
           }}
         >
           {createRoutine.isPending ? (
-            'Guardando...'
+            t('common:buttons.loading')
           ) : (
             <>
               <Plus size={20} />
-              Crear rutina
+              {t('routine:create')}
             </>
           )}
         </button>

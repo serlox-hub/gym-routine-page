@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Info, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
@@ -23,6 +24,7 @@ function ExerciseCard({
   totalExercises = 1,
   positionLabels = [],
 }) {
+  const { t } = useTranslation()
   const { exercise, series, reps, rir, rest_seconds, tempo, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
@@ -42,12 +44,12 @@ function ExerciseCard({
   }))
 
   const menuItems = [
-    { icon: Pencil, label: 'Editar', onClick: onEdit },
-    { icon: Repeat2, label: 'Sustituir', onClick: onReplace },
-    { icon: Copy, label: 'Duplicar', onClick: onDuplicate },
-    { icon: FolderInput, label: 'Mover de día', onClick: onMoveToDay },
-    totalExercises > 1 && { icon: ArrowUpDown, label: 'Reordenar', children: positionOptions, disabled: isReordering },
-    { icon: Trash2, label: 'Eliminar', onClick: onDelete, danger: true },
+    { icon: Pencil, label: t('common:buttons.edit'), onClick: onEdit },
+    { icon: Repeat2, label: t('routine:exercise.replace'), onClick: onReplace },
+    { icon: Copy, label: t('routine:exercise.duplicateExercise'), onClick: onDuplicate },
+    { icon: FolderInput, label: t('routine:exercise.moveToDay'), onClick: onMoveToDay },
+    totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), children: positionOptions, disabled: isReordering },
+    { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ].filter(Boolean)
 
   return (

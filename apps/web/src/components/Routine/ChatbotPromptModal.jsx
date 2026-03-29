@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Copy, Check, X, ChevronLeft } from 'lucide-react'
 import { Button, Input } from '../ui/index.js'
 import { buildChatbotPrompt, getNotifier } from '@gym/shared'
@@ -18,6 +19,7 @@ const INITIAL_FORM_STATE = {
 }
 
 function ChatbotPromptModal({ onClose, onImportClick }) {
+  const { t } = useTranslation()
   const [step, setStep] = useState('form')
   const [copied, setCopied] = useState(false)
   const [form, setForm] = useState(INITIAL_FORM_STATE)
@@ -46,7 +48,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      getNotifier()?.show('Error al copiar', 'error')
+      getNotifier()?.show(t('common:errors.copyError'), 'error')
     }
   }
 
@@ -77,7 +79,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
               </button>
             )}
             <h3 className="font-semibold" style={{ color: colors.textPrimary }}>
-              {step === 'form' ? 'Crear rutina con IA' : 'Tu prompt personalizado'}
+              {step === 'form' ? t('routine:chatbot.title') : t('routine:chatbot.yourPrompt')}
             </h3>
           </div>
           <button
@@ -93,79 +95,79 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
           <>
             <div className="p-4 overflow-y-auto flex-1">
               <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-                Completa estos datos para generar un prompt optimizado. Tus datos no se almacenan.
+                {t('routine:chatbot.description')}
               </p>
               <div className="space-y-3">
                 <FormField
-                  label="Objetivo *"
+                  label={`${t('routine:chatbot.goal')} *`}
                   value={form.objetivo}
                   onChange={value => setForm(f => ({ ...f, objetivo: value, objetivoCustom: '' }))}
                   customValue={form.objetivoCustom}
                   onCustomChange={value => setForm(f => ({ ...f, objetivoCustom: value }))}
                   options={[
-                    { value: 'Hipertrofia', label: 'Hipertrofia (ganar músculo)' },
-                    { value: 'Fuerza', label: 'Fuerza' },
-                    { value: 'Pérdida de grasa', label: 'Pérdida de grasa' },
-                    { value: 'Resistencia', label: 'Resistencia' },
-                    { value: 'Mantenimiento', label: 'Mantenimiento' },
-                    { value: 'Salud general', label: 'Salud general' }
+                    { value: 'Hipertrofia', label: t('routine:chatbot.goals.hypertrophy') },
+                    { value: 'Fuerza', label: t('routine:chatbot.goals.strength') },
+                    { value: 'Pérdida de grasa', label: t('routine:chatbot.goals.fatLoss') },
+                    { value: 'Resistencia', label: t('routine:chatbot.goals.endurance') },
+                    { value: 'Mantenimiento', label: t('routine:chatbot.goals.maintenance') },
+                    { value: 'Salud general', label: t('routine:chatbot.goals.general') }
                   ]}
-                  customPlaceholder="Escribe tu objetivo..."
+                  customPlaceholder={t('routine:chatbot.customGoal')}
                 />
                 <FormField
-                  label="Días por semana *"
+                  label={`${t('routine:chatbot.daysPerWeek')} *`}
                   value={form.diasPorSemana}
                   onChange={value => setForm(f => ({ ...f, diasPorSemana: value, diasPorSemanaCustom: '' }))}
                   customValue={form.diasPorSemanaCustom}
                   onCustomChange={value => setForm(f => ({ ...f, diasPorSemanaCustom: value }))}
                   options={[
-                    { value: '1', label: '1 día' },
-                    { value: '2', label: '2 días' },
-                    { value: '3', label: '3 días' },
-                    { value: '4', label: '4 días' },
-                    { value: '5', label: '5 días' },
-                    { value: '6', label: '6 días' },
-                    { value: '7', label: '7 días' }
+                    { value: '1', label: `1 ${t('routine:chatbot.day')}` },
+                    { value: '2', label: `2 ${t('routine:chatbot.days')}` },
+                    { value: '3', label: `3 ${t('routine:chatbot.days')}` },
+                    { value: '4', label: `4 ${t('routine:chatbot.days')}` },
+                    { value: '5', label: `5 ${t('routine:chatbot.days')}` },
+                    { value: '6', label: `6 ${t('routine:chatbot.days')}` },
+                    { value: '7', label: `7 ${t('routine:chatbot.days')}` }
                   ]}
-                  customPlaceholder="Ej: 7 días, alternando..."
+                  customPlaceholder={t('routine:chatbot.customDays')}
                 />
                 <FormField
-                  label="Nivel de experiencia"
+                  label={t('routine:chatbot.experience')}
                   value={form.nivelExperiencia}
                   onChange={value => setForm(f => ({ ...f, nivelExperiencia: value, nivelExperienciaCustom: '' }))}
                   customValue={form.nivelExperienciaCustom}
                   onCustomChange={value => setForm(f => ({ ...f, nivelExperienciaCustom: value }))}
                   options={[
-                    { value: 'Principiante (menos de 1 año)', label: 'Principiante (menos de 1 año)' },
-                    { value: 'Intermedio (1-3 años)', label: 'Intermedio (1-3 años)' },
-                    { value: 'Avanzado (más de 3 años)', label: 'Avanzado (más de 3 años)' }
+                    { value: 'Principiante (menos de 1 año)', label: t('routine:chatbot.levels.beginner') },
+                    { value: 'Intermedio (1-3 años)', label: t('routine:chatbot.levels.intermediate') },
+                    { value: 'Avanzado (más de 3 años)', label: t('routine:chatbot.levels.advanced') }
                   ]}
-                  customPlaceholder="Describe tu nivel..."
+                  customPlaceholder={t('routine:chatbot.customLevel')}
                 />
                 <FormField
-                  label="Duración por sesión (minutos)"
+                  label={t('routine:chatbot.duration')}
                   value={form.duracionSesion}
                   onChange={value => setForm(f => ({ ...f, duracionSesion: value, duracionSesionCustom: '' }))}
                   customValue={form.duracionSesionCustom}
                   onCustomChange={value => setForm(f => ({ ...f, duracionSesionCustom: value }))}
                   options={[
-                    { value: '30', label: '30 minutos' },
-                    { value: '45', label: '45 minutos' },
-                    { value: '60', label: '60 minutos' },
-                    { value: '75', label: '75 minutos' },
-                    { value: '90', label: '90 minutos' }
+                    { value: '30', label: `30 ${t('common:time.min')}` },
+                    { value: '45', label: `45 ${t('common:time.min')}` },
+                    { value: '60', label: `60 ${t('common:time.min')}` },
+                    { value: '75', label: `75 ${t('common:time.min')}` },
+                    { value: '90', label: `90 ${t('common:time.min')}` }
                   ]}
-                  customPlaceholder="Ej: 120 minutos, variable..."
+                  customPlaceholder={t('routine:chatbot.customDuration')}
                 />
                 <Input
-                  label="Equipamiento disponible"
+                  label={t('routine:chatbot.equipment')}
                   value={form.equipamiento}
                   onChange={e => setForm(f => ({ ...f, equipamiento: e.target.value }))}
-                  placeholder="Ej: gimnasio completo, solo mancuernas..."
+                  placeholder={t('routine:chatbot.equipmentPlaceholder')}
                 />
                 <div>
                   <label className="block text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>
-                    Notas adicionales
+                    {t('routine:chatbot.additionalNotes')}
                   </label>
                   <textarea
                     value={form.notas}
@@ -185,7 +187,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
                 onClick={() => setStep('prompt')}
                 disabled={!isFormValid()}
               >
-                Generar prompt
+                {t('routine:chatbot.generate')}
               </Button>
             </div>
           </>
@@ -193,7 +195,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
           <>
             <div className="p-4 overflow-y-auto flex-1">
               <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-                Copia este prompt y pégalo en ChatGPT, Claude u otro chatbot. Luego copia el JSON generado y pégalo en la app.
+                {t('routine:chatbot.promptInstructions')}
               </p>
               <div
                 className="p-3 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre-wrap"
@@ -209,7 +211,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
                 onClick={handleCopyPrompt}
               >
                 {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? 'Copiado' : 'Copiar prompt'}
+                {copied ? t('common:errors.copySuccess') : t('routine:chatbot.copyPrompt')}
               </Button>
               <Button
                 variant="secondary"
@@ -218,7 +220,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
                   onImportClick()
                 }}
               >
-                Pegar JSON
+                {t('routine:chatbot.pasteJSON')}
               </Button>
             </div>
           </>
@@ -229,6 +231,7 @@ function ChatbotPromptModal({ onClose, onImportClick }) {
 }
 
 function FormField({ label, value, onChange, customValue, onCustomChange, options, customPlaceholder }) {
+  const { t } = useTranslation()
   return (
     <div>
       <label className="block text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>
@@ -240,11 +243,11 @@ function FormField({ label, value, onChange, customValue, onCustomChange, option
         className="w-full p-2 rounded-lg text-sm"
         style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
       >
-        <option value="">Seleccionar...</option>
+        <option value="">{t('common:buttons.select')}...</option>
         {options.map(opt => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
-        <option value="custom">Otro...</option>
+        <option value="custom">{t('common:labels.other')}...</option>
       </select>
       {value === 'custom' && (
         <Input

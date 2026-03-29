@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next'
 import { colors, RGB_ACCENT } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 import PhoneMockup, { MockupRoutineScreen, MockupWorkoutScreen, MockupProgressScreen } from './PhoneMockup'
 
 function ShowcaseSection() {
+  const { t } = useTranslation()
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 70% 30%, rgba(${RGB_ACCENT}, 0.06) 0%, transparent 50%)` }} />
@@ -12,13 +14,13 @@ function ShowcaseSection() {
             className="inline-block text-xs font-semibold tracking-widest mb-4 px-3 py-1 rounded-full"
             style={{ color: colors.accent, backgroundColor: colors.accentBgSubtle, border: `1px solid rgba(${RGB_ACCENT}, 0.2)` }}
           >
-            LA APP EN ACCIÓN
+            {t('landing:showcase.tag')}
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: colors.textPrimary }}>
-            Diseñada para el gimnasio
+            {t('landing:showcase.title')}
           </h2>
           <p className="text-lg max-w-2xl mx-auto" style={{ color: colors.textSecondary }}>
-            Interfaz oscura, rápida y optimizada para usar entre series.
+            {t('landing:showcase.subtitle')}
           </p>
         </AnimatedSection>
 
@@ -28,7 +30,7 @@ function ShowcaseSection() {
               <PhoneMockup>
                 <MockupRoutineScreen />
               </PhoneMockup>
-              <p className="mt-4 text-sm font-medium" style={{ color: colors.textSecondary }}>Planifica tu rutina</p>
+              <p className="mt-4 text-sm font-medium" style={{ color: colors.textSecondary }}>{t('landing:showcase.planRoutine')}</p>
             </div>
           </AnimatedSection>
 
@@ -37,7 +39,7 @@ function ShowcaseSection() {
               <PhoneMockup>
                 <MockupWorkoutScreen />
               </PhoneMockup>
-              <p className="mt-4 text-sm font-medium" style={{ color: colors.textPrimary }}>Registra en tiempo real</p>
+              <p className="mt-4 text-sm font-medium" style={{ color: colors.textPrimary }}>{t('landing:showcase.trackLive')}</p>
             </div>
           </AnimatedSection>
 
@@ -46,7 +48,7 @@ function ShowcaseSection() {
               <PhoneMockup>
                 <MockupProgressScreen />
               </PhoneMockup>
-              <p className="mt-4 text-sm font-medium" style={{ color: colors.textSecondary }}>Analiza tu progreso</p>
+              <p className="mt-4 text-sm font-medium" style={{ color: colors.textSecondary }}>{t('landing:showcase.analyzeProgress')}</p>
             </div>
           </AnimatedSection>
         </div>

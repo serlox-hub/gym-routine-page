@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Flame, X, Pause, Play, Settings, Check, Share2 } from 'lucide-react-native'
 import { useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession } from '@gym/shared'
 import { Card } from '../ui'
@@ -7,6 +8,7 @@ import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal'
 import { colors } from '../../lib/styles'
 
 function WeeklyGoalWidget({ onOpenSettings, navigation }) {
+  const { t } = useTranslation()
   const goal = useTrainingGoal()
   const updatePreference = useUpdateTrainingGoal()
   const [showSetup, setShowSetup] = useState(false)
@@ -71,11 +73,11 @@ function WeeklyGoalWidget({ onOpenSettings, navigation }) {
             <View className="flex-row items-center gap-2">
               <Pause size={14} color={colors.textSecondary} />
               <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary }}>
-                Descanso
+                {t('common:preferences.rest')}
               </Text>
               {streak > 0 && (
                 <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                  · racha protegida
+                  · {t('common:preferences.streakProtected')}
                 </Text>
               )}
             </View>
@@ -100,7 +102,7 @@ function WeeklyGoalWidget({ onOpenSettings, navigation }) {
                 <View className="flex-row items-center gap-1">
                   <Flame size={14} color={colors.warning} />
                   <Text style={{ fontSize: 12, fontWeight: '700', color: colors.warning }}>
-                    Racha de {streak}
+                    {t('common:preferences.streak', { count: streak })}
                   </Text>
                 </View>
               )}
@@ -130,7 +132,7 @@ function WeeklyGoalWidget({ onOpenSettings, navigation }) {
               >
                 <Share2 size={12} color={colors.accent} />
                 <Text style={{ fontSize: 12, color: colors.accent }}>
-                  {loadingShare ? 'Cargando...' : 'Compartir último entrenamiento'}
+                  {loadingShare ? t('common:buttons.loading') : t('common:preferences.shareLastWorkout')}
                 </Text>
               </Pressable>
             )}
@@ -189,6 +191,7 @@ function DaySlot({ day, onPress }) {
 }
 
 function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave, onDismiss }) {
+  const { t } = useTranslation()
   return (
     <View className="mb-6">
       <Card className="p-4">
@@ -200,10 +203,10 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
               </View>
               <View>
                 <Text className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                  Establece un objetivo de entrenamiento
+                  {t('common:preferences.showTrainingGoal')}
                 </Text>
                 <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                  Lleva el seguimiento de tu constancia
+                  {t('common:preferences.trackConsistency')}
                 </Text>
               </View>
             </Pressable>
@@ -214,7 +217,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
         ) : (
           <View>
             <Text className="text-sm font-medium mb-3" style={{ color: colors.textPrimary }}>
-              Dias de entrenamiento por ciclo
+              {t('routine:cycleDays')}
             </Text>
             <View className="flex-row items-center gap-2">
               <View className="flex-row gap-1">
@@ -247,7 +250,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
                 <Text className="text-sm font-medium" style={{
                   color: daysInput ? colors.white : colors.textSecondary,
                 }}>
-                  Guardar
+                  {t('common:buttons.save')}
                 </Text>
               </Pressable>
             </View>

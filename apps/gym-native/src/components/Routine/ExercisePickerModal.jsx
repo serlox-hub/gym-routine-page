@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { View, Text, ScrollView } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useCreateExercise } from '../../hooks/useExercises'
 import { Modal, Button } from '../ui'
 import ExerciseForm from '../Exercise/ExerciseForm'
@@ -9,11 +10,12 @@ export default function ExercisePickerModal({
   isOpen,
   onClose,
   onSelect,
-  title = 'Seleccionar ejercicio',
+  title,
   subtitle,
   initialMuscleGroup,
   existingExerciseIds,
 }) {
+  const { t } = useTranslation()
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const { data: exercises, isLoading } = useExercisesWithMuscleGroup()
@@ -35,7 +37,7 @@ export default function ExercisePickerModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="p-6" position="bottom">
       <Text className="text-primary text-lg font-semibold mb-4">
-        {isCreatingNew ? 'Nuevo ejercicio' : title}
+        {isCreatingNew ? t('exercise:new') : (title || t('exercise:selectExercise'))}
       </Text>
 
       {isCreatingNew ? (
@@ -50,13 +52,13 @@ export default function ExercisePickerModal({
             />
           </ScrollView>
           <View className="flex-row gap-2 pt-3 mt-3 border-t border-border">
-            <Button variant="secondary" onPress={() => setIsCreatingNew(false)}>Cancelar</Button>
+            <Button variant="secondary" onPress={() => setIsCreatingNew(false)}>{t('common:buttons.cancel')}</Button>
             <Button
               onPress={() => ExerciseForm._submit?.()}
               loading={createExercise.isPending}
               className="flex-1"
             >
-              Crear ejercicio
+              {t('exercise:create')}
             </Button>
           </View>
         </>
@@ -76,8 +78,8 @@ export default function ExercisePickerModal({
             onSearchChange={setSearchTerm}
           />
           <View className="flex-row gap-2 pt-3 mt-3 border-t border-border">
-            <Button onPress={() => setIsCreatingNew(true)} className="flex-1">Crear nuevo</Button>
-            <Button variant="secondary" onPress={onClose}>Cancelar</Button>
+            <Button onPress={() => setIsCreatingNew(true)} className="flex-1">{t('exercise:new')}</Button>
+            <Button variant="secondary" onPress={onClose}>{t('common:buttons.cancel')}</Button>
           </View>
         </>
       )}

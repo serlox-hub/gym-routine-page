@@ -1,0 +1,70 @@
+{
+  "hero": {
+    "title1": "Your workout",
+    "title2": "diary",
+    "subtitle": "Plan routines, track your workouts, and analyze your progress. All in one place.",
+    "cta": "Start for free",
+    "login": "I already have an account"
+  },
+  "showcase": {
+    "tag": "How it works",
+    "title": "Everything you need to train better",
+    "subtitle": "From planning to analysis, Gym Diary is with you every step of the way.",
+    "planRoutine": "Plan your routine",
+    "trackLive": "Track in real time",
+    "analyzeProgress": "Analyze your progress"
+  },
+  "features": {
+    "tag": "Features",
+    "title": "Tools for every aspect of your training",
+    "subtitle": "Designed to help you be more consistent and efficient at the gym.",
+    "routines": {
+      "title": "Custom routines",
+      "description": "Create routines with days, blocks, supersets, tempo, and execution notes."
+    },
+    "liveTracking": {
+      "title": "Real-time tracking",
+      "description": "Record weight, reps, and rest during your workout."
+    },
+    "progress": {
+      "title": "Progress tracking",
+      "description": "Visualize your progress with weight, volume, and estimated 1RM charts."
+    },
+    "ai": {
+      "title": "AI-powered creation",
+      "description": "Generate personalized routines with artificial intelligence based on your goals."
+    },
+    "history": {
+      "title": "Session history",
+      "description": "Review all your past sessions with full detail."
+    },
+    "bodyMetrics": {
+      "title": "Body metrics",
+      "description": "Track your body weight and measurements to monitor your composition."
+    }
+  },
+  "steps": {
+    "tag": "Getting started",
+    "title": "Start training in 3 steps",
+    "create": {
+      "title": "Create your routine",
+      "description": "Design your routine manually, use a template, or generate one with AI."
+    },
+    "train": {
+      "title": "Train and record",
+      "description": "Start a session and log each set with weight, reps, and rest."
+    },
+    "analyze": {
+      "title": "Analyze your progress",
+      "description": "Review your history, personal records, and progress over time."
+    }
+  },
+  "cta": {
+    "title": "Start training better today",
+    "subtitle": "Free, no credit card required. Create your account in seconds.",
+    "button": "Create free account"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  }
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { View, Text, FlatList, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, TrendingUp, TrendingDown, Minus, Settings, ChevronDown } from 'lucide-react-native'
 import { useBodyMeasurementHistory, useRecordBodyMeasurement, useUpdateBodyMeasurement, useDeleteBodyMeasurement } from '../../hooks/useBodyMeasurements'
 import { usePreferences, useUpdatePreference } from '../../hooks/usePreferences'
@@ -17,6 +18,7 @@ import {
 import { colors } from '../../lib/styles'
 
 export default function MeasurementSection() {
+  const { t } = useTranslation()
   const { data: preferences } = usePreferences()
   const updatePreference = useUpdatePreference()
 
@@ -91,9 +93,9 @@ export default function MeasurementSection() {
     return (
       <View className="items-center py-12">
         <Text className="text-secondary mb-4 text-center">
-          Configura las medidas corporales que quieres trackear
+          {t('body:measurements.configureDescription')}
         </Text>
-        <Button onPress={() => setShowConfigModal(true)}>Configurar medidas</Button>
+        <Button onPress={() => setShowConfigModal(true)}>{t('body:measurements.configure')}</Button>
 
         <MeasurementConfigModal
           isOpen={showConfigModal}
@@ -171,7 +173,7 @@ export default function MeasurementSection() {
             <View className="flex-row flex-wrap px-4 gap-3 mb-4">
               <View className="flex-1" style={{ minWidth: '45%' }}>
                 <Card className="p-3">
-                  <Text className="text-xs text-secondary mb-1">Actual</Text>
+                  <Text className="text-xs text-secondary mb-1">{t('body:weight.current')}</Text>
                   <Text className="text-lg font-bold" style={{ color: colors.accent }}>
                     {stats.current} {unit}
                   </Text>
@@ -180,7 +182,7 @@ export default function MeasurementSection() {
               <View className="flex-1" style={{ minWidth: '45%' }}>
                 <Card className="p-3">
                   <View className="flex-row items-center gap-1 mb-1">
-                    <Text className="text-xs text-secondary">Cambio</Text>
+                    <Text className="text-xs text-secondary">{t('body:weight.change')}</Text>
                     <TrendIcon size={12} color={colors.textSecondary} />
                   </View>
                   <Text className="text-lg font-bold text-secondary">
@@ -190,7 +192,7 @@ export default function MeasurementSection() {
               </View>
               <View className="flex-1" style={{ minWidth: '45%' }}>
                 <Card className="p-3">
-                  <Text className="text-xs text-secondary mb-1">Mínimo</Text>
+                  <Text className="text-xs text-secondary mb-1">{t('body:weight.min')}</Text>
                   <Text className="text-lg font-bold" style={{ color: colors.success }}>
                     {stats.min} {unit}
                   </Text>
@@ -198,7 +200,7 @@ export default function MeasurementSection() {
               </View>
               <View className="flex-1" style={{ minWidth: '45%' }}>
                 <Card className="p-3">
-                  <Text className="text-xs text-secondary mb-1">Máximo</Text>
+                  <Text className="text-xs text-secondary mb-1">{t('body:weight.max')}</Text>
                   <Text className="text-lg font-bold" style={{ color: colors.warning }}>
                     {stats.max} {unit}
                   </Text>
@@ -219,12 +221,12 @@ export default function MeasurementSection() {
           {/* Action Button */}
           <View className="px-4 mb-4">
             <Button onPress={() => setShowRecordModal(true)}>
-              Registrar {selectedType ? getMeasurementLabel(selectedType).toLowerCase() : 'medida'}
+              {t('body:measurements.record')} {selectedType ? getMeasurementLabel(selectedType).toLowerCase() : ''}
             </Button>
           </View>
 
           {/* History */}
-          <Text className="text-lg font-bold text-primary mb-3 px-4">Historial</Text>
+          <Text className="text-lg font-bold text-primary mb-3 px-4">{t('body:weight.history')}</Text>
 
           <FlatList
             data={records || []}
@@ -234,7 +236,7 @@ export default function MeasurementSection() {
             contentContainerStyle={{ paddingBottom: 20 }}
             ListEmptyComponent={
               <Text className="text-secondary text-center py-8">
-                Sin registros. Empieza registrando tu primera medida.
+                {t('body:measurements.noRecords')}
               </Text>
             }
           />
@@ -243,7 +245,7 @@ export default function MeasurementSection() {
 
       {/* Type Selector Modal */}
       <Modal isOpen={showTypeSelector} onClose={() => setShowTypeSelector(false)} position="bottom" className="p-4">
-        <Text className="text-lg font-semibold text-primary mb-4">Seleccionar medida</Text>
+        <Text className="text-lg font-semibold text-primary mb-4">{t('body:measurements.selectType')}</Text>
         <View className="gap-1">
           {enabledMeasurements.map(type => (
             <Pressable
@@ -291,9 +293,9 @@ export default function MeasurementSection() {
       {/* Delete Confirm */}
       <ConfirmModal
         isOpen={!!recordToDelete}
-        title="Eliminar registro"
-        message="¿Eliminar este registro?"
-        confirmText="Eliminar"
+        title={t('body:measurements.delete')}
+        message={t('body:measurements.deleteConfirm')}
+        confirmText={t('common:buttons.delete')}
         onConfirm={handleDelete}
         onCancel={() => setRecordToDelete(null)}
       />

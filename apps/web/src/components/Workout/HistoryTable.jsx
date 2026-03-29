@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ChevronRight, FileText } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { formatSetValue, formatShortDate } from '@gym/shared'
@@ -11,10 +12,12 @@ const RIR_LABELS = {
 }
 
 function HistoryTable({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
+  const { t } = useTranslation()
+
   if (!sessions || sessions.length === 0) {
     return (
       <p className="text-center text-secondary py-8">
-        Sin registros anteriores
+        {t('workout:history.noSessions')}
       </p>
     )
   }
@@ -80,7 +83,7 @@ function HistoryTable({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSe
           className="w-full py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50"
           style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
         >
-          {isFetchingNextPage ? 'Cargando...' : 'Cargar más'}
+          {isFetchingNextPage ? t('common:buttons.loading') : t('common:buttons.seeMore')}
         </button>
       )}
     </div>

@@ -1,63 +1,41 @@
-/**
- * Utilidades para validación de formularios
- */
+import { t } from '../i18n/index.js'
 
-/**
- * Valida el formulario de registro
- * @param {{email: string, password: string, confirmPassword: string}} data - Datos del formulario
- * @returns {{valid: boolean, error: string|null}}
- */
 export function validateSignupForm({ email, password, confirmPassword }) {
   if (!email || !password || !confirmPassword) {
-    return { valid: false, error: 'Por favor completa todos los campos' }
+    return { valid: false, error: t('validation:allFieldsRequired') }
   }
 
   if (!isValidEmail(email)) {
-    return { valid: false, error: 'El email no es válido' }
+    return { valid: false, error: t('validation:invalidEmail') }
   }
 
   if (password.length < 6) {
-    return { valid: false, error: 'La contraseña debe tener al menos 6 caracteres' }
+    return { valid: false, error: t('validation:passwordMinLength') }
   }
 
   if (password !== confirmPassword) {
-    return { valid: false, error: 'Las contraseñas no coinciden' }
+    return { valid: false, error: t('validation:passwordsDontMatch') }
   }
 
   return { valid: true, error: null }
 }
 
-/**
- * Valida el formulario de login
- * @param {{email: string, password: string}} data - Datos del formulario
- * @returns {{valid: boolean, error: string|null}}
- */
 export function validateLoginForm({ email, password }) {
   if (!email || !password) {
-    return { valid: false, error: 'Por favor completa todos los campos' }
+    return { valid: false, error: t('validation:allFieldsRequired') }
   }
 
   return { valid: true, error: null }
 }
 
-/**
- * Valida el formulario de rutina
- * @param {{name: string, description?: string, goal?: string}} data - Datos del formulario
- * @returns {{valid: boolean, error: string|null}}
- */
 export function validateRoutineForm({ name }) {
   if (!name || !name.trim()) {
-    return { valid: false, error: 'El nombre es obligatorio' }
+    return { valid: false, error: t('validation:nameRequired') }
   }
 
   return { valid: true, error: null }
 }
 
-/**
- * Prepara los datos de rutina para enviar (sanitiza)
- * @param {{name: string, description?: string, goal?: string}} form - Datos del formulario
- * @returns {{name: string, description: string|null, goal: string|null}}
- */
 export function prepareRoutineData(form) {
   return {
     name: form.name.trim(),
@@ -66,52 +44,31 @@ export function prepareRoutineData(form) {
   }
 }
 
-/**
- * Valida el formulario de reset de contraseña
- * @param {{password: string, confirmPassword: string}} data - Datos del formulario
- * @returns {{valid: boolean, error: string|null}}
- */
 export function validateResetPasswordForm({ password, confirmPassword }) {
   if (!password) {
-    return { valid: false, error: 'Por favor ingresa una contraseña' }
+    return { valid: false, error: t('validation:enterPassword') }
   }
 
   if (password.length < 6) {
-    return { valid: false, error: 'La contraseña debe tener al menos 6 caracteres' }
+    return { valid: false, error: t('validation:passwordMinLength') }
   }
 
   if (password !== confirmPassword) {
-    return { valid: false, error: 'Las contraseñas no coinciden' }
+    return { valid: false, error: t('validation:passwordsDontMatch') }
   }
 
   return { valid: true, error: null }
 }
 
-/**
- * Verifica si un email es válido
- * @param {string} email - Email a validar
- * @returns {boolean}
- */
 export function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
 
-/**
- * Verifica si un string no está vacío después de trim
- * @param {string} value - Valor a verificar
- * @returns {boolean}
- */
 export function isNotEmpty(value) {
   return value && value.trim().length > 0
 }
 
-/**
- * Verifica longitud mínima
- * @param {string} value - Valor a verificar
- * @param {number} minLength - Longitud mínima
- * @returns {boolean}
- */
 export function hasMinLength(value, minLength) {
   return value && value.length >= minLength
 }

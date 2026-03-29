@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader, Button } from '../components/ui/index.js'
@@ -7,11 +8,12 @@ import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate, format
 import { colors } from '../lib/styles.js'
 
 function BodyMetrics() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('peso')
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
-      <PageHeader title="Registro Corporal" backTo="/" />
+      <PageHeader title={t('body:weight.title')} backTo="/" />
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-lg mb-6" style={{ backgroundColor: colors.bgTertiary }}>
@@ -23,7 +25,7 @@ function BodyMetrics() {
             color: activeTab === 'peso' ? colors.textPrimary : colors.textSecondary,
           }}
         >
-          Peso
+          {t('body:weight.tab')}
         </button>
         <button
           onClick={() => setActiveTab('medidas')}
@@ -33,7 +35,7 @@ function BodyMetrics() {
             color: activeTab === 'medidas' ? colors.textPrimary : colors.textSecondary,
           }}
         >
-          Medidas
+          {t('body:measurements.title')}
         </button>
       </div>
 
@@ -44,6 +46,7 @@ function BodyMetrics() {
 }
 
 function WeightSection() {
+  const { t } = useTranslation()
   const { data: records, isLoading, error } = useBodyWeightHistory()
   const recordMutation = useRecordBodyWeight()
   const updateMutation = useUpdateBodyWeight()
@@ -79,7 +82,7 @@ function WeightSection() {
   }
 
   const handleDelete = (id) => {
-    if (confirm('¿Eliminar este registro?')) {
+    if (confirm(t('body:weight.deleteConfirm'))) {
       deleteMutation.mutate(id)
     }
   }
@@ -98,14 +101,14 @@ function WeightSection() {
       {stats && (
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Card className="p-3">
-            <div className="text-xs text-secondary mb-1">Actual</div>
+            <div className="text-xs text-secondary mb-1">{t('body:weight.current')}</div>
             <div className="text-lg font-bold" style={{ color: colors.accent }}>
               {stats.current} kg
             </div>
           </Card>
           <Card className="p-3">
             <div className="flex items-center gap-1 text-xs text-secondary mb-1">
-              <span>Cambio</span>
+              <span>{t('body:weight.change')}</span>
               <TrendIcon size={12} style={{ color: trendColor }} />
             </div>
             <div className="text-lg font-bold" style={{ color: trendColor }}>
@@ -113,13 +116,13 @@ function WeightSection() {
             </div>
           </Card>
           <Card className="p-3">
-            <div className="text-xs text-secondary mb-1">Mínimo</div>
+            <div className="text-xs text-secondary mb-1">{t('common:labels.worst')}</div>
             <div className="text-lg font-bold" style={{ color: colors.success }}>
               {stats.min} kg
             </div>
           </Card>
           <Card className="p-3">
-            <div className="text-xs text-secondary mb-1">Máximo</div>
+            <div className="text-xs text-secondary mb-1">{t('common:labels.best')}</div>
             <div className="text-lg font-bold" style={{ color: colors.warning }}>
               {stats.max} kg
             </div>
@@ -141,15 +144,15 @@ function WeightSection() {
           onClick={() => setShowModal(true)}
         >
           <Plus size={18} />
-          Registrar peso
+          {t('body:weight.record')}
         </Button>
       </div>
 
       {/* History */}
-      <h2 className="text-lg font-bold mb-3">Historial</h2>
+      <h2 className="text-lg font-bold mb-3">{t('body:weight.history')}</h2>
       {!records || records.length === 0 ? (
         <p className="text-center text-secondary py-8">
-          Sin registros. Empieza registrando tu peso actual.
+          {t('body:weight.noRecords')}
         </p>
       ) : (
         <div className="space-y-2">

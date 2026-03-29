@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import PRNotification from './PRNotification.jsx'
 import { colors } from '../../lib/styles.js'
 import { useNavigate } from 'react-router-dom'
@@ -29,6 +30,7 @@ import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExer
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
@@ -92,7 +94,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           className="w-full py-3 rounded-lg font-medium"
           style={{ backgroundColor: colors.danger, color: colors.white }}
         >
-          {abandonSessionMutation.isPending ? 'Cancelando...' : 'Cancelar sesión'}
+          {abandonSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.abandon')}
         </button>
       </div>
     )
@@ -183,8 +185,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           }
           onBack={() => navigate(-1)}
           menuItems={[
-            { icon: Plus, label: 'Añadir ejercicio', onClick: () => setShowAddExercise(true) },
-            { icon: ArrowRightLeft, label: 'Conversor lb/kg', onClick: () => setShowConverter(true) },
+            { icon: Plus, label: t('workout:addExercise.toSession'), onClick: () => setShowAddExercise(true) },
+            { icon: ArrowRightLeft, label: t('workout:converter'), onClick: () => setShowConverter(true) },
           ]}
         />
 
@@ -193,13 +195,13 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         {!hasExercises ? (
           <div className="text-center py-12 px-4">
             <p className="text-secondary text-sm mb-6">
-              No hay ejercicios. Añade los que quieras hacer.
+              {t('exercise:noExercises')}
             </p>
             <Button
               variant="primary"
               onClick={() => setShowAddExercise(true)}
             >
-              Añadir ejercicio
+              {t('workout:addExercise.toSession')}
             </Button>
           </div>
         ) : (
@@ -220,14 +222,14 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
 
       <BottomActions
         secondary={{
-          label: abandonSessionMutation.isPending ? 'Cancelando...' : 'Cancelar',
+          label: abandonSessionMutation.isPending ? t('common:buttons.loading') : t('common:buttons.cancel'),
           onClick: () => setShowCancelModal(true),
           disabled: abandonSessionMutation.isPending,
           danger: true,
         }}
         center={<SessionTimer />}
         primary={{
-          label: endSessionMutation.isPending ? 'Guardando...' : 'Finalizar',
+          label: endSessionMutation.isPending ? t('common:buttons.loading') : t('common:buttons.done'),
           onClick: handleEndWorkout,
           disabled: endSessionMutation.isPending || !hasCompletedSets,
         }}
@@ -235,10 +237,10 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
 
       <ConfirmModal
         isOpen={showCancelModal}
-        title="Cancelar entrenamiento"
-        message="¿Seguro que quieres cancelar? Se perderán todas las series registradas."
-        confirmText="Sí, cancelar"
-        cancelText="Continuar"
+        title={t('workout:session.abandonConfirm')}
+        message={t('workout:session.abandonMessage')}
+        confirmText={t('workout:session.abandon')}
+        cancelText={t('common:buttons.continue')}
         onConfirm={handleAbandonWorkout}
         onCancel={() => setShowCancelModal(false)}
       />

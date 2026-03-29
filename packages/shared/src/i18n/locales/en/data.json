@@ -1,0 +1,67 @@
+{
+  "muscleGroups": {
+    "Pecho": "Chest",
+    "Espalda": "Back",
+    "Hombros": "Shoulders",
+    "Bíceps": "Biceps",
+    "Tríceps": "Triceps",
+    "Cuádriceps": "Quads",
+    "Isquiotibiales": "Hamstrings",
+    "Pantorrillas": "Calves",
+    "Abdominales": "Abs",
+    "Glúteos": "Glutes",
+    "Antebrazo": "Forearms",
+    "Cardio": "Cardio",
+    "Movilidad": "Mobility",
+    "Cuerpo Completo": "Full Body"
+  },
+  "muscleGroupCategories": {
+    "Superior": "Upper",
+    "Inferior": "Lower",
+    "Abdominales": "Abs"
+  },
+  "blockNames": {
+    "Calentamiento": "Warm-up",
+    "Principal": "Main",
+    "Añadido": "Added"
+  },
+  "sensation": {
+    "1": "Very bad",
+    "2": "Bad",
+    "3": "Normal",
+    "4": "Good",
+    "5": "Very good"
+  },
+  "rir": {
+    "-1": "Failure",
+    "0": "Last rep",
+    "1": "Very close",
+    "2": "Controlled",
+    "3": "Comfortable"
+  },
+  "setTypes": {
+    "normal": "Normal",
+    "dropset": "Dropset"
+  },
+  "measurementTypes": {
+    "weight_reps": "Weight × Reps",
+    "reps_only": "Reps only",
+    "time": "Time",
+    "weight_time": "Weight × Time",
+    "distance": "Distance",
+    "weight_distance": "Weight × Distance",
+    "calories": "Calories",
+    "level_time": "Level × Time",
+    "level_distance": "Level × Distance",
+    "level_calories": "Level × Calories",
+    "distance_time": "Distance × Time",
+    "distance_pace": "Distance × Pace"
+  },
+  "volumeLegend": {
+    "belowMv": "Insufficient",
+    "mv": "Maintenance",
+    "mev": "Minimum effective",
+    "mav": "Maximum adaptive",
+    "mrv": "Maximum recoverable"
+  }
+}

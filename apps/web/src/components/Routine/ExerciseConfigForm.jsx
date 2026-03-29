@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Button, Input, Select } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder } from '@gym/shared'
@@ -16,6 +17,8 @@ function ExerciseConfigForm({
   showSupersetField = false,
   hideExerciseName = false,
 }) {
+  const { t } = useTranslation()
+
   return (
     <div className="space-y-4">
       {!hideExerciseName && (
@@ -31,7 +34,7 @@ function ExerciseConfigForm({
 
       <div className="grid grid-cols-2 gap-3">
         <Input
-          label={isSessionMode ? 'Series' : <>Series <span style={{ color: colors.danger }}>*</span></>}
+          label={isSessionMode ? t('routine:exercise.series') : <>{t('routine:exercise.series')} <span style={{ color: colors.danger }}>*</span></>}
           type="number"
           min="1"
           value={form.series}
@@ -52,7 +55,7 @@ function ExerciseConfigForm({
       >
         {!isSessionMode && (
           <p className="text-xs" style={{ color: colors.textSecondary }}>
-            Opcionales
+            {t('common:labels.optional')}
           </p>
         )}
 
@@ -67,7 +70,7 @@ function ExerciseConfigForm({
             placeholder="Ej: 2"
           />
           <Input
-            label="Descanso (seg)"
+            label={t('routine:exercise.rest')}
             type="number"
             min="0"
             value={form.rest_seconds}
@@ -85,7 +88,7 @@ function ExerciseConfigForm({
             placeholder="Ej: 3-1-2-0"
           />
           <Input
-            label="Razón"
+            label={t('routine:exercise.tempoReason')}
             type="text"
             value={form.tempo_razon}
             onChange={(e) => setForm(prev => ({ ...prev, tempo_razon: e.target.value }))}
@@ -94,15 +97,15 @@ function ExerciseConfigForm({
           />
         </div>
         <p className="text-xs -mt-2" style={{ color: colors.textSecondary }}>
-          Concéntrica - Pausa arriba - Excéntrica - Pausa abajo
+          {t('routine:exercise.tempoFormat')}
         </p>
 
         <div>
-          <label className="text-sm font-medium block mb-1" style={{ color: colors.textSecondary }}>Notas</label>
+          <label className="text-sm font-medium block mb-1" style={{ color: colors.textSecondary }}>{t('routine:exercise.notes')}</label>
           <textarea
             value={form.notes}
             onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-            placeholder={isSessionMode ? "Notas para este ejercicio..." : "Notas específicas para esta rutina..."}
+            placeholder={t('routine:exercise.notesPlaceholder')}
             rows={2}
             className="w-full rounded-lg px-3 py-2 text-sm"
             style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}`, resize: 'vertical' }}
@@ -116,18 +119,18 @@ function ExerciseConfigForm({
               value={form.superset_group || ''}
               onChange={(e) => setForm(prev => ({ ...prev, superset_group: e.target.value }))}
             >
-              <option value="">Sin superset</option>
+              <option value="">{t('routine:superset.noSuperset')}</option>
               {existingSupersets.map(id => (
                 <option key={id} value={id}>
                   {formatSupersetLabel(id)}
                 </option>
               ))}
               <option value={nextSupersetId}>
-                + Nuevo {formatSupersetLabel(nextSupersetId)}
+                + {t('common:labels.new')} {formatSupersetLabel(nextSupersetId)}
               </option>
             </Select>
             <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-              Ejercicios en el mismo superset se hacen sin descanso entre ellos
+              {t('routine:superset.description')}
             </p>
           </div>
         )}
@@ -136,7 +139,11 @@ function ExerciseConfigForm({
   )
 }
 
-export function ExerciseConfigFormButtons({ onBack, onSubmit, isPending, backLabel = 'Volver', submitLabel = 'Añadir', pendingLabel = 'Añadiendo...' }) {
+export function ExerciseConfigFormButtons({ onBack, onSubmit, isPending, backLabel, submitLabel, pendingLabel }) {
+  const { t } = useTranslation()
+  const _backLabel = backLabel || t('common:buttons.back')
+  const _submitLabel = submitLabel || t('common:buttons.add')
+  const _pendingLabel = pendingLabel || t('common:buttons.loading')
   return (
     <div className="flex gap-3 justify-end pt-3 border-t flex-shrink-0" style={{ borderColor: colors.border }}>
       <Button
@@ -144,10 +151,10 @@ export function ExerciseConfigFormButtons({ onBack, onSubmit, isPending, backLab
         type="button"
         onClick={onBack}
       >
-        {backLabel}
+        {_backLabel}
       </Button>
       <Button onClick={onSubmit} disabled={isPending}>
-        {isPending ? pendingLabel : submitLabel}
+        {isPending ? _pendingLabel : _submitLabel}
       </Button>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Flame, X, Pause, Play, Settings, Check, Share2 } from 'lucide-react'
 import { useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession } from '@gym/shared'
 import { Card } from '../ui/index.js'
@@ -8,6 +9,7 @@ import { colors } from '../../lib/styles.js'
 
 function WeeklyGoalWidget({ onOpenSettings }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const goal = useTrainingGoal()
   const updatePreference = useUpdateTrainingGoal()
   const [showSetup, setShowSetup] = useState(false)
@@ -74,11 +76,11 @@ function WeeklyGoalWidget({ onOpenSettings }) {
             <div className="flex items-center gap-2">
               <Pause size={14} style={{ color: colors.textSecondary }} />
               <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-                Descanso
+                {t('common:preferences.rest')}
               </span>
               {streak > 0 && (
                 <span className="text-xs" style={{ color: colors.textMuted }}>
-                  · racha protegida
+                  · {t('common:preferences.streakProtected')}
                 </span>
               )}
             </div>
@@ -103,7 +105,7 @@ function WeeklyGoalWidget({ onOpenSettings }) {
                 <div className="flex items-center gap-1">
                   <Flame size={14} style={{ color: colors.warning }} />
                   <span className="text-xs font-bold" style={{ color: colors.warning }}>
-                    Racha de {streak}
+                    {t('common:preferences.streak', { count: streak })}
                   </span>
                 </div>
               )}
@@ -133,7 +135,7 @@ function WeeklyGoalWidget({ onOpenSettings }) {
                 style={{ color: colors.accent }}
               >
                 <Share2 size={12} />
-                {loadingShare ? 'Cargando...' : 'Compartir último entrenamiento'}
+                {loadingShare ? t('common:buttons.loading') : t('workout:summary.share')}
               </button>
             )}
           </div>
@@ -195,6 +197,8 @@ function DaySlot({ day, onClick }) {
 }
 
 function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave, onDismiss }) {
+  const { t } = useTranslation()
+
   return (
     <section className="mb-6">
       <Card className="p-4">
@@ -209,10 +213,10 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
               </div>
               <div>
                 <p className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                  Establece un objetivo de entrenamiento
+                  {t('common:preferences.showTrainingGoal')}
                 </p>
                 <p className="text-xs" style={{ color: colors.textSecondary }}>
-                  Lleva el seguimiento de tu constancia
+                  {t('common:preferences.trackConsistency')}
                 </p>
               </div>
             </div>
@@ -227,7 +231,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
         ) : (
           <div>
             <p className="text-sm font-medium mb-3" style={{ color: colors.textPrimary }}>
-              Dias de entrenamiento por ciclo
+              {t('common:preferences.daysPerCycle')}
             </p>
             <div className="flex items-center gap-2">
               <div className="flex gap-1">
@@ -255,7 +259,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
                   opacity: daysInput ? 1 : 0.5,
                 }}
               >
-                Guardar
+                {t('common:buttons.save')}
               </button>
             </div>
           </div>

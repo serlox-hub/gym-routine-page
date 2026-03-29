@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { View, Text, FlatList } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Check } from 'lucide-react-native'
 import { Modal, Card, Button } from '../ui'
 import { colors } from '../../lib/styles'
 import { ROUTINE_TEMPLATES } from '@gym/shared'
 
 function TemplateCard({ template, isSelected, onSelect }) {
+  const { t } = useTranslation()
   const daysCount = template.data.routine.days.length
 
   return (
@@ -40,7 +42,7 @@ function TemplateCard({ template, isSelected, onSelect }) {
             ))}
             <View className="px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.bgPrimary }}>
               <Text className="text-xs text-secondary">
-                {daysCount} {daysCount === 1 ? 'día' : 'días'}
+                {daysCount} {t('routine:day.title', { count: daysCount })}
               </Text>
             </View>
           </View>
@@ -51,6 +53,7 @@ function TemplateCard({ template, isSelected, onSelect }) {
 }
 
 export default function TemplatesModal({ isOpen, onClose, onSelect }) {
+  const { t } = useTranslation()
   const [selectedTemplate, setSelectedTemplate] = useState(null)
 
   const handleConfirm = () => {
@@ -63,12 +66,12 @@ export default function TemplatesModal({ isOpen, onClose, onSelect }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <View className="p-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
-        <Text className="font-semibold text-primary">Plantillas predefinidas</Text>
+        <Text className="font-semibold text-primary">{t('routine:templates.title')}</Text>
       </View>
 
       <View className="p-4">
         <Text className="text-sm text-secondary mb-4">
-          Selecciona una rutina para empezar rápidamente. Podrás personalizarla después.
+          {t('routine:templates.description')}
         </Text>
       </View>
 
@@ -89,7 +92,7 @@ export default function TemplatesModal({ isOpen, onClose, onSelect }) {
 
       <View className="p-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
         <Button onPress={handleConfirm} disabled={!selectedTemplate}>
-          Usar plantilla
+          {t('routine:templates.use')}
         </Button>
       </View>
     </Modal>

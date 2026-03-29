@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { ErrorMessage, Card, PageHeader, Button } from '../components/ui'
 import { useCreateRoutine } from '../hooks/useRoutines'
 import { inputStyle, colors } from '../lib/styles'
 import { prepareRoutineData, validateRoutineForm } from '@gym/shared'
 
 export default function NewRoutineScreen({ navigation }) {
+  const { t } = useTranslation()
   const createRoutine = useCreateRoutine()
 
   const [form, setForm] = useState({
@@ -40,7 +42,7 @@ export default function NewRoutineScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title="Nueva rutina" />
+      <PageHeader title={t('routine:new')} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -53,22 +55,22 @@ export default function NewRoutineScreen({ navigation }) {
           {error && <ErrorMessage message={error} className="mb-4" />}
 
           <Card className="p-4 mb-4">
-            <Text className="text-primary text-sm font-medium mb-2">Nombre *</Text>
+            <Text className="text-primary text-sm font-medium mb-2">{t('routine:name')} *</Text>
             <TextInput
               value={form.name}
               onChangeText={(v) => handleChange('name', v)}
-              placeholder="Ej: Push Pull Legs"
+              placeholder={t('routine:namePlaceholder')}
               placeholderTextColor={colors.textMuted}
               style={inputStyle}
             />
           </Card>
 
           <Card className="p-4 mb-4">
-            <Text className="text-primary text-sm font-medium mb-2">Descripción (opcional)</Text>
+            <Text className="text-primary text-sm font-medium mb-2">{t('routine:description')} ({t('common:labels.optional')})</Text>
             <TextInput
               value={form.description}
               onChangeText={(v) => handleChange('description', v)}
-              placeholder="Descripción de la rutina..."
+              placeholder={t('routine:descriptionPlaceholder')}
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={2}
@@ -77,11 +79,11 @@ export default function NewRoutineScreen({ navigation }) {
           </Card>
 
           <Card className="p-4 mb-6">
-            <Text className="text-primary text-sm font-medium mb-2">Objetivo (opcional)</Text>
+            <Text className="text-primary text-sm font-medium mb-2">{t('routine:goal')} ({t('common:labels.optional')})</Text>
             <TextInput
               value={form.goal}
               onChangeText={(v) => handleChange('goal', v)}
-              placeholder="Ej: Hipertrofia, Fuerza, Recomposición..."
+              placeholder={t('routine:goalPlaceholder')}
               placeholderTextColor={colors.textMuted}
               style={inputStyle}
             />
@@ -93,7 +95,7 @@ export default function NewRoutineScreen({ navigation }) {
             className="w-full py-4"
             size="lg"
           >
-            Crear rutina
+            {t('routine:create')}
           </Button>
         </ScrollView>
       </KeyboardAvoidingView>

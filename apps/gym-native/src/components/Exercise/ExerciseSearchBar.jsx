@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, Modal } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Search, ChevronDown } from 'lucide-react-native'
 import { colors, inputStyle } from '../../lib/styles'
-import { getMuscleGroupColor } from '@gym/shared'
+import { getMuscleGroupColor, translateMuscleGroup } from '@gym/shared'
 
 export default function ExerciseSearchBar({
   search,
@@ -12,6 +13,7 @@ export default function ExerciseSearchBar({
   onMuscleGroupChange,
   autoFocus = false,
 }) {
+  const { t } = useTranslation()
   const [showPicker, setShowPicker] = useState(false)
   const selectedGroup = muscleGroups?.find(g => g.id === selectedMuscleGroup)
 
@@ -29,7 +31,7 @@ export default function ExerciseSearchBar({
         <TextInput
           value={search}
           onChangeText={onSearchChange}
-          placeholder="Buscar ejercicio..."
+          placeholder={t('exercise:searchPlaceholder')}
           placeholderTextColor={colors.textMuted}
           autoFocus={autoFocus}
           style={[inputStyle, { paddingLeft: 40 }]}
@@ -52,7 +54,7 @@ export default function ExerciseSearchBar({
           style={{ color: selectedGroup ? colors.textPrimary : colors.textSecondary }}
           numberOfLines={1}
         >
-          {selectedGroup ? selectedGroup.name : 'Todos los grupos musculares'}
+          {selectedGroup ? translateMuscleGroup(selectedGroup.name) : t('exercise:allMuscleGroups')}
         </Text>
         <ChevronDown size={16} color={colors.textSecondary} />
       </Pressable>
@@ -67,7 +69,7 @@ export default function ExerciseSearchBar({
             onPress={(e) => e.stopPropagation()}
             className="bg-surface-block rounded-t-2xl pb-8"
           >
-            <Text className="text-primary font-semibold p-4">Grupo muscular</Text>
+            <Text className="text-primary font-semibold p-4">{t('exercise:muscleGroup')}</Text>
             <ScrollView style={{ maxHeight: 400 }}>
               <Pressable
                 onPress={() => handleSelect(null)}
@@ -75,7 +77,7 @@ export default function ExerciseSearchBar({
                 style={!selectedMuscleGroup ? { backgroundColor: colors.accentBgSubtle } : {}}
               >
                 <Text style={{ color: !selectedMuscleGroup ? colors.accent : colors.textSecondary }}>
-                  Todos los grupos musculares
+                  {t('exercise:allMuscleGroups')}
                 </Text>
               </Pressable>
               {muscleGroups?.map(group => {
@@ -92,7 +94,7 @@ export default function ExerciseSearchBar({
                       style={{ backgroundColor: getMuscleGroupColor(group.name) }}
                     />
                     <Text style={{ color: isSelected ? colors.accent : colors.textPrimary }}>
-                      {group.name}
+                      {translateMuscleGroup(group.name)}
                     </Text>
                   </Pressable>
                 )

@@ -1,7 +1,7 @@
 # Gym Tracker - Claude Instructions
 
 ## Project Overview
-Monorepo with web (React + Vite) and mobile (Expo + NativeWind) apps sharing business logic via `@gym/shared`. Spanish UI with user authentication backed by Supabase.
+Monorepo with web (React + Vite) and mobile (Expo + NativeWind) apps sharing business logic via `@gym/shared`. Bilingual UI (Spanish default, English) with i18n via `i18next` + `react-i18next`. User authentication backed by Supabase.
 
 ## Tech Stack
 - React 18 (JavaScript, NO TypeScript)
@@ -12,6 +12,7 @@ Monorepo with web (React + Vite) and mobile (Expo + NativeWind) apps sharing bus
 - Tailwind CSS (web) / NativeWind v4 (mobile)
 - React Router DOM (web) / React Navigation (mobile)
 - `@gym/shared` — shared business logic package
+- i18next + react-i18next (internationalization)
 
 ## Project Structure
 
@@ -43,6 +44,9 @@ gym-routine-page/
         ├── stores/             # Zustand store factories
         │   ├── createAuthStore.js
         │   └── createWorkoutStore.js
+        ├── i18n/               # Internationalization
+        │   ├── index.js        # initI18n(), t(), getCurrentLocale()
+        │   └── locales/        # es/ and en/ JSON translation files
         ├── lib/                # Pure utility functions
         └── index.js            # Barrel — all public exports
 ```
@@ -57,11 +61,14 @@ import { useRoutines, exportRoutine, QUERY_KEYS } from '@gym/shared'
 
 ### Injection layer (called at app startup in main.jsx / App.js)
 ```js
-import { initApi, initStores, initNotifications } from '@gym/shared'
+import { initApi, initStores, initNotifications, i18n, initI18n } from '@gym/shared'
+import { initReactI18next } from 'react-i18next'
 
-initApi(supabaseClient)           // inject Supabase client before any API call
-initStores({ authStore, workoutStore })  // inject store instances
-initNotifications(showToast)      // inject platform-specific toast function
+i18n.use(initReactI18next)
+initI18n()                                // i18n (auto-inits with 'es', call before render)
+initApi(supabaseClient)                   // inject Supabase client before any API call
+initStores({ authStore, workoutStore })   // inject store instances
+initNotifications(showToast)              // inject platform-specific toast function
 ```
 
 ### Shared + thin wrapper pattern
@@ -115,8 +122,8 @@ Shared hooks accept optional callback props for browser/native differences:
 
 ### Language
 - **Code**: English (variables, functions, components, files)
-- **UI text**: Spanish (user-facing strings)
-- **Database columns**: Spanish (nombre, descripcion, etc.)
+- **UI text**: Via i18n — never hardcode Spanish/English strings in components (see i18n section below)
+- **Database columns**: English names, Spanish content as data values
 
 ### Component Rules
 1. **One component per file** - Always
@@ -166,7 +173,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 
 ### Error Handling
 - Always handle Supabase errors
-- Show user-friendly messages in Spanish
+- Show user-friendly messages via `t()` (never hardcoded strings)
 - Use ErrorMessage component for display
 
 ### Styling
@@ -191,6 +198,79 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 - Acentos: `accent`, `accentHover`, `success`, `warning`, `danger`, `purple`, `purpleAccent`, `teal`, `pink`, `orange`, `actionPrimary`
 - Fondos semánticos (alpha): `accentBg`, `accentBgSubtle`, `purpleBg`, `purpleAccentBg`, `successBg`, `warningBg`, `orangeBg`, `dangerBg`, `actionPrimaryBg`, `overlay`
 - Bordes: `border`
+
+## Internationalization (i18n)
+
+### Architecture
+- All translations live in `packages/shared/src/i18n/locales/{es,en}/` as JSON files
+- i18n auto-initializes with Spanish — `t()` works immediately at module load
+- Both apps use `react-i18next` for component-level translations
+- Language preference persisted in `user_preferences` table (key: `language`)
+
+### Translation namespaces
+| Namespace | File | Content |
+|-----------|------|---------|
+| `common` | `common.json` | Buttons, labels, nav, preferences, offline banner |
+| `auth` | `auth.json` | Login, signup, forgot/reset password |
+| `routine` | `routine.json` | Routines, days, blocks, superset, chatbot, volume |
+| `exercise` | `exercise.json` | Exercises, muscle groups, measurement types |
+| `workout` | `workout.json` | Sessions, sets, rest timer, summary, history, PRs |
+| `body` | `body.json` | Body weight, body measurements |
+| `validation` | `validation.json` | Form validation errors |
+| `data` | `data.json` | Reference data: muscle groups, block names, sensations, RIR, set types, measurement type labels |
+
+### How to add user-facing text
+
+**In components** (web/native) — use the `useTranslation` hook:
+```jsx
+import { useTranslation } from 'react-i18next'
+
+export default function MyComponent() {
+  const { t } = useTranslation()
+  return <button>{t('common:buttons.save')}</button>
+}
+```
+
+**In shared lib/hooks/API** — use `t` from `@gym/shared` i18n module:
+```js
+import { t } from '../i18n/index.js'
+return { valid: false, error: t('validation:nameRequired') }
+```
+
+**Interpolation** — use `{{variable}}` syntax:
+```js
+t('routine:deleteConfirm', { name: routine.name })
+// "¿Seguro que quieres eliminar "PPL"?"
+```
+
+### Rules for new code
+1. **NEVER hardcode user-facing strings** — always use `t('namespace:key')`
+2. **Add keys to BOTH** `es/*.json` AND `en/*.json` when creating new text
+3. **Use existing keys** before creating new ones — check the JSON files first
+4. **Namespace by domain** — use the namespace that matches the feature area
+5. **Keep keys descriptive** — `routine:day.deleteConfirm` not `routine:msg1`
+
+### DB reference data translation
+- **Muscle groups** (from `muscle_groups` table): display with `translateMuscleGroup(dbName)` from `@gym/shared`
+- **Block names** (`'Calentamiento'`, `'Principal'`, `'Añadido'`): stored in DB as Spanish identifiers. Use `BLOCK_NAMES.WARMUP` etc. in code logic, `translateBlockName(dbName)` for display
+- **User-generated content** (routine names, exercise names, notes): NOT translated — stays in the language the user wrote
+
+### Constants with translated labels
+Static constants evaluated at module load use getters or Proxy for lazy translation:
+```js
+// For new translated constants, use getter functions:
+export function getSensationLabels() {
+  return { 1: t('data:sensation.1'), ... }
+}
+
+// Backwards-compatible proxy exists for: SENSATION_LABELS, SET_TYPE_LABELS
+```
+
+### When modifying i18n
+1. Edit translation JSON files in `packages/shared/src/i18n/locales/`
+2. Always update **both** `es/` and `en/` files
+3. Run `npm run test:shared` — tests auto-init i18n with Spanish
+4. Run `npm run build` — verify no missing exports
 
 ## Database Schema
 
@@ -234,6 +314,8 @@ Deletion strategy:
 - ❌ Magic numbers (use constants)
 - ❌ console.log in committed code
 - ❌ Business logic in apps/ (belongs in packages/shared/src/lib/)
+- ❌ Hardcoded user-facing strings (use `t()` from i18n)
+- ❌ Adding translation keys to only one language (must add to both es/ and en/)
 
 ## What TO Do
 - ✅ One component = one file
@@ -245,6 +327,8 @@ Deletion strategy:
 - ✅ Extract business logic to `packages/shared/src/lib/` utilities
 - ✅ Keep components "dumb" (UI only)
 - ✅ Thin wrappers in apps/ inject platform callbacks, shared hooks do the work
+- ✅ All user-facing text via `t()` — in components via `useTranslation()`, in shared code via `import { t } from '../i18n/index.js'`
+- ✅ Translation keys in both es/ and en/ JSON files
 
 ## Component Architecture: Dumb Components + Testable Utils
 
@@ -335,6 +419,8 @@ export function generateCalendarDays(currentDate, sessions) {
 4. [ ] Complex `useMemo`/`useCallback` calls util functions
 5. [ ] Validation logic in `lib/validation.js`
 6. [ ] Data transformations in appropriate util file
+7. [ ] All user-facing strings use `t()` — no hardcoded Spanish/English
+8. [ ] Translation keys added to both `es/*.json` and `en/*.json`
 
 ### Updating Existing Components Checklist
 

@@ -1,0 +1,108 @@
+{
+  "session": {
+    "active": "Sesión activa",
+    "start": "Iniciar",
+    "end": "Finalizar entrenamiento",
+    "endConfirm": "¿Seguro que quieres finalizar el entrenamiento?",
+    "resume": "Reanudar entrenamiento",
+    "abandon": "Abandonar",
+    "abandonConfirm": "¿Seguro que quieres abandonar el entrenamiento? Se perderá todo el progreso.",
+    "abandonMessage": "Se perderá todo el progreso del entrenamiento actual.",
+    "date": "Fecha",
+    "time": "Hora",
+    "endTime": "Hora de fin",
+    "inSession": "En sesión",
+    "routineInProgress": "Rutina en curso",
+    "routineSessionActive": "Sesión de rutina activa",
+    "freeWorkout": "Entrenamiento Libre",
+    "notFound": "Sesión no encontrada",
+    "deleteConfirm": "¿Eliminar esta sesión? Se perderán todos los datos registrados.",
+    "notesPlaceholder": "¿Algo que quieras recordar de esta sesión?",
+    "duration": "Duración",
+    "exercises": "Ejercicios",
+    "volume": "Volumen"
+  },
+  "set": {
+    "complete": "Completar serie",
+    "edit": "Editar serie",
+    "delete": "Eliminar serie",
+    "weight": "Peso",
+    "weightUnit": "kg",
+    "reps": "Reps",
+    "time": "Tiempo",
+    "timeSec": "Tiempo (seg)",
+    "distance": "Distancia",
+    "distanceM": "Distancia (m)",
+    "level": "Nivel",
+    "pace": "Ritmo",
+    "calories": "Calorías",
+    "rir": "RIR",
+    "notes": "Notas",
+    "previous": "Anterior",
+    "addSet": "Añadir serie",
+    "addVideo": "Añadir video",
+    "videoTooLarge": "Video demasiado grande",
+    "weightConverter": "Conversor de peso",
+    "setNumber": "Serie {{number}}",
+    "type": {
+      "label": "Tipo de serie",
+      "normal": "Normal",
+      "dropset": "Dropset"
+    }
+  },
+  "rest": {
+    "title": "Descanso",
+    "timer": "Temporizador",
+    "skip": "Saltar",
+    "seconds": "{{seconds}} seg"
+  },
+  "converter": "Conversor",
+  "addExercise": {
+    "title": "Añadir ejercicio",
+    "toSession": "Añadir a la sesión",
+    "search": "Buscar ejercicio...",
+    "noExercises": "No hay ejercicios disponibles"
+  },
+  "summary": {
+    "title": "Resumen",
+    "duration": "Duración",
+    "totalExercises": "Ejercicios",
+    "totalSets": "Series completadas",
+    "totalVolume": "Volumen total",
+    "personalRecords": "Récords personales",
+    "pr": "PR",
+    "newPR": "Nuevo PR",
+    "share": "Compartir",
+    "download": "Descargar",
+    "bestSet": "Mejor serie",
+    "maxWeight": "Máx Peso",
+    "maxReps": "Máx Reps",
+    "best1RM": "Mejor 1RM",
+    "best1rm": "Mejor 1RM",
+    "sessions": "Sesiones",
+    "noSets": "Sin series completadas"
+  },
+  "history": {
+    "title": "Histórico",
+    "noSessions": "No hay sesiones registradas",
+    "session": "Sesión",
+    "date": "Fecha",
+    "time": "Hora",
+    "endTime": "Hora de fin",
+    "sessionsThisDay": "sesiones este día",
+    "deleteSession": "Eliminar sesión",
+    "viewDetail": "Ver detalle"
+  },
+  "sensation": {
+    "label": "Sensación",
+    "howWasIt": "¿Cómo fue la sesión?"
+  },
+  "pr": {
+    "weight": "Peso",
+    "reps": "Reps",
+    "oneRM": "1RM",
+    "volume": "Volumen",
+    "time": "Tiempo",
+    "distance": "Distancia"
+  }
+}

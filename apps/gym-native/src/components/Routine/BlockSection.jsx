@@ -1,4 +1,5 @@
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Flame, Link2, Dumbbell, Plus } from 'lucide-react-native'
 import ExerciseCard from './ExerciseCard'
 import { Card } from '../ui'
@@ -17,6 +18,7 @@ export default function BlockSection({
   onMoveExerciseToDay,
   onReorderExercise,
 }) {
+  const { t } = useTranslation()
   const { name, duration_min, routine_exercises } = block
   const isWarmup = name.toLowerCase() === 'calentamiento'
   const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
@@ -117,7 +119,7 @@ export default function BlockSection({
         >
           <Plus size={14} color={accentColor} />
           <Text className="text-xs" style={{ color: accentColor }}>
-            Añadir {isWarmup ? 'calentamiento' : 'ejercicio'}
+            {isWarmup ? t('routine:block.addToWarmup') : t('routine:block.addExercise')}
           </Text>
         </Pressable>
       )}

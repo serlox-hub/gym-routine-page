@@ -1,5 +1,6 @@
 import { View, Text, Switch, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { useIsAdmin } from '../hooks/useAuth'
 import { useAllUsers, useUpdateUserSetting } from '../hooks/useAdmin'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui'
@@ -7,8 +8,8 @@ import { formatFullDate } from '@gym/shared'
 import { colors } from '../lib/styles'
 
 const FEATURE_FLAGS = [
-  { key: 'can_upload_video', label: 'Subir videos', description: 'Permite subir videos de ejercicios' },
-  { key: 'is_admin', label: 'Administrador', description: 'Acceso al panel de administración' },
+  { key: 'can_upload_video', labelKey: 'common:preferences.showVideoUpload', descriptionKey: 'common:preferences.showVideoUploadDescription' },
+  { key: 'is_admin', labelKey: 'common:nav.admin', descriptionKey: 'common:nav.adminDescription' },
 ]
 
 function FeatureToggle({ userId, settingKey, label, description, currentValue, onToggle, isUpdating }) {
@@ -32,12 +33,13 @@ function FeatureToggle({ userId, settingKey, label, description, currentValue, o
 }
 
 function UserCard({ user, onToggleSetting, isUpdating }) {
+  const { t } = useTranslation()
   return (
     <Card className="p-4 mx-4">
       <View className="mb-3">
         <Text className="font-medium text-primary">{user.email}</Text>
         <Text className="text-xs text-secondary">
-          Registrado: {formatFullDate(user.created_at)}
+          {t('common:admin.registered')}: {formatFullDate(user.created_at)}
         </Text>
       </View>
       <View className="gap-1" style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 }}>
@@ -46,8 +48,8 @@ function UserCard({ user, onToggleSetting, isUpdating }) {
             key={flag.key}
             userId={user.id}
             settingKey={flag.key}
-            label={flag.label}
-            description={flag.description}
+            label={t(flag.labelKey)}
+            description={t(flag.descriptionKey)}
             currentValue={user.settings[flag.key]}
             onToggle={onToggleSetting}
             isUpdating={isUpdating}
@@ -59,6 +61,7 @@ function UserCard({ user, onToggleSetting, isUpdating }) {
 }
 
 export default function AdminUsersScreen({ navigation }) {
+  const { t } = useTranslation()
   const { isAdmin, isLoading: isLoadingAdmin } = useIsAdmin()
   const { data: users, isLoading, error } = useAllUsers()
   const updateSetting = useUpdateUserSetting()
@@ -79,7 +82,7 @@ export default function AdminUsersScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title="Gestión de usuarios" onBack={() => navigation.goBack()} />
+      <PageHeader title={t('common:nav.admin')} onBack={() => navigation.goBack()} />
 
       <FlatList
         data={users || []}
@@ -95,7 +98,7 @@ export default function AdminUsersScreen({ navigation }) {
         contentContainerStyle={{ paddingBottom: 40 }}
         ListEmptyComponent={
           <Text className="text-secondary text-center py-8">
-            No hay usuarios registrados
+            {t('common:admin.noUsers')}
           </Text>
         }
       />

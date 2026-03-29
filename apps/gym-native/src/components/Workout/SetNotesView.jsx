@@ -1,16 +1,18 @@
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui'
 import VideoPlayer from '../ui/VideoPlayer'
 import { RIR_LABELS } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
+  const { t } = useTranslation()
   const rirInfo = rir != null ? RIR_LABELS[rir] : null
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="p-4">
       <View className="flex-row justify-between items-center mb-4">
-        <Text className="text-primary font-bold">Notas de la serie</Text>
+        <Text className="text-primary font-bold">{t('workout:set.notes')}</Text>
         <Pressable onPress={onClose}>
           <Text className="text-xl" style={{ color: colors.textSecondary }}>✕</Text>
         </Pressable>
@@ -43,7 +45,7 @@ export default function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) 
 
         {notes && (
           <View className="p-3 rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
-            <Text className="text-xs mb-1" style={{ color: colors.textSecondary }}>Nota</Text>
+            <Text className="text-xs mb-1" style={{ color: colors.textSecondary }}>{t('common:labels.notes')}</Text>
             <Text className="text-sm" style={{ color: colors.textPrimary }}>{notes}</Text>
           </View>
         )}
@@ -57,7 +59,7 @@ export default function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) 
         style={{ backgroundColor: colors.bgTertiary }}
       >
         <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-          Cerrar
+          {t('common:buttons.close')}
         </Text>
       </Pressable>
     </Modal>

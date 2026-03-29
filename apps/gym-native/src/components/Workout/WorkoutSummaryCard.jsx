@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Trophy } from 'lucide-react-native'
 import { APP_NAME, APP_URL, SUMMARY_MAX_EXERCISES } from '@gym/shared'
 import { colors } from '../../lib/styles'
@@ -46,6 +47,7 @@ function ExerciseRow({ name, setsCompleted, bestSet, hasPR }) {
 }
 
 const WorkoutSummaryCard = forwardRef(function WorkoutSummaryCard({ summaryData, sessionNumber }, ref) {
+  const { t } = useTranslation()
   if (!summaryData) return null
 
   const {
@@ -75,18 +77,18 @@ const WorkoutSummaryCard = forwardRef(function WorkoutSummaryCard({ summaryData,
 
       {/* Stats Grid */}
       <View style={s.statsRow}>
-        <StatBox value={durationFormatted} label="Duración" />
-        <StatBox value={totalExercises} label="Ejercicios" />
+        <StatBox value={durationFormatted} label={t('workout:summary.duration')} />
+        <StatBox value={totalExercises} label={t('workout:summary.totalExercises')} />
       </View>
       <View style={[s.statsRow, { marginBottom: 24 }]}>
-        <StatBox value={totalSetsCompleted} label="Series" />
-        <StatBox value={sessionNumber ? `#${sessionNumber}` : '—'} label="Sesión" />
+        <StatBox value={totalSetsCompleted} label={t('workout:summary.totalSets')} />
+        <StatBox value={sessionNumber ? `#${sessionNumber}` : '—'} label={t('workout:history.session')} />
       </View>
 
       {/* PRs Section */}
       {hasPRs ? (
         <View style={s.prsSection}>
-          <Text style={s.prsSectionTitle}>Records personales</Text>
+          <Text style={s.prsSectionTitle}>{t('workout:summary.personalRecords')}</Text>
           {prs.slice(0, 3).map((pr) => (
             <PRItem key={pr.exerciseName} exerciseName={pr.exerciseName} details={pr.details} />
           ))}
@@ -98,7 +100,7 @@ const WorkoutSummaryCard = forwardRef(function WorkoutSummaryCard({ summaryData,
 
       {/* Exercises List */}
       <View style={s.exercisesSection}>
-        <Text style={s.exercisesSectionTitle}>Ejercicios</Text>
+        <Text style={s.exercisesSectionTitle}>{t('workout:session.exercises')}</Text>
         {visibleExercises.map((ex) => (
           <ExerciseRow key={ex.name} {...ex} />
         ))}

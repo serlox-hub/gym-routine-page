@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Copy, Check, X, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Button } from '../ui/index.js'
 import { buildAdaptRoutinePrompt, getNotifier } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function AdaptRoutineModal({ onClose, onImportClick }) {
+  const { t } = useTranslation()
   const [step, setStep] = useState(1)
   const [copied, setCopied] = useState(false)
   const adaptPrompt = buildAdaptRoutinePrompt()
@@ -15,7 +17,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      getNotifier()?.show('Error al copiar', 'error')
+      getNotifier()?.show(t('common:errors.copyError'), 'error')
     }
   }
 
@@ -69,7 +71,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
             onClick={handleCopy}
           >
             {copied ? <Check size={16} /> : <Copy size={16} />}
-            {copied ? 'Copiado' : 'Copiar prompt completo'}
+            {copied ? t('common:errors.copySuccess') : t('routine:chatbot.copyPrompt')}
           </Button>
           <div
             className="p-3 rounded-lg text-sm"
@@ -153,7 +155,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
               onImportClick()
             }}
           >
-            Pegar resultado
+            {t('routine:adapt.pasteResult')}
           </Button>
         </div>
       )
@@ -175,7 +177,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
       >
         <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: colors.border }}>
           <h3 className="font-semibold" style={{ color: colors.textPrimary }}>
-            Importar desde herramienta externa
+            {t('routine:adapt.title')}
           </h3>
           <button
             onClick={onClose}
@@ -214,7 +216,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
             className="flex items-center gap-1"
           >
             <ChevronLeft size={16} />
-            Anterior
+            {t('common:buttons.back')}
           </Button>
           {step < 4 ? (
             <Button
@@ -222,7 +224,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
               onClick={() => setStep(s => s + 1)}
               className="flex items-center gap-1"
             >
-              Siguiente
+              {t('common:buttons.next')}
               <ChevronRight size={16} />
             </Button>
           ) : (
@@ -230,7 +232,7 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
               variant="secondary"
               onClick={onClose}
             >
-              Cerrar
+              {t('common:buttons.close')}
             </Button>
           )}
         </div>

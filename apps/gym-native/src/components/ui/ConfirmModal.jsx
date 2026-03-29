@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import Button from './Button'
 import Modal from './Modal'
 
@@ -6,14 +7,18 @@ export default function ConfirmModal({
   isOpen,
   title,
   message,
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
+  confirmText,
+  cancelText,
   loadingText,
   onConfirm,
   onCancel,
   variant = 'danger',
   isLoading = false,
 }) {
+  const { t } = useTranslation()
+  confirmText = confirmText || t('common:buttons.confirm')
+  cancelText = cancelText || t('common:buttons.cancel')
+
   return (
     <Modal
       isOpen={isOpen}
@@ -27,7 +32,7 @@ export default function ConfirmModal({
           {cancelText}
         </Button>
         <Button variant={variant} onPress={onConfirm} loading={isLoading}>
-          {isLoading ? (loadingText || 'Procesando...') : confirmText}
+          {isLoading ? (loadingText || t('common:buttons.loading')) : confirmText}
         </Button>
       </View>
     </Modal>

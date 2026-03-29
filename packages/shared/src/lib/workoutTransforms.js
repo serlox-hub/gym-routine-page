@@ -1,6 +1,4 @@
-/**
- * Utilidades para transformación de datos de sesiones de entrenamiento
- */
+import { BLOCK_NAMES } from './constants.js'
 
 // ============================================
 // SESSION EXERCISES (nueva tabla)
@@ -22,11 +20,11 @@ export function transformSessionExercises(sessionExercises) {
   // Agrupar por bloque
   const blockMap = new Map()
   sorted.forEach(se => {
-    const blockName = se.block_name || 'Principal'
+    const blockName = se.block_name || BLOCK_NAMES.MAIN
     if (!blockMap.has(blockName)) {
       blockMap.set(blockName, {
         blockName,
-        isWarmup: blockName.toLowerCase() === 'calentamiento',
+        isWarmup: blockName === BLOCK_NAMES.WARMUP,
         exerciseGroups: [],
       })
     }
@@ -37,7 +35,7 @@ export function transformSessionExercises(sessionExercises) {
   const currentSupersetByBlock = new Map()
 
   sorted.forEach(se => {
-    const blockName = se.block_name || 'Principal'
+    const blockName = se.block_name || BLOCK_NAMES.MAIN
     const block = blockMap.get(blockName)
 
     const enrichedExercise = {
@@ -55,7 +53,7 @@ export function transformSessionExercises(sessionExercises) {
       is_extra: se.is_extra,
       routine_exercise: se.routine_exercise,
       blockName,
-      isWarmup: blockName.toLowerCase() === 'calentamiento',
+      isWarmup: blockName === BLOCK_NAMES.WARMUP,
       type: se.is_extra ? 'extra' : 'routine',
     }
 
@@ -87,15 +85,15 @@ export function transformSessionExercises(sessionExercises) {
 
   // Construir exercisesByBlock en orden predeterminado
   const exercisesByBlock = []
-  const warmupBlock = blockMap.get('Calentamiento')
+  const warmupBlock = blockMap.get(BLOCK_NAMES.WARMUP)
   if (warmupBlock && warmupBlock.exerciseGroups.length > 0) {
     exercisesByBlock.push(warmupBlock)
   }
-  const mainBlock = blockMap.get('Principal')
+  const mainBlock = blockMap.get(BLOCK_NAMES.MAIN)
   if (mainBlock && mainBlock.exerciseGroups.length > 0) {
     exercisesByBlock.push(mainBlock)
   }
-  const addedBlock = blockMap.get('Añadido')
+  const addedBlock = blockMap.get(BLOCK_NAMES.ADDED)
   if (addedBlock && addedBlock.exerciseGroups.length > 0) {
     exercisesByBlock.push(addedBlock)
   }
@@ -115,8 +113,8 @@ export function transformSessionExercises(sessionExercises) {
     superset_group: se.superset_group,
     is_extra: se.is_extra,
     routine_exercise: se.routine_exercise,
-    blockName: se.block_name || 'Principal',
-    isWarmup: (se.block_name || '').toLowerCase() === 'calentamiento',
+    blockName: se.block_name || BLOCK_NAMES.MAIN,
+    isWarmup: (se.block_name || '') === BLOCK_NAMES.WARMUP,
     type: se.is_extra ? 'extra' : 'routine',
   }))
 
@@ -190,7 +188,7 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
       notes: re?.notes || null,
       superset_group: re?.superset_group ?? null,
       is_extra: false,
-      block_name: re?.block_name || 'Principal',
+      block_name: re?.block_name || BLOCK_NAMES.MAIN,
       exercise: {
         id: exercise.id,
         name: exercise.name,
@@ -245,7 +243,7 @@ export function buildRoutineExerciseMap(blocks) {
         ...re,
         blockName: block.name,
         blockOrder: block.sort_order,
-        isWarmup: block.name.toLowerCase() === 'calentamiento'
+        isWarmup: block.name === BLOCK_NAMES.WARMUP
       })
     })
   })
@@ -264,7 +262,7 @@ export function groupExercisesByBlock(blocks) {
   return blocks.map(block => ({
     blockName: block.name,
     blockOrder: block.sort_order,
-    isWarmup: block.name.toLowerCase() === 'calentamiento',
+    isWarmup: block.name === BLOCK_NAMES.WARMUP,
     durationMin: block.duration_min,
     exerciseGroups: groupExercisesBySupersetId(block.routine_exercises, block.name),
   }))
@@ -280,7 +278,7 @@ export function groupExercisesByBlock(blocks) {
 export function groupExercisesBySupersetId(exercises, blockName) {
   if (!exercises || exercises.length === 0) return []
 
-  const isWarmup = blockName.toLowerCase() === 'calentamiento'
+  const isWarmup = blockName === BLOCK_NAMES.WARMUP
   const groups = []
 
   // Ordenar por sort_order

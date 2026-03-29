@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Pencil, ArrowUpDown } from 'lucide-react-native'
 import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
@@ -30,6 +31,7 @@ export default function DayCard({
   activeRoutineDayId,
   navigation: _navigation,
 }) {
+  const { t } = useTranslation()
   const { id, sort_order, name, estimated_duration_min } = day
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -130,7 +132,7 @@ export default function DayCard({
                 }}
               >
                 <Text className="text-xs font-semibold uppercase" style={{ color: isThisDayActive ? colors.white : colors.black }}>
-                  {isThisDayActive ? 'Continuar' : 'Iniciar'}
+                  {isThisDayActive ? t('common:buttons.continue') : t('workout:session.start')}
                 </Text>
               </Pressable>
             )}
@@ -139,7 +141,7 @@ export default function DayCard({
                 items={[
                   {
                     icon: Pencil,
-                    label: 'Editar',
+                    label: t('common:buttons.edit'),
                     onClick: () => {
                       setDayForm({ name, duration: estimated_duration_min || '' })
                       setEditingDay(true)
@@ -147,10 +149,10 @@ export default function DayCard({
                   },
                   ...(totalDays > 1 ? [{
                     icon: ArrowUpDown,
-                    label: 'Reordenar',
+                    label: t('routine:reorder'),
                     onClick: () => setShowReorderDay(true),
                   }] : []),
-                  { icon: Trash2, label: 'Eliminar', onClick: () => onDelete(id), danger: true },
+                  { icon: Trash2, label: t('common:buttons.delete'), onClick: () => onDelete(id), danger: true },
                 ]}
               />
             )}
@@ -192,7 +194,7 @@ export default function DayCard({
           ) : (
             <>
               {blocks?.length === 0 ? (
-                <Text className="text-secondary text-sm">No hay ejercicios configurados</Text>
+                <Text className="text-secondary text-sm">{t('routine:block.noExercises')}</Text>
               ) : (
                 blocks?.filter(b => b.routine_exercises?.length > 0).map(block => (
                   <BlockSection key={block.id} block={block} />
@@ -205,9 +207,9 @@ export default function DayCard({
 
       <ConfirmModal
         isOpen={!!exerciseToDelete}
-        title="Eliminar ejercicio"
-        message={`¿Seguro que quieres eliminar "${exerciseToDelete?.exercise?.name}" de este día?`}
-        confirmText="Eliminar"
+        title={t('routine:exercise.removeFromRoutine')}
+        message={t('routine:exercise.removeConfirm', { name: exerciseToDelete?.exercise?.name })}
+        confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteExercise}
         onCancel={() => setExerciseToDelete(null)}
       />

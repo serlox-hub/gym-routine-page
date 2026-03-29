@@ -1,5 +1,6 @@
 import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { useExercise } from '../hooks/useExercises'
 import { useExerciseHistory, useExerciseChartData, useExerciseAllTimeStats } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui'
@@ -58,6 +59,7 @@ function SessionCard({ session, exercise }) {
 }
 
 export default function ExerciseProgressScreen({ route, navigation }) {
+  const { t } = useTranslation()
   const { exerciseId, exerciseName } = route.params
   const { data: exercise, isLoading: loadingExercise, error: exerciseError } = useExercise(exerciseId)
   const { isLoading: loadingChart } = useExerciseChartData(exerciseId)
@@ -68,7 +70,7 @@ export default function ExerciseProgressScreen({ route, navigation }) {
 
   if (loadingExercise || loadingSessions) return <LoadingSpinner />
   if (exerciseError) return <ErrorMessage message={exerciseError.message} className="m-4" />
-  if (!exercise) return <ErrorMessage message="Ejercicio no encontrado" className="m-4" />
+  if (!exercise) return <ErrorMessage message={t('exercise:notFound')} className="m-4" />
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
   const weightUnit = exercise.weight_unit || 'kg'
@@ -79,18 +81,18 @@ export default function ExerciseProgressScreen({ route, navigation }) {
       {stats && (
         <View className="flex-row flex-wrap gap-3 mb-4">
           {stats.best1rm > 0 && (
-            <StatCard label="Mejor 1RM Est." value={`${stats.best1rm} ${weightUnit}`} color={colors.purple} />
+            <StatCard label={t('workout:summary.best1RM')} value={`${stats.best1rm} ${weightUnit}`} color={colors.purple} />
           )}
           {stats.maxWeight > 0 && (
-            <StatCard label="Peso máximo" value={`${stats.maxWeight} ${weightUnit}`} color={colors.accent} />
+            <StatCard label={t('workout:summary.maxWeight')} value={`${stats.maxWeight} ${weightUnit}`} color={colors.accent} />
           )}
           {stats.maxReps > 0 && (
-            <StatCard label="Máx. repeticiones" value={stats.maxReps} color={colors.success} />
+            <StatCard label={t('workout:summary.maxReps')} value={stats.maxReps} color={colors.success} />
           )}
           {stats.totalVolume > 0 && (
-            <StatCard label="Volumen total" value={`${stats.totalVolume.toLocaleString()} ${weightUnit}`} color={colors.warning} />
+            <StatCard label={t('workout:summary.totalVolume')} value={`${stats.totalVolume.toLocaleString()} ${weightUnit}`} color={colors.warning} />
           )}
-          <StatCard label="Sesiones" value={stats.sessionCount} color={colors.textSecondary} />
+          <StatCard label={t('workout:summary.sessions')} value={stats.sessionCount} color={colors.textSecondary} />
         </View>
       )}
 
@@ -101,12 +103,12 @@ export default function ExerciseProgressScreen({ route, navigation }) {
       ) : (
         <Card className="p-4 mb-4">
           <Text className="text-secondary text-center py-4 text-sm">
-            Necesitas al menos 2 sesiones para ver la gráfica de progresión
+            {t('exercise:progressMinSessions')}
           </Text>
         </Card>
       )}
 
-      <Text className="text-lg font-bold text-primary mb-3">Historial</Text>
+      <Text className="text-lg font-bold text-primary mb-3">{t('workout:history.title')}</Text>
     </View>
   )
 
@@ -122,7 +124,7 @@ export default function ExerciseProgressScreen({ route, navigation }) {
         ListHeaderComponent={ListHeader}
         contentContainerStyle={{ paddingBottom: 40 }}
         ListEmptyComponent={
-          <Text className="text-secondary text-center py-8">Sin registros anteriores</Text>
+          <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
         }
       />
     </SafeAreaView>

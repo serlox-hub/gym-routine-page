@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, TextInput, Pressable, Alert, ScrollView } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Check, Save, Video, X, Maximize2 } from 'lucide-react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useVideoPlayer, VideoView } from 'expo-video'
@@ -32,7 +33,7 @@ function SetVideoPreview({ uri }) {
   if (loading) {
     return (
       <View style={{ width: '100%', height: 160, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bgTertiary }}>
-        <Text style={{ color: colors.textSecondary }}>Cargando video...</Text>
+        <Text style={{ color: colors.textSecondary }}>Loading...</Text>
       </View>
     )
   }
@@ -75,6 +76,7 @@ export default function SetDetailsModal({
   descansoSeg = 0,
   measurementType,
 }) {
+  const { t } = useTranslation()
   const canUploadVideo = useCanUploadVideo()
   const { value: showRirInput } = usePreference('show_rir_input')
   const { value: showSetNotes } = usePreference('show_set_notes')
@@ -115,7 +117,7 @@ export default function SetDetailsModal({
     const asset = result.assets[0]
     if (asset.fileSize && asset.fileSize > MAX_VIDEO_SIZE) {
       const sizeMB = Math.round(asset.fileSize / 1024 / 1024)
-      Alert.alert('Video demasiado grande', `El video pesa ${sizeMB}MB. Máximo permitido: 100MB`)
+      Alert.alert(t('workout:set.videoTooLarge'), `${sizeMB}MB. Max: 100MB`)
       return
     }
 
@@ -151,7 +153,7 @@ export default function SetDetailsModal({
   }
 
   const isEditMode = mode === 'edit'
-  const title = isEditMode ? 'Editar serie' : 'Completar serie'
+  const title = isEditMode ? t('workout:set.edit') : t('workout:set.complete')
   const buttonDisabled = isEditMode && !hasChanges
   const buttonColor = buttonDisabled ? colors.bgTertiary : (isEditMode ? colors.purple : colors.success)
   const buttonTextColor = buttonDisabled ? colors.textSecondary : colors.white
@@ -172,7 +174,7 @@ export default function SetDetailsModal({
       <ScrollView className="p-4 gap-5" keyboardShouldPersistTaps="handled">
         <View>
           <Text className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-            Tipo de serie
+            {t('workout:set.type.label')}
           </Text>
           <View className="flex-row gap-2">
             {Object.entries(SET_TYPE_LABELS).map(([key, label]) => (
@@ -231,7 +233,7 @@ export default function SetDetailsModal({
         {showSetNotes && (
           <View>
             <Text className="text-sm mb-2" style={{ color: colors.textSecondary }}>
-              Nota (opcional)
+              {t('workout:set.notes')} ({t('common:labels.optional')})
             </Text>
             <TextInput
               value={note}
@@ -247,7 +249,7 @@ export default function SetDetailsModal({
         {showVideo && (
           <View>
             <Text className="text-sm mb-2" style={{ color: colors.textSecondary }}>
-              Video (opcional)
+              {t('common:preferences.showVideoUpload')} ({t('common:labels.optional')})
             </Text>
             {videoUri ? (
               <View className="rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
@@ -268,7 +270,7 @@ export default function SetDetailsModal({
               >
                 <Video size={18} color={colors.textSecondary} />
                 <Text className="text-sm" style={{ color: colors.textSecondary }}>
-                  Añadir video
+                  {t('workout:set.addVideo')}
                 </Text>
               </Pressable>
             )}
@@ -281,7 +283,7 @@ export default function SetDetailsModal({
         {!isEditMode && descansoSeg > 0 && (
           <View className="py-2 rounded-lg items-center" style={{ backgroundColor: colors.bgTertiary }}>
             <Text className="text-sm" style={{ color: colors.textSecondary }}>
-              Descanso: <Text style={{ color: colors.accent }}>{formatRestTimeDisplay(descansoSeg)}</Text>
+              {t('workout:rest.title')}: <Text style={{ color: colors.accent }}>{formatRestTimeDisplay(descansoSeg)}</Text>
             </Text>
           </View>
         )}
@@ -303,7 +305,7 @@ export default function SetDetailsModal({
             <Check size={20} color={buttonTextColor} />
           )}
           <Text className="font-bold" style={{ color: buttonTextColor }}>
-            {isEditMode ? 'Guardar cambios' : 'Completar'}
+            {isEditMode ? t('common:buttons.save') : t('workout:set.complete')}
           </Text>
         </Pressable>
       </View>

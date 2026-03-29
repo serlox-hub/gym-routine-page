@@ -12,7 +12,8 @@ import RootNavigator from './src/navigation/RootNavigator'
 import { toastConfig } from './src/components/ui/toastConfig'
 import ErrorBoundary from './src/components/ErrorBoundary'
 import { supabase } from './src/lib/supabase'
-import { queryClient, initApi, initStores, initNotifications, initHaptics } from '@gym/shared'
+import { queryClient, initApi, initStores, initNotifications, initHaptics, i18n, initI18n, useLanguageSync } from '@gym/shared'
+import { initReactI18next } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
 import useAuthStore from './src/stores/authStore'
 import useWorkoutStore from './src/stores/workoutStore'
@@ -24,6 +25,8 @@ if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
   })
 }
 
+i18n.use(initReactI18next)
+initI18n()
 initApi(supabase)
 initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
 initNotifications((message, type = 'success') =>
@@ -46,11 +49,17 @@ const linking = {
   prefixes: [Linking.createURL('/'), 'diariogym://'],
 }
 
+function LanguageSync() {
+  useLanguageSync()
+  return null
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
+        <LanguageSync />
         <NavigationContainer
           linking={linking}
           theme={{

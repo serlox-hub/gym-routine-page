@@ -1,4 +1,5 @@
 import { View, Text, TextInput } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Pencil, Download, Trash2, Copy } from 'lucide-react-native'
 import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
@@ -9,27 +10,28 @@ import { inputStyle, colors } from '../../lib/styles'
 import { PageHeader } from '../ui'
 
 export function RoutineEditForm({ routine, routineId }) {
+  const { t } = useTranslation()
   const { editForm, handleFieldChange } = useRoutineEditForm(routine, routineId)
 
   return (
     <View className="gap-3 mb-4">
       <View>
-        <Text className="text-secondary text-sm mb-1">Nombre</Text>
+        <Text className="text-secondary text-sm mb-1">{t('routine:name')}</Text>
         <TextInput
           value={editForm.name}
           onChangeText={(v) => handleFieldChange('name', v)}
-          placeholder="Nombre de la rutina"
+          placeholder={t('routine:namePlaceholder')}
           placeholderTextColor={colors.textMuted}
           autoFocus
           style={[inputStyle, { padding: 8, fontSize: 14 }]}
         />
       </View>
       <View>
-        <Text className="text-secondary text-sm mb-1">Descripción</Text>
+        <Text className="text-secondary text-sm mb-1">{t('routine:description')}</Text>
         <TextInput
           value={editForm.description}
           onChangeText={(v) => handleFieldChange('description', v)}
-          placeholder="Descripción de la rutina..."
+          placeholder={t('routine:descriptionPlaceholder')}
           placeholderTextColor={colors.textMuted}
           multiline
           numberOfLines={2}
@@ -37,17 +39,17 @@ export function RoutineEditForm({ routine, routineId }) {
         />
       </View>
       <View>
-        <Text className="text-secondary text-sm mb-1">Objetivo</Text>
+        <Text className="text-secondary text-sm mb-1">{t('routine:goal')}</Text>
         <TextInput
           value={editForm.goal}
           onChangeText={(v) => handleFieldChange('goal', v)}
-          placeholder="Ej: Hipertrofia, Fuerza..."
+          placeholder={t('routine:goalPlaceholder')}
           placeholderTextColor={colors.textMuted}
           style={[inputStyle, { padding: 8, fontSize: 14 }]}
         />
       </View>
       <View>
-        <Text className="text-secondary text-sm mb-1">La rutina se repite cada (días)</Text>
+        <Text className="text-secondary text-sm mb-1">{t('routine:cycleDays')}</Text>
         <TextInput
           value={String(editForm.cycle_days)}
           onChangeText={(v) => handleFieldChange('cycle_days', v)}
@@ -62,16 +64,17 @@ export function RoutineEditForm({ routine, routineId }) {
 }
 
 export default function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, onDelete, navigation }) {
+  const { t } = useTranslation()
   const duplicateRoutine = useDuplicateRoutine()
 
   const handleDuplicate = async () => {
-    Toast.show({ type: 'loading', text1: 'Duplicando rutina...', autoHide: false })
+    Toast.show({ type: 'loading', text1: t('routine:duplicating'), autoHide: false })
     try {
       const newRoutine = await duplicateRoutine.mutateAsync({ routineId: parseInt(routineId) })
-      Toast.show({ type: 'success', text1: 'Rutina duplicada' })
+      Toast.show({ type: 'success', text1: t('routine:duplicated') })
       navigation.replace('RoutineDetail', { routineId: newRoutine.id })
     } catch {
-      Toast.show({ type: 'error', text1: 'No se pudo duplicar la rutina' })
+      Toast.show({ type: 'error', text1: t('routine:duplicateError') })
     }
   }
 
@@ -82,22 +85,22 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
       const filename = sanitizeFilename(routine?.name || 'rutina') + '.json'
       const file = new File(Paths.cache, filename)
       file.write(json)
-      await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Exportar rutina' })
+      await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: t('common:buttons.export') })
     } catch {
-      Toast.show({ type: 'error', text1: 'No se pudo exportar la rutina' })
+      Toast.show({ type: 'error', text1: t('routine:exportError') })
     }
   }
 
   const menuItems = [
-    { icon: Pencil, label: 'Editar', onClick: onEditStart },
-    { icon: Copy, label: 'Duplicar', onClick: handleDuplicate },
-    { icon: Download, label: 'Exportar', onClick: handleExport },
-    { icon: Trash2, label: 'Eliminar', onClick: onDelete, danger: true },
+    { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart },
+    { icon: Copy, label: t('routine:duplicate'), onClick: handleDuplicate },
+    { icon: Download, label: t('common:buttons.export'), onClick: handleExport },
+    { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ]
 
   return (
     <PageHeader
-      title={isEditing ? 'Editar rutina' : routine?.name || 'Días'}
+      title={isEditing ? t('routine:edit') : routine?.name || t('routine:day.title')}
       onBack={isEditing ? onEditEnd : undefined}
       menuItems={!isEditing ? menuItems : undefined}
     />

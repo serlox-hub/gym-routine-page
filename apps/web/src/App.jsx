@@ -7,6 +7,7 @@ import OfflineBanner from './components/ui/OfflineBanner.jsx'
 import { useAuth } from './hooks/useAuth.js'
 import { colors } from './lib/styles.js'
 import { useRestoreActiveSession, useSyncPendingSets } from './hooks/useWorkout.js'
+import { useLanguageSync } from '@gym/shared'
 
 const Landing = lazy(() => import('./pages/Landing.jsx'))
 const Home = lazy(() => import('./pages/Home.jsx'))
@@ -34,7 +35,7 @@ function HomeOrLanding() {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bgPrimary }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p style={{ color: colors.textSecondary }}>Cargando...</p>
+          <p style={{ color: colors.textSecondary }}></p>
         </div>
       </div>
     )
@@ -57,6 +58,11 @@ function PasswordRecoveryRedirect({ children }) {
   return children
 }
 
+function LanguageSync() {
+  useLanguageSync()
+  return null
+}
+
 function SessionRestorer() {
   useRestoreActiveSession()
   useSyncPendingSets()
@@ -67,6 +73,7 @@ function App() {
   return (
     <BrowserRouter>
       <PasswordRecoveryRedirect>
+        <LanguageSync />
         <SessionRestorer />
         <div className="min-h-screen bg-surface text-primary">
           <OfflineBanner />

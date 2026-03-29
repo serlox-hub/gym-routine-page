@@ -1,28 +1,26 @@
-/**
- * Formato JSON para importar/exportar rutinas
- * Usado tanto para crear rutinas con IA como para adaptar rutinas existentes
- */
+import { t, getCurrentLocale } from '../i18n/index.js'
+
 export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
   "version": 4,
   "exercises": [
     {
-      "name": "Nombre del ejercicio",
+      "name": "Exercise name",
       "measurement_type": "weight_reps",
       "muscle_group_name": "Pecho",
       "weight_unit": "kg",
       "time_unit": "s",
       "distance_unit": "m",
-      "instructions": "Instrucciones de ejecución del ejercicio (opcional)"
+      "instructions": "Exercise instructions (optional)"
     }
   ],
   "routine": {
-    "name": "Nombre de la rutina",
-    "description": "Descripción breve",
-    "goal": "Objetivo",
+    "name": "Routine name",
+    "description": "Short description",
+    "goal": "Goal",
     "days": [
       {
-        "name": "Día 1 - Nombre descriptivo",
+        "name": "Day 1 - Descriptive name",
         "sort_order": 0,
         "estimated_duration_min": 60,
         "blocks": [
@@ -38,14 +36,14 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
             "duration_min": 50,
             "exercises": [
               {
-                "exercise_name": "Nombre del ejercicio",
+                "exercise_name": "Exercise name",
                 "series": 4,
                 "reps": "8-12",
                 "rir": 2,
                 "rest_seconds": 90,
                 "tempo": "3-1-1-0",
-                "tempo_razon": "Razón del tempo elegido (opcional)",
-                "notes": "Notas de ejecución específicas (opcional)"
+                "tempo_razon": "Reason for tempo (optional)",
+                "notes": "Specific execution notes (optional)"
               }
             ]
           }
@@ -56,95 +54,136 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
 }
 \`\`\``
 
-export const ROUTINE_JSON_RULES = `REGLAS IMPORTANTES:
-1. Cada ejercicio en "exercises" debe usarse en "routine.days[].blocks[].exercises"
-2. El "exercise_name" debe coincidir EXACTAMENTE con el "name" del ejercicio
-3. Cada día debe tener exactamente 2 bloques: "Calentamiento" (sort_order: 0) y "Principal" (sort_order: 1)
-4. Los días deben tener sort_order secuencial empezando en 0
+export const ROUTINE_JSON_RULES = `IMPORTANT RULES:
+1. Each exercise in "exercises" must be used in "routine.days[].blocks[].exercises"
+2. The "exercise_name" must EXACTLY match the "name" of the exercise
+3. Each day must have exactly 2 blocks: "Calentamiento" (sort_order: 0) and "Principal" (sort_order: 1)
+4. Days must have sequential sort_order starting at 0
 
-CAMPOS DE EJERCICIOS (en "exercises"):
-- name: nombre del ejercicio (OBLIGATORIO)
-- measurement_type (OBLIGATORIO, uno de estos):
-  - "weight_reps": peso × repeticiones (ej: press banca)
-  - "reps_only": solo repeticiones sin peso (ej: dominadas)
-  - "time": tiempo (ej: plancha)
-  - "distance": distancia (ej: farmer walk)
-  - "level_time": nivel × tiempo (ej: bici estática)
-  - "level_distance": nivel × distancia (ej: elíptica)
-  - "level_calories": nivel × calorías (ej: remo estático)
-  - "distance_time": distancia × tiempo (ej: cinta de correr)
-  - "distance_pace": distancia × ritmo (ej: running con pace min/km)
-- muscle_group_name (OBLIGATORIO, uno de estos):
+EXERCISE FIELDS (in "exercises"):
+- name: exercise name (REQUIRED)
+- measurement_type (REQUIRED, one of):
+  - "weight_reps": weight × repetitions (e.g.: bench press)
+  - "reps_only": reps only without weight (e.g.: pull-ups)
+  - "time": time (e.g.: plank)
+  - "distance": distance (e.g.: farmer walk)
+  - "level_time": level × time (e.g.: stationary bike)
+  - "level_distance": level × distance (e.g.: elliptical)
+  - "level_calories": level × calories (e.g.: rowing machine)
+  - "distance_time": distance × time (e.g.: treadmill)
+  - "distance_pace": distance × pace (e.g.: running with pace min/km)
+- muscle_group_name (REQUIRED, one of):
   - "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps"
   - "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas"
   - "Abdominales", "Antebrazo"
-- weight_unit: "kg" o "lb" (opcional, por defecto "kg")
-- time_unit: "s" o "min" (opcional, por defecto "s")
-- distance_unit: "m" o "km" (opcional, por defecto "m")
-- instructions: instrucciones generales de ejecución del ejercicio (opcional)
+- weight_unit: "kg" or "lb" (optional, default "kg")
+- time_unit: "s" or "min" (optional, default "s")
+- distance_unit: "m" or "km" (optional, default "m")
+- instructions: general exercise instructions (optional)
 
-CAMPOS DE BLOQUES (en "days[].blocks"):
-- name: "Calentamiento" o "Principal" (OBLIGATORIO)
-- sort_order: 0 para Calentamiento, 1 para Principal (OBLIGATORIO)
-- duration_min: duración estimada del bloque en minutos (opcional)
-- exercises: array de ejercicios del bloque (OBLIGATORIO)
+BLOCK FIELDS (in "days[].blocks"):
+- name: "Calentamiento" or "Principal" (REQUIRED — always use these exact Spanish names)
+- sort_order: 0 for Calentamiento, 1 for Principal (REQUIRED)
+- duration_min: estimated block duration in minutes (optional)
+- exercises: array of block exercises (REQUIRED)
 
-CAMPOS DE EJERCICIOS EN RUTINA (en "blocks[].exercises"):
-- exercise_name: debe coincidir con "name" del ejercicio (OBLIGATORIO)
-- series: número de series (OBLIGATORIO)
-- reps: string con repeticiones, tiempo o distancia (OBLIGATORIO, ej: "8-12", "30s", "40m")
-- rir: 0-5, repeticiones en reserva (opcional)
-- rest_seconds: segundos de descanso entre series (opcional)
-- tempo: cadencia del movimiento en formato "excéntrico-pausa abajo-concéntrico-pausa arriba" (opcional, ej: "3-1-1-0")
-- tempo_razon: explicación de por qué se usa ese tempo (opcional)
-- notes: notas específicas de ejecución para esta rutina (opcional, ej: "Agarre cerrado", "Pausa en el pecho")`
+ROUTINE EXERCISE FIELDS (in "blocks[].exercises"):
+- exercise_name: must match "name" from exercises (REQUIRED)
+- series: number of sets (REQUIRED)
+- reps: string with reps, time or distance (REQUIRED, e.g.: "8-12", "30s", "40m")
+- rir: 0-5, reps in reserve (optional)
+- rest_seconds: rest between sets in seconds (optional)
+- tempo: movement cadence in "eccentric-pause bottom-concentric-pause top" format (optional, e.g.: "3-1-1-0")
+- tempo_razon: explanation of why that tempo is used (optional)
+- notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest")`
 
-/**
- * Genera un prompt personalizado para chatbots basado en las preferencias del usuario
- */
 export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }) {
+  const lang = getCurrentLocale()
+  const isEn = lang === 'en'
+
+  const labels = {
+    goal: isEn ? 'Goal' : 'Objetivo',
+    daysPerWeek: isEn ? 'Days per week' : 'Días por semana',
+    experience: isEn ? 'Experience level' : 'Nivel de experiencia',
+    duration: isEn ? 'Session duration' : 'Duración por sesión',
+    equipment: isEn ? 'Available equipment' : 'Equipamiento disponible',
+    additionalNotes: isEn ? 'Additional notes' : 'Notas adicionales',
+    minutes: isEn ? 'minutes' : 'minutos',
+  }
+
   const userRequest = [
-    objetivo && `- Objetivo: ${objetivo}`,
-    diasPorSemana && `- Días por semana: ${diasPorSemana}`,
-    nivelExperiencia && `- Nivel de experiencia: ${nivelExperiencia}`,
-    duracionSesion && `- Duración por sesión: ${duracionSesion} minutos`,
-    equipamiento && `- Equipamiento disponible: ${equipamiento}`,
-    notas && `- Notas adicionales: ${notas}`,
+    objetivo && `- ${labels.goal}: ${objetivo}`,
+    diasPorSemana && `- ${labels.daysPerWeek}: ${diasPorSemana}`,
+    nivelExperiencia && `- ${labels.experience}: ${nivelExperiencia}`,
+    duracionSesion && `- ${labels.duration}: ${duracionSesion} ${labels.minutes}`,
+    equipamiento && `- ${labels.equipment}: ${equipamiento}`,
+    notas && `- ${labels.additionalNotes}: ${notas}`,
   ].filter(Boolean).join('\n')
 
-  return `Actúa como un entrenador personal certificado con más de 10 años de experiencia. Diseña rutinas efectivas, seguras y basadas en evidencia científica, adaptadas a cada persona.
+  const intro = isEn
+    ? `Act as a certified personal trainer with over 10 years of experience. Design effective, safe, and evidence-based routines adapted to each person.
 
-Crea una rutina de entrenamiento personalizada con estos requisitos del cliente:
+Create a personalized training routine with these client requirements:`
+    : `Actúa como un entrenador personal certificado con más de 10 años de experiencia. Diseña rutinas efectivas, seguras y basadas en evidencia científica, adaptadas a cada persona.
+
+Crea una rutina de entrenamiento personalizada con estos requisitos del cliente:`
+
+  const criteria = isEn
+    ? `DESIGN CRITERIA:
+- Adapt exercise selection, volume and intensity to the stated goal and level
+- Ensure balanced work distribution across available days
+- Include rest times consistent with the type of training`
+    : `CRITERIOS DE DISEÑO:
+- Adapta la selección de ejercicios, volumen e intensidad al objetivo y nivel indicados
+- Asegura una distribución equilibrada del trabajo según los días disponibles
+- Incluye tiempos de descanso coherentes con el tipo de entrenamiento`
+
+  const outputInstruction = isEn
+    ? 'Generate the result in JSON format following EXACTLY this structure:'
+    : 'Genera el resultado en formato JSON siguiendo EXACTAMENTE esta estructura:'
+
+  const jsonOnly = isEn
+    ? 'Respond ONLY with the JSON, no additional text.'
+    : 'Responde SOLO con el JSON, sin texto adicional.'
+
+  return `${intro}
 
 ${userRequest}
 
-CRITERIOS DE DISEÑO:
-- Adapta la selección de ejercicios, volumen e intensidad al objetivo y nivel indicados
-- Asegura una distribución equilibrada del trabajo según los días disponibles
-- Incluye tiempos de descanso coherentes con el tipo de entrenamiento
+${criteria}
 
-Genera el resultado en formato JSON siguiendo EXACTAMENTE esta estructura:
+${outputInstruction}
 
 ${ROUTINE_JSON_FORMAT}
 
 ${ROUTINE_JSON_RULES}
 
-Responde SOLO con el JSON, sin texto adicional.`
+${jsonOnly}`
 }
 
-/**
- * Genera un prompt para adaptar una rutina existente al formato JSON
- */
 export function buildAdaptRoutinePrompt() {
-  return `Convierte esta rutina de entrenamiento al siguiente formato JSON. Mantén todos los ejercicios, series, repeticiones y configuraciones lo más fiel posible al original.
+  const lang = getCurrentLocale()
+  const isEn = lang === 'en'
 
-FORMATO REQUERIDO:
+  const intro = isEn
+    ? 'Convert this training routine to the following JSON format. Keep all exercises, sets, reps and configurations as close to the original as possible.'
+    : 'Convierte esta rutina de entrenamiento al siguiente formato JSON. Mantén todos los ejercicios, series, repeticiones y configuraciones lo más fiel posible al original.'
+
+  const requiredFormat = isEn ? 'REQUIRED FORMAT:' : 'FORMATO REQUERIDO:'
+  const jsonOnly = isEn
+    ? 'Respond ONLY with the JSON, no additional text.'
+    : 'Responde SOLO con el JSON, sin texto adicional.'
+  const myRoutine = isEn ? 'MY ROUTINE TO CONVERT:' : 'MI RUTINA A CONVERTIR:'
+
+  return `${intro}
+
+${requiredFormat}
 ${ROUTINE_JSON_FORMAT}
 
 ${ROUTINE_JSON_RULES}
 
-Responde SOLO con el JSON, sin texto adicional.
+${jsonOnly}
 
-MI RUTINA A CONVERTIR:
+${myRoutine}
 `
 }

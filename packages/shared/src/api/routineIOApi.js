@@ -1,5 +1,6 @@
 import { getClient } from './_client.js'
 import { MeasurementType } from '../lib/measurementTypes.js'
+import { t } from '../i18n/index.js'
 
 // ============================================
 // IMPORT / EXPORT / DUPLICATE
@@ -141,7 +142,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
   const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData
 
   if (!data.routine) {
-    throw new Error('Formato de archivo inválido')
+    throw new Error(t('validation:invalidFileFormat'))
   }
 
   const { routine, exercises: exportedExercises } = data
@@ -321,7 +322,7 @@ export async function duplicateRoutine(routineId, userId, newName) {
   const exportData = await exportRoutine(routineId)
 
   // Modificar el nombre de la rutina
-  exportData.routine.name = newName || `${exportData.routine.name} (copia)`
+  exportData.routine.name = newName || `${exportData.routine.name} ${t('routine:duplicateSuffix')}`
 
   // Importar como nueva rutina (sin actualizar ejercicios existentes)
   return importRoutine(exportData, userId, { updateExercises: false })

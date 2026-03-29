@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui'
 import { getDefaultReps, getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
 import ExercisePickerModal from './ExercisePickerModal'
@@ -26,6 +27,7 @@ export default function AddExerciseModal({
   existingSupersets = [],
   existingExercises = [],
 }) {
+  const { t } = useTranslation()
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [form, setForm] = useState(DEFAULT_FORM)
 
@@ -53,7 +55,7 @@ export default function AddExerciseModal({
     })
   }
 
-  const title = isWarmup ? 'Añadir calentamiento' : 'Añadir ejercicio'
+  const title = isWarmup ? t('routine:block.addToWarmup') : t('routine:block.addExercise')
   const nextSuperset = getNextSupersetId(existingSupersets)
   const showSupersetField = !isWarmup
 

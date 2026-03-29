@@ -9,12 +9,14 @@ import {
   ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { validateSignupForm } from '@gym/shared'
 import { Button, Card, GoogleIcon } from '../components/ui'
 import { colors } from '../lib/styles'
 
 export default function SignupScreen({ navigation }) {
+  const { t } = useTranslation()
   const { signup, loginWithGoogle, isLoading, error, clearError } = useAuth()
 
   const [email, setEmail] = useState('')
@@ -47,12 +49,12 @@ export default function SignupScreen({ navigation }) {
         <View className="flex-1 items-center justify-center px-4">
           <Card className="w-full p-6 items-center">
             <Text className="text-success text-4xl mb-4">✓</Text>
-            <Text className="text-success text-2xl font-bold mb-4">Registro exitoso</Text>
+            <Text className="text-success text-2xl font-bold mb-4">{t('auth:signup.success')}</Text>
             <Text className="text-secondary text-center mb-6">
-              Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.
+              {t('auth:signup.checkEmail')}
             </Text>
             <Button onPress={() => navigation.navigate('Login')} className="w-full">
-              Ir a Iniciar Sesión
+              {t('auth:login.title')}
             </Button>
           </Card>
         </View>
@@ -73,11 +75,11 @@ export default function SignupScreen({ navigation }) {
         >
           <Card className="p-6">
             <Text className="text-primary text-2xl font-bold text-center mb-6">
-              Crear Cuenta
+              {t('auth:signup.title')}
             </Text>
 
             <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">Email</Text>
+              <Text className="text-primary text-sm font-medium mb-1">{t('auth:signup.email')}</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -91,11 +93,11 @@ export default function SignupScreen({ navigation }) {
             </View>
 
             <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">Contraseña</Text>
+              <Text className="text-primary text-sm font-medium mb-1">{t('auth:signup.password')}</Text>
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Mínimo 6 caracteres"
+                placeholder={t('auth:signup.minChars')}
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete="new-password"
@@ -104,11 +106,11 @@ export default function SignupScreen({ navigation }) {
             </View>
 
             <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">Confirmar Contraseña</Text>
+              <Text className="text-primary text-sm font-medium mb-1">{t('auth:signup.confirmPassword')}</Text>
               <TextInput
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                placeholder="Repite la contraseña"
+                placeholder={t('auth:signup.confirmPassword')}
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete="new-password"
@@ -123,12 +125,12 @@ export default function SignupScreen({ navigation }) {
             )}
 
             <Button onPress={handleSignup} loading={isLoading} className="mb-4">
-              Crear Cuenta
+              {t('auth:signup.submit')}
             </Button>
 
             <View className="flex-row items-center gap-3 mb-4">
               <View className="flex-1 h-px bg-border" />
-              <Text className="text-secondary text-xs">o</Text>
+              <Text className="text-secondary text-xs">{t('common:labels.or')}</Text>
               <View className="flex-1 h-px bg-border" />
             </View>
 
@@ -140,14 +142,14 @@ export default function SignupScreen({ navigation }) {
             >
               <GoogleIcon size={20} />
               <Text className="text-base font-medium" style={{ color: colors.textDark }}>
-                Continuar con Google
+                {t('auth:login.google')}
               </Text>
             </Pressable>
 
             <Pressable onPress={() => navigation.navigate('Login')}>
               <Text className="text-secondary text-sm text-center">
-                ¿Ya tienes cuenta?{' '}
-                <Text className="text-accent">Inicia sesión</Text>
+                {t('auth:signup.hasAccount')}{' '}
+                <Text className="text-accent">{t('auth:signup.loginLink')}</Text>
               </Text>
             </Pressable>
           </Card>

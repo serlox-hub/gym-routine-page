@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   Dumbbell,
   CalendarDays,
@@ -10,46 +11,48 @@ import {
 import { colors } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 
-const FEATURES = [
-  {
-    icon: Dumbbell,
-    title: 'Rutinas personalizadas',
-    description: 'Crea rutinas con días, bloques y ejercicios. Configura series, repeticiones, tempo y más.',
-    color: colors.accent,
-  },
-  {
-    icon: Timer,
-    title: 'Seguimiento en vivo',
-    description: 'Registra cada serie en tiempo real con temporizador de descanso y alertas de audio.',
-    color: colors.success,
-  },
-  {
-    icon: TrendingUp,
-    title: 'Progreso visual',
-    description: 'Gráficos de evolución por ejercicio, estimación de 1RM y volumen total de entrenamiento.',
-    color: colors.purple,
-  },
-  {
-    icon: Sparkles,
-    title: 'Generación con IA',
-    description: 'Genera rutinas completas con ChatGPT o Claude. Importa y exporta en JSON.',
-    color: colors.warning,
-  },
-  {
-    icon: CalendarDays,
-    title: 'Historial completo',
-    description: 'Calendario mensual con todas tus sesiones. Revisa cualquier entrenamiento pasado al detalle.',
-    color: colors.pink,
-  },
-  {
-    icon: Activity,
-    title: 'Métricas corporales',
-    description: 'Registra tu peso y medidas. Visualiza tendencias y evolución en el tiempo.',
-    color: colors.teal,
-  },
-]
-
 function FeaturesSection() {
+  const { t } = useTranslation()
+
+  const FEATURES = [
+    {
+      icon: Dumbbell,
+      title: t('landing:features.routines.title'),
+      description: t('landing:features.routines.description'),
+      color: colors.accent,
+    },
+    {
+      icon: Timer,
+      title: t('landing:features.liveTracking.title'),
+      description: t('landing:features.liveTracking.description'),
+      color: colors.success,
+    },
+    {
+      icon: TrendingUp,
+      title: t('landing:features.progress.title'),
+      description: t('landing:features.progress.description'),
+      color: colors.purple,
+    },
+    {
+      icon: Sparkles,
+      title: t('landing:features.ai.title'),
+      description: t('landing:features.ai.description'),
+      color: colors.warning,
+    },
+    {
+      icon: CalendarDays,
+      title: t('landing:features.history.title'),
+      description: t('landing:features.history.description'),
+      color: colors.pink,
+    },
+    {
+      icon: Activity,
+      title: t('landing:features.bodyMetrics.title'),
+      description: t('landing:features.bodyMetrics.description'),
+      color: colors.teal,
+    },
+  ]
+
   return (
     <section className="py-24 relative">
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(63, 185, 80, 0.04) 0%, transparent 50%)' }} />
@@ -59,13 +62,13 @@ function FeaturesSection() {
             className="inline-block text-xs font-semibold tracking-widest mb-4 px-3 py-1 rounded-full"
             style={{ color: colors.success, backgroundColor: 'rgba(63, 185, 80, 0.1)', border: '1px solid rgba(63, 185, 80, 0.2)' }}
           >
-            FUNCIONALIDADES
+            {t('landing:features.tag')}
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: colors.textPrimary }}>
-            Todo lo que necesitas para entrenar
+            {t('landing:features.title')}
           </h2>
           <p className="text-lg max-w-2xl mx-auto" style={{ color: colors.textSecondary }}>
-            Desde la planificación hasta el análisis, cada herramienta diseñada para ayudarte a progresar.
+            {t('landing:features.subtitle')}
           </p>
         </AnimatedSection>
 

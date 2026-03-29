@@ -1,12 +1,14 @@
 import { useRef, useState, useEffect } from 'react'
 import { View, Text, Pressable, Animated, PanResponder, Dimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { Play } from 'lucide-react-native'
 import useWorkoutStore from '../../stores/workoutStore'
 import { formatSecondsToMMSS } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function ActiveSessionBanner() {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const workoutVisible = useWorkoutStore(state => state.workoutVisible)
@@ -79,7 +81,7 @@ export default function ActiveSessionBanner() {
         style={{ backgroundColor: colors.bgSecondary, borderWidth: 2, borderColor: colors.accent }}
       >
         <Text className="text-xs font-medium" style={{ color: colors.accent }}>
-          Entrenamiento en curso
+          {t('workout:session.active')}
         </Text>
         {restTimerActive && timeRemaining > 0 && (
           <Text className="font-mono font-bold text-lg" style={{ color: timerColor }}>
@@ -92,7 +94,7 @@ export default function ActiveSessionBanner() {
           style={{ backgroundColor: colors.actionPrimaryBg }}
         >
           <Play size={14} color={colors.white} fill={colors.white} />
-          <Text className="text-white text-sm font-medium">Volver</Text>
+          <Text className="text-white text-sm font-medium">{t('common:buttons.back')}</Text>
         </Pressable>
       </View>
     </Animated.View>

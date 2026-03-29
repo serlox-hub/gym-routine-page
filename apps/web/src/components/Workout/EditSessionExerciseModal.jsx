@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS, diffSessionExerciseFields } from '@gym/shared'
 import { Modal } from '../ui/index.js'
@@ -7,23 +8,19 @@ import { ExerciseFormPanel } from '../Exercise/index.js'
 import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 
-function ViewToggle({ view, onChangeView }) {
+function ViewToggle({ view, onChangeView, labels }) {
   return (
     <div className="flex rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
-      <button
-        onClick={() => onChangeView('session')}
-        className="flex-1 py-1.5 text-xs font-semibold transition-colors"
-        style={view === 'session' ? { backgroundColor: colors.accent, color: colors.white } : { color: colors.textSecondary }}
-      >
-        En sesión
-      </button>
-      <button
-        onClick={() => onChangeView('exercise')}
-        className="flex-1 py-1.5 text-xs font-semibold transition-colors"
-        style={view === 'exercise' ? { backgroundColor: colors.accent, color: colors.white } : { color: colors.textSecondary }}
-      >
-        Ficha
-      </button>
+      {labels.map(({ key, label }) => (
+        <button
+          key={key}
+          onClick={() => onChangeView(key)}
+          className="flex-1 py-1.5 text-xs font-semibold transition-colors"
+          style={view === key ? { backgroundColor: colors.accent, color: colors.white } : { color: colors.textSecondary }}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   )
 }
@@ -39,6 +36,7 @@ export default function EditSessionExerciseModal({
   sessionExercise,
   existingSupersets = [],
 }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const [view, setView] = useState('session')
@@ -79,7 +77,7 @@ export default function EditSessionExerciseModal({
 
   if (!sessionExercise) return null
 
-  const exerciseName = sessionExercise.exercise?.name || 'Ejercicio'
+  const exerciseName = sessionExercise.exercise?.name || t('exercise:title')
   const exerciseObj = sessionExercise.exercise || {}
 
   return (
@@ -88,7 +86,7 @@ export default function EditSessionExerciseModal({
         <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
           {exerciseName}
         </p>
-        <ViewToggle view={view} onChangeView={setView} />
+        <ViewToggle view={view} onChangeView={setView} labels={[{ key: 'session', label: t('routine:exercise.config') }, { key: 'exercise', label: t('exercise:details') }]} />
       </div>
 
       {view === 'session' ? (
@@ -105,9 +103,9 @@ export default function EditSessionExerciseModal({
           <ExerciseConfigFormButtons
             onBack={onClose}
             onSubmit={handleSave}
-            backLabel="Cancelar"
-            submitLabel="Guardar"
-            pendingLabel="Guardando..."
+            backLabel={t('common:buttons.cancel')}
+            submitLabel={t('common:buttons.save')}
+            pendingLabel={t('common:buttons.loading')}
           />
         </div>
       ) : (

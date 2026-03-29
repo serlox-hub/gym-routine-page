@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 import { getMeasurementLabel, parseDecimal } from '@gym/shared'
 
 export default function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = 'cm', record = null, isPending }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({ value: '', notes: '' })
   const isEditing = !!record
 
@@ -44,7 +46,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="p-5">
       <Text className="text-lg font-semibold text-primary mb-4">
-        {isEditing ? `Editar ${label.toLowerCase()}` : `Registrar ${label.toLowerCase()}`}
+        {isEditing ? `${t('common:buttons.edit')} ${label.toLowerCase()}` : `${t('body:measurements.record')} ${label.toLowerCase()}`}
       </Text>
 
       <View className="gap-4">
@@ -62,7 +64,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
         </View>
 
         <View>
-          <Text className="text-sm font-medium text-secondary mb-1">Notas (opcional)</Text>
+          <Text className="text-sm font-medium text-secondary mb-1">{t('common:labels.notes')} ({t('common:labels.optional')})</Text>
           <TextInput
             value={form.notes}
             onChangeText={(text) => setForm(prev => ({ ...prev, notes: text }))}
@@ -75,13 +77,13 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
         </View>
 
         <View className="flex-row gap-3 justify-end pt-2">
-          <Button variant="secondary" onPress={handleClose}>Cancelar</Button>
+          <Button variant="secondary" onPress={handleClose}>{t('common:buttons.cancel')}</Button>
           <Button
             onPress={handleSubmit}
             disabled={!form.value || parseDecimal(form.value) <= 0 || isPending}
             loading={isPending}
           >
-            {isEditing ? 'Guardar' : 'Registrar'}
+            {isEditing ? t('common:buttons.save') : t('body:measurements.record')}
           </Button>
         </View>
       </View>

@@ -4,9 +4,12 @@
   "private": true,
   "main": "./src/index.js",
   "peerDependencies": {
+    "@tanstack/react-query": "*",
     "react": "*",
     "react-native": "*",
-    "@tanstack/react-query": "*",
     "zustand": "*"
+  },
+  "dependencies": {
+    "i18next": "^26.0.1"
   }
 }

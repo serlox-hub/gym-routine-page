@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useCreateExercise } from '../../hooks/useExercises.js'
 import { Modal, Button } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
@@ -9,11 +10,13 @@ export default function ExercisePickerModal({
   isOpen,
   onClose,
   onSelect,
-  title = 'Seleccionar ejercicio',
+  title,
   subtitle,
   initialMuscleGroup,
   existingExerciseIds,
 }) {
+  const { t } = useTranslation()
+  const _title = title || t('exercise:selectExercise')
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const { data: exercises, isLoading } = useExercisesWithMuscleGroup()
@@ -40,7 +43,7 @@ export default function ExercisePickerModal({
       className="p-6 max-h-[85vh] flex flex-col"
     >
       <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-        {isCreatingNew ? 'Nuevo ejercicio' : title}
+        {isCreatingNew ? t('exercise:new') : _title}
       </h3>
 
       {isCreatingNew ? (
@@ -62,9 +65,9 @@ export default function ExercisePickerModal({
               disabled={createExercise.isPending}
               className="flex-1"
             >
-              {createExercise.isPending ? 'Guardando...' : 'Guardar'}
+              {createExercise.isPending ? t('common:buttons.loading') : t('common:buttons.save')}
             </Button>
-            <Button variant="secondary" onClick={() => setIsCreatingNew(false)}>Cancelar</Button>
+            <Button variant="secondary" onClick={() => setIsCreatingNew(false)}>{t('common:buttons.cancel')}</Button>
           </div>
         </>
       ) : (
@@ -83,8 +86,8 @@ export default function ExercisePickerModal({
             onSearchChange={setSearchTerm}
           />
           <div className="flex gap-2 pt-3 mt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
-            <Button onClick={() => setIsCreatingNew(true)} className="flex-1">Crear nuevo</Button>
-            <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+            <Button onClick={() => setIsCreatingNew(true)} className="flex-1">{t('exercise:create')}</Button>
+            <Button variant="secondary" onClick={onClose}>{t('common:buttons.cancel')}</Button>
           </div>
         </>
       )}

@@ -1,0 +1,59 @@
+{
+  "title": "Exercises",
+  "new": "New exercise",
+  "edit": "Edit exercise",
+  "create": "Create exercise",
+  "delete": "Delete exercise",
+  "deleteConfirm": "Are you sure you want to delete \"{{name}}\"?",
+  "deleted": "Exercise deleted",
+  "usedInRoutine": "This exercise is being used in a routine. Remove it from the routine first.",
+  "name": "Exercise name",
+  "namePlaceholder": "E.g.: Bench press",
+  "nameHint": "Use a descriptive and unique name",
+  "nameRequired": "Exercise name is required",
+  "details": "Details",
+  "instructions": "Instructions",
+  "instructionsPlaceholder": "Execution instructions (optional)",
+  "muscleGroup": "Muscle group",
+  "noMuscleGroup": "No muscle group",
+  "allMuscleGroups": "All groups",
+  "selectMuscleGroup": "Select muscle group",
+  "muscleGroupRequired": "Muscle group is required",
+  "measurementType": "Measurement type",
+  "weightUnit": "Weight unit",
+  "timeUnit": "Time unit",
+  "distanceUnit": "Distance unit",
+  "noExercises": "You don't have any exercises yet",
+  "noExercisesSearch": "No exercises found",
+  "notFound": "Exercise not found",
+  "searchPlaceholder": "Search exercise...",
+  "selectExercise": "Select exercise",
+  "progression": "Progression",
+  "noHistory": "No history",
+  "needMoreSessions": "You need more sessions to see progression",
+  "progressMinSessions": "At least 2 sessions are needed to see progression",
+  "usage": {
+    "title": "Exercise usage",
+    "inRoutine": "In routine",
+    "inRoutines": "In routines",
+    "inSessions": "In sessions",
+    "noUsage": "This exercise is not used in any routine or session"
+  },
+  "effort": {
+    "rir": "RIR",
+    "effort": "Effort"
+  },
+  "repsLabel": {
+    "reps": "Repetitions",
+    "time": "Time",
+    "distance": "Distance",
+    "calories": "Calories"
+  },
+  "repsPlaceholder": {
+    "reps": "E.g.: 8-12",
+    "time": "E.g.: 30s, 1min",
+    "distance": "E.g.: 40m",
+    "calories": "E.g.: 100kcal",
+    "distanceTime": "E.g.: 5km"
+  }
+}

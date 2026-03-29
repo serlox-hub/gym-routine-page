@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { ArrowRightLeft } from 'lucide-react-native'
 import { Modal } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 import { convertWeight, getWeightUnits, toggleWeightMode } from '@gym/shared'
 
 export default function WeightConverterModal({ isOpen, onClose }) {
+  const { t } = useTranslation()
   const [value, setValue] = useState('')
   const [mode, setMode] = useState('lb-to-kg')
 
@@ -32,7 +34,7 @@ export default function WeightConverterModal({ isOpen, onClose }) {
     <Modal isOpen={isOpen} onClose={onClose}>
       <View className="p-4">
         <Text className="text-base font-semibold mb-4" style={{ color: colors.textPrimary }}>
-          Conversor de peso
+          {t('workout:set.weightConverter')}
         </Text>
 
         <View className="flex-row items-end gap-2 mb-4">

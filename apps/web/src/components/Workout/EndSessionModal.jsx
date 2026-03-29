@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 
 function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
+  const { t } = useTranslation()
   const { value: showSessionNotes } = usePreference('show_session_notes')
   const [notes, setNotes] = useState('')
 
@@ -39,7 +41,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
-            Finalizar entrenamiento
+            {t('workout:session.end')}
           </h3>
           <button
             onClick={handleClose}
@@ -53,12 +55,12 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
         {showSessionNotes && (
           <div className="mb-5">
             <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
-              Notas (opcional)
+              {t('common:labels.notes')} ({t('common:labels.optional')})
             </label>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="¿Algo que quieras recordar de esta sesión?"
+              placeholder={t('workout:session.notesPlaceholder')}
               rows={3}
               className="w-full px-3 py-2 rounded-lg text-sm resize-none"
               style={{
@@ -72,7 +74,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
 
         <div className="flex gap-3">
           <Button variant="secondary" className="flex-1" onClick={handleClose}>
-            Cancelar
+            {t('common:buttons.cancel')}
           </Button>
           <Button
             variant="primary"
@@ -80,7 +82,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
             onClick={handleConfirm}
             disabled={isPending}
           >
-            {isPending ? 'Guardando...' : 'Finalizar'}
+            {isPending ? t('common:buttons.loading') : t('common:buttons.done')}
           </Button>
         </div>
       </div>

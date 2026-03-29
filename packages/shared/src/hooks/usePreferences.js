@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { fetchPreferences, upsertPreference } from '../api/preferencesApi.js'
 import { useUserId } from './useAuth.js'
+import { i18n } from '../i18n/index.js'
 
 const DEFAULT_VALUES = {
   show_rir_input: true,
@@ -14,6 +16,7 @@ const DEFAULT_VALUES = {
   training_cycle_length: 7,
   training_rest_weeks: [],
   show_training_goal: true,
+  language: 'es',
 }
 
 // ============================================
@@ -67,4 +70,15 @@ export function usePreference(key) {
     value: preferences?.[key] ?? DEFAULT_VALUES[key],
     isLoading,
   }
+}
+
+export function useLanguageSync() {
+  const { data: preferences } = usePreferences()
+  const language = preferences?.language
+
+  useEffect(() => {
+    if (language && language !== i18n.language) {
+      i18n.changeLanguage(language)
+    }
+  }, [language])
 }

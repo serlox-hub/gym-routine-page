@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { View, Text, ScrollView, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react-native'
 import { useWorkoutHistory } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, Modal, PageHeader, ActiveSessionBanner } from '../components/ui'
@@ -10,6 +11,7 @@ import { formatTime } from '@gym/shared'
 import { colors } from '../lib/styles'
 
 export default function HistoryScreen({ navigation }) {
+  const { t } = useTranslation()
   const [currentDate, setCurrentDate] = useState(new Date())
   const { data: sessions, isLoading, error, refetch } = useWorkoutHistory(currentDate)
   const [selectedDay, setSelectedDay] = useState(null)
@@ -38,7 +40,7 @@ export default function HistoryScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title="Histórico" onBack={() => navigation.goBack()} />
+      <PageHeader title={t('workout:history.title')} onBack={() => navigation.goBack()} />
 
       <ScrollView
         className="flex-1 px-4"
@@ -48,7 +50,7 @@ export default function HistoryScreen({ navigation }) {
         {!sessions || sessions.length === 0 ? (
           <View className="items-center py-12">
             <Calendar size={48} color={colors.textSecondary} />
-            <Text className="text-secondary mt-4">No hay sesiones registradas</Text>
+            <Text className="text-secondary mt-4">{t('workout:history.noSessions')}</Text>
           </View>
         ) : (
           <>
@@ -65,7 +67,7 @@ export default function HistoryScreen({ navigation }) {
 
       <Modal isOpen={!!selectedDay} onClose={() => setSelectedDay(null)} className="p-4">
         <Text className="text-primary font-semibold mb-4">
-          {selectedDay?.sessions.length} sesiones este día
+          {selectedDay?.sessions.length} {t('workout:history.sessionsThisDay')}
         </Text>
         <View className="gap-2">
           {selectedDay?.sessions.map(session => (
@@ -75,7 +77,7 @@ export default function HistoryScreen({ navigation }) {
               onPress={() => handleSessionSelect(session.id)}
             >
               <Text className="text-primary font-medium">
-                {session.day_name || session.routine_day?.name || 'Entrenamiento Libre'}
+                {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </Text>
               <Text className="text-secondary text-sm">
                 {formatTime(session.started_at)}

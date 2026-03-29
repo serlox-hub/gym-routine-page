@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
@@ -24,6 +25,7 @@ function ViewToggle({ view, onChangeView, labels }) {
 }
 
 function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routineExercise, existingSupersets = [], isReplacing = false }) {
+  const { t } = useTranslation()
   const [view, setView] = useState('config')
   const [form, setForm] = useState({
     series: '3', reps: '', rir: '', rest_seconds: '', notes: '', tempo: '', tempo_razon: '', superset_group: '',
@@ -68,8 +70,8 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
         isOpen={isOpen}
         onClose={onClose}
         onSelect={handleReplace}
-        title="Sustituir ejercicio"
-        subtitle={`Sustituyendo: ${exercise?.name}`}
+        title={t('routine:exercise.replace')}
+        subtitle={`${t('routine:exercise.replacing')}: ${exercise?.name}`}
         initialMuscleGroup={exercise?.muscle_group?.id}
       />
     )
@@ -79,12 +81,12 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
     <Modal isOpen={isOpen} onClose={onClose} position="center" maxWidth="max-w-md">
       <div className="p-4 space-y-3" style={{ borderBottom: `1px solid ${colors.border}` }}>
         <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-          {exercise?.name || 'Ejercicio'}
+          {exercise?.name || t('exercise:title')}
         </p>
         <ViewToggle
           view={view}
           onChangeView={setView}
-          labels={[{ key: 'config', label: 'En rutina' }, { key: 'exercise', label: 'Ficha' }]}
+          labels={[{ key: 'config', label: t('routine:exercise.config') }, { key: 'exercise', label: t('exercise:details') }]}
         />
       </div>
 
@@ -103,9 +105,9 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
             onBack={onClose}
             onSubmit={handleSubmit}
             isPending={isPending}
-            backLabel="Cancelar"
-            submitLabel="Guardar"
-            pendingLabel="Guardando..."
+            backLabel={t('common:buttons.cancel')}
+            submitLabel={t('common:buttons.save')}
+            pendingLabel={t('common:buttons.loading')}
           />
         </div>
       ) : (

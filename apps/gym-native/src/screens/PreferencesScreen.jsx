@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Switch, ScrollView } from 'react-native'
+import { View, Text, Switch, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Check, X } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
+import { Check, X, Globe } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
 import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
@@ -28,6 +29,7 @@ function PreferenceToggle({ label, description, checked, onChange, disabled }) {
 }
 
 function PremiumFeature({ title, description, enabled, comingSoon }) {
+  const { t } = useTranslation()
   return (
     <View className="flex-row items-start gap-3 py-1">
       <View className="mt-0.5">
@@ -47,7 +49,7 @@ function PremiumFeature({ title, description, enabled, comingSoon }) {
           </Text>
           {comingSoon && (
             <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bgTertiary }}>
-              <Text className="text-xs text-secondary">Próximamente</Text>
+              <Text className="text-xs text-secondary">{t('common:preferences.comingSoon')}</Text>
             </View>
           )}
         </View>
@@ -58,6 +60,7 @@ function PremiumFeature({ title, description, enabled, comingSoon }) {
 }
 
 export default function PreferencesScreen({ navigation }) {
+  const { t } = useTranslation()
   const { data: preferences, isLoading } = usePreferences()
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
@@ -84,27 +87,61 @@ export default function PreferencesScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title="Preferencias" onBack={() => navigation.goBack()} />
+      <PageHeader title={t('common:preferences.title')} onBack={() => navigation.goBack()} />
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="gap-4">
+          {/* Language Section */}
+          <Card className="p-4">
+            <View className="flex-row items-center gap-2 mb-3">
+              <Globe size={16} color={colors.textSecondary} />
+              <Text className="text-sm font-medium text-secondary">
+                {t('common:preferences.language')}
+              </Text>
+            </View>
+            <View className="flex-row gap-2">
+              {[
+                { code: 'es', label: t('common:preferences.spanish') },
+                { code: 'en', label: t('common:preferences.english') },
+              ].map(({ code, label }) => {
+                const isActive = (preferences?.language || 'es') === code
+                return (
+                  <Pressable
+                    key={code}
+                    onPress={() => handleChange('language', code)}
+                    className="flex-1 py-2 px-3 rounded-lg items-center"
+                    style={{ backgroundColor: isActive ? colors.accent : colors.bgTertiary }}
+                    disabled={updatePreference.isPending}
+                  >
+                    <Text
+                      className="text-sm font-medium"
+                      style={{ color: isActive ? '#fff' : colors.textSecondary }}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </Card>
+
           {/* Plan Section */}
           <Card className="p-4">
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-sm font-medium text-secondary">Tu plan</Text>
+              <Text className="text-sm font-medium text-secondary">{t('common:preferences.yourPlan')}</Text>
               <PlanBadge isPremium={isPremium} />
             </View>
 
             <View className="gap-2">
-              <Text className="text-sm font-medium text-primary">Beneficios Premium</Text>
+              <Text className="text-sm font-medium text-primary">{t('common:preferences.premiumBenefits')}</Text>
               <PremiumFeature
-                title="Subir videos"
-                description="Graba y guarda videos de tus series para revisar tu técnica"
+                title={t('common:preferences.showVideoUpload')}
+                description={t('common:preferences.videoDescription')}
                 enabled={isPremium}
               />
               <PremiumFeature
-                title="Más funciones próximamente"
-                description="Nuevas características exclusivas en desarrollo"
+                title={t('common:preferences.moreFeaturesComingSoon')}
+                description={t('common:preferences.moreFeaturesDescription')}
                 enabled={isPremium}
                 comingSoon
               />
@@ -114,36 +151,36 @@ export default function PreferencesScreen({ navigation }) {
           {/* Workout Preferences */}
           <Card className="p-4">
             <Text className="text-sm font-medium text-secondary mb-4">
-              Durante el entrenamiento
+              {t('common:preferences.duringWorkout')}
             </Text>
 
             <View className="gap-2">
               <PreferenceToggle
-                label="Sonido y vibración del timer"
-                description="Reproducir sonido y vibrar cuando termine el descanso"
+                label={t('common:preferences.timerSound')}
+                description={t('common:preferences.timerSoundDescription')}
                 checked={timerSoundEnabled}
                 onChange={handleTimerSoundChange}
               />
 
               <PreferenceToggle
-                label="Registrar RIR (esfuerzo)"
-                description="Mostrar selector de RIR al completar cada serie"
+                label={t('common:preferences.showRir')}
+                description={t('common:preferences.showRirDescription')}
                 checked={preferences?.show_rir_input ?? true}
                 onChange={(value) => handleChange('show_rir_input', value)}
                 disabled={updatePreference.isPending}
               />
 
               <PreferenceToggle
-                label="Notas por serie"
-                description="Permitir añadir notas a cada serie completada"
+                label={t('common:preferences.showSetNotes')}
+                description={t('common:preferences.showSetNotesDescription')}
                 checked={preferences?.show_set_notes ?? true}
                 onChange={(value) => handleChange('show_set_notes', value)}
                 disabled={updatePreference.isPending}
               />
 
               <PreferenceToggle
-                label="Notas al finalizar"
-                description="Mostrar campo de notas al terminar la sesión"
+                label={t('common:preferences.showSessionNotes')}
+                description={t('common:preferences.showSessionNotesDescription')}
                 checked={preferences?.show_session_notes ?? true}
                 onChange={(value) => handleChange('show_session_notes', value)}
                 disabled={updatePreference.isPending}
@@ -151,8 +188,8 @@ export default function PreferencesScreen({ navigation }) {
 
               {canUploadVideo && (
                 <PreferenceToggle
-                  label="Grabar video"
-                  description="Permitir adjuntar video a cada serie"
+                  label={t('common:preferences.showVideoUpload')}
+                  description={t('common:preferences.showVideoUploadDescription')}
                   checked={preferences?.show_video_upload ?? true}
                   onChange={(value) => handleChange('show_video_upload', value)}
                   disabled={updatePreference.isPending}

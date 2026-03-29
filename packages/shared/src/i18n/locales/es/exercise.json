@@ -1,0 +1,59 @@
+{
+  "title": "Ejercicios",
+  "new": "Nuevo ejercicio",
+  "edit": "Editar ejercicio",
+  "create": "Crear ejercicio",
+  "delete": "Eliminar ejercicio",
+  "deleteConfirm": "¿Seguro que quieres eliminar \"{{name}}\"?",
+  "deleted": "Ejercicio eliminado",
+  "usedInRoutine": "Este ejercicio está siendo usado en una rutina. Elimínalo de la rutina primero.",
+  "name": "Nombre del ejercicio",
+  "namePlaceholder": "Ej: Press banca con barra",
+  "nameHint": "Usa un nombre descriptivo y único",
+  "nameRequired": "El nombre es obligatorio",
+  "details": "Detalles",
+  "instructions": "Instrucciones",
+  "instructionsPlaceholder": "Instrucciones de ejecución (opcional)",
+  "muscleGroup": "Grupo muscular",
+  "noMuscleGroup": "Seleccionar grupo muscular",
+  "allMuscleGroups": "Todos los grupos",
+  "selectMuscleGroup": "Seleccionar grupo muscular",
+  "muscleGroupRequired": "Selecciona un grupo muscular",
+  "measurementType": "Tipo de medición",
+  "weightUnit": "Unidad de peso",
+  "timeUnit": "Unidad de tiempo",
+  "distanceUnit": "Unidad de distancia",
+  "noExercises": "No tienes ejercicios todavía",
+  "noExercisesSearch": "No se encontraron ejercicios",
+  "notFound": "Ejercicio no encontrado",
+  "searchPlaceholder": "Buscar ejercicio...",
+  "selectExercise": "Seleccionar ejercicio",
+  "progression": "Progresión",
+  "noHistory": "Sin historial",
+  "needMoreSessions": "Necesitas más sesiones para ver la progresión",
+  "progressMinSessions": "Se necesitan al menos 2 sesiones para ver la progresión",
+  "usage": {
+    "title": "Uso del ejercicio",
+    "inRoutine": "En rutina",
+    "inRoutines": "En rutinas",
+    "inSessions": "En sesiones",
+    "noUsage": "Este ejercicio no se usa en ninguna rutina ni sesión"
+  },
+  "effort": {
+    "rir": "RIR",
+    "effort": "Esfuerzo"
+  },
+  "repsLabel": {
+    "reps": "Repeticiones",
+    "time": "Tiempo",
+    "distance": "Distancia",
+    "calories": "Calorías"
+  },
+  "repsPlaceholder": {
+    "reps": "Ej: 8-12",
+    "time": "Ej: 30s, 1min",
+    "distance": "Ej: 40m",
+    "calories": "Ej: 100kcal",
+    "distanceTime": "Ej: 5km"
+  }
+}

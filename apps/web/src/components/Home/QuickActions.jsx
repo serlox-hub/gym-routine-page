@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Zap, Star } from 'lucide-react'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { Card } from '../ui/index.js'
@@ -7,6 +8,7 @@ import { colors } from '../../lib/styles.js'
 
 function QuickActions({ favoriteRoutine }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const startSessionMutation = useStartSession()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
@@ -21,7 +23,7 @@ function QuickActions({ favoriteRoutine }) {
 
   return (
     <section className="mb-6">
-      <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>Acceso rápido</h2>
+      <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>{t('common:nav.quickAccess')}</h2>
       <div className="space-y-2">
         <Card
           className="p-3"
@@ -46,14 +48,14 @@ function QuickActions({ favoriteRoutine }) {
             <div className="flex-1">
               <h3 className="font-medium text-sm" style={{ color: colors.purpleAccent }}>
                 {startSessionMutation.isPending
-                  ? 'Iniciando...'
+                  ? t('common:buttons.loading')
                   : isFreeSessionActive
-                    ? 'Continuar Entrenamiento'
-                    : 'Entrenamiento Libre'}
+                    ? t('workout:session.resume')
+                    : t('workout:session.freeWorkout')}
               </h3>
               {isRoutineSessionActive && (
                 <p className="text-xs" style={{ color: colors.textSecondary }}>
-                  Tienes un entrenamiento de rutina en curso
+                  {t('workout:session.routineInProgress')}
                 </p>
               )}
             </div>

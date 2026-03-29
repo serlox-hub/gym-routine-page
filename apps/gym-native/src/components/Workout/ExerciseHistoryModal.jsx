@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { ChevronRight, FileText } from 'lucide-react-native'
 import { useExerciseHistory } from '../../hooks/useWorkout'
 import { LoadingSpinner, Card, Modal } from '../ui'
@@ -27,8 +28,9 @@ function StatCard({ label, value, color }) {
 }
 
 function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
+  const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
-    return <Text className="text-secondary text-center py-8">Sin registros anteriores</Text>
+    return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
   }
 
   return (
@@ -36,18 +38,18 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
       {stats && (
         <View className="flex-row flex-wrap gap-2">
           {stats.best1RM > 0 && (
-            <StatCard label="Mejor 1RM Est." value={`${stats.best1RM} ${weightUnit}`} color={colors.purple} />
+            <StatCard label={t('workout:summary.best1RM')} value={`${stats.best1RM} ${weightUnit}`} color={colors.purple} />
           )}
           {stats.maxWeight > 0 && (
-            <StatCard label="Peso máximo" value={`${stats.maxWeight} ${weightUnit}`} color={colors.accent} />
+            <StatCard label={t('workout:summary.maxWeight')} value={`${stats.maxWeight} ${weightUnit}`} color={colors.accent} />
           )}
           {stats.maxReps > 0 && (
-            <StatCard label="Máx. repeticiones" value={stats.maxReps} color={colors.success} />
+            <StatCard label={t('workout:summary.maxReps')} value={stats.maxReps} color={colors.success} />
           )}
           {stats.totalVolume > 0 && (
-            <StatCard label="Volumen total" value={`${stats.totalVolume.toLocaleString()} ${weightUnit}`} color={colors.warning} />
+            <StatCard label={t('workout:summary.totalVolume')} value={`${stats.totalVolume.toLocaleString()} ${weightUnit}`} color={colors.warning} />
           )}
-          <StatCard label="Sesiones" value={stats.sessionCount} color={colors.textSecondary} />
+          <StatCard label={t('workout:summary.sessions')} value={stats.sessionCount} color={colors.textSecondary} />
         </View>
       )}
 
@@ -55,7 +57,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
         <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
       ) : (
         <Text className="text-secondary text-center py-4 text-sm">
-          Necesitas al menos 2 sesiones para ver la gráfica
+          {t('exercise:progressMinSessions')}
         </Text>
       )}
     </View>
@@ -63,8 +65,9 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
 }
 
 function HistoryTab({ sessions, timeUnit, distanceUnit, onSelectSet, onSessionClick }) {
+  const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
-    return <Text className="text-secondary text-center py-8">Sin registros anteriores</Text>
+    return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
   }
 
   return (
@@ -129,6 +132,7 @@ export default function ExerciseHistoryModal({
   routineDayId = null,
   onSessionClick,
 }) {
+  const { t } = useTranslation()
   const [selectedSet, setSelectedSet] = useState(null)
   const [activeTab, setActiveTab] = useState('progress')
   const [scope, setScope] = useState(routineDayId ? 'day' : 'global')
@@ -165,7 +169,7 @@ export default function ExerciseHistoryModal({
                   className="text-xs font-medium"
                   style={{ color: scope === 'day' ? colors.success : colors.textSecondary }}
                 >
-                  Rutina
+                  {t('routine:title')}
                 </Text>
               </Pressable>
               <Pressable
@@ -197,7 +201,7 @@ export default function ExerciseHistoryModal({
               className="text-sm font-medium"
               style={{ color: activeTab === 'progress' ? colors.purple : colors.textSecondary }}
             >
-              Progresión
+              {t('exercise:progression')}
             </Text>
           </Pressable>
           <Pressable
@@ -209,7 +213,7 @@ export default function ExerciseHistoryModal({
               className="text-sm font-medium"
               style={{ color: activeTab === 'history' ? colors.accent : colors.textSecondary }}
             >
-              Historial
+              {t('workout:history.title')}
             </Text>
           </Pressable>
         </View>
@@ -245,7 +249,7 @@ export default function ExerciseHistoryModal({
                 {isFetchingNextPage ? (
                   <ActivityIndicator size="small" color={colors.textSecondary} />
                 ) : (
-                  <Text className="text-sm text-secondary">Cargar más</Text>
+                  <Text className="text-sm text-secondary">{t('common:buttons.seeMore')}</Text>
                 )}
               </Pressable>
             )}

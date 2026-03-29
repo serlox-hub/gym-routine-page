@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { View, Text, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useTranslation } from 'react-i18next'
 import { Clock, Calendar, Trash2, Trophy, Share2, TrendingUp, Pencil, Plus, X } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader, Button } from '../components/ui'
@@ -135,6 +136,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
 }
 
 export default function SessionDetailScreen({ route, navigation }) {
+  const { t } = useTranslation()
   const { sessionId } = route.params
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
   const { data: sessionPRsData } = useSessionPRs(sessionId)
@@ -156,7 +158,7 @@ export default function SessionDetailScreen({ route, navigation }) {
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
-  if (!session) return <ErrorMessage message="Sesión no encontrada" className="m-4" />
+  if (!session) return <ErrorMessage message={t('workout:session.notFound')} className="m-4" />
 
   const formatTimeFromISO = (isoString) => {
     if (!isoString) return ''
@@ -217,8 +219,8 @@ export default function SessionDetailScreen({ route, navigation }) {
   }
 
   const menuItems = [
-    !isEditing && { icon: Pencil, label: 'Editar', onPress: handleStartEdit },
-    { icon: Trash2, label: 'Eliminar', onPress: () => setShowDeleteConfirm(true), danger: true },
+    !isEditing && { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit },
+    { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setShowDeleteConfirm(true), danger: true },
   ].filter(Boolean)
 
   const handleTimeBlur = () => {
@@ -235,7 +237,7 @@ export default function SessionDetailScreen({ route, navigation }) {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <PageHeader
-        title="Detalle de sesión"
+        title={t('workout:history.viewDetail')}
         onBack={() => navigation.goBack()}
         menuItems={menuItems}
       />
@@ -245,15 +247,15 @@ export default function SessionDetailScreen({ route, navigation }) {
         <Card className="p-4 mb-4">
           <View className="gap-3">
             <View>
-              <Text className="text-xs text-secondary">Día</Text>
+              <Text className="text-xs text-secondary">{t('routine:day.title')}</Text>
               <Text className="text-sm font-medium text-primary">
-                {session.day_name || session.routine_day?.name || 'Entrenamiento Libre'}
+                {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </Text>
             </View>
 
             {(session.routine_name || session.routine_day?.routine?.name) && (
               <View>
-                <Text className="text-xs text-secondary">Rutina</Text>
+                <Text className="text-xs text-secondary">{t('routine:title')}</Text>
                 <Text className="text-sm text-primary">
                   {session.routine_name || session.routine_day?.routine?.name}
                 </Text>
@@ -264,14 +266,14 @@ export default function SessionDetailScreen({ route, navigation }) {
               <View className="flex-row items-center gap-2">
                 <Calendar size={16} color={colors.textSecondary} />
                 <View>
-                  <Text className="text-xs text-secondary">Fecha</Text>
+                  <Text className="text-xs text-secondary">{t('workout:history.date')}</Text>
                   <Text className="text-sm text-primary capitalize">{formatFullDate(session.started_at)}</Text>
                 </View>
               </View>
               <View className="flex-row items-center gap-2">
                 <Clock size={16} color={colors.textSecondary} />
                 <View>
-                  <Text className="text-xs text-secondary">Hora</Text>
+                  <Text className="text-xs text-secondary">{t('workout:history.time')}</Text>
                   <Text className="text-sm text-primary">{formatTime(session.started_at)}</Text>
                 </View>
               </View>
@@ -280,7 +282,7 @@ export default function SessionDetailScreen({ route, navigation }) {
             <View className="flex-row gap-4">
               {isEditing ? (
                 <View className="flex-1">
-                  <Text className="text-xs text-secondary mb-1">Hora de fin</Text>
+                  <Text className="text-xs text-secondary mb-1">{t('workout:history.endTime')}</Text>
                   <TextInput
                     value={editTimeText}
                     onChangeText={setEditTimeText}
@@ -295,9 +297,9 @@ export default function SessionDetailScreen({ route, navigation }) {
                 <>
                   {session.duration_minutes != null && (
                     <View>
-                      <Text className="text-xs text-secondary">Duración</Text>
+                      <Text className="text-xs text-secondary">{t('workout:summary.duration')}</Text>
                       <Text className="text-sm text-primary">
-                        {session.duration_minutes > 0 ? `${session.duration_minutes} minutos` : '< 1 minuto'}
+                        {session.duration_minutes > 0 ? `${session.duration_minutes} ${t('common:time.min')}` : `< 1 ${t('common:time.min')}`}
                       </Text>
                     </View>
                   )}
@@ -306,7 +308,7 @@ export default function SessionDetailScreen({ route, navigation }) {
 
               {session.overall_feeling && (
                 <View>
-                  <Text className="text-xs text-secondary">Sensación</Text>
+                  <Text className="text-xs text-secondary">{t('workout:sensation.label')}</Text>
                   <View
                     className="px-2 py-0.5 rounded mt-1 self-start"
                     style={{ backgroundColor: getSensationColor(session.overall_feeling) }}
@@ -322,11 +324,11 @@ export default function SessionDetailScreen({ route, navigation }) {
 
           {isEditing ? (
             <View className="mt-4 pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
-              <Text className="text-xs text-secondary mb-1">Notas</Text>
+              <Text className="text-xs text-secondary mb-1">{t('common:labels.notes')}</Text>
               <TextInput
                 value={editNotes}
                 onChangeText={setEditNotes}
-                placeholder="Notas de la sesión..."
+                placeholder={t('workout:session.notesPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 multiline
                 style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
@@ -335,14 +337,14 @@ export default function SessionDetailScreen({ route, navigation }) {
           ) : (
             session.notes && (
               <View className="mt-4 pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
-                <Text className="text-xs text-secondary mb-1">Notas</Text>
+                <Text className="text-xs text-secondary mb-1">{t('common:labels.notes')}</Text>
                 <Text className="text-sm text-primary">{session.notes}</Text>
               </View>
             )
           )}
         </Card>
 
-        <Text className="text-lg font-bold text-primary mb-3">Ejercicios</Text>
+        <Text className="text-lg font-bold text-primary mb-3">{t('workout:session.exercises')}</Text>
 
         <View className="gap-3">
           {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => {
@@ -370,7 +372,7 @@ export default function SessionDetailScreen({ route, navigation }) {
                   )}
                   {exercise.deleted_at && (
                     <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dangerBg }}>
-                      <Text className="text-xs" style={{ color: colors.danger }}>Eliminado</Text>
+                      <Text className="text-xs" style={{ color: colors.danger }}>{t('exercise:deleted')}</Text>
                     </View>
                   )}
                 </View>
@@ -406,7 +408,7 @@ export default function SessionDetailScreen({ route, navigation }) {
                       style={{ backgroundColor: colors.bgTertiary }}
                     >
                       <Plus size={14} color={colors.accent} />
-                      <Text className="text-xs" style={{ color: colors.accent }}>Añadir serie</Text>
+                      <Text className="text-xs" style={{ color: colors.accent }}>{t('workout:set.addSet')}</Text>
                     </Pressable>
                   </>
                 ) : (
@@ -461,10 +463,10 @@ export default function SessionDetailScreen({ route, navigation }) {
           style={{ backgroundColor: colors.bgSecondary, borderTopWidth: 1, borderTopColor: colors.border }}
         >
           <Button variant="secondary" className="flex-1" onPress={handleCancelEdit}>
-            Cancelar
+            {t('common:buttons.cancel')}
           </Button>
           <Button className="flex-1" onPress={handleSaveMetadata} loading={updateMetadata.isPending}>
-            Guardar
+            {t('common:buttons.save')}
           </Button>
         </View>
       ) : (
@@ -478,7 +480,7 @@ export default function SessionDetailScreen({ route, navigation }) {
             style={{ backgroundColor: colors.accent }}
           >
             <Share2 size={16} color={colors.white} />
-            <Text style={{ color: colors.white, fontSize: 14, fontWeight: '500' }}>Compartir</Text>
+            <Text style={{ color: colors.white, fontSize: 14, fontWeight: '500' }}>{t('common:buttons.share')}</Text>
           </Pressable>
         </View>
       )}
@@ -500,10 +502,10 @@ export default function SessionDetailScreen({ route, navigation }) {
 
       <ConfirmModal
         isOpen={showDeleteConfirm}
-        title="Eliminar sesión"
-        message="¿Seguro que quieres eliminar esta sesión? Se eliminarán todas las series registradas."
-        confirmText="Eliminar"
-        loadingText="Eliminando..."
+        title={t('workout:history.deleteSession')}
+        message={t('workout:session.deleteConfirm')}
+        confirmText={t('common:buttons.delete')}
+        loadingText={t('common:buttons.loading')}
         isLoading={deleteSession.isPending}
         onConfirm={() => {
           deleteSession.mutate({

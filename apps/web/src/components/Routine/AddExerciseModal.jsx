@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { getDefaultReps, getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
@@ -17,6 +18,7 @@ const DEFAULT_FORM = {
 }
 
 function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine', existingSupersets = [], existingExercises = [] }) {
+  const { t } = useTranslation()
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [form, setForm] = useState(DEFAULT_FORM)
 
@@ -44,7 +46,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
     })
   }
 
-  const title = isWarmup ? 'Añadir calentamiento' : 'Añadir ejercicio'
+  const title = isWarmup ? t('routine:block.addToWarmup') : t('routine:block.addExercise')
   const nextSuperset = getNextSupersetId(existingSupersets)
   const showSupersetField = !isWarmup
 

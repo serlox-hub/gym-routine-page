@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Modal, Button } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
 function MoveToDayModal({ isOpen, onClose, onSubmit, days, currentDayId, exerciseName, isPending }) {
+  const { t } = useTranslation()
   const [selectedDayId, setSelectedDayId] = useState(null)
 
   const availableDays = days?.filter(d => d.id !== currentDayId) || []
@@ -22,15 +24,15 @@ function MoveToDayModal({ isOpen, onClose, onSubmit, days, currentDayId, exercis
     <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-sm">
       <div className="p-5">
         <h3 className="text-lg font-semibold mb-2" style={{ color: colors.textPrimary }}>
-          Mover ejercicio
+          {t('routine:exercise.moveToDay')}
         </h3>
         <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-          Selecciona el día destino para <strong>{exerciseName}</strong>
+          {t('routine:exercise.selectDay')} <strong>{exerciseName}</strong>
         </p>
 
         {availableDays.length === 0 ? (
           <p className="text-sm py-4 text-center" style={{ color: colors.textSecondary }}>
-            No hay otros días disponibles
+            {t('routine:exercise.noOtherDays')}
           </p>
         ) : (
           <div className="space-y-2 mb-4">
@@ -53,13 +55,13 @@ function MoveToDayModal({ isOpen, onClose, onSubmit, days, currentDayId, exercis
 
         <div className="flex gap-3 justify-end">
           <Button variant="secondary" onClick={handleClose}>
-            Cancelar
+            {t('common:buttons.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={!selectedDayId || isPending}
           >
-            {isPending ? 'Moviendo...' : 'Mover'}
+            {isPending ? t('common:buttons.loading') : t('routine:exercise.moveToDay')}
           </Button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, Button, Input } from '@/components/ui'
 import { validateSignupForm } from '@gym/shared'
@@ -7,6 +8,7 @@ import { colors } from '../lib/styles.js'
 
 function Signup() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { signup, loginWithGoogle, isLoading, error, clearError } = useAuth()
 
   const [email, setEmail] = useState('')
@@ -39,12 +41,12 @@ function Signup() {
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
         <Card className="w-full max-w-md p-6 text-center">
           <div className="mb-4 text-4xl">✓</div>
-          <h1 className="text-2xl font-bold mb-4" style={{ color: colors.success }}>Registro exitoso</h1>
+          <h1 className="text-2xl font-bold mb-4" style={{ color: colors.success }}>{t('auth:signup.success')}</h1>
           <p className="mb-6" style={{ color: colors.textSecondary }}>
-            Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.
+            {t('auth:signup.checkEmail')}
           </p>
           <Button onClick={() => navigate('/login')} className="w-full">
-            Ir a Iniciar Sesión
+            {t('auth:login.title')}
           </Button>
         </Card>
       </div>
@@ -54,12 +56,12 @@ function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
       <Card className="w-full max-w-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Crear Cuenta</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">{t('auth:signup.title')}</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             id="email"
-            label="Email"
+            label={t('auth:signup.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -69,21 +71,21 @@ function Signup() {
 
           <Input
             id="password"
-            label="Contraseña"
+            label={t('auth:signup.password')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mínimo 6 caracteres"
+            placeholder={t('auth:signup.minChars')}
             autoComplete="new-password"
           />
 
           <Input
             id="confirmPassword"
-            label="Confirmar Contraseña"
+            label={t('auth:signup.confirmPassword')}
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Repite la contraseña"
+            placeholder={t('auth:signup.confirmPassword')}
             autoComplete="new-password"
           />
 
@@ -98,7 +100,7 @@ function Signup() {
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
+            {isLoading ? t('common:buttons.loading') : t('auth:signup.submit')}
           </Button>
         </form>
 
@@ -108,7 +110,7 @@ function Signup() {
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-2" style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary }}>
-              o continúa con
+              {t('auth:login.orContinueWith')}
             </span>
           </div>
         </div>
@@ -126,13 +128,13 @@ function Signup() {
             <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
             <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
           </svg>
-          Google
+          {t('auth:login.google')}
         </Button>
 
         <p className="text-center mt-4 text-sm" style={{ color: colors.textSecondary }}>
-          ¿Ya tienes cuenta?{' '}
+          {t('auth:signup.hasAccount')}{' '}
           <Link to="/login" className="hover:underline" style={{ color: colors.accent }}>
-            Inicia sesión
+            {t('auth:signup.loginLink')}
           </Link>
         </p>
       </Card>

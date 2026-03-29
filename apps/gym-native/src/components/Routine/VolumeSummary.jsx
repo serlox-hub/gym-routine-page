@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { View, Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
 import { useRoutineBlocks } from '../../hooks/useRoutines'
 import { colors } from '../../lib/styles'
 
 function VolumeSummary({ days, cycleDays = 7 }) {
+  const { t } = useTranslation()
   const [allDaysBlocks, setAllDaysBlocks] = useState([])
 
   if (!days?.length) return null
@@ -12,7 +14,7 @@ function VolumeSummary({ days, cycleDays = 7 }) {
   return (
     <View className="mt-4 px-4 mb-4">
       <Text className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
-        Volumen semanal por grupo muscular
+        {t('routine:volumeSummary')}
       </Text>
       {days.map((day, i) => (
         <DayBlocksCollector key={day.id} dayId={day.id} index={i} onBlocks={setAllDaysBlocks} />

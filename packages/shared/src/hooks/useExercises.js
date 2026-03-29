@@ -11,6 +11,7 @@ import {
   deleteExercise,
 } from '../api/exerciseApi.js'
 import { getNotifier } from '../notifications.js'
+import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 
 export function useExercisesWithMuscleGroup() {
@@ -83,7 +84,7 @@ export function useDeleteExercise() {
     mutationFn: deleteExercise,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES] })
-      getNotifier()?.show('Ejercicio eliminado', 'success')
+      getNotifier()?.show(t('exercise:deleted'), 'success')
     },
   })
 }
