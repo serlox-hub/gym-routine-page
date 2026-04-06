@@ -77,8 +77,12 @@
     "tryAgain": "Try again",
     "notFound": "Not found",
     "copyError": "Copy failed",
-    "copySuccess": "Copied to clipboard"
+    "copySuccess": "Copied to clipboard",
+    "somethingWrong": "Something went wrong",
+    "unexpected": "An unexpected error occurred",
+    "videoLoad": "Error loading video"
   },
+  "daysShort": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
   "confirm": {
     "deleteTitle": "Confirm deletion",
     "areYouSure": "Are you sure?",

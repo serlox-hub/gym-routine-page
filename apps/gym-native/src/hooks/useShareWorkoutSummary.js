@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import * as Sharing from 'expo-sharing'
-import { getNotifier } from '@gym/shared'
+import { getNotifier, t } from '@gym/shared'
 
 export function useShareWorkoutSummary() {
   const [isGenerating, setIsGenerating] = useState(false)
@@ -13,7 +13,7 @@ export function useShareWorkoutSummary() {
 
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: 'Compartir entrenamiento',
+        dialogTitle: t('workout:share.dialogTitle'),
       })
     } catch (err) {
       getNotifier()?.show(`Error al compartir: ${err.message}`, 'error')

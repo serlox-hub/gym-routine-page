@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
+import { t } from '@gym/shared'
 import { colors } from '../lib/styles'
 
 export default class ErrorBoundary extends Component {
@@ -21,7 +22,7 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
-      const errorMessage = this.state.error?.message || 'Ha ocurrido un error inesperado'
+      const errorMessage = this.state.error?.message || t('common:errors.unexpected')
       const componentStack = this.state.errorInfo?.componentStack
 
       return (
@@ -42,7 +43,7 @@ export default class ErrorBoundary extends Component {
               marginBottom: 8,
             }}
           >
-            Algo salió mal
+            {t('common:errors.somethingWrong')}
           </Text>
           <Text
             style={{
@@ -85,7 +86,7 @@ export default class ErrorBoundary extends Component {
             }}
           >
             <Text style={{ fontSize: 14, fontWeight: '500', color: colors.white }}>
-              Reintentar
+              {t('common:buttons.retry')}
             </Text>
           </Pressable>
         </View>

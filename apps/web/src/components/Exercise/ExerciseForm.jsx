@@ -12,10 +12,12 @@ import {
   measurementTypeUsesWeight
 } from '@gym/shared'
 
-const WEIGHT_UNITS = [
-  { value: 'kg', label: 'Kilogramos (kg)' },
-  { value: 'lb', label: 'Libras (lb)' },
-]
+function getWeightUnits(t) {
+  return [
+    { value: 'kg', label: t('exercise:weightUnitKg') },
+    { value: 'lb', label: t('exercise:weightUnitLb') },
+  ]
+}
 
 function UnitSelector({ label, units, field, form, onChange, Wrapper, compact }) {
   return (
@@ -229,7 +231,7 @@ function ExerciseForm({
 
       {/* Unidad de peso (solo si usa peso) */}
       {usesWeight && (
-        <UnitSelector label={t('exercise:weightUnit')} units={WEIGHT_UNITS} field="weight_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
+        <UnitSelector label={t('exercise:weightUnit')} units={getWeightUnits(t)} field="weight_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
       )}
 
 

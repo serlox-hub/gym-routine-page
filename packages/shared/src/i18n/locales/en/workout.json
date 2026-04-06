@@ -24,6 +24,9 @@
   },
   "set": {
     "complete": "Complete set",
+    "unmark": "Unmark set",
+    "markDropset": "Mark as dropset",
+    "removeDropset": "Remove dropset",
     "edit": "Edit set",
     "delete": "Delete set",
     "weight": "Weight",
@@ -92,6 +95,9 @@
     "sessionsThisDay": "sessions on this day",
     "deleteSession": "Delete session",
     "viewDetail": "View detail"
+  },
+  "share": {
+    "dialogTitle": "Share workout"
   },
   "sensation": {
     "label": "Sensation",

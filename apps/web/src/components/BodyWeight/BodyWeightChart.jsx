@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   LineChart,
   Line,
@@ -12,6 +13,7 @@ import { transformBodyWeightToChartData } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function BodyWeightChart({ records, unit = 'kg' }) {
+  const { t } = useTranslation()
   const chartData = useMemo(
     () => transformBodyWeightToChartData(records, 30),
     [records]
@@ -49,7 +51,7 @@ function BodyWeightChart({ records, unit = 'kg' }) {
               }}
               labelStyle={{ color: colors.textPrimary }}
               labelFormatter={(_, payload) => payload[0]?.payload?.fullDate || ''}
-              formatter={(value) => [`${value} ${unit}`, 'Peso']}
+              formatter={(value) => [`${value} ${unit}`, t('body:weight.tab')]}
             />
             <Line
               type="monotone"

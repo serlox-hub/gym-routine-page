@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   MUSCLE_GROUP_COLORS,
@@ -9,9 +10,9 @@ import {
 } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
-const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-
 function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
+  const { t } = useTranslation()
+  const DAYS_OF_WEEK = t('common:daysShort', { returnObjects: true })
   const calendarData = useMemo(
     () => generateCalendarDays(currentDate, sessions),
     [currentDate, sessions]

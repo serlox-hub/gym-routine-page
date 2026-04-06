@@ -24,6 +24,9 @@
   },
   "set": {
     "complete": "Completar serie",
+    "unmark": "Desmarcar serie",
+    "markDropset": "Marcar como dropset",
+    "removeDropset": "Quitar dropset",
     "edit": "Editar serie",
     "delete": "Eliminar serie",
     "weight": "Peso",
@@ -92,6 +95,9 @@
     "sessionsThisDay": "sesiones este día",
     "deleteSession": "Eliminar sesión",
     "viewDetail": "Ver detalle"
+  },
+  "share": {
+    "dialogTitle": "Compartir entrenamiento"
   },
   "sensation": {
     "label": "Sensación",

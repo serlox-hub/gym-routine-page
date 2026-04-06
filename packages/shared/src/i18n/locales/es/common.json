@@ -77,8 +77,12 @@
     "tryAgain": "Inténtalo de nuevo",
     "notFound": "No encontrado",
     "copyError": "Error al copiar",
-    "copySuccess": "Copiado al portapapeles"
+    "copySuccess": "Copiado al portapapeles",
+    "somethingWrong": "Algo salió mal",
+    "unexpected": "Ha ocurrido un error inesperado",
+    "videoLoad": "Error al cargar video"
   },
+  "daysShort": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
   "confirm": {
     "deleteTitle": "Confirmar eliminación",
     "areYouSure": "¿Estás seguro?",

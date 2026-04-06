@@ -24,6 +24,7 @@ import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
 
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete }) {
+  const { t } = useTranslation()
   const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(exercise.measurement_type)
 
   const [weight, setWeight] = useState(String(set.weight ?? ''))
@@ -72,7 +73,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         onClick={handleToggleDropset}
         className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0"
         style={{ backgroundColor: setType === 'dropset' ? colors.orange : isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
-        title={setType === 'dropset' ? 'Quitar dropset' : 'Marcar como dropset'}
+        title={setType === 'dropset' ? t('workout:set.removeDropset') : t('workout:set.markDropset')}
       >
         {setType === 'dropset' ? 'D' : set.set_number}
       </button>

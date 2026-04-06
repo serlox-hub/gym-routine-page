@@ -28,6 +28,8 @@
   "muscleGroupRequired": "Muscle group is required",
   "measurementType": "Measurement type",
   "weightUnit": "Weight unit",
+  "weightUnitKg": "Kilograms (kg)",
+  "weightUnitLb": "Pounds (lb)",
   "timeUnit": "Time unit",
   "distanceUnit": "Distance unit",
   "noExercises": "You don't have any exercises yet",

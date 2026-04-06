@@ -28,6 +28,8 @@
   "muscleGroupRequired": "Selecciona un grupo muscular",
   "measurementType": "Tipo de medición",
   "weightUnit": "Unidad de peso",
+  "weightUnitKg": "Kilogramos (kg)",
+  "weightUnitLb": "Libras (lb)",
   "timeUnit": "Unidad de tiempo",
   "distanceUnit": "Unidad de distancia",
   "noExercises": "No tienes ejercicios todavía",

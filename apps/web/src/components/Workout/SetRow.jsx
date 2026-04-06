@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { useIsPRSet } from './PRContext.jsx'
@@ -31,6 +32,7 @@ function SetRow({
   canRemove = false,
   onRemove
 }) {
+  const { t } = useTranslation()
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(sessionExerciseId, setNumber))
   const setData = useWorkoutStore(state => state.getSetData(sessionExerciseId, setNumber))
   const cachedData = useWorkoutStore(state => state.getCachedSetData(sessionExerciseId, setNumber))
@@ -236,7 +238,7 @@ function SetRow({
           cursor: (!isCompleted && !isValid()) ? 'default' : 'pointer',
           opacity: (!isCompleted && !isValid()) ? 0.5 : 1,
         }}
-        title={isCompleted ? 'Desmarcar serie' : 'Completar serie'}
+        title={isCompleted ? t('workout:set.unmark') : t('workout:set.complete')}
       >
         {isCompleted ? '✕' : '✓'}
       </button>

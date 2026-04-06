@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { t } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
 export default class ErrorBoundary extends Component {
@@ -27,13 +28,13 @@ export default class ErrorBoundary extends Component {
             className="text-lg font-semibold mb-2"
             style={{ color: colors.textPrimary }}
           >
-            Algo salió mal
+            {t('common:errors.somethingWrong')}
           </h2>
           <p
             className="text-sm mb-6 text-center max-w-md"
             style={{ color: colors.textSecondary }}
           >
-            {this.state.error?.message || 'Ha ocurrido un error inesperado'}
+            {this.state.error?.message || t('common:errors.unexpected')}
           </p>
           <div className="flex gap-3">
             <button

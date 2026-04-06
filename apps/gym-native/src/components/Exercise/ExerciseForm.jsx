@@ -13,11 +13,11 @@ import {
   measurementTypeUsesWeight
 } from '@gym/shared'
 
-const UNIT_OPTIONS = {
-  weight: [
-    { value: 'kg', label: 'Kilogramos (kg)' },
-    { value: 'lb', label: 'Libras (lb)' },
-  ],
+function getWeightUnits(t) {
+  return [
+    { value: 'kg', label: t('exercise:weightUnitKg') },
+    { value: 'lb', label: t('exercise:weightUnitLb') },
+  ]
 }
 
 const DEFAULT_FORM = {
@@ -183,7 +183,7 @@ export default function ExerciseForm({
       </View>
 
       {measurementTypeUsesWeight(form.measurement_type) && (
-        <UnitSelector label={t('exercise:weightUnit')} units={UNIT_OPTIONS.weight} field="weight_unit" form={form} onChange={handleChange} />
+        <UnitSelector label={t('exercise:weightUnit')} units={getWeightUnits(t)} field="weight_unit" form={form} onChange={handleChange} />
       )}
 
       <View className="mb-4">
