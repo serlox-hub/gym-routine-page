@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
+import { useTranslation } from 'react-i18next'
+import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, translateMuscleGroup, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
 import { useRoutineBlocks } from '../../hooks/useRoutines.js'
 import { colors } from '../../lib/styles.js'
 
@@ -83,7 +84,7 @@ function VolumeRow({ name, sets, zone, landmarks }) {
   return (
     <div className="flex items-center gap-3">
       <div className="w-28 flex-shrink-0">
-        <span className="text-xs font-medium" style={{ color }}>{name}</span>
+        <span className="text-xs font-medium" style={{ color }}>{translateMuscleGroup(name)}</span>
       </div>
       <div className="flex-1 relative h-4">
         {/* Fondo con zonas coloreadas */}
@@ -126,6 +127,7 @@ function VolumeRow({ name, sets, zone, landmarks }) {
 }
 
 function VolumeLegend() {
+  const { t } = useTranslation()
   return (
     <div className="mt-3 pt-3 border-t" style={{ borderColor: colors.border }}>
       <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -139,7 +141,7 @@ function VolumeLegend() {
         ))}
       </div>
       <p className="text-xs mt-2" style={{ color: colors.textMuted }}>
-        Rangos orientativos basados en Israetel et al. (Renaissance Periodization) y Schoenfeld et al. (2017)
+        {t('routine:volumeReference')}
       </p>
     </div>
   )

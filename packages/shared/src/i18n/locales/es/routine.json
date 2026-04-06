@@ -24,6 +24,7 @@
   "duplicateError": "Error al duplicar la rutina",
   "exportError": "Error al exportar la rutina",
   "volumeSummary": "Resumen de volumen",
+  "volumeReference": "Rangos orientativos basados en Israetel et al. (Renaissance Periodization) y Schoenfeld et al. (2017)",
   "favorite": "Favorita",
   "setFavorite": "Marcar como favorita",
   "unsetFavorite": "Quitar de favoritas",

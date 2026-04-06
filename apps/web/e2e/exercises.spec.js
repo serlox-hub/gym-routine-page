@@ -75,11 +75,11 @@ test.describe('Editar ejercicio', () => {
   })
 
   test('puede navegar a editar desde la lista usando menú', async ({ page }) => {
-    // Buscar el menú de tres puntos dentro de la sección de ejercicios
-    const exerciseCards = page.locator('main button').filter({ has: page.locator('svg') })
+    // Buscar el ejercicio custom del usuario (no del sistema) por su nombre
+    const exerciseRow = page.locator('main').getByText('Press Banca E2E Test').locator('..')
+    const menuButton = exerciseRow.locator('button').filter({ has: page.locator('svg') }).first()
 
-    // Hacer clic en el primer menú de ejercicio
-    await exerciseCards.first().click()
+    await menuButton.click()
 
     // Esperar a que aparezca el menú y hacer clic en Editar
     await page.getByRole('button', { name: /editar/i }).click()
@@ -89,9 +89,11 @@ test.describe('Editar ejercicio', () => {
   })
 
   test('puede guardar cambios en ejercicio', async ({ page }) => {
-    // Abrir menú y editar
-    const exerciseCards = page.locator('main button').filter({ has: page.locator('svg') })
-    await exerciseCards.first().click()
+    // Buscar el ejercicio custom del usuario
+    const exerciseRow = page.locator('main').getByText('Press Banca E2E Test').locator('..')
+    const menuButton = exerciseRow.locator('button').filter({ has: page.locator('svg') }).first()
+
+    await menuButton.click()
     await page.getByRole('button', { name: /editar/i }).click()
 
     // Verificar que se abre el modal y esperar a que carguen los datos

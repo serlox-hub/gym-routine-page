@@ -24,6 +24,7 @@
   "duplicateError": "Error duplicating routine",
   "exportError": "Error exporting routine",
   "volumeSummary": "Volume summary",
+  "volumeReference": "Reference ranges based on Israetel et al. (Renaissance Periodization) and Schoenfeld et al. (2017)",
   "favorite": "Favorite",
   "setFavorite": "Set as favorite",
   "unsetFavorite": "Remove from favorites",

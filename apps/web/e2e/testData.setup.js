@@ -55,6 +55,8 @@ setup('create test data', async () => {
     let { data: exercises } = await supabase
       .from('exercises')
       .select('id, name:name_es')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
       .limit(1)
 
     let exerciseId

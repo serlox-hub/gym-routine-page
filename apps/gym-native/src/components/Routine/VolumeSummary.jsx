@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
+import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, translateMuscleGroup, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
 import { useRoutineBlocks } from '../../hooks/useRoutines'
 import { colors } from '../../lib/styles'
 
@@ -85,7 +85,7 @@ function VolumeRow({ name, sets, zone, landmarks }) {
   return (
     <View className="flex-row items-center gap-3">
       <View style={{ width: 112 }}>
-        <Text className="text-xs font-medium" style={{ color }}>{name}</Text>
+        <Text className="text-xs font-medium" style={{ color }}>{translateMuscleGroup(name)}</Text>
       </View>
       <View className="flex-1 h-4">
         {/* Fondo con zonas coloreadas */}
@@ -131,6 +131,7 @@ function VolumeRow({ name, sets, zone, landmarks }) {
 }
 
 function VolumeLegend() {
+  const { t } = useTranslation()
   return (
     <View
       className="mt-3 pt-3"
@@ -147,7 +148,7 @@ function VolumeLegend() {
         ))}
       </View>
       <Text className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-        Rangos orientativos basados en Israetel et al. (Renaissance Periodization) y Schoenfeld et al. (2017)
+        {t('routine:volumeReference')}
       </Text>
     </View>
   )
