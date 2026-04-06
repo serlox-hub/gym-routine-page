@@ -75,11 +75,9 @@ test.describe('Editar ejercicio', () => {
   })
 
   test('puede navegar a editar desde la lista usando menú', async ({ page }) => {
-    // Buscar el ejercicio custom del usuario (no del sistema) por su nombre
-    const exerciseRow = page.locator('main').getByText('Press Banca E2E Test').locator('..')
-    const menuButton = exerciseRow.locator('button').filter({ has: page.locator('svg') }).first()
-
-    await menuButton.click()
+    // Buscar el card que contiene el ejercicio custom del usuario
+    const exerciseCard = page.locator('main > div').filter({ hasText: 'Press Banca E2E Test' }).first()
+    await exerciseCard.locator('button').first().click()
 
     // Esperar a que aparezca el menú y hacer clic en Editar
     await page.getByRole('button', { name: /editar/i }).click()
@@ -89,11 +87,9 @@ test.describe('Editar ejercicio', () => {
   })
 
   test('puede guardar cambios en ejercicio', async ({ page }) => {
-    // Buscar el ejercicio custom del usuario
-    const exerciseRow = page.locator('main').getByText('Press Banca E2E Test').locator('..')
-    const menuButton = exerciseRow.locator('button').filter({ has: page.locator('svg') }).first()
-
-    await menuButton.click()
+    // Buscar el card que contiene el ejercicio custom del usuario
+    const exerciseCard = page.locator('main > div').filter({ hasText: 'Press Banca E2E Test' }).first()
+    await exerciseCard.locator('button').first().click()
     await page.getByRole('button', { name: /editar/i }).click()
 
     // Verificar que se abre el modal y esperar a que carguen los datos
