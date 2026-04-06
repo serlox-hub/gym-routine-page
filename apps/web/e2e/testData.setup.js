@@ -54,7 +54,7 @@ setup('create test data', async () => {
     // Obtener un ejercicio existente (o crear uno si no hay)
     let { data: exercises } = await supabase
       .from('exercises')
-      .select('id, name')
+      .select('id, name:name_es')
       .limit(1)
 
     let exerciseId
@@ -74,9 +74,8 @@ setup('create test data', async () => {
       const { data: newExercise, error: exerciseError } = await supabase
         .from('exercises')
         .insert({
-          name: 'Press Banca E2E Test',
+          name_es: 'Press Banca E2E Test',
           measurement_type: 'weight_reps',
-          weight_unit: 'kg',
           muscle_group_id: muscleGroups[0].id,
           user_id: userId,
         })

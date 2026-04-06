@@ -25,7 +25,7 @@ function ExerciseCard({
   positionLabels = [],
 }) {
   const { t } = useTranslation()
-  const { exercise, series, reps, rir, rest_seconds, tempo, measurement_type } = routineExercise
+  const { exercise, series, reps, rir, rest_seconds, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
 
   const measurementType = measurement_type || exercise.measurement_type || MeasurementType.WEIGHT_REPS
@@ -82,7 +82,6 @@ function ExerciseCard({
         <span className="text-xs" style={{ color: colors.textSecondary }}>{series}×{reps}</span>
         {rir !== null && rir !== undefined && <span className="text-xs" style={{ color: colors.purple }}>RIR {rir}</span>}
         {rest_seconds > 0 && <span className="text-xs" style={{ color: colors.warning }}>{rest_seconds}s</span>}
-        {tempo && <span className="text-xs" style={{ color: colors.textSecondary }}>{tempo}</span>}
       </div>
 
       <ExerciseHistoryModal
@@ -91,8 +90,6 @@ function ExerciseCard({
         exerciseId={exercise.id}
         exerciseName={exercise.name}
         measurementType={measurementType}
-        timeUnit={exercise.time_unit}
-        distanceUnit={exercise.distance_unit}
         routineDayId={routineDayId}
       />
     </Wrapper>

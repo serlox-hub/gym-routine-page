@@ -28,7 +28,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
   const { t } = useTranslation()
   const [view, setView] = useState('config')
   const [form, setForm] = useState({
-    series: '3', reps: '', rir: '', rest_seconds: '', notes: '', tempo: '', tempo_razon: '', superset_group: '',
+    series: '3', reps: '', rir: '', rest_seconds: '', notes: '', superset_group: '',
   })
 
   const exercise = routineExercise?.exercise
@@ -42,8 +42,6 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
         rir: routineExercise.rir != null ? String(routineExercise.rir) : '',
         rest_seconds: routineExercise.rest_seconds ? String(routineExercise.rest_seconds) : '',
         notes: routineExercise.notes || '',
-        tempo: routineExercise.tempo || '',
-        tempo_razon: routineExercise.tempo_razon || '',
         superset_group: routineExercise.superset_group != null
           ? String(routineExercise.superset_group)
           : '',
@@ -58,7 +56,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
   }
 
   const handleReplace = (newExercise) => {
-    const replaceForm = { ...form, rir: '', tempo: '', tempo_razon: '', notes: '' }
+    const replaceForm = { ...form, rir: '', notes: '' }
     onSubmit({ exerciseId: routineExercise.id, exercise_id: newExercise.id, ...parseExerciseConfigForm(replaceForm) })
   }
 

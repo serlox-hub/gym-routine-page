@@ -9,24 +9,12 @@ import {
   MeasurementType,
   getMuscleGroupColor,
   translateMuscleGroup,
-  measurementTypeUsesDistance,
-  measurementTypeUsesTime,
   measurementTypeUsesWeight
 } from '@gym/shared'
 
 const WEIGHT_UNITS = [
   { value: 'kg', label: 'Kilogramos (kg)' },
   { value: 'lb', label: 'Libras (lb)' },
-]
-
-const TIME_UNITS = [
-  { value: 's', label: 'Segundos (s)' },
-  { value: 'min', label: 'Minutos (min)' },
-]
-
-const DISTANCE_UNITS = [
-  { value: 'm', label: 'Metros (m)' },
-  { value: 'km', label: 'Kilómetros (km)' },
 ]
 
 function UnitSelector({ label, units, field, form, onChange, Wrapper, compact }) {
@@ -111,8 +99,6 @@ const DEFAULT_FORM = {
   name: '',
   measurement_type: MeasurementType.WEIGHT_REPS,
   weight_unit: 'kg',
-  time_unit: 's',
-  distance_unit: 'm',
   instructions: '',
 }
 
@@ -155,8 +141,6 @@ function ExerciseForm({
         name: initialData.name || '',
         measurement_type: initialData.measurement_type || MeasurementType.WEIGHT_REPS,
         weight_unit: initialData.weight_unit || 'kg',
-        time_unit: initialData.time_unit || 's',
-        distance_unit: initialData.distance_unit || 'm',
         instructions: initialData.instructions || '',
       })
       setSelectedMuscleGroupId(initialData.muscle_group_id || null)
@@ -164,8 +148,6 @@ function ExerciseForm({
   }, [initialData])
 
   const usesWeight = measurementTypeUsesWeight(form.measurement_type)
-  const usesTime = measurementTypeUsesTime(form.measurement_type)
-  const usesDistance = measurementTypeUsesDistance(form.measurement_type)
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -250,15 +232,6 @@ function ExerciseForm({
         <UnitSelector label={t('exercise:weightUnit')} units={WEIGHT_UNITS} field="weight_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
       )}
 
-      {/* Unidad de tiempo (solo si usa tiempo) */}
-      {usesTime && (
-        <UnitSelector label={t('exercise:timeUnit')} units={TIME_UNITS} field="time_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
-      )}
-
-      {/* Unidad de distancia (solo si usa distancia) */}
-      {usesDistance && (
-        <UnitSelector label={t('exercise:distanceUnit')} units={DISTANCE_UNITS} field="distance_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
-      )}
 
       <Wrapper className={compact ? '' : 'p-4'}>
         <MuscleGroupPicker

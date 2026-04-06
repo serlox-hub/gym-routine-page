@@ -1,4 +1,5 @@
 export * from './lib/arrayUtils.js'
+export * from './lib/exerciseUtils.js'
 export * from './lib/bodyMeasurementCalculations.js'
 export * from './lib/bodyWeightCalculations.js'
 export * from './lib/calendarUtils.js'

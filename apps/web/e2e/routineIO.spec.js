@@ -33,13 +33,12 @@ test.describe('Import/Export de rutinas', () => {
   test('puede importar una rutina desde archivo JSON', async ({ page }) => {
     // Crear archivo temporal de prueba
     const testRoutine = {
-      version: 4,
+      version: 5,
       exportedAt: new Date().toISOString(),
       exercises: [
         {
-          name: 'Press banca test',
+          name_es: 'Press banca test',
           measurement_type: 'weight_reps',
-          weight_unit: 'kg',
           instructions: null,
           muscle_group_name: 'Pecho',
         },
@@ -65,8 +64,6 @@ test.describe('Import/Export de rutinas', () => {
                     reps: '10',
                     rir: 2,
                     rest_seconds: 60,
-                    tempo: null,
-                    tempo_razon: null,
                     notes: null,
                   },
                 ],

@@ -115,7 +115,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>{exercise.time_unit || 's'}</span>
+          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>s</span>
         </div>
       )}
       {showDistance && (
@@ -129,7 +129,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>{exercise.distance_unit || 'm'}</span>
+          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>m</span>
         </div>
       )}
       <button
@@ -241,7 +241,7 @@ function SessionDetail() {
       <Card className="p-4 mb-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <div className="text-xs text-secondary">{t('routine:day.title')}</div>
+            <div className="text-xs text-secondary">{t('workout:history.session')}</div>
             <div className="text-sm font-medium">
               {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
             </div>
@@ -409,7 +409,7 @@ function SessionDetail() {
                       {set.set_number}
                     </span>
                     <div className="flex-1 text-sm">
-                      {formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}
+                      {formatSetValue(set)}
                     </div>
                     {set.set_type === 'dropset' && (
                       <span

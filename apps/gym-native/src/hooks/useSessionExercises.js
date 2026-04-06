@@ -28,8 +28,8 @@ export function useAddSessionExercise() {
   const sessionId = useWorkoutStore(state => state.sessionId)
 
   return useMutation({
-    mutationFn: async ({ exercise, series, reps, rir, rest_seconds, notes, tempo, superset_group }) => {
-      return addSessionExercise({ sessionId, exercise, series, reps, rir, rest_seconds, notes, tempo, superset_group })
+    mutationFn: async ({ exercise, series, reps, rir, rest_seconds, notes, superset_group }) => {
+      return addSessionExercise({ sessionId, exercise, series, reps, rir, rest_seconds, notes, superset_group })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
@@ -46,7 +46,7 @@ export function useReplaceSessionExercise() {
     mutationFn: async ({ sessionExerciseId, newExerciseId }) => {
       await deleteCompletedSetsByExercise({ sessionId, sessionExerciseId })
       await updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
-      return updateSessionExerciseFields(sessionExerciseId, { rir: null, tempo: null, notes: null })
+      return updateSessionExerciseFields(sessionExerciseId, { rir: null, notes: null })
     },
     onSuccess: (_, { sessionExerciseId }) => {
       clearExercise(sessionExerciseId)

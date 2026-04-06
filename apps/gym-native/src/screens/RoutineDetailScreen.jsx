@@ -254,8 +254,6 @@ export default function RoutineDetailScreen({ route, navigation }) {
               rir: data.rir,
               rest_seconds: data.rest_seconds,
               notes: data.notes,
-              tempo: data.tempo,
-              tempo_razon: data.tempo_razon,
               superset_group: data.superset_group,
               esCalentamiento: addExerciseIsWarmup,
             })

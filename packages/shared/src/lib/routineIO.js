@@ -2,15 +2,13 @@ import { t, getCurrentLocale } from '../i18n/index.js'
 
 export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
-  "version": 4,
+  "version": 5,
   "exercises": [
     {
-      "name": "Exercise name",
+      "name_es": "Exercise name in Spanish",
       "measurement_type": "weight_reps",
       "muscle_group_name": "Pecho",
       "weight_unit": "kg",
-      "time_unit": "s",
-      "distance_unit": "m",
       "instructions": "Exercise instructions (optional)"
     }
   ],
@@ -41,8 +39,6 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
                 "reps": "8-12",
                 "rir": 2,
                 "rest_seconds": 90,
-                "tempo": "3-1-1-0",
-                "tempo_razon": "Reason for tempo (optional)",
                 "notes": "Specific execution notes (optional)"
               }
             ]
@@ -56,12 +52,12 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
 
 export const ROUTINE_JSON_RULES = `IMPORTANT RULES:
 1. Each exercise in "exercises" must be used in "routine.days[].blocks[].exercises"
-2. The "exercise_name" must EXACTLY match the "name" of the exercise
+2. The "exercise_name" must EXACTLY match the "name_es" of the exercise
 3. Each day must have exactly 2 blocks: "Calentamiento" (sort_order: 0) and "Principal" (sort_order: 1)
 4. Days must have sequential sort_order starting at 0
 
 EXERCISE FIELDS (in "exercises"):
-- name: exercise name (REQUIRED)
+- name_es: exercise name in Spanish (REQUIRED)
 - measurement_type (REQUIRED, one of):
   - "weight_reps": weight × repetitions (e.g.: bench press)
   - "reps_only": reps only without weight (e.g.: pull-ups)
@@ -77,8 +73,6 @@ EXERCISE FIELDS (in "exercises"):
   - "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas"
   - "Abdominales", "Antebrazo"
 - weight_unit: "kg" or "lb" (optional, default "kg")
-- time_unit: "s" or "min" (optional, default "s")
-- distance_unit: "m" or "km" (optional, default "m")
 - instructions: general exercise instructions (optional)
 
 BLOCK FIELDS (in "days[].blocks"):
@@ -88,14 +82,12 @@ BLOCK FIELDS (in "days[].blocks"):
 - exercises: array of block exercises (REQUIRED)
 
 ROUTINE EXERCISE FIELDS (in "blocks[].exercises"):
-- exercise_name: must match "name" from exercises (REQUIRED)
+- exercise_name: must match "name_es" from exercises (REQUIRED)
 - series: number of sets (REQUIRED)
 - reps: string with reps, time or distance (REQUIRED, e.g.: "8-12", "30s", "40m")
 - rir: 0-5, reps in reserve (optional)
 - rest_seconds: rest between sets in seconds (optional)
-- tempo: movement cadence in "eccentric-pause bottom-concentric-pause top" format (optional, e.g.: "3-1-1-0")
-- tempo_razon: explanation of why that tempo is used (optional)
-- notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest")`
+- notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest", "Tempo 3-1-1-0")`
 
 export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }) {
   const lang = getCurrentLocale()

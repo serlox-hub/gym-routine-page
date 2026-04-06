@@ -10,8 +10,6 @@ const DEFAULT_FORM = {
   series: '3',
   reps: '',
   notes: '',
-  tempo: '',
-  tempo_razon: '',
   rir: '',
   rest_seconds: '',
   superset_group: '',

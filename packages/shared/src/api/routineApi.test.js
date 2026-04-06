@@ -35,7 +35,7 @@ describe('exportRoutine', () => {
         routine_exercises: [
           {
             series: 3, reps: '8-12', rir: 2, rest_seconds: 90,
-            tempo: null, tempo_razon: null, notes: null, sort_order: 1,
+            notes: null, sort_order: 1,
             exercise: {
               id: `ex-${dayId}`,
               name: `Ejercicio ${dayId}`,
@@ -50,12 +50,12 @@ describe('exportRoutine', () => {
     const fakeExercises = [
       {
         name: 'Ejercicio day-1', measurement_type: 'weight_reps',
-        weight_unit: 'kg', time_unit: 's', distance_unit: 'm',
+        weight_unit: 'kg',
         instructions: null, muscle_group: { name: 'Pecho' },
       },
       {
         name: 'Ejercicio day-2', measurement_type: 'weight_reps',
-        weight_unit: 'kg', time_unit: 's', distance_unit: 'm',
+        weight_unit: 'kg',
         instructions: null, muscle_group: { name: 'Pecho' },
       },
     ]
@@ -137,11 +137,9 @@ describe('importRoutine', () => {
       exportedAt: '2026-01-01T00:00:00.000Z',
       exercises: [
         {
-          name: 'Press Banca',
+          name_es: 'Press Banca',
           measurement_type: 'weight_reps',
           weight_unit: 'kg',
-          time_unit: 's',
-          distance_unit: 'm',
           instructions: null,
           muscle_group_name: 'Pecho',
         },
@@ -167,8 +165,6 @@ describe('importRoutine', () => {
                     reps: '5',
                     rir: 1,
                     rest_seconds: 180,
-                    tempo: null,
-                    tempo_razon: null,
                     notes: null,
                   },
                 ],
@@ -336,7 +332,7 @@ describe('duplicateRoutine', () => {
         routine_exercises: [
           {
             series: 3, reps: '10', rir: 2, rest_seconds: 60,
-            tempo: null, tempo_razon: null, notes: null, sort_order: 1,
+            notes: null, sort_order: 1,
             exercise: {
               id: 'ex-1', name: 'Sentadilla', measurement_type: 'weight_reps',
               instructions: null, muscle_group: { name: 'Piernas' },
@@ -348,7 +344,7 @@ describe('duplicateRoutine', () => {
     const fakeExercises = [
       {
         name: 'Sentadilla', measurement_type: 'weight_reps',
-        weight_unit: 'kg', time_unit: 's', distance_unit: 'm',
+        weight_unit: 'kg',
         instructions: null, muscle_group: { name: 'Piernas' },
       },
     ]

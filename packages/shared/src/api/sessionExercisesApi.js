@@ -17,26 +17,21 @@ export async function fetchSessionExercises(sessionId) {
       reps,
       rir,
       rest_seconds,
-      tempo,
       notes,
       superset_group,
       is_extra,
       block_name,
       exercise:exercises (
         id,
-        name,
+        name:name_es,
+        name_en,
         instructions,
         measurement_type,
         weight_unit,
-        time_unit,
-        distance_unit,
-        muscle_group:muscle_groups (
+        muscle_group:muscle_groups!muscle_group_id (
           id,
           name
         )
-      ),
-      routine_exercise:routine_exercises (
-        tempo_razon
       )
     `)
     .eq('session_id', sessionId)
@@ -77,7 +72,7 @@ export async function updateSessionExerciseSortOrder(id, sortOrder) {
   if (error) throw error
 }
 
-export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, series, reps, rir, restSeconds, tempo, notes, supersetGroup, blockName }) {
+export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, series, reps, rir, restSeconds, notes, supersetGroup, blockName }) {
   const { data, error } = await getClient()
     .from('session_exercises')
     .insert({
@@ -89,7 +84,6 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
       reps: reps || '10',
       rir,
       rest_seconds: restSeconds,
-      tempo,
       notes,
       superset_group: supersetGroup,
       is_extra: true,
@@ -103,18 +97,16 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
       reps,
       rir,
       rest_seconds,
-      tempo,
       notes,
       superset_group,
       is_extra,
       block_name,
       exercise:exercises (
         id,
-        name,
+        name:name_es,
+        name_en,
         measurement_type,
-        weight_unit,
-        time_unit,
-        distance_unit
+        weight_unit
       )
     `)
     .single()
@@ -149,7 +141,7 @@ export async function updateSessionExerciseExerciseId({ sessionExerciseId, newEx
   return data
 }
 
-export async function addSessionExercise({ sessionId, exercise, series, reps, rir, rest_seconds, notes, tempo, superset_group }) {
+export async function addSessionExercise({ sessionId, exercise, series, reps, rir, rest_seconds, notes, superset_group }) {
   const existing = await fetchSessionExercisesSortOrder(sessionId)
 
   let insertSortOrder
@@ -191,7 +183,6 @@ export async function addSessionExercise({ sessionId, exercise, series, reps, ri
     reps: reps || '10',
     rir,
     restSeconds: rest_seconds,
-    tempo,
     notes,
     supersetGroup: superset_group,
     blockName,

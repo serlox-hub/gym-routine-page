@@ -48,16 +48,14 @@ export async function exportRoutine(routineId) {
             reps,
             rir,
             rest_seconds,
-            tempo,
-            tempo_razon,
             notes,
             sort_order,
             exercise:exercises (
               id,
-              name,
+              name:name_es,
               measurement_type,
               instructions,
-              muscle_group:muscle_groups(name)
+              muscle_group:muscle_groups!muscle_group_id(name)
             )
           )
         `)
@@ -84,8 +82,6 @@ export async function exportRoutine(routineId) {
                 reps: re.reps,
                 rir: re.rir,
                 rest_seconds: re.rest_seconds,
-                tempo: re.tempo,
-                tempo_razon: re.tempo_razon,
                 notes: re.notes,
               }
             })
@@ -98,27 +94,23 @@ export async function exportRoutine(routineId) {
   const { data: exercises, error: exercisesError } = await getClient()
     .from('exercises')
     .select(`
-      name,
+      name:name_es,
       measurement_type,
       weight_unit,
-      time_unit,
-      distance_unit,
       instructions,
-      muscle_group:muscle_groups(name)
+      muscle_group:muscle_groups!muscle_group_id(name)
     `)
     .in('id', Array.from(exerciseIds))
 
   if (exercisesError) throw exercisesError
 
   return {
-    version: 4,
+    version: 5,
     exportedAt: new Date().toISOString(),
     exercises: exercises.map(ex => ({
-      name: ex.name,
+      name_es: ex.name,
       measurement_type: ex.measurement_type,
       weight_unit: ex.weight_unit,
-      time_unit: ex.time_unit,
-      distance_unit: ex.distance_unit,
       instructions: ex.instructions,
       muscle_group_name: ex.muscle_group?.name,
     })),
@@ -167,38 +159,49 @@ export async function importRoutine(jsonData, userId, options = {}) {
       }
     }
 
-    // Batch: obtener todos los ejercicios existentes del usuario de una vez
-    const exerciseNames = exportedExercises.map(ex => ex.name)
+    // Batch: obtener ejercicios existentes (custom del usuario + sistema)
+    const exerciseNames = exportedExercises.map(ex => ex.name_es || ex.name)
     const existingExercisesMap = new Map()
     if (exerciseNames.length > 0) {
-      const { data: existingRows } = await getClient()
+      // Buscar en custom del usuario
+      const { data: userRows } = await getClient()
         .from('exercises')
-        .select('id, name')
+        .select('id, name:name_es')
         .eq('user_id', userId)
-        .in('name', exerciseNames)
-      for (const row of existingRows || []) {
+        .in('name_es', exerciseNames)
+      for (const row of userRows || []) {
         existingExercisesMap.set(row.name, row.id)
+      }
+      // Buscar en ejercicios del sistema
+      const { data: systemRows } = await getClient()
+        .from('exercises')
+        .select('id, name:name_es')
+        .eq('is_system', true)
+        .in('name_es', exerciseNames)
+      for (const row of systemRows || []) {
+        if (!existingExercisesMap.has(row.name)) {
+          existingExercisesMap.set(row.name, row.id)
+        }
       }
     }
 
     for (const ex of exportedExercises) {
+      const exName = ex.name_es || ex.name
       const muscleGroupId = ex.muscle_group_name
         ? muscleGroupMap.get(ex.muscle_group_name) || null
         : null
 
-      const existingId = existingExercisesMap.get(ex.name)
+      const existingId = existingExercisesMap.get(exName)
 
       if (existingId) {
-        exerciseMap.set(ex.name, existingId)
+        exerciseMap.set(exName, existingId)
 
         if (updateExercises) {
           await getClient()
             .from('exercises')
             .update({
               measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
-              weight_unit: ex.weight_unit || 'kg',
-              time_unit: ex.time_unit || 's',
-              distance_unit: ex.distance_unit || 'm',
+              weight_unit: ex.weight_unit || null,
               instructions: ex.instructions,
               muscle_group_id: muscleGroupId,
             })
@@ -208,11 +211,9 @@ export async function importRoutine(jsonData, userId, options = {}) {
         const { data: newExercise, error: exError } = await getClient()
           .from('exercises')
           .insert({
-            name: ex.name,
+            name_es: exName,
             measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
-            weight_unit: ex.weight_unit || 'kg',
-            time_unit: ex.time_unit || 's',
-            distance_unit: ex.distance_unit || 'm',
+            weight_unit: ex.weight_unit || null,
             instructions: ex.instructions,
             muscle_group_id: muscleGroupId,
             user_id: userId,
@@ -221,7 +222,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
           .single()
 
         if (exError) throw exError
-        exerciseMap.set(ex.name, newExercise.id)
+        exerciseMap.set(exName, newExercise.id)
       }
     }
   }
@@ -275,17 +276,27 @@ export async function importRoutine(jsonData, userId, options = {}) {
       for (let i = 0; i < (block.exercises || []).length; i++) {
         const ex = block.exercises[i]
 
-        // Buscar ejercicio: primero en el mapa, luego en BD
+        // Buscar ejercicio: primero en el mapa, luego en BD (custom + sistema)
         let exerciseId = exerciseMap.get(ex.exercise_name)
 
         if (!exerciseId) {
           const { data: exercise } = await getClient()
             .from('exercises')
             .select('id')
-            .eq('name', ex.exercise_name)
+            .eq('name_es', ex.exercise_name)
             .eq('user_id', userId)
             .maybeSingle()
           exerciseId = exercise?.id
+        }
+
+        if (!exerciseId) {
+          const { data: sysExercise } = await getClient()
+            .from('exercises')
+            .select('id')
+            .eq('name_es', ex.exercise_name)
+            .eq('is_system', true)
+            .maybeSingle()
+          exerciseId = sysExercise?.id
         }
 
         if (exerciseId) {
@@ -298,8 +309,6 @@ export async function importRoutine(jsonData, userId, options = {}) {
               reps: ex.reps,
               rir: ex.rir,
               rest_seconds: ex.rest_seconds,
-              tempo: ex.tempo,
-              tempo_razon: ex.tempo_razon,
               notes: ex.notes,
               sort_order: i + 1,
             })

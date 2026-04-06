@@ -146,35 +146,6 @@ export default function ExerciseConfigForm({
           </View>
         </View>
 
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <FormField label={t('routine:exercise.tempo')} secondary>
-              <TextInput
-                value={form.tempo}
-                onChangeText={update('tempo')}
-                placeholder="Ej: 3-1-2-0"
-                placeholderTextColor={colors.textMuted}
-                style={inputStyle}
-              />
-            </FormField>
-          </View>
-          <View className="flex-1">
-            <FormField label={t('routine:exercise.tempoReason')} secondary>
-              <TextInput
-                value={form.tempo_razon}
-                onChangeText={update('tempo_razon')}
-                placeholder="Ej: Más tensión"
-                placeholderTextColor={colors.textMuted}
-                editable={!!form.tempo}
-                style={[inputStyle, !form.tempo && { opacity: 0.4 }]}
-              />
-            </FormField>
-          </View>
-        </View>
-        <Text className="text-secondary text-xs -mt-1">
-          {t('routine:exercise.tempoFormat')}
-        </Text>
-
         <FormField label={t('routine:exercise.notes')} secondary>
           <TextInput
             value={form.notes}

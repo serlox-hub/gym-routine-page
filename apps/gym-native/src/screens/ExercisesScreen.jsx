@@ -66,9 +66,9 @@ export default function ExercisesScreen({ navigation }) {
           items={[
             { icon: BarChart3, label: t('exercise:usage.title'), onPress: () => setExerciseForUsage(exercise) },
             { icon: TrendingUp, label: t('exercise:progression'), onPress: () => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id, exerciseName: exercise.name }) },
-            { icon: Pencil, label: t('common:buttons.edit'), onPress: () => setEditExerciseId(exercise.id) },
-            { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setExerciseToDelete(exercise), danger: true },
-          ]}
+            !exercise.is_system && { icon: Pencil, label: t('common:buttons.edit'), onPress: () => setEditExerciseId(exercise.id) },
+            !exercise.is_system && { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setExerciseToDelete(exercise), danger: true },
+          ].filter(Boolean)}
         />
       </View>
     </Card>

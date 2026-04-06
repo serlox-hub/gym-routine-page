@@ -157,7 +157,6 @@ describe('insertSessionExercise', () => {
       reps: '10',
       rir: null,
       restSeconds: null,
-      tempo: null,
       notes: null,
       supersetGroup: null,
       blockName: 'Principal',

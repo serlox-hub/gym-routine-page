@@ -1,6 +1,7 @@
 import { View, Text, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useCreateExercise, useUpdateExercise, useExercise } from '../../hooks/useExercises'
+import { getExerciseInstructions } from '@gym/shared'
 import { Modal } from '../ui'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm'
 import ExerciseForm from './ExerciseForm'
@@ -31,9 +32,7 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
       name: exercise.name,
       measurement_type: exercise.measurement_type,
       weight_unit: exercise.weight_unit,
-      time_unit: exercise.time_unit,
-      distance_unit: exercise.distance_unit,
-      instructions: exercise.instructions,
+      instructions: getExerciseInstructions(exercise),
       muscle_group_id: exercise.muscle_group_id,
     }
     : initialName ? { name: initialName } : null

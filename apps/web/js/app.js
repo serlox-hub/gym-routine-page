@@ -155,11 +155,7 @@ function renderExercise(ejercicio) {
                     <span class="meta-item rest">${ejercicio.descanso_seg}s</span>
                 </div>
             </div>
-            <div class="exercise-tempo-row">
-                <span class="tempo-label">Tempo:</span>
-                <span class="tempo-value">${ejercicio.tempo}</span>
-            </div>
-            ${ejercicio.agarre ? `
+${ejercicio.agarre ? `
                 <div class="exercise-grip">
                     <span class="grip-icon">✋</span>
                     <span class="grip-label">Agarre:</span>

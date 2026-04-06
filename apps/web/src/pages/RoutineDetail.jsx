@@ -85,7 +85,7 @@ function RoutineDetail() {
     setShowAddExercise(true)
   }
 
-  const handleAddExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group }) => {
+  const handleAddExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, superset_group }) => {
     try {
       await addExercise.mutateAsync({
         dayId: selectedDayId,
@@ -95,8 +95,6 @@ function RoutineDetail() {
         rir,
         rest_seconds,
         notes,
-        tempo,
-        tempo_razon,
         esCalentamiento: isAddingWarmup,
         superset_group,
       })
@@ -124,9 +122,9 @@ function RoutineDetail() {
     setShowEditExercise(true)
   }
 
-  const handleEditExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group, exercise_id }) => {
+  const handleEditExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, superset_group, exercise_id }) => {
     try {
-      const data = { series, reps, rir, rest_seconds, notes, tempo, tempo_razon, superset_group }
+      const data = { series, reps, rir, rest_seconds, notes, superset_group }
       if (exercise_id) data.exercise_id = exercise_id
       await updateExercise.mutateAsync({
         exerciseId,

@@ -1,27 +1,77 @@
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '../ui'
+import { getExerciseInstructions, getStructuredInstructions } from '@gym/shared'
 import { colors } from '../../lib/styles'
+
+function StructuredInstructions({ instructions }) {
+  const { t } = useTranslation()
+  if (!instructions) return null
+
+  return (
+    <View className="gap-2">
+      {instructions.setup && (
+        <Text className="text-sm" style={{ color: colors.textPrimary }}>
+          <Text className="font-medium" style={{ color: colors.accent }}>{t('exercise:setup')}: </Text>
+          {instructions.setup}
+        </Text>
+      )}
+      {instructions.execution && (
+        <Text className="text-sm" style={{ color: colors.textPrimary }}>
+          <Text className="font-medium" style={{ color: colors.accent }}>{t('exercise:execution')}: </Text>
+          {instructions.execution}
+        </Text>
+      )}
+      {instructions.cues?.length > 0 && (
+        <View>
+          <Text className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>{t('exercise:cues')}</Text>
+          <View className="gap-0.5">
+            {instructions.cues.map((cue, i) => (
+              <View key={i} className="flex-row items-start gap-1.5">
+                <Text style={{ color: colors.success }}>&#x2022;</Text>
+                <Text className="text-xs flex-1" style={{ color: colors.textPrimary }}>{cue}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+      {instructions.mistakes?.length > 0 && (
+        <View>
+          <Text className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>{t('exercise:mistakes')}</Text>
+          <View className="gap-0.5">
+            {instructions.mistakes.map((mistake, i) => (
+              <View key={i} className="flex-row items-start gap-1.5">
+                <Text style={{ color: colors.warning }}>&#x2022;</Text>
+                <Text className="text-xs flex-1" style={{ color: colors.textPrimary }}>{mistake}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+    </View>
+  )
+}
 
 function ExerciseCardNotes({
   series,
   reps,
   rir,
-  tempo,
   rest_seconds,
   showNotes,
   onToggleNotes,
   exercise,
-  tempoRazon,
   notes,
 }) {
-  const hasNoteContent = exercise.instructions || notes || tempoRazon
+  const { t } = useTranslation()
+  const structured = getStructuredInstructions(exercise)
+  const legacyText = !structured ? getExerciseInstructions(exercise) : ''
+  const hasNoteContent = structured || legacyText || notes
 
   return (
     <>
       <View className="my-3 pt-3 flex-row flex-wrap items-center gap-2" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
         <Badge variant="accent">{series}×{reps}</Badge>
         {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
-        {tempo && <Badge variant="default">{tempo}</Badge>}
         {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
         {hasNoteContent && (
           <Pressable
@@ -30,7 +80,7 @@ function ExerciseCardNotes({
             style={{ backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary }}
           >
             <Text className="text-xs" style={{ color: showNotes ? colors.teal : colors.textSecondary }}>
-              {showNotes ? '▲ Ocultar notas' : '▼ Ver notas'}
+              {showNotes ? `▲ ${t('exercise:hideNotes')}` : `▼ ${t('exercise:showNotes')}`}
             </Text>
           </Pressable>
         )}
@@ -38,19 +88,15 @@ function ExerciseCardNotes({
 
       {showNotes && hasNoteContent && (
         <View className="mb-3 p-3 rounded gap-2" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
-          {exercise.instructions && (
+          {structured && <StructuredInstructions instructions={structured} />}
+          {legacyText && (
             <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.accent }}>Ejecución: </Text>{exercise.instructions}
-            </Text>
-          )}
-          {tempoRazon && (
-            <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.purple }}>Tempo: </Text>{tempoRazon}
+              <Text style={{ color: colors.accent }}>{t('exercise:execution')}: </Text>{legacyText}
             </Text>
           )}
           {notes && (
             <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.warning }}>Nota: </Text>{notes}
+              <Text style={{ color: colors.warning }}>{t('common:labels.notes')}: </Text>{notes}
             </Text>
           )}
         </View>

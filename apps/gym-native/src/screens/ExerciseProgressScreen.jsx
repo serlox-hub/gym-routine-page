@@ -23,7 +23,7 @@ function StatCard({ label, value, color }) {
   )
 }
 
-function SessionCard({ session, exercise }) {
+function SessionCard({ session }) {
   return (
     <Card className="p-4 mx-4">
       <Text className="text-xs text-secondary mb-2">
@@ -39,7 +39,7 @@ function SessionCard({ session, exercise }) {
               <Text className="text-xs font-bold text-secondary">{set.set_number}</Text>
             </View>
             <Text className="flex-1 text-sm text-primary">
-              {formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}
+              {formatSetValue(set)}
             </Text>
             {set.rir_actual !== null && (
               <View
@@ -119,7 +119,7 @@ export default function ExerciseProgressScreen({ route, navigation }) {
       <FlatList
         data={sessions || []}
         keyExtractor={(item) => String(item.sessionId)}
-        renderItem={({ item }) => <SessionCard session={item} exercise={exercise} />}
+        renderItem={({ item }) => <SessionCard session={item} />}
         ItemSeparatorComponent={() => <View className="h-3" />}
         ListHeaderComponent={ListHeader}
         contentContainerStyle={{ paddingBottom: 40 }}

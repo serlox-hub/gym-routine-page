@@ -112,7 +112,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
             placeholderTextColor={colors.textMuted}
           />
-          <Text className="text-xs" style={{ color: colors.textSecondary }}>{exercise.time_unit || 's'}</Text>
+          <Text className="text-xs" style={{ color: colors.textSecondary }}>s</Text>
         </View>
       )}
       {showDistance && (
@@ -125,7 +125,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
             placeholderTextColor={colors.textMuted}
           />
-          <Text className="text-xs" style={{ color: colors.textSecondary }}>{exercise.distance_unit || 'm'}</Text>
+          <Text className="text-xs" style={{ color: colors.textSecondary }}>m</Text>
         </View>
       )}
       <Pressable onPress={() => onDelete({ sessionId, sessionExerciseId, setNumber: set.set_number })} hitSlop={8}>
@@ -247,7 +247,7 @@ export default function SessionDetailScreen({ route, navigation }) {
         <Card className="p-4 mb-4">
           <View className="gap-3">
             <View>
-              <Text className="text-xs text-secondary">{t('routine:day.title')}</Text>
+              <Text className="text-xs text-secondary">{t('workout:history.session')}</Text>
               <Text className="text-sm font-medium text-primary">
                 {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </Text>
@@ -433,7 +433,7 @@ export default function SessionDetailScreen({ route, navigation }) {
                         </Text>
                       </View>
                       <Text className="flex-1 text-sm text-primary">
-                        {formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}
+                        {formatSetValue(set)}
                       </Text>
                       {set.set_type === 'dropset' && (
                         <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.orangeBg }}>

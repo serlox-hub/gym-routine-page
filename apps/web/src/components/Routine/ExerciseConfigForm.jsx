@@ -4,7 +4,7 @@ import { colors } from '../../lib/styles.js'
 import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder } from '@gym/shared'
 
 /**
- * Formulario para configurar series, reps, tempo, notas de un ejercicio
+ * Formulario para configurar series, reps, notas de un ejercicio
  * Reutilizable para añadir y editar ejercicios en rutinas/sesiones
  */
 function ExerciseConfigForm({
@@ -78,27 +78,6 @@ function ExerciseConfigForm({
             placeholder="Ej: 90"
           />
         </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            label="Tempo"
-            type="text"
-            value={form.tempo}
-            onChange={(e) => setForm(prev => ({ ...prev, tempo: e.target.value }))}
-            placeholder="Ej: 3-1-2-0"
-          />
-          <Input
-            label={t('routine:exercise.tempoReason')}
-            type="text"
-            value={form.tempo_razon}
-            onChange={(e) => setForm(prev => ({ ...prev, tempo_razon: e.target.value }))}
-            placeholder="Ej: Más tensión"
-            disabled={!form.tempo}
-          />
-        </div>
-        <p className="text-xs -mt-2" style={{ color: colors.textSecondary }}>
-          {t('routine:exercise.tempoFormat')}
-        </p>
 
         <div>
           <label className="text-sm font-medium block mb-1" style={{ color: colors.textSecondary }}>{t('routine:exercise.notes')}</label>

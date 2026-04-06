@@ -2,8 +2,8 @@
  * Compara los valores editados con los originales del session exercise
  * y devuelve solo los campos que cambiaron.
  *
- * @param {{ series: string, reps: string, rir: string, restSeconds: string, tempo: string, notes: string }} edited
- * @param {{ series: number, reps: string, rir: number|null, rest_seconds: number|null, tempo: string|null, notes: string|null }} original
+ * @param {{ series: string, reps: string, rir: string, restSeconds: string, notes: string }} edited
+ * @param {{ series: number, reps: string, rir: number|null, rest_seconds: number|null, notes: string|null }} original
  * @returns {{ fields: object, newSeries: number|null }}
  */
 export function diffSessionExerciseFields(edited, original) {
@@ -22,7 +22,6 @@ export function diffSessionExerciseFields(edited, original) {
   if (!isNaN(newRest) && newRest !== original.rest_seconds) fields.rest_seconds = newRest
   else if (edited.restSeconds === '' && original.rest_seconds) fields.rest_seconds = null
 
-  if (edited.tempo !== (original.tempo ?? '')) fields.tempo = edited.tempo || null
   if (edited.notes !== (original.notes ?? '')) fields.notes = edited.notes || null
 
   if (edited.supersetGroup !== undefined) {

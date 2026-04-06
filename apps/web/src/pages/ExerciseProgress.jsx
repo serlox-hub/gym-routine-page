@@ -12,12 +12,12 @@ import {
 } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
-function getBestFromRow(row, measurementType) {
+function getBestFromRow(row, measurementType, weightUnit = 'kg') {
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
     case MeasurementType.WEIGHT_TIME:
     case MeasurementType.WEIGHT_DISTANCE:
-      return { value: row.best_weight || 0, unit: 'kg' }
+      return { value: row.best_weight || 0, unit: weightUnit }
     case MeasurementType.REPS_ONLY:
       return { value: row.best_reps || 0, unit: 'reps' }
     case MeasurementType.TIME:
@@ -33,12 +33,12 @@ function getBestFromRow(row, measurementType) {
   }
 }
 
-function transformChartDataFromStats(data, measurementType) {
+function transformChartDataFromStats(data, measurementType, weightUnit = 'kg') {
   if (!data || data.length === 0) return []
   return data.map(row => {
     const date = new Date(row.session_date)
     const dateLabel = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-    const { value: best, unit } = getBestFromRow(row, measurementType)
+    const { value: best, unit } = getBestFromRow(row, measurementType, weightUnit)
     return {
       date: dateLabel,
       best,
@@ -61,9 +61,10 @@ function ExerciseProgress() {
   const loadingSessions = loadingChart || loadingStats || loadingHistory
 
   const measurementType = exercise?.measurement_type || MeasurementType.WEIGHT_REPS
+  const weightUnit = exercise?.weight_unit || 'kg'
   const chartData = useMemo(
-    () => transformChartDataFromStats(chartRawData, measurementType),
-    [chartRawData, measurementType]
+    () => transformChartDataFromStats(chartRawData, measurementType, weightUnit),
+    [chartRawData, measurementType, weightUnit]
   )
 
   if (loadingExercise || loadingSessions) return <LoadingSpinner />
@@ -157,7 +158,7 @@ function ExerciseProgress() {
                     >
                       {set.set_number}
                     </span>
-                    <span className="flex-1">{formatSetValue(set, { timeUnit: exercise.time_unit, distanceUnit: exercise.distance_unit })}</span>
+                    <span className="flex-1">{formatSetValue(set)}</span>
                     {set.rir_actual !== null && (
                       <span
                         className="text-xs font-bold px-1 rounded"

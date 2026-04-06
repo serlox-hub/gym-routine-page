@@ -26,7 +26,7 @@ function ViewToggle({ view, onChangeView, labels }) {
 }
 
 const DEFAULT_FORM = {
-  series: '3', reps: '', rir: '', rest_seconds: '', notes: '', tempo: '', tempo_razon: '', superset_group: '',
+  series: '3', reps: '', rir: '', rest_seconds: '', notes: '', superset_group: '',
 }
 
 export default function EditSessionExerciseModal({
@@ -53,8 +53,6 @@ export default function EditSessionExerciseModal({
         rir: sessionExercise.rir != null ? String(sessionExercise.rir) : '',
         rest_seconds: sessionExercise.rest_seconds ? String(sessionExercise.rest_seconds) : '',
         notes: sessionExercise.notes ?? '',
-        tempo: sessionExercise.tempo ?? '',
-        tempo_razon: '',
         superset_group: sessionExercise.superset_group != null ? String(sessionExercise.superset_group) : '',
       })
     }
@@ -62,7 +60,7 @@ export default function EditSessionExerciseModal({
 
   const handleSave = () => {
     const { fields, newSeries } = diffSessionExerciseFields(
-      { series: form.series, reps: form.reps, rir: form.rir, restSeconds: form.rest_seconds, tempo: form.tempo, notes: form.notes, supersetGroup: form.superset_group },
+      { series: form.series, reps: form.reps, rir: form.rir, restSeconds: form.rest_seconds, notes: form.notes, supersetGroup: form.superset_group },
       sessionExercise,
     )
     if (Object.keys(fields).length > 0) {

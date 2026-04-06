@@ -393,8 +393,6 @@ describe('duplicateRoutineExercise', () => {
       reps: '8-12',
       rir: 2,
       rest_seconds: 90,
-      tempo: null,
-      tempo_razon: null,
       notes: null,
     }
     const copy = { id: 55, ...original, sort_order: 2, superset_group: null }

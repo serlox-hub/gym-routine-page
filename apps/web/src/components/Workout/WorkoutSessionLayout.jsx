@@ -141,7 +141,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
       rir: data.rir,
       rest_seconds: data.rest_seconds,
       notes: data.notes,
-      tempo: data.tempo,
       superset_group: data.superset_group,
     }, {
       onSuccess: () => setShowAddExercise(false)

@@ -31,7 +31,7 @@ export function useAddSessionExercise() {
   const sessionId = useWorkoutStore(state => state.sessionId)
 
   return useMutation({
-    mutationFn: async ({ exercise, series, reps, rir, rest_seconds, notes, tempo, superset_group }) => {
+    mutationFn: async ({ exercise, series, reps, rir, rest_seconds, notes, superset_group }) => {
       // Obtener todos los ejercicios de la sesion para calcular posicion
       const existing = await fetchSessionExercisesSortOrder(sessionId)
 
@@ -80,7 +80,6 @@ export function useAddSessionExercise() {
         reps: reps || '10',
         rir,
         restSeconds: rest_seconds,
-        tempo,
         notes,
         supersetGroup: superset_group,
         blockName,
@@ -104,7 +103,7 @@ export function useReplaceSessionExercise() {
 
       // Actualizar el exercise_id y limpiar campos específicos del anterior
       await updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
-      return updateSessionExerciseFields(sessionExerciseId, { rir: null, tempo: null, notes: null })
+      return updateSessionExerciseFields(sessionExerciseId, { rir: null, notes: null })
     },
     onSuccess: (_, { sessionExerciseId }) => {
       clearExercise(sessionExerciseId)

@@ -6,11 +6,12 @@ export async function fetchExercisesWithMuscleGroup() {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
-      id, name, measurement_type, weight_unit, time_unit, distance_unit,
-      muscle_group_id, muscle_group:muscle_groups(id, name)
+      id, name:name_es, name_en, measurement_type, weight_unit,
+      is_system, equipment,
+      muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name)
     `)
     .is('deleted_at', null)
-    .order('name')
+    .order('name_es')
 
   if (error) throw error
   return data
@@ -121,8 +122,9 @@ export async function fetchExercise(exerciseId) {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
-      id, name, measurement_type, weight_unit, time_unit, distance_unit,
-      instructions, deleted_at, muscle_group_id, muscle_group:muscle_groups(id, name)
+      id, name:name_es, name_en, measurement_type, weight_unit,
+      is_system, equipment, instructions, deleted_at,
+      muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name)
     `)
     .eq('id', exerciseId)
     .single()
@@ -135,12 +137,10 @@ export async function createExercise({ userId, exercise, muscleGroupId }) {
   const { data, error } = await getClient()
     .from('exercises')
     .insert({
-      name: exercise.name,
+      name_es: exercise.name,
       instructions: exercise.instructions || null,
       measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
-      weight_unit: exercise.weight_unit || 'kg',
-      time_unit: exercise.time_unit || 's',
-      distance_unit: exercise.distance_unit || 'm',
+      weight_unit: exercise.weight_unit || null,
       muscle_group_id: muscleGroupId || null,
       user_id: userId,
     })
@@ -155,12 +155,10 @@ export async function updateExercise({ exerciseId, exercise, muscleGroupId }) {
   const { data, error } = await getClient()
     .from('exercises')
     .update({
-      name: exercise.name,
+      name_es: exercise.name,
       instructions: exercise.instructions || null,
       measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
-      weight_unit: exercise.weight_unit || 'kg',
-      time_unit: exercise.time_unit || 's',
-      distance_unit: exercise.distance_unit || 'm',
+      weight_unit: exercise.weight_unit || null,
       muscle_group_id: muscleGroupId || null,
     })
     .eq('id', exerciseId)
@@ -172,6 +170,17 @@ export async function updateExercise({ exerciseId, exercise, muscleGroupId }) {
 }
 
 export async function deleteExercise(exerciseId) {
+  const { data: exercise, error: fetchError } = await getClient()
+    .from('exercises')
+    .select('is_system')
+    .eq('id', exerciseId)
+    .single()
+
+  if (fetchError) throw fetchError
+  if (exercise?.is_system) {
+    throw new Error(t('exercise:cannotDeleteSystem'))
+  }
+
   const { data: usedInRoutines, error: checkError } = await getClient()
     .from('routine_exercises')
     .select('id')

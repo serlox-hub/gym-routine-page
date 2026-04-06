@@ -23,7 +23,7 @@ export default function ExerciseCard({
   positionLabels = [],
 }) {
   const { t } = useTranslation()
-  const { exercise, series, reps, rir, rest_seconds, tempo } = routineExercise
+  const { exercise, series, reps, rir, rest_seconds } = routineExercise
   const [showReorder, setShowReorder] = useState(false)
 
   const borderStyle = getMuscleGroupBorderStyle(exercise?.muscle_group?.name)
@@ -67,7 +67,6 @@ export default function ExerciseCard({
         {rest_seconds > 0 && (
           <Text className="text-xs" style={{ color: colors.warning }}>{rest_seconds}s</Text>
         )}
-        {tempo && <Text className="text-secondary text-xs">{tempo}</Text>}
       </View>
     </>
   )

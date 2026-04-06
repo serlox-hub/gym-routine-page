@@ -64,10 +64,7 @@ function getBestSetFormatted(sets, exercise) {
     }
   }
 
-  return formatSetValue(best, {
-    timeUnit: exercise?.time_unit || 's',
-    distanceUnit: exercise?.distance_unit || 'm',
-  })
+  return formatSetValue(best)
 }
 
 /**

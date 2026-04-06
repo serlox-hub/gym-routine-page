@@ -8,8 +8,6 @@ describe('parseExerciseConfigForm', () => {
     rir: '2',
     rest_seconds: '90',
     notes: 'Controlar excéntrica',
-    tempo: '3-1-1-0',
-    tempo_razon: 'Hipertrofia',
     superset_group: '1',
   }
 
@@ -21,8 +19,6 @@ describe('parseExerciseConfigForm', () => {
       rir: 2,
       rest_seconds: 90,
       notes: 'Controlar excéntrica',
-      tempo: '3-1-1-0',
-      tempo_razon: 'Hipertrofia',
       superset_group: 1,
     })
   })
@@ -34,8 +30,6 @@ describe('parseExerciseConfigForm', () => {
       rir: '',
       rest_seconds: '',
       notes: '',
-      tempo: '',
-      tempo_razon: '',
       superset_group: '',
     }
     const result = parseExerciseConfigForm(emptyForm)
@@ -45,14 +39,12 @@ describe('parseExerciseConfigForm', () => {
       rir: null,
       rest_seconds: null,
       notes: null,
-      tempo: null,
-      tempo_razon: null,
       superset_group: null,
     })
   })
 
   it('permite override de defaultReps', () => {
-    const form = { series: '3', reps: '', rir: '', rest_seconds: '', notes: '', tempo: '', tempo_razon: '', superset_group: '' }
+    const form = { series: '3', reps: '', rir: '', rest_seconds: '', notes: '', superset_group: '' }
     const result = parseExerciseConfigForm(form, { defaultReps: '30:00' })
     expect(result.reps).toBe('30:00')
   })

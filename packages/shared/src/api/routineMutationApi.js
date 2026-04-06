@@ -147,7 +147,7 @@ export async function reorderRoutineExercises(exercises) {
   if (error) throw error
 }
 
-export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, rest_seconds, notes, tempo, tempo_razon, esCalentamiento = false, superset_group }) {
+export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, rest_seconds, notes, esCalentamiento = false, superset_group }) {
   const blockName = esCalentamiento ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN
 
   // Buscar o crear el bloque correspondiente
@@ -212,8 +212,6 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
       rest_seconds: rest_seconds || null,
       sort_order: nextExerciseOrder,
       notes: notes || null,
-      tempo: tempo || null,
-      tempo_razon: tempo_razon || null,
       superset_group: superset_group ?? null,
     })
     .select()
@@ -244,8 +242,6 @@ export async function duplicateRoutineExercise({ routineExercise }) {
       reps: routineExercise.reps,
       rir: routineExercise.rir,
       rest_seconds: routineExercise.rest_seconds,
-      tempo: routineExercise.tempo,
-      tempo_razon: routineExercise.tempo_razon,
       notes: routineExercise.notes,
       superset_group: null,
       sort_order: nextOrder,

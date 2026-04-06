@@ -92,9 +92,9 @@ function Exercises() {
                   items={[
                     { icon: BarChart3, label: t('exercise:usage.title'), onClick: () => setExerciseForUsage(exercise) },
                     { icon: TrendingUp, label: t('exercise:progression'), onClick: () => navigate(`/exercises/${exercise.id}/progress`) },
-                    { icon: Pencil, label: t('common:buttons.edit'), onClick: () => setEditExerciseId(exercise.id) },
-                    { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setExerciseToDelete(exercise), danger: true },
-                  ]}
+                    !exercise.is_system && { icon: Pencil, label: t('common:buttons.edit'), onClick: () => setEditExerciseId(exercise.id) },
+                    !exercise.is_system && { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setExerciseToDelete(exercise), danger: true },
+                  ].filter(Boolean)}
                 />
               </div>
             </Card>

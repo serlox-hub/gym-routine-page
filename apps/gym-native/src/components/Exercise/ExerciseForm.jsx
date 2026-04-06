@@ -10,8 +10,6 @@ import {
   MeasurementType,
   getMuscleGroupColor,
   translateMuscleGroup,
-  measurementTypeUsesDistance,
-  measurementTypeUsesTime,
   measurementTypeUsesWeight
 } from '@gym/shared'
 
@@ -20,22 +18,12 @@ const UNIT_OPTIONS = {
     { value: 'kg', label: 'Kilogramos (kg)' },
     { value: 'lb', label: 'Libras (lb)' },
   ],
-  time: [
-    { value: 's', label: 'Segundos (s)' },
-    { value: 'min', label: 'Minutos (min)' },
-  ],
-  distance: [
-    { value: 'm', label: 'Metros (m)' },
-    { value: 'km', label: 'Kilómetros (km)' },
-  ],
 }
 
 const DEFAULT_FORM = {
   name: '',
   measurement_type: MeasurementType.WEIGHT_REPS,
   weight_unit: 'kg',
-  time_unit: 's',
-  distance_unit: 'm',
   instructions: '',
 }
 
@@ -122,8 +110,6 @@ export default function ExerciseForm({
         name: initialData.name || '',
         measurement_type: initialData.measurement_type || MeasurementType.WEIGHT_REPS,
         weight_unit: initialData.weight_unit || 'kg',
-        time_unit: initialData.time_unit || 's',
-        distance_unit: initialData.distance_unit || 'm',
         instructions: initialData.instructions || '',
       })
       setSelectedMuscleGroupId(initialData.muscle_group_id || null)
@@ -171,13 +157,13 @@ export default function ExerciseForm({
         <TextInput
           value={form.name}
           onChangeText={(v) => handleChange('name', v)}
-          placeholder="Ej: Press banca con barra"
+          placeholder={t('exercise:namePlaceholder')}
           placeholderTextColor={colors.textMuted}
           style={inputStyle}
         />
         {!minimal && (
           <Text className="text-secondary text-xs mt-1">
-            Incluye equipamiento y tipo de agarre si aplica
+            {t('exercise:nameHint')}
           </Text>
         )}
       </View>
@@ -198,12 +184,6 @@ export default function ExerciseForm({
 
       {measurementTypeUsesWeight(form.measurement_type) && (
         <UnitSelector label={t('exercise:weightUnit')} units={UNIT_OPTIONS.weight} field="weight_unit" form={form} onChange={handleChange} />
-      )}
-      {measurementTypeUsesTime(form.measurement_type) && (
-        <UnitSelector label={t('exercise:timeUnit')} units={UNIT_OPTIONS.time} field="time_unit" form={form} onChange={handleChange} />
-      )}
-      {measurementTypeUsesDistance(form.measurement_type) && (
-        <UnitSelector label={t('exercise:distanceUnit')} units={UNIT_OPTIONS.distance} field="distance_unit" form={form} onChange={handleChange} />
       )}
 
       <View className="mb-4">

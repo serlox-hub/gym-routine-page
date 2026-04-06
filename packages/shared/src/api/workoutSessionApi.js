@@ -150,7 +150,7 @@ export async function fetchWorkoutHistory({ from, to }) {
         id,
         exercise:exercises (
           id,
-          muscle_group:muscle_groups (
+          muscle_group:muscle_groups!muscle_group_id (
             id,
             name
           )
@@ -196,11 +196,10 @@ export async function fetchSessionDetail(sessionId) {
         block_name,
         exercise:exercises (
           id,
-          name,
+          name:name_es,
+          name_en,
           deleted_at,
-          time_unit,
-          distance_unit,
-          muscle_group:muscle_groups (
+          muscle_group:muscle_groups!muscle_group_id (
             id,
             name
           )
