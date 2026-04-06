@@ -128,7 +128,22 @@
   },
   "adapt": {
     "title": "Adaptar rutina con IA",
-    "pasteResult": "Pegar resultado"
+    "pasteResult": "Pegar resultado",
+    "step1Title": "Paso 1: Prepara tu rutina",
+    "step1Desc": "Copia tu rutina actual en formato texto. Puede ser desde:",
+    "step1Sources": ["Una hoja de cálculo (Excel, Google Sheets)", "Un PDF o documento", "Notas de tu móvil", "Una app de entrenamiento", "Un mensaje o email de tu entrenador"],
+    "step1ExampleTitle": "Ejemplo de formato:",
+    "step2Title": "Paso 2: Copia el prompt",
+    "step2Desc": "Este prompt le dice a la IA cómo convertir tu rutina al formato correcto:",
+    "step2Hint": "El prompt termina con \"MI RUTINA A CONVERTIR:\" — ahí es donde pegarás tu rutina en el siguiente paso",
+    "step3Title": "Paso 3: Pega prompt + rutina en la IA",
+    "step3Desc": "Abre tu chatbot favorito y pega:",
+    "step3Instruction1": "Primero el <strong>prompt</strong> que copiaste",
+    "step3Instruction2": "Después <strong>tu rutina</strong> (del paso 1)",
+    "step3Result": "La IA te devolverá el resultado. Cópialo para pegarlo en el siguiente paso.",
+    "step4Title": "Paso 4: Pega el resultado",
+    "step4Desc": "Una vez tengas el resultado de la IA:",
+    "step4Instructions": ["Copia el resultado que te devolvió la IA", "Pulsa el botón de abajo", "Pégalo en el campo de texto"]
   },
   "import": {
     "fromFile": "Desde archivo",

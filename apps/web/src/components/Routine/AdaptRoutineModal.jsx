@@ -23,24 +23,22 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
 
   const steps = [
     {
-      title: 'Paso 1: Prepara tu rutina',
+      title: t('routine:adapt.step1Title'),
       content: (
         <div className="space-y-3">
           <p style={{ color: colors.textSecondary }}>
-            Copia tu rutina actual en formato texto. Puede ser desde:
+            {t('routine:adapt.step1Desc')}
           </p>
           <ul className="list-disc list-inside space-y-1 text-sm" style={{ color: colors.textSecondary }}>
-            <li>Una hoja de cálculo (Excel, Google Sheets)</li>
-            <li>Un PDF o documento</li>
-            <li>Notas de tu móvil</li>
-            <li>Una app de entrenamiento</li>
-            <li>Un mensaje o email de tu entrenador</li>
+            {t('routine:adapt.step1Sources', { returnObjects: true }).map((src, i) => (
+              <li key={i}>{src}</li>
+            ))}
           </ul>
           <div
             className="p-3 rounded-lg text-sm"
             style={{ backgroundColor: colors.bgPrimary, border: `1px solid ${colors.border}` }}
           >
-            <p className="font-medium mb-2" style={{ color: colors.textPrimary }}>Ejemplo de formato:</p>
+            <p className="font-medium mb-2" style={{ color: colors.textPrimary }}>{t('routine:adapt.step1ExampleTitle')}</p>
             <pre className="text-xs whitespace-pre-wrap" style={{ color: colors.textSecondary }}>
 {`Día 1 - Push
 - Press banca: 4x8-10, RIR 2
@@ -53,11 +51,11 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
       )
     },
     {
-      title: 'Paso 2: Copia el prompt',
+      title: t('routine:adapt.step2Title'),
       content: (
         <div className="space-y-3">
           <p style={{ color: colors.textSecondary }}>
-            Este prompt le dice a la IA cómo convertir tu rutina al formato correcto:
+            {t('routine:adapt.step2Desc')}
           </p>
           <div
             className="p-3 rounded-lg text-xs font-mono max-h-40 overflow-y-auto"
@@ -78,22 +76,22 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
             style={{ backgroundColor: colors.purpleAccentBg, border: `1px solid ${colors.purpleAccent}` }}
           >
             <p style={{ color: colors.purpleAccent }}>
-              El prompt termina con "MI RUTINA A CONVERTIR:" — ahí es donde pegarás tu rutina en el siguiente paso
+              {t('routine:adapt.step2Hint')}
             </p>
           </div>
         </div>
       )
     },
     {
-      title: 'Paso 3: Pega prompt + rutina en la IA',
+      title: t('routine:adapt.step3Title'),
       content: (
         <div className="space-y-3">
           <p style={{ color: colors.textSecondary }}>
-            Abre tu chatbot favorito y pega:
+            {t('routine:adapt.step3Desc')}
           </p>
           <ol className="list-decimal list-inside space-y-1 text-sm" style={{ color: colors.textSecondary }}>
-            <li>Primero el <strong style={{ color: colors.textPrimary }}>prompt</strong> que copiaste</li>
-            <li>Después <strong style={{ color: colors.textPrimary }}>tu rutina</strong> (del paso 1)</li>
+            <li dangerouslySetInnerHTML={{ __html: t('routine:adapt.step3Instruction1') }} />
+            <li dangerouslySetInnerHTML={{ __html: t('routine:adapt.step3Instruction2') }} />
           </ol>
           <div className="grid grid-cols-3 gap-2">
             <a
@@ -129,23 +127,23 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
             style={{ backgroundColor: 'rgba(46, 160, 67, 0.1)', border: `1px solid ${colors.success}` }}
           >
             <p style={{ color: colors.success }}>
-              La IA te devolverá el resultado. Cópialo para pegarlo en el siguiente paso.
+              {t('routine:adapt.step3Result')}
             </p>
           </div>
         </div>
       )
     },
     {
-      title: 'Paso 4: Pega el resultado',
+      title: t('routine:adapt.step4Title'),
       content: (
         <div className="space-y-3">
           <p style={{ color: colors.textSecondary }}>
-            Una vez tengas el resultado de la IA:
+            {t('routine:adapt.step4Desc')}
           </p>
           <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: colors.textSecondary }}>
-            <li>Copia el resultado que te devolvió la IA</li>
-            <li>Pulsa el botón de abajo</li>
-            <li>Pégalo en el campo de texto</li>
+            {t('routine:adapt.step4Instructions', { returnObjects: true }).map((instr, i) => (
+              <li key={i}>{instr}</li>
+            ))}
           </ol>
           <Button
             variant="primary"
@@ -189,7 +187,6 @@ function AdaptRoutineModal({ onClose, onImportClick }) {
         </div>
 
         <div className="p-4 overflow-y-auto flex-1">
-          {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2 mb-4">
             {[1, 2, 3, 4].map(i => (
               <div

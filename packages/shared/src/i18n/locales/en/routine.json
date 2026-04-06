@@ -128,7 +128,22 @@
   },
   "adapt": {
     "title": "Adapt routine with AI",
-    "pasteResult": "Paste result"
+    "pasteResult": "Paste result",
+    "step1Title": "Step 1: Prepare your routine",
+    "step1Desc": "Copy your current routine as text. It can be from:",
+    "step1Sources": ["A spreadsheet (Excel, Google Sheets)", "A PDF or document", "Notes on your phone", "A training app", "A message or email from your trainer"],
+    "step1ExampleTitle": "Example format:",
+    "step2Title": "Step 2: Copy the prompt",
+    "step2Desc": "This prompt tells the AI how to convert your routine to the correct format:",
+    "step2Hint": "The prompt ends with \"MY ROUTINE TO CONVERT:\" — that's where you'll paste your routine in the next step",
+    "step3Title": "Step 3: Paste prompt + routine in AI",
+    "step3Desc": "Open your favorite chatbot and paste:",
+    "step3Instruction1": "First the <strong>prompt</strong> you copied",
+    "step3Instruction2": "Then <strong>your routine</strong> (from step 1)",
+    "step3Result": "The AI will return the result. Copy it to paste in the next step.",
+    "step4Title": "Step 4: Paste the result",
+    "step4Desc": "Once you have the AI result:",
+    "step4Instructions": ["Copy the result the AI returned", "Press the button below", "Paste it in the text field"]
   },
   "import": {
     "fromFile": "From file",
