@@ -25,7 +25,7 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
     return (
       <View className="rounded-lg p-2" style={{ backgroundColor: colors.bgSecondary }}>
         <Text className="text-xs" style={{ color: colors.textSecondary }}>
-          Primera vez con este ejercicio
+          {t('workout:set.firstTime')}
         </Text>
       </View>
     )

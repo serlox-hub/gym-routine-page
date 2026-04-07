@@ -43,6 +43,7 @@
     "notes": "Notes",
     "previous": "Previous",
     "lastTime": "Last time",
+    "firstTime": "First time with this exercise",
     "addSet": "Add set",
     "addVideo": "Add video",
     "videoTooLarge": "Video too large",

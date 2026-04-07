@@ -29,7 +29,7 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
         className="rounded-lg p-2 text-xs"
         style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary }}
       >
-        Primera vez con este ejercicio
+        {t('workout:set.firstTime')}
       </div>
     )
   }
