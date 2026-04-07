@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, ScrollView } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import { NotesBadge } from '../ui'
 import SetNotesView from './SetNotesView'
@@ -7,6 +8,7 @@ import { MeasurementType, formatRelativeDate, formatSetValueByType } from '@gym/
 import { colors } from '../../lib/styles'
 
 export default function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, timeUnit = 's', distanceUnit = 'm' }) {
+  const { t } = useTranslation()
   const { data: previous, isLoading } = usePreviousWorkout(exerciseId)
   const [selectedSet, setSelectedSet] = useState(null)
 
@@ -35,7 +37,7 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
       style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}
     >
       <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-xs" style={{ color: colors.textSecondary }}>Última vez</Text>
+        <Text className="text-xs" style={{ color: colors.textSecondary }}>{t('workout:set.lastTime')}</Text>
         <Text className="text-xs" style={{ color: colors.textMuted }}>
           {formatRelativeDate(previous.date)}
         </Text>

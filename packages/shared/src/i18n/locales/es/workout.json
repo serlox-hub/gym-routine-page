@@ -42,6 +42,7 @@
     "rir": "RIR",
     "notes": "Notas",
     "previous": "Anterior",
+    "lastTime": "Última vez",
     "addSet": "Añadir serie",
     "addVideo": "Añadir video",
     "videoTooLarge": "Video demasiado grande",

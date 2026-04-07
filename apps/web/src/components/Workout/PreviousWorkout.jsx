@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import { NotesBadge } from '../ui/index.js'
@@ -6,6 +7,7 @@ import SetNotesView from './SetNotesView.jsx'
 import { MeasurementType, formatRelativeDate, formatSetValueByType } from '@gym/shared'
 
 function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, timeUnit = 's', distanceUnit = 'm' }) {
+  const { t } = useTranslation()
   const { data: previous, isLoading } = usePreviousWorkout(exerciseId)
   const [selectedSet, setSelectedSet] = useState(null)
 
@@ -39,7 +41,7 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
     >
       <div className="flex justify-between items-center mb-2">
         <span className="text-xs" style={{ color: colors.textSecondary }}>
-          Última vez
+          {t('workout:set.lastTime')}
         </span>
         <span className="text-xs" style={{ color: colors.textMuted }}>
           {formatRelativeDate(previous.date)}
