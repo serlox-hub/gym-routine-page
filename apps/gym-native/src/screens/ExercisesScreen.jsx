@@ -3,10 +3,10 @@ import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react-native'
-import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useExerciseStats } from '../hooks/useExercises'
+import { useExercisesWithMuscleGroup, useDeleteExercise, useMuscleGroups, useEquipmentTypes, useExerciseStats } from '../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, DropdownMenu, Button, ActiveSessionBanner } from '../components/ui'
 import { ExerciseSearchBar, ExerciseUsageModal, ExerciseFormModal } from '../components/Exercise'
-import { normalizeSearchText } from '@gym/shared'
+import { normalizeSearchText, getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseName } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors } from '../lib/styles'
 
@@ -14,11 +14,15 @@ export default function ExercisesScreen({ navigation }) {
   const { t } = useTranslation()
   const { data: exercises, isLoading, error, refetch, isRefetching } = useExercisesWithMuscleGroup()
   const { data: muscleGroups } = useMuscleGroups()
+  const { data: equipmentTypes } = useEquipmentTypes()
   const { data: exerciseStats } = useExerciseStats()
   const deleteExercise = useDeleteExercise()
 
   const [search, setSearch] = useState('')
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null)
+  const [selectedEquipmentType, setSelectedEquipmentType] = useState(null)
+  const [sourceFilter, setSourceFilter] = useState('all')
+  const [showUsage, setShowUsage] = useState(false)
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
   const [exerciseForUsage, setExerciseForUsage] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -27,11 +31,13 @@ export default function ExercisesScreen({ navigation }) {
   const filteredExercises = useMemo(() => {
     if (!exercises) return []
     return exercises.filter(e => {
-      const matchesSearch = !search.trim() || normalizeSearchText(e.name).includes(normalizeSearchText(search))
+      const matchesSearch = !search.trim() || normalizeSearchText(getExerciseName(e)).includes(normalizeSearchText(search))
       const matchesMuscleGroup = !selectedMuscleGroup || e.muscle_group_id === selectedMuscleGroup
-      return matchesSearch && matchesMuscleGroup
+      const matchesEquipment = !selectedEquipmentType || e.equipment_type?.id === selectedEquipmentType
+      const matchesSource = sourceFilter === 'all' || (sourceFilter === 'custom' ? !e.is_system : e.is_system)
+      return matchesSearch && matchesMuscleGroup && matchesEquipment && matchesSource
     })
-  }, [exercises, search, selectedMuscleGroup])
+  }, [exercises, search, selectedMuscleGroup, selectedEquipmentType, sourceFilter])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
@@ -59,13 +65,31 @@ export default function ExercisesScreen({ navigation }) {
     <Card className="p-3 mx-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-primary font-medium text-sm" numberOfLines={1}>{exercise.name}</Text>
-          <Text className="text-secondary text-xs">{getUsageText(exercise.id)}</Text>
+          <Text className="text-primary font-medium text-sm" numberOfLines={1}>{getExerciseName(exercise)}</Text>
+          <View className="flex-row items-center gap-1.5 mt-1 flex-wrap">
+            <View className="flex-row items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ backgroundColor: colors.bgTertiary }}>
+              <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getMuscleGroupColor(exercise.muscle_group?.name) }} />
+              <Text style={{ fontSize: 10, color: colors.textSecondary }}>{getMuscleGroupName(exercise.muscle_group)}</Text>
+            </View>
+            {exercise.equipment_type && (
+              <View className="px-1.5 py-0.5 rounded-full" style={{ backgroundColor: colors.bgTertiary }}>
+                <Text style={{ fontSize: 10, color: colors.textSecondary }}>{getEquipmentName(exercise.equipment_type)}</Text>
+              </View>
+            )}
+            {!exercise.is_system && (
+              <View className="px-1.5 py-0.5 rounded-full" style={{ backgroundColor: colors.accentBgSubtle }}>
+                <Text style={{ fontSize: 10, color: colors.accent }}>{t('exercise:custom')}</Text>
+              </View>
+            )}
+          </View>
+          {showUsage && (
+            <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 2 }}>{getUsageText(exercise.id)}</Text>
+          )}
         </View>
         <DropdownMenu
           items={[
             { icon: BarChart3, label: t('exercise:usage.title'), onPress: () => setExerciseForUsage(exercise) },
-            { icon: TrendingUp, label: t('exercise:progression'), onPress: () => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id, exerciseName: exercise.name }) },
+            { icon: TrendingUp, label: t('exercise:progression'), onPress: () => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id, exerciseName: getExerciseName(exercise) }) },
             !exercise.is_system && { icon: Pencil, label: t('common:buttons.edit'), onPress: () => setEditExerciseId(exercise.id) },
             !exercise.is_system && { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setExerciseToDelete(exercise), danger: true },
           ].filter(Boolean)}
@@ -85,6 +109,13 @@ export default function ExercisesScreen({ navigation }) {
           muscleGroups={muscleGroups}
           selectedMuscleGroup={selectedMuscleGroup}
           onMuscleGroupChange={setSelectedMuscleGroup}
+          equipmentTypes={equipmentTypes}
+          selectedEquipmentType={selectedEquipmentType}
+          onEquipmentTypeChange={setSelectedEquipmentType}
+          sourceFilter={sourceFilter}
+          onSourceFilterChange={setSourceFilter}
+          showUsage={showUsage}
+          onToggleUsage={setShowUsage}
         />
       </View>
 

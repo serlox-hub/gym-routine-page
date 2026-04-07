@@ -65,6 +65,8 @@ export const QUERY_KEYS = {
   EXERCISE_USAGE_COUNTS: 'exercise-usage-counts',
   EXERCISE_USAGE_DETAIL: 'exercise-usage-detail',
   TRAINING_GOAL_SESSIONS: 'training-goal-sessions',
+  MUSCLE_GROUPS: 'muscle-groups',
+  EQUIPMENT_TYPES: 'equipment-types',
 }
 
 // Timer

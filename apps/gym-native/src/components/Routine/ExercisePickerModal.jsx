@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useExercisesWithMuscleGroup, useMuscleGroups, useCreateExercise } from '../../hooks/useExercises'
+import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCreateExercise } from '../../hooks/useExercises'
 import { Modal, Button } from '../ui'
 import ExerciseForm from '../Exercise/ExerciseForm'
 import ExerciseSearchList from './ExerciseSearchList'
@@ -20,6 +20,7 @@ export default function ExercisePickerModal({
   const [searchTerm, setSearchTerm] = useState('')
   const { data: exercises, isLoading } = useExercisesWithMuscleGroup()
   const { data: muscleGroups } = useMuscleGroups()
+  const { data: equipmentTypes } = useEquipmentTypes()
   const createExercise = useCreateExercise()
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function ExercisePickerModal({
           <ExerciseSearchList
             exercises={exercises}
             muscleGroups={muscleGroups}
+            equipmentTypes={equipmentTypes}
             isLoading={isLoading}
             onSelect={onSelect}
             initialMuscleGroup={initialMuscleGroup}

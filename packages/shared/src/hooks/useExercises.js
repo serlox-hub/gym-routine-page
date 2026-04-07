@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
-import { getExerciseName, getMuscleGroupName } from '../lib/exerciseUtils.js'
+import { getExerciseName, getMuscleGroupName, getEquipmentName } from '../lib/exerciseUtils.js'
 import {
   fetchExercisesWithMuscleGroup,
   fetchMuscleGroups,
+  fetchEquipmentTypes,
   fetchExerciseStats,
   fetchExerciseUsageDetail,
   fetchExercise,
@@ -27,10 +28,20 @@ export function useExercisesWithMuscleGroup() {
 
 export function useMuscleGroups() {
   return useQuery({
-    queryKey: ['muscle-groups'],
+    queryKey: [QUERY_KEYS.MUSCLE_GROUPS],
     queryFn: fetchMuscleGroups,
     select: (data) => [...data].sort((a, b) =>
       getMuscleGroupName(a).localeCompare(getMuscleGroupName(b))
+    ),
+  })
+}
+
+export function useEquipmentTypes() {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EQUIPMENT_TYPES],
+    queryFn: fetchEquipmentTypes,
+    select: (data) => [...data].sort((a, b) =>
+      getEquipmentName(a).localeCompare(getEquipmentName(b))
     ),
   })
 }
