@@ -160,10 +160,31 @@ function Preferences() {
           </div>
         </Card>
 
+        <Card className="p-4">
+          <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
+            {t('common:preferences.weekStartDay')}
+          </h2>
+          <div className="flex gap-1">
+            {[{ value: 'monday', label: t('common:preferences.monday') }, { value: 'sunday', label: t('common:preferences.sunday') }].map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => handleChange('week_start_day', value)}
+                disabled={updatePreference.isPending}
+                className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: (preferences?.week_start_day || 'monday') === value ? colors.accent : colors.bgTertiary,
+                  color: (preferences?.week_start_day || 'monday') === value ? colors.white : colors.textSecondary,
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </Card>
+
         <TrainingGoalSection
           preferences={preferences}
           onChangeDays={(value) => handleChange('training_days_per_week', value)}
-          onChangeCycleLength={(value) => handleChange('training_cycle_length', value)}
           onToggleWidget={(value) => handleChange('show_training_goal', value)}
           disabled={updatePreference.isPending}
         />

@@ -3,12 +3,17 @@
  */
 
 /**
- * Obtiene el día de la semana ajustado (lunes = 0, domingo = 6)
- * @param {Date} date - Fecha
- * @returns {number} Día de la semana (0-6, lunes-domingo)
+ * Obtiene el día de la semana ajustado según inicio de semana.
+ * Si weekStartDay='monday': lunes=0, domingo=6
+ * Si weekStartDay='sunday': domingo=0, sábado=6
+ * @param {Date} date
+ * @param {string} weekStartDay - 'monday' | 'sunday'
+ * @returns {number} 0-6
  */
-export function getAdjustedDayOfWeek(date) {
-  let day = date.getDay() - 1
+export function getAdjustedDayOfWeek(date, weekStartDay = 'monday') {
+  const jsDay = date.getDay() // 0=Sun, 6=Sat
+  if (weekStartDay === 'sunday') return jsDay
+  let day = jsDay - 1
   if (day < 0) day = 6
   return day
 }
@@ -52,14 +57,14 @@ export function extractMuscleGroupsFromSessions(sessions) {
  * @param {Array} sessions - Sesiones de entrenamiento
  * @returns {Array} Array de días del calendario (null para días vacíos)
  */
-export function generateCalendarDays(currentDate, sessions) {
+export function generateCalendarDays(currentDate, sessions, weekStartDay = 'monday') {
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
 
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
 
-  const startDayOfWeek = getAdjustedDayOfWeek(firstDay)
+  const startDayOfWeek = getAdjustedDayOfWeek(firstDay, weekStartDay)
   const sessionsByDate = groupSessionsByDate(sessions)
 
   const days = []

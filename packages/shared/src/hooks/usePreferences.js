@@ -16,6 +16,7 @@ const DEFAULT_VALUES = {
   training_cycle_length: 7,
   training_rest_weeks: [],
   show_training_goal: true,
+  week_start_day: 'monday',
   language: 'es',
 }
 

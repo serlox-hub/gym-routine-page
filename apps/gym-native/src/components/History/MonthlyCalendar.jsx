@@ -7,19 +7,23 @@ import {
   generateCalendarDays,
   getMonthName,
   getNextMonth,
-  getPreviousMonth
+  getPreviousMonth,
+  usePreference
 } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onDateChange }) {
   const { t } = useTranslation()
-  const DAYS_OF_WEEK = [
+  const { value: weekStartDay } = usePreference('week_start_day')
+  const wsd = weekStartDay || 'monday'
+  const allDays = [
     t('common:time.mon'), t('common:time.tue'), t('common:time.wed'),
     t('common:time.thu'), t('common:time.fri'), t('common:time.sat'), t('common:time.sun'),
   ]
+  const DAYS_OF_WEEK = wsd === 'sunday' ? [allDays[6], ...allDays.slice(0, 6)] : allDays
   const calendarData = useMemo(
-    () => generateCalendarDays(currentDate, sessions),
-    [currentDate, sessions],
+    () => generateCalendarDays(currentDate, sessions, wsd),
+    [currentDate, sessions, wsd],
   )
 
   const monthName = getMonthName(currentDate)

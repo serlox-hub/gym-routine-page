@@ -4,10 +4,9 @@ import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import PreferenceToggle from './PreferenceToggle.jsx'
 
-function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, onToggleWidget, disabled }) {
+function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabled }) {
   const { t } = useTranslation()
   const currentDays = preferences?.training_days_per_week
-  const currentCycleLength = preferences?.training_cycle_length || 7
   const showWidget = preferences?.show_training_goal ?? true
 
   return (
@@ -19,32 +18,10 @@ function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, o
       <div className="space-y-4">
         <div>
           <p className="font-medium text-sm mb-2" style={{ color: colors.textPrimary }}>
-            {t('common:preferences.cycleLengthDays')}
+            {t('common:preferences.trainingDaysPerWeek')}
           </p>
           <div className="flex gap-1 flex-wrap">
-            {[7, 8, 9, 10, 11, 12, 13, 14].map(n => (
-              <button
-                key={n}
-                onClick={() => onChangeCycleLength(n)}
-                disabled={disabled}
-                className="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: n === currentCycleLength ? colors.accent : colors.bgTertiary,
-                  color: n === currentCycleLength ? colors.white : colors.textSecondary,
-                }}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="font-medium text-sm mb-2" style={{ color: colors.textPrimary }}>
-            {t('common:preferences.trainingDaysPerCycle')}
-          </p>
-          <div className="flex gap-1 flex-wrap">
-            {Array.from({ length: currentCycleLength }, (_, i) => i + 1).map(n => (
+            {[1, 2, 3, 4, 5, 6, 7].map(n => (
               <button
                 key={n}
                 onClick={() => onChangeDays(n)}

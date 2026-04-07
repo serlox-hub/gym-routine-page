@@ -59,10 +59,9 @@ function PremiumFeature({ title, description, enabled, comingSoon }) {
   )
 }
 
-function TrainingGoalCard({ preferences, onChangeDays, onChangeCycleLength, onToggleWidget, disabled }) {
+function TrainingGoalCard({ preferences, onChangeDays, onToggleWidget, disabled }) {
   const { t } = useTranslation()
   const currentDays = preferences?.training_days_per_week
-  const currentCycleLength = preferences?.training_cycle_length || 7
   const showWidget = preferences?.show_training_goal ?? true
 
   return (
@@ -74,31 +73,10 @@ function TrainingGoalCard({ preferences, onChangeDays, onChangeCycleLength, onTo
       <View className="gap-4">
         <View>
           <Text className="font-medium text-sm text-primary mb-2">
-            {t('common:preferences.cycleLengthDays')}
+            {t('common:preferences.trainingDaysPerWeek')}
           </Text>
           <View className="flex-row flex-wrap gap-1">
-            {[7, 8, 9, 10, 11, 12, 13, 14].map(n => (
-              <Pressable
-                key={n}
-                onPress={() => onChangeCycleLength(n)}
-                disabled={disabled}
-                className="w-9 h-9 rounded-lg items-center justify-center"
-                style={{ backgroundColor: n === currentCycleLength ? colors.accent : colors.bgTertiary }}
-              >
-                <Text className="text-sm font-medium" style={{ color: n === currentCycleLength ? '#fff' : colors.textSecondary }}>
-                  {n}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        <View>
-          <Text className="font-medium text-sm text-primary mb-2">
-            {t('common:preferences.trainingDaysPerCycle')}
-          </Text>
-          <View className="flex-row flex-wrap gap-1">
-            {Array.from({ length: currentCycleLength }, (_, i) => i + 1).map(n => (
+            {[1, 2, 3, 4, 5, 6, 7].map(n => (
               <Pressable
                 key={n}
                 onPress={() => onChangeDays(n)}
@@ -230,10 +208,31 @@ export default function PreferencesScreen({ navigation }) {
           <TrainingGoalCard
             preferences={preferences}
             onChangeDays={(value) => handleChange('training_days_per_week', value)}
-            onChangeCycleLength={(value) => handleChange('training_cycle_length', value)}
             onToggleWidget={(value) => handleChange('show_training_goal', value)}
             disabled={updatePreference.isPending}
           />
+
+          {/* Week Start */}
+          <Card className="p-4">
+            <Text className="text-sm font-medium text-secondary mb-3">
+              {t('common:preferences.weekStartDay')}
+            </Text>
+            <View className="flex-row gap-1">
+              {[{ value: 'monday', label: t('common:preferences.monday') }, { value: 'sunday', label: t('common:preferences.sunday') }].map(({ value, label }) => (
+                <Pressable
+                  key={value}
+                  onPress={() => handleChange('week_start_day', value)}
+                  disabled={updatePreference.isPending}
+                  className="flex-1 py-2 rounded-lg items-center"
+                  style={{ backgroundColor: (preferences?.week_start_day || 'monday') === value ? colors.accent : colors.bgTertiary }}
+                >
+                  <Text className="text-sm font-medium" style={{ color: (preferences?.week_start_day || 'monday') === value ? '#fff' : colors.textSecondary }}>
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </Card>
 
           {/* Workout Preferences */}
           <Card className="p-4">

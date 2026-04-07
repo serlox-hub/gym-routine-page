@@ -10,11 +10,18 @@
  * - Si no cumple → la racha se rompe.
  */
 
-const DAY_LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+const DAY_LABELS_MONDAY = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+const DAY_LABELS_SUNDAY = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
-// Lunes 1 de enero de 2024 — ancla para calcular ciclos
-const CYCLE_ANCHOR = new Date(2024, 0, 1)
-CYCLE_ANCHOR.setHours(0, 0, 0, 0)
+// Anclas para calcular ciclos según inicio de semana
+const ANCHOR_MONDAY = new Date(2024, 0, 1) // Lunes 1 ene 2024
+ANCHOR_MONDAY.setHours(0, 0, 0, 0)
+const ANCHOR_SUNDAY = new Date(2023, 11, 31) // Domingo 31 dic 2023
+ANCHOR_SUNDAY.setHours(0, 0, 0, 0)
+
+function getCycleAnchor(weekStartDay) {
+  return weekStartDay === 'sunday' ? ANCHOR_SUNDAY : ANCHOR_MONDAY
+}
 
 // ============================================
 // HELPERS INTERNOS
@@ -33,8 +40,12 @@ function daysBetween(a, b) {
   return Math.floor((msB - msA) / 86400000)
 }
 
-function getDayLabel(date) {
-  return DAY_LABELS[date.getDay()]
+function getDayLabel(date, weekStartDay = 'monday') {
+  const labels = weekStartDay === 'sunday' ? DAY_LABELS_SUNDAY : DAY_LABELS_MONDAY
+  const jsDay = date.getDay() // 0=Sun, 6=Sat
+  if (weekStartDay === 'sunday') return labels[jsDay]
+  // monday start: Mon=0, Tue=1, ..., Sun=6
+  return labels[jsDay === 0 ? 6 : jsDay - 1]
 }
 
 // ============================================
@@ -47,10 +58,11 @@ function getDayLabel(date) {
  * @param {number} cycleLength - Duracion del ciclo en dias
  * @returns {Date}
  */
-export function getCycleStart(date, cycleLength = 7) {
+export function getCycleStart(date, cycleLength = 7, weekStartDay = 'monday') {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
-  const days = daysBetween(CYCLE_ANCHOR, d)
+  const anchor = getCycleAnchor(weekStartDay)
+  const days = daysBetween(anchor, d)
   const offset = ((days % cycleLength) + cycleLength) % cycleLength
   const start = new Date(d)
   start.setDate(start.getDate() - offset)
@@ -63,8 +75,8 @@ export function getCycleStart(date, cycleLength = 7) {
  * @param {number} cycleLength
  * @returns {string}
  */
-export function getCycleKey(date, cycleLength = 7) {
-  return toDateStr(getCycleStart(date, cycleLength))
+export function getCycleKey(date, cycleLength = 7, weekStartDay = 'monday') {
+  return toDateStr(getCycleStart(date, cycleLength, weekStartDay))
 }
 
 /**
@@ -73,10 +85,10 @@ export function getCycleKey(date, cycleLength = 7) {
  * @param {number} cycleLength
  * @returns {Record<string, number>}
  */
-export function countSessionsByCycle(sessions, cycleLength = 7) {
+export function countSessionsByCycle(sessions, cycleLength = 7, weekStartDay = 'monday') {
   const counts = {}
   for (const session of sessions) {
-    const key = getCycleKey(new Date(session.completed_at), cycleLength)
+    const key = getCycleKey(new Date(session.completed_at), cycleLength, weekStartDay)
     counts[key] = (counts[key] || 0) + 1
   }
   return counts
@@ -93,12 +105,11 @@ export function countSessionsByCycle(sessions, cycleLength = 7) {
  * @param {Date} [now]
  * @returns {number}
  */
-export function calculateStreak(sessionsByCycle, target, restCycles = [], cycleLength = 7, now = new Date()) {
+export function calculateStreak(sessionsByCycle, target, restCycles = [], cycleLength = 7, now = new Date(), weekStartDay = 'monday') {
   const restSet = new Set(restCycles)
   let streak = 0
 
-  // Empezar desde el ciclo anterior al actual
-  const currentStart = getCycleStart(now, cycleLength)
+  const currentStart = getCycleStart(now, cycleLength, weekStartDay)
   const prevStart = new Date(currentStart)
   prevStart.setDate(prevStart.getDate() - cycleLength)
 
@@ -134,8 +145,8 @@ export function calculateStreak(sessionsByCycle, target, restCycles = [], cycleL
  * @param {Date} [now]
  * @returns {{ completed: number, target: number, isComplete: boolean }}
  */
-export function getCurrentCycleProgress(sessionsByCycle, target, cycleLength = 7, now = new Date()) {
-  const key = getCycleKey(now, cycleLength)
+export function getCurrentCycleProgress(sessionsByCycle, target, cycleLength = 7, now = new Date(), weekStartDay = 'monday') {
+  const key = getCycleKey(now, cycleLength, weekStartDay)
   const completed = sessionsByCycle[key] || 0
   return { completed, target, isComplete: completed >= target }
 }
@@ -147,8 +158,8 @@ export function getCurrentCycleProgress(sessionsByCycle, target, cycleLength = 7
  * @param {Date} [now]
  * @returns {boolean}
  */
-export function isCurrentCycleRest(restCycles, cycleLength = 7, now = new Date()) {
-  const key = getCycleKey(now, cycleLength)
+export function isCurrentCycleRest(restCycles, cycleLength = 7, now = new Date(), weekStartDay = 'monday') {
+  const key = getCycleKey(now, cycleLength, weekStartDay)
   return restCycles.includes(key)
 }
 
@@ -158,8 +169,8 @@ export function isCurrentCycleRest(restCycles, cycleLength = 7, now = new Date()
  * @param {Date} [now]
  * @returns {string}
  */
-export function getCurrentCycleKey(cycleLength = 7, now = new Date()) {
-  return getCycleKey(now, cycleLength)
+export function getCurrentCycleKey(cycleLength = 7, now = new Date(), weekStartDay = 'monday') {
+  return getCycleKey(now, cycleLength, weekStartDay)
 }
 
 /**
@@ -169,8 +180,8 @@ export function getCurrentCycleKey(cycleLength = 7, now = new Date()) {
  * @param {Date} [now]
  * @returns {Array<{label: string, date: Date, dateStr: string, sessions: Array, hasSession: boolean, isToday: boolean, isPast: boolean}>}
  */
-export function getCurrentCycleDays(sessions, cycleLength = 7, now = new Date()) {
-  const start = getCycleStart(now, cycleLength)
+export function getCurrentCycleDays(sessions, cycleLength = 7, now = new Date(), weekStartDay = 'monday') {
+  const start = getCycleStart(now, cycleLength, weekStartDay)
   const todayStr = toDateStr(now)
   const days = []
 
@@ -184,7 +195,7 @@ export function getCurrentCycleDays(sessions, cycleLength = 7, now = new Date())
     )
 
     days.push({
-      label: getDayLabel(date),
+      label: getDayLabel(date, weekStartDay),
       date,
       dateStr,
       sessions: daySessions,

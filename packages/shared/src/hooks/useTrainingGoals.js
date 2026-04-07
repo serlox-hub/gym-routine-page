@@ -34,9 +34,9 @@ const FROM_DATE = getTwoYearsAgoISO()
 export function useTrainingGoal() {
   const userId = useUserId()
   const { value: daysPerCycle } = usePreference('training_days_per_week')
-  const { value: cycleLength } = usePreference('training_cycle_length')
   const { value: restCycles } = usePreference('training_rest_weeks')
   const { value: showWidget } = usePreference('show_training_goal')
+  const { value: weekStartDay } = usePreference('week_start_day')
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS, userId],
@@ -49,20 +49,20 @@ export function useTrainingGoal() {
     return { isConfigured: false, showWidget: showWidget !== false, isLoading: false }
   }
 
-  const len = cycleLength || 7
-  const sessionsByCycle = sessions ? countSessionsByCycle(sessions, len) : {}
-  const streak = sessions ? calculateStreak(sessionsByCycle, daysPerCycle, restCycles || [], len) : 0
-  const cycleProgress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, len)
-  const isRestCycle = isCurrentCycleRest(restCycles || [], len)
-  const currentCycleKey = getCurrentCycleKey(len)
-  const cycleDays = getCurrentCycleDays(sessions || [], len)
+  const CYCLE_LENGTH = 7
+  const wsd = weekStartDay || 'monday'
+  const sessionsByCycle = sessions ? countSessionsByCycle(sessions, CYCLE_LENGTH, wsd) : {}
+  const streak = sessions ? calculateStreak(sessionsByCycle, daysPerCycle, restCycles || [], CYCLE_LENGTH, new Date(), wsd) : 0
+  const cycleProgress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, CYCLE_LENGTH, new Date(), wsd)
+  const isRestCycle = isCurrentCycleRest(restCycles || [], CYCLE_LENGTH, new Date(), wsd)
+  const currentCycleKey = getCurrentCycleKey(CYCLE_LENGTH, new Date(), wsd)
+  const cycleDays = getCurrentCycleDays(sessions || [], CYCLE_LENGTH, new Date(), wsd)
 
   return {
     isConfigured: true,
     showWidget: true,
     isLoading,
     daysPerCycle,
-    cycleLength: len,
     streak,
     cycleProgress,
     isRestCycle,
