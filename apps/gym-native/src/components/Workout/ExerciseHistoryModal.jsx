@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, FileText } from 'lucide-react-native'
+import { ChevronRight, FileText, Video } from 'lucide-react-native'
 import { useExerciseHistory } from '../../hooks/useWorkout'
 import { LoadingSpinner, Card, Modal } from '../ui'
 import SetNotesView from './SetNotesView'
@@ -95,10 +95,10 @@ function HistoryTab({ sessions, timeUnit, distanceUnit, onSelectSet, onSessionCl
                 <Text className="flex-1 text-sm text-primary">
                   {formatSetValue(set, { timeUnit, distanceUnit })}
                 </Text>
-                {(set.rir_actual !== null || set.notes) && (
+                {(set.rir_actual !== null || set.notes || set.video_url) && (
                   <Pressable
                     onPress={() => {
-                      if (set.notes) onSelectSet(set)
+                      if (set.notes || set.video_url) onSelectSet(set)
                     }}
                     className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"
                     style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)' }}
@@ -108,6 +108,7 @@ function HistoryTab({ sessions, timeUnit, distanceUnit, onSelectSet, onSessionCl
                         {RIR_LABELS[set.rir_actual] ?? set.rir_actual}
                       </Text>
                     )}
+                    {set.video_url && <Video size={12} color={colors.purple} />}
                     {set.notes && <FileText size={12} color={colors.purple} />}
                   </Pressable>
                 )}
@@ -262,6 +263,7 @@ export default function ExerciseHistoryModal({
         onClose={() => setSelectedSet(null)}
         rir={selectedSet?.rir_actual}
         notes={selectedSet?.notes}
+        videoUrl={selectedSet?.video_url}
       />
     </Modal>
   )

@@ -71,7 +71,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
             onSessionClick={handleSessionClick} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onLoadMore={fetchNextPage} />
         )}
       </div>
-      <SetNotesView isOpen={!!selectedSet} onClose={() => setSelectedSet(null)} rir={selectedSet?.rir_actual} notes={selectedSet?.notes} />
+      <SetNotesView isOpen={!!selectedSet} onClose={() => setSelectedSet(null)} rir={selectedSet?.rir_actual} notes={selectedSet?.notes} videoUrl={selectedSet?.video_url} />
     </Modal>
   )
 }

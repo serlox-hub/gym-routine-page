@@ -287,6 +287,7 @@ export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to 
         pace_seconds,
         rir_actual,
         notes,
+        video_url,
         set_type,
         performed_at
       )
