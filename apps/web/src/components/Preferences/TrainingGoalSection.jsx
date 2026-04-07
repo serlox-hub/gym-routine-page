@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import PreferenceToggle from './PreferenceToggle.jsx'
 
 function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, onToggleWidget, disabled }) {
+  const { t } = useTranslation()
   const currentDays = preferences?.training_days_per_week
   const currentCycleLength = preferences?.training_cycle_length || 7
   const showWidget = preferences?.show_training_goal ?? true
@@ -11,13 +13,13 @@ function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, o
   return (
     <Card className="p-4">
       <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
-        Objetivo de entrenamiento
+        {t('common:preferences.trainingGoalTitle')}
       </h2>
 
       <div className="space-y-4">
         <div>
           <p className="font-medium text-sm mb-2" style={{ color: colors.textPrimary }}>
-            Duración del ciclo (días)
+            {t('common:preferences.cycleLengthDays')}
           </p>
           <div className="flex gap-1 flex-wrap">
             {[7, 8, 9, 10, 11, 12, 13, 14].map(n => (
@@ -39,7 +41,7 @@ function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, o
 
         <div>
           <p className="font-medium text-sm mb-2" style={{ color: colors.textPrimary }}>
-            Días de entrenamiento por ciclo
+            {t('common:preferences.trainingDaysPerCycle')}
           </p>
           <div className="flex gap-1 flex-wrap">
             {Array.from({ length: currentCycleLength }, (_, i) => i + 1).map(n => (
@@ -65,7 +67,7 @@ function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, o
                   backgroundColor: colors.bgTertiary,
                   color: colors.textSecondary,
                 }}
-                title="Quitar objetivo"
+                title={t('common:preferences.removeGoal')}
               >
                 <X size={14} />
               </button>
@@ -74,8 +76,8 @@ function TrainingGoalSection({ preferences, onChangeDays, onChangeCycleLength, o
         </div>
 
         <PreferenceToggle
-          label="Mostrar widget en inicio"
-          description="Ver el progreso y racha en la pantalla principal"
+          label={t('common:preferences.showWidgetHome')}
+          description={t('common:preferences.showWidgetHomeDescription')}
           checked={showWidget}
           onChange={onToggleWidget}
           disabled={disabled}

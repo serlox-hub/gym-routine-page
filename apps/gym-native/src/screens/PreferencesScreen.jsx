@@ -59,6 +59,84 @@ function PremiumFeature({ title, description, enabled, comingSoon }) {
   )
 }
 
+function TrainingGoalCard({ preferences, onChangeDays, onChangeCycleLength, onToggleWidget, disabled }) {
+  const { t } = useTranslation()
+  const currentDays = preferences?.training_days_per_week
+  const currentCycleLength = preferences?.training_cycle_length || 7
+  const showWidget = preferences?.show_training_goal ?? true
+
+  return (
+    <Card className="p-4">
+      <Text className="text-sm font-medium text-secondary mb-3">
+        {t('common:preferences.trainingGoalTitle')}
+      </Text>
+
+      <View className="gap-4">
+        <View>
+          <Text className="font-medium text-sm text-primary mb-2">
+            {t('common:preferences.cycleLengthDays')}
+          </Text>
+          <View className="flex-row flex-wrap gap-1">
+            {[7, 8, 9, 10, 11, 12, 13, 14].map(n => (
+              <Pressable
+                key={n}
+                onPress={() => onChangeCycleLength(n)}
+                disabled={disabled}
+                className="w-9 h-9 rounded-lg items-center justify-center"
+                style={{ backgroundColor: n === currentCycleLength ? colors.accent : colors.bgTertiary }}
+              >
+                <Text className="text-sm font-medium" style={{ color: n === currentCycleLength ? '#fff' : colors.textSecondary }}>
+                  {n}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View>
+          <Text className="font-medium text-sm text-primary mb-2">
+            {t('common:preferences.trainingDaysPerCycle')}
+          </Text>
+          <View className="flex-row flex-wrap gap-1">
+            {Array.from({ length: currentCycleLength }, (_, i) => i + 1).map(n => (
+              <Pressable
+                key={n}
+                onPress={() => onChangeDays(n)}
+                disabled={disabled}
+                className="w-9 h-9 rounded-lg items-center justify-center"
+                style={{ backgroundColor: n === currentDays ? colors.accent : colors.bgTertiary }}
+              >
+                <Text className="text-sm font-medium" style={{ color: n === currentDays ? '#fff' : colors.textSecondary }}>
+                  {n}
+                </Text>
+              </Pressable>
+            ))}
+            {currentDays && (
+              <Pressable
+                onPress={() => onChangeDays(null)}
+                disabled={disabled}
+                className="w-9 h-9 rounded-lg items-center justify-center"
+                style={{ backgroundColor: colors.bgTertiary }}
+                accessibilityLabel={t('common:preferences.removeGoal')}
+              >
+                <X size={14} color={colors.textSecondary} />
+              </Pressable>
+            )}
+          </View>
+        </View>
+
+        <PreferenceToggle
+          label={t('common:preferences.showWidgetHome')}
+          description={t('common:preferences.showWidgetHomeDescription')}
+          checked={showWidget}
+          onChange={onToggleWidget}
+          disabled={disabled}
+        />
+      </View>
+    </Card>
+  )
+}
+
 export default function PreferencesScreen({ navigation }) {
   const { t } = useTranslation()
   const { data: preferences, isLoading } = usePreferences()
@@ -147,6 +225,15 @@ export default function PreferencesScreen({ navigation }) {
               />
             </View>
           </Card>
+
+          {/* Training Goal */}
+          <TrainingGoalCard
+            preferences={preferences}
+            onChangeDays={(value) => handleChange('training_days_per_week', value)}
+            onChangeCycleLength={(value) => handleChange('training_cycle_length', value)}
+            onToggleWidget={(value) => handleChange('show_training_goal', value)}
+            disabled={updatePreference.isPending}
+          />
 
           {/* Workout Preferences */}
           <Card className="p-4">
