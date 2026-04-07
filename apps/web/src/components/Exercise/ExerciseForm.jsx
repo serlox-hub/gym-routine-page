@@ -8,7 +8,7 @@ import {
   MEASUREMENT_TYPE_OPTIONS,
   MeasurementType,
   getMuscleGroupColor,
-  translateMuscleGroup,
+  getMuscleGroupName,
   measurementTypeUsesWeight
 } from '@gym/shared'
 
@@ -74,7 +74,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
         style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}`, color: selected ? colors.textPrimary : colors.textSecondary }}
       >
         {selected && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(selected.name) }} />}
-        <span className="flex-1">{selected ? translateMuscleGroup(selected.name) : t('exercise:noMuscleGroup')}</span>
+        <span className="flex-1">{selected ? getMuscleGroupName(selected) : t('exercise:noMuscleGroup')}</span>
         <ChevronDown size={14} style={{ color: colors.textSecondary }} />
       </button>
       {open && (
@@ -88,7 +88,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
               style={selectedId === g.id ? { backgroundColor: colors.accentBgSubtle } : undefined}
             >
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(g.name) }} />
-              <span style={{ color: selectedId === g.id ? colors.accent : colors.textPrimary }}>{translateMuscleGroup(g.name)}</span>
+              <span style={{ color: selectedId === g.id ? colors.accent : colors.textPrimary }}>{getMuscleGroupName(g)}</span>
             </button>
           ))}
         </div>

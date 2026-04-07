@@ -55,7 +55,7 @@ export async function exportRoutine(routineId) {
               name:name_es,
               measurement_type,
               instructions,
-              muscle_group:muscle_groups!muscle_group_id(name)
+              muscle_group:muscle_groups!muscle_group_id(name:name_es)
             )
           )
         `)
@@ -98,7 +98,7 @@ export async function exportRoutine(routineId) {
       measurement_type,
       weight_unit,
       instructions,
-      muscle_group:muscle_groups!muscle_group_id(name)
+      muscle_group:muscle_groups!muscle_group_id(name:name_es)
     `)
     .in('id', Array.from(exerciseIds))
 
@@ -152,8 +152,8 @@ export async function importRoutine(jsonData, userId, options = {}) {
     if (muscleGroupNames.length > 0) {
       const { data: mgRows } = await getClient()
         .from('muscle_groups')
-        .select('id, name')
-        .in('name', muscleGroupNames)
+        .select('id, name:name_es')
+        .in('name_es', muscleGroupNames)
       for (const mg of mgRows || []) {
         muscleGroupMap.set(mg.name, mg.id)
       }

@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, ScrollView, Modal } from 'react-nativ
 import { useTranslation } from 'react-i18next'
 import { Search, ChevronDown } from 'lucide-react-native'
 import { colors, inputStyle } from '../../lib/styles'
-import { getMuscleGroupColor, translateMuscleGroup } from '@gym/shared'
+import { getMuscleGroupColor, getMuscleGroupName } from '@gym/shared'
 
 export default function ExerciseSearchBar({
   search,
@@ -54,7 +54,7 @@ export default function ExerciseSearchBar({
           style={{ color: selectedGroup ? colors.textPrimary : colors.textSecondary }}
           numberOfLines={1}
         >
-          {selectedGroup ? translateMuscleGroup(selectedGroup.name) : t('exercise:allMuscleGroups')}
+          {selectedGroup ? getMuscleGroupName(selectedGroup) : t('exercise:allMuscleGroups')}
         </Text>
         <ChevronDown size={16} color={colors.textSecondary} />
       </Pressable>
@@ -94,7 +94,7 @@ export default function ExerciseSearchBar({
                       style={{ backgroundColor: getMuscleGroupColor(group.name) }}
                     />
                     <Text style={{ color: isSelected ? colors.accent : colors.textPrimary }}>
-                      {translateMuscleGroup(group.name)}
+                      {getMuscleGroupName(group)}
                     </Text>
                   </Pressable>
                 )

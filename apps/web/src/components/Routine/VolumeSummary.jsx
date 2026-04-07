@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, translateMuscleGroup, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
+import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, getMuscleGroupName, useMuscleGroups, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
 import { useRoutineBlocks } from '../../hooks/useRoutines.js'
 import { colors } from '../../lib/styles.js'
 
 function VolumeSummary({ days, cycleDays = 7 }) {
+  const { t } = useTranslation()
   const [allDaysBlocks, setAllDaysBlocks] = useState([])
 
   if (!days?.length) return null
@@ -12,7 +13,7 @@ function VolumeSummary({ days, cycleDays = 7 }) {
   return (
     <section className="mt-4">
       <h3 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
-        Volumen semanal por grupo muscular
+        {t('routine:volumeSummary')}
       </h3>
       {days.map((day, i) => (
         <DayBlocksCollector key={day.id} dayId={day.id} index={i} onBlocks={setAllDaysBlocks} />
@@ -37,6 +38,14 @@ function DayBlocksCollector({ dayId, index, onBlocks }) {
 }
 
 function VolumeBars({ allDaysBlocks, cycleDays, totalDays }) {
+  const { data: muscleGroups } = useMuscleGroups()
+
+  const mgByName = useMemo(() => {
+    const map = {}
+    for (const mg of muscleGroups || []) map[mg.name] = mg
+    return map
+  }, [muscleGroups])
+
   const summary = useMemo(() => {
     if (allDaysBlocks.length < totalDays) return []
     const cycleSets = countSetsByMuscleGroup(allDaysBlocks)
@@ -44,27 +53,24 @@ function VolumeBars({ allDaysBlocks, cycleDays, totalDays }) {
     return buildVolumeSummary(weeklySets)
   }, [allDaysBlocks, cycleDays, totalDays])
 
-  // Mostrar todos los grupos musculares con rangos, incluso sin series
   const allGroups = useMemo(() => {
     const summaryMap = new Map(summary.map(s => [s.name, s]))
     return Object.keys(VOLUME_LANDMARKS).map(name => {
       const existing = summaryMap.get(name)
-      return existing || {
-        name,
-        sets: 0,
-        zone: 'below_mv',
-        landmarks: VOLUME_LANDMARKS[name],
+      return {
+        ...(existing || { name, sets: 0, zone: 'below_mv', landmarks: VOLUME_LANDMARKS[name] }),
+        muscleGroup: mgByName[name] || { name },
       }
     })
-  }, [summary])
+  }, [summary, mgByName])
 
   if (allGroups.length === 0) return null
 
   return (
     <div>
       <div className="space-y-2.5">
-        {allGroups.map(({ name, sets, zone, landmarks }) => (
-          <VolumeRow key={name} name={name} sets={sets} zone={zone} landmarks={landmarks} />
+        {allGroups.map(({ name, muscleGroup, sets, zone, landmarks }) => (
+          <VolumeRow key={name} name={name} muscleGroup={muscleGroup} sets={sets} zone={zone} landmarks={landmarks} />
         ))}
       </div>
       <VolumeLegend />
@@ -73,7 +79,7 @@ function VolumeBars({ allDaysBlocks, cycleDays, totalDays }) {
 }
 
 
-function VolumeRow({ name, sets, zone, landmarks }) {
+function VolumeRow({ name, muscleGroup, sets, zone, landmarks }) {
   const color = getMuscleGroupColor(name)
   if (!landmarks) return null
 
@@ -84,7 +90,7 @@ function VolumeRow({ name, sets, zone, landmarks }) {
   return (
     <div className="flex items-center gap-3">
       <div className="w-28 flex-shrink-0">
-        <span className="text-xs font-medium" style={{ color }}>{translateMuscleGroup(name)}</span>
+        <span className="text-xs font-medium" style={{ color }}>{getMuscleGroupName(muscleGroup)}</span>
       </div>
       <div className="flex-1 relative h-4">
         {/* Fondo con zonas coloreadas */}

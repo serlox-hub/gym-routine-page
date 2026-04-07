@@ -15,10 +15,6 @@ export function getExerciseName(exercise) {
  * Resolves the weight unit for an exercise.
  * Priority: exercise override > user preference > 'kg'
  */
-/**
- * Resolves the weight unit for an exercise.
- * Priority: exercise override > user preference > 'kg'
- */
 export function resolveWeightUnit(exercise, userPreferences) {
   return exercise?.weight_unit
     || userPreferences?.weight_unit
@@ -55,4 +51,26 @@ export function getStructuredInstructions(exercise) {
 
   const locale = getCurrentLocale()
   return (locale === 'en' && instructions.en) ? instructions.en : instructions.es
+}
+
+/**
+ * Returns the muscle group name in the current locale.
+ * Receives the muscle_group object from a Supabase join (with name alias + name_en).
+ */
+export function getMuscleGroupName(muscleGroup) {
+  if (!muscleGroup) return ''
+  const locale = getCurrentLocale()
+  if (locale === 'en' && muscleGroup.name_en) return muscleGroup.name_en
+  return muscleGroup.name || muscleGroup.name_es || ''
+}
+
+/**
+ * Returns the equipment type name in the current locale.
+ * Receives the equipment_type object from a Supabase join (with name alias + name_en).
+ */
+export function getEquipmentName(equipmentType) {
+  if (!equipmentType) return ''
+  const locale = getCurrentLocale()
+  if (locale === 'en' && equipmentType.name_en) return equipmentType.name_en
+  return equipmentType.name || equipmentType.name_es || ''
 }

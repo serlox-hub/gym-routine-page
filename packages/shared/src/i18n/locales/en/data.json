@@ -1,20 +1,4 @@
 {
-  "muscleGroups": {
-    "Pecho": "Chest",
-    "Espalda": "Back",
-    "Hombros": "Shoulders",
-    "Bíceps": "Biceps",
-    "Tríceps": "Triceps",
-    "Cuádriceps": "Quads",
-    "Isquiotibiales": "Hamstrings",
-    "Pantorrillas": "Calves",
-    "Abdominales": "Abs",
-    "Glúteos": "Glutes",
-    "Antebrazo": "Forearms",
-    "Cardio": "Cardio",
-    "Movilidad": "Mobility",
-    "Cuerpo Completo": "Full Body"
-  },
   "muscleGroupCategories": {
     "Superior": "Upper",
     "Inferior": "Lower",

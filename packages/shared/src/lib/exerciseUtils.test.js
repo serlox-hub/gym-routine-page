@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { initI18n } from '../i18n/index.js'
-import { getExerciseName, resolveWeightUnit, getExerciseInstructions, getStructuredInstructions } from './exerciseUtils.js'
+import { getExerciseName, resolveWeightUnit, getExerciseInstructions, getStructuredInstructions, getMuscleGroupName, getEquipmentName } from './exerciseUtils.js'
 
 beforeAll(() => { initI18n() })
 
@@ -97,5 +97,31 @@ describe('getStructuredInstructions', () => {
     const result = getStructuredInstructions(exercise)
     expect(result.setup).toBe('A')
     expect(result.cues).toEqual(['C'])
+  })
+})
+
+describe('getMuscleGroupName', () => {
+  it('devuelve name (alias de name_es) por defecto', () => {
+    expect(getMuscleGroupName({ name: 'Pecho', name_en: 'Chest' })).toBe('Pecho')
+  })
+
+  it('devuelve string vacío para null/undefined', () => {
+    expect(getMuscleGroupName(null)).toBe('')
+    expect(getMuscleGroupName(undefined)).toBe('')
+  })
+
+  it('usa name_es como fallback', () => {
+    expect(getMuscleGroupName({ name_es: 'Espalda' })).toBe('Espalda')
+  })
+})
+
+describe('getEquipmentName', () => {
+  it('devuelve name (alias de name_es) por defecto', () => {
+    expect(getEquipmentName({ name: 'Barra', name_en: 'Barbell' })).toBe('Barra')
+  })
+
+  it('devuelve string vacío para null/undefined', () => {
+    expect(getEquipmentName(null)).toBe('')
+    expect(getEquipmentName(undefined)).toBe('')
   })
 })

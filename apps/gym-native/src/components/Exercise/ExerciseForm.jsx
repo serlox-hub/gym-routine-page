@@ -9,7 +9,7 @@ import {
   MEASUREMENT_TYPE_OPTIONS,
   MeasurementType,
   getMuscleGroupColor,
-  translateMuscleGroup,
+  getMuscleGroupName,
   measurementTypeUsesWeight
 } from '@gym/shared'
 
@@ -138,7 +138,7 @@ export default function ExerciseForm({
 
   const muscleGroupOptions = muscleGroups?.map(g => ({
     value: g.id,
-    label: translateMuscleGroup(g.name),
+    label: getMuscleGroupName(g),
     color: getMuscleGroupColor(g.name),
   })) || []
 

@@ -30,7 +30,8 @@ export async function fetchSessionExercises(sessionId) {
         weight_unit,
         muscle_group:muscle_groups!muscle_group_id (
           id,
-          name
+          name:name_es,
+          name_en
         )
       )
     `)

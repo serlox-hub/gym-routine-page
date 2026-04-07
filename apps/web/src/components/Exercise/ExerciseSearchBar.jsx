@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Search, ChevronDown } from 'lucide-react'
 import { colors, inputStyle } from '../../lib/styles.js'
-import { getMuscleGroupColor, translateMuscleGroup } from '@gym/shared'
+import { getMuscleGroupColor, getMuscleGroupName } from '@gym/shared'
 
 function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscleGroup, onMuscleGroupChange, autoFocus = false }) {
   const { t } = useTranslation()
@@ -63,7 +63,7 @@ function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscl
             />
           )}
           <span className="flex-1 text-left truncate">
-            {selectedGroup ? translateMuscleGroup(selectedGroup.name) : t('common:labels.all')}
+            {selectedGroup ? getMuscleGroupName(selectedGroup) : t('common:labels.all')}
           </span>
           <ChevronDown
             size={16}
@@ -109,7 +109,7 @@ function ExerciseSearchBar({ search, onSearchChange, muscleGroups, selectedMuscl
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: getMuscleGroupColor(group.name) }}
                     />
-                    {translateMuscleGroup(group.name)}
+                    {getMuscleGroupName(group)}
                   </button>
                 )
               })}

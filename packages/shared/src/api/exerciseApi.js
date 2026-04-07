@@ -7,8 +7,9 @@ export async function fetchExercisesWithMuscleGroup() {
     .from('exercises')
     .select(`
       id, name:name_es, name_en, measurement_type, weight_unit,
-      is_system, equipment,
-      muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name)
+      is_system,
+      muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
+      equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
     `)
     .is('deleted_at', null)
     .order('name_es')
@@ -20,8 +21,8 @@ export async function fetchExercisesWithMuscleGroup() {
 export async function fetchMuscleGroups() {
   const { data, error } = await getClient()
     .from('muscle_groups')
-    .select('id, name')
-    .order('name')
+    .select('id, name:name_es, name_en, category')
+    .order('name_es')
 
   if (error) throw error
   return data
@@ -123,8 +124,9 @@ export async function fetchExercise(exerciseId) {
     .from('exercises')
     .select(`
       id, name:name_es, name_en, measurement_type, weight_unit,
-      is_system, equipment, instructions, deleted_at,
-      muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name)
+      is_system, instructions, deleted_at,
+      muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
+      equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
     `)
     .eq('id', exerciseId)
     .single()
@@ -165,6 +167,15 @@ export async function updateExercise({ exerciseId, exercise, muscleGroupId }) {
     .select()
     .single()
 
+  if (error) throw error
+  return data
+}
+
+export async function fetchEquipmentTypes() {
+  const { data, error } = await getClient()
+    .from('equipment_types')
+    .select('id, key, name:name_es, name_en')
+    .order('name_es')
   if (error) throw error
   return data
 }

@@ -164,10 +164,6 @@ export function getMuscleGroupColor(name) {
   return MUSCLE_GROUP_COLORS[name] || '#8b949e'
 }
 
-export function translateMuscleGroup(dbName) {
-  return t(`data:muscleGroups.${dbName}`, { defaultValue: dbName })
-}
-
 export function translateBlockName(dbName) {
   return t(`data:blockNames.${dbName}`, { defaultValue: dbName })
 }

@@ -67,7 +67,8 @@ export async function fetchRoutineBlocks(dayId) {
           instructions,
           muscle_group:muscle_groups!muscle_group_id (
             id,
-            name
+            name:name_es,
+            name_en
           )
         )
       )
