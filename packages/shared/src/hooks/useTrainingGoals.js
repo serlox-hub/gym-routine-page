@@ -69,6 +69,9 @@ export function useTrainingGoal() {
     currentCycleKey,
     restCycles: restCycles || [],
     cycleDays,
+    sessions: sessions || [],
+    sessionsByCycle,
+    weekStartDay: wsd,
   }
 }
 

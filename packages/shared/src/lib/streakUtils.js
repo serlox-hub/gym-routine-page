@@ -180,9 +180,9 @@ export function getCurrentCycleKey(cycleLength = 7, now = new Date(), weekStartD
  * @param {Date} [now]
  * @returns {Array<{label: string, date: Date, dateStr: string, sessions: Array, hasSession: boolean, isToday: boolean, isPast: boolean}>}
  */
-export function getCurrentCycleDays(sessions, cycleLength = 7, now = new Date(), weekStartDay = 'monday') {
+export function getCurrentCycleDays(sessions, cycleLength = 7, now = new Date(), weekStartDay = 'monday', today = new Date()) {
   const start = getCycleStart(now, cycleLength, weekStartDay)
-  const todayStr = toDateStr(now)
+  const todayStr = toDateStr(today)
   const days = []
 
   for (let i = 0; i < cycleLength; i++) {
@@ -221,6 +221,20 @@ export function getLastCycleSession(cycleDays) {
     }
   }
   return null
+}
+
+/**
+ * Devuelve el rango de fechas (inicio y fin) del ciclo que contiene la fecha dada.
+ * @param {number} cycleLength
+ * @param {Date} [now]
+ * @param {string} [weekStartDay]
+ * @returns {{ start: Date, end: Date }}
+ */
+export function getCycleDateRange(cycleLength = 7, now = new Date(), weekStartDay = 'monday') {
+  const start = getCycleStart(now, cycleLength, weekStartDay)
+  const end = new Date(start)
+  end.setDate(end.getDate() + cycleLength - 1)
+  return { start, end }
 }
 
 // ============================================

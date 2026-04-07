@@ -1,11 +1,18 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Flame, X, Pause, Play, Settings, Check, Share2 } from 'lucide-react-native'
-import { useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession } from '@gym/shared'
+import { Flame, X, Pause, Play, Settings, Check, Share2, ChevronLeft, ChevronRight } from 'lucide-react-native'
+import {
+  useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession,
+  getCurrentCycleDays, getCurrentCycleProgress, getCurrentCycleKey, countSessionsByCycle,
+  getCycleDateRange, formatShortDate,
+} from '@gym/shared'
 import { Card } from '../ui'
 import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal'
 import { colors } from '../../lib/styles'
+
+const CYCLE_LENGTH = 7
+const MAX_OFFSET = -12
 
 function WeeklyGoalWidget({ onOpenSettings, navigation }) {
   const { t } = useTranslation()
@@ -15,6 +22,32 @@ function WeeklyGoalWidget({ onOpenSettings, navigation }) {
   const [daysInput, setDaysInput] = useState(null)
   const [summaryData, setSummaryData] = useState(null)
   const [loadingShare, setLoadingShare] = useState(false)
+  const [cycleOffset, setCycleOffset] = useState(0)
+
+  // All hooks must be before any early return
+  const { streak, restCycles, sessions = [], daysPerCycle, weekStartDay = 'monday' } = goal.isConfigured ? goal : {}
+  const isCurrentCycle = cycleOffset === 0
+
+  const referenceDate = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + cycleOffset * CYCLE_LENGTH)
+    return d
+  }, [cycleOffset])
+
+  const sessionsByCycle = useMemo(
+    () => sessions.length ? countSessionsByCycle(sessions, CYCLE_LENGTH, weekStartDay) : {},
+    [sessions, weekStartDay]
+  )
+
+  const viewedCycleDays = useMemo(
+    () => getCurrentCycleDays(sessions, CYCLE_LENGTH, referenceDate, weekStartDay),
+    [sessions, referenceDate, weekStartDay]
+  )
+
+  const dateRangeLabel = useMemo(() => {
+    const { start, end } = getCycleDateRange(CYCLE_LENGTH, referenceDate, weekStartDay)
+    return `${formatShortDate(start)} – ${formatShortDate(end)}`
+  }, [referenceDate, weekStartDay])
 
   const handleShareLastSession = async (sessionId) => {
     setLoadingShare(true)
@@ -49,12 +82,14 @@ function WeeklyGoalWidget({ onOpenSettings, navigation }) {
 
   if (!goal.showWidget || !goal.isConfigured) return null
 
-  const { streak, cycleProgress, cycleDays, isRestCycle, currentCycleKey, restCycles } = goal
+  const viewedCycleKey = getCurrentCycleKey(CYCLE_LENGTH, referenceDate, weekStartDay)
+  const viewedProgress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, CYCLE_LENGTH, referenceDate, weekStartDay)
+  const viewedIsRest = restCycles.includes(viewedCycleKey)
 
   const handleToggleRestCycle = () => {
-    const newRestCycles = isRestCycle
-      ? restCycles.filter(k => k !== currentCycleKey)
-      : [...restCycles, currentCycleKey]
+    const newRestCycles = viewedIsRest
+      ? restCycles.filter(k => k !== viewedCycleKey)
+      : [...restCycles, viewedCycleKey]
     updatePreference.mutate({ key: 'training_rest_weeks', value: newRestCycles })
   }
 
@@ -63,42 +98,63 @@ function WeeklyGoalWidget({ onOpenSettings, navigation }) {
     navigation.navigate('SessionDetail', { sessionId: day.sessions[day.sessions.length - 1].id })
   }
 
-  const lastSession = !isRestCycle ? getLastCycleSession(cycleDays) : null
+  const lastSession = isCurrentCycle && !viewedIsRest ? getLastCycleSession(viewedCycleDays) : null
 
   return (
     <View className="mb-6">
-      <Card className="px-3 py-3 overflow-hidden">
-        {isRestCycle ? (
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <Pause size={14} color={colors.textSecondary} />
-              <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary }}>
-                {t('common:preferences.rest')}
-              </Text>
-              {streak > 0 && (
-                <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                  · {t('common:preferences.streakProtected')}
-                </Text>
-              )}
-            </View>
-            <View className="flex-row items-center gap-1">
-              <Pressable onPress={handleToggleRestCycle} className="p-1">
-                <Play size={12} color={colors.textSecondary} />
+      <Card className="overflow-hidden">
+        {/* Cycle navigation */}
+        <View className="flex-row items-center justify-between px-3 py-2" style={{ backgroundColor: colors.bgTertiary }}>
+          <Pressable onPress={() => setCycleOffset(o => Math.max(o - 1, MAX_OFFSET))} className="p-1">
+            <ChevronLeft size={14} color={colors.textSecondary} />
+          </Pressable>
+          <Text style={{ fontSize: 11, fontWeight: '500', color: colors.textSecondary }}>
+            {dateRangeLabel}
+          </Text>
+          {isCurrentCycle ? (
+            onOpenSettings ? (
+              <Pressable onPress={onOpenSettings} className="p-1">
+                <Settings size={14} color={colors.textSecondary} />
               </Pressable>
-              {onOpenSettings && (
-                <Pressable onPress={onOpenSettings} className="p-1">
-                  <Settings size={12} color={colors.textSecondary} />
-                </Pressable>
-              )}
-            </View>
+            ) : (
+              <View style={{ width: 24 }} />
+            )
+          ) : (
+            <Pressable onPress={() => setCycleOffset(o => o + 1)} className="p-1">
+              <ChevronRight size={14} color={colors.textSecondary} />
+            </Pressable>
+          )}
+        </View>
+
+        <View className="px-3 py-3">
+        {viewedIsRest ? (
+          <View className="items-center gap-2 py-2">
+            <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary }}>
+              {t('common:preferences.rest')}
+            </Text>
+            {isCurrentCycle && streak > 0 && (
+              <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                {t('common:preferences.streakProtected')}
+              </Text>
+            )}
+            <Pressable
+              onPress={handleToggleRestCycle}
+              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: colors.bgTertiary }}
+            >
+              <Play size={12} color={colors.textSecondary} />
+              <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary }}>
+                {t('common:preferences.removeRest')}
+              </Text>
+            </Pressable>
           </View>
         ) : (
           <View>
             <View className="flex-row items-center justify-between mb-3">
-              <Text style={{ fontSize: 12, fontWeight: '500', color: cycleProgress.isComplete ? colors.success : colors.textSecondary }}>
-                {cycleProgress.completed}/{cycleProgress.target}
+              <Text style={{ fontSize: 12, fontWeight: '500', color: viewedProgress.isComplete ? colors.success : colors.textSecondary }}>
+                {viewedProgress.completed}/{viewedProgress.target}
               </Text>
-              {streak > 0 && (
+              {isCurrentCycle && streak > 0 && (
                 <View className="flex-row items-center gap-1">
                   <Flame size={14} color={colors.warning} />
                   <Text style={{ fontSize: 12, fontWeight: '700', color: colors.warning }}>
@@ -106,20 +162,13 @@ function WeeklyGoalWidget({ onOpenSettings, navigation }) {
                   </Text>
                 </View>
               )}
-              <View className="flex-row items-center gap-1">
-                <Pressable onPress={handleToggleRestCycle} className="p-1">
-                  <Pause size={12} color={colors.textSecondary} />
-                </Pressable>
-                {onOpenSettings && (
-                  <Pressable onPress={onOpenSettings} className="p-1">
-                    <Settings size={12} color={colors.textSecondary} />
-                  </Pressable>
-                )}
-              </View>
+              <Pressable onPress={handleToggleRestCycle} className="p-1">
+                <Pause size={12} color={colors.textSecondary} />
+              </Pressable>
             </View>
 
             <View className="flex-row items-center justify-between gap-1">
-              {cycleDays.map((day) => (
+              {viewedCycleDays.map((day) => (
                 <DaySlot key={day.dateStr} day={day} onPress={() => handleDayPress(day)} />
               ))}
             </View>
@@ -138,6 +187,7 @@ function WeeklyGoalWidget({ onOpenSettings, navigation }) {
             )}
           </View>
         )}
+        </View>
       </Card>
 
       <WorkoutSummaryModal
@@ -217,7 +267,7 @@ function SetupPrompt({ showSetup, daysInput, onToggleSetup, onDaysChange, onSave
         ) : (
           <View>
             <Text className="text-sm font-medium mb-3" style={{ color: colors.textPrimary }}>
-              {t('routine:cycleDays')}
+              {t('common:preferences.daysPerCycle')}
             </Text>
             <View className="flex-row items-center gap-2">
               <View className="flex-row gap-1">

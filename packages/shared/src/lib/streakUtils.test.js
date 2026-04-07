@@ -14,6 +14,7 @@ import {
   isCurrentCycleRest,
   getCurrentCycleKey,
   getCurrentCycleDays,
+  getCycleDateRange,
 } from './streakUtils.js'
 
 // ============================================
@@ -366,7 +367,7 @@ describe('getCurrentCycleDays', () => {
       { id: 's1', completed_at: '2026-03-16T10:00:00Z' }, // lunes
       { id: 's2', completed_at: '2026-03-19T10:00:00Z' }, // jueves (hoy)
     ]
-    const days = getCurrentCycleDays(sessions, 7, now)
+    const days = getCurrentCycleDays(sessions, 7, now, 'monday', now)
 
     expect(days[0].hasSession).toBe(true) // lunes
     expect(days[0].sessions[0].id).toBe('s1')
@@ -376,7 +377,7 @@ describe('getCurrentCycleDays', () => {
   })
 
   it('marca dias pasados y futuros', () => {
-    const days = getCurrentCycleDays([], 7, now)
+    const days = getCurrentCycleDays([], 7, now, 'monday', now)
     expect(days[0].isPast).toBe(true) // lunes
     expect(days[3].isToday).toBe(true) // jueves
     expect(days[3].isPast).toBe(false)
@@ -392,5 +393,21 @@ describe('getCurrentCycleDays', () => {
   it('devuelve array vacio sin sesiones', () => {
     const days = getCurrentCycleDays([], 7, now)
     expect(days.every(d => !d.hasSession)).toBe(true)
+  })
+})
+
+describe('getCycleDateRange', () => {
+  it('devuelve inicio y fin del ciclo de 7 dias', () => {
+    const now = new Date(2026, 2, 19) // jueves 19 marzo 2026
+    const { start, end } = getCycleDateRange(7, now)
+    expect(start.getDate()).toBe(16) // lunes 16
+    expect(end.getDate()).toBe(22) // domingo 22
+  })
+
+  it('respeta weekStartDay sunday', () => {
+    const now = new Date(2026, 2, 19) // jueves 19 marzo 2026
+    const { start, end } = getCycleDateRange(7, now, 'sunday')
+    expect(start.getDay()).toBe(0) // domingo
+    expect(end.getDay()).toBe(6) // sabado
   })
 })

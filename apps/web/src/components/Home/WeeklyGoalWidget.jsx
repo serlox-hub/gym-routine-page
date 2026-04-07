@@ -1,11 +1,18 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Flame, X, Pause, Play, Settings, Check, Share2 } from 'lucide-react'
-import { useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession } from '@gym/shared'
+import { Flame, X, Pause, Play, Settings, Check, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession,
+  getCurrentCycleDays, getCurrentCycleProgress, getCurrentCycleKey, countSessionsByCycle,
+  getCycleDateRange, formatShortDate,
+} from '@gym/shared'
 import { Card } from '../ui/index.js'
 import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal.jsx'
 import { colors } from '../../lib/styles.js'
+
+const CYCLE_LENGTH = 7
+const MAX_OFFSET = -12
 
 function WeeklyGoalWidget({ onOpenSettings }) {
   const navigate = useNavigate()
@@ -16,6 +23,32 @@ function WeeklyGoalWidget({ onOpenSettings }) {
   const [daysInput, setDaysInput] = useState('')
   const [summaryData, setSummaryData] = useState(null)
   const [loadingShare, setLoadingShare] = useState(false)
+  const [cycleOffset, setCycleOffset] = useState(0)
+
+  // All hooks must be before any early return
+  const { streak, restCycles, sessions = [], daysPerCycle, weekStartDay = 'monday' } = goal.isConfigured ? goal : {}
+  const isCurrentCycle = cycleOffset === 0
+
+  const referenceDate = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + cycleOffset * CYCLE_LENGTH)
+    return d
+  }, [cycleOffset])
+
+  const sessionsByCycle = useMemo(
+    () => sessions.length ? countSessionsByCycle(sessions, CYCLE_LENGTH, weekStartDay) : {},
+    [sessions, weekStartDay]
+  )
+
+  const viewedCycleDays = useMemo(
+    () => getCurrentCycleDays(sessions, CYCLE_LENGTH, referenceDate, weekStartDay),
+    [sessions, referenceDate, weekStartDay]
+  )
+
+  const dateRangeLabel = useMemo(() => {
+    const { start, end } = getCycleDateRange(CYCLE_LENGTH, referenceDate, weekStartDay)
+    return `${formatShortDate(start)} – ${formatShortDate(end)}`
+  }, [referenceDate, weekStartDay])
 
   const handleShareLastSession = async (sessionId) => {
     setLoadingShare(true)
@@ -28,7 +61,6 @@ function WeeklyGoalWidget({ onOpenSettings }) {
 
   if (goal.isLoading) return null
 
-  // No configurado: mostrar invitacion a configurar
   if (!goal.isConfigured && goal.showWidget) {
     return (
       <SetupPrompt
@@ -52,12 +84,14 @@ function WeeklyGoalWidget({ onOpenSettings }) {
 
   if (!goal.showWidget || !goal.isConfigured) return null
 
-  const { streak, cycleProgress, cycleDays, isRestCycle, currentCycleKey, restCycles } = goal
+  const viewedCycleKey = getCurrentCycleKey(CYCLE_LENGTH, referenceDate, weekStartDay)
+  const viewedProgress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, CYCLE_LENGTH, referenceDate, weekStartDay)
+  const viewedIsRest = restCycles.includes(viewedCycleKey)
 
   const handleToggleRestCycle = () => {
-    const newRestCycles = isRestCycle
-      ? restCycles.filter(k => k !== currentCycleKey)
-      : [...restCycles, currentCycleKey]
+    const newRestCycles = viewedIsRest
+      ? restCycles.filter(k => k !== viewedCycleKey)
+      : [...restCycles, viewedCycleKey]
     updatePreference.mutate({ key: 'training_rest_weeks', value: newRestCycles })
   }
 
@@ -66,63 +100,83 @@ function WeeklyGoalWidget({ onOpenSettings }) {
     navigate(`/history/${day.sessions[day.sessions.length - 1].id}`)
   }
 
-  const lastSession = !isRestCycle ? getLastCycleSession(cycleDays) : null
+  const lastSession = isCurrentCycle && !viewedIsRest ? getLastCycleSession(viewedCycleDays) : null
 
   return (
     <section className="mb-6">
-      <Card className="px-3 py-3">
-        {isRestCycle ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Pause size={14} style={{ color: colors.textSecondary }} />
-              <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-                {t('common:preferences.rest')}
-              </span>
-              {streak > 0 && (
-                <span className="text-xs" style={{ color: colors.textMuted }}>
-                  · {t('common:preferences.streakProtected')}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <button onClick={handleToggleRestCycle} className="p-1" style={{ color: colors.textSecondary }} title="Quitar descanso">
-                <Play size={12} />
+      <Card className="overflow-hidden">
+        {/* Cycle navigation */}
+        <div className="flex items-center justify-between px-3 py-2" style={{ backgroundColor: colors.bgTertiary }}>
+          <button onClick={() => setCycleOffset(o => Math.max(o - 1, MAX_OFFSET))} className="p-1" style={{ color: colors.textSecondary }}>
+            <ChevronLeft size={14} />
+          </button>
+          <span className="text-[11px] font-medium" style={{ color: colors.textSecondary }}>
+            {dateRangeLabel}
+          </span>
+          {isCurrentCycle ? (
+            onOpenSettings ? (
+              <button onClick={onOpenSettings} className="p-1" style={{ color: colors.textSecondary }}>
+                <Settings size={14} />
               </button>
-              {onOpenSettings && (
-                <button onClick={onOpenSettings} className="p-1" style={{ color: colors.textSecondary }} title="Configurar">
-                  <Settings size={12} />
-                </button>
-              )}
-            </div>
+            ) : (
+              <div className="w-6" />
+            )
+          ) : (
+            <button onClick={() => setCycleOffset(o => o + 1)} className="p-1" style={{ color: colors.textSecondary }}>
+              <ChevronRight size={14} />
+            </button>
+          )}
+        </div>
+
+        <div className="px-3 py-3">
+        {viewedIsRest ? (
+          <div className="flex flex-col items-center gap-2 py-2">
+            <span className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+              {t('common:preferences.rest')}
+            </span>
+            {isCurrentCycle && streak > 0 && (
+              <span className="text-xs" style={{ color: colors.textMuted }}>
+                {t('common:preferences.streakProtected')}
+              </span>
+            )}
+            <button
+              onClick={handleToggleRestCycle}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+            >
+              <Play size={12} />
+              {t('common:preferences.removeRest')}
+            </button>
           </div>
         ) : (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium" style={{ color: cycleProgress.isComplete ? colors.success : colors.textSecondary }}>
-                {cycleProgress.completed}/{cycleProgress.target}
-              </span>
-              {streak > 0 && (
-                <div className="flex items-center gap-1">
-                  <Flame size={14} style={{ color: colors.warning }} />
-                  <span className="text-xs font-bold" style={{ color: colors.warning }}>
-                    {t('common:preferences.streak', { count: streak })}
+              {isCurrentCycle ? (
+                <>
+                  <span className="text-xs font-medium" style={{ color: viewedProgress.isComplete ? colors.success : colors.textSecondary }}>
+                    {viewedProgress.completed}/{viewedProgress.target}
                   </span>
-                </div>
+                  {streak > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Flame size={14} style={{ color: colors.warning }} />
+                      <span className="text-xs font-bold" style={{ color: colors.warning }}>
+                        {t('common:preferences.streak', { count: streak })}
+                      </span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs font-medium" style={{ color: viewedProgress.isComplete ? colors.success : colors.textSecondary }}>
+                  {viewedProgress.completed}/{viewedProgress.target}
+                </span>
               )}
-              <div className="flex items-center gap-1">
-                <button onClick={handleToggleRestCycle} className="p-1" style={{ color: colors.textSecondary }} title="Marcar como descanso">
-                  <Pause size={12} />
-                </button>
-                {onOpenSettings && (
-                  <button onClick={onOpenSettings} className="p-1" style={{ color: colors.textSecondary }} title="Configurar">
-                    <Settings size={12} />
-                  </button>
-                )}
-              </div>
+              <button onClick={handleToggleRestCycle} className="p-1" style={{ color: colors.textSecondary }}>
+                <Pause size={12} />
+              </button>
             </div>
 
             <div className="flex items-center justify-between gap-1">
-              {cycleDays.map((day) => (
+              {viewedCycleDays.map((day) => (
                 <DaySlot key={day.dateStr} day={day} onClick={() => handleDayClick(day)} />
               ))}
             </div>
@@ -135,11 +189,12 @@ function WeeklyGoalWidget({ onOpenSettings }) {
                 style={{ color: colors.accent }}
               >
                 <Share2 size={12} />
-                {loadingShare ? t('common:buttons.loading') : t('workout:summary.share')}
+                {loadingShare ? t('common:buttons.loading') : t('common:preferences.shareLastWorkout')}
               </button>
             )}
           </div>
         )}
+        </div>
       </Card>
 
       {summaryData && (
