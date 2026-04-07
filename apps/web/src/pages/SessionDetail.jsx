@@ -481,7 +481,7 @@ function SessionDetail() {
       />
 
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4 py-3"
+        className="fixed bottom-0 left-0 right-0 z-30 flex justify-center px-4 py-3"
         style={{ backgroundColor: colors.bgPrimary, borderTop: `1px solid ${colors.border}` }}
       >
         <button
