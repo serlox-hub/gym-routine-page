@@ -40,12 +40,6 @@ function DayBlocksCollector({ dayId, index, onBlocks }) {
 function VolumeBars({ allDaysBlocks, cycleDays, totalDays }) {
   const { data: muscleGroups } = useMuscleGroups()
 
-  const mgByName = useMemo(() => {
-    const map = {}
-    for (const mg of muscleGroups || []) map[mg.name] = mg
-    return map
-  }, [muscleGroups])
-
   const summary = useMemo(() => {
     if (allDaysBlocks.length < totalDays) return []
     const cycleSets = countSetsByMuscleGroup(allDaysBlocks)
@@ -54,15 +48,18 @@ function VolumeBars({ allDaysBlocks, cycleDays, totalDays }) {
   }, [allDaysBlocks, cycleDays, totalDays])
 
   const allGroups = useMemo(() => {
+    if (!muscleGroups?.length) return []
     const summaryMap = new Map(summary.map(s => [s.name, s]))
-    return Object.keys(VOLUME_LANDMARKS).map(name => {
-      const existing = summaryMap.get(name)
-      return {
-        ...(existing || { name, sets: 0, zone: 'below_mv', landmarks: VOLUME_LANDMARKS[name] }),
-        muscleGroup: mgByName[name] || { name },
-      }
-    })
-  }, [summary, mgByName])
+    return muscleGroups
+      .filter(mg => VOLUME_LANDMARKS[mg.name])
+      .map(mg => {
+        const existing = summaryMap.get(mg.name)
+        return {
+          ...(existing || { name: mg.name, sets: 0, zone: 'below_mv', landmarks: VOLUME_LANDMARKS[mg.name] }),
+          muscleGroup: mg,
+        }
+      })
+  }, [summary, muscleGroups])
 
   if (allGroups.length === 0) return null
 
