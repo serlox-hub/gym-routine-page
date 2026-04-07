@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, Switch, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Check, X, Globe } from 'lucide-react-native'
+import { Check, X } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
 import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
@@ -147,40 +147,6 @@ export default function PreferencesScreen({ navigation }) {
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="gap-4">
-          {/* Language Section */}
-          <Card className="p-4">
-            <View className="flex-row items-center gap-2 mb-3">
-              <Globe size={16} color={colors.textSecondary} />
-              <Text className="text-sm font-medium text-secondary">
-                {t('common:preferences.language')}
-              </Text>
-            </View>
-            <View className="flex-row gap-2">
-              {[
-                { code: 'es', label: t('common:preferences.spanish') },
-                { code: 'en', label: t('common:preferences.english') },
-              ].map(({ code, label }) => {
-                const isActive = (preferences?.language || 'es') === code
-                return (
-                  <Pressable
-                    key={code}
-                    onPress={() => handleChange('language', code)}
-                    className="flex-1 py-2 px-3 rounded-lg items-center"
-                    style={{ backgroundColor: isActive ? colors.accent : colors.bgTertiary }}
-                    disabled={updatePreference.isPending}
-                  >
-                    <Text
-                      className="text-sm font-medium"
-                      style={{ color: isActive ? '#fff' : colors.textSecondary }}
-                    >
-                      {label}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
-          </Card>
-
           {/* Plan Section */}
           <Card className="p-4">
             <View className="flex-row items-center justify-between mb-4">
@@ -204,33 +170,93 @@ export default function PreferencesScreen({ navigation }) {
             </View>
           </Card>
 
-          {/* Training Goal */}
-          <TrainingGoalCard
-            preferences={preferences}
-            onChangeDays={(value) => handleChange('training_days_per_week', value)}
-            onToggleWidget={(value) => handleChange('show_training_goal', value)}
-            disabled={updatePreference.isPending}
-          />
-
-          {/* Week Start */}
+          {/* General: Language + Weight Unit + Week Start */}
           <Card className="p-4">
-            <Text className="text-sm font-medium text-secondary mb-3">
-              {t('common:preferences.weekStartDay')}
+            <Text className="text-sm font-medium text-secondary mb-4">
+              {t('common:preferences.general')}
             </Text>
-            <View className="flex-row gap-1">
-              {[{ value: 'monday', label: t('common:preferences.monday') }, { value: 'sunday', label: t('common:preferences.sunday') }].map(({ value, label }) => (
-                <Pressable
-                  key={value}
-                  onPress={() => handleChange('week_start_day', value)}
-                  disabled={updatePreference.isPending}
-                  className="flex-1 py-2 rounded-lg items-center"
-                  style={{ backgroundColor: (preferences?.week_start_day || 'monday') === value ? colors.accent : colors.bgTertiary }}
-                >
-                  <Text className="text-sm font-medium" style={{ color: (preferences?.week_start_day || 'monday') === value ? '#fff' : colors.textSecondary }}>
-                    {label}
-                  </Text>
-                </Pressable>
-              ))}
+
+            <View className="gap-4">
+              <View>
+                <Text className="font-medium text-sm text-primary mb-2">
+                  {t('common:preferences.language')}
+                </Text>
+                <View className="flex-row gap-2">
+                  {[
+                    { code: 'es', label: t('common:preferences.spanish') },
+                    { code: 'en', label: t('common:preferences.english') },
+                  ].map(({ code, label }) => {
+                    const isActive = (preferences?.language || 'es') === code
+                    return (
+                      <Pressable
+                        key={code}
+                        onPress={() => handleChange('language', code)}
+                        className="flex-1 py-2 px-3 rounded-lg items-center"
+                        style={{ backgroundColor: isActive ? colors.accent : colors.bgTertiary }}
+                        disabled={updatePreference.isPending}
+                      >
+                        <Text
+                          className="text-sm font-medium"
+                          style={{ color: isActive ? '#fff' : colors.textSecondary }}
+                        >
+                          {label}
+                        </Text>
+                      </Pressable>
+                    )
+                  })}
+                </View>
+              </View>
+
+              <View>
+                <Text className="font-medium text-sm text-primary mb-1">
+                  {t('common:preferences.weightUnit')}
+                </Text>
+                <Text className="text-xs mb-2" style={{ color: colors.textMuted }}>
+                  {t('common:preferences.weightUnitDescription')}
+                </Text>
+                <View className="flex-row gap-2">
+                  {['kg', 'lb'].map((unit) => {
+                    const isActive = (preferences?.weight_unit || 'kg') === unit
+                    return (
+                      <Pressable
+                        key={unit}
+                        onPress={() => handleChange('weight_unit', unit)}
+                        className="flex-1 py-2 px-3 rounded-lg items-center"
+                        style={{ backgroundColor: isActive ? colors.accent : colors.bgTertiary }}
+                        disabled={updatePreference.isPending}
+                      >
+                        <Text
+                          className="text-sm font-medium"
+                          style={{ color: isActive ? '#fff' : colors.textSecondary }}
+                        >
+                          {unit}
+                        </Text>
+                      </Pressable>
+                    )
+                  })}
+                </View>
+              </View>
+
+              <View>
+                <Text className="font-medium text-sm text-primary mb-2">
+                  {t('common:preferences.weekStartDay')}
+                </Text>
+                <View className="flex-row gap-1">
+                  {[{ value: 'monday', label: t('common:preferences.monday') }, { value: 'sunday', label: t('common:preferences.sunday') }].map(({ value, label }) => (
+                    <Pressable
+                      key={value}
+                      onPress={() => handleChange('week_start_day', value)}
+                      disabled={updatePreference.isPending}
+                      className="flex-1 py-2 rounded-lg items-center"
+                      style={{ backgroundColor: (preferences?.week_start_day || 'monday') === value ? colors.accent : colors.bgTertiary }}
+                    >
+                      <Text className="text-sm font-medium" style={{ color: (preferences?.week_start_day || 'monday') === value ? '#fff' : colors.textSecondary }}>
+                        {label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
             </View>
           </Card>
 
@@ -283,6 +309,14 @@ export default function PreferencesScreen({ navigation }) {
               )}
             </View>
           </Card>
+
+          {/* Training Goal */}
+          <TrainingGoalCard
+            preferences={preferences}
+            onChangeDays={(value) => handleChange('training_days_per_week', value)}
+            onToggleWidget={(value) => handleChange('show_training_goal', value)}
+            disabled={updatePreference.isPending}
+          />
         </View>
 
         <Text className="text-center text-xs mt-2 mb-4" style={{ color: colors.textSecondary }}>

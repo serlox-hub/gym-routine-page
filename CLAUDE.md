@@ -316,6 +316,7 @@ Deletion strategy:
 - ❌ Business logic in apps/ (belongs in packages/shared/src/lib/)
 - ❌ Hardcoded user-facing strings (use `t()` from i18n)
 - ❌ Adding translation keys to only one language (must add to both es/ and en/)
+- ❌ Differences between web and native — all screens must have the same appearance, section order, and functionality on both platforms unless technically impossible
 
 ## What TO Do
 - ✅ One component = one file

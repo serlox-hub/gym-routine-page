@@ -10,6 +10,7 @@ const DEFAULT_VALUES = {
   show_set_notes: true,
   show_session_notes: true,
   show_video_upload: true,
+  weight_unit: 'kg',
   enabled_body_measurements: [],
   measurement_unit: 'cm',
   training_days_per_week: null,

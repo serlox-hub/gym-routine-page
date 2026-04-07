@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Check, X, Globe } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { Card, LoadingSpinner, PlanBadge, PageHeader } from '../components/ui/index.js'
 import { PreferenceToggle, InstallAppSection, TrainingGoalSection } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
@@ -53,37 +53,6 @@ function Preferences() {
 
       <main className="space-y-4">
         <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Globe size={16} style={{ color: colors.textSecondary }} />
-            <h2 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-              {t('common:preferences.language')}
-            </h2>
-          </div>
-          <div className="flex gap-2">
-            {[
-              { code: 'es', label: t('common:preferences.spanish') },
-              { code: 'en', label: t('common:preferences.english') },
-            ].map(({ code, label }) => {
-              const isActive = (preferences?.language || 'es') === code
-              return (
-                <button
-                  key={code}
-                  onClick={() => handleChange('language', code)}
-                  className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: isActive ? colors.accent : colors.bgTertiary,
-                    color: isActive ? '#fff' : colors.textSecondary,
-                  }}
-                  disabled={updatePreference.isPending}
-                >
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        </Card>
-
-        <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
               {t('common:preferences.plan')}
@@ -108,6 +77,92 @@ function Preferences() {
                 comingSoon
               />
             </ul>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
+            {t('common:preferences.general')}
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
+                {t('common:preferences.language')}
+              </h3>
+              <div className="flex gap-2">
+                {[
+                  { code: 'es', label: t('common:preferences.spanish') },
+                  { code: 'en', label: t('common:preferences.english') },
+                ].map(({ code, label }) => {
+                  const isActive = (preferences?.language || 'es') === code
+                  return (
+                    <button
+                      key={code}
+                      onClick={() => handleChange('language', code)}
+                      className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+                      style={{
+                        backgroundColor: isActive ? colors.accent : colors.bgTertiary,
+                        color: isActive ? '#fff' : colors.textSecondary,
+                      }}
+                      disabled={updatePreference.isPending}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                {t('common:preferences.weightUnit')}
+              </h3>
+              <p className="text-xs mb-2" style={{ color: colors.textMuted }}>
+                {t('common:preferences.weightUnitDescription')}
+              </p>
+              <div className="flex gap-2">
+                {['kg', 'lb'].map((unit) => {
+                  const isActive = (preferences?.weight_unit || 'kg') === unit
+                  return (
+                    <button
+                      key={unit}
+                      onClick={() => handleChange('weight_unit', unit)}
+                      className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+                      style={{
+                        backgroundColor: isActive ? colors.accent : colors.bgTertiary,
+                        color: isActive ? '#fff' : colors.textSecondary,
+                      }}
+                      disabled={updatePreference.isPending}
+                    >
+                      {unit}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
+                {t('common:preferences.weekStartDay')}
+              </h3>
+              <div className="flex gap-1">
+                {[{ value: 'monday', label: t('common:preferences.monday') }, { value: 'sunday', label: t('common:preferences.sunday') }].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => handleChange('week_start_day', value)}
+                    disabled={updatePreference.isPending}
+                    className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{
+                      backgroundColor: (preferences?.week_start_day || 'monday') === value ? colors.accent : colors.bgTertiary,
+                      color: (preferences?.week_start_day || 'monday') === value ? colors.white : colors.textSecondary,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </Card>
 
@@ -157,28 +212,6 @@ function Preferences() {
                 disabled={updatePreference.isPending}
               />
             )}
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
-            {t('common:preferences.weekStartDay')}
-          </h2>
-          <div className="flex gap-1">
-            {[{ value: 'monday', label: t('common:preferences.monday') }, { value: 'sunday', label: t('common:preferences.sunday') }].map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => handleChange('week_start_day', value)}
-                disabled={updatePreference.isPending}
-                className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: (preferences?.week_start_day || 'monday') === value ? colors.accent : colors.bgTertiary,
-                  color: (preferences?.week_start_day || 'monday') === value ? colors.white : colors.textSecondary,
-                }}
-              >
-                {label}
-              </button>
-            ))}
           </div>
         </Card>
 
