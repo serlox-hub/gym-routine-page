@@ -2,7 +2,7 @@
   "expo": {
     "name": "Diario Gym",
     "slug": "diario-gym",
-    "version": "1.18.2",
+    "version": "1.19.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
