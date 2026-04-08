@@ -11,6 +11,7 @@ import EditSessionExerciseModal from './EditSessionExerciseModal'
 import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
+import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { colors } from '../../lib/styles'
 import { MeasurementType, getHaptics, getExerciseInstructions, getExerciseName } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
@@ -19,7 +20,9 @@ function WarmupExerciseCard({ exercise, series, reps, notes, rest_seconds }) {
   const { t } = useTranslation()
   const [showNotes, setShowNotes] = useState(false)
   const instructionText = getExerciseInstructions(exercise)
-  const hasNotes = instructionText || notes
+  const { data: override } = useUserExerciseOverride(exercise?.id)
+  const personalNotes = override?.notes
+  const hasNotes = instructionText || notes || personalNotes
 
   return (
     <View className="p-3 rounded-lg" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border, ...getMuscleGroupBorderStyle(exercise.muscle_group?.name) }}>
@@ -36,7 +39,8 @@ function WarmupExerciseCard({ exercise, series, reps, notes, rest_seconds }) {
       {showNotes && hasNotes && (
         <View className="mt-2 p-2 rounded gap-1" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
           {instructionText && <Text className="text-xs" style={{ color: colors.textPrimary }}><Text style={{ color: colors.accent }}>{t('exercise:instructions')}: </Text>{instructionText}</Text>}
-          {notes && <Text className="text-xs" style={{ color: colors.textPrimary }}><Text style={{ color: colors.warning }}>{t('common:labels.notes')}: </Text>{notes}</Text>}
+          {personalNotes && <Text className="text-xs" style={{ color: colors.textPrimary }}><Text style={{ color: colors.teal }}>{t('exercise:personalNotes')}: </Text>{personalNotes}</Text>}
+          {notes && <Text className="text-xs" style={{ color: colors.textPrimary }}><Text style={{ color: colors.warning }}>{t('exercise:routineComment')}: </Text>{notes}</Text>}
         </View>
       )}
     </View>

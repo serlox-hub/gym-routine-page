@@ -61,13 +61,13 @@
     "noExercises": "No exercises"
   },
   "exercise": {
-    "config": "Configure exercise",
+    "config": "In routine",
     "series": "Sets",
     "reps": "Reps",
     "rir": "RIR",
     "rest": "Rest (sec)",
-    "notes": "Notes",
-    "notesPlaceholder": "Execution notes (optional)",
+    "notes": "Comment for this routine",
+    "notesPlaceholder": "E.g.: Slow eccentric, pause at bottom...",
     "moveToDay": "Move to another day",
     "moveToDayDesc": "Select the destination day",
     "selectDay": "Select a day for",

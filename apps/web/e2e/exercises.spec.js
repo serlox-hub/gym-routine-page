@@ -37,8 +37,8 @@ test.describe('Crear nuevo ejercicio', () => {
     await page.getByRole('button', { name: /crear/i }).click()
     await expect(page.getByText(/nuevo ejercicio/i)).toBeVisible()
 
-    // Intentar guardar sin llenar campos
-    await page.getByRole('button', { name: /guardar/i }).click()
+    // Intentar añadir sin llenar campos
+    await page.getByRole('button', { name: /añadir/i }).click()
 
     // Debería mostrar error
     await expect(page.getByText(/nombre es obligatorio|selecciona un grupo muscular/i)).toBeVisible()
@@ -59,8 +59,8 @@ test.describe('Crear nuevo ejercicio', () => {
     await page.getByText(/seleccionar grupo muscular/i).click()
     await page.getByRole('button', { name: /pecho/i }).click()
 
-    // Guardar
-    await page.getByRole('button', { name: /guardar/i }).click()
+    // Añadir
+    await page.getByRole('button', { name: /añadir/i }).click()
 
     // Modal se cierra y seguimos en /exercises
     await expect(page.getByText(/nuevo ejercicio/i)).not.toBeVisible({ timeout: 10000 })

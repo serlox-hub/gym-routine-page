@@ -180,6 +180,42 @@ export async function fetchEquipmentTypes() {
   return data
 }
 
+// ============================================
+// USER EXERCISE OVERRIDES
+// ============================================
+
+export async function fetchUserExerciseOverride(exerciseId) {
+  const { data, error } = await getClient()
+    .from('user_exercise_overrides')
+    .select('notes, weight_unit')
+    .eq('exercise_id', exerciseId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+export async function upsertUserExerciseOverride({ userId, exerciseId, notes, weightUnit }) {
+  const { data, error } = await getClient()
+    .from('user_exercise_overrides')
+    .upsert({
+      user_id: userId,
+      exercise_id: exerciseId,
+      notes: notes || null,
+      weight_unit: weightUnit || null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,exercise_id' })
+    .select('notes, weight_unit')
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+// ============================================
+// DELETE
+// ============================================
+
 export async function deleteExercise(exerciseId) {
   const { data: exercise, error: fetchError } = await getClient()
     .from('exercises')

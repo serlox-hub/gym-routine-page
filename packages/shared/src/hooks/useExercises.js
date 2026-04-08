@@ -11,6 +11,8 @@ import {
   createExercise,
   updateExercise,
   deleteExercise,
+  fetchUserExerciseOverride,
+  upsertUserExerciseOverride,
 } from '../api/exerciseApi.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
@@ -104,6 +106,30 @@ export function useDeleteExercise() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES] })
       getNotifier()?.show(t('exercise:deleted'), 'success')
+    },
+  })
+}
+
+// ============================================
+// USER EXERCISE OVERRIDES
+// ============================================
+
+export function useUserExerciseOverride(exerciseId) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISES, 'override', exerciseId],
+    queryFn: () => fetchUserExerciseOverride(exerciseId),
+    enabled: !!exerciseId,
+  })
+}
+
+export function useUpsertUserExerciseOverride() {
+  const queryClient = useQueryClient()
+  const userId = useUserId()
+
+  return useMutation({
+    mutationFn: (params) => upsertUserExerciseOverride({ userId, ...params }),
+    onSuccess: (_, { exerciseId }) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES, 'override', exerciseId] })
     },
   })
 }

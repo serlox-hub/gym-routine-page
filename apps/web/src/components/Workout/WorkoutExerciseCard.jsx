@@ -10,6 +10,7 @@ import ExerciseCardNotes from './ExerciseCardNotes.jsx'
 import SetsList from './SetsList.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
+import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType, getExerciseInstructions, getExerciseName } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
@@ -112,7 +113,9 @@ function WarmupExerciseCard({ exercise, series, reps, notes, rest_seconds }) {
   const { t } = useTranslation()
   const [showNotes, setShowNotes] = useState(false)
   const instructionText = getExerciseInstructions(exercise)
-  const hasNotes = instructionText || notes
+  const { data: override } = useUserExerciseOverride(exercise?.id)
+  const personalNotes = override?.notes
+  const hasNotes = instructionText || notes || personalNotes
 
   return (
     <div className="p-3 rounded-lg" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, ...getMuscleGroupBorderStyle(exercise.muscle_group?.name) }}>
@@ -131,7 +134,8 @@ function WarmupExerciseCard({ exercise, series, reps, notes, rest_seconds }) {
       {showNotes && hasNotes && (
         <div className="mt-2 p-2 rounded text-xs space-y-1" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
           {instructionText && <p style={{ color: colors.textPrimary, whiteSpace: 'pre-line' }}><span style={{ color: colors.accent }}>{t('exercise:instructions')}:</span> {instructionText}</p>}
-          {notes && <p style={{ color: colors.textPrimary }}><span style={{ color: colors.warning }}>{t('common:labels.notes')}:</span> {notes}</p>}
+          {personalNotes && <p style={{ color: colors.textPrimary }}><span style={{ color: colors.teal }}>{t('exercise:personalNotes')}:</span> {personalNotes}</p>}
+          {notes && <p style={{ color: colors.textPrimary }}><span style={{ color: colors.warning }}>{t('exercise:routineComment')}:</span> {notes}</p>}
         </div>
       )}
     </div>

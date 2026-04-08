@@ -2,6 +2,7 @@ import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '../ui'
 import { getExerciseInstructions, getStructuredInstructions } from '@gym/shared'
+import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { colors } from '../../lib/styles'
 
 function StructuredInstructions({ instructions }) {
@@ -65,7 +66,9 @@ function ExerciseCardNotes({
   const { t } = useTranslation()
   const structured = getStructuredInstructions(exercise)
   const legacyText = !structured ? getExerciseInstructions(exercise) : ''
-  const hasNoteContent = structured || legacyText || notes
+  const { data: override } = useUserExerciseOverride(exercise?.id)
+  const personalNotes = override?.notes
+  const hasNoteContent = structured || legacyText || notes || personalNotes
 
   return (
     <>
@@ -94,9 +97,14 @@ function ExerciseCardNotes({
               <Text style={{ color: colors.accent }}>{t('exercise:execution')}: </Text>{legacyText}
             </Text>
           )}
+          {personalNotes && (
+            <Text className="text-sm" style={{ color: colors.textPrimary }}>
+              <Text style={{ color: colors.teal }}>{t('exercise:personalNotes')}: </Text>{personalNotes}
+            </Text>
+          )}
           {notes && (
             <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.warning }}>{t('common:labels.notes')}: </Text>{notes}
+              <Text style={{ color: colors.warning }}>{t('exercise:routineComment')}: </Text>{notes}
             </Text>
           )}
         </View>

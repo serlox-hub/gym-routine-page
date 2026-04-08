@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useCreateExercise, useUpdateExercise, useExercise } from '../../hooks/useExercises.js'
+import { useCreateExercise, useUpdateExercise, useExercise, useUserExerciseOverride, useUpsertUserExerciseOverride } from '../../hooks/useExercises.js'
 import { getExerciseInstructions } from '@gym/shared'
 import { Modal } from '../ui/index.js'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm.jsx'
 import ExerciseForm from './ExerciseForm.jsx'
-import { colors } from '../../lib/styles.js'
+import SystemExerciseDetailsPanel from './SystemExerciseDetailsPanel.jsx'
+import { colors, inputStyle } from '../../lib/styles.js'
 
 export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose, onSaveSuccess }) {
   const { t } = useTranslation()
@@ -13,14 +15,38 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
   const createExercise = useCreateExercise()
   const updateExercise = useUpdateExercise()
 
+  const { data: override } = useUserExerciseOverride(isEdit ? exerciseId : null)
+  const upsertOverride = useUpsertUserExerciseOverride()
+  const [personalNotes, setPersonalNotes] = useState('')
+
+  useEffect(() => {
+    if (override) setPersonalNotes(override.notes || '')
+  }, [override])
+
   const mutation = isEdit ? updateExercise : createExercise
+
+  // System exercises show info banner + personal notes panel
+  if (isEdit && exercise?.is_system) {
+    return (
+      <SystemExerciseDetailsPanel
+        exerciseId={exerciseId}
+        onClose={onClose}
+      />
+    )
+  }
 
   const handleSubmit = async (formData, muscleGroupId) => {
     try {
       if (isEdit) {
         await updateExercise.mutateAsync({ exerciseId, exercise: formData, muscleGroupId })
+        if (personalNotes !== (override?.notes || '')) {
+          await upsertOverride.mutateAsync({ exerciseId, notes: personalNotes })
+        }
       } else {
-        await createExercise.mutateAsync({ exercise: formData, muscleGroupId })
+        const newExercise = await createExercise.mutateAsync({ exercise: formData, muscleGroupId })
+        if (personalNotes.trim()) {
+          await upsertOverride.mutateAsync({ exerciseId: newExercise.id, notes: personalNotes })
+        }
       }
       onSaveSuccess?.()
       onClose()
@@ -48,6 +74,19 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
           minimal
           hideSubmitButton
         />
+        <div className="mt-3">
+          <h4 className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+            {t('exercise:personalNotes')}
+          </h4>
+          <textarea
+            value={personalNotes}
+            onChange={(e) => setPersonalNotes(e.target.value)}
+            placeholder={t('exercise:personalNotesPlaceholder')}
+            rows={2}
+            className="w-full p-3 rounded-lg text-sm resize-none"
+            style={inputStyle}
+          />
+        </div>
       </div>
       <ExerciseConfigFormButtons
         onBack={onClose}
