@@ -19,7 +19,7 @@ test.describe('Lista de ejercicios', () => {
   })
 
   test('navega a crear nuevo ejercicio', async ({ page }) => {
-    await page.getByRole('button', { name: /nuevo/i }).click()
+    await page.getByRole('button', { name: /crear/i }).click()
 
     // Se abre modal en vez de navegar
     await expect(page.getByText(/nuevo ejercicio/i)).toBeVisible()
@@ -34,7 +34,7 @@ test.describe('Crear nuevo ejercicio', () => {
 
   test('valida campos obligatorios', async ({ page }) => {
     // Abrir modal de crear
-    await page.getByRole('button', { name: /nuevo/i }).click()
+    await page.getByRole('button', { name: /crear/i }).click()
     await expect(page.getByText(/nuevo ejercicio/i)).toBeVisible()
 
     // Intentar guardar sin llenar campos
@@ -46,7 +46,7 @@ test.describe('Crear nuevo ejercicio', () => {
 
   test('puede crear un ejercicio', async ({ page }) => {
     // Abrir modal de crear
-    await page.getByRole('button', { name: /nuevo/i }).click()
+    await page.getByRole('button', { name: /crear/i }).click()
     await expect(page.getByText(/nuevo ejercicio/i)).toBeVisible()
 
     // Usar timestamp para nombre único
