@@ -2,7 +2,7 @@ import { Flame, Link2, Dumbbell, Plus } from 'lucide-react'
 import ExerciseCard from './ExerciseCard.jsx'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { formatSupersetLabel, groupExercisesBySupersetId } from '@gym/shared'
+import { formatSupersetLabel, groupExercisesBySupersetId, getExerciseName } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function BlockSection({
@@ -21,7 +21,7 @@ function BlockSection({
   const { name, duration_min, routine_exercises } = block
   const isWarmup = name.toLowerCase() === 'calentamiento'
   const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
-  const positionLabels = routine_exercises.map(re => re.exercise.name)
+  const positionLabels = routine_exercises.map(re => getExerciseName(re.exercise))
 
   return (
     <section className="space-y-2">

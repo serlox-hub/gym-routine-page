@@ -4,7 +4,7 @@ import { Info, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType } from '@gym/shared'
+import { MeasurementType, getExerciseName } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function ExerciseCard({
@@ -55,7 +55,7 @@ function ExerciseCard({
   return (
     <Wrapper {...wrapperProps}>
       <div className="flex items-center justify-between gap-2">
-        <h4 className="font-medium text-sm truncate flex-1 min-w-0">{exercise.name}</h4>
+        <h4 className="font-medium text-sm truncate flex-1 min-w-0">{getExerciseName(exercise)}</h4>
         {isEditing ? (
           isReordering ? (
             <div className="p-1.5" style={{ color: colors.textSecondary }}>
@@ -88,7 +88,7 @@ function ExerciseCard({
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
         exerciseId={exercise.id}
-        exerciseName={exercise.name}
+        exerciseName={getExerciseName(exercise)}
         measurementType={measurementType}
         routineDayId={routineDayId}
       />

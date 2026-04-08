@@ -19,6 +19,7 @@ import {
   recalculateExercisePRs,
   buildEmptySetData,
   getSetFieldsForMeasurementType,
+  getExerciseName,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
@@ -341,7 +342,7 @@ function SessionDetail() {
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>
-                  {exercise.name}
+                  {getExerciseName(exercise)}
                 </h3>
                 {prData && (
                   <span

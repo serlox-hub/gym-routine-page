@@ -12,6 +12,59 @@ export function getExerciseName(exercise) {
 }
 
 /**
+ * Returns a shallow copy of the exercise with `name` resolved to the current locale.
+ * Use in hook `select` transforms so components can just use exercise.name.
+ */
+export function localizeExercise(exercise) {
+  if (!exercise || exercise.name_en === undefined) return exercise
+  return { ...exercise, name: getExerciseName(exercise) }
+}
+
+/**
+ * Localizes exercise names in nested data structures.
+ * Handles: items with .exercise, .session_exercises[].exercise,
+ * .routine_exercises[].exercise, and top-level exercises.
+ */
+export function localizeExercisesInList(items) {
+  if (!items) return items
+  return items.map(item => {
+    let result = item
+
+    // Direct exercise field (session_exercises, routine_exercises items)
+    if (item.exercise) {
+      result = { ...result, exercise: localizeExercise(item.exercise) }
+    }
+
+    // Nested session_exercises (e.g., session detail, workout history)
+    if (item.session_exercises) {
+      result = {
+        ...result,
+        session_exercises: item.session_exercises.map(se =>
+          se.exercise ? { ...se, exercise: localizeExercise(se.exercise) } : se
+        ),
+      }
+    }
+
+    // Nested routine_exercises (e.g., routine blocks)
+    if (item.routine_exercises) {
+      result = {
+        ...result,
+        routine_exercises: item.routine_exercises.map(re =>
+          re.exercise ? { ...re, exercise: localizeExercise(re.exercise) } : re
+        ),
+      }
+    }
+
+    // Top-level exercise (e.g., from useExercisesWithMuscleGroup)
+    if (result === item && item.name_en !== undefined) {
+      return localizeExercise(item)
+    }
+
+    return result
+  })
+}
+
+/**
  * Resolves the weight unit for an exercise.
  * Priority: exercise override > user preference > 'kg'
  */

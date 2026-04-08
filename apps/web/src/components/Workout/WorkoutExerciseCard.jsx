@@ -11,7 +11,7 @@ import SetsList from './SetsList.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType, getExerciseInstructions } from '@gym/shared'
+import { MeasurementType, getExerciseInstructions, getExerciseName } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [], existingSupersets = [] }) {
@@ -92,16 +92,16 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   return (
     <Wrapper {...wrapperProps}>
-      <ExerciseCardHeader exerciseName={exercise.name} completedCount={completedCount} setsCount={setsCount} isCompleted={isCompleted} collapsed={collapsed} onToggleCollapse={() => setCollapsed(c => !c)} menuItems={menuItems} />
+      <ExerciseCardHeader exerciseName={getExerciseName(exercise)} completedCount={completedCount} setsCount={setsCount} isCompleted={isCompleted} collapsed={collapsed} onToggleCollapse={() => setCollapsed(c => !c)} menuItems={menuItems} />
       {!collapsed && (
         <>
           <ExerciseCardNotes series={series} reps={reps} rir={rir} rest_seconds={rest_seconds} showNotes={showNotes} onToggleNotes={() => setShowNotes(!showNotes)} exercise={exercise} notes={notes} />
           <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} measurementType={measurementType} weightUnit={weightUnit} rest_seconds={rest_seconds} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} />
         </>
       )}
-      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={exercise.name} measurementType={measurementType} weightUnit={weightUnit} routineDayId={routineDayId} />
-      <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${exercise.name}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
-      <ConfirmModal isOpen={showRemoveConfirm} title={t('routine:exercise.removeFromRoutine')} message={t('routine:exercise.removeConfirm', { name: exercise.name })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
+      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} measurementType={measurementType} weightUnit={weightUnit} routineDayId={routineDayId} />
+      <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
+      <ConfirmModal isOpen={showRemoveConfirm} title={t('routine:exercise.removeFromRoutine')} message={t('routine:exercise.removeConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
       <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />
     </Wrapper>
   )
@@ -117,7 +117,7 @@ function WarmupExerciseCard({ exercise, series, reps, notes, rest_seconds }) {
   return (
     <div className="p-3 rounded-lg" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, ...getMuscleGroupBorderStyle(exercise.muscle_group?.name) }}>
       <div className="flex items-start justify-between gap-2">
-        <p className="font-medium text-sm" style={{ color: colors.textPrimary }}>{exercise.name}</p>
+        <p className="font-medium text-sm" style={{ color: colors.textPrimary }}>{getExerciseName(exercise)}</p>
       </div>
       <div className="flex flex-wrap items-center gap-1.5 mt-2">
         {series > 0 && <Badge variant="accent">{series}×{reps}</Badge>}

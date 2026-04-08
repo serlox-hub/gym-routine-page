@@ -27,6 +27,7 @@ import {
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
+import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 
 export function useRoutines() {
   return useQuery({
@@ -63,6 +64,7 @@ export function useRoutineBlocks(dayId) {
   return useQuery({
     queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(dayId)],
     queryFn: () => fetchRoutineBlocks(dayId),
+    select: localizeExercisesInList,
     enabled: !!dayId
   })
 }

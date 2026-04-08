@@ -12,7 +12,7 @@ import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
 import { colors } from '../../lib/styles'
-import { MeasurementType, getHaptics, getExerciseInstructions } from '@gym/shared'
+import { MeasurementType, getHaptics, getExerciseInstructions, getExerciseName } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WarmupExerciseCard({ exercise, series, reps, notes, rest_seconds }) {
@@ -23,7 +23,7 @@ function WarmupExerciseCard({ exercise, series, reps, notes, rest_seconds }) {
 
   return (
     <View className="p-3 rounded-lg" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border, ...getMuscleGroupBorderStyle(exercise.muscle_group?.name) }}>
-      <Text className="text-primary font-medium text-sm">{exercise.name}</Text>
+      <Text className="text-primary font-medium text-sm">{getExerciseName(exercise)}</Text>
       <View className="flex-row flex-wrap items-center gap-1.5 mt-2">
         {series > 0 && <Badge variant="accent">{series}×{reps}</Badge>}
         {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
@@ -106,16 +106,16 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const content = (
     <>
-      <ExerciseCardHeader exerciseName={exercise.name} completedCount={completedCount} setsCount={setsCount} isCompleted={isCompleted} collapsed={collapsed} onToggleCollapse={() => setCollapsed(c => !c)} menuItems={menuItems} />
+      <ExerciseCardHeader exerciseName={getExerciseName(exercise)} completedCount={completedCount} setsCount={setsCount} isCompleted={isCompleted} collapsed={collapsed} onToggleCollapse={() => setCollapsed(c => !c)} menuItems={menuItems} />
       {!collapsed && (
         <>
           <ExerciseCardNotes series={series} reps={reps} rir={rir} rest_seconds={rest_seconds} showNotes={showNotes} onToggleNotes={() => setShowNotes(!showNotes)} exercise={exercise} notes={notes} />
           <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} measurementType={measurementType} weightUnit={weightUnit} rest_seconds={rest_seconds} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} />
         </>
       )}
-      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={exercise.name} measurementType={measurementType} weightUnit={weightUnit} routineDayId={routineDayId} />
-      <ConfirmModal isOpen={showRemoveConfirm} title={t('routine:exercise.removeFromRoutine')} message={t('routine:exercise.removeConfirm', { name: exercise.name })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
-      <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${exercise.name}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
+      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} measurementType={measurementType} weightUnit={weightUnit} routineDayId={routineDayId} />
+      <ConfirmModal isOpen={showRemoveConfirm} title={t('routine:exercise.removeFromRoutine')} message={t('routine:exercise.removeConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
+      <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
       {showReorder && <ReorderModal visible onClose={() => setShowReorder(false)} totalItems={totalExercises} currentIndex={currentIndex} positionLabels={positionLabels} onSelect={(i) => { onReorder(currentIndex, i); setShowReorder(false) }} />}
       <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />
     </>

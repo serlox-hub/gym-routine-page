@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { initI18n } from '../i18n/index.js'
-import { getExerciseName, resolveWeightUnit, getExerciseInstructions, getStructuredInstructions, getMuscleGroupName, getEquipmentName } from './exerciseUtils.js'
+import { getExerciseName, resolveWeightUnit, getExerciseInstructions, getStructuredInstructions, getMuscleGroupName, getEquipmentName, localizeExercise, localizeExercisesInList } from './exerciseUtils.js'
 
 beforeAll(() => { initI18n() })
 
@@ -123,5 +123,67 @@ describe('getEquipmentName', () => {
   it('devuelve string vacío para null/undefined', () => {
     expect(getEquipmentName(null)).toBe('')
     expect(getEquipmentName(undefined)).toBe('')
+  })
+})
+
+describe('localizeExercise', () => {
+  it('resuelve name al locale actual (es por defecto)', () => {
+    const ex = { name: 'Press de banca', name_en: 'Bench Press' }
+    const result = localizeExercise(ex)
+    expect(result.name).toBe('Press de banca')
+    expect(result.name_en).toBe('Bench Press')
+  })
+
+  it('no modifica ejercicios sin name_en', () => {
+    const ex = { name: 'Custom', id: 1 }
+    expect(localizeExercise(ex)).toBe(ex)
+  })
+
+  it('devuelve null/undefined sin error', () => {
+    expect(localizeExercise(null)).toBe(null)
+    expect(localizeExercise(undefined)).toBe(undefined)
+  })
+})
+
+describe('localizeExercisesInList', () => {
+  it('localiza ejercicios de nivel superior', () => {
+    const items = [{ name: 'Press', name_en: 'Bench Press' }]
+    const result = localizeExercisesInList(items)
+    expect(result[0].name).toBe('Press')
+  })
+
+  it('localiza exercises anidados en .exercise', () => {
+    const items = [{ id: 1, exercise: { name: 'Press', name_en: 'Bench Press' } }]
+    const result = localizeExercisesInList(items)
+    expect(result[0].exercise.name).toBe('Press')
+  })
+
+  it('localiza session_exercises[].exercise', () => {
+    const items = [{
+      id: 's1',
+      session_exercises: [{ id: 'se1', exercise: { name: 'Curl', name_en: 'Curl' } }]
+    }]
+    const result = localizeExercisesInList(items)
+    expect(result[0].session_exercises[0].exercise.name).toBe('Curl')
+  })
+
+  it('localiza routine_exercises[].exercise', () => {
+    const items = [{
+      id: 'b1',
+      routine_exercises: [{ id: 're1', exercise: { name: 'Sentadilla', name_en: 'Squat' } }]
+    }]
+    const result = localizeExercisesInList(items)
+    expect(result[0].routine_exercises[0].exercise.name).toBe('Sentadilla')
+  })
+
+  it('devuelve null/undefined sin error', () => {
+    expect(localizeExercisesInList(null)).toBe(null)
+    expect(localizeExercisesInList(undefined)).toBe(undefined)
+  })
+
+  it('no modifica items sin exercises', () => {
+    const items = [{ id: 1, other: 'data' }]
+    const result = localizeExercisesInList(items)
+    expect(result[0]).toBe(items[0])
   })
 })

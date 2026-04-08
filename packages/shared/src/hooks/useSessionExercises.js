@@ -13,6 +13,7 @@ import {
   reorderSessionExercises,
 } from '../api/workoutApi.js'
 import { useWorkoutStore } from './_stores.js'
+import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 
 // ============================================
 // SESSION EXERCISES QUERIES & MUTATIONS
@@ -22,6 +23,7 @@ export function useSessionExercises(sessionId) {
   return useQuery({
     queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId],
     queryFn: () => fetchSessionExercises(sessionId),
+    select: localizeExercisesInList,
     enabled: !!sessionId,
   })
 }

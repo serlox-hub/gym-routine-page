@@ -19,6 +19,7 @@ import {
   recalculateExercisePRs,
 } from '../api/exerciseStatsApi.js'
 import { transformSessionDetailData } from '../lib/workoutTransforms.js'
+import { localizeExercisesInList, localizeExercise } from '../lib/exerciseUtils.js'
 
 // ============================================
 // HISTORY QUERIES
@@ -36,7 +37,7 @@ export function useWorkoutHistory(currentDate) {
       const data = await fetchWorkoutHistory({ from, to })
 
       // Extraer grupos musculares únicos de cada sesión
-      return data.map(session => {
+      return localizeExercisesInList(data).map(session => {
         const muscleGroupsSet = new Set()
         session.session_exercises?.forEach(se => {
           if (se.exercise?.muscle_group?.name) {
@@ -65,7 +66,11 @@ export function useSessionDetail(sessionId) {
     queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId],
     queryFn: async () => {
       const session = await fetchSessionDetail(sessionId)
-      return transformSessionDetailData(session)
+      const transformed = transformSessionDetailData(session)
+      if (transformed?.exercises) {
+        transformed.exercises = localizeExercisesInList(transformed.exercises)
+      }
+      return transformed
     },
     enabled: !!sessionId,
   })

@@ -7,7 +7,8 @@ import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui
 import {
   MeasurementType,
   formatSetValue,
-  formatShortDate
+  formatShortDate,
+  getExerciseName
 } from '@gym/shared'
 import { colors } from '../lib/styles'
 import { ExerciseProgressChart } from '../components/Charts'
@@ -114,7 +115,7 @@ export default function ExerciseProgressScreen({ route, navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title={exerciseName || exercise.name} onBack={() => navigation.goBack()} />
+      <PageHeader title={exerciseName || getExerciseName(exercise)} onBack={() => navigation.goBack()} />
 
       <FlatList
         data={sessions || []}

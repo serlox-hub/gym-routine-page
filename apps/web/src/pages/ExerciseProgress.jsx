@@ -8,7 +8,8 @@ import ExerciseProgressChart from '../components/Workout/ExerciseProgressChart.j
 import {
   MeasurementType,
   formatSetValue,
-  formatShortDate
+  formatShortDate,
+  getExerciseName
 } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
@@ -73,7 +74,7 @@ function ExerciseProgress() {
 
   return (
     <div className="p-4 max-w-4xl mx-auto pb-24">
-      <PageHeader title={exercise.name} onBack={() => history.back()} />
+      <PageHeader title={getExerciseName(exercise)} onBack={() => history.back()} />
 
       {/* Stats */}
       {stats && (

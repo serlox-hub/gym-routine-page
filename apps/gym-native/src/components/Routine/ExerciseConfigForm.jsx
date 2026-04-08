@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react-native'
 import { Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
-import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder } from '@gym/shared'
+import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder, getExerciseName } from '@gym/shared'
 
 function FormField({ label, required, secondary, children }) {
   return (
@@ -88,7 +88,7 @@ export default function ExerciseConfigForm({
     <ScrollView keyboardShouldPersistTaps="handled">
       {!hideExerciseName && (
         <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: colors.accentBgSubtle }}>
-          <Text className="text-primary font-medium">{exercise.name}</Text>
+          <Text className="text-primary font-medium">{getExerciseName(exercise)}</Text>
         </View>
       )}
 

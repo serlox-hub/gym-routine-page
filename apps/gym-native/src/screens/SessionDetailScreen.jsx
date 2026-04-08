@@ -18,6 +18,7 @@ import {
   recalculateExercisePRs,
   buildEmptySetData,
   getSetFieldsForMeasurementType,
+  getExerciseName,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
 import { colors, inputStyle } from '../lib/styles'
@@ -359,7 +360,7 @@ export default function SessionDetailScreen({ route, navigation }) {
                     className={`font-medium ${exercise.deleted_at ? 'line-through' : ''}`}
                     style={{ color: exercise.deleted_at ? colors.textSecondary : colors.textPrimary }}
                   >
-                    {exercise.name}
+                    {getExerciseName(exercise)}
                   </Text>
                   {prData && (
                     <View

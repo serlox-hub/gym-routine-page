@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Button, Input, Select } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder } from '@gym/shared'
+import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder, getExerciseName } from '@gym/shared'
 
 /**
  * Formulario para configurar series, reps, notas de un ejercicio
@@ -27,7 +27,7 @@ function ExerciseConfigForm({
           style={{ backgroundColor: colors.accentBgSubtle }}
         >
           <div className="font-medium" style={{ color: colors.textPrimary }}>
-            {exercise.name}
+            {getExerciseName(exercise)}
           </div>
         </div>
       )}
