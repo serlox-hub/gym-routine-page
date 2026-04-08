@@ -28,7 +28,6 @@ export {
 export {
   fetchSessionExercises,
   fetchSessionExercisesSortOrder,
-  fetchSessionExerciseBlockName,
   updateSessionExerciseSortOrder,
   insertSessionExercise,
   deleteCompletedSetsByExercise,

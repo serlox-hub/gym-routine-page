@@ -4,7 +4,7 @@ import { Flame, Link2, Dumbbell, Plus } from 'lucide-react-native'
 import ExerciseCard from './ExerciseCard'
 import { Card } from '../ui'
 import { colors } from '../../lib/styles'
-import { formatSupersetLabel, groupExercisesBySupersetId } from '@gym/shared'
+import { formatSupersetLabel, groupExercisesBySupersetId, translateBlockName } from '@gym/shared'
 
 export default function BlockSection({
   block,
@@ -20,7 +20,7 @@ export default function BlockSection({
 }) {
   const { t } = useTranslation()
   const { name, duration_min, routine_exercises } = block
-  const isWarmup = name.toLowerCase() === 'calentamiento'
+  const isWarmup = block.is_warmup || name.toLowerCase() === 'calentamiento'
   const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
   const positionLabels = routine_exercises.map(re => re.exercise?.name)
 
@@ -42,7 +42,7 @@ export default function BlockSection({
           <Dumbbell size={12} color={accentColor} />
         )}
         <Text className="text-xs font-medium uppercase" style={{ color: accentColor }}>
-          {name}
+          {translateBlockName(name)}
         </Text>
         <Text className="text-secondary text-xs">({routine_exercises.length})</Text>
         {duration_min && (

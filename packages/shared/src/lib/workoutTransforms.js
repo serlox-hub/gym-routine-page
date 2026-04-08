@@ -20,11 +20,12 @@ export function transformSessionExercises(sessionExercises) {
   // Agrupar por bloque
   const blockMap = new Map()
   sorted.forEach(se => {
-    const blockName = se.block_name || BLOCK_NAMES.MAIN
+    const isWarmup = se.is_warmup || false
+    const blockName = isWarmup ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN
     if (!blockMap.has(blockName)) {
       blockMap.set(blockName, {
         blockName,
-        isWarmup: blockName === BLOCK_NAMES.WARMUP,
+        isWarmup,
         exerciseGroups: [],
       })
     }
@@ -35,7 +36,8 @@ export function transformSessionExercises(sessionExercises) {
   const currentSupersetByBlock = new Map()
 
   sorted.forEach(se => {
-    const blockName = se.block_name || BLOCK_NAMES.MAIN
+    const isWarmup = se.is_warmup || false
+    const blockName = isWarmup ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN
     const block = blockMap.get(blockName)
 
     const enrichedExercise = {
@@ -52,7 +54,7 @@ export function transformSessionExercises(sessionExercises) {
       is_extra: se.is_extra,
       routine_exercise: se.routine_exercise,
       blockName,
-      isWarmup: blockName === BLOCK_NAMES.WARMUP,
+      isWarmup,
       type: se.is_extra ? 'extra' : 'routine',
     }
 
@@ -111,8 +113,8 @@ export function transformSessionExercises(sessionExercises) {
     superset_group: se.superset_group,
     is_extra: se.is_extra,
     routine_exercise: se.routine_exercise,
-    blockName: se.block_name || BLOCK_NAMES.MAIN,
-    isWarmup: (se.block_name || '') === BLOCK_NAMES.WARMUP,
+    blockName: se.is_warmup ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN,
+    isWarmup: se.is_warmup || false,
     type: se.is_extra ? 'extra' : 'routine',
   }))
 
@@ -147,7 +149,7 @@ export function buildSessionExercisesFromBlocks(blocks) {
         notes: re.notes,
         superset_group: re.superset_group,
         is_extra: false,
-        block_name: block.name,
+        is_warmup: block.is_warmup || block.name === BLOCK_NAMES.WARMUP,
       })
     })
   })
@@ -164,7 +166,7 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
   blocks?.forEach(block => {
     const sorted = [...(block.routine_exercises || [])].sort((a, b) => a.sort_order - b.sort_order)
     sorted.forEach(re => {
-      flatFromBlocks.push({ ...re, block_name: block.name })
+      flatFromBlocks.push({ ...re, is_warmup: block.is_warmup || block.name === BLOCK_NAMES.WARMUP })
     })
   })
 
@@ -184,7 +186,7 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
       notes: re?.notes || null,
       superset_group: re?.superset_group ?? null,
       is_extra: false,
-      block_name: re?.block_name || BLOCK_NAMES.MAIN,
+      is_warmup: re?.is_warmup || false,
       exercise: {
         id: exercise.id,
         name: exercise.name,
@@ -213,7 +215,7 @@ export function transformSessionDetailData(rawSession) {
       series: se.series,
       reps: se.reps,
       is_extra: se.is_extra,
-      block_name: se.block_name,
+      is_warmup: se.is_warmup || false,
       sets: (se.completed_sets || []).sort((a, b) => a.set_number - b.set_number),
     }))
   return { ...rawSession, exercises, session_exercises: undefined }
@@ -236,9 +238,9 @@ export function buildRoutineExerciseMap(blocks) {
     block.routine_exercises.forEach(re => {
       map.set(re.id, {
         ...re,
-        blockName: block.name,
+        blockName: block.is_warmup ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN,
         blockOrder: block.sort_order,
-        isWarmup: block.name === BLOCK_NAMES.WARMUP
+        isWarmup: block.is_warmup || false
       })
     })
   })
@@ -257,7 +259,7 @@ export function groupExercisesByBlock(blocks) {
   return blocks.map(block => ({
     blockName: block.name,
     blockOrder: block.sort_order,
-    isWarmup: block.name === BLOCK_NAMES.WARMUP,
+    isWarmup: block.is_warmup || block.name === BLOCK_NAMES.WARMUP,
     durationMin: block.duration_min,
     exerciseGroups: groupExercisesBySupersetId(block.routine_exercises, block.name),
   }))

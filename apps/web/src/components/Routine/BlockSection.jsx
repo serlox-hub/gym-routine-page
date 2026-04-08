@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { Flame, Link2, Dumbbell, Plus } from 'lucide-react'
 import ExerciseCard from './ExerciseCard.jsx'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { formatSupersetLabel, groupExercisesBySupersetId, getExerciseName } from '@gym/shared'
+import { formatSupersetLabel, groupExercisesBySupersetId, getExerciseName, translateBlockName } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function BlockSection({
@@ -18,8 +19,9 @@ function BlockSection({
   onDuplicateExercise,
   onMoveExerciseToDay,
 }) {
+  const { t } = useTranslation()
   const { name, duration_min, routine_exercises } = block
-  const isWarmup = name.toLowerCase() === 'calentamiento'
+  const isWarmup = block.is_warmup || name.toLowerCase() === 'calentamiento'
   const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
   const positionLabels = routine_exercises.map(re => getExerciseName(re.exercise))
 
@@ -41,7 +43,7 @@ function BlockSection({
           className="text-xs font-medium uppercase"
           style={{ color: isWarmup ? colors.warning : colors.purple }}
         >
-          {name}
+          {translateBlockName(name)}
         </span>
         <span className="text-xs" style={{ color: colors.textSecondary }}>
           ({routine_exercises.length})
@@ -135,7 +137,7 @@ function BlockSection({
             style={{ border: `1px dashed ${colors.border}`, color: isWarmup ? colors.warning : colors.purple }}
           >
             <Plus size={14} />
-            Añadir {isWarmup ? 'calentamiento' : 'ejercicio'}
+            {isWarmup ? t('routine:block.addToWarmup') : t('routine:block.addExercise')}
           </button>
         )}
       </div>

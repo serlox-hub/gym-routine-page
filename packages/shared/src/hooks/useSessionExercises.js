@@ -1,9 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS, BLOCK_NAMES } from '../lib/constants.js'
+import { QUERY_KEYS } from '../lib/constants.js'
 import {
   fetchSessionExercises,
   fetchSessionExercisesSortOrder,
-  fetchSessionExerciseBlockName,
   updateSessionExerciseSortOrder,
   insertSessionExercise,
   deleteCompletedSetsByExercise,
@@ -12,6 +11,7 @@ import {
   deleteSessionExercise,
   reorderSessionExercises,
 } from '../api/workoutApi.js'
+import { getClient } from '../api/_client.js'
 import { useWorkoutStore } from './_stores.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 
@@ -38,7 +38,7 @@ export function useAddSessionExercise() {
       const existing = await fetchSessionExercisesSortOrder(sessionId)
 
       let insertSortOrder
-      let blockName = BLOCK_NAMES.MAIN
+      let isWarmup = false
 
       if (superset_group && existing?.length) {
         // Si se asigna a un superset, insertar despues del ultimo ejercicio del superset
@@ -49,12 +49,16 @@ export function useAddSessionExercise() {
           const lastSupersetExercise = supersetExercises[supersetExercises.length - 1]
           insertSortOrder = lastSupersetExercise.sort_order + 1
 
-          // Usar el mismo bloque que el superset (buscar en existing)
+          // Usar el mismo is_warmup que el superset
           const supersetMember = existing.find(e => e.superset_group === superset_group)
           if (supersetMember) {
-            const memberBlockName = await fetchSessionExerciseBlockName(supersetMember.id)
-            if (memberBlockName) {
-              blockName = memberBlockName
+            const { data: memberData } = await getClient()
+              .from('session_exercises')
+              .select('is_warmup')
+              .eq('id', supersetMember.id)
+              .single()
+            if (memberData) {
+              isWarmup = memberData.is_warmup || false
             }
           }
 
@@ -84,7 +88,7 @@ export function useAddSessionExercise() {
         restSeconds: rest_seconds,
         notes,
         supersetGroup: superset_group,
-        blockName,
+        isWarmup,
       })
     },
     onSuccess: () => {

@@ -117,7 +117,7 @@ describe('useSessionExercises — mutations', () => {
         exerciseId: 'ex-1',
         series: 3,
         reps: '10',
-        blockName: 'Principal',
+        isWarmup: false,
       })
     )
   })

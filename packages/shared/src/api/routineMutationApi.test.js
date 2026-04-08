@@ -302,20 +302,15 @@ describe('reorderRoutineExercises', () => {
 // ============================================
 
 describe('addExerciseToDay', () => {
-  it('uses existing block when block already exists', async () => {
-    const existingBlock = { id: 20, sort_order: 1 }
-    const newExercise = { id: 50, exercise_id: 'ex-1', sort_order: 1 }
+  it('inserts exercise with next sort_order when day has exercises', async () => {
+    const newExercise = { id: 50, exercise_id: 'ex-1', sort_order: 3 }
     let callCount = 0
 
     getClient.mockImplementation(() => {
       callCount++
       if (callCount === 1) {
-        // fetch existing block: found
-        return makeClientMock({ routine_blocks: { data: existingBlock, error: null } })
-      }
-      if (callCount === 2) {
-        // fetch max sort_order in block
-        return makeClientMock({ routine_exercises: { data: [], error: null } })
+        // fetch max sort_order in day
+        return makeClientMock({ routine_exercises: { data: [{ sort_order: 2 }], error: null } })
       }
       // insert exercise
       return makeClientMock({ routine_exercises: { data: newExercise, error: null } })
@@ -325,27 +320,14 @@ describe('addExerciseToDay', () => {
     expect(result).toEqual(newExercise)
   })
 
-  it('creates new block when block does not exist', async () => {
-    const newBlock = { id: 21, sort_order: 1 }
+  it('inserts exercise with sort_order 1 when day is empty', async () => {
     const newExercise = { id: 51, exercise_id: 'ex-2', sort_order: 1 }
     let callCount = 0
 
     getClient.mockImplementation(() => {
       callCount++
       if (callCount === 1) {
-        // fetch existing block: not found (PGRST116 = no rows)
-        return makeClientMock({ routine_blocks: { data: null, error: { code: 'PGRST116' } } })
-      }
-      if (callCount === 2) {
-        // get max sort_order of blocks
-        return makeClientMock({ routine_blocks: { data: [], error: null } })
-      }
-      if (callCount === 3) {
-        // create new block
-        return makeClientMock({ routine_blocks: { data: newBlock, error: null } })
-      }
-      if (callCount === 4) {
-        // fetch max sort_order in new block
+        // fetch max sort_order in day: empty
         return makeClientMock({ routine_exercises: { data: [], error: null } })
       }
       // insert exercise
@@ -354,24 +336,21 @@ describe('addExerciseToDay', () => {
 
     const result = await addExerciseToDay({ dayId: 10, exerciseId: 'ex-2' })
     expect(result).toEqual(newExercise)
+    expect(result.sort_order).toBe(1)
   })
 
-  it('throws when block fetch returns non-PGRST116 error', async () => {
+  it('throws when max sort_order fetch fails', async () => {
     getClient.mockImplementation(() =>
-      makeClientMock({ routine_blocks: { data: null, error: new Error('permission denied') } })
+      makeClientMock({ routine_exercises: { data: null, error: new Error('permission denied') } })
     )
     await expect(addExerciseToDay({ dayId: 10, exerciseId: 'ex-1' })).rejects.toThrow('permission denied')
   })
 
   it('throws when exercise insert fails', async () => {
-    const existingBlock = { id: 20, sort_order: 1 }
     let callCount = 0
     getClient.mockImplementation(() => {
       callCount++
       if (callCount === 1) {
-        return makeClientMock({ routine_blocks: { data: existingBlock, error: null } })
-      }
-      if (callCount === 2) {
         return makeClientMock({ routine_exercises: { data: [], error: null } })
       }
       return makeClientMock({ routine_exercises: { data: null, error: new Error('insert failed') } })
@@ -387,7 +366,7 @@ describe('addExerciseToDay', () => {
 describe('duplicateRoutineExercise', () => {
   it('inserts a copy with next sort_order', async () => {
     const original = {
-      routine_block_id: 20,
+      routine_day_id: 20,
       exercise_id: 'ex-1',
       series: 3,
       reps: '8-12',
@@ -415,7 +394,7 @@ describe('duplicateRoutineExercise', () => {
   })
 
   it('uses sort_order=1 when block is empty', async () => {
-    const original = { routine_block_id: 20, exercise_id: 'ex-1', series: 3, reps: '10' }
+    const original = { routine_day_id: 20, exercise_id: 'ex-1', series: 3, reps: '10' }
     const copy = { id: 56, sort_order: 1 }
     let callCount = 0
 
@@ -441,7 +420,7 @@ describe('duplicateRoutineExercise', () => {
       }
       return makeClientMock({ routine_exercises: { data: null, error: new Error('duplicate failed') } })
     })
-    await expect(duplicateRoutineExercise({ routineExercise: { routine_block_id: 20 } })).rejects.toThrow('duplicate failed')
+    await expect(duplicateRoutineExercise({ routineExercise: { routine_day_id: 20 } })).rejects.toThrow('duplicate failed')
   })
 })
 
@@ -450,54 +429,36 @@ describe('duplicateRoutineExercise', () => {
 // ============================================
 
 describe('moveRoutineExerciseToDay', () => {
-  it('moves exercise to existing block in target day', async () => {
-    const targetBlock = { id: 30 }
-    const moved = { id: 40, routine_block_id: 30, sort_order: 1 }
+  it('moves exercise to target day with next sort_order', async () => {
+    const moved = { id: 40, routine_day_id: 11, sort_order: 3, is_warmup: false }
     let callCount = 0
 
     getClient.mockImplementation(() => {
       callCount++
       if (callCount === 1) {
-        // fetch target block: found
-        return makeClientMock({ routine_blocks: { data: targetBlock, error: null } })
+        // fetch max sort_order in target day
+        return makeClientMock({ routine_exercises: { data: [{ sort_order: 2 }], error: null } })
       }
-      if (callCount === 2) {
-        // fetch max sort_order in target block
-        return makeClientMock({ routine_exercises: { data: [], error: null } })
-      }
-      // update exercise block
+      // update exercise
       return makeClientMock({ routine_exercises: { data: moved, error: null } })
     })
 
     const result = await moveRoutineExerciseToDay({
-      routineExercise: { id: 40, routine_block_id: 20 },
+      routineExercise: { id: 40 },
       targetDayId: 11,
     })
     expect(result).toEqual(moved)
-    expect(result.routine_block_id).toBe(30)
+    expect(result.routine_day_id).toBe(11)
   })
 
-  it('creates new block in target day when none exists', async () => {
-    const newBlock = { id: 31 }
-    const moved = { id: 41, routine_block_id: 31, sort_order: 1 }
+  it('moves exercise with sort_order 1 when target day is empty', async () => {
+    const moved = { id: 41, routine_day_id: 12, sort_order: 1, is_warmup: false }
     let callCount = 0
 
     getClient.mockImplementation(() => {
       callCount++
       if (callCount === 1) {
-        // fetch block: not found
-        return makeClientMock({ routine_blocks: { data: null, error: { code: 'PGRST116' } } })
-      }
-      if (callCount === 2) {
-        // get max sort_order of blocks
-        return makeClientMock({ routine_blocks: { data: [], error: null } })
-      }
-      if (callCount === 3) {
-        // create new block
-        return makeClientMock({ routine_blocks: { data: newBlock, error: null } })
-      }
-      if (callCount === 4) {
-        // fetch max sort_order in new block
+        // fetch max sort_order: empty
         return makeClientMock({ routine_exercises: { data: [], error: null } })
       }
       // update exercise
@@ -505,15 +466,16 @@ describe('moveRoutineExerciseToDay', () => {
     })
 
     const result = await moveRoutineExerciseToDay({
-      routineExercise: { id: 41, routine_block_id: 20 },
+      routineExercise: { id: 41 },
       targetDayId: 12,
     })
     expect(result).toEqual(moved)
+    expect(result.sort_order).toBe(1)
   })
 
-  it('throws when block fetch returns unexpected error', async () => {
+  it('throws when max sort_order fetch fails', async () => {
     getClient.mockImplementation(() =>
-      makeClientMock({ routine_blocks: { data: null, error: new Error('db error') } })
+      makeClientMock({ routine_exercises: { data: null, error: new Error('db error') } })
     )
     await expect(moveRoutineExerciseToDay({
       routineExercise: { id: 40 },
@@ -522,14 +484,10 @@ describe('moveRoutineExerciseToDay', () => {
   })
 
   it('throws when update exercise fails', async () => {
-    const targetBlock = { id: 30 }
     let callCount = 0
     getClient.mockImplementation(() => {
       callCount++
       if (callCount === 1) {
-        return makeClientMock({ routine_blocks: { data: targetBlock, error: null } })
-      }
-      if (callCount === 2) {
         return makeClientMock({ routine_exercises: { data: [], error: null } })
       }
       return makeClientMock({ routine_exercises: { data: null, error: new Error('move failed') } })

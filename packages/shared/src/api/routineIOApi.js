@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { BLOCK_NAMES } from '../lib/constants.js'
 import { MeasurementType } from '../lib/measurementTypes.js'
 import { t } from '../i18n/index.js'
 
@@ -34,45 +35,43 @@ export async function exportRoutine(routineId) {
   // Set para recopilar ejercicios únicos
   const exerciseIds = new Set()
 
-  // Obtener bloques y ejercicios para cada día usando day.id directamente
+  // Obtener ejercicios para cada día directamente desde routine_exercises
   const daysWithExercises = await Promise.all(
     days.map(async (day) => {
-      const { data: blocks, error: blocksError } = await getClient()
-        .from('routine_blocks')
+      const { data: exercises, error: exError } = await getClient()
+        .from('routine_exercises')
         .select(`
-          name,
+          series,
+          reps,
+          rir,
+          rest_seconds,
+          notes,
           sort_order,
-          duration_min,
-          routine_exercises (
-            series,
-            reps,
-            rir,
-            rest_seconds,
-            notes,
-            sort_order,
-            exercise:exercises (
-              id,
-              name:name_es,
-              measurement_type,
-              instructions,
-              muscle_group:muscle_groups!muscle_group_id(name:name_es)
-            )
+          is_warmup,
+          exercise:exercises (
+            id,
+            name:name_es,
+            measurement_type,
+            instructions,
+            muscle_group:muscle_groups!muscle_group_id(name:name_es)
           )
         `)
         .eq('routine_day_id', day.id)
         .order('sort_order')
 
-      if (blocksError) throw blocksError
+      if (exError) throw exError
 
-      return {
-        name: day.name,
-        estimated_duration_min: day.estimated_duration_min,
-        sort_order: day.sort_order,
-        blocks: blocks.map(block => ({
-          name: block.name,
-          sort_order: block.sort_order,
-          duration_min: block.duration_min,
-          exercises: block.routine_exercises
+      // Agrupar por is_warmup para producir bloques en el formato de export
+      const warmup = (exercises || []).filter(re => re.is_warmup)
+      const main = (exercises || []).filter(re => !re.is_warmup)
+
+      const blocks = []
+      if (warmup.length > 0) {
+        blocks.push({
+          name: BLOCK_NAMES.WARMUP,
+          sort_order: 0,
+          duration_min: null,
+          exercises: warmup
             .sort((a, b) => a.sort_order - b.sort_order)
             .map(re => {
               exerciseIds.add(re.exercise.id)
@@ -85,7 +84,34 @@ export async function exportRoutine(routineId) {
                 notes: re.notes,
               }
             })
-        }))
+        })
+      }
+      if (main.length > 0) {
+        blocks.push({
+          name: BLOCK_NAMES.MAIN,
+          sort_order: 1,
+          duration_min: null,
+          exercises: main
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map(re => {
+              exerciseIds.add(re.exercise.id)
+              return {
+                exercise_name: re.exercise.name,
+                series: re.series,
+                reps: re.reps,
+                rir: re.rir,
+                rest_seconds: re.rest_seconds,
+                notes: re.notes,
+              }
+            })
+        })
+      }
+
+      return {
+        name: day.name,
+        estimated_duration_min: day.estimated_duration_min,
+        sort_order: day.sort_order,
+        blocks,
       }
     })
   )
@@ -257,25 +283,12 @@ export async function importRoutine(jsonData, userId, options = {}) {
 
     if (dayError) throw dayError
 
-    // Crear bloques y ejercicios
+    // Crear ejercicios directamente (sin routine_blocks)
+    let sortOrder = 1
     for (const block of day.blocks || []) {
-      const { data: newBlock, error: blockError } = await getClient()
-        .from('routine_blocks')
-        .insert({
-          routine_day_id: newDay.id,
-          name: block.name,
-          sort_order: block.sort_order,
-          duration_min: block.duration_min,
-        })
-        .select()
-        .single()
+      const isWarmup = block.name === BLOCK_NAMES.WARMUP
 
-      if (blockError) throw blockError
-
-      // Crear ejercicios del bloque
-      for (let i = 0; i < (block.exercises || []).length; i++) {
-        const ex = block.exercises[i]
-
+      for (const ex of block.exercises || []) {
         // Buscar ejercicio: primero en el mapa, luego en BD (custom + sistema)
         let exerciseId = exerciseMap.get(ex.exercise_name)
 
@@ -303,14 +316,15 @@ export async function importRoutine(jsonData, userId, options = {}) {
           await getClient()
             .from('routine_exercises')
             .insert({
-              routine_block_id: newBlock.id,
+              routine_day_id: newDay.id,
               exercise_id: exerciseId,
               series: ex.series,
               reps: ex.reps,
               rir: ex.rir,
               rest_seconds: ex.rest_seconds,
               notes: ex.notes,
-              sort_order: i + 1,
+              sort_order: sortOrder++,
+              is_warmup: isWarmup,
             })
         }
       }

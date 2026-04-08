@@ -1,5 +1,4 @@
 import { getClient } from './_client.js'
-import { BLOCK_NAMES } from '../lib/constants.js'
 
 // ============================================
 // MUTATIONS
@@ -148,54 +147,11 @@ export async function reorderRoutineExercises(exercises) {
 }
 
 export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, rest_seconds, notes, esCalentamiento = false, superset_group }) {
-  const blockName = esCalentamiento ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN
-
-  // Buscar o crear el bloque correspondiente
-  const { data: existingBlock, error: blockFetchError } = await getClient()
-    .from('routine_blocks')
-    .select('id, sort_order')
-    .eq('routine_day_id', dayId)
-    .eq('name', blockName)
-    .single()
-
-  if (blockFetchError && blockFetchError.code !== 'PGRST116') {
-    throw blockFetchError
-  }
-
-  let blockId
-  if (!existingBlock) {
-    let nextOrder = 1
-    if (!esCalentamiento) {
-      const { data: maxOrderBlocks } = await getClient()
-        .from('routine_blocks')
-        .select('sort_order')
-        .eq('routine_day_id', dayId)
-        .order('sort_order', { ascending: false })
-        .limit(1)
-      nextOrder = (maxOrderBlocks?.[0]?.sort_order || 0) + 1
-    }
-
-    const { data: newBlock, error: blockCreateError } = await getClient()
-      .from('routine_blocks')
-      .insert({
-        routine_day_id: dayId,
-        name: blockName,
-        sort_order: nextOrder,
-      })
-      .select()
-      .single()
-
-    if (blockCreateError) throw blockCreateError
-    blockId = newBlock.id
-  } else {
-    blockId = existingBlock.id
-  }
-
-  // Obtener el maximo orden de ejercicios en el bloque
+  // Obtener el maximo orden de ejercicios en el día
   const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')
     .select('sort_order')
-    .eq('routine_block_id', blockId)
+    .eq('routine_day_id', dayId)
     .order('sort_order', { ascending: false })
     .limit(1)
 
@@ -204,7 +160,8 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
   const { data: newExercise, error: exerciseError } = await getClient()
     .from('routine_exercises')
     .insert({
-      routine_block_id: blockId,
+      routine_day_id: dayId,
+      is_warmup: esCalentamiento,
       exercise_id: exerciseId,
       series: series || 3,
       reps: reps || '8-12',
@@ -222,12 +179,12 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
 }
 
 export async function duplicateRoutineExercise({ routineExercise }) {
-  const blockId = routineExercise.routine_block_id
+  const dayId = routineExercise.routine_day_id
 
   const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')
     .select('sort_order')
-    .eq('routine_block_id', blockId)
+    .eq('routine_day_id', dayId)
     .order('sort_order', { ascending: false })
     .limit(1)
 
@@ -236,7 +193,8 @@ export async function duplicateRoutineExercise({ routineExercise }) {
   const { data, error } = await getClient()
     .from('routine_exercises')
     .insert({
-      routine_block_id: blockId,
+      routine_day_id: dayId,
+      is_warmup: routineExercise.is_warmup || false,
       exercise_id: routineExercise.exercise_id,
       series: routineExercise.series,
       reps: routineExercise.reps,
@@ -254,50 +212,10 @@ export async function duplicateRoutineExercise({ routineExercise }) {
 }
 
 export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, esCalentamiento = false }) {
-  const blockName = esCalentamiento ? BLOCK_NAMES.WARMUP : BLOCK_NAMES.MAIN
-
-  const { data: existingBlock, error: blockFetchError } = await getClient()
-    .from('routine_blocks')
-    .select('id')
-    .eq('routine_day_id', targetDayId)
-    .eq('name', blockName)
-    .single()
-
-  if (blockFetchError && blockFetchError.code !== 'PGRST116') {
-    throw blockFetchError
-  }
-
-  let targetBlockId
-  if (!existingBlock) {
-    const { data: maxOrderBlocks } = await getClient()
-      .from('routine_blocks')
-      .select('sort_order')
-      .eq('routine_day_id', targetDayId)
-      .order('sort_order', { ascending: false })
-      .limit(1)
-
-    const nextBlockOrder = (maxOrderBlocks?.[0]?.sort_order || 0) + 1
-
-    const { data: newBlock, error: blockCreateError } = await getClient()
-      .from('routine_blocks')
-      .insert({
-        routine_day_id: targetDayId,
-        name: blockName,
-        sort_order: nextBlockOrder,
-      })
-      .select()
-      .single()
-
-    if (blockCreateError) throw blockCreateError
-    targetBlockId = newBlock.id
-  } else {
-    targetBlockId = existingBlock.id
-  }
-
   const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')
     .select('sort_order')
-    .eq('routine_block_id', targetBlockId)
+    .eq('routine_day_id', targetDayId)
     .order('sort_order', { ascending: false })
     .limit(1)
 
@@ -306,7 +224,8 @@ export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, e
   const { data, error } = await getClient()
     .from('routine_exercises')
     .update({
-      routine_block_id: targetBlockId,
+      routine_day_id: targetDayId,
+      is_warmup: esCalentamiento,
       sort_order: nextOrder,
       superset_group: null,
     })

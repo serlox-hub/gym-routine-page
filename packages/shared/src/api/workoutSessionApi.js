@@ -194,7 +194,7 @@ export async function fetchSessionDetail(sessionId) {
         series,
         reps,
         is_extra,
-        block_name,
+        is_warmup,
         exercise:exercises (
           id,
           name:name_es,

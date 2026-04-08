@@ -1,5 +1,4 @@
 import { getClient } from './_client.js'
-import { BLOCK_NAMES } from '../lib/constants.js'
 
 // ============================================
 // SESSION EXERCISES - QUERIES
@@ -20,7 +19,7 @@ export async function fetchSessionExercises(sessionId) {
       notes,
       superset_group,
       is_extra,
-      block_name,
+      is_warmup,
       exercise:exercises (
         id,
         name:name_es,
@@ -53,17 +52,6 @@ export async function fetchSessionExercisesSortOrder(sessionId) {
   return data || []
 }
 
-export async function fetchSessionExerciseBlockName(sessionExerciseId) {
-  const { data, error } = await getClient()
-    .from('session_exercises')
-    .select('block_name')
-    .eq('id', sessionExerciseId)
-    .single()
-
-  if (error) throw error
-  return data?.block_name || null
-}
-
 export async function updateSessionExerciseSortOrder(id, sortOrder) {
   const { error } = await getClient()
     .from('session_exercises')
@@ -73,7 +61,7 @@ export async function updateSessionExerciseSortOrder(id, sortOrder) {
   if (error) throw error
 }
 
-export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, series, reps, rir, restSeconds, notes, supersetGroup, blockName }) {
+export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, series, reps, rir, restSeconds, notes, supersetGroup, isWarmup = false }) {
   const { data, error } = await getClient()
     .from('session_exercises')
     .insert({
@@ -88,7 +76,7 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
       notes,
       superset_group: supersetGroup,
       is_extra: true,
-      block_name: blockName,
+      is_warmup: isWarmup,
     })
     .select(`
       id,
@@ -101,7 +89,7 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
       notes,
       superset_group,
       is_extra,
-      block_name,
+      is_warmup,
       exercise:exercises (
         id,
         name:name_es,
@@ -146,7 +134,7 @@ export async function addSessionExercise({ sessionId, exercise, series, reps, ri
   const existing = await fetchSessionExercisesSortOrder(sessionId)
 
   let insertSortOrder
-  let blockName = BLOCK_NAMES.MAIN
+  let isWarmup = false
 
   if (superset_group && existing?.length) {
     const supersetExercises = existing.filter(e => e.superset_group === superset_group)
@@ -157,9 +145,13 @@ export async function addSessionExercise({ sessionId, exercise, series, reps, ri
 
       const supersetMember = existing.find(e => e.superset_group === superset_group)
       if (supersetMember) {
-        const memberBlockName = await fetchSessionExerciseBlockName(supersetMember.id)
-        if (memberBlockName) {
-          blockName = memberBlockName
+        const { data: memberData } = await getClient()
+          .from('session_exercises')
+          .select('is_warmup')
+          .eq('id', supersetMember.id)
+          .single()
+        if (memberData) {
+          isWarmup = memberData.is_warmup || false
         }
       }
 
@@ -186,7 +178,7 @@ export async function addSessionExercise({ sessionId, exercise, series, reps, ri
     restSeconds: rest_seconds,
     notes,
     supersetGroup: superset_group,
-    blockName,
+    isWarmup,
   })
 }
 

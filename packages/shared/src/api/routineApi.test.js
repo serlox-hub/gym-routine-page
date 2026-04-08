@@ -21,30 +21,23 @@ describe('exportRoutine', () => {
   it('hace exactamente N+2 queries para una rutina con N días (sin query extra por día)', async () => {
     const fromCalls = []
 
-    // Datos de prueba: 2 días, cada uno con 1 bloque y 1 ejercicio
+    // Datos de prueba: 2 días, cada uno con ejercicios
     const fakeRoutine = { name: 'Rutina Test', description: null, goal: null }
     const fakeDays = [
       { id: 'day-1', name: 'Día 1', estimated_duration_min: 60, sort_order: 1 },
       { id: 'day-2', name: 'Día 2', estimated_duration_min: 45, sort_order: 2 },
     ]
-    const fakeBlocks = (dayId) => [
+    const fakeRoutineExercises = (dayId) => [
       {
-        name: 'Principal',
-        sort_order: 1,
-        duration_min: null,
-        routine_exercises: [
-          {
-            series: 3, reps: '8-12', rir: 2, rest_seconds: 90,
-            notes: null, sort_order: 1,
-            exercise: {
-              id: `ex-${dayId}`,
-              name: `Ejercicio ${dayId}`,
-              measurement_type: 'weight_reps',
-              instructions: null,
-              muscle_group: { name: 'Pecho' },
-            },
-          },
-        ],
+        series: 3, reps: '8-12', rir: 2, rest_seconds: 90,
+        notes: null, sort_order: 1, is_warmup: false,
+        exercise: {
+          id: `ex-${dayId}`,
+          name: `Ejercicio ${dayId}`,
+          measurement_type: 'weight_reps',
+          instructions: null,
+          muscle_group: { name: 'Pecho' },
+        },
       },
     ]
     const fakeExercises = [
@@ -78,13 +71,12 @@ describe('exportRoutine', () => {
             order: vi.fn().mockResolvedValue({ data: fakeDays, error: null }),
           }
         }
-        if (table === 'routine_blocks') {
+        if (table === 'routine_exercises') {
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
-            order: vi.fn().mockImplementation((col, opts) => {
-              // Determinar qué día según contexto — simplificado: ambos días devuelven bloques
-              return Promise.resolve({ data: fakeBlocks('day-1'), error: null })
+            order: vi.fn().mockImplementation(() => {
+              return Promise.resolve({ data: fakeRoutineExercises('day-1'), error: null })
             }),
           }
         }
@@ -100,19 +92,18 @@ describe('exportRoutine', () => {
 
     await exportRoutine('routine-123')
 
-    // N = 2 días → esperamos N+2 = 4 queries: 1 routines + 1 routine_days + 2 routine_blocks
-    // NO debe haber queries extra de routine_days para obtener el id de cada día
+    // N = 2 días → esperamos N+3 queries: 1 routines + 1 routine_days + 2 routine_exercises + 1 exercises
     const routinesCount = fromCalls.filter(t => t === 'routines').length
     const routineDaysCount = fromCalls.filter(t => t === 'routine_days').length
-    const routineBlocksCount = fromCalls.filter(t => t === 'routine_blocks').length
+    const routineExercisesCount = fromCalls.filter(t => t === 'routine_exercises').length
     const exercisesCount = fromCalls.filter(t => t === 'exercises').length
 
     expect(routinesCount).toBe(1)
     expect(routineDaysCount).toBe(1) // Solo 1 query de días — NO una por día adicional
-    expect(routineBlocksCount).toBe(fakeDays.length) // Una por día (N)
+    expect(routineExercisesCount).toBe(fakeDays.length) // Una por día (N)
     expect(exercisesCount).toBe(1)
 
-    // Total: 1 + 1 + N + 1 = N+3 (routine + days + N blocks + exercises)
+    // Total: 1 + 1 + N + 1 = N+3 (routine + days + N routine_exercises + exercises)
     expect(fromCalls.length).toBe(fakeDays.length + 3)
   })
 })
@@ -126,14 +117,13 @@ describe('importRoutine', () => {
     vi.clearAllMocks()
   })
 
-  it('inserta rutina, días, bloques y ejercicios con los IDs enlazados correctamente', async () => {
+  it('inserta rutina, días y ejercicios con los IDs enlazados correctamente', async () => {
     const insertCalls = {}
     let routineIdCounter = 100
     let dayIdCounter = 200
-    let blockIdCounter = 300
 
     const sampleJson = {
-      version: 4,
+      version: 5,
       exportedAt: '2026-01-01T00:00:00.000Z',
       exercises: [
         {
@@ -236,19 +226,6 @@ describe('importRoutine', () => {
           }
         }
 
-        if (table === 'routine_blocks') {
-          return {
-            insert: vi.fn((record) => {
-              insertCalls[table].push(record)
-              blockIdCounter++
-              return {
-                select: vi.fn().mockReturnThis(),
-                single: vi.fn().mockResolvedValue({ data: { id: blockIdCounter, ...record }, error: null }),
-              }
-            }),
-          }
-        }
-
         if (table === 'routine_exercises') {
           return {
             insert: vi.fn((record) => {
@@ -283,22 +260,18 @@ describe('importRoutine', () => {
     })
     expect(insertCalls['routine_days'][0].routine_id).toBeDefined()
 
-    // 1 bloque creado, referenciando el día
-    expect(insertCalls['routine_blocks']).toHaveLength(1)
-    expect(insertCalls['routine_blocks'][0]).toMatchObject({
-      name: 'Principal',
-      sort_order: 1,
-    })
-    expect(insertCalls['routine_blocks'][0].routine_day_id).toBeDefined()
+    // No routine_blocks creados (tabla eliminada)
+    expect(insertCalls['routine_blocks']).toBeUndefined()
 
-    // 1 ejercicio de rutina creado, referenciando el bloque
+    // 1 ejercicio de rutina creado directamente con routine_day_id e is_warmup
     expect(insertCalls['routine_exercises']).toHaveLength(1)
     expect(insertCalls['routine_exercises'][0]).toMatchObject({
       series: 4,
       reps: '5',
       sort_order: 1,
+      is_warmup: false,
     })
-    expect(insertCalls['routine_exercises'][0].routine_block_id).toBeDefined()
+    expect(insertCalls['routine_exercises'][0].routine_day_id).toBeDefined()
     expect(insertCalls['routine_exercises'][0].exercise_id).toBeDefined()
 
     // Retorna la rutina creada
@@ -324,21 +297,14 @@ describe('duplicateRoutine', () => {
     const fakeDays = [
       { id: 'day-1', name: 'Día 1', estimated_duration_min: 60, sort_order: 1 },
     ]
-    const fakeBlocks = [
+    const fakeRoutineExercises = [
       {
-        name: 'Principal',
-        sort_order: 1,
-        duration_min: null,
-        routine_exercises: [
-          {
-            series: 3, reps: '10', rir: 2, rest_seconds: 60,
-            notes: null, sort_order: 1,
-            exercise: {
-              id: 'ex-1', name: 'Sentadilla', measurement_type: 'weight_reps',
-              instructions: null, muscle_group: { name: 'Piernas' },
-            },
-          },
-        ],
+        series: 3, reps: '10', rir: 2, rest_seconds: 60,
+        notes: null, sort_order: 1, is_warmup: false,
+        exercise: {
+          id: 'ex-1', name: 'Sentadilla', measurement_type: 'weight_reps',
+          instructions: null, muscle_group: { name: 'Piernas' },
+        },
       },
     ]
     const fakeExercises = [
@@ -380,15 +346,12 @@ describe('duplicateRoutine', () => {
             })),
           }
         }
-        if (table === 'routine_blocks') {
+        if (table === 'routine_exercises') {
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
-            order: vi.fn().mockResolvedValue({ data: fakeBlocks, error: null }),
-            insert: vi.fn((record) => ({
-              select: vi.fn().mockReturnThis(),
-              single: vi.fn().mockResolvedValue({ data: { id: 'new-block-1', ...record }, error: null }),
-            })),
+            order: vi.fn().mockResolvedValue({ data: fakeRoutineExercises, error: null }),
+            insert: vi.fn().mockResolvedValue({ data: { id: 're-1' }, error: null }),
           }
         }
         if (table === 'exercises') {
@@ -415,11 +378,6 @@ describe('duplicateRoutine', () => {
             in: vi.fn().mockReturnThis(),
             maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'mg-1' }, error: null }),
             then: resolved.then.bind(resolved),
-          }
-        }
-        if (table === 'routine_exercises') {
-          return {
-            insert: vi.fn().mockResolvedValue({ data: { id: 're-1' }, error: null }),
           }
         }
         return makeQueryMock({ data: null, error: null })
@@ -468,7 +426,7 @@ describe('duplicateRoutine', () => {
             })),
           }
         }
-        if (table === 'routine_blocks') {
+        if (table === 'routine_exercises') {
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),

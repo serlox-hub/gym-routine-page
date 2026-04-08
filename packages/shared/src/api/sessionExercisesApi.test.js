@@ -7,7 +7,6 @@ import { getClient } from './_client.js'
 import {
   fetchSessionExercises,
   fetchSessionExercisesSortOrder,
-  fetchSessionExerciseBlockName,
   updateSessionExerciseSortOrder,
   insertSessionExercise,
   deleteCompletedSetsByExercise,
@@ -28,8 +27,8 @@ beforeEach(() => {
 describe('fetchSessionExercises', () => {
   it('returns exercise array on success', async () => {
     const exercises = [
-      { id: 'se-1', exercise_id: 'ex-1', sort_order: 1, block_name: 'Principal' },
-      { id: 'se-2', exercise_id: 'ex-2', sort_order: 2, block_name: 'Principal' },
+      { id: 'se-1', exercise_id: 'ex-1', sort_order: 1, is_warmup: false },
+      { id: 'se-2', exercise_id: 'ex-2', sort_order: 2, is_warmup: false },
     ]
     const mock = makeQueryMock({ data: exercises, error: null })
     getClient.mockReturnValue({ from: () => mock })
@@ -83,32 +82,6 @@ describe('fetchSessionExercisesSortOrder', () => {
 })
 
 // ============================================
-// fetchSessionExerciseBlockName
-// ============================================
-
-describe('fetchSessionExerciseBlockName', () => {
-  it('returns block name on success', async () => {
-    const mock = makeQueryMock({ data: { block_name: 'Principal' }, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    const result = await fetchSessionExerciseBlockName('se-1')
-    expect(result).toBe('Principal')
-  })
-
-  it('throws when Supabase returns error', async () => {
-    const mock = makeQueryMock({ data: null, error: new Error('not found') })
-    getClient.mockReturnValue({ from: () => mock })
-    await expect(fetchSessionExerciseBlockName('se-999')).rejects.toThrow('not found')
-  })
-
-  it('returns null when block_name is null', async () => {
-    const mock = makeQueryMock({ data: { block_name: null }, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    const result = await fetchSessionExerciseBlockName('se-1')
-    expect(result).toBeNull()
-  })
-})
-
-// ============================================
 // updateSessionExerciseSortOrder
 // ============================================
 
@@ -145,7 +118,7 @@ describe('insertSessionExercise', () => {
       series: 3,
       reps: '10',
       is_extra: true,
-      block_name: 'Principal',
+      is_warmup: false,
     }
     const mock = makeQueryMock({ data: inserted, error: null })
     getClient.mockReturnValue({ from: () => mock })
@@ -159,7 +132,7 @@ describe('insertSessionExercise', () => {
       restSeconds: null,
       notes: null,
       supersetGroup: null,
-      blockName: 'Principal',
+      isWarmup: false,
     })
     expect(result).toEqual(inserted)
     expect(result.is_extra).toBe(true)

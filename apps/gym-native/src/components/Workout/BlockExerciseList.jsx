@@ -4,7 +4,7 @@ import { Flame } from 'lucide-react-native'
 import WorkoutExerciseCard from './WorkoutExerciseCard'
 import SupersetCard from './SupersetCard'
 import { colors } from '../../lib/styles'
-import { countExercisesInBlock, findExerciseIndex } from '@gym/shared'
+import { countExercisesInBlock, findExerciseIndex, translateBlockName } from '@gym/shared'
 
 function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false, existingSupersets = [] }) {
   const totalFlat = flatExercises.length
@@ -30,7 +30,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                 className="text-sm font-semibold uppercase"
                 style={{ color: block.isWarmup ? colors.warning : colors.purple, letterSpacing: 1 }}
               >
-                {block.blockName}
+                {translateBlockName(block.blockName)}
               </Text>
               <Text className="text-xs" style={{ color: colors.textSecondary }}>
                 ({totalExercises})

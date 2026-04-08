@@ -6,6 +6,7 @@ export {
   fetchRoutine,
   fetchRoutineDays,
   fetchRoutineDay,
+  fetchRoutineDayExercises,
   fetchRoutineBlocks,
   fetchRoutineAllExercises,
 } from './routineQueryApi.js'

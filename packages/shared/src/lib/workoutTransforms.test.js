@@ -13,6 +13,7 @@ describe('workoutTransforms', () => {
     {
       id: 1,
       name: 'Calentamiento',
+      is_warmup: true,
       sort_order: 0,
       duration_min: 10,
       routine_exercises: [
@@ -22,6 +23,7 @@ describe('workoutTransforms', () => {
     {
       id: 2,
       name: 'Principal',
+      is_warmup: false,
       sort_order: 1,
       duration_min: 45,
       routine_exercises: [
@@ -36,6 +38,7 @@ describe('workoutTransforms', () => {
     {
       id: 1,
       name: 'Principal',
+      is_warmup: false,
       sort_order: 0,
       duration_min: 45,
       routine_exercises: [
@@ -185,7 +188,7 @@ describe('workoutTransforms', () => {
         notes: 'Nota test',
         superset_group: null,
         is_extra: false,
-        block_name: 'Principal',
+        is_warmup: false,
         exercise: { id: 10, name: 'Press banca', measurement_type: 'weight_reps' },
       },
       {
@@ -199,7 +202,7 @@ describe('workoutTransforms', () => {
         notes: null,
         superset_group: null,
         is_extra: false,
-        block_name: 'Principal',
+        is_warmup: false,
         exercise: { id: 11, name: 'Press inclinado', measurement_type: 'weight_reps' },
       },
     ]
@@ -237,7 +240,7 @@ describe('workoutTransforms', () => {
         {
           id: 1,
           sort_order: 1,
-          block_name: 'Calentamiento',
+          is_warmup: true,
           exercise: { id: 1, name: 'Cardio' },
           series: 1,
           reps: '5min',
@@ -255,7 +258,7 @@ describe('workoutTransforms', () => {
           id: 1,
           sort_order: 1,
           superset_group: null,
-          block_name: 'Principal',
+          is_warmup: false,
           exercise: { id: 1, name: 'Press' },
           series: 3,
           reps: '10',
@@ -264,7 +267,7 @@ describe('workoutTransforms', () => {
           id: 2,
           sort_order: 2,
           superset_group: 1,
-          block_name: 'Principal',
+          is_warmup: false,
           exercise: { id: 2, name: 'Curl' },
           series: 3,
           reps: '12',
@@ -273,7 +276,7 @@ describe('workoutTransforms', () => {
           id: 3,
           sort_order: 3,
           superset_group: 1,
-          block_name: 'Principal',
+          is_warmup: false,
           exercise: { id: 3, name: 'Triceps' },
           series: 3,
           reps: '12',
@@ -289,9 +292,9 @@ describe('workoutTransforms', () => {
 
     it('mantiene orden por sort_order', () => {
       const unorderedExercises = [
-        { id: 2, sort_order: 2, block_name: 'Principal', exercise: { id: 2, name: 'B' }, series: 3, reps: '10' },
-        { id: 1, sort_order: 1, block_name: 'Principal', exercise: { id: 1, name: 'A' }, series: 3, reps: '10' },
-        { id: 3, sort_order: 3, block_name: 'Principal', exercise: { id: 3, name: 'C' }, series: 3, reps: '10' },
+        { id: 2, sort_order: 2, is_warmup: false, exercise: { id: 2, name: 'B' }, series: 3, reps: '10' },
+        { id: 1, sort_order: 1, is_warmup: false, exercise: { id: 1, name: 'A' }, series: 3, reps: '10' },
+        { id: 3, sort_order: 3, is_warmup: false, exercise: { id: 3, name: 'C' }, series: 3, reps: '10' },
       ]
       const result = transformSessionExercises(unorderedExercises)
 
@@ -302,7 +305,7 @@ describe('workoutTransforms', () => {
 
     it('marca ejercicios extra correctamente', () => {
       const exercises = [
-        { id: 1, sort_order: 1, is_extra: true, block_name: 'Añadido', exercise: { id: 1, name: 'Extra' }, series: 3, reps: '10' },
+        { id: 1, sort_order: 1, is_extra: true, is_warmup: false, exercise: { id: 1, name: 'Extra' }, series: 3, reps: '10' },
       ]
       const result = transformSessionExercises(exercises)
 
@@ -310,9 +313,9 @@ describe('workoutTransforms', () => {
       expect(result.flatExercises[0].type).toBe('extra')
     })
 
-    it('usa "Principal" como bloque por defecto si block_name es null', () => {
+    it('usa "Principal" como bloque por defecto si is_warmup es false/null', () => {
       const exercises = [
-        { id: 1, sort_order: 1, block_name: null, exercise: { id: 1, name: 'Test' }, series: 3, reps: '10' },
+        { id: 1, sort_order: 1, is_warmup: null, exercise: { id: 1, name: 'Test' }, series: 3, reps: '10' },
       ]
       const result = transformSessionExercises(exercises)
 
@@ -334,7 +337,7 @@ describe('workoutTransforms', () => {
 
       expect(result).toHaveLength(3)
       expect(result[0].exercise_id).toBe(undefined) // sampleBlocks no tiene exercise_id
-      expect(result[0].block_name).toBe('Calentamiento')
+      expect(result[0].is_warmup).toBe(true)
       expect(result[0].is_extra).toBe(false)
     })
 
@@ -379,7 +382,7 @@ describe('workoutTransforms', () => {
         notes: 'Controlar bajada',
         superset_group: null,
         is_extra: false,
-        block_name: 'Principal',
+        is_warmup: false,
       })
     })
 

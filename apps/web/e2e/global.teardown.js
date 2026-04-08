@@ -82,25 +82,9 @@ async function globalTeardown() {
       if (days && days.length > 0) {
         const dayIds = days.map(d => d.id)
 
-        // Obtener bloques de los días
-        const { data: blocks } = await supabase
-          .from('routine_blocks')
-          .select('id')
-          .in('routine_day_id', dayIds)
-
-        if (blocks && blocks.length > 0) {
-          const blockIds = blocks.map(b => b.id)
-
-          // Eliminar ejercicios de rutina
-          await supabase
-            .from('routine_exercises')
-            .delete()
-            .in('routine_block_id', blockIds)
-        }
-
-        // Eliminar bloques
+        // Eliminar ejercicios de rutina
         await supabase
-          .from('routine_blocks')
+          .from('routine_exercises')
           .delete()
           .in('routine_day_id', dayIds)
       }

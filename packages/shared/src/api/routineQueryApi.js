@@ -51,25 +51,22 @@ export async function fetchRoutineDay(dayId) {
   return data
 }
 
-export async function fetchRoutineBlocks(dayId) {
+export async function fetchRoutineDayExercises(dayId) {
   const { data, error } = await getClient()
-    .from('routine_blocks')
+    .from('routine_exercises')
     .select(`
       *,
-      routine_exercises (
-        *,
-        exercise:exercises (
+      exercise:exercises (
+        id,
+        name:name_es,
+        name_en,
+        measurement_type,
+        weight_unit,
+        instructions,
+        muscle_group:muscle_groups!muscle_group_id (
           id,
           name:name_es,
-          name_en,
-          measurement_type,
-          weight_unit,
-          instructions,
-          muscle_group:muscle_groups!muscle_group_id (
-            id,
-            name:name_es,
-            name_en
-          )
+          name_en
         )
       )
     `)
@@ -78,31 +75,28 @@ export async function fetchRoutineBlocks(dayId) {
 
   if (error) throw error
 
-  // Ordenar bloques: Calentamiento siempre primero, luego por sort_order
-  const sortedBlocks = data.sort((a, b) => {
-    if (a.name === BLOCK_NAMES.WARMUP) return -1
-    if (b.name === BLOCK_NAMES.WARMUP) return 1
-    return a.sort_order - b.sort_order
-  })
+  // Group into virtual blocks for backward compatibility
+  const warmup = (data || []).filter(re => re.is_warmup)
+  const main = (data || []).filter(re => !re.is_warmup)
 
-  return sortedBlocks.map(block => ({
-    ...block,
-    routine_exercises: block.routine_exercises.sort((a, b) => a.sort_order - b.sort_order)
-  }))
+  return [
+    warmup.length > 0 && { name: BLOCK_NAMES.WARMUP, is_warmup: true, routine_exercises: warmup, sort_order: 0 },
+    main.length > 0 && { name: BLOCK_NAMES.MAIN, is_warmup: false, routine_exercises: main, sort_order: 1 },
+  ].filter(Boolean)
 }
+
+export { fetchRoutineDayExercises as fetchRoutineBlocks }
 
 export async function fetchRoutineAllExercises(routineId) {
   const { data, error } = await getClient()
     .from('routine_exercises')
     .select(`
       *,
-      routine_block:routine_blocks!inner (
-        routine_day:routine_days!inner (
-          routine_id
-        )
+      routine_day:routine_days!inner (
+        routine_id
       )
     `)
-    .eq('routine_block.routine_day.routine_id', routineId)
+    .eq('routine_day.routine_id', routineId)
 
   if (error) throw error
   return data

@@ -126,32 +126,31 @@ describe('fetchRoutineDay', () => {
 // ============================================
 
 describe('fetchRoutineBlocks', () => {
-  it('returns blocks with exercises sorted by sort_order', async () => {
-    const blocks = [
-      {
-        id: 20,
-        name: 'Principal',
-        sort_order: 1,
-        routine_exercises: [
-          { id: 30, sort_order: 2 },
-          { id: 31, sort_order: 1 },
-        ],
-      },
+  it('groups exercises into virtual blocks by is_warmup', async () => {
+    const exercises = [
+      { id: 30, sort_order: 1, is_warmup: true },
+      { id: 31, sort_order: 2, is_warmup: false },
+      { id: 32, sort_order: 3, is_warmup: false },
     ]
-    const mock = makeQueryMock({ data: blocks, error: null })
+    const mock = makeQueryMock({ data: exercises, error: null })
     getClient.mockReturnValue({ from: () => mock })
     const result = await fetchRoutineBlocks(10)
-    // Exercises within block should be sorted by sort_order
-    expect(result[0].routine_exercises[0].sort_order).toBe(1)
-    expect(result[0].routine_exercises[1].sort_order).toBe(2)
+
+    expect(result).toHaveLength(2)
+    expect(result[0].name).toBe('Calentamiento')
+    expect(result[0].is_warmup).toBe(true)
+    expect(result[0].routine_exercises).toHaveLength(1)
+    expect(result[1].name).toBe('Principal')
+    expect(result[1].is_warmup).toBe(false)
+    expect(result[1].routine_exercises).toHaveLength(2)
   })
 
-  it('places Calentamiento block first regardless of sort_order', async () => {
-    const blocks = [
-      { id: 21, name: 'Principal', sort_order: 1, routine_exercises: [] },
-      { id: 22, name: 'Calentamiento', sort_order: 2, routine_exercises: [] },
+  it('places Calentamiento block first', async () => {
+    const exercises = [
+      { id: 31, sort_order: 1, is_warmup: false },
+      { id: 30, sort_order: 2, is_warmup: true },
     ]
-    const mock = makeQueryMock({ data: blocks, error: null })
+    const mock = makeQueryMock({ data: exercises, error: null })
     getClient.mockReturnValue({ from: () => mock })
     const result = await fetchRoutineBlocks(10)
     expect(result[0].name).toBe('Calentamiento')
@@ -164,7 +163,7 @@ describe('fetchRoutineBlocks', () => {
     await expect(fetchRoutineBlocks(10)).rejects.toThrow('fetch blocks failed')
   })
 
-  it('returns empty array when day has no blocks', async () => {
+  it('returns empty array when day has no exercises', async () => {
     const mock = makeQueryMock({ data: [], error: null })
     getClient.mockReturnValue({ from: () => mock })
     const result = await fetchRoutineBlocks(10)

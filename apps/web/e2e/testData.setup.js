@@ -118,31 +118,18 @@ setup('create test data', async () => {
 
     if (dayError) throw dayError
 
-    // Crear bloque
-    const { data: block, error: blockError } = await supabase
-      .from('routine_blocks')
-      .insert({
-        routine_day_id: day.id,
-        name: 'Principal',
-        sort_order: 1,
-        duration_min: 45,
-      })
-      .select()
-      .single()
-
-    if (blockError) throw blockError
-
-    // Crear ejercicio en el bloque
+    // Crear ejercicio en el día
     const { error: routineExerciseError } = await supabase
       .from('routine_exercises')
       .insert({
-        routine_block_id: block.id,
+        routine_day_id: day.id,
         exercise_id: exerciseId,
         series: 3,
         reps: '10',
         rir: 2,
         rest_seconds: 90,
         sort_order: 1,
+        is_warmup: false,
       })
 
     if (routineExerciseError) throw routineExerciseError
@@ -150,7 +137,6 @@ setup('create test data', async () => {
     console.log('✅ Datos de prueba creados correctamente')
     console.log(`   - Rutina: ${routine.name} (id: ${routine.id})`)
     console.log(`   - Día: ${day.name}`)
-    console.log(`   - Bloque: ${block.name}`)
 
   } catch (error) {
     console.error('❌ Error creando datos de test:', error.message)

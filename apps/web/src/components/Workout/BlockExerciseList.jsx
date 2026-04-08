@@ -2,7 +2,7 @@ import { Flame } from 'lucide-react'
 import { WorkoutExerciseCard } from './index.js'
 import SupersetCard from './SupersetCard.jsx'
 import { colors } from '../../lib/styles.js'
-import { countExercisesInBlock, getReorderProps, getExerciseName } from '@gym/shared'
+import { countExercisesInBlock, getReorderProps, getExerciseName, translateBlockName } from '@gym/shared'
 
 function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, onRemove, onReplace, flatExercises = [], onReorder, isReordering = false, existingSupersets = [] }) {
   const positionLabels = flatExercises.map(e => getExerciseName(e.exercise))
@@ -31,7 +31,7 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                 className="text-sm font-semibold uppercase tracking-wide"
                 style={{ color: block.isWarmup ? colors.warning : colors.purple }}
               >
-                {block.blockName}
+                {translateBlockName(block.blockName)}
               </h3>
               <span className="text-xs" style={{ color: colors.textSecondary }}>
                 ({totalExercises})
