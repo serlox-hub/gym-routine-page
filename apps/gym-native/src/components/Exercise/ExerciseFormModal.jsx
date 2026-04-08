@@ -8,6 +8,7 @@ import ExerciseForm from './ExerciseForm'
 import { colors } from '../../lib/styles'
 
 export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose, onSaveSuccess }) {
+  const { t } = useTranslation()
   const isEdit = !!exerciseId
   const { data: exercise } = useExercise(exerciseId)
   const createExercise = useCreateExercise()
@@ -52,9 +53,7 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
         onBack={onClose}
         onSubmit={() => ExerciseForm._submit?.()}
         isPending={mutation.isPending}
-        backLabel={undefined}
-        submitLabel={undefined}
-        pendingLabel={undefined}
+        submitLabel={isEdit ? t('common:buttons.save') : t('common:buttons.add')}
       />
     </>
   )

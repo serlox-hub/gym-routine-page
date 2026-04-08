@@ -53,7 +53,7 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
         onBack={onClose}
         onSubmit={() => ExerciseForm._submit?.()}
         isPending={mutation.isPending}
-        submitLabel={t('common:buttons.save')}
+        submitLabel={isEdit ? t('common:buttons.save') : t('common:buttons.add')}
       />
     </div>
   )
