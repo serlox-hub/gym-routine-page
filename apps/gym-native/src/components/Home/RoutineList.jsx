@@ -1,6 +1,6 @@
 import { View, Text, Pressable, FlatList } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Plus, Star } from 'lucide-react-native'
+import { Plus, Pin } from 'lucide-react-native'
 import { useSetFavoriteRoutine } from '../../hooks/useRoutines'
 import { Card, TruncatedText } from '../ui'
 import { colors } from '../../lib/styles'
@@ -38,10 +38,10 @@ function RoutineItem({ routine, navigation, setFavoriteMutation }) {
           }}
           className="p-1"
         >
-          <Star
+          <Pin
             size={18}
-            color={routine.is_favorite ? colors.warning : colors.textSecondary}
-            fill={routine.is_favorite ? colors.warning : 'none'}
+            color={routine.is_favorite ? colors.success : colors.textSecondary}
+            fill={routine.is_favorite ? colors.success : 'none'}
           />
         </Pressable>
       </View>

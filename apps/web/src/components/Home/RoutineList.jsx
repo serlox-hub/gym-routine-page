@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus, Star } from 'lucide-react'
+import { Plus, Pin } from 'lucide-react'
 import { useSetFavoriteRoutine } from '../../hooks/useRoutines.js'
 import { Card, TruncatedText } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
@@ -60,10 +60,10 @@ function RoutineList({ routines, onNewRoutine }) {
                   }}
                   className="p-1 rounded hover:opacity-80 shrink-0"
                 >
-                  <Star
+                  <Pin
                     size={18}
-                    style={{ color: routine.is_favorite ? colors.warning : colors.textSecondary }}
-                    fill={routine.is_favorite ? colors.warning : 'none'}
+                    style={{ color: routine.is_favorite ? colors.success : colors.textSecondary }}
+                    fill={routine.is_favorite ? colors.success : 'none'}
                   />
                 </button>
               </div>

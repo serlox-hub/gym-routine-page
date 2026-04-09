@@ -1,25 +1,10 @@
-import { View, Text } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Dumbbell, Plus, Play, ChevronRight, Star } from 'lucide-react-native'
-import LinearGradient from 'react-native-linear-gradient'
-import { useRoutines, useNextRoutineDay } from '@gym/shared'
+import { Plus, ChevronRight, Pin, Repeat, Layers } from 'lucide-react-native'
+import { useRoutines } from '@gym/shared'
 import { useStartSession } from '../../hooks/useWorkout'
-import { Card } from '../ui'
 import useWorkoutStore from '../../stores/workoutStore'
-import { colors, gradients, design } from '../../lib/styles'
-
-function IconBg({ gradient, children }) {
-  return (
-    <LinearGradient
-      colors={gradient}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{ width: design.iconBgSize, height: design.iconBgSize, borderRadius: design.iconBgRadius, alignItems: 'center', justifyContent: 'center' }}
-    >
-      {children}
-    </LinearGradient>
-  )
-}
+import { colors, design } from '../../lib/styles'
 
 function TodaysWorkout({ navigation }) {
   const { t } = useTranslation()
@@ -30,104 +15,114 @@ function TodaysWorkout({ navigation }) {
   const isFreeSessionActive = hasActiveSession && activeRoutineDayId === null
   const isRoutineSessionActive = hasActiveSession && activeRoutineDayId !== null
 
-  const favoriteRoutine = routines?.find(r => r.is_favorite)
-  const { nextDay, isLoading, isError } = useNextRoutineDay(favoriteRoutine?.id)
+  const pinnedRoutine = routines?.find(r => r.is_favorite)
+  const hasRoutines = routines && routines.length > 0
 
   const handleStartFreeWorkout = () => {
     useWorkoutStore.getState().showWorkout()
     startSessionMutation.mutate(undefined)
   }
 
-  const hasRoutines = routines && routines.length > 0
-
   return (
     <View>
-      {/* Header */}
-      <View className="flex-row items-center justify-between mb-3">
-        <Text style={{ color: colors.textPrimary, fontSize: design.sectionTitleSize, fontWeight: '700', letterSpacing: -0.3 }}>
-          {t('common:home.todaysWorkout')}
-        </Text>
-        {hasRoutines && (
-          <Text
-            onPress={() => navigation.navigate('Routines')}
-            style={{ color: colors.success, fontSize: 13, fontWeight: '500' }}
-          >
-            {t('common:buttons.seeAll')}
-          </Text>
-        )}
-      </View>
+      <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '600', marginBottom: 14 }}>
+        {t('common:home.workout')}
+      </Text>
 
-      {/* Next routine day OR create routine */}
-      {favoriteRoutine && nextDay && !isLoading && !isError ? (
-        <Card
-          className="p-3 mb-3"
-          onPress={() => {
-            useWorkoutStore.getState().setRoutineContext(favoriteRoutine.id, nextDay.id)
-            useWorkoutStore.getState().showWorkout()
+      {/* Pinned routine card */}
+      {pinnedRoutine ? (
+        <Pressable
+          onPress={() => navigation.navigate('RoutineDetail', { routineId: pinnedRoutine.id })}
+          style={{
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 14,
+            padding: 16,
+            marginBottom: 10,
           }}
-          style={isRoutineSessionActive ? { opacity: 0.5 } : {}}
         >
-          <View className="flex-row items-center gap-3">
-            <IconBg gradient={gradients.lime}>
-              <Dumbbell size={design.iconSize} color={colors.bgPrimary} />
-            </IconBg>
-            <View className="flex-1">
-              <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize, fontWeight: '600' }}>
-                {nextDay.name}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 2 }}>
-                {favoriteRoutine.name}
-                {nextDay.estimated_duration_min ? ` · ${nextDay.estimated_duration_min} min` : ''}
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textMuted} />
+          <View className="flex-row items-center gap-1.5 mb-2">
+            <Pin size={12} color={colors.success} />
+            <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
+              {t('common:home.pinnedToHome')}
+            </Text>
           </View>
-        </Card>
-      ) : !hasRoutines ? (
-        <Card
-          className="p-3 mb-3"
-          onPress={() => navigation.navigate('Routines', { openNewRoutine: true })}
-        >
-          <View className="flex-row items-center gap-3">
-            <IconBg gradient={gradients.lime}>
-              <Plus size={design.iconSize} color={colors.bgPrimary} />
-            </IconBg>
-            <View className="flex-1">
-              <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize, fontWeight: '600' }}>
-                {t('common:home.createRoutine')}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 2 }}>
-                {t('common:home.createRoutineDesc')}
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textMuted} />
+          <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize + 1, fontWeight: '700' }}>
+            {pinnedRoutine.name}
+          </Text>
+          {pinnedRoutine.description && (
+            <Text style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 4, lineHeight: 17 }}>
+              {pinnedRoutine.description}
+            </Text>
+          )}
+          <View className="flex-row items-center gap-2 mt-3">
+            {pinnedRoutine.days_count > 0 && (
+              <View className="flex-row items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 }}>
+                <Repeat size={11} color={colors.textSecondary} />
+                <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '500' }}>
+                  {t('common:home.nDays', { count: pinnedRoutine.days_count })}
+                </Text>
+              </View>
+            )}
+            {pinnedRoutine.exercises_count > 0 && (
+              <View className="flex-row items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 }}>
+                <Layers size={11} color={colors.textSecondary} />
+                <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '500' }}>
+                  {t('common:home.nExercises', { count: pinnedRoutine.exercises_count })}
+                </Text>
+              </View>
+            )}
           </View>
-        </Card>
-      ) : !favoriteRoutine ? (
-        <Card
-          className="p-3 mb-3"
-          onPress={() => navigation.navigate('Routines')}
-        >
-          <View className="flex-row items-center gap-3">
-            <View style={{ width: design.iconBgSize, height: design.iconBgSize, borderRadius: design.iconBgRadius, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgTertiary }}>
-              <Star size={design.iconSize} color={colors.textSecondary} />
-            </View>
-            <View className="flex-1">
-              <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize, fontWeight: '600' }}>
-                {t('common:home.setupFavorite')}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 2 }}>
-                {t('common:home.setupFavoriteDesc')}
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textMuted} />
-          </View>
-        </Card>
-      ) : null}
+        </Pressable>
 
-      {/* Free workout */}
-      <Card
-        className="p-3"
+      ) : !hasRoutines ? (
+        <Pressable
+          onPress={() => navigation.navigate('Routines', { openNewRoutine: true })}
+          className="flex-row items-center justify-center gap-2"
+          style={{
+            backgroundColor: colors.success,
+            borderRadius: 14,
+            height: 48,
+            marginBottom: 10,
+          }}
+        >
+          <Plus size={18} color={colors.bgPrimary} />
+          <Text style={{ color: colors.bgPrimary, fontSize: design.cardTitleSize, fontWeight: '700' }}>
+            {t('common:home.createRoutine')}
+          </Text>
+        </Pressable>
+
+      ) : (
+        <Pressable
+          onPress={() => navigation.navigate('Routines')}
+          className="flex-row items-center"
+          style={{
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 14,
+            paddingVertical: 14,
+            paddingHorizontal: 16,
+            gap: 10,
+            marginBottom: 10,
+          }}
+        >
+          <Pin size={18} color={colors.textMuted} />
+          <View className="flex-1">
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
+              {t('common:home.pinRoutine')}
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 1 }}>
+              {t('common:home.pinRoutineDesc')}
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} />
+        </Pressable>
+      )}
+
+      {/* Free workout button */}
+      <Pressable
         onPress={
           isFreeSessionActive
             ? () => useWorkoutStore.getState().showWorkout()
@@ -137,26 +132,24 @@ function TodaysWorkout({ navigation }) {
                 ? handleStartFreeWorkout
                 : undefined
         }
-        style={isRoutineSessionActive ? { opacity: 0.5 } : {}}
+        className="flex-row items-center justify-center gap-2"
+        style={{
+          backgroundColor: colors.bgSecondary,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: 14,
+          height: 48,
+          opacity: isRoutineSessionActive ? 0.5 : 1,
+        }}
       >
-        <View className="flex-row items-center gap-3">
-          <IconBg gradient={gradients.orange}>
-            <Play size={design.iconSize} color={colors.white} />
-          </IconBg>
-          <View className="flex-1">
-            <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize, fontWeight: '600' }}>
-              {isFreeSessionActive
-                ? t('workout:session.resume')
-                : t('common:home.freeWorkout')
-              }
-            </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 2 }}>
-              {t('common:home.freeWorkoutDesc')}
-            </Text>
-          </View>
-          <ChevronRight size={18} color={colors.textMuted} />
-        </View>
-      </Card>
+        <Plus size={16} color={colors.success} />
+        <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize, fontWeight: '600' }}>
+          {isFreeSessionActive
+            ? t('workout:session.resume')
+            : t('common:home.freeWorkout')
+          }
+        </Text>
+      </Pressable>
     </View>
   )
 }
