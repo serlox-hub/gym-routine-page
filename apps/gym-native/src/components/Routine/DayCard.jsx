@@ -197,7 +197,7 @@ export default function DayCard({
                 <Text className="text-secondary text-sm">{t('routine:block.noExercises')}</Text>
               ) : (
                 blocks?.filter(b => b.routine_exercises?.length > 0).map(block => (
-                  <BlockSection key={block.id} block={block} />
+                  <BlockSection key={block.name} block={block} />
                 ))
               )}
             </>
