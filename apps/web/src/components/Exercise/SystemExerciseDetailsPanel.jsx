@@ -78,12 +78,14 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
         </div>
       </div>
 
-      <ExerciseConfigFormButtons
-        onBack={onClose}
-        onSubmit={handleSave}
-        isPending={upsertOverride.isPending}
-        submitLabel={t('common:buttons.save')}
-      />
+      <div className="px-4 pb-4">
+        <ExerciseConfigFormButtons
+          onBack={onClose}
+          onSubmit={handleSave}
+          isPending={upsertOverride.isPending}
+          submitLabel={t('common:buttons.save')}
+        />
+      </div>
     </>
   )
 }
