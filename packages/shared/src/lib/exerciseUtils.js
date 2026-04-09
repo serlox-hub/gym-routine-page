@@ -66,10 +66,10 @@ export function localizeExercisesInList(items) {
 
 /**
  * Resolves the weight unit for an exercise.
- * Priority: exercise override > user preference > 'kg'
+ * Priority: user exercise override > user global preference > 'kg'
  */
-export function resolveWeightUnit(exercise, userPreferences) {
-  return exercise?.weight_unit
+export function resolveWeightUnit(override, userPreferences) {
+  return override?.weight_unit
     || userPreferences?.weight_unit
     || 'kg'
 }

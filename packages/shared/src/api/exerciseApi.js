@@ -6,7 +6,7 @@ export async function fetchExercisesWithMuscleGroup() {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
-      id, name:name_es, name_en, measurement_type, weight_unit,
+      id, name:name_es, name_en, measurement_type,
       is_system,
       muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
       equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
@@ -123,7 +123,7 @@ export async function fetchExercise(exerciseId) {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
-      id, name:name_es, name_en, measurement_type, weight_unit,
+      id, name:name_es, name_en, measurement_type,
       is_system, instructions, deleted_at,
       muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
       equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
@@ -142,7 +142,6 @@ export async function createExercise({ userId, exercise, muscleGroupId }) {
       name_es: exercise.name,
       instructions: exercise.instructions || null,
       measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
-      weight_unit: exercise.weight_unit || null,
       muscle_group_id: muscleGroupId || null,
       user_id: userId,
     })
@@ -160,7 +159,6 @@ export async function updateExercise({ exerciseId, exercise, muscleGroupId }) {
       name_es: exercise.name,
       instructions: exercise.instructions || null,
       measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
-      weight_unit: exercise.weight_unit || null,
       muscle_group_id: muscleGroupId || null,
     })
     .eq('id', exerciseId)
@@ -183,6 +181,22 @@ export async function fetchEquipmentTypes() {
 // ============================================
 // USER EXERCISE OVERRIDES
 // ============================================
+
+export async function fetchUserExerciseWeightUnits(exerciseIds) {
+  if (!exerciseIds?.length) return {}
+  const { data, error } = await getClient()
+    .from('user_exercise_overrides')
+    .select('exercise_id, weight_unit')
+    .in('exercise_id', exerciseIds)
+    .not('weight_unit', 'is', null)
+
+  if (error) throw error
+  const map = {}
+  for (const row of data || []) {
+    map[row.exercise_id] = row.weight_unit
+  }
+  return map
+}
 
 export async function fetchUserExerciseOverride(exerciseId) {
   const { data, error } = await getClient()

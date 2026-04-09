@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Flame, X, Pause, Play, Settings, Check, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
-  useTrainingGoal, useUpdateTrainingGoal, fetchWorkoutSummary, getLastCycleSession,
+  useTrainingGoal, useUpdateTrainingGoal, usePreference, fetchWorkoutSummary, getLastCycleSession,
   getCurrentCycleDays, getCurrentCycleProgress, getCurrentCycleKey, countSessionsByCycle,
   getCycleDateRange, formatShortDate,
 } from '@gym/shared'
@@ -24,6 +24,7 @@ function WeeklyGoalWidget({ onOpenSettings }) {
   const [summaryData, setSummaryData] = useState(null)
   const [loadingShare, setLoadingShare] = useState(false)
   const [cycleOffset, setCycleOffset] = useState(0)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
 
   // All hooks must be before any early return
   const { streak, restCycles, sessions = [], daysPerCycle, weekStartDay = 'monday' } = goal.isConfigured ? goal : {}
@@ -53,7 +54,7 @@ function WeeklyGoalWidget({ onOpenSettings }) {
   const handleShareLastSession = async (sessionId) => {
     setLoadingShare(true)
     try {
-      setSummaryData(await fetchWorkoutSummary(sessionId))
+      setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit }))
     } finally {
       setLoadingShare(false)
     }

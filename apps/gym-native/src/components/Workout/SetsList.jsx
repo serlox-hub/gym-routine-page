@@ -19,7 +19,7 @@ function SetsList({
   return (
     <>
       <View className="mb-3">
-        <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+        <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
       </View>
 
       <View className="gap-2">

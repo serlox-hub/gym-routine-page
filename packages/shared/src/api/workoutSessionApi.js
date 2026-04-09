@@ -20,7 +20,7 @@ export async function fetchActiveSession() {
 export async function fetchCompletedSetsForSession(sessionId) {
   const { data, error } = await getClient()
     .from('completed_sets')
-    .select('session_exercise_id, set_number, weight, weight_unit, reps_completed, time_seconds, distance_meters, pace_seconds, rir_actual, notes, video_url, set_type')
+    .select('session_exercise_id, set_number, weight, reps_completed, time_seconds, distance_meters, pace_seconds, rir_actual, notes, video_url, set_type')
     .eq('session_id', sessionId)
 
   if (error) throw error
@@ -210,7 +210,6 @@ export async function fetchSessionDetail(sessionId) {
           id,
           set_number,
           weight,
-          weight_unit,
           reps_completed,
           time_seconds,
           distance_meters,
@@ -280,7 +279,6 @@ export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to 
         id,
         set_number,
         weight,
-        weight_unit,
         reps_completed,
         time_seconds,
         distance_meters,
@@ -320,7 +318,6 @@ export async function fetchPreviousWorkout(exerciseId) {
       completed_sets!inner (
         set_number,
         weight,
-        weight_unit,
         reps_completed,
         time_seconds,
         distance_meters,

@@ -38,7 +38,6 @@ function buildCompletedSetsMap(rawSets) {
       sessionExerciseId: set.session_exercise_id,
       setNumber: set.set_number,
       weight: set.weight,
-      weightUnit: set.weight_unit,
       repsCompleted: set.reps_completed,
       timeSeconds: set.time_seconds,
       distanceMeters: set.distance_meters,

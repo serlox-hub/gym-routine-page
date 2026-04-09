@@ -12,7 +12,7 @@ import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType, getExerciseInstructions, getExerciseName } from '@gym/shared'
+import { MeasurementType, getExerciseInstructions, getExerciseName, usePreference, resolveWeightUnit } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, isWarmup = false, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [], existingSupersets = [] }) {
@@ -25,8 +25,10 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const [showEdit, setShowEdit] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
 
+  const { data: override } = useUserExerciseOverride(exercise?.id)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
-  const weightUnit = exercise.weight_unit || 'kg'
+  const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
   const exerciseKey = sessionExerciseId || id
 
   const completedSets = useWorkoutStore(state => state.completedSets)

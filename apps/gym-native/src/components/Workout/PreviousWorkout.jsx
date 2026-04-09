@@ -7,7 +7,7 @@ import SetNotesView from './SetNotesView'
 import { MeasurementType, formatRelativeDate, formatSetValueByType } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
-export default function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, timeUnit = 's', distanceUnit = 'm' }) {
+export default function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm' }) {
   const { t } = useTranslation()
   const { data: previous, isLoading } = usePreviousWorkout(exerciseId)
   const [selectedSet, setSelectedSet] = useState(null)
@@ -60,7 +60,7 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
                   />
                 </View>
                 <Text className="text-sm font-medium text-center" style={{ color: colors.textPrimary }}>
-                  {formatSetValueByType(set, measurementType, { timeUnit, distanceUnit })}
+                  {formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit })}
                 </Text>
               </View>
             )

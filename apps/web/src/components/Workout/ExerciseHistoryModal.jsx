@@ -67,7 +67,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
         ) : activeTab === TABS.PROGRESS ? (
           <HistoryChart sessions={summarySessions} stats={stats} measurementType={measurementType} weightUnit={weightUnit} />
         ) : (
-          <HistoryTable sessions={historySessions} timeUnit={timeUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
+          <HistoryTable sessions={historySessions} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
             onSessionClick={handleSessionClick} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onLoadMore={fetchNextPage} />
         )}
       </div>

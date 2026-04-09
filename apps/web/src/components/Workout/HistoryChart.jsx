@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Card } from '../ui/index.js'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'
 import { colors } from '../../lib/styles.js'
@@ -14,10 +15,11 @@ function StatCard({ label, value, color }) {
 }
 
 function HistoryChart({ sessions, stats, measurementType, weightUnit }) {
+  const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return (
       <p className="text-center text-secondary py-8">
-        Sin registros anteriores
+        {t('exercise:noHistory')}
       </p>
     )
   }
@@ -29,34 +31,34 @@ function HistoryChart({ sessions, stats, measurementType, weightUnit }) {
         <div className="grid grid-cols-2 gap-2">
           {stats.best1RM > 0 && (
             <StatCard
-              label="Mejor 1RM Est."
+              label={t('workout:summary.best1rm')}
               value={`${stats.best1RM.toLocaleString()} ${weightUnit}`}
               color={colors.purple}
             />
           )}
           {stats.maxWeight > 0 && (
             <StatCard
-              label="Peso maximo"
+              label={t('workout:summary.maxWeight')}
               value={`${stats.maxWeight.toLocaleString()} ${weightUnit}`}
               color={colors.accent}
             />
           )}
           {stats.maxReps > 0 && (
             <StatCard
-              label="Max. repeticiones"
+              label={t('workout:summary.maxReps')}
               value={stats.maxReps}
               color={colors.success}
             />
           )}
           {stats.totalVolume > 0 && (
             <StatCard
-              label="Volumen total"
+              label={t('workout:summary.totalVolume')}
               value={`${stats.totalVolume.toLocaleString()} ${weightUnit}`}
               color={colors.warning}
             />
           )}
           <StatCard
-            label="Sesiones"
+            label={t('workout:summary.sessions')}
             value={stats.sessionCount}
             color={colors.textSecondary}
           />
@@ -65,10 +67,10 @@ function HistoryChart({ sessions, stats, measurementType, weightUnit }) {
 
       {/* Chart */}
       {sessions.length >= 2 ? (
-        <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
+        <ExerciseProgressChart sessions={sessions} measurementType={measurementType} weightUnit={weightUnit} />
       ) : (
         <p className="text-center text-secondary py-4 text-sm">
-          Necesitas al menos 2 sesiones para ver la grafica
+          {t('exercise:progressMinSessions')}
         </p>
       )}
     </div>

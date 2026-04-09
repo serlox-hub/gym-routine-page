@@ -118,9 +118,9 @@ describe('sessionStatsCalculation', () => {
 
     describe('weight_reps', () => {
       const sets = [
-        { weight: 100, reps_completed: 8, weight_unit: 'kg' },
-        { weight: 100, reps_completed: 6, weight_unit: 'kg' },
-        { weight: 90, reps_completed: 10, weight_unit: 'kg' },
+        { weight: 100, reps_completed: 8 },
+        { weight: 100, reps_completed: 6 },
+        { weight: 90, reps_completed: 10 },
       ]
 
       it('calcula bestWeight', () => {

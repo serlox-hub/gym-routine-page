@@ -57,7 +57,6 @@ export function buildEmptySetData({ sessionId, sessionExerciseId, setNumber, exe
     sessionExerciseId,
     setNumber,
     weight: usesWeight ? 0 : null,
-    weightUnit: exercise.weight_unit || 'kg',
     repsCompleted: usesReps ? 0 : null,
     timeSeconds: usesTime ? 0 : null,
     distanceMeters: usesDistance ? 0 : null,

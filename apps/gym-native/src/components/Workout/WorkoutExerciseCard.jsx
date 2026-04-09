@@ -13,7 +13,7 @@ import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { colors } from '../../lib/styles'
-import { MeasurementType, getHaptics, getExerciseInstructions, getExerciseName } from '@gym/shared'
+import { MeasurementType, getHaptics, getExerciseInstructions, getExerciseName, usePreference, resolveWeightUnit } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WarmupExerciseCard({ exercise, series, reps, notes, rest_seconds }) {
@@ -59,8 +59,10 @@ function RegularExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const [collapsed, setCollapsed] = useState(false)
 
   const updateFieldsMutation = useUpdateSessionExerciseFields()
+  const { data: override } = useUserExerciseOverride(exercise?.id)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
-  const weightUnit = exercise.weight_unit || 'kg'
+  const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
   const exerciseKey = sessionExerciseId || id
 
   const routineDayId = useWorkoutStore(state => state.routineDayId)

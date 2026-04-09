@@ -129,7 +129,7 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance, 
  * @returns {Object} Datos para guardar la serie
  */
 export function buildCompletedSetData(measurementType, formData, info) {
-  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, weightUnit = 'kg', distanceUnit = 'm', rirActual, notes, videoUrl, setType } = info
+  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, distanceUnit = 'm', rirActual, notes, videoUrl, setType } = info
   const { weight, reps, time, distance, calories, level, pace } = formData
 
   const data = {
@@ -148,7 +148,6 @@ export function buildCompletedSetData(measurementType, formData, info) {
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
       data.weight = parseDecimal(weight)
-      data.weightUnit = weightUnit
       data.repsCompleted = parseInt(reps)
       break
     case MeasurementType.REPS_ONLY:
@@ -159,7 +158,6 @@ export function buildCompletedSetData(measurementType, formData, info) {
       break
     case MeasurementType.WEIGHT_TIME:
       data.weight = parseDecimal(weight)
-      data.weightUnit = weightUnit
       data.timeSeconds = parseInt(time)
       break
     case MeasurementType.DISTANCE:
@@ -167,7 +165,6 @@ export function buildCompletedSetData(measurementType, formData, info) {
       break
     case MeasurementType.WEIGHT_DISTANCE:
       data.weight = parseDecimal(weight)
-      data.weightUnit = weightUnit
       data.distanceMeters = distanceToMeters(distance, distanceUnit)
       break
     case MeasurementType.CALORIES:

@@ -108,12 +108,11 @@ describe('buildEmptySetData', () => {
   const base = { sessionId: 's1', sessionExerciseId: 'se1', setNumber: 1 }
 
   it('genera campos correctos para weight_reps', () => {
-    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'weight_reps', weight_unit: 'kg' } })
+    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'weight_reps' } })
     expect(result.weight).toBe(0)
     expect(result.repsCompleted).toBe(0)
     expect(result.timeSeconds).toBeNull()
     expect(result.distanceMeters).toBeNull()
-    expect(result.weightUnit).toBe('kg')
   })
 
   it('genera campos correctos para reps_only', () => {
@@ -131,11 +130,10 @@ describe('buildEmptySetData', () => {
   })
 
   it('genera campos correctos para weight_time', () => {
-    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'weight_time', weight_unit: 'lb' } })
+    const result = buildEmptySetData({ ...base, exercise: { measurement_type: 'weight_time' } })
     expect(result.weight).toBe(0)
     expect(result.timeSeconds).toBe(0)
     expect(result.repsCompleted).toBeNull()
-    expect(result.weightUnit).toBe('lb')
   })
 
   it('genera campos correctos para distance', () => {
@@ -149,6 +147,5 @@ describe('buildEmptySetData', () => {
     const result = buildEmptySetData({ ...base, exercise: {} })
     expect(result.weight).toBe(0)
     expect(result.repsCompleted).toBe(0)
-    expect(result.weightUnit).toBe('kg')
   })
 })

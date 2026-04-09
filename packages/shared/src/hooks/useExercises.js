@@ -12,6 +12,7 @@ import {
   updateExercise,
   deleteExercise,
   fetchUserExerciseOverride,
+  fetchUserExerciseWeightUnits,
   upsertUserExerciseOverride,
 } from '../api/exerciseApi.js'
 import { getNotifier } from '../notifications.js'
@@ -113,6 +114,15 @@ export function useDeleteExercise() {
 // ============================================
 // USER EXERCISE OVERRIDES
 // ============================================
+
+export function useExerciseWeightUnits(exerciseIds) {
+  const key = exerciseIds?.length ? exerciseIds.slice().sort().join(',') : null
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISES, 'weight-units', key],
+    queryFn: () => fetchUserExerciseWeightUnits(exerciseIds),
+    enabled: !!key,
+  })
+}
 
 export function useUserExerciseOverride(exerciseId) {
   return useQuery({

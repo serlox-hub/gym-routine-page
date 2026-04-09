@@ -9,45 +9,7 @@ import {
   MeasurementType,
   getMuscleGroupColor,
   getMuscleGroupName,
-  measurementTypeUsesWeight
 } from '@gym/shared'
-
-function getWeightUnits(t) {
-  return [
-    { value: 'kg', label: t('exercise:weightUnitKg') },
-    { value: 'lb', label: t('exercise:weightUnitLb') },
-  ]
-}
-
-function UnitSelector({ label, units, field, form, onChange, Wrapper, compact }) {
-  return (
-    <Wrapper className={compact ? '' : 'p-4'}>
-      <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-        {label}
-      </label>
-      <div className="flex gap-2">
-        {units.map(unit => {
-          const isSelected = form[field] === unit.value
-          return (
-            <button
-              key={unit.value}
-              type="button"
-              onClick={() => onChange(field, unit.value)}
-              className="flex-1 py-2 px-3 rounded-lg text-sm transition-colors"
-              style={{
-                backgroundColor: isSelected ? colors.accentBg : colors.bgTertiary,
-                color: isSelected ? colors.accent : colors.textPrimary,
-                border: isSelected ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
-              }}
-            >
-              {unit.label}
-            </button>
-          )
-        })}
-      </div>
-    </Wrapper>
-  )
-}
 
 function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
   const { t } = useTranslation()
@@ -100,7 +62,6 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
 const DEFAULT_FORM = {
   name: '',
   measurement_type: MeasurementType.WEIGHT_REPS,
-  weight_unit: 'kg',
   instructions: '',
 }
 
@@ -142,14 +103,11 @@ function ExerciseForm({
       setForm({
         name: initialData.name || '',
         measurement_type: initialData.measurement_type || MeasurementType.WEIGHT_REPS,
-        weight_unit: initialData.weight_unit || 'kg',
         instructions: initialData.instructions || '',
       })
       setSelectedMuscleGroupId(initialData.muscle_group_id || null)
     }
   }, [initialData])
-
-  const usesWeight = measurementTypeUsesWeight(form.measurement_type)
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -228,11 +186,6 @@ function ExerciseForm({
           ))}
         </Select>
       </Wrapper>
-
-      {/* Unidad de peso (solo si usa peso) */}
-      {usesWeight && (
-        <UnitSelector label={t('exercise:weightUnit')} units={getWeightUnits(t)} field="weight_unit" form={form} onChange={handleChange} Wrapper={Wrapper} compact={compact} />
-      )}
 
 
       <Wrapper className={compact ? '' : 'p-4'}>

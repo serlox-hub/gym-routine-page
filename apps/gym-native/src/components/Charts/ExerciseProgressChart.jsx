@@ -11,7 +11,7 @@ const TABS = {
   E1RM: 'e1rm',
 }
 
-export default function ExerciseProgressChart({ sessions, measurementType }) {
+export default function ExerciseProgressChart({ sessions, measurementType, weightUnit = 'kg' }) {
   const { t } = useTranslation()
 
   const TAB_CONFIG = {
@@ -23,8 +23,8 @@ export default function ExerciseProgressChart({ sessions, measurementType }) {
   const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
 
   const chartData = useMemo(
-    () => transformSessionsToChartData(sessions, measurementType),
-    [sessions, measurementType]
+    () => transformSessionsToChartData(sessions, measurementType, { weightUnit }),
+    [sessions, measurementType, weightUnit]
   )
 
   const { dataKey, color, label } = TAB_CONFIG[activeTab]

@@ -122,7 +122,6 @@ export async function exportRoutine(routineId) {
     .select(`
       name:name_es,
       measurement_type,
-      weight_unit,
       instructions,
       muscle_group:muscle_groups!muscle_group_id(name:name_es)
     `)
@@ -136,7 +135,6 @@ export async function exportRoutine(routineId) {
     exercises: exercises.map(ex => ({
       name_es: ex.name,
       measurement_type: ex.measurement_type,
-      weight_unit: ex.weight_unit,
       instructions: ex.instructions,
       muscle_group_name: ex.muscle_group?.name,
     })),
@@ -227,7 +225,6 @@ export async function importRoutine(jsonData, userId, options = {}) {
             .from('exercises')
             .update({
               measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
-              weight_unit: ex.weight_unit || null,
               instructions: ex.instructions,
               muscle_group_id: muscleGroupId,
             })
@@ -239,7 +236,6 @@ export async function importRoutine(jsonData, userId, options = {}) {
           .insert({
             name_es: exName,
             measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
-            weight_unit: ex.weight_unit || null,
             instructions: ex.instructions,
             muscle_group_id: muscleGroupId,
             user_id: userId,

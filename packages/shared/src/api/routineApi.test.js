@@ -43,12 +43,12 @@ describe('exportRoutine', () => {
     const fakeExercises = [
       {
         name: 'Ejercicio day-1', measurement_type: 'weight_reps',
-        weight_unit: 'kg',
+
         instructions: null, muscle_group: { name: 'Pecho' },
       },
       {
         name: 'Ejercicio day-2', measurement_type: 'weight_reps',
-        weight_unit: 'kg',
+
         instructions: null, muscle_group: { name: 'Pecho' },
       },
     ]
@@ -129,7 +129,7 @@ describe('importRoutine', () => {
         {
           name_es: 'Press Banca',
           measurement_type: 'weight_reps',
-          weight_unit: 'kg',
+  
           instructions: null,
           muscle_group_name: 'Pecho',
         },
@@ -310,7 +310,7 @@ describe('duplicateRoutine', () => {
     const fakeExercises = [
       {
         name: 'Sentadilla', measurement_type: 'weight_reps',
-        weight_unit: 'kg',
+
         instructions: null, muscle_group: { name: 'Piernas' },
       },
     ]

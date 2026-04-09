@@ -10,20 +10,11 @@ import {
   MeasurementType,
   getMuscleGroupColor,
   getMuscleGroupName,
-  measurementTypeUsesWeight
 } from '@gym/shared'
-
-function getWeightUnits(t) {
-  return [
-    { value: 'kg', label: t('exercise:weightUnitKg') },
-    { value: 'lb', label: t('exercise:weightUnitLb') },
-  ]
-}
 
 const DEFAULT_FORM = {
   name: '',
   measurement_type: MeasurementType.WEIGHT_REPS,
-  weight_unit: 'kg',
   instructions: '',
 }
 
@@ -54,35 +45,6 @@ function BottomSheetPicker({ visible, onClose, title, options, selected, onSelec
   )
 }
 
-function UnitSelector({ label, units, field, form, onChange }) {
-  return (
-    <View className="mb-4">
-      <Text className="text-primary text-sm font-medium mb-2">{label}</Text>
-      <View className="flex-row gap-2">
-        {units.map(unit => {
-          const isSelected = form[field] === unit.value
-          return (
-            <Pressable
-              key={unit.value}
-              onPress={() => onChange(field, unit.value)}
-              className="flex-1 py-2 px-3 rounded-lg items-center"
-              style={{
-                backgroundColor: isSelected ? colors.accentBg : colors.bgTertiary,
-                borderWidth: 1,
-                borderColor: isSelected ? colors.accent : colors.border,
-              }}
-            >
-              <Text className="text-sm" style={{ color: isSelected ? colors.accent : colors.textPrimary }}>
-                {unit.label}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
-    </View>
-  )
-}
-
 export default function ExerciseForm({
   initialData = null,
   onSubmit,
@@ -109,7 +71,6 @@ export default function ExerciseForm({
       setForm({
         name: initialData.name || '',
         measurement_type: initialData.measurement_type || MeasurementType.WEIGHT_REPS,
-        weight_unit: initialData.weight_unit || 'kg',
         instructions: initialData.instructions || '',
       })
       setSelectedMuscleGroupId(initialData.muscle_group_id || null)
@@ -181,10 +142,6 @@ export default function ExerciseForm({
           <ChevronDown size={16} color={colors.textSecondary} />
         </Pressable>
       </View>
-
-      {measurementTypeUsesWeight(form.measurement_type) && (
-        <UnitSelector label={t('exercise:weightUnit')} units={getWeightUnits(t)} field="weight_unit" form={form} onChange={handleChange} />
-      )}
 
       <View className="mb-4">
         <Text className="text-primary text-sm font-medium mb-2">

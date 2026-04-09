@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Clock, Calendar, Trash2, TrendingUp, Trophy, Share2, Pencil, Plus, X } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../hooks/useWorkout.js'
 import { useSessionPRs } from '../hooks/useWorkout.js'
+import { useUserExerciseOverride } from '../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader, BottomActions } from '../components/ui/index.js'
 import SetNotesView from '../components/Workout/SetNotesView.jsx'
 import WorkoutSummaryModal from '../components/Workout/WorkoutSummaryModal.jsx'
@@ -14,17 +15,19 @@ import {
   formatTime,
   getSensationColor,
   findPRSetNumbers,
-  buildWorkoutSummaryFromSession,
+  fetchWorkoutSummary,
   buildPRsByExerciseMap,
   recalculateExercisePRs,
   buildEmptySetData,
   getSetFieldsForMeasurementType,
   getExerciseName,
+  usePreference,
+  resolveWeightUnit,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
 import { colors } from '../lib/styles.js'
 
-function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete }) {
+function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
   const { t } = useTranslation()
   const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(exercise.measurement_type)
 
@@ -39,7 +42,6 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     sessionExerciseId,
     setNumber: set.set_number,
     weight: weight ? parseFloat(weight) : null,
-    weightUnit: set.weight_unit || 'kg',
     repsCompleted: reps ? parseInt(reps, 10) : null,
     timeSeconds: timeSeconds ? parseInt(timeSeconds, 10) : null,
     distanceMeters: distanceMeters ? parseFloat(distanceMeters) : null,
@@ -90,7 +92,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>{exercise.weight_unit || 'kg'}</span>
+          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>{weightUnit}</span>
         </div>
       )}
       {showWeight && showReps && <span style={{ color: colors.textSecondary }}>×</span>}
@@ -144,6 +146,114 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   )
 }
 
+function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, globalWeightUnit, isEditing, navigate, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
+  const { t } = useTranslation()
+  const { data: override } = useUserExerciseOverride(exercise.id)
+  const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
+  const prData = prsByExercise[exercise.id]
+  const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
+  const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
+
+  return (
+    <Card className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>
+            {getExerciseName(exercise)}
+          </h3>
+          {prData && (
+            <span
+              className="text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1"
+              style={{ backgroundColor: 'rgba(210, 153, 34, 0.15)', color: colors.warning }}
+            >
+              <Trophy size={10} /> PR
+            </span>
+          )}
+          {exercise.deleted_at && (
+            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dangerBg, color: colors.danger }}>
+              {t('exercise:deleted')}
+            </span>
+          )}
+        </div>
+        {!exercise.deleted_at && !isEditing && (
+          <button
+            onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
+            className="p-1.5 rounded hover:opacity-80"
+            style={{ backgroundColor: colors.bgTertiary }}
+            title={t('exercise:progression')}
+          >
+            <TrendingUp size={14} style={{ color: colors.purple }} />
+          </button>
+        )}
+      </div>
+      <div className="space-y-2">
+        {isEditing ? (
+          <>
+            {sets.map(set => (
+              <EditableSetRow
+                key={set.id}
+                set={set}
+                exercise={exercise}
+                sessionId={sessionId}
+                sessionExerciseId={sessionExerciseId}
+                isSetPR={prSetNums?.has(set.set_number)}
+                onUpsert={onUpsertSet}
+                onDelete={onDeleteSet}
+                weightUnit={weightUnit}
+              />
+            ))}
+            <button
+              onClick={() => onAddSet(sessionExerciseId, exercise, maxSetNumber)}
+              className="flex items-center justify-center gap-1 w-full py-2 rounded text-xs"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
+            >
+              <Plus size={14} /> {t('workout:set.addSet')}
+            </button>
+          </>
+        ) : (
+          sets.map(set => {
+            const isSetPR = prSetNums?.has(set.set_number)
+            return (
+            <div
+              key={set.id}
+              className="flex items-center gap-3 py-2 px-3 rounded"
+              style={{
+                backgroundColor: isSetPR ? 'rgba(210, 153, 34, 0.15)' : colors.bgTertiary,
+                borderLeft: isSetPR ? `3px solid ${colors.warning}` : '3px solid transparent',
+              }}
+            >
+              <span
+                className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold"
+                style={{ backgroundColor: isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
+              >
+                {set.set_number}
+              </span>
+              <div className="flex-1 text-sm">
+                {formatSetValue({ ...set, weight_unit: weightUnit })}
+              </div>
+              {set.set_type === 'dropset' && (
+                <span
+                  className="px-1.5 py-0.5 rounded text-xs font-bold"
+                  style={{ backgroundColor: colors.orangeBg, color: colors.orange }}
+                >
+                  D
+                </span>
+              )}
+              <NotesBadge
+                rir={set.rir_actual}
+                hasNotes={!!set.notes}
+                hasVideo={!!set.video_url}
+                onClick={(set.notes || set.video_url) ? () => onSelectSet(set) : null}
+              />
+            </div>
+            )
+          })
+        )}
+      </div>
+    </Card>
+  )
+}
+
 function SessionDetail() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
@@ -157,11 +267,12 @@ function SessionDetail() {
 
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showSummary, setShowSummary] = useState(false)
+  const [summaryData, setSummaryData] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
 
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
+  const { value: globalWeightUnit } = usePreference('weight_unit')
 
   const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRs), [sessionPRs])
 
@@ -333,108 +444,23 @@ function SessionDetail() {
 
       <h2 className="text-lg font-bold mb-3">{t('workout:session.exercises')}</h2>
       <div className="space-y-3">
-        {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => {
-          const prData = prsByExercise[exercise.id]
-          const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
-          const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
-          return (
-          <Card key={sessionExerciseId} className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div className="flex items-center gap-2">
-                <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>
-                  {getExerciseName(exercise)}
-                </h3>
-                {prData && (
-                  <span
-                    className="text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1"
-                    style={{ backgroundColor: 'rgba(210, 153, 34, 0.15)', color: colors.warning }}
-                  >
-                    <Trophy size={10} /> PR
-                  </span>
-                )}
-                {exercise.deleted_at && (
-                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dangerBg, color: colors.danger }}>
-                    {t('exercise:deleted')}
-                  </span>
-                )}
-              </div>
-              {!exercise.deleted_at && !isEditing && (
-                <button
-                  onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
-                  className="p-1.5 rounded hover:opacity-80"
-                  style={{ backgroundColor: colors.bgTertiary }}
-                  title="Ver progresión"
-                >
-                  <TrendingUp size={14} style={{ color: colors.purple }} />
-                </button>
-              )}
-            </div>
-            <div className="space-y-2">
-              {isEditing ? (
-                <>
-                  {sets.map(set => (
-                    <EditableSetRow
-                      key={set.id}
-                      set={set}
-                      exercise={exercise}
-                      sessionId={sessionId}
-                      sessionExerciseId={sessionExerciseId}
-                      isSetPR={prSetNums?.has(set.set_number)}
-                      onUpsert={handleUpsertSet}
-                      onDelete={handleDeleteSet}
-                    />
-                  ))}
-                  <button
-                    onClick={() => handleAddSet(sessionExerciseId, exercise, maxSetNumber)}
-                    className="flex items-center justify-center gap-1 w-full py-2 rounded text-xs"
-                    style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
-                  >
-                    <Plus size={14} /> {t('workout:set.addSet')}
-                  </button>
-                </>
-              ) : (
-                sets.map(set => {
-                  const isSetPR = prSetNums?.has(set.set_number)
-                  return (
-                  <div
-                    key={set.id}
-                    className="flex items-center gap-3 py-2 px-3 rounded"
-                    style={{
-                      backgroundColor: isSetPR ? 'rgba(210, 153, 34, 0.15)' : colors.bgTertiary,
-                      borderLeft: isSetPR ? `3px solid ${colors.warning}` : '3px solid transparent',
-                    }}
-                  >
-                    <span
-                      className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold"
-                      style={{ backgroundColor: isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
-                    >
-                      {set.set_number}
-                    </span>
-                    <div className="flex-1 text-sm">
-                      {formatSetValue(set)}
-                    </div>
-                    {set.set_type === 'dropset' && (
-                      <span
-                        className="px-1.5 py-0.5 rounded text-xs font-bold"
-                        style={{ backgroundColor: colors.orangeBg, color: colors.orange }}
-                      >
-                        D
-                      </span>
-                    )}
-                    <NotesBadge
-                      rir={set.rir_actual}
-                      hasNotes={!!set.notes}
-                      hasVideo={!!set.video_url}
-                      onClick={(set.notes || set.video_url) ? () => setSelectedSet(set) : null}
-                    />
-                  </div>
-                  )
-                })
-              )}
-            </div>
-          </Card>
-          )
-        })}
+        {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
+          <SessionExerciseBlock
+            key={sessionExerciseId}
+            sessionExerciseId={sessionExerciseId}
+            exercise={exercise}
+            sets={sets}
+            sessionId={sessionId}
+            prsByExercise={prsByExercise}
+            globalWeightUnit={globalWeightUnit}
+            isEditing={isEditing}
+            navigate={navigate}
+            onUpsertSet={handleUpsertSet}
+            onDeleteSet={handleDeleteSet}
+            onAddSet={handleAddSet}
+            onSelectSet={setSelectedSet}
+          />
+        ))}
       </div>
 
       {isEditing && (
@@ -452,10 +478,10 @@ function SessionDetail() {
         videoUrl={selectedSet?.video_url}
       />
 
-      {showSummary && (
+      {summaryData && (
         <WorkoutSummaryModal
-          summaryData={buildWorkoutSummaryFromSession(session, sessionPRs)}
-          onClose={() => setShowSummary(false)}
+          summaryData={summaryData}
+          onClose={() => setSummaryData(null)}
         />
       )}
 
@@ -486,7 +512,7 @@ function SessionDetail() {
         style={{ backgroundColor: colors.bgPrimary, borderTop: `1px solid ${colors.border}` }}
       >
         <button
-          onClick={() => setShowSummary(true)}
+          onClick={async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit }))}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
           style={{ backgroundColor: colors.accent, color: colors.white }}
         >

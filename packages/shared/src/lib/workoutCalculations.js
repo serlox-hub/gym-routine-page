@@ -47,7 +47,7 @@ export function calculateTotalVolume(sets) {
  * @param {string} measurementType - Tipo de medición
  * @returns {{value: number, unit: string}}
  */
-export function getBestValueFromSets(sets, measurementType) {
+export function getBestValueFromSets(sets, measurementType, { weightUnit = 'kg' } = {}) {
   if (!sets || sets.length === 0) return { value: 0, unit: '' }
 
   let bestValue = 0
@@ -57,7 +57,7 @@ export function getBestValueFromSets(sets, measurementType) {
     if (measurementType === MeasurementType.WEIGHT_REPS || measurementType === MeasurementType.WEIGHT_DISTANCE || measurementType === MeasurementType.WEIGHT_TIME) {
       if (set.weight && set.weight > bestValue) {
         bestValue = set.weight
-        unit = set.weight_unit || 'kg'
+        unit = weightUnit
       }
     } else if (measurementType === MeasurementType.TIME) {
       if (set.time_seconds && set.time_seconds > bestValue) {
@@ -120,7 +120,7 @@ export function getBest1RMFromSets(sets) {
  * @param {string} measurementType - Tipo de medición
  * @returns {Array<{date: string, best: number, volume: number, e1rm: number, unit: string}>}
  */
-export function transformSessionsToChartData(sessions, measurementType) {
+export function transformSessionsToChartData(sessions, measurementType, { weightUnit = 'kg' } = {}) {
   if (!sessions || sessions.length === 0) return []
 
   const sortedSessions = [...sessions].reverse()
@@ -129,7 +129,7 @@ export function transformSessionsToChartData(sessions, measurementType) {
     const date = new Date(session.date)
     const dateLabel = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 
-    const { value: bestValue, unit } = getBestValueFromSets(session.sets, measurementType)
+    const { value: bestValue, unit } = getBestValueFromSets(session.sets, measurementType, { weightUnit })
     const totalVolume = calculateTotalVolume(session.sets)
     const bestE1RM = getBest1RMFromSets(session.sets)
 

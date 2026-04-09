@@ -193,7 +193,6 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
         name_en: exercise.name_en || null,
         instructions: exercise.instructions || null,
         measurement_type: exercise.measurement_type || 'weight_reps',
-        weight_unit: exercise.weight_unit || null,
         muscle_group: exercise.muscle_group || null,
       },
       routine_exercise: null,

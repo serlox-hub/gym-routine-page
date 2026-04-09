@@ -94,11 +94,11 @@ describe('workoutCalculations', () => {
 
     it('obtiene mejor peso para weight_reps', () => {
       const sets = [
-        { weight: 80, weight_unit: 'kg' },
-        { weight: 100, weight_unit: 'kg' },
-        { weight: 90, weight_unit: 'kg' },
+        { weight: 80 },
+        { weight: 100 },
+        { weight: 90 },
       ]
-      expect(getBestValueFromSets(sets, 'weight_reps')).toEqual({ value: 100, unit: 'kg' })
+      expect(getBestValueFromSets(sets, 'weight_reps', { weightUnit: 'kg' })).toEqual({ value: 100, unit: 'kg' })
     })
 
     it('obtiene mejor tiempo para time', () => {
@@ -200,8 +200,8 @@ describe('workoutCalculations', () => {
         {
           date: '2024-01-15T10:00:00Z',
           sets: [
-            { weight: 100, reps_completed: 10, weight_unit: 'kg' },
-            { weight: 100, reps_completed: 8, weight_unit: 'kg' },
+            { weight: 100, reps_completed: 10 },
+            { weight: 100, reps_completed: 8 },
           ],
         },
       ]

@@ -26,7 +26,6 @@ export async function fetchSessionExercises(sessionId) {
         name_en,
         instructions,
         measurement_type,
-        weight_unit,
         muscle_group:muscle_groups!muscle_group_id (
           id,
           name:name_es,
@@ -94,8 +93,7 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
         id,
         name:name_es,
         name_en,
-        measurement_type,
-        weight_unit
+        measurement_type
       )
     `)
     .single()

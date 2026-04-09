@@ -6,7 +6,7 @@ import { NotesBadge } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import { MeasurementType, formatRelativeDate, formatSetValueByType } from '@gym/shared'
 
-function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, timeUnit = 's', distanceUnit = 'm' }) {
+function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm' }) {
   const { t } = useTranslation()
   const { data: previous, isLoading } = usePreviousWorkout(exerciseId)
   const [selectedSet, setSelectedSet] = useState(null)
@@ -69,7 +69,7 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
                 />
               </div>
               <div className="text-sm font-medium text-center" style={{ color: colors.textPrimary }}>
-                {formatSetValueByType(set, measurementType, { timeUnit, distanceUnit })}
+                {formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit })}
               </div>
             </div>
           )

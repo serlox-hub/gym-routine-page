@@ -11,7 +11,7 @@ const RIR_LABELS = {
   3: '3+',
 }
 
-function HistoryTable({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
+function HistoryTable({ sessions, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
   const { t } = useTranslation()
 
   if (!sessions || sessions.length === 0) {
@@ -49,7 +49,7 @@ function HistoryTable({ sessions, timeUnit = 's', distanceUnit = 'm', onSelectSe
                 >
                   {set.set_type === 'dropset' ? 'D' : set.set_number}
                 </span>
-                <span className="flex-1">{formatSetValue(set, { timeUnit, distanceUnit })}</span>
+                <span className="flex-1">{formatSetValue({ ...set, weight_unit: weightUnit }, { timeUnit, distanceUnit })}</span>
                 {(set.rir_actual !== null || set.notes || set.video_url) && (
                   <button
                     onClick={(e) => {

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   LineChart,
   Line,
@@ -17,70 +18,49 @@ const TABS = {
   E1RM: 'e1rm',
 }
 
-function ExerciseProgressChart({ sessions, chartData: chartDataProp, measurementType }) {
+function ExerciseProgressChart({ sessions, chartData: chartDataProp, measurementType, weightUnit = 'kg' }) {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
   const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
 
+  const TAB_CONFIG = {
+    [TABS.WEIGHT]: { dataKey: 'best', color: colors.accent, label: t('workout:summary.maxWeight') },
+    [TABS.VOLUME]: { dataKey: 'volume', color: colors.success, label: t('workout:summary.totalVolume') },
+    [TABS.E1RM]: { dataKey: 'e1rm', color: colors.purple, label: t('workout:summary.best1rm') },
+  }
+
   const chartData = useMemo(
-    () => chartDataProp || transformSessionsToChartData(sessions, measurementType),
-    [chartDataProp, sessions, measurementType]
+    () => chartDataProp || transformSessionsToChartData(sessions, measurementType, { weightUnit }),
+    [chartDataProp, sessions, measurementType, weightUnit]
   )
 
   if (chartData.length < 2) {
     return null
   }
 
-  const getChartConfig = () => {
-    switch (activeTab) {
-      case TABS.VOLUME:
-        return { dataKey: 'volume', color: colors.success, label: 'Volumen' }
-      case TABS.E1RM:
-        return { dataKey: 'e1rm', color: colors.purple, label: '1RM Est.' }
-      default:
-        return { dataKey: 'best', color: colors.accent, label: 'Peso máx' }
-    }
-  }
-
-  const { dataKey, color: lineColor, label } = getChartConfig()
+  const { dataKey, color: lineColor, label } = TAB_CONFIG[activeTab]
 
   return (
     <div className="mb-4">
       {showVolumeTabs ? (
         <div className="flex gap-2 mb-3">
-          <button
-            onClick={() => setActiveTab(TABS.WEIGHT)}
-            className="px-3 py-1 rounded text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: activeTab === TABS.WEIGHT ? colors.accentBg : colors.bgTertiary,
-              color: activeTab === TABS.WEIGHT ? colors.accent : colors.textSecondary,
-            }}
-          >
-            Peso máx
-          </button>
-          <button
-            onClick={() => setActiveTab(TABS.VOLUME)}
-            className="px-3 py-1 rounded text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: activeTab === TABS.VOLUME ? colors.successBg : colors.bgTertiary,
-              color: activeTab === TABS.VOLUME ? colors.success : colors.textSecondary,
-            }}
-          >
-            Volumen
-          </button>
-          <button
-            onClick={() => setActiveTab(TABS.E1RM)}
-            className="px-3 py-1 rounded text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: activeTab === TABS.E1RM ? colors.purpleBg : colors.bgTertiary,
-              color: activeTab === TABS.E1RM ? colors.purple : colors.textSecondary,
-            }}
-          >
-            1RM Est.
-          </button>
+          {Object.entries(TAB_CONFIG).map(([key, config]) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className="px-3 py-1 rounded text-xs font-medium transition-colors"
+              style={{
+                backgroundColor: activeTab === key ? `${config.color}20` : colors.bgTertiary,
+                color: activeTab === key ? config.color : colors.textSecondary,
+              }}
+            >
+              {config.label}
+            </button>
+          ))}
         </div>
       ) : (
         <h4 className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
-          Progresión
+          {t('exercise:progression')}
         </h4>
       )}
 

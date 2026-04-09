@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useExercise } from '../hooks/useExercises.js'
+import { useExercise, useUserExerciseOverride } from '../hooks/useExercises.js'
 import { useExerciseHistory, useExerciseChartData, useExerciseAllTimeStats } from '../hooks/useWorkout.js'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
 import ExerciseProgressChart from '../components/Workout/ExerciseProgressChart.jsx'
@@ -9,7 +9,9 @@ import {
   MeasurementType,
   formatSetValue,
   formatShortDate,
-  getExerciseName
+  getExerciseName,
+  usePreference,
+  resolveWeightUnit,
 } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
@@ -61,8 +63,10 @@ function ExerciseProgress() {
   const historySessions = historyData?.pages.flat() ?? []
   const loadingSessions = loadingChart || loadingStats || loadingHistory
 
+  const { data: override } = useUserExerciseOverride(exerciseId)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
   const measurementType = exercise?.measurement_type || MeasurementType.WEIGHT_REPS
-  const weightUnit = exercise?.weight_unit || 'kg'
+  const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
   const chartData = useMemo(
     () => transformChartDataFromStats(chartRawData, measurementType, weightUnit),
     [chartRawData, measurementType, weightUnit]
@@ -82,14 +86,14 @@ function ExerciseProgress() {
           {stats.best1rm > 0 && (
             <StatCard
               label={t('workout:summary.best1rm')}
-              value={`${stats.best1rm.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
+              value={`${stats.best1rm.toLocaleString()} ${weightUnit}`}
               color={colors.purple}
             />
           )}
           {stats.maxWeight > 0 && (
             <StatCard
               label={t('workout:summary.maxWeight')}
-              value={`${stats.maxWeight.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
+              value={`${stats.maxWeight.toLocaleString()} ${weightUnit}`}
               color={colors.accent}
             />
           )}
@@ -103,7 +107,7 @@ function ExerciseProgress() {
           {stats.totalVolume > 0 && (
             <StatCard
               label={t('workout:summary.totalVolume')}
-              value={`${stats.totalVolume.toLocaleString()} ${exercise.weight_unit || 'kg'}`}
+              value={`${stats.totalVolume.toLocaleString()} ${weightUnit}`}
               color={colors.warning}
             />
           )}
@@ -121,7 +125,7 @@ function ExerciseProgress() {
           <h2 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
             {t('exercise:progression')}
           </h2>
-          <ExerciseProgressChart chartData={chartData} measurementType={measurementType} />
+          <ExerciseProgressChart chartData={chartData} measurementType={measurementType} weightUnit={weightUnit} />
         </Card>
       ) : (
         <Card className="p-4 mb-6">
@@ -159,7 +163,7 @@ function ExerciseProgress() {
                     >
                       {set.set_number}
                     </span>
-                    <span className="flex-1">{formatSetValue(set)}</span>
+                    <span className="flex-1">{formatSetValue({ ...set, weight_unit: weightUnit })}</span>
                     {set.rir_actual !== null && (
                       <span
                         className="text-xs font-bold px-1 rounded"

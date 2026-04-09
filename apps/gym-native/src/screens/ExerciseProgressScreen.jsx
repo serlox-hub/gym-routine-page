@@ -1,14 +1,16 @@
 import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { useExercise } from '../hooks/useExercises'
+import { useExercise, useUserExerciseOverride } from '../hooks/useExercises'
 import { useExerciseHistory, useExerciseChartData, useExerciseAllTimeStats } from '../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui'
 import {
   MeasurementType,
   formatSetValue,
   formatShortDate,
-  getExerciseName
+  getExerciseName,
+  usePreference,
+  resolveWeightUnit,
 } from '@gym/shared'
 import { colors } from '../lib/styles'
 import { ExerciseProgressChart } from '../components/Charts'
@@ -24,7 +26,7 @@ function StatCard({ label, value, color }) {
   )
 }
 
-function SessionCard({ session }) {
+function SessionCard({ session, weightUnit = 'kg' }) {
   return (
     <Card className="p-4 mx-4">
       <Text className="text-xs text-secondary mb-2">
@@ -40,7 +42,7 @@ function SessionCard({ session }) {
               <Text className="text-xs font-bold text-secondary">{set.set_number}</Text>
             </View>
             <Text className="flex-1 text-sm text-primary">
-              {formatSetValue(set)}
+              {formatSetValue({ ...set, weight_unit: weightUnit })}
             </Text>
             {set.rir_actual !== null && (
               <View
@@ -66,6 +68,8 @@ export default function ExerciseProgressScreen({ route, navigation }) {
   const { isLoading: loadingChart } = useExerciseChartData(exerciseId)
   const { data: stats, isLoading: loadingStats } = useExerciseAllTimeStats(exerciseId)
   const { data: historyData, isLoading: loadingHistory } = useExerciseHistory(exerciseId)
+  const { data: override } = useUserExerciseOverride(exerciseId)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
   const sessions = historyData?.pages.flat() ?? []
   const loadingSessions = loadingChart || loadingStats || loadingHistory
 
@@ -74,7 +78,7 @@ export default function ExerciseProgressScreen({ route, navigation }) {
   if (!exercise) return <ErrorMessage message={t('exercise:notFound')} className="m-4" />
 
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
-  const weightUnit = exercise.weight_unit || 'kg'
+  const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
 
   const ListHeader = () => (
     <View className="px-4">
@@ -99,7 +103,7 @@ export default function ExerciseProgressScreen({ route, navigation }) {
 
       {sessions && sessions.length >= 2 ? (
         <Card className="p-4 mb-4">
-          <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
+          <ExerciseProgressChart sessions={sessions} measurementType={measurementType} weightUnit={weightUnit} />
         </Card>
       ) : (
         <Card className="p-4 mb-4">
@@ -120,7 +124,7 @@ export default function ExerciseProgressScreen({ route, navigation }) {
       <FlatList
         data={sessions || []}
         keyExtractor={(item) => String(item.sessionId)}
-        renderItem={({ item }) => <SessionCard session={item} />}
+        renderItem={({ item }) => <SessionCard session={item} weightUnit={weightUnit} />}
         ItemSeparatorComponent={() => <View className="h-3" />}
         ListHeaderComponent={ListHeader}
         contentContainerStyle={{ paddingBottom: 40 }}

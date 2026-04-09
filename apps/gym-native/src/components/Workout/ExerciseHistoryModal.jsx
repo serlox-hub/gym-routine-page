@@ -54,7 +54,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
       )}
 
       {sessions.length >= 2 ? (
-        <ExerciseProgressChart sessions={sessions} measurementType={measurementType} />
+        <ExerciseProgressChart sessions={sessions} measurementType={measurementType} weightUnit={weightUnit} />
       ) : (
         <Text className="text-secondary text-center py-4 text-sm">
           {t('exercise:progressMinSessions')}
@@ -64,7 +64,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit }) {
   )
 }
 
-function HistoryTab({ sessions, timeUnit, distanceUnit, onSelectSet, onSessionClick }) {
+function HistoryTab({ sessions, weightUnit, timeUnit, distanceUnit, onSelectSet, onSessionClick }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
@@ -93,7 +93,7 @@ function HistoryTab({ sessions, timeUnit, distanceUnit, onSelectSet, onSessionCl
                   <Text className="text-xs font-bold" style={{ color: set.set_type === 'dropset' ? colors.orange : colors.textSecondary }}>{set.set_type === 'dropset' ? 'D' : set.set_number}</Text>
                 </View>
                 <Text className="flex-1 text-sm text-primary">
-                  {formatSetValue(set, { timeUnit, distanceUnit })}
+                  {formatSetValue({ ...set, weight_unit: weightUnit }, { timeUnit, distanceUnit })}
                 </Text>
                 {(set.rir_actual !== null || set.notes || set.video_url) && (
                   <Pressable
@@ -235,6 +235,7 @@ export default function ExerciseHistoryModal({
           <View>
             <HistoryTab
               sessions={sessions}
+              weightUnit={weightUnit}
               timeUnit={timeUnit}
               distanceUnit={distanceUnit}
               onSelectSet={setSelectedSet}

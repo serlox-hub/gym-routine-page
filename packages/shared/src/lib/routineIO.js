@@ -8,7 +8,6 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
       "name_es": "Exercise name in Spanish",
       "measurement_type": "weight_reps",
       "muscle_group_name": "Pecho",
-      "weight_unit": "kg",
       "instructions": "Exercise instructions (optional)"
     }
   ],
@@ -72,7 +71,6 @@ EXERCISE FIELDS (in "exercises"):
   - "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps"
   - "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas"
   - "Abdominales", "Antebrazo"
-- weight_unit: "kg" or "lb" (optional, default "kg")
 - instructions: general exercise instructions (optional)
 
 BLOCK FIELDS (in "days[].blocks"):

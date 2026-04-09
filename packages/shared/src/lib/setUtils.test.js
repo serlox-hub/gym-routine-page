@@ -223,7 +223,6 @@ describe('setUtils', () => {
         exerciseId: 456,
         setNumber: 1,
         weight: 80,
-        weightUnit: 'kg',
         repsCompleted: 12,
         rirActual: 2,
         notes: 'Test note',
@@ -267,7 +266,6 @@ describe('setUtils', () => {
       )
       expect(result.distanceMeters).toBe(100)
       expect(result.weight).toBe(20)
-      expect(result.weightUnit).toBe('kg')
     })
 
     it('construye datos para weight_time', () => {
@@ -277,7 +275,6 @@ describe('setUtils', () => {
         baseInfo
       )
       expect(result.weight).toBe(10)
-      expect(result.weightUnit).toBe('kg')
       expect(result.timeSeconds).toBe(30)
     })
 

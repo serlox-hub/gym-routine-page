@@ -27,7 +27,6 @@ describe('upsertCompletedSet', () => {
       session_exercise_id: 'se-1',
       set_number: 1,
       weight: 100,
-      weight_unit: 'kg',
       reps_completed: 5,
     }
     const mock = makeQueryMock({ data: upsertedSet, error: null })
@@ -37,7 +36,6 @@ describe('upsertCompletedSet', () => {
       sessionExerciseId: 'se-1',
       setNumber: 1,
       weight: 100,
-      weightUnit: 'kg',
       repsCompleted: 5,
       timeSeconds: null,
       distanceMeters: null,

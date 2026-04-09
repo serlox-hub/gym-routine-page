@@ -58,7 +58,6 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
     ? {
       name: exercise.name,
       measurement_type: exercise.measurement_type,
-      weight_unit: exercise.weight_unit,
       instructions: getExerciseInstructions(exercise),
       muscle_group_id: exercise.muscle_group_id,
     }

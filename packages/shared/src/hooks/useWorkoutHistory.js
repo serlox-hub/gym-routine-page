@@ -137,7 +137,6 @@ export function usePreviousWorkout(exerciseId) {
           .map(set => ({
             setNumber: set.set_number,
             weight: set.weight,
-            weightUnit: set.weight_unit,
             reps: set.reps_completed,
             timeSeconds: set.time_seconds,
             distanceMeters: set.distance_meters,
