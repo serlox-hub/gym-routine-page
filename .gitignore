@@ -32,3 +32,4 @@ apps/web/.auth/
 # Planning
 .planning/
 backup/
+supabase/.temp
