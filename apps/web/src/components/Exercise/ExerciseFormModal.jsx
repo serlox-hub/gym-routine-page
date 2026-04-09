@@ -11,7 +11,7 @@ import { colors, inputStyle } from '../../lib/styles.js'
 export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose, onSaveSuccess }) {
   const { t } = useTranslation()
   const isEdit = !!exerciseId
-  const { data: exercise } = useExercise(exerciseId)
+  const { data: exercise, isLoading: loadingExercise } = useExercise(exerciseId)
   const createExercise = useCreateExercise()
   const updateExercise = useUpdateExercise()
 
@@ -25,7 +25,8 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
 
   const mutation = isEdit ? updateExercise : createExercise
 
-  // System exercises show info banner + personal notes panel
+  if (isEdit && loadingExercise) return null
+
   if (isEdit && exercise?.is_system) {
     return (
       <SystemExerciseDetailsPanel
