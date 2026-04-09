@@ -111,6 +111,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
       ) : (
         <ExerciseFormPanel
           exerciseId={exercise?.id}
+          isSystem={exercise?.is_system}
           onClose={onClose}
         />
       )}

@@ -26,6 +26,7 @@ export async function fetchSessionExercises(sessionId) {
         name_en,
         instructions,
         measurement_type,
+        is_system,
         muscle_group:muscle_groups!muscle_group_id (
           id,
           name:name_es,

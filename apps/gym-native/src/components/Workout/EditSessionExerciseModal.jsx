@@ -121,6 +121,7 @@ export default function EditSessionExerciseModal({
       ) : (
         <ExerciseFormPanel
           exerciseId={exerciseId}
+          isSystem={sessionExercise?.exercise?.is_system}
           onClose={onClose}
           onSaveSuccess={handleExerciseSaved}
         />

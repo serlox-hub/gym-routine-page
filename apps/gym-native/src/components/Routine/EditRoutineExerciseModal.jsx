@@ -126,6 +126,7 @@ export default function EditRoutineExerciseModal({
       ) : (
         <ExerciseFormPanel
           exerciseId={exercise?.id}
+          isSystem={exercise?.is_system}
           onClose={onClose}
         />
       )}

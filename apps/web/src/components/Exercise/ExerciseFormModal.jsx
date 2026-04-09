@@ -8,7 +8,7 @@ import ExerciseForm from './ExerciseForm.jsx'
 import SystemExerciseDetailsPanel from './SystemExerciseDetailsPanel.jsx'
 import { colors, inputStyle } from '../../lib/styles.js'
 
-export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose, onSaveSuccess }) {
+export function ExerciseFormPanel({ exerciseId = null, isSystem, initialName = '', onClose, onSaveSuccess }) {
   const { t } = useTranslation()
   const isEdit = !!exerciseId
   const { data: exercise, isLoading: loadingExercise } = useExercise(exerciseId)
@@ -24,10 +24,11 @@ export function ExerciseFormPanel({ exerciseId = null, initialName = '', onClose
   }, [override])
 
   const mutation = isEdit ? updateExercise : createExercise
+  const resolvedIsSystem = isSystem ?? exercise?.is_system
 
-  if (isEdit && loadingExercise) return null
+  if (isEdit && resolvedIsSystem === undefined && loadingExercise) return null
 
-  if (isEdit && exercise?.is_system) {
+  if (isEdit && resolvedIsSystem) {
     return (
       <SystemExerciseDetailsPanel
         exerciseId={exerciseId}
