@@ -305,6 +305,62 @@ export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to 
   return data
 }
 
+// ============================================
+// HOME SCREEN
+// ============================================
+
+export async function fetchLastCompletedSessionForRoutine(routineId) {
+  const { data, error } = await getClient()
+    .from('workout_sessions')
+    .select('routine_day_id')
+    .eq('status', 'completed')
+    .not('routine_day_id', 'is', null)
+    .order('completed_at', { ascending: false })
+    .limit(1)
+
+  if (error) throw error
+  if (!data || data.length === 0) return null
+
+  // Verificar que el routine_day pertenece a la rutina solicitada
+  const { data: dayData, error: dayError } = await getClient()
+    .from('routine_days')
+    .select('id, routine_id')
+    .eq('id', data[0].routine_day_id)
+    .eq('routine_id', routineId)
+    .maybeSingle()
+
+  if (dayError) throw dayError
+  return dayData ? data[0] : null
+}
+
+export async function fetchWeeklySessionStats(from, to) {
+  const { data, error } = await getClient()
+    .from('workout_sessions')
+    .select('duration_minutes')
+    .eq('status', 'completed')
+    .gte('completed_at', from)
+    .lte('completed_at', to)
+
+  if (error) throw error
+  return data || []
+}
+
+export async function fetchMonthlySessionCount(from, to) {
+  const { count, error } = await getClient()
+    .from('workout_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'completed')
+    .gte('completed_at', from)
+    .lte('completed_at', to)
+
+  if (error) throw error
+  return count || 0
+}
+
+// ============================================
+// EXERCISE HISTORY
+// ============================================
+
 export async function fetchPreviousWorkout(exerciseId) {
   const { data, error } = await getClient()
     .from('session_exercises')

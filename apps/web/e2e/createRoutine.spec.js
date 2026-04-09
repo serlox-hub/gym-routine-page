@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Crear rutina desde template', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/routines')
   })
 
   test('puede abrir modal de nueva rutina', async ({ page }) => {
@@ -126,7 +126,7 @@ test.describe('Editar rutina existente', () => {
   }
 
   test('puede añadir día a rutina en modo edición', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/routines')
 
     if (!await navigateToTestRoutine(page)) {
       test.skip()
@@ -158,7 +158,7 @@ test.describe('Editar rutina existente', () => {
   })
 
   test('puede expandir día y ver ejercicios', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/routines')
 
     if (!await navigateToTestRoutine(page)) {
       test.skip()

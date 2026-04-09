@@ -7,7 +7,7 @@ import { getClient } from './_client.js'
 export async function fetchCompletedSessionDates({ userId, from }) {
   const { data, error } = await getClient()
     .from('workout_sessions')
-    .select('id, completed_at')
+    .select('id, completed_at, duration_minutes')
     .eq('user_id', userId)
     .eq('status', 'completed')
     .gte('completed_at', from)

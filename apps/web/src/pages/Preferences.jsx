@@ -1,20 +1,56 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Check, X } from 'lucide-react'
-import { Card, LoadingSpinner, PlanBadge, PageHeader } from '../components/ui/index.js'
+import { Check, X, LogOut } from 'lucide-react'
+import { Card, LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui/index.js'
 import { PreferenceToggle, InstallAppSection, TrainingGoalSection } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
-import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
+import { useAuth, useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
+import useWorkoutStore from '../stores/workoutStore.js'
 import { colors } from '../lib/styles.js'
 
 function Preferences() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { t } = useTranslation()
+  const { logout } = useAuth()
   const { data: preferences, isLoading } = usePreferences()
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
   const isPremium = useIsPremium()
+  const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
+  const goalRef = useRef(null)
+  const [highlight, setHighlight] = useState(false)
+
+  useEffect(() => {
+    if (location.state?.scrollTo === 'training-goal' && !isLoading) {
+      setTimeout(() => {
+        goalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setHighlight(true)
+        setTimeout(() => setHighlight(false), 1800)
+      }, 300)
+    }
+  }, [location.state, isLoading])
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const handleLogoutClick = () => {
+    if (hasActiveSession) {
+      setShowLogoutConfirm(true)
+    } else {
+      handleLogout()
+    }
+  }
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      navigate('/')
+    } catch {
+      setIsLoggingOut(false)
+    }
+  }
 
   // Preferencia de sonido guardada en localStorage (funciona offline)
   const [timerSoundEnabled, setTimerSoundEnabled] = useState(() => {
@@ -215,19 +251,43 @@ function Preferences() {
           </div>
         </Card>
 
-        <TrainingGoalSection
-          preferences={preferences}
-          onChangeDays={(value) => handleChange('training_days_per_week', value)}
-          onToggleWidget={(value) => handleChange('show_training_goal', value)}
-          disabled={updatePreference.isPending}
-        />
+        <div ref={goalRef}>
+          <TrainingGoalSection
+            preferences={preferences}
+            onChangeDays={(value) => handleChange('training_days_per_week', value)}
+            onToggleWidget={(value) => handleChange('show_training_goal', value)}
+            disabled={updatePreference.isPending}
+            highlight={highlight}
+          />
+        </div>
 
         <InstallAppSection />
+
+        <button
+          onClick={handleLogoutClick}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium mt-2"
+          style={{ backgroundColor: colors.dangerBg, color: colors.danger }}
+        >
+          <LogOut size={16} />
+          {t('common:nav.logout')}
+        </button>
 
         <p className="text-center text-xs mt-2" style={{ color: colors.textMuted }}>
           v{__APP_VERSION__}
         </p>
       </main>
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title={t('auth:logout.activeSession')}
+        message={t('auth:logout.confirm')}
+        confirmText={t('common:nav.logout')}
+        cancelText={t('common:buttons.continue')}
+        loadingText={t('common:buttons.loading')}
+        isLoading={isLoggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   )
 }

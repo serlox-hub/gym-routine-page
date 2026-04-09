@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
-import { View, Text, Switch, ScrollView, Pressable } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, Switch, ScrollView, Pressable, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Check, X } from 'lucide-react-native'
+import { Check, X, LogOut } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
-import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
-import { LoadingSpinner, Card, PlanBadge, PageHeader } from '../components/ui'
+import { useAuth, useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
+import { LoadingSpinner, Card, PlanBadge, PageHeader, ConfirmModal } from '../components/ui'
+import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
 const appVersion = require('../../app.json').expo.version
 
@@ -59,13 +60,20 @@ function PremiumFeature({ title, description, enabled, comingSoon }) {
   )
 }
 
-function TrainingGoalCard({ preferences, onChangeDays, onToggleWidget, disabled }) {
+function TrainingGoalCard({ preferences, onChangeDays, onToggleWidget, disabled, highlightAnim }) {
   const { t } = useTranslation()
   const currentDays = preferences?.training_days_per_week
   const showWidget = preferences?.show_training_goal ?? true
 
+  const borderColor = highlightAnim
+    ? highlightAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [colors.border, colors.success],
+      })
+    : colors.border
+
   return (
-    <Card className="p-4">
+    <Animated.View style={{ backgroundColor: colors.bgSecondary, borderWidth: 2, borderColor, borderRadius: 12, padding: 16 }}>
       <Text className="text-sm font-medium text-secondary mb-3">
         {t('common:preferences.trainingGoalTitle')}
       </Text>
@@ -89,17 +97,6 @@ function TrainingGoalCard({ preferences, onChangeDays, onToggleWidget, disabled 
                 </Text>
               </Pressable>
             ))}
-            {currentDays && (
-              <Pressable
-                onPress={() => onChangeDays(null)}
-                disabled={disabled}
-                className="w-9 h-9 rounded-lg items-center justify-center"
-                style={{ backgroundColor: colors.bgTertiary }}
-                accessibilityLabel={t('common:preferences.removeGoal')}
-              >
-                <X size={14} color={colors.textSecondary} />
-              </Pressable>
-            )}
           </View>
         </View>
 
@@ -111,16 +108,56 @@ function TrainingGoalCard({ preferences, onChangeDays, onToggleWidget, disabled 
           disabled={disabled}
         />
       </View>
-    </Card>
+    </Animated.View>
   )
 }
 
-export default function PreferencesScreen({ navigation }) {
+export default function PreferencesScreen({ navigation, route }) {
   const { t } = useTranslation()
+  const { logout } = useAuth()
   const { data: preferences, isLoading } = usePreferences()
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
   const isPremium = useIsPremium()
+  const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const scrollRef = useRef(null)
+  const goalY = useRef(0)
+  const highlightAnim = useRef(new Animated.Value(0)).current
+  const scrollTo = route?.params?.scrollTo
+
+  useEffect(() => {
+    if (scrollTo === 'training-goal' && !isLoading) {
+      setTimeout(() => {
+        if (goalY.current > 0) {
+          scrollRef.current?.scrollTo({ y: goalY.current - 16, animated: true })
+        }
+        Animated.sequence([
+          Animated.timing(highlightAnim, { toValue: 1, duration: 300, useNativeDriver: false }),
+          Animated.delay(1000),
+          Animated.timing(highlightAnim, { toValue: 0, duration: 500, useNativeDriver: false }),
+        ]).start()
+      }, 400)
+    }
+  }, [scrollTo, isLoading, highlightAnim])
+
+  const handleLogoutClick = () => {
+    if (hasActiveSession) {
+      setShowLogoutConfirm(true)
+    } else {
+      handleLogout()
+    }
+  }
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await logout()
+    } catch {
+      setIsLoggingOut(false)
+    }
+  }
 
   const [timerSoundEnabled, setTimerSoundEnabled] = useState(true)
 
@@ -145,7 +182,7 @@ export default function PreferencesScreen({ navigation }) {
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <PageHeader title={t('common:preferences.title')} onBack={() => navigation.goBack()} />
 
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView ref={scrollRef} className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="gap-4">
           {/* Plan Section */}
           <Card className="p-4">
@@ -311,18 +348,44 @@ export default function PreferencesScreen({ navigation }) {
           </Card>
 
           {/* Training Goal */}
-          <TrainingGoalCard
-            preferences={preferences}
-            onChangeDays={(value) => handleChange('training_days_per_week', value)}
-            onToggleWidget={(value) => handleChange('show_training_goal', value)}
-            disabled={updatePreference.isPending}
-          />
+          <View onLayout={(e) => { goalY.current = e.nativeEvent.layout.y }}>
+            <TrainingGoalCard
+              preferences={preferences}
+              onChangeDays={(value) => handleChange('training_days_per_week', value)}
+              onToggleWidget={(value) => handleChange('show_training_goal', value)}
+              disabled={updatePreference.isPending}
+              highlightAnim={highlightAnim}
+            />
+          </View>
+
+          <Pressable
+            onPress={handleLogoutClick}
+            className="flex-row items-center justify-center gap-2 py-3 rounded-lg mt-2"
+            style={{ backgroundColor: colors.dangerBg }}
+          >
+            <LogOut size={16} color={colors.danger} />
+            <Text className="text-sm font-medium" style={{ color: colors.danger }}>
+              {t('common:nav.logout')}
+            </Text>
+          </Pressable>
         </View>
 
         <Text className="text-center text-xs mt-2 mb-4" style={{ color: colors.textSecondary }}>
           v{appVersion}
         </Text>
       </ScrollView>
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title={t('auth:logout.activeSession')}
+        message={t('auth:logout.activeSessionMessage')}
+        confirmText={t('common:nav.logout')}
+        cancelText={t('auth:logout.continueTraining')}
+        loadingText={t('auth:logout.loggingOut')}
+        isLoading={isLoggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </SafeAreaView>
   )
 }

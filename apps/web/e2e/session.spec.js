@@ -78,8 +78,8 @@ test.describe('Entrenamiento libre', () => {
   test('puede iniciar entrenamiento libre desde home', async ({ page }) => {
     await page.goto('/')
 
-    // Buscar botón de entrenamiento libre
-    const freeWorkoutButton = page.getByRole('button', { name: /libre|free/i })
+    // Buscar card de entrenamiento libre
+    const freeWorkoutButton = page.getByText(/libre|free workout/i).first()
 
     if (await freeWorkoutButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await freeWorkoutButton.click()
@@ -92,7 +92,7 @@ test.describe('Entrenamiento libre', () => {
   test('entrenamiento libre permite añadir ejercicios', async ({ page }) => {
     await page.goto('/')
 
-    const freeWorkoutButton = page.getByRole('button', { name: /libre|free/i })
+    const freeWorkoutButton = page.getByText(/libre|free workout/i).first()
 
     if (await freeWorkoutButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await freeWorkoutButton.click()
@@ -109,7 +109,7 @@ test.describe('Entrenamiento libre', () => {
   test('entrenamiento libre tiene botones de cancelar y finalizar', async ({ page }) => {
     await page.goto('/')
 
-    const freeWorkoutButton = page.getByRole('button', { name: /libre|free/i })
+    const freeWorkoutButton = page.getByText(/libre|free workout/i).first()
 
     if (await freeWorkoutButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await freeWorkoutButton.click()
@@ -125,7 +125,7 @@ test.describe('Entrenamiento libre', () => {
   test('puede cancelar entrenamiento libre', async ({ page }) => {
     await page.goto('/')
 
-    const freeWorkoutButton = page.getByRole('button', { name: /libre|free/i })
+    const freeWorkoutButton = page.getByText(/libre|free workout/i).first()
 
     if (await freeWorkoutButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await freeWorkoutButton.click()

@@ -1,16 +1,18 @@
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import PreferenceToggle from './PreferenceToggle.jsx'
 
-function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabled }) {
+function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabled, highlight }) {
   const { t } = useTranslation()
   const currentDays = preferences?.training_days_per_week
   const showWidget = preferences?.show_training_goal ?? true
 
   return (
-    <Card className="p-4">
+    <Card
+      className="p-4 transition-all duration-500"
+      style={{ border: highlight ? `2px solid ${colors.success}` : undefined }}
+    >
       <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
         {t('common:preferences.trainingGoalTitle')}
       </h2>
@@ -35,20 +37,6 @@ function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabl
                 {n}
               </button>
             ))}
-            {currentDays && (
-              <button
-                onClick={() => onChangeDays(null)}
-                disabled={disabled}
-                className="w-9 h-9 rounded-lg text-sm transition-colors flex items-center justify-center"
-                style={{
-                  backgroundColor: colors.bgTertiary,
-                  color: colors.textSecondary,
-                }}
-                title={t('common:preferences.removeGoal')}
-              >
-                <X size={14} />
-              </button>
-            )}
           </div>
         </div>
 
@@ -59,6 +47,7 @@ function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabl
           onChange={onToggleWidget}
           disabled={disabled}
         />
+
       </div>
     </Card>
   )

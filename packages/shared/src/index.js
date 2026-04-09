@@ -25,6 +25,7 @@ export * from './lib/volumeConstants.js'
 export * from './lib/routineVolumeUtils.js'
 export * from './lib/weightConversion.js'
 export * from './lib/workoutSummary.js'
+export * from './lib/homeUtils.js'
 
 // API layer
 export * from './api/exerciseApi.js'
@@ -69,6 +70,7 @@ export * from './hooks/useSession.js'
 export * from './hooks/useSessionExercises.js'
 export { useTimerEngine, useRestTimer } from './hooks/useRestTimer.js'
 export * from './hooks/useTrainingGoals.js'
+export * from './hooks/useHomeScreen.js'
 
 // Store injection for hooks
 export { initStores } from './hooks/_stores.js'

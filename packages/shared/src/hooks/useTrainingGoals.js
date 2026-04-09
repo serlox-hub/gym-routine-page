@@ -45,7 +45,7 @@ export function useTrainingGoal() {
     staleTime: 1000 * 60 * 5,
   })
 
-  if (!daysPerCycle || showWidget === false) {
+  if (!daysPerCycle) {
     return { isConfigured: false, showWidget: showWidget !== false, isLoading: false }
   }
 
@@ -60,7 +60,7 @@ export function useTrainingGoal() {
 
   return {
     isConfigured: true,
-    showWidget: true,
+    showWidget: showWidget !== false,
     isLoading,
     daysPerCycle,
     streak,

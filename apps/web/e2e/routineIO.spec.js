@@ -4,7 +4,7 @@ import fs from 'fs'
 
 test.describe('Import/Export de rutinas', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/routines')
   })
 
   test('puede exportar una rutina existente', async ({ page }) => {

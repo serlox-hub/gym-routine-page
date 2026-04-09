@@ -9,12 +9,12 @@ test.describe('Sesión de entrenamiento', () => {
     // Verificar que estamos en la home (no en login)
     await expect(page).not.toHaveURL(/\/login/)
 
-    // Debería mostrar contenido de la app
-    await expect(page.getByText(/rutina|entrenar/i).first()).toBeVisible({ timeout: 10000 })
+    // Debería mostrar contenido de la app (greeting, workout section)
+    await expect(page.getByText(/workout|entrenamiento/i).first()).toBeVisible({ timeout: 10000 })
   })
 
   test('puede navegar a una rutina', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/routines')
 
     // Buscar si hay rutinas disponibles
     const routineLink = page.locator('a[href*="/routine/"]').first()
@@ -37,12 +37,12 @@ test.describe('Sesión de entrenamiento', () => {
 // Tests de workout cuando hay una sesión activa
 test.describe('Flujo de entrenamiento', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/routines')
   })
 
   test('puede iniciar sesión de entrenamiento si hay rutinas', async ({ page }) => {
-    // Buscar botón de entrenar
-    const trainButton = page.getByRole('button', { name: /entrenar|comenzar/i }).first()
+    // Buscar primera rutina
+    const trainButton = page.locator('[href*="/routine/"]').first()
 
     if (await trainButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await trainButton.click()

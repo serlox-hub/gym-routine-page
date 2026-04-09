@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Completar serie en workout', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/routines')
   })
 
   // Helper para navegar a workout
