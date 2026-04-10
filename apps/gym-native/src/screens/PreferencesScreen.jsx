@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, Switch, ScrollView, Pressable, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Check, X, LogOut } from 'lucide-react-native'
+import { Check, X, LogOut, Users } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
-import { useAuth, useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
+import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
 import { LoadingSpinner, Card, PlanBadge, PageHeader, ConfirmModal } from '../components/ui'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
@@ -119,6 +119,7 @@ export default function PreferencesScreen({ navigation, route }) {
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
   const isPremium = useIsPremium()
+  const { isAdmin } = useIsAdmin()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -357,6 +358,19 @@ export default function PreferencesScreen({ navigation, route }) {
               highlightAnim={highlightAnim}
             />
           </View>
+
+          {isAdmin && (
+            <Pressable
+              onPress={() => navigation.navigate('AdminUsers')}
+              className="flex-row items-center justify-center gap-2 py-3 rounded-lg mt-2"
+              style={{ backgroundColor: colors.bgTertiary }}
+            >
+              <Users size={16} color={colors.textSecondary} />
+              <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                {t('common:nav.admin')}
+              </Text>
+            </Pressable>
+          )}
 
           <Pressable
             onPress={handleLogoutClick}

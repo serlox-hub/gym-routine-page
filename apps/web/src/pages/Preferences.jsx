@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Check, X, LogOut } from 'lucide-react'
+import { Check, X, LogOut, Users } from 'lucide-react'
 import { Card, LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui/index.js'
 import { PreferenceToggle, InstallAppSection, TrainingGoalSection } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
-import { useAuth, useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
+import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { colors } from '../lib/styles.js'
 
@@ -18,6 +18,7 @@ function Preferences() {
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
   const isPremium = useIsPremium()
+  const { isAdmin } = useIsAdmin()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const goalRef = useRef(null)
   const [highlight, setHighlight] = useState(false)
@@ -262,6 +263,17 @@ function Preferences() {
         </div>
 
         <InstallAppSection />
+
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/admin/users')}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium mt-2"
+            style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+          >
+            <Users size={16} />
+            {t('common:nav.admin')}
+          </button>
+        )}
 
         <button
           onClick={handleLogoutClick}
