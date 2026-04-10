@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Info, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
+import { Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
 import { Card, DropdownMenu, ReorderModal } from '../ui'
 import { colors } from '../../lib/styles'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
@@ -16,7 +16,7 @@ export default function ExerciseCard({
   onDuplicate,
   onMoveToDay,
   onReplace,
-  onPress,
+  onPress: _onPress,
   onReorderToPosition,
   currentIndex = 0,
   totalExercises = 1,
@@ -42,22 +42,41 @@ export default function ExerciseCard({
     { icon: Trash2, label: t('common:buttons.delete'), onPress: onDelete, danger: true },
   ].filter(Boolean)
 
+  // Vista mode — card con fondo y borde muscular
+  if (!isEditing) {
+    return (
+      <View
+        style={{
+          backgroundColor: colors.bgTertiary,
+          borderRadius: 8,
+          paddingVertical: 10,
+          paddingHorizontal: 14,
+          ...rnBorderStyle,
+        }}
+      >
+        <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
+          {exercise?.name}
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
+          {rir !== null && rir !== undefined && (
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>RIR {rir}</Text>
+          )}
+          {rest_seconds > 0 && (
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</Text>
+          )}
+        </View>
+      </View>
+    )
+  }
+
   const content = (
     <>
       <View className="flex-row items-center justify-between gap-2">
         <Text className="text-primary font-medium text-sm flex-1" numberOfLines={1}>
           {exercise?.name}
         </Text>
-        {isEditing ? (
-          <DropdownMenu items={menuItems} triggerSize={14} />
-        ) : (
-          <Pressable
-            onPress={onPress}
-            className="p-1 rounded bg-surface-block active:opacity-70"
-          >
-            <Info size={14} color={colors.textSecondary} />
-          </Pressable>
-        )}
+        <DropdownMenu items={menuItems} triggerSize={14} />
       </View>
       <View className="flex-row flex-wrap gap-2 mt-1">
         <Text className="text-secondary text-xs">{series}×{reps}</Text>

@@ -168,7 +168,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
       )}
 
       {isExpanded && (
-        <div className="mt-3 pt-3 border-t space-y-4" style={{ borderColor: colors.border }}>
+        <div className="mt-3 space-y-4">
           {loadingBlocks ? (
             <LoadingSpinner />
           ) : isEditing ? (

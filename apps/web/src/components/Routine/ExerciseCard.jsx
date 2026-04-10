@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Info, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
+import { Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
@@ -52,30 +52,39 @@ function ExerciseCard({
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ].filter(Boolean)
 
+  if (!isEditing) {
+    return (
+      <div
+        className="rounded-lg"
+        style={{
+          backgroundColor: colors.bgTertiary,
+          padding: '10px 14px',
+          ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
+        }}
+        onClick={onClick}
+      >
+        <h4 className="font-semibold truncate" style={{ color: colors.textPrimary, fontSize: 14 }}>
+          {getExerciseName(exercise)}
+        </h4>
+        <div className="flex flex-wrap gap-3 mt-1">
+          <span style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</span>
+          {rir !== null && rir !== undefined && <span style={{ color: colors.textSecondary, fontSize: 12 }}>RIR {rir}</span>}
+          {rest_seconds > 0 && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</span>}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <Wrapper {...wrapperProps}>
       <div className="flex items-center justify-between gap-2">
         <h4 className="font-medium text-sm truncate flex-1 min-w-0">{getExerciseName(exercise)}</h4>
-        {isEditing ? (
-          isReordering ? (
-            <div className="p-1.5" style={{ color: colors.textSecondary }}>
-              <Loader2 size={14} className="animate-spin" />
-            </div>
-          ) : (
-            <DropdownMenu items={menuItems} triggerSize={14} />
-          )
+        {isReordering ? (
+          <div className="p-1.5" style={{ color: colors.textSecondary }}>
+            <Loader2 size={14} className="animate-spin" />
+          </div>
         ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowHistory(true)
-            }}
-            className="p-1 rounded hover:opacity-80 flex-shrink-0"
-            style={{ backgroundColor: colors.bgTertiary }}
-            title="Info del ejercicio"
-          >
-            <Info size={14} style={{ color: colors.textSecondary }} />
-          </button>
+          <DropdownMenu items={menuItems} triggerSize={14} />
         )}
       </div>
       <div className="flex flex-wrap gap-2 mt-1">

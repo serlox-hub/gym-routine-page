@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Flame, Link2, Dumbbell, Plus } from 'lucide-react-native'
+import { Link2, Plus } from 'lucide-react-native'
 import ExerciseCard from './ExerciseCard'
 import { Card } from '../ui'
 import { colors } from '../../lib/styles'
@@ -28,25 +28,12 @@ export default function BlockSection({
 
   return (
     <View className="gap-2">
-      <View
-        className="flex-row items-center gap-1.5 px-2 py-1 rounded"
-        style={{
-          backgroundColor: colors.bgTertiary,
-          borderLeftWidth: 2,
-          borderLeftColor: accentColor,
-        }}
-      >
-        {isWarmup ? (
-          <Flame size={12} color={accentColor} />
-        ) : (
-          <Dumbbell size={12} color={accentColor} />
-        )}
-        <Text className="text-xs font-medium uppercase" style={{ color: accentColor }}>
-          {translateBlockName(name)}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Text style={{ color: colors.success, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          {translateBlockName(name)} ({routine_exercises.length})
         </Text>
-        <Text className="text-secondary text-xs">({routine_exercises.length})</Text>
         {duration_min && (
-          <Text className="text-secondary text-xs ml-auto">~{duration_min} min</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, marginLeft: 'auto' }}>~{duration_min} min</Text>
         )}
       </View>
 

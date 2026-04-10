@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Flame, Link2, Dumbbell, Plus } from 'lucide-react'
+import { Link2, Plus } from 'lucide-react'
 import ExerciseCard from './ExerciseCard.jsx'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
@@ -27,26 +27,12 @@ function BlockSection({
 
   return (
     <section className="space-y-2">
-      <div
-        className="flex items-center gap-1.5 px-2 py-1 rounded border-l-2"
-        style={{
-          backgroundColor: colors.bgTertiary,
-          borderLeftColor: isWarmup ? colors.warning : colors.purple,
-        }}
-      >
-        {isWarmup ? (
-          <Flame size={12} style={{ color: colors.warning }} />
-        ) : (
-          <Dumbbell size={12} style={{ color: colors.purple }} />
-        )}
+      <div className="flex items-center gap-1.5">
         <span
-          className="text-xs font-medium uppercase"
-          style={{ color: isWarmup ? colors.warning : colors.purple }}
+          className="text-xs font-semibold uppercase tracking-wide"
+          style={{ color: colors.success }}
         >
-          {translateBlockName(name)}
-        </span>
-        <span className="text-xs" style={{ color: colors.textSecondary }}>
-          ({routine_exercises.length})
+          {translateBlockName(name)} ({routine_exercises.length})
         </span>
         {duration_min && (
           <span className="text-xs ml-auto" style={{ color: colors.textSecondary }}>

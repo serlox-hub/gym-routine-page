@@ -158,7 +158,7 @@ export default function DayCard({
       )}
 
       {isExpanded && (
-        <View className="mt-3 pt-3 border-t border-border gap-4">
+        <View style={{ marginTop: 12, gap: 16 }}>
           {loadingBlocks ? (
             <LoadingSpinner fullScreen={false} />
           ) : isEditing ? (
