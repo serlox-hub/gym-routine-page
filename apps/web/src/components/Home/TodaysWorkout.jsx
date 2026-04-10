@@ -44,33 +44,38 @@ function TodaysWorkout() {
               padding: 16,
             }}
           >
-            <div className="flex items-center gap-1.5 mb-2">
-              <Pin size={12} style={{ color: colors.success }} />
-              <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>
-                {t('common:home.pinnedToHome')}
-              </span>
-            </div>
-            <h3 style={{ color: colors.textPrimary, fontSize: design.cardTitleSize + 1, fontWeight: 700 }}>
-              {pinnedRoutine.name}
-            </h3>
-            {pinnedRoutine.description && (
-              <p style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 4, lineHeight: 1.4 }}>
-                {pinnedRoutine.description}
-              </p>
-            )}
-            <div className="flex items-center gap-2 mt-3">
-              {pinnedRoutine.days_count > 0 && (
-                <span className="inline-flex items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '4px 8px', color: colors.textSecondary, fontSize: 10, fontWeight: 500 }}>
-                  <Repeat size={11} />
-                  {t('common:home.nDays', { count: pinnedRoutine.days_count })}
-                </span>
-              )}
-              {pinnedRoutine.exercises_count > 0 && (
-                <span className="inline-flex items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '4px 8px', color: colors.textSecondary, fontSize: 10, fontWeight: 500 }}>
-                  <Layers size={11} />
-                  {t('common:home.nExercises', { count: pinnedRoutine.exercises_count })}
-                </span>
-              )}
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Pin size={12} style={{ color: colors.success }} />
+                  <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>
+                    {t('common:home.pinnedToHome')}
+                  </span>
+                </div>
+                <h3 style={{ color: colors.textPrimary, fontSize: design.cardTitleSize + 1, fontWeight: 700 }}>
+                  {pinnedRoutine.name}
+                </h3>
+                {pinnedRoutine.description && (
+                  <p style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 4, lineHeight: 1.4 }}>
+                    {pinnedRoutine.description}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mt-3">
+                  {pinnedRoutine.days_count > 0 && (
+                    <span className="inline-flex items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '4px 8px', color: colors.textSecondary, fontSize: 10, fontWeight: 500 }}>
+                      <Repeat size={11} />
+                      {t('common:home.nDays', { count: pinnedRoutine.days_count })}
+                    </span>
+                  )}
+                  {pinnedRoutine.exercises_count > 0 && (
+                    <span className="inline-flex items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '4px 8px', color: colors.textSecondary, fontSize: 10, fontWeight: 500 }}>
+                      <Layers size={11} />
+                      {t('common:home.nExercises', { count: pinnedRoutine.exercises_count })}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <ChevronRight size={18} style={{ color: colors.textMuted, marginTop: 24 }} />
             </div>
           </div>
 

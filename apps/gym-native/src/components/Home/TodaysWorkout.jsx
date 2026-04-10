@@ -42,37 +42,42 @@ function TodaysWorkout({ navigation }) {
             marginBottom: 10,
           }}
         >
-          <View className="flex-row items-center gap-1.5 mb-2">
-            <Pin size={12} color={colors.success} />
-            <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
-              {t('common:home.pinnedToHome')}
-            </Text>
-          </View>
-          <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize + 1, fontWeight: '700' }}>
-            {pinnedRoutine.name}
-          </Text>
-          {pinnedRoutine.description && (
-            <Text style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 4, lineHeight: 17 }}>
-              {pinnedRoutine.description}
-            </Text>
-          )}
-          <View className="flex-row items-center gap-2 mt-3">
-            {pinnedRoutine.days_count > 0 && (
-              <View className="flex-row items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 }}>
-                <Repeat size={11} color={colors.textSecondary} />
-                <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '500' }}>
-                  {t('common:home.nDays', { count: pinnedRoutine.days_count })}
+          <View className="flex-row items-start gap-3">
+            <View className="flex-1">
+              <View className="flex-row items-center gap-1.5 mb-2">
+                <Pin size={12} color={colors.success} />
+                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
+                  {t('common:home.pinnedToHome')}
                 </Text>
               </View>
-            )}
-            {pinnedRoutine.exercises_count > 0 && (
-              <View className="flex-row items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 }}>
-                <Layers size={11} color={colors.textSecondary} />
-                <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '500' }}>
-                  {t('common:home.nExercises', { count: pinnedRoutine.exercises_count })}
+              <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize + 1, fontWeight: '700' }}>
+                {pinnedRoutine.name}
+              </Text>
+              {pinnedRoutine.description && (
+                <Text style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 4, lineHeight: 17 }}>
+                  {pinnedRoutine.description}
                 </Text>
+              )}
+              <View className="flex-row items-center gap-2 mt-3">
+                {pinnedRoutine.days_count > 0 && (
+                  <View className="flex-row items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 }}>
+                    <Repeat size={11} color={colors.textSecondary} />
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '500' }}>
+                      {t('common:home.nDays', { count: pinnedRoutine.days_count })}
+                    </Text>
+                  </View>
+                )}
+                {pinnedRoutine.exercises_count > 0 && (
+                  <View className="flex-row items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 }}>
+                    <Layers size={11} color={colors.textSecondary} />
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '500' }}>
+                      {t('common:home.nExercises', { count: pinnedRoutine.exercises_count })}
+                    </Text>
+                  </View>
+                )}
               </View>
-            )}
+            </View>
+            <ChevronRight size={18} color={colors.textMuted} style={{ marginTop: 24 }} />
           </View>
         </Pressable>
 
