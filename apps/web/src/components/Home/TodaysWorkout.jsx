@@ -43,6 +43,8 @@ function TodaysWorkout() {
               borderRadius: 14,
               padding: 16,
             }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bgAlt}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bgSecondary}
           >
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
@@ -142,6 +144,8 @@ function TodaysWorkout() {
             opacity: isRoutineSessionActive ? 0.5 : 1,
             cursor: isRoutineSessionActive ? 'not-allowed' : 'pointer',
           }}
+          onMouseEnter={!isRoutineSessionActive ? (e) => e.currentTarget.style.backgroundColor = colors.bgAlt : undefined}
+          onMouseLeave={!isRoutineSessionActive ? (e) => e.currentTarget.style.backgroundColor = colors.bgSecondary : undefined}
         >
           <Plus size={16} style={{ color: colors.success }} />
           <span style={{ color: colors.textPrimary, fontSize: design.cardTitleSize, fontWeight: 600 }}>

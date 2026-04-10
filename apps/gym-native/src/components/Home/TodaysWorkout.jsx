@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Plus, ChevronRight, Pin, Repeat, Layers } from 'lucide-react-native'
@@ -17,6 +18,8 @@ function TodaysWorkout({ navigation }) {
 
   const pinnedRoutine = routines?.find(r => r.is_favorite)
   const hasRoutines = routines && routines.length > 0
+  const [pinnedPressed, setPinnedPressed] = useState(false)
+  const [freePressed, setFreePressed] = useState(false)
 
   const handleStartFreeWorkout = () => {
     useWorkoutStore.getState().showWorkout()
@@ -33,8 +36,10 @@ function TodaysWorkout({ navigation }) {
       {pinnedRoutine ? (
         <Pressable
           onPress={() => navigation.navigate('RoutineDetail', { routineId: pinnedRoutine.id })}
+          onPressIn={() => setPinnedPressed(true)}
+          onPressOut={() => setPinnedPressed(false)}
           style={{
-            backgroundColor: colors.bgSecondary,
+            backgroundColor: pinnedPressed ? colors.bgAlt : colors.bgSecondary,
             borderWidth: 1,
             borderColor: colors.border,
             borderRadius: 14,
@@ -138,8 +143,10 @@ function TodaysWorkout({ navigation }) {
                 : undefined
         }
         className="flex-row items-center justify-center gap-2"
+        onPressIn={() => setFreePressed(true)}
+        onPressOut={() => setFreePressed(false)}
         style={{
-          backgroundColor: colors.bgSecondary,
+          backgroundColor: freePressed && !isRoutineSessionActive ? colors.bgAlt : colors.bgSecondary,
           borderWidth: 1,
           borderColor: colors.border,
           borderRadius: 14,
