@@ -7,7 +7,7 @@ import { useWorkoutHistory, formatTime } from '@gym/shared'
 import { LoadingSpinner, ErrorMessage } from '../components/ui'
 import { MonthlyCalendar } from '../components/History'
 import SessionInlineDetail from '../components/History/SessionInlineDetail'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 export default function HistoryScreen({ navigation }) {
   const { t } = useTranslation()
@@ -41,7 +41,7 @@ export default function HistoryScreen({ navigation }) {
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScrollView
         className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: design.tabContentPaddingBottom }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
         keyboardShouldPersistTaps="handled"
       >

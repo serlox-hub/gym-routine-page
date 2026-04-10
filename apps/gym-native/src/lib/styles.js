@@ -37,6 +37,9 @@ export const design = {
   // Animation
   slideAnimDuration: 150,
   swipeThreshold: 60,
+
+  // Tab bar
+  tabContentPaddingBottom: 100,
 }
 
 export const colors = {

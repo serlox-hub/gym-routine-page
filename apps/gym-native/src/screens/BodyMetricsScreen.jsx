@@ -4,11 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, PageHeader, Button, ActiveSessionBanner } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, Button } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'
 import { BodyWeightChart } from '../components/Charts'
 import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate, formatTime } from '@gym/shared'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 function WeightSection() {
   const { t } = useTranslation()
@@ -156,7 +156,7 @@ function WeightSection() {
         renderItem={renderRecord}
         ItemSeparatorComponent={() => <View className="h-2" />}
         ListHeaderComponent={ListHeader}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: design.tabContentPaddingBottom }}
         ListEmptyComponent={
           <Text className="text-secondary text-center py-8">
             {t('body:weight.noRecords')}
@@ -184,17 +184,15 @@ function WeightSection() {
   )
 }
 
-export default function BodyMetricsScreen({ navigation }) {
+export default function BodyMetricsScreen() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('peso')
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title={t('body:title')} onBack={() => navigation.goBack()} />
-
       {/* Tabs */}
       <View
-        className="flex-row mx-4 mb-4 p-1 rounded-lg"
+        className="flex-row mx-4 mt-2 mb-4 p-1 rounded-lg"
         style={{ backgroundColor: colors.bgTertiary }}
       >
         <Pressable
@@ -230,7 +228,6 @@ export default function BodyMetricsScreen({ navigation }) {
       {activeTab === 'peso' && <WeightSection />}
       {activeTab === 'medidas' && <MeasurementSection />}
 
-      <ActiveSessionBanner />
     </SafeAreaView>
   )
 }

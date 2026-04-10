@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight.js'
-import { LoadingSpinner, ErrorMessage, Card, PageHeader, Button } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, Button } from '../components/ui/index.js'
 import { BodyWeightChart, BodyWeightModal, MeasurementSection } from '../components/BodyWeight/index.js'
 import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate, formatTime } from '@gym/shared'
 import { colors } from '../lib/styles.js'
@@ -13,8 +13,6 @@ function BodyMetrics() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
-      <PageHeader title={t('body:weight.title')} backTo="/" />
-
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-lg mb-6" style={{ backgroundColor: colors.bgTertiary }}>
         <button
@@ -93,7 +91,7 @@ function WeightSection() {
   }
 
   const TrendIcon = trend === 'increasing' ? TrendingUp : trend === 'decreasing' ? TrendingDown : Minus
-  const trendColor = trend === 'increasing' ? colors.error : trend === 'decreasing' ? colors.success : colors.textSecondary
+  const trendColor = trend === 'increasing' ? colors.danger : trend === 'decreasing' ? colors.success : colors.textSecondary
 
   return (
     <>
@@ -143,7 +141,6 @@ function WeightSection() {
           className="w-full flex items-center justify-center gap-2"
           onClick={() => setShowModal(true)}
         >
-          <Plus size={18} />
           {t('body:weight.record')}
         </Button>
       </div>
@@ -185,7 +182,7 @@ function WeightSection() {
                   <button
                     onClick={() => handleDelete(record.id)}
                     className="p-2 rounded hover:opacity-80 disabled:opacity-50"
-                    style={{ color: colors.error }}
+                    style={{ color: colors.danger }}
                     disabled={deleteMutation.isPending}
                   >
                     <Trash2 size={16} />

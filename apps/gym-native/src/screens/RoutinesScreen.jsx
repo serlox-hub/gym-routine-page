@@ -6,7 +6,7 @@ import { Plus, Pin } from 'lucide-react-native'
 import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines'
 import { LoadingSpinner, ErrorMessage, Card, TruncatedText } from '../components/ui'
 import { NewRoutineFlow } from '../components/Home'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 function RoutineItem({ routine, navigation, setFavoriteMutation }) {
   const { t } = useTranslation()
@@ -98,7 +98,7 @@ export default function RoutinesScreen({ navigation, route }) {
           />
         )}
         ListHeaderComponent={renderHeader}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: design.tabContentPaddingBottom }}
         refreshing={isRefetching}
         onRefresh={refetch}
       />
