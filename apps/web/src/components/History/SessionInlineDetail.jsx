@@ -1,13 +1,12 @@
 import { useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Clock, Calendar, Trash2, TrendingUp, Trophy, Share2, Pencil, Plus, X } from 'lucide-react'
-import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../hooks/useWorkout.js'
-import { useSessionPRs } from '../hooks/useWorkout.js'
-import { useUserExerciseOverride } from '../hooks/useExercises.js'
-import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader, BottomActions } from '../components/ui/index.js'
-import SetNotesView from '../components/Workout/SetNotesView.jsx'
-import WorkoutSummaryModal from '../components/Workout/WorkoutSummaryModal.jsx'
+import { Trash2, TrendingUp, Trophy, Share2, Pencil, Plus, X } from 'lucide-react'
+import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs } from '../../hooks/useWorkout.js'
+import { useUserExerciseOverride } from '../../hooks/useExercises.js'
+import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, DropdownMenu } from '../ui/index.js'
+import SetNotesView from '../Workout/SetNotesView.jsx'
+import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal.jsx'
 import {
   SENSATION_LABELS,
   formatFullDate,
@@ -21,11 +20,13 @@ import {
   buildEmptySetData,
   getSetFieldsForMeasurementType,
   getExerciseName,
+  getMuscleGroupName,
+  getMuscleGroupColor,
   usePreference,
   resolveWeightUnit,
 } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles.js'
-import { colors } from '../lib/styles.js'
+import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
+import { colors } from '../../lib/styles.js'
 
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
   const { t } = useTranslation()
@@ -254,8 +255,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   )
 }
 
-function SessionDetail() {
-  const { sessionId } = useParams()
+function SessionInlineDetail({ sessionId }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
@@ -269,16 +269,23 @@ function SessionDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [summaryData, setSummaryData] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
-
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
   const { value: globalWeightUnit } = usePreference('weight_unit')
 
   const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRs), [sessionPRs])
 
+  const muscleGroups = useMemo(() => {
+    if (!session?.exercises) return []
+    const seen = new Set()
+    return session.exercises
+      .map(e => e.exercise?.muscle_group)
+      .filter(mg => mg && !seen.has(mg.name) && seen.add(mg.name))
+  }, [session])
+
   if (isLoading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error.message} className="m-4" />
-  if (!session) return <ErrorMessage message={t('workout:session.notFound')} className="m-4" />
+  if (error) return <ErrorMessage message={error.message} />
+  if (!session) return null
 
   const handleStartEdit = () => {
     setIsEditing(true)
@@ -338,19 +345,21 @@ function SessionDetail() {
     }
   }
 
-  const menuItems = [
-    !isEditing && { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
-    { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
-  ].filter(Boolean)
-
   return (
-    <div className="p-4 max-w-4xl mx-auto pb-24">
-      <PageHeader
-        title={t('workout:history.viewDetail')}
-        onBack={() => navigate(-1)}
-        menuItems={menuItems}
-      />
+    <div>
+      {/* Actions menu */}
+      {!isEditing && (
+        <div className="flex justify-end mb-3">
+          <DropdownMenu items={[
+            { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
+            { icon: Share2, label: t('common:buttons.share'), onClick: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
+            { type: 'separator' },
+            { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
+          ]} />
+        </div>
+      )}
 
+      {/* Metadata */}
       <Card className="p-4 mb-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -367,34 +376,26 @@ function SessionDetail() {
               </div>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <Calendar size={16} style={{ color: colors.textSecondary }} />
-            <div>
-              <div className="text-xs text-secondary">{t('workout:session.date')}</div>
-              <div className="text-sm capitalize">{formatFullDate(session.started_at)}</div>
-            </div>
+          <div>
+            <div className="text-xs text-secondary">{t('workout:session.date')}</div>
+            <div className="text-sm capitalize">{formatFullDate(session.started_at)}</div>
           </div>
-          <div className="flex items-center gap-2">
-            <Clock size={16} style={{ color: colors.textSecondary }} />
-            <div>
-              <div className="text-xs text-secondary">{t('workout:session.time')}</div>
-              <div className="text-sm">{formatTime(session.started_at)}</div>
-            </div>
+          <div>
+            <div className="text-xs text-secondary">{t('workout:session.time')}</div>
+            <div className="text-sm">{formatTime(session.started_at)}</div>
           </div>
 
           {isEditing ? (
-            <>
-              <div>
-                <div className="text-xs text-secondary mb-1">{t('workout:session.endTime')}</div>
-                <input
-                  type="time"
-                  value={formatEditTime(editCompletedAt || session.completed_at)}
-                  onChange={e => handleTimeChange(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg text-sm"
-                  style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
-                />
-              </div>
-            </>
+            <div>
+              <div className="text-xs text-secondary mb-1">{t('workout:session.endTime')}</div>
+              <input
+                type="time"
+                value={formatEditTime(editCompletedAt || session.completed_at)}
+                onChange={e => handleTimeChange(e.target.value)}
+                className="w-full px-3 py-1.5 rounded-lg text-sm"
+                style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
+              />
+            </div>
           ) : (
             <>
               {session.duration_minutes != null && (
@@ -440,8 +441,48 @@ function SessionDetail() {
             </div>
           )
         )}
+
+        {muscleGroups.length > 0 && (
+          <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
+            <div className="text-xs text-secondary mb-2">{t('workout:session.musclesWorked')}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {muscleGroups.map(mg => (
+                <span
+                  key={mg.name}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                  style={{ backgroundColor: `${getMuscleGroupColor(mg.name)}20`, color: getMuscleGroupColor(mg.name), border: `1px solid ${getMuscleGroupColor(mg.name)}40` }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getMuscleGroupColor(mg.name) }} />
+                  {getMuscleGroupName(mg)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
 
+      {/* Edit save/cancel */}
+      {isEditing && (
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={handleCancelEdit}
+            className="flex-1 py-2 rounded-lg text-sm font-medium"
+            style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+          >
+            {t('common:buttons.cancel')}
+          </button>
+          <button
+            onClick={handleSaveMetadata}
+            disabled={updateMetadata.isPending}
+            className="flex-1 py-2 rounded-lg text-sm font-medium"
+            style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
+          >
+            {updateMetadata.isPending ? t('common:buttons.loading') : t('common:buttons.save')}
+          </button>
+        </div>
+      )}
+
+      {/* Exercises */}
       <h2 className="text-lg font-bold mb-3">{t('workout:session.exercises')}</h2>
       <div className="space-y-3">
         {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
@@ -463,13 +504,7 @@ function SessionDetail() {
         ))}
       </div>
 
-      {isEditing && (
-        <BottomActions
-          secondary={{ label: t('common:buttons.cancel'), onClick: handleCancelEdit }}
-          primary={{ label: updateMetadata.isPending ? t('common:buttons.loading') : t('common:buttons.save'), onClick: handleSaveMetadata, disabled: updateMetadata.isPending }}
-        />
-      )}
-
+      {/* Modals */}
       <SetNotesView
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
@@ -498,31 +533,13 @@ function SessionDetail() {
             exerciseIds: session.exercises?.map(e => e.exercise?.id).filter(Boolean) || [],
             sessionDate: session.started_at,
           }, {
-            onSuccess: () => {
-              setShowDeleteConfirm(false)
-              navigate('/history')
-            }
+            onSuccess: () => setShowDeleteConfirm(false),
           })
         }}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-
-      <div
-        className="fixed bottom-0 left-0 right-0 z-30 flex justify-center px-4 py-3"
-        style={{ backgroundColor: colors.bgPrimary, borderTop: `1px solid ${colors.border}` }}
-      >
-        <button
-          onClick={async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit }))}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          style={{ backgroundColor: colors.accent, color: colors.white }}
-        >
-          <Share2 size={16} />
-          {t('common:buttons.share')}
-        </button>
-      </div>
-      <div className="h-16" />
     </div>
   )
 }
 
-export default SessionDetail
+export default SessionInlineDetail

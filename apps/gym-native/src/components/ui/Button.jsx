@@ -4,7 +4,7 @@ import { colors } from '../../lib/styles'
 const VARIANTS = {
   primary: {
     bg: 'bg-action-primary',
-    text: 'text-white',
+    text: 'text-dark',
     border: '',
   },
   secondary: {
@@ -50,7 +50,7 @@ export default function Button({
       className={`rounded-lg items-center justify-center flex-row ${v.bg} ${v.border} ${s.container} ${disabled || loading ? 'opacity-50' : 'active:opacity-70'} ${className}`}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'primary' ? colors.white : colors.textPrimary} />
+        <ActivityIndicator size="small" color={variant === 'primary' ? colors.textDark : colors.textPrimary} />
       ) : typeof children === 'string' ? (
         <Text className={`font-semibold text-center ${v.text} ${s.text} ${textClassName}`}>
           {children}

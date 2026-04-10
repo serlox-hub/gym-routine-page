@@ -156,7 +156,6 @@ function StreakCard() {
   }
 
   const { streak, restCycles = [], sessions = [], daysPerCycle, weekStartDay = 'monday' } = goal.isConfigured ? goal : {}
-  const isCurrentCycle = cycleOffset === 0
 
   const referenceDate = useMemo(() => {
     const d = new Date()

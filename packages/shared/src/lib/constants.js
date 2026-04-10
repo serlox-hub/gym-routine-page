@@ -151,15 +151,15 @@ export const MUSCLE_GROUP_COLORS = {
   'Hombros': '#a371f7',
   'Bíceps': '#d29922',
   'Tríceps': '#39d2c0',
-  'Cuádriceps': '#226f2dff',
+  'Cuádriceps': '#226f2d',
   'Isquiotibiales': '#f0883e',
   'Pantorrillas': '#c69178',
-  'Abdominales': '#abe79fff',
+  'Abdominales': '#abe79f',
   'Glúteos': '#db61a2',
   'Antebrazo': '#8b949e',
-  'Cardio': '#dd23d9ff',
-  'Movilidad': '#ddddddff',
-  'Cuerpo Completo': '#1d3bdfff',
+  'Cardio': '#dd23d9',
+  'Movilidad': '#dddddd',
+  'Cuerpo Completo': '#1d3bdf',
 }
 
 export function getMuscleGroupColor(name) {

@@ -3,7 +3,7 @@ import { colors } from '../../lib/styles.js'
 const VARIANTS = {
   primary: {
     backgroundColor: colors.actionPrimary,
-    color: colors.white,
+    color: colors.textDark,
   },
   secondary: {
     backgroundColor: colors.bgTertiary,

@@ -16,7 +16,6 @@ const RoutineDetail = lazy(() => import('./pages/RoutineDetail.jsx'))
 const WorkoutSession = lazy(() => import('./pages/WorkoutSession.jsx'))
 const FreeWorkoutSession = lazy(() => import('./pages/FreeWorkoutSession.jsx'))
 const History = lazy(() => import('./pages/History.jsx'))
-const SessionDetail = lazy(() => import('./pages/SessionDetail.jsx'))
 const Exercises = lazy(() => import('./pages/Exercises.jsx'))
 const ExerciseProgress = lazy(() => import('./pages/ExerciseProgress.jsx'))
 const NewRoutine = lazy(() => import('./pages/NewRoutine.jsx'))
@@ -108,7 +107,6 @@ function App() {
             <Route path="/routine/:routineId/day/:dayId/workout" element={<PrivateRoute><WorkoutSession /></PrivateRoute>} />
             <Route path="/workout/free" element={<PrivateRoute><FreeWorkoutSession /></PrivateRoute>} />
             <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
-            <Route path="/history/:sessionId" element={<PrivateRoute><SessionDetail /></PrivateRoute>} />
             <Route path="/exercises" element={<PrivateRoute><Exercises /></PrivateRoute>} />
             <Route path="/exercises/:exerciseId/progress" element={<PrivateRoute><ExerciseProgress /></PrivateRoute>} />
             <Route path="/routines" element={<PrivateRoute><Routines /></PrivateRoute>} />

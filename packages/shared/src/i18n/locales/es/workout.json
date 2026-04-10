@@ -20,6 +20,7 @@
     "notesPlaceholder": "¿Algo que quieras recordar de esta sesión?",
     "duration": "Duración",
     "exercises": "Ejercicios",
+    "musclesWorked": "Músculos trabajados",
     "volume": "Volumen"
   },
   "set": {
@@ -96,7 +97,9 @@
     "endTime": "Hora de fin",
     "sessionsThisDay": "sesiones este día",
     "deleteSession": "Eliminar sesión",
-    "viewDetail": "Ver detalle"
+    "viewDetail": "Ver detalle",
+    "selectDay": "Selecciona un día para ver el detalle",
+    "noSessionsDay": "Sin entrenamientos este día"
   },
   "share": {
     "dialogTitle": "Compartir entrenamiento"

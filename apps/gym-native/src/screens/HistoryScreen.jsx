@@ -1,20 +1,21 @@
 import { useState, useCallback } from 'react'
-import { View, Text, ScrollView, RefreshControl } from 'react-native'
+import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react-native'
-import { useWorkoutHistory } from '../hooks/useWorkout'
-import { LoadingSpinner, ErrorMessage, Card, Modal, PageHeader, ActiveSessionBanner } from '../components/ui'
+import { useWorkoutHistory, formatTime } from '@gym/shared'
+import { LoadingSpinner, ErrorMessage } from '../components/ui'
 import { MonthlyCalendar } from '../components/History'
-import { DurationChart } from '../components/Charts'
-import { formatTime } from '@gym/shared'
+import SessionInlineDetail from '../components/History/SessionInlineDetail'
 import { colors } from '../lib/styles'
 
 export default function HistoryScreen({ navigation }) {
   const { t } = useTranslation()
   const [currentDate, setCurrentDate] = useState(new Date())
   const { data: sessions, isLoading, error, refetch } = useWorkoutHistory(currentDate)
-  const [selectedDay, setSelectedDay] = useState(null)
+  const [selectedSessions, setSelectedSessions] = useState(null)
+  const [selectedSessionId, setSelectedSessionId] = useState(null)
+  const [selectedDateKey, setSelectedDateKey] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
 
   const handleRefresh = useCallback(async () => {
@@ -26,31 +27,28 @@ export default function HistoryScreen({ navigation }) {
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   const handleDayPress = (dayData) => {
-    if (dayData.sessions.length === 1) {
-      navigation.navigate('SessionDetail', { sessionId: dayData.sessions[0].id })
-    } else if (dayData.sessions.length > 1) {
-      setSelectedDay(dayData)
+    setSelectedDateKey(dayData.dateKey)
+    if (dayData.sessions && dayData.sessions.length > 0) {
+      setSelectedSessions(dayData.sessions)
+      setSelectedSessionId(dayData.sessions[0].id)
+    } else {
+      setSelectedSessions(null)
+      setSelectedSessionId(null)
     }
-  }
-
-  const handleSessionSelect = (sessionId) => {
-    setSelectedDay(null)
-    navigation.navigate('SessionDetail', { sessionId })
   }
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader title={t('workout:history.title')} onBack={() => navigation.goBack()} />
-
       <ScrollView
         className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
+        keyboardShouldPersistTaps="handled"
       >
         {!sessions || sessions.length === 0 ? (
           <View className="items-center py-12">
             <Calendar size={48} color={colors.textSecondary} />
-            <Text className="text-secondary mt-4">{t('workout:history.noSessions')}</Text>
+            <Text className="mt-4" style={{ color: colors.textSecondary }}>{t('workout:history.noSessions')}</Text>
           </View>
         ) : (
           <>
@@ -59,36 +57,50 @@ export default function HistoryScreen({ navigation }) {
               onDayPress={handleDayPress}
               currentDate={currentDate}
               onDateChange={setCurrentDate}
+              selectedDateKey={selectedDateKey}
             />
-            <DurationChart sessions={sessions} currentDate={currentDate} />
+
+            {/* Session selector */}
+            {selectedSessions && selectedSessions.length > 1 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4 mb-2">
+                <View className="flex-row gap-2">
+                  {selectedSessions.map(session => (
+                    <Pressable
+                      key={session.id}
+                      onPress={() => setSelectedSessionId(session.id)}
+                      className="px-3 py-1.5 rounded-full"
+                      style={{
+                        backgroundColor: session.id === selectedSessionId ? colors.success : colors.bgTertiary,
+                      }}
+                    >
+                      <Text className="text-xs font-medium" style={{
+                        color: session.id === selectedSessionId ? colors.bgPrimary : colors.textSecondary,
+                      }}>
+                        {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+                        {' · '}
+                        {formatTime(session.started_at)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+
+            {/* Inline session detail */}
+            {selectedSessionId ? (
+              <View className="mt-4">
+                <SessionInlineDetail key={selectedSessionId} sessionId={selectedSessionId} navigation={navigation} />
+              </View>
+            ) : (
+              <View className="items-center py-8">
+                <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+                  {selectedDateKey ? t('workout:history.noSessionsDay') : t('workout:history.selectDay')}
+                </Text>
+              </View>
+            )}
           </>
         )}
       </ScrollView>
-
-      <Modal isOpen={!!selectedDay} onClose={() => setSelectedDay(null)} className="p-4">
-        <Text className="text-primary font-semibold mb-4">
-          {selectedDay?.sessions.length} {t('workout:history.sessionsThisDay')}
-        </Text>
-        <View className="gap-2">
-          {selectedDay?.sessions.map(session => (
-            <Card
-              key={session.id}
-              className="p-3"
-              onPress={() => handleSessionSelect(session.id)}
-            >
-              <Text className="text-primary font-medium">
-                {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
-              </Text>
-              <Text className="text-secondary text-sm">
-                {formatTime(session.started_at)}
-                {session.duration_minutes && ` · ${session.duration_minutes} min`}
-              </Text>
-            </Card>
-          ))}
-        </View>
-      </Modal>
-
-      <ActiveSessionBanner />
     </SafeAreaView>
   )
 }

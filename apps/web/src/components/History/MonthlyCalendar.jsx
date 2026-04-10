@@ -11,7 +11,7 @@ import {
 } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
-function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
+function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, selectedDateKey }) {
   const { t } = useTranslation()
   const { value: weekStartDay } = usePreference('week_start_day')
   const wsd = weekStartDay || 'monday'
@@ -82,21 +82,21 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
             return <div key={`empty-${index}`} className="aspect-square" />
           }
 
-          const hasWorkout = dayData.sessions.length > 0
+          const isSelected = selectedDateKey === dayData.dateKey
 
           return (
             <div
               key={dayData.dateKey}
-              onClick={() => hasWorkout && onDayClick?.(dayData)}
-              className={`aspect-square rounded p-1 flex flex-col ${hasWorkout ? 'cursor-pointer hover:opacity-80' : ''}`}
+              onClick={() => onDayClick?.(dayData)}
+              className="aspect-square rounded p-1 flex flex-col cursor-pointer hover:opacity-80"
               style={{
-                backgroundColor: dayData.isToday ? colors.accentBg : colors.bgTertiary,
-                border: dayData.isToday ? `1px solid ${colors.accent}` : '1px solid transparent',
+                backgroundColor: isSelected ? colors.successBg : dayData.isToday ? colors.accentBg : colors.bgTertiary,
+                border: isSelected ? `1px solid ${colors.success}` : dayData.isToday ? `1px solid ${colors.accent}` : '1px solid transparent',
               }}
             >
               <span
                 className="text-xs font-medium"
-                style={{ color: dayData.isToday ? colors.accent : colors.textSecondary }}
+                style={{ color: isSelected ? colors.success : dayData.isToday ? colors.accent : colors.textSecondary }}
               >
                 {dayData.day}
               </span>
@@ -124,20 +124,6 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
         })}
       </div>
 
-      {/* Leyenda */}
-      <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(MUSCLE_GROUP_COLORS).map(([name, color]) => (
-            <div key={name} className="flex items-center gap-1">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-xs" style={{ color: colors.textSecondary }}>{name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

@@ -18,15 +18,12 @@ test.describe('Detalle de sesión', () => {
     await expect(page).toHaveURL(/\/history/)
     await page.waitForTimeout(2000)
 
-    // Si hay sesiones, debería haber enlaces a ellas (la ruta es /history/:sessionId)
-    const sessionLinks = page.locator('a[href*="/history/"]').filter({ hasNotText: /^$/ })
-    const count = await sessionLinks.count()
-
-    // Si hay sesiones, navegar a la primera
-    if (count > 0) {
-      await sessionLinks.first().click()
-      await expect(page).toHaveURL(/\/history\/\d+/)
-      await expect(page.getByRole('heading', { name: /detalle de sesión/i })).toBeVisible()
+    // Si hay sesiones en el calendario, hacer click en un día con entrenamiento
+    const dayWithWorkout = page.locator('.cursor-pointer').filter({ has: page.locator('.rounded-full') }).first()
+    if (await dayWithWorkout.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await dayWithWorkout.click()
+      // El detalle inline debería aparecer
+      await expect(page.getByText(/ejercicio|exercise/i).first()).toBeVisible({ timeout: 5000 })
     }
   })
 
@@ -156,10 +153,6 @@ test.describe('Protección de rutas de sesión', () => {
     await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
   })
 
-  test('session detail requiere autenticación', async ({ page }) => {
-    await page.goto('/history/1')
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
-  })
 
   test('free workout requiere autenticación', async ({ page }) => {
     await page.goto('/workout/free')

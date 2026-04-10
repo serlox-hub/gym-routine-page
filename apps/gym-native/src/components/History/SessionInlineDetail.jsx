@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react'
-import { View, Text, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { View, Text, TextInput, Pressable } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { Clock, Calendar, Trash2, Trophy, Share2, TrendingUp, Pencil, Plus, X } from 'lucide-react-native'
-import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../hooks/useWorkout'
-import { useUserExerciseOverride } from '../hooks/useExercises'
-import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, PageHeader, Button } from '../components/ui'
-import { SetNotesView, WorkoutSummaryModal } from '../components/Workout'
+import { Trash2, Trophy, Share2, TrendingUp, Pencil, Plus, X } from 'lucide-react-native'
+import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../../hooks/useWorkout'
+import { useUserExerciseOverride } from '../../hooks/useExercises'
+import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, Button, DropdownMenu } from '../ui'
+import { SetNotesView, WorkoutSummaryModal } from '../Workout'
 import {
   SENSATION_LABELS,
   formatFullDate,
@@ -20,11 +20,13 @@ import {
   buildEmptySetData,
   getSetFieldsForMeasurementType,
   getExerciseName,
+  getMuscleGroupName,
+  getMuscleGroupColor,
   usePreference,
   resolveWeightUnit,
 } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../lib/muscleGroupStyles'
-import { colors, inputStyle } from '../lib/styles'
+import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
+import { colors, inputStyle } from '../../lib/styles'
 
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
   const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(exercise.measurement_type)
@@ -171,7 +173,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             </View>
           )}
         </View>
-        {!exercise.deleted_at && (
+        {!exercise.deleted_at && !isEditing && (
           <Pressable
             onPress={() => navigation.navigate('ExerciseProgress', { exerciseId: exercise.id })}
             className="p-1.5 rounded"
@@ -251,9 +253,10 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   )
 }
 
-export default function SessionDetailScreen({ route, navigation }) {
+function SessionInlineDetail({ sessionId, navigation: navigationProp }) {
+  const navigationHook = useNavigation()
+  const navigation = navigationProp || navigationHook
   const { t } = useTranslation()
-  const { sessionId } = route.params
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
   const { data: sessionPRsData } = useSessionPRs(sessionId)
   const deleteSession = useDeleteSession()
@@ -265,7 +268,6 @@ export default function SessionDetailScreen({ route, navigation }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [summaryData, setSummaryData] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
-
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
   const [editTimeText, setEditTimeText] = useState('')
@@ -273,9 +275,17 @@ export default function SessionDetailScreen({ route, navigation }) {
 
   const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRsData), [sessionPRsData])
 
+  const muscleGroups = useMemo(() => {
+    if (!session?.exercises) return []
+    const seen = new Set()
+    return session.exercises
+      .map(e => e.exercise?.muscle_group)
+      .filter(mg => mg && !seen.has(mg.name) && seen.add(mg.name))
+  }, [session])
+
   if (isLoading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error.message} className="m-4" />
-  if (!session) return <ErrorMessage message={t('workout:session.notFound')} className="m-4" />
+  if (error) return <ErrorMessage message={error.message} />
+  if (!session) return null
 
   const formatTimeFromISO = (isoString) => {
     if (!isoString) return ''
@@ -307,7 +317,6 @@ export default function SessionDetailScreen({ route, navigation }) {
       notes: editNotes.trim() || null,
     })
 
-    // Recalcular PRs
     const exerciseIds = session.exercises?.map(e => e.exercise?.id).filter(Boolean) || []
     if (exerciseIds.length > 0) {
       try {
@@ -335,11 +344,6 @@ export default function SessionDetailScreen({ route, navigation }) {
     }))
   }
 
-  const menuItems = [
-    !isEditing && { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit },
-    { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setShowDeleteConfirm(true), danger: true },
-  ].filter(Boolean)
-
   const handleTimeBlur = () => {
     const match = editTimeText.match(/^(\d{1,2}):(\d{2})$/)
     if (match) {
@@ -352,143 +356,137 @@ export default function SessionDetailScreen({ route, navigation }) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <PageHeader
-        title={t('workout:history.viewDetail')}
-        onBack={() => navigation.goBack()}
-        menuItems={menuItems}
-      />
+    <View>
+      {/* Actions menu */}
+      {!isEditing && (
+        <View className="flex-row justify-end mb-3">
+          <DropdownMenu items={[
+            { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit },
+            { icon: Share2, label: t('common:buttons.share'), onPress: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
+            { type: 'separator' },
+            { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setShowDeleteConfirm(true), danger: true },
+          ]} />
+        </View>
+      )}
 
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: isEditing ? 120 : 40 }} keyboardShouldPersistTaps="handled">
-        <Card className="p-4 mb-4">
-          <View className="gap-3">
+      {/* Metadata */}
+      <Card className="p-4 mb-4">
+        <View className="gap-3">
+          <View>
+            <Text className="text-xs text-secondary">{t('workout:history.session')}</Text>
+            <Text className="text-sm font-medium text-primary">
+              {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+            </Text>
+          </View>
+
+          {(session.routine_name || session.routine_day?.routine?.name) && (
             <View>
-              <Text className="text-xs text-secondary">{t('workout:history.session')}</Text>
-              <Text className="text-sm font-medium text-primary">
-                {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+              <Text className="text-xs text-secondary">{t('routine:title')}</Text>
+              <Text className="text-sm text-primary">
+                {session.routine_name || session.routine_day?.routine?.name}
               </Text>
             </View>
+          )}
 
-            {(session.routine_name || session.routine_day?.routine?.name) && (
-              <View>
-                <Text className="text-xs text-secondary">{t('routine:title')}</Text>
-                <Text className="text-sm text-primary">
-                  {session.routine_name || session.routine_day?.routine?.name}
-                </Text>
-              </View>
-            )}
-
-            <View className="flex-row gap-4">
-              <View className="flex-row items-center gap-2">
-                <Calendar size={16} color={colors.textSecondary} />
-                <View>
-                  <Text className="text-xs text-secondary">{t('workout:history.date')}</Text>
-                  <Text className="text-sm text-primary capitalize">{formatFullDate(session.started_at)}</Text>
-                </View>
-              </View>
-              <View className="flex-row items-center gap-2">
-                <Clock size={16} color={colors.textSecondary} />
-                <View>
-                  <Text className="text-xs text-secondary">{t('workout:history.time')}</Text>
-                  <Text className="text-sm text-primary">{formatTime(session.started_at)}</Text>
-                </View>
-              </View>
+          <View className="flex-row gap-4">
+            <View>
+              <Text className="text-xs text-secondary">{t('workout:history.date')}</Text>
+              <Text className="text-sm text-primary capitalize">{formatFullDate(session.started_at)}</Text>
             </View>
-
-            <View className="flex-row gap-4">
-              {isEditing ? (
-                <View className="flex-1">
-                  <Text className="text-xs text-secondary mb-1">{t('workout:history.endTime')}</Text>
-                  <TextInput
-                    value={editTimeText}
-                    onChangeText={setEditTimeText}
-                    onBlur={handleTimeBlur}
-                    placeholder="HH:MM"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="numbers-and-punctuation"
-                    style={[inputStyle, { paddingVertical: 6 }]}
-                  />
-                </View>
-              ) : (
-                <>
-                  {session.duration_minutes != null && (
-                    <View>
-                      <Text className="text-xs text-secondary">{t('workout:summary.duration')}</Text>
-                      <Text className="text-sm text-primary">
-                        {session.duration_minutes > 0 ? `${session.duration_minutes} ${t('common:time.min')}` : `< 1 ${t('common:time.min')}`}
-                      </Text>
-                    </View>
-                  )}
-                </>
-              )}
-
-              {session.overall_feeling && (
-                <View>
-                  <Text className="text-xs text-secondary">{t('workout:sensation.label')}</Text>
-                  <View
-                    className="px-2 py-0.5 rounded mt-1 self-start"
-                    style={{ backgroundColor: getSensationColor(session.overall_feeling) }}
-                  >
-                    <Text className="text-xs font-medium" style={{ color: colors.bgPrimary }}>
-                      {SENSATION_LABELS[session.overall_feeling]}
-                    </Text>
-                  </View>
-                </View>
-              )}
+            <View>
+              <Text className="text-xs text-secondary">{t('workout:history.time')}</Text>
+              <Text className="text-sm text-primary">{formatTime(session.started_at)}</Text>
             </View>
           </View>
 
-          {isEditing ? (
+          <View className="flex-row gap-4">
+            {isEditing ? (
+              <View className="flex-1">
+                <Text className="text-xs text-secondary mb-1">{t('workout:history.endTime')}</Text>
+                <TextInput
+                  value={editTimeText}
+                  onChangeText={setEditTimeText}
+                  onBlur={handleTimeBlur}
+                  placeholder="HH:MM"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="numbers-and-punctuation"
+                  style={[inputStyle, { paddingVertical: 6 }]}
+                />
+              </View>
+            ) : (
+              <>
+                {session.duration_minutes != null && (
+                  <View>
+                    <Text className="text-xs text-secondary">{t('workout:summary.duration')}</Text>
+                    <Text className="text-sm text-primary">
+                      {session.duration_minutes > 0 ? `${session.duration_minutes} ${t('common:time.min')}` : `< 1 ${t('common:time.min')}`}
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
+
+            {session.overall_feeling && (
+              <View>
+                <Text className="text-xs text-secondary">{t('workout:sensation.label')}</Text>
+                <View
+                  className="px-2 py-0.5 rounded mt-1 self-start"
+                  style={{ backgroundColor: getSensationColor(session.overall_feeling) }}
+                >
+                  <Text className="text-xs font-medium" style={{ color: colors.bgPrimary }}>
+                    {SENSATION_LABELS[session.overall_feeling]}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {isEditing ? (
+          <View className="mt-4 pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Text className="text-xs text-secondary mb-1">{t('common:labels.notes')}</Text>
+            <TextInput
+              value={editNotes}
+              onChangeText={setEditNotes}
+              placeholder={t('workout:session.notesPlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
+            />
+          </View>
+        ) : (
+          session.notes && (
             <View className="mt-4 pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
               <Text className="text-xs text-secondary mb-1">{t('common:labels.notes')}</Text>
-              <TextInput
-                value={editNotes}
-                onChangeText={setEditNotes}
-                placeholder={t('workout:session.notesPlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                multiline
-                style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
-              />
+              <Text className="text-sm text-primary">{session.notes}</Text>
             </View>
-          ) : (
-            session.notes && (
-              <View className="mt-4 pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
-                <Text className="text-xs text-secondary mb-1">{t('common:labels.notes')}</Text>
-                <Text className="text-sm text-primary">{session.notes}</Text>
-              </View>
-            )
-          )}
-        </Card>
+          )
+        )}
 
-        <Text className="text-lg font-bold text-primary mb-3">{t('workout:session.exercises')}</Text>
+        {muscleGroups.length > 0 && (
+          <View className="mt-4 pt-4" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Text className="text-xs text-secondary mb-2">{t('workout:session.musclesWorked')}</Text>
+            <View className="flex-row flex-wrap gap-1.5">
+              {muscleGroups.map(mg => (
+                <View
+                  key={mg.name}
+                  className="flex-row items-center gap-1 px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: `${getMuscleGroupColor(mg.name)}20`, borderWidth: 1, borderColor: `${getMuscleGroupColor(mg.name)}40` }}
+                >
+                  <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getMuscleGroupColor(mg.name) }} />
+                  <Text style={{ color: getMuscleGroupColor(mg.name), fontSize: 10, fontWeight: '500' }}>
+                    {getMuscleGroupName(mg)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </Card>
 
-        <View className="gap-3">
-          {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
-            <SessionExerciseBlock
-              key={sessionExerciseId}
-              sessionExerciseId={sessionExerciseId}
-              exercise={exercise}
-              sets={sets}
-              sessionId={sessionId}
-              prsByExercise={prsByExercise}
-              globalWeightUnit={globalWeightUnit}
-              isEditing={isEditing}
-              navigation={navigation}
-              onUpsertSet={handleUpsertSet}
-              onDeleteSet={handleDeleteSet}
-              onAddSet={handleAddSet}
-              onSelectSet={setSelectedSet}
-            />
-          ))}
-        </View>
-      </ScrollView>
-
-      {isEditing ? (
-        <View
-          className="flex-row gap-3 px-4 py-3"
-          style={{ backgroundColor: colors.bgSecondary, borderTopWidth: 1, borderTopColor: colors.border }}
-        >
+      {/* Edit save/cancel */}
+      {isEditing && (
+        <View className="flex-row gap-2 mb-4">
           <Button variant="secondary" className="flex-1" onPress={handleCancelEdit}>
             {t('common:buttons.cancel')}
           </Button>
@@ -496,23 +494,32 @@ export default function SessionDetailScreen({ route, navigation }) {
             {t('common:buttons.save')}
           </Button>
         </View>
-      ) : (
-        <View
-          className="items-center px-4 py-3"
-          style={{ borderTopWidth: 1, borderTopColor: colors.border }}
-        >
-          <Pressable
-            onPress={async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit }))}
-            className="flex-row items-center gap-2 px-5 py-2.5 rounded-lg"
-            style={{ backgroundColor: colors.accent }}
-          >
-            <Share2 size={16} color={colors.white} />
-            <Text style={{ color: colors.white, fontSize: 14, fontWeight: '500' }}>{t('common:buttons.share')}</Text>
-          </Pressable>
-        </View>
       )}
-      </KeyboardAvoidingView>
 
+      {/* Exercises */}
+      <Text className="text-lg font-bold text-primary mb-3">{t('workout:session.exercises')}</Text>
+
+      <View className="gap-3">
+        {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
+          <SessionExerciseBlock
+            key={sessionExerciseId}
+            sessionExerciseId={sessionExerciseId}
+            exercise={exercise}
+            sets={sets}
+            sessionId={sessionId}
+            prsByExercise={prsByExercise}
+            globalWeightUnit={globalWeightUnit}
+            isEditing={isEditing}
+            navigation={navigation}
+            onUpsertSet={handleUpsertSet}
+            onDeleteSet={handleDeleteSet}
+            onAddSet={handleAddSet}
+            onSelectSet={setSelectedSet}
+          />
+        ))}
+      </View>
+
+      {/* Modals */}
       <SetNotesView
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
@@ -540,14 +547,13 @@ export default function SessionDetailScreen({ route, navigation }) {
             exerciseIds: session.exercises?.map(e => e.exercise?.id).filter(Boolean) || [],
             sessionDate: session.started_at,
           }, {
-            onSuccess: () => {
-              setShowDeleteConfirm(false)
-              navigation.goBack()
-            },
+            onSuccess: () => setShowDeleteConfirm(false),
           })
         }}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </SafeAreaView>
+    </View>
   )
 }
+
+export default SessionInlineDetail

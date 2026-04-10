@@ -24,7 +24,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
   const historySessions = historyPages?.pages.flat() ?? []
   const isLoading = loadingSummary || loadingHistory
 
-  const handleSessionClick = (sessionId) => { onClose(); navigate(`/history/${sessionId}`) }
+  const handleSessionClick = (sessionId) => { onClose(); navigate('/history', { state: { sessionId } }) }
   const stats = useMemo(() => calculateExerciseStats(summarySessions, measurementType), [summarySessions, measurementType])
 
   return (

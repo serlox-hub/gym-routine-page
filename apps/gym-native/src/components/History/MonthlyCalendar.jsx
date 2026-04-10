@@ -12,7 +12,7 @@ import {
 } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
-export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onDateChange }) {
+export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onDateChange, selectedDateKey }) {
   const { t } = useTranslation()
   const { value: weekStartDay } = usePreference('week_start_day')
   const wsd = weekStartDay || 'monday'
@@ -75,12 +75,12 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
             return <View key={`empty-${index}`} style={{ width: '14.28%', aspectRatio: 1 }} />
           }
 
-          const hasWorkout = dayData.sessions.length > 0
+          const isSelected = selectedDateKey === dayData.dateKey
 
           return (
             <Pressable
               key={dayData.dateKey}
-              onPress={() => hasWorkout && onDayPress?.(dayData)}
+              onPress={() => onDayPress?.(dayData)}
               style={{
                 width: '14.28%',
                 aspectRatio: 1,
@@ -90,14 +90,14 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
               <View
                 className="flex-1 rounded p-1"
                 style={{
-                  backgroundColor: dayData.isToday ? colors.accentBg : colors.bgTertiary,
-                  borderWidth: dayData.isToday ? 1 : 0,
-                  borderColor: dayData.isToday ? colors.accent : 'transparent',
+                  backgroundColor: isSelected ? colors.successBg : dayData.isToday ? colors.accentBg : colors.bgTertiary,
+                  borderWidth: isSelected || dayData.isToday ? 1 : 0,
+                  borderColor: isSelected ? colors.success : dayData.isToday ? colors.accent : 'transparent',
                 }}
               >
                 <Text
                   className="text-xs font-medium"
-                  style={{ color: dayData.isToday ? colors.accent : colors.textSecondary }}
+                  style={{ color: isSelected ? colors.success : dayData.isToday ? colors.accent : colors.textSecondary }}
                 >
                   {dayData.day}
                 </Text>
@@ -119,16 +119,6 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
         })}
       </View>
 
-      <View className="mt-4 pt-3" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
-        <View className="flex-row flex-wrap gap-2">
-          {Object.entries(MUSCLE_GROUP_COLORS).map(([name, color]) => (
-            <View key={name} className="flex-row items-center gap-1">
-              <View className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-              <Text className="text-xs" style={{ color: colors.textSecondary }}>{name}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
     </View>
   )
 }

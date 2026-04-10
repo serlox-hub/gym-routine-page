@@ -1,106 +1,85 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Calendar, X } from 'lucide-react'
-import { useWorkoutHistory } from '../hooks/useWorkout.js'
-import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
-import { MonthlyCalendar, DurationChart } from '../components/History/index.js'
-import { formatTime } from '@gym/shared'
+import { Calendar } from 'lucide-react'
+import { useWorkoutHistory, formatTime } from '@gym/shared'
+import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
+import { MonthlyCalendar } from '../components/History/index.js'
+import SessionInlineDetail from '../components/History/SessionInlineDetail.jsx'
 import { colors } from '../lib/styles.js'
 
 function History() {
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const [currentDate, setCurrentDate] = useState(new Date())
   const { data: sessions, isLoading, error } = useWorkoutHistory(currentDate)
-  const [selectedDay, setSelectedDay] = useState(null)
+  const [selectedSessions, setSelectedSessions] = useState(null)
+  const [selectedSessionId, setSelectedSessionId] = useState(null)
+  const [selectedDateKey, setSelectedDateKey] = useState(null)
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   const handleDayClick = (dayData) => {
-    if (dayData.sessions.length === 1) {
-      navigate(`/history/${dayData.sessions[0].id}`)
-    } else if (dayData.sessions.length > 1) {
-      setSelectedDay(dayData)
+    setSelectedDateKey(dayData.dateKey)
+    if (dayData.sessions && dayData.sessions.length > 0) {
+      setSelectedSessions(dayData.sessions)
+      setSelectedSessionId(dayData.sessions[0].id)
+    } else {
+      setSelectedSessions(null)
+      setSelectedSessionId(null)
     }
   }
 
-  const handleSessionSelect = (sessionId) => {
-    setSelectedDay(null)
-    navigate(`/history/${sessionId}`)
-  }
-
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <PageHeader title={t('workout:history.title')} backTo="/" />
+    <div className="p-4 max-w-4xl mx-auto pb-20">
+      {!sessions || sessions.length === 0 ? (
+        <div className="text-center py-12">
+          <Calendar size={48} className="mx-auto mb-4" style={{ color: colors.textSecondary }} />
+          <p style={{ color: colors.textSecondary }}>{t('workout:history.noSessions')}</p>
+        </div>
+      ) : (
+        <>
+          <MonthlyCalendar
+            sessions={sessions}
+            onDayClick={handleDayClick}
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+            selectedDateKey={selectedDateKey}
+          />
 
-      <main>
-        {!sessions || sessions.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar size={48} className="mx-auto mb-4" style={{ color: colors.textSecondary }} />
-            <p className="text-secondary">{t('workout:history.noSessions')}</p>
-          </div>
-        ) : (
-          <>
-            <MonthlyCalendar
-              sessions={sessions}
-              onDayClick={handleDayClick}
-              currentDate={currentDate}
-              onDateChange={setCurrentDate}
-            />
-            <DurationChart sessions={sessions} currentDate={currentDate} />
-          </>
-        )}
-      </main>
-
-      {/* Modal de selección de sesión */}
-      {selectedDay && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: colors.overlay }}
-          onClick={() => setSelectedDay(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-lg p-4"
-            style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">
-                {selectedDay.sessions.length} {t('workout:history.session')}
-              </h3>
-              <button
-                onClick={() => setSelectedDay(null)}
-                className="p-1 rounded hover:opacity-80"
-                style={{ backgroundColor: colors.bgTertiary }}
-              >
-                <X size={18} style={{ color: colors.textSecondary }} />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {selectedDay.sessions.map(session => (
-                <Card
+          {/* Session selector (when multiple sessions on same day) */}
+          {selectedSessions && selectedSessions.length > 1 && (
+            <div className="flex gap-2 mt-4 mb-2 overflow-x-auto">
+              {selectedSessions.map(session => (
+                <button
                   key={session.id}
-                  className="p-3"
-                  onClick={() => handleSessionSelect(session.id)}
+                  onClick={() => setSelectedSessionId(session.id)}
+                  className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
+                  style={{
+                    backgroundColor: session.id === selectedSessionId ? colors.success : colors.bgTertiary,
+                    color: session.id === selectedSessionId ? colors.bgPrimary : colors.textSecondary,
+                  }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">
-                        {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
-                      </div>
-                      <div className="text-sm text-secondary">
-                        {formatTime(session.started_at)}
-                        {session.duration_minutes && ` · ${session.duration_minutes} min`}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
+                  {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+                  {' · '}
+                  {formatTime(session.started_at)}
+                </button>
               ))}
             </div>
-          </div>
-        </div>
+          )}
+
+          {/* Inline session detail */}
+          {selectedSessionId ? (
+            <div className="mt-4">
+              <SessionInlineDetail key={selectedSessionId} sessionId={selectedSessionId} />
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p style={{ color: colors.textMuted, fontSize: 13 }}>
+                {selectedDateKey ? t('workout:history.noSessionsDay') : t('workout:history.selectDay')}
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
