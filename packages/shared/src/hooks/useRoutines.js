@@ -145,8 +145,39 @@ export function useSetFavoriteRoutine() {
 
   return useMutation({
     mutationFn: ({ routineId, isFavorite }) => apiSetFavoriteRoutine({ routineId, isFavorite }),
-    onSuccess: () => {
+    onMutate: async ({ routineId, isFavorite }) => {
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.ROUTINE] })
+
+      const prevRoutines = queryClient.getQueryData([QUERY_KEYS.ROUTINES])
+      const prevRoutine = queryClient.getQueryData([QUERY_KEYS.ROUTINE, routineId])
+        ?? queryClient.getQueryData([QUERY_KEYS.ROUTINE, String(routineId)])
+
+      // Optimistic update en la lista
+      queryClient.setQueryData([QUERY_KEYS.ROUTINES], old =>
+        old?.map(r => r.id === routineId
+          ? { ...r, is_favorite: isFavorite }
+          : isFavorite ? { ...r, is_favorite: false } : r
+        )
+      )
+
+      // Optimistic update en el detalle
+      queryClient.setQueriesData({ queryKey: [QUERY_KEYS.ROUTINE] }, old =>
+        old?.id === routineId ? { ...old, is_favorite: isFavorite } : old
+      )
+
+      return { prevRoutines, prevRoutine, routineId }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevRoutines) queryClient.setQueryData([QUERY_KEYS.ROUTINES], context.prevRoutines)
+      if (context?.prevRoutine) {
+        queryClient.setQueryData([QUERY_KEYS.ROUTINE, context.routineId], context.prevRoutine)
+        queryClient.setQueryData([QUERY_KEYS.ROUTINE, String(context.routineId)], context.prevRoutine)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE] })
     },
   })
 }

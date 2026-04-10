@@ -270,13 +270,13 @@ function RoutineDetail() {
           <div
             style={{
               width: 44, height: 26, borderRadius: 13,
-              backgroundColor: routine?.is_favorite ? colors.success : colors.bgAlt,
+              backgroundColor: routine?.is_favorite ? colors.success : colors.border,
               position: 'relative', transition: 'background-color 0.2s',
             }}
           >
             <div style={{
               width: 22, height: 22, borderRadius: 11,
-              backgroundColor: colors.white,
+              backgroundColor: colors.bgPrimary,
               position: 'absolute', top: 2,
               left: routine?.is_favorite ? 20 : 2,
               transition: 'left 0.2s',
