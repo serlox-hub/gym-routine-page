@@ -84,14 +84,12 @@ function BlockSection({
                   {supersetLabel}
                 </span>
               </div>
-              <div className="divide-y" style={{ borderColor: colors.border }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 8 }}>
                 {group.exercises.map((exercise) => {
                   const index = routine_exercises.findIndex(re => re.id === exercise.id)
                   return (
                     <div
                       key={exercise.id}
-                      className="p-2"
-                      style={getMuscleGroupBorderStyle(exercise.exercise?.muscle_group?.name)}
                     >
                       <ExerciseCard
                         routineExercise={exercise}

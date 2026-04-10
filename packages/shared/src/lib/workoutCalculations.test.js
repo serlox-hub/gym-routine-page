@@ -509,9 +509,34 @@ describe('workoutCalculations', () => {
 
       expect(result.sessionCount).toBe(2)
       expect(result.maxReps).toBe(15)
+      expect(result.avgReps).toBe(12)
       expect(result.best1RM).toBe(0)
       expect(result.maxWeight).toBe(0)
       expect(result.totalVolume).toBe(0)
+    })
+
+    it('calcula max y avg para ejercicios de tiempo', () => {
+      const sessions = [
+        { sets: [{ time_seconds: 60 }, { time_seconds: 90 }] },
+        { sets: [{ time_seconds: 120 }] },
+      ]
+      const result = calculateExerciseStats(sessions, 'time')
+
+      expect(result.maxTime).toBe(120)
+      expect(result.avgTime).toBe(90)
+      expect(result.maxWeight).toBe(0)
+    })
+
+    it('calcula max y avg para ejercicios de distancia', () => {
+      const sessions = [
+        { sets: [{ distance: 100 }, { distance: 200 }] },
+        { sets: [{ distance: 150 }] },
+      ]
+      const result = calculateExerciseStats(sessions, 'distance')
+
+      expect(result.maxDistance).toBe(200)
+      expect(result.avgDistance).toBe(150)
+      expect(result.maxWeight).toBe(0)
     })
 
   })

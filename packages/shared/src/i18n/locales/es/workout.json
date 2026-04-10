@@ -83,8 +83,13 @@
     "bestSet": "Mejor serie",
     "maxWeight": "Máx Peso",
     "maxReps": "Máx Reps",
+    "avgReps": "Media Reps",
+    "maxTime": "Máx Tiempo",
+    "avgTime": "Media Tiempo",
+    "maxDistance": "Máx Distancia",
+    "avgDistance": "Media Dist.",
     "best1RM": "Mejor 1RM",
-    "best1rm": "Mejor 1RM",
+    "best1rm": "Est. 1RM",
     "sessions": "Sesiones",
     "noSets": "Sin series completadas"
   },
@@ -99,7 +104,8 @@
     "deleteSession": "Eliminar sesión",
     "viewDetail": "Ver detalle",
     "selectDay": "Selecciona un día para ver el detalle",
-    "noSessionsDay": "Sin entrenamientos este día"
+    "noSessionsDay": "Sin entrenamientos este día",
+    "recentSessions": "Sesiones recientes"
   },
   "share": {
     "dialogTitle": "Compartir entrenamiento"

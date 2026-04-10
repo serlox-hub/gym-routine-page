@@ -79,6 +79,7 @@ export default function BlockSection({
                 {supersetLabel}
               </Text>
             </View>
+            <View style={{ gap: 8, padding: 8 }}>
             {group.exercises.map((exercise) => (
               <ExerciseCard
                 key={exercise.id}
@@ -97,6 +98,7 @@ export default function BlockSection({
                 totalExercises={routine_exercises.length}
               />
             ))}
+            </View>
           </Card>
         )
       })}

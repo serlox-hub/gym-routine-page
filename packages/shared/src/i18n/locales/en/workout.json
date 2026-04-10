@@ -83,8 +83,13 @@
     "bestSet": "Best set",
     "maxWeight": "Max Weight",
     "maxReps": "Max Reps",
+    "avgReps": "Avg Reps",
+    "maxTime": "Max Time",
+    "avgTime": "Avg Time",
+    "maxDistance": "Max Dist.",
+    "avgDistance": "Avg Dist.",
     "best1RM": "Best 1RM",
-    "best1rm": "Best 1RM",
+    "best1rm": "Est. 1RM",
     "sessions": "Sessions",
     "noSets": "No completed sets"
   },
@@ -99,7 +104,8 @@
     "deleteSession": "Delete session",
     "viewDetail": "View detail",
     "selectDay": "Select a day to see the details",
-    "noSessionsDay": "No workouts on this day"
+    "noSessionsDay": "No workouts on this day",
+    "recentSessions": "Recent Sessions"
   },
   "share": {
     "dialogTitle": "Share workout"

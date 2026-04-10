@@ -1,81 +1,90 @@
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, FileText, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import { formatSetValue, formatShortDate } from '@gym/shared'
-
-const RIR_LABELS = {
-  [-1]: 'F',
-  0: '0',
-  1: '1',
-  2: '2',
-  3: '3+',
-}
+import { formatSetValue, formatShortDate, calculateTotalVolume } from '@gym/shared'
 
 function HistoryTable({ sessions, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
   const { t } = useTranslation()
 
   if (!sessions || sessions.length === 0) {
     return (
-      <p className="text-center text-secondary py-8">
-        {t('workout:history.noSessions')}
+      <p className="text-center py-8" style={{ color: colors.textSecondary }}>
+        {t('exercise:noHistory')}
       </p>
     )
   }
 
   return (
-    <div className="space-y-3">
-      {sessions.map(session => (
-        <div
-          key={session.sessionId}
-          className="p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-          style={{ backgroundColor: colors.bgTertiary }}
-          onClick={() => onSessionClick(session.sessionId, session.date)}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-secondary">
-              {formatShortDate(session.date)}
-            </span>
-            <ChevronRight size={14} style={{ color: colors.textSecondary }} />
-          </div>
-          <div className="space-y-1">
-            {session.sets.map(set => (
-              <div
-                key={set.id}
-                className="flex items-center gap-2 text-sm"
-              >
-                <span
-                  className="w-5 h-5 flex items-center justify-center rounded text-xs font-bold"
-                  style={{ backgroundColor: set.set_type === 'dropset' ? colors.orangeBg : colors.border, color: set.set_type === 'dropset' ? colors.orange : colors.textSecondary }}
-                >
-                  {set.set_type === 'dropset' ? 'D' : set.set_number}
-                </span>
-                <span className="flex-1">{formatSetValue({ ...set, weight_unit: weightUnit }, { timeUnit, distanceUnit })}</span>
-                {(set.rir_actual !== null || set.notes || set.video_url) && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (set.notes || set.video_url) onSelectSet(set)
-                    }}
-                    className={`flex items-center justify-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded ${(set.notes || set.video_url) ? 'hover:opacity-80' : ''}`}
-                    style={{
-                      backgroundColor: 'rgba(163, 113, 247, 0.15)',
-                      color: colors.purple,
-                      cursor: (set.notes || set.video_url) ? 'pointer' : 'default',
-                      minWidth: '24px',
-                    }}
-                  >
-                    {set.rir_actual !== null && (
-                      <span className="w-4 text-center">{RIR_LABELS[set.rir_actual] ?? set.rir_actual}</span>
-                    )}
-                    {set.video_url && <Video size={12} />}
-                    {set.notes && <FileText size={12} />}
-                  </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>
+        {t('workout:history.recentSessions')}
+      </span>
+
+      {sessions.map(session => {
+        const volume = calculateTotalVolume(session.sets)
+        return (
+          <div
+            key={session.sessionId}
+            className="rounded-lg"
+            style={{
+              backgroundColor: colors.bgTertiary,
+              borderRadius: 12,
+              border: `1px solid ${colors.border}`,
+              overflow: 'hidden',
+            }}
+          >
+            {/* Session header — clickable to navigate */}
+            <div
+              className="flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
+              style={{ padding: '12px 14px 8px' }}
+              onClick={() => onSessionClick(session.sessionId, session.date)}
+            >
+              <span style={{ color: colors.textPrimary, fontSize: 15, fontWeight: 700 }}>
+                {formatShortDate(session.date)}
+              </span>
+              <div className="flex items-center gap-2">
+                {volume > 0 && (
+                  <span style={{ color: colors.textMuted, fontSize: 12 }}>
+                    {volume.toLocaleString()} {weightUnit}
+                  </span>
                 )}
+                <ChevronRight size={16} color={colors.textSecondary} />
               </div>
-            ))}
+            </div>
+
+            {/* Sets */}
+            <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {session.sets.map(set => (
+                <div key={set.id} className="flex items-center gap-3" style={{ fontSize: 13 }}>
+                  <span style={{ color: colors.textMuted, fontSize: 12, width: 14, textAlign: 'right' }}>
+                    {set.set_number}
+                  </span>
+                  <span className="flex-1" style={{ color: colors.textPrimary }}>
+                    {formatSetValue({ ...set, weight_unit: weightUnit }, { timeUnit, distanceUnit })}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {set.notes && (
+                      <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSelectSet(set) }} className="hover:opacity-80 p-1">
+                        <FileText size={14} color={colors.textMuted} />
+                      </button>
+                    )}
+                    {set.video_url && (
+                      <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSelectSet(set) }} className="hover:opacity-80 p-1">
+                        <Video size={14} color={colors.textMuted} />
+                      </button>
+                    )}
+                    {set.rir_actual !== null && set.rir_actual !== undefined && (
+                      <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'right' }}>
+                        {set.rir_actual}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
 
       {hasNextPage && (
         <button
