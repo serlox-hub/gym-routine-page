@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react-native'
-import { useWorkoutHistory, formatTime } from '@gym/shared'
+import { useWorkoutHistory, formatTime, groupSessionsByDate } from '@gym/shared'
 import { LoadingSpinner, ErrorMessage } from '../components/ui'
 import { MonthlyCalendar } from '../components/History'
 import SessionInlineDetail from '../components/History/SessionInlineDetail'
@@ -17,11 +17,32 @@ export default function HistoryScreen({ navigation }) {
   const [selectedSessionId, setSelectedSessionId] = useState(null)
   const [selectedDateKey, setSelectedDateKey] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const autoSelectedRef = useRef(null)
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     try { await refetch() } finally { setRefreshing(false) }
   }, [refetch])
+
+  // Auto-seleccionar día de hoy al cargar
+  useEffect(() => {
+    if (!sessions || sessions.length === 0) return
+    const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
+    if (autoSelectedRef.current === monthKey) return
+    autoSelectedRef.current = monthKey
+
+    const todayKey = new Date().toDateString()
+    const todaySessions = groupSessionsByDate(sessions).get(todayKey)
+
+    setSelectedDateKey(todayKey)
+    if (todaySessions) {
+      setSelectedSessions(todaySessions)
+      setSelectedSessionId(todaySessions[0].id)
+    } else {
+      setSelectedSessions(null)
+      setSelectedSessionId(null)
+    }
+  }, [sessions, currentDate])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />

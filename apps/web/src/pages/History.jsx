@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react'
-import { useWorkoutHistory, formatTime } from '@gym/shared'
+import { useWorkoutHistory, formatTime, groupSessionsByDate } from '@gym/shared'
 import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
 import { MonthlyCalendar } from '../components/History/index.js'
 import SessionInlineDetail from '../components/History/SessionInlineDetail.jsx'
@@ -14,6 +14,27 @@ function History() {
   const [selectedSessions, setSelectedSessions] = useState(null)
   const [selectedSessionId, setSelectedSessionId] = useState(null)
   const [selectedDateKey, setSelectedDateKey] = useState(null)
+  const autoSelectedRef = useRef(null)
+
+  // Auto-seleccionar día de hoy al cargar
+  useEffect(() => {
+    if (!sessions || sessions.length === 0) return
+    const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
+    if (autoSelectedRef.current === monthKey) return
+    autoSelectedRef.current = monthKey
+
+    const todayKey = new Date().toDateString()
+    const todaySessions = groupSessionsByDate(sessions).get(todayKey)
+
+    setSelectedDateKey(todayKey)
+    if (todaySessions) {
+      setSelectedSessions(todaySessions)
+      setSelectedSessionId(todaySessions[0].id)
+    } else {
+      setSelectedSessions(null)
+      setSelectedSessionId(null)
+    }
+  }, [sessions, currentDate])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
