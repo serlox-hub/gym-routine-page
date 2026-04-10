@@ -29,7 +29,7 @@ function HistoryTable({ sessions, weightUnit = 'kg', timeUnit = 's', distanceUni
           key={session.sessionId}
           className="p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
           style={{ backgroundColor: colors.bgTertiary }}
-          onClick={() => onSessionClick(session.sessionId)}
+          onClick={() => onSessionClick(session.sessionId, session.date)}
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-secondary">

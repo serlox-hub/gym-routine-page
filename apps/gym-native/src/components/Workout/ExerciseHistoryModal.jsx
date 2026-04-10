@@ -75,7 +75,7 @@ function HistoryTab({ sessions, weightUnit, timeUnit, distanceUnit, onSelectSet,
       {sessions.map(session => (
         <Pressable
           key={session.sessionId}
-          onPress={() => onSessionClick(session.sessionId)}
+          onPress={() => onSessionClick(session.sessionId, session.date)}
           className="p-3 rounded-lg"
           style={{ backgroundColor: colors.bgTertiary }}
         >
@@ -101,7 +101,7 @@ function HistoryTab({ sessions, weightUnit, timeUnit, distanceUnit, onSelectSet,
                       if (set.notes || set.video_url) onSelectSet(set)
                     }}
                     className="flex-row items-center gap-1 px-1.5 py-0.5 rounded"
-                    style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)' }}
+                    style={{ backgroundColor: colors.purpleBg }}
                   >
                     {set.rir_actual !== null && (
                       <Text className="text-xs font-bold" style={{ color: colors.purple }}>
@@ -146,9 +146,9 @@ export default function ExerciseHistoryModal({
     return calculateExerciseStats(sessions, measurementType)
   }, [sessions, measurementType])
 
-  const handleSessionClick = (sessionId) => {
+  const handleSessionClick = (sessionId, date) => {
     onClose()
-    onSessionClick?.(sessionId)
+    onSessionClick?.(sessionId, date)
   }
 
   return (
@@ -161,30 +161,30 @@ export default function ExerciseHistoryModal({
             <View className="flex-row rounded-full p-0.5" style={{ backgroundColor: colors.bgTertiary }}>
               <Pressable
                 onPress={() => setScope('day')}
-                className="px-2 py-0.5 rounded-full"
+                className="px-3 py-1 rounded-full"
                 style={{
-                  backgroundColor: scope === 'day' ? 'rgba(63, 185, 80, 0.2)' : 'transparent',
+                  backgroundColor: scope === 'day' ? colors.successBg : 'transparent',
                 }}
               >
                 <Text
                   className="text-xs font-medium"
                   style={{ color: scope === 'day' ? colors.success : colors.textSecondary }}
                 >
-                  {t('routine:title')}
+                  {t('exercise:scopeRoutine')}
                 </Text>
               </Pressable>
               <Pressable
                 onPress={() => setScope('global')}
-                className="px-2 py-0.5 rounded-full"
+                className="px-3 py-1 rounded-full"
                 style={{
-                  backgroundColor: scope === 'global' ? 'rgba(139, 148, 158, 0.2)' : 'transparent',
+                  backgroundColor: scope === 'global' ? colors.accentBgSubtle : 'transparent',
                 }}
               >
                 <Text
                   className="text-xs font-medium"
                   style={{ color: scope === 'global' ? colors.textPrimary : colors.textSecondary }}
                 >
-                  Global
+                  {t('exercise:scopeGlobal')}
                 </Text>
               </Pressable>
             </View>
@@ -214,7 +214,7 @@ export default function ExerciseHistoryModal({
               className="text-sm font-medium"
               style={{ color: activeTab === 'history' ? colors.accent : colors.textSecondary }}
             >
-              {t('workout:history.title')}
+              {t('exercise:history')}
             </Text>
           </Pressable>
         </View>

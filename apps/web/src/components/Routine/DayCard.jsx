@@ -99,8 +99,6 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
 
   return (
     <Card
-      className={`${editingDay ? 'cursor-default' : 'cursor-pointer'}`}
-      onClick={handleClick}
       noHover
       style={{
         borderRadius: 14,
@@ -115,7 +113,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
           onSave={handleSaveDay}
         />
       ) : (
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={handleClick}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <ChevronDown
               size={16}
@@ -236,7 +234,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
 
       <ConfirmModal
         isOpen={!!exerciseToDelete}
-        title={t('exercise:delete')}
+        title={t('routine:exercise.removeFromRoutine')}
         message={t('routine:exercise.removeFromRoutine', { name: exerciseToDelete?.exercise?.name })}
         confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteExercise}

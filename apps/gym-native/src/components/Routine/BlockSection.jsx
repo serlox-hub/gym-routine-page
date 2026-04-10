@@ -8,6 +8,7 @@ import { formatSupersetLabel, groupExercisesBySupersetId, translateBlockName } f
 
 export default function BlockSection({
   block,
+  routineDayId,
   isEditing = false,
   isReordering = false,
   onAddExercise,
@@ -43,6 +44,7 @@ export default function BlockSection({
             <ExerciseCard
               key={group.exercise.id}
               routineExercise={group.exercise}
+              routineDayId={routineDayId}
               isEditing={isEditing}
               isReordering={isReordering}
               onEdit={() => onEditExercise?.(group.exercise)}
@@ -81,6 +83,7 @@ export default function BlockSection({
               <ExerciseCard
                 key={exercise.id}
                 routineExercise={exercise}
+                routineDayId={routineDayId}
                 isSuperset
                 isEditing={isEditing}
                 isReordering={isReordering}

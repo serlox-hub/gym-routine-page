@@ -9,7 +9,7 @@ import { MonthlyCalendar } from '../components/History'
 import SessionInlineDetail from '../components/History/SessionInlineDetail'
 import { colors, design } from '../lib/styles'
 
-export default function HistoryScreen({ navigation }) {
+export default function HistoryScreen({ navigation, route }) {
   const { t } = useTranslation()
   const [currentDate, setCurrentDate] = useState(new Date())
   const { data: sessions, isLoading, error, refetch } = useWorkoutHistory(currentDate)
@@ -24,8 +24,39 @@ export default function HistoryScreen({ navigation }) {
     try { await refetch() } finally { setRefreshing(false) }
   }, [refetch])
 
-  // Auto-seleccionar día de hoy al cargar
+  // Navegar a sesión específica si viene por params
+  const incomingSessionId = route?.params?.sessionId
+  const incomingSessionDate = route?.params?.sessionDate
   useEffect(() => {
+    if (!incomingSessionId) return
+
+    // Cambiar al mes de la sesión si es diferente al actual
+    if (incomingSessionDate) {
+      const sessionDate = new Date(incomingSessionDate)
+      if (sessionDate.getFullYear() !== currentDate.getFullYear() || sessionDate.getMonth() !== currentDate.getMonth()) {
+        setCurrentDate(sessionDate)
+        return
+      }
+    }
+
+    if (!sessions || sessions.length === 0) return
+    const sessionsByDate = groupSessionsByDate(sessions)
+    for (const [dateKey, daySessions] of sessionsByDate) {
+      const match = daySessions.find(s => s.id === incomingSessionId)
+      if (match) {
+        setSelectedDateKey(dateKey)
+        setSelectedSessions(daySessions)
+        setSelectedSessionId(incomingSessionId)
+        autoSelectedRef.current = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
+        navigation.setParams({ sessionId: undefined, sessionDate: undefined })
+        return
+      }
+    }
+  }, [incomingSessionId, incomingSessionDate, sessions, currentDate, navigation])
+
+  // Auto-seleccionar día de hoy al cargar (skip si hay incoming)
+  useEffect(() => {
+    if (incomingSessionId) return
     if (!sessions || sessions.length === 0) return
     const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
     if (autoSelectedRef.current === monthKey) return
@@ -42,7 +73,7 @@ export default function HistoryScreen({ navigation }) {
       setSelectedSessions(null)
       setSelectedSessionId(null)
     }
-  }, [sessions, currentDate])
+  }, [incomingSessionId, sessions, currentDate])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />

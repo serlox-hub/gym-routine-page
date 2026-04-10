@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
+import { ChevronRight, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
 import { Card, DropdownMenu } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
@@ -54,24 +54,44 @@ function ExerciseCard({
 
   if (!isEditing) {
     return (
-      <div
-        className="rounded-lg"
-        style={{
-          backgroundColor: colors.bgTertiary,
-          padding: '10px 14px',
-          ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
-        }}
-        onClick={onClick}
-      >
-        <h4 className="font-semibold truncate" style={{ color: colors.textPrimary, fontSize: 14 }}>
-          {getExerciseName(exercise)}
-        </h4>
-        <div className="flex flex-wrap gap-3 mt-1">
-          <span style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</span>
-          {rir !== null && rir !== undefined && <span style={{ color: colors.textSecondary, fontSize: 12 }}>RIR {rir}</span>}
-          {rest_seconds > 0 && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</span>}
+      <>
+        <div
+          className="rounded-lg cursor-pointer transition-colors"
+          style={{
+            backgroundColor: colors.bgTertiary,
+            padding: '10px 14px',
+            ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowHistory(true)
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bgAlt}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bgTertiary}
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold truncate" style={{ color: colors.textPrimary, fontSize: 14 }}>
+                {getExerciseName(exercise)}
+              </h4>
+              <div className="flex flex-wrap gap-3 mt-1">
+                <span style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</span>
+                {rir !== null && rir !== undefined && <span style={{ color: colors.textSecondary, fontSize: 12 }}>RIR {rir}</span>}
+                {rest_seconds > 0 && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</span>}
+              </div>
+            </div>
+            <ChevronRight size={16} color={colors.textMuted} className="shrink-0" />
+          </div>
         </div>
-      </div>
+        <ExerciseHistoryModal
+          isOpen={showHistory}
+          onClose={() => setShowHistory(false)}
+          exerciseId={exercise.id}
+          exerciseName={getExerciseName(exercise)}
+          measurementType={measurementType}
+          routineDayId={routineDayId}
+        />
+      </>
     )
   }
 

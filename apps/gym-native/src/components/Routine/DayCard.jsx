@@ -165,6 +165,7 @@ export default function DayCard({
             <>
               <BlockSection
                   block={warmupBlock || { name: 'Calentamiento', routine_exercises: [] }}
+                  routineDayId={id}
                   isEditing
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
@@ -177,6 +178,7 @@ export default function DayCard({
                 />
               <BlockSection
                   block={mainBlock || { name: 'Principal', routine_exercises: [] }}
+                  routineDayId={id}
                   isEditing
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
@@ -194,7 +196,7 @@ export default function DayCard({
                 <Text className="text-secondary text-sm">{t('routine:block.noExercises')}</Text>
               ) : (
                 blocks?.filter(b => b.routine_exercises?.length > 0).map(block => (
-                  <BlockSection key={block.name} block={block} />
+                  <BlockSection key={block.name} block={block} routineDayId={id} />
                 ))
               )}
             </>

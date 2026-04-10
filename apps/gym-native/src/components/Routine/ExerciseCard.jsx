@@ -1,13 +1,17 @@
 import { useState } from 'react'
-import { View, Text } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
+import { ChevronRight, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
+import { useNavigation } from '@react-navigation/native'
 import { Card, DropdownMenu, ReorderModal } from '../ui'
+import { ExerciseHistoryModal } from '../Workout'
 import { colors } from '../../lib/styles'
+import { MeasurementType } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 export default function ExerciseCard({
   routineExercise,
+  routineDayId,
   isSuperset = false,
   isEditing = false,
   isReordering: _isReordering = false,
@@ -16,15 +20,17 @@ export default function ExerciseCard({
   onDuplicate,
   onMoveToDay,
   onReplace,
-  onPress: _onPress,
   onReorderToPosition,
   currentIndex = 0,
   totalExercises = 1,
   positionLabels = [],
 }) {
   const { t } = useTranslation()
-  const { exercise, series, reps, rir, rest_seconds } = routineExercise
+  const navigation = useNavigation()
+  const { exercise, series, reps, rir, rest_seconds, measurement_type } = routineExercise
   const [showReorder, setShowReorder] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const measurementType = measurement_type || exercise?.measurement_type || MeasurementType.WEIGHT_REPS
 
   const borderStyle = getMuscleGroupBorderStyle(exercise?.muscle_group?.name)
   const rnBorderStyle = {
@@ -42,31 +48,52 @@ export default function ExerciseCard({
     { icon: Trash2, label: t('common:buttons.delete'), onPress: onDelete, danger: true },
   ].filter(Boolean)
 
-  // Vista mode — card con fondo y borde muscular
+  // Vista mode — card clickable con historial
   if (!isEditing) {
     return (
-      <View
-        style={{
-          backgroundColor: colors.bgTertiary,
-          borderRadius: 8,
-          paddingVertical: 10,
-          paddingHorizontal: 14,
-          ...rnBorderStyle,
-        }}
-      >
-        <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
-          {exercise?.name}
-        </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
-          {rir !== null && rir !== undefined && (
-            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>RIR {rir}</Text>
-          )}
-          {rest_seconds > 0 && (
-            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</Text>
-          )}
-        </View>
-      </View>
+      <>
+        <Pressable
+          onPress={() => setShowHistory(true)}
+          style={{
+            backgroundColor: colors.bgTertiary,
+            borderRadius: 8,
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            ...rnBorderStyle,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
+              {exercise?.name}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
+              {rir !== null && rir !== undefined && (
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>RIR {rir}</Text>
+              )}
+              {rest_seconds > 0 && (
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</Text>
+              )}
+            </View>
+          </View>
+          <ChevronRight size={16} color={colors.textMuted} />
+        </Pressable>
+        <ExerciseHistoryModal
+          isOpen={showHistory}
+          onClose={() => setShowHistory(false)}
+          exerciseId={exercise?.id}
+          exerciseName={exercise?.name}
+          measurementType={measurementType}
+          routineDayId={routineDayId}
+          onSessionClick={(sessionId, date) => {
+            setShowHistory(false)
+            navigation.navigate('MainTabs', { screen: 'History', params: { sessionId, sessionDate: date } })
+          }}
+        />
+      </>
     )
   }
 

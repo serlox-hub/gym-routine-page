@@ -32,9 +32,10 @@ function Modal({
     ? `w-full ${maxWidth} rounded-t-2xl ${className}`
     : `w-full ${maxWidth} rounded-lg ${className}`
 
-  const contentStyle = noBorder
-    ? modalContentStyle
-    : { ...modalContentStyle, border: `1px solid ${colors.border}` }
+  const contentStyle = {
+    ...(noBorder ? modalContentStyle : { ...modalContentStyle, border: `1px solid ${colors.border}` }),
+    ...(isBottom ? { maxHeight: '85vh' } : {}),
+  }
 
   return (
     <div
