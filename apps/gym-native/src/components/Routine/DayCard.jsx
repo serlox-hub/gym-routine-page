@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Pencil, ArrowUpDown } from 'lucide-react-native'
+import { Trash2, ChevronDown, ChevronRight, Play, Pencil, ArrowUpDown } from 'lucide-react-native'
 import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
@@ -102,7 +102,11 @@ export default function DayCard({
   }
 
   return (
-    <Card className="p-4 mb-2" onPress={editingDay ? undefined : handleClick}>
+    <Card
+      className="mb-2"
+      style={{ borderRadius: 14, padding: 12, paddingHorizontal: 14 }}
+      onPress={editingDay ? undefined : handleClick}
+    >
       {editingDay ? (
         <DayEditForm
           dayNumber={sort_order}
@@ -111,29 +115,22 @@ export default function DayCard({
           onSave={handleSaveDay}
         />
       ) : (
-        <View className="flex-row items-center justify-between gap-2">
-          <View className="flex-row items-center gap-3 flex-1">
-            <ChevronRight
-              size={18}
-              color={colors.textSecondary}
-              style={{ transform: [{ rotate: isExpanded ? '90deg' : '0deg' }] }}
-            />
-            <Text className="text-primary font-medium shrink" numberOfLines={1}>{name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+            {isExpanded
+              ? <ChevronDown size={16} color={colors.textSecondary} />
+              : <ChevronRight size={16} color={colors.textSecondary} />
+            }
+            <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{name}</Text>
           </View>
-          <View className="flex-row items-center gap-2">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 }}>
             {!isEditing && (
               <Pressable
                 onPress={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
                 disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
-                className="px-5 py-1.5 rounded-full active:scale-95"
-                style={{
-                  backgroundColor: isThisDayActive ? colors.success : colors.accent,
-                  opacity: (hasActiveSession && !isThisDayActive) ? 0.4 : 1,
-                }}
+                style={{ opacity: (hasActiveSession && !isThisDayActive) ? 0.4 : 1 }}
               >
-                <Text className="text-xs font-semibold uppercase" style={{ color: isThisDayActive ? colors.white : colors.black }}>
-                  {isThisDayActive ? t('common:buttons.continue') : t('workout:session.start')}
-                </Text>
+                <Play size={20} color={colors.success} />
               </Pressable>
             )}
             {isEditing && (

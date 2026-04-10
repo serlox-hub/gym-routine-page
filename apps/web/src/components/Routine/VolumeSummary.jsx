@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ChevronDown } from 'lucide-react'
 import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, getMuscleGroupName, useMuscleGroups, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
 import { useRoutineBlocks } from '../../hooks/useRoutines.js'
 import { colors } from '../../lib/styles.js'
@@ -7,18 +8,34 @@ import { colors } from '../../lib/styles.js'
 function VolumeSummary({ days, cycleDays = 7 }) {
   const { t } = useTranslation()
   const [allDaysBlocks, setAllDaysBlocks] = useState([])
+  const [isExpanded, setIsExpanded] = useState(false)
 
   if (!days?.length) return null
 
   return (
     <section className="mt-4">
-      <h3 className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
-        {t('routine:volumeSummary')}
-      </h3>
+      <button
+        className="flex items-center gap-2 w-full"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <h3 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+          {t('routine:volumeSummary')}
+        </h3>
+        <ChevronDown
+          size={14}
+          color={colors.textSecondary}
+          className="transition-transform"
+          style={{ transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+        />
+      </button>
       {days.map((day, i) => (
         <DayBlocksCollector key={day.id} dayId={day.id} index={i} onBlocks={setAllDaysBlocks} />
       ))}
-      <VolumeBars allDaysBlocks={allDaysBlocks} cycleDays={cycleDays} totalDays={days.length} />
+      {isExpanded && (
+        <div className="mt-3">
+          <VolumeBars allDaysBlocks={allDaysBlocks} cycleDays={cycleDays} totalDays={days.length} />
+        </div>
+      )}
     </section>
   )
 }

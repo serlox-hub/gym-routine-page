@@ -74,17 +74,21 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
   }
 
   const menuItems = [
-    { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart },
+    { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart, accent: true },
     { icon: Copy, label: t('routine:duplicate'), onClick: handleDuplicate },
     { icon: Download, label: t('common:buttons.export'), onClick: handleExport },
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ]
 
+  const editMenuItems = [
+    { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
+  ]
+
   return (
     <PageHeader
-      title={isEditing ? t('routine:edit') : routine?.name || t('routine:day.title')}
+      title={isEditing ? t('routine:edit') : ''}
       onBack={() => isEditing ? onEditEnd() : navigate('/')}
-      menuItems={!isEditing ? menuItems : undefined}
+      menuItems={isEditing ? editMenuItems : menuItems}
     />
   )
 }

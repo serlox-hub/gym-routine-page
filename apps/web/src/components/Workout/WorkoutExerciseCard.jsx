@@ -74,7 +74,6 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
     { label: t('common:buttons.edit'), icon: Pencil, onClick: () => setShowEdit(true) },
     { label: t('workout:set.addSet'), icon: Plus, onClick: addSet },
     onReplace && { label: t('routine:exercise.replace'), icon: Repeat2, onClick: () => setShowReplace(true) },
-    onReorderToPosition && totalExercises > 1 && { type: 'separator' },
     onReorderToPosition && totalExercises > 1 && {
       icon: ArrowUpDown, label: t('routine:reorder'), disabled: isReordering,
       children: Array.from({ length: totalExercises }, (_, i) => ({
@@ -82,7 +81,6 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         active: i === currentIndex, disabled: i === currentIndex || isReordering,
       })),
     },
-    onRemove && { type: 'separator' },
     onRemove && { label: t('routine:exercise.removeFromRoutine'), icon: Trash2, onClick: () => setShowRemoveConfirm(true), danger: true },
   ]
 

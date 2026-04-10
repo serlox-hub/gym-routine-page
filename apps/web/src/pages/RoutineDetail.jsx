@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus } from 'lucide-react'
-import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useMoveRoutineExerciseToDay } from '../hooks/useRoutines.js'
+import { Plus, Pin, Repeat, Layers } from 'lucide-react'
+import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
 import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, RoutineEditForm, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
 import { moveItemToPosition } from '@gym/shared'
@@ -31,6 +31,7 @@ function RoutineDetail() {
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [exerciseToMove, setExerciseToMove] = useState(null)
   const [movingFromDayId, setMovingFromDayId] = useState(null)
+  const [descExpanded, setDescExpanded] = useState(false)
 
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
@@ -43,6 +44,7 @@ function RoutineDetail() {
   const reorderDays = useReorderRoutineDays()
   const duplicateExercise = useDuplicateRoutineExercise()
   const moveExercise = useMoveRoutineExerciseToDay()
+  const setFavoriteMutation = useSetFavoriteRoutine()
 
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
@@ -193,6 +195,10 @@ function RoutineDetail() {
     }
   }
 
+  const exerciseCount = allRoutineExercises?.length || 0
+  const daysCount = days?.length || 0
+  const descNeedsTruncation = routine?.description && routine.description.length > 100
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <RoutineHeader
@@ -204,9 +210,91 @@ function RoutineDetail() {
         onDelete={() => setShowDeleteConfirm(true)}
       />
 
-      <main className="space-y-2">
+      {/* Info Section (view mode) */}
+      {!isEditing && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+          <h2 style={{ color: colors.textPrimary, fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
+            {routine?.name}
+          </h2>
+          {routine?.description && (
+            <div>
+              <p style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 1.4 }}
+                className={descExpanded ? '' : 'line-clamp-2'}
+              >
+                {routine.description}
+              </p>
+              {descNeedsTruncation && (
+                <button
+                  onClick={() => setDescExpanded(!descExpanded)}
+                  style={{ color: colors.success, fontSize: 13, fontWeight: 500, marginTop: 2 }}
+                >
+                  {descExpanded ? t('common:buttons.seeLess') : t('common:buttons.seeMore')}
+                </button>
+              )}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <span className="inline-flex items-center gap-1"
+              style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '5px 10px', color: colors.textSecondary, fontSize: 11, fontWeight: 500 }}>
+              <Repeat size={12} />
+              {t('common:home.nDays', { count: daysCount })}
+            </span>
+            <span className="inline-flex items-center gap-1"
+              style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '5px 10px', color: colors.textSecondary, fontSize: 11, fontWeight: 500 }}>
+              <Layers size={12} />
+              {t('common:home.nExercises', { count: exerciseCount })}
+            </span>
+          </div>
+        </section>
+      )}
+
+      {/* Pin toggle (view mode) */}
+      {!isEditing && (
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          style={{
+            backgroundColor: colors.bgSecondary,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 14,
+            padding: '14px 16px',
+            marginBottom: 24,
+          }}
+          onClick={() => setFavoriteMutation.mutate({ routineId: parseInt(routineId), isFavorite: !routine?.is_favorite })}
+        >
+          <div className="flex items-center gap-2.5">
+            <Pin size={18} style={{ color: colors.success }} />
+            <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>
+              {t('common:home.pinnedToHome')}
+            </span>
+          </div>
+          <div
+            style={{
+              width: 44, height: 26, borderRadius: 13,
+              backgroundColor: routine?.is_favorite ? colors.success : colors.bgAlt,
+              position: 'relative', transition: 'background-color 0.2s',
+            }}
+          >
+            <div style={{
+              width: 22, height: 22, borderRadius: 11,
+              backgroundColor: colors.white,
+              position: 'absolute', top: 2,
+              left: routine?.is_favorite ? 20 : 2,
+              transition: 'left 0.2s',
+            }} />
+          </div>
+        </div>
+      )}
+
+      <main style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {isEditing && (
             <RoutineEditForm routine={routine} routineId={routineId} />
+          )}
+
+          {/* Workout Days label */}
+          {!isEditing && days?.length > 0 && (
+            <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600, letterSpacing: 0.5 }}>
+              {t('routine:workoutDays')}
+            </span>
           )}
 
           {days?.length === 0 && !isEditing ? (

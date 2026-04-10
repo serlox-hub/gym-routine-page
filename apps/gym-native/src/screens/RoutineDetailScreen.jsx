@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Plus } from 'lucide-react-native'
+import { Plus, Pin, Repeat, Layers } from 'lucide-react-native'
 import {
   useRoutine, useRoutineDays, useRoutineAllExercises,
   useCreateRoutineDay, useDeleteRoutine, useDeleteRoutineDay,
   useReorderRoutineDays, useAddExerciseToDay, useUpdateRoutineExercise,
   useDuplicateRoutineExercise, useMoveRoutineExerciseToDay,
+  useSetFavoriteRoutine,
 } from '../hooks/useRoutines'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, ActiveSessionBanner } from '../components/ui'
 import {
@@ -54,6 +55,8 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const updateExercise = useUpdateRoutineExercise()
   const duplicateExercise = useDuplicateRoutineExercise()
   const moveExercise = useMoveRoutineExerciseToDay()
+  const setFavoriteMutation = useSetFavoriteRoutine()
+  const [descExpanded, setDescExpanded] = useState(false)
 
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
@@ -113,9 +116,93 @@ export default function RoutineDetailScreen({ route, navigation }) {
         navigation={navigation}
       />
 
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Info Section (view mode) */}
+        {!isEditing && (
+          <View style={{ gap: 8, marginBottom: 24 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: '800', letterSpacing: -0.5 }}>
+              {routine?.name}
+            </Text>
+            {routine?.description ? (
+              <View>
+                <Text
+                  numberOfLines={descExpanded ? undefined : 2}
+                  style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}
+                >
+                  {routine.description}
+                </Text>
+                {routine.description.length > 100 && (
+                  <Pressable onPress={() => setDescExpanded(!descExpanded)}>
+                    <Text style={{ color: colors.success, fontSize: 13, fontWeight: '500', marginTop: 2 }}>
+                      {descExpanded ? t('common:buttons.seeLess') : t('common:buttons.seeMore')}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            ) : null}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10 }}>
+                <Repeat size={12} color={colors.textSecondary} />
+                <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500' }}>
+                  {t('common:home.nDays', { count: days?.length || 0 })}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10 }}>
+                <Layers size={12} color={colors.textSecondary} />
+                <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500' }}>
+                  {t('common:home.nExercises', { count: allRoutineExercises?.length || 0 })}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Pin toggle (view mode) */}
+        {!isEditing && (
+          <Pressable
+            onPress={() => setFavoriteMutation.mutate({ routineId: parseInt(routineId), isFavorite: !routine?.is_favorite })}
+            style={{
+              backgroundColor: colors.bgSecondary,
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 14,
+              paddingVertical: 14,
+              paddingHorizontal: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 24,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Pin size={18} color={colors.success} />
+              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
+                {t('common:home.pinnedToHome')}
+              </Text>
+            </View>
+            <View style={{
+              width: 44, height: 26, borderRadius: 13,
+              backgroundColor: routine?.is_favorite ? colors.success : colors.bgAlt,
+            }}>
+              <View style={{
+                width: 22, height: 22, borderRadius: 11,
+                backgroundColor: colors.white,
+                position: 'absolute', top: 2,
+                left: routine?.is_favorite ? 20 : 2,
+              }} />
+            </View>
+          </Pressable>
+        )}
+
         {isEditing && (
           <RoutineEditForm routine={routine} routineId={routineId} />
+        )}
+
+        {/* Workout Days label */}
+        {!isEditing && days?.length > 0 && (
+          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 10 }}>
+            {t('routine:workoutDays')}
+          </Text>
         )}
 
         {days?.length === 0 && !isEditing ? (

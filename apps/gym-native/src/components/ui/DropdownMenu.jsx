@@ -14,9 +14,9 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
     <View>
       <Pressable
         onPress={() => setIsOpen(true)}
-        className="p-1.5 rounded-lg bg-surface-block active:opacity-70"
+        className="p-1.5 rounded-lg active:opacity-70"
       >
-        <MoreVertical size={triggerSize} color={colors.textSecondary} />
+        <MoreVertical size={triggerSize} color={colors.textPrimary} />
       </Pressable>
 
       <Modal
@@ -50,12 +50,12 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
                   {item.icon && (
                     <item.icon
                       size={18}
-                      color={item.danger ? colors.danger : colors.textSecondary}
+                      color={item.danger ? colors.danger : item.accent ? colors.success : colors.textSecondary}
                     />
                   )}
                   <Text
                     className="text-base"
-                    style={{ color: item.danger ? colors.danger : colors.textPrimary }}
+                    style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textPrimary }}
                   >
                     {item.label}
                   </Text>

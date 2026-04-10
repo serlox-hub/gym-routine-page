@@ -353,7 +353,6 @@ function SessionInlineDetail({ sessionId }) {
           <DropdownMenu items={[
             { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
             { icon: Share2, label: t('common:buttons.share'), onClick: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
-            { type: 'separator' },
             { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
           ]} />
         </div>

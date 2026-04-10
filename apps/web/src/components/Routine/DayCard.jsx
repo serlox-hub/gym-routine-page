@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Pencil, ArrowUpDown } from 'lucide-react'
+import { Trash2, ChevronDown, Play, Pencil, ArrowUpDown } from 'lucide-react'
 import { Card, ConfirmModal, DropdownMenu, LoadingSpinner } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
@@ -98,7 +98,15 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
 
 
   return (
-    <Card className={`p-4 ${editingDay ? 'cursor-default' : 'cursor-pointer'}`} onClick={handleClick}>
+    <Card
+      className={`${editingDay ? 'cursor-default' : 'cursor-pointer'}`}
+      onClick={handleClick}
+      noHover
+      style={{
+        borderRadius: 14,
+        padding: isEditing ? 16 : '12px 14px',
+      }}
+    >
       {editingDay ? (
         <DayEditForm
           dayNumber={sort_order}
@@ -108,30 +116,25 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
         />
       ) : (
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <ChevronRight
-              size={18}
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <ChevronDown
+              size={16}
+              color={colors.textSecondary}
               className="shrink-0 transition-transform"
               style={{
-                color: colors.textSecondary,
-                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
               }}
             />
-            <h3 className="font-medium truncate">{name}</h3>
+            <h3 className="font-bold truncate" style={{ color: colors.textPrimary, fontSize: 15 }}>{name}</h3>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-2">
             {!isEditing && (
               <button
                 onClick={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
                 disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
-                className="px-5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all disabled:opacity-40"
-                style={{
-                  backgroundColor: isThisDayActive ? colors.success : colors.accent,
-                  color: isThisDayActive ? colors.white : colors.textPrimary,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                }}
+                className="disabled:opacity-40"
               >
-                {isThisDayActive ? t('workout:session.resume') : t('workout:session.start')}
+                <Play size={20} style={{ color: colors.success }} />
               </button>
             )}
             {isEditing && (

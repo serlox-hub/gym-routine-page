@@ -24,7 +24,7 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
           setIsOpen(true)
         }}
         className={`p-1.5 rounded-lg transition-opacity hover:opacity-80 ${triggerClassName}`}
-        style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+        style={{ color: colors.textPrimary }}
       >
         <MoreVertical size={triggerSize} />
       </button>
@@ -82,9 +82,9 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
                 }}
                 disabled={item.disabled}
                 className={ITEM_CLASS}
-                style={{ color: item.danger ? colors.danger : colors.textPrimary }}
+                style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textPrimary }}
               >
-                {item.icon && <item.icon size={18} style={{ color: item.danger ? colors.danger : colors.textSecondary }} />}
+                {item.icon && <item.icon size={18} style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textSecondary }} />}
                 {item.label}
               </button>
             )
