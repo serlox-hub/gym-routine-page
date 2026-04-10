@@ -1,6 +1,7 @@
 {
   "title": "My Routines",
   "new": "New routine",
+  "allRoutines": "All Routines",
   "create": "Create routine",
   "edit": "Edit routine",
   "delete": "Delete routine",

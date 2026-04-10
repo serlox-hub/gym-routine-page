@@ -1,5 +1,5 @@
 {
-  "version": "2.8",
+  "version": "2.10",
   "children": [
     {
       "type": "frame",
@@ -5351,55 +5351,6 @@
             },
             {
               "type": "frame",
-              "id": "AZU7A",
-              "name": "Header",
-              "width": "fill_container",
-              "padding": [
-                0,
-                24
-              ],
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "VPYTg",
-                  "name": "title",
-                  "fill": "$text-primary",
-                  "content": "Routines",
-                  "fontFamily": "Inter",
-                  "fontSize": 28,
-                  "fontWeight": "800",
-                  "letterSpacing": -0.5
-                },
-                {
-                  "type": "frame",
-                  "id": "rHKDr",
-                  "name": "addBtn",
-                  "width": 36,
-                  "height": 36,
-                  "fill": "$accent-lime",
-                  "cornerRadius": 12,
-                  "layout": "vertical",
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "pFcSX",
-                      "name": "addIcon",
-                      "width": 20,
-                      "height": 20,
-                      "iconFontName": "plus",
-                      "iconFontFamily": "lucide",
-                      "fill": "#0A0A0F"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
               "id": "7Jr24",
               "name": "Routines List",
               "width": "fill_container",
@@ -5599,6 +5550,43 @@
                   "fontFamily": "Inter",
                   "fontSize": 12,
                   "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "Un8B4",
+                  "name": "New Routine Card",
+                  "width": "fill_container",
+                  "height": 48,
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "$border-card"
+                  },
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "FlHKd",
+                      "name": "newIcon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "plus",
+                      "iconFontFamily": "lucide",
+                      "fill": "$accent-lime"
+                    },
+                    {
+                      "type": "text",
+                      "id": "TY31R",
+                      "name": "newText",
+                      "fill": "$text-secondary",
+                      "content": "New Routine",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
                 },
                 {
                   "type": "frame",
@@ -7618,16 +7606,6 @@
                               "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "B5bHe",
-                                  "name": "d1meta",
-                                  "fill": "$text-secondary",
-                                  "content": "6 exercises",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 11,
-                                  "fontWeight": "500"
-                                },
-                                {
                                   "type": "icon_font",
                                   "id": "JYKK0",
                                   "name": "d1play",
@@ -7774,16 +7752,6 @@
                           "alignItems": "center",
                           "children": [
                             {
-                              "type": "text",
-                              "id": "okPSl",
-                              "name": "d2meta",
-                              "fill": "$text-secondary",
-                              "content": "5 exercises",
-                              "fontFamily": "Inter",
-                              "fontSize": 11,
-                              "fontWeight": "500"
-                            },
-                            {
                               "type": "icon_font",
                               "id": "Ylaew",
                               "name": "d2p",
@@ -7851,16 +7819,6 @@
                           "gap": 8,
                           "alignItems": "center",
                           "children": [
-                            {
-                              "type": "text",
-                              "id": "jmT9M",
-                              "name": "d3meta",
-                              "fill": "$text-secondary",
-                              "content": "6 exercises",
-                              "fontFamily": "Inter",
-                              "fontSize": 11,
-                              "fontWeight": "500"
-                            },
                             {
                               "type": "icon_font",
                               "id": "2ohsd",

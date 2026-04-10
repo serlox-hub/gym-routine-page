@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin } from 'lucide-react'
-import { useRoutines, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
-import { LoadingSpinner, ErrorMessage, Card, TruncatedText } from '../components/ui/index.js'
+import { useRoutines } from '../hooks/useRoutines.js'
+import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
+import { RoutineCard } from '../components/Routine/index.js'
 import { NewRoutineFlow } from '../components/Home/index.js'
 import { colors } from '../lib/styles.js'
 
@@ -12,7 +13,6 @@ function Routines() {
   const location = useLocation()
   const { t } = useTranslation()
   const { data: routines, isLoading, error } = useRoutines()
-  const setFavoriteMutation = useSetFavoriteRoutine()
   const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
 
   useEffect(() => {
@@ -25,70 +25,63 @@ function Routines() {
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
-  return (
-    <div className="p-4 max-w-2xl mx-auto pb-20">
-      <h1 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
-        {t('common:nav.routines')}
-      </h1>
+  const pinnedRoutine = routines?.find(r => r.is_favorite)
+  const otherRoutines = routines?.filter(r => !r.is_favorite) || []
 
-      <ul className="space-y-2">
-        <li>
-          <Card
-            className="p-3 border-dashed"
-            onClick={() => setShowNewRoutineModal(true)}
-          >
-            <div className="flex items-center gap-2 justify-center" style={{ color: colors.textSecondary }}>
-              <Plus size={18} />
-              <span className="text-sm">{t('routine:new')}</span>
-            </div>
-          </Card>
-        </li>
-        {routines?.map(routine => (
-          <li key={routine.id}>
-            <Card
-              className="p-3"
-              onClick={() => navigate(`/routine/${routine.id}`)}
-            >
-              <div className={`flex justify-between gap-3 ${routine.description || routine.goal ? 'items-start' : 'items-center'}`}>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm" style={{ color: colors.textPrimary }}>
-                    {routine.name}
-                  </h3>
-                  {routine.description && (
-                    <TruncatedText
-                      text={routine.description}
-                      className="text-xs mt-1"
-                      style={{ color: colors.textSecondary }}
-                    />
-                  )}
-                  {routine.goal && (
-                    <p className="text-xs mt-1">
-                      <span style={{ color: colors.success }}>{t('routine:goal')}:</span>{' '}
-                      <span style={{ color: colors.textSecondary }}>{routine.goal}</span>
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setFavoriteMutation.mutate({
-                      routineId: routine.id,
-                      isFavorite: !routine.is_favorite,
-                    })
-                  }}
-                  className="p-1 rounded hover:opacity-80 shrink-0"
-                >
-                  <Pin
-                    size={18}
-                    style={{ color: routine.is_favorite ? colors.success : colors.textSecondary }}
-                    fill={routine.is_favorite ? colors.success : 'none'}
-                  />
-                </button>
-              </div>
-            </Card>
-          </li>
+  return (
+    <div className="px-6 pt-4 pb-20 max-w-2xl mx-auto flex flex-col gap-3">
+
+      {/* Pinned to Home section */}
+      {pinnedRoutine && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-1.5">
+            <Pin size={14} style={{ color: colors.success }} />
+            <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>
+              {t('common:home.pinnedToHome')}
+            </span>
+          </div>
+          <RoutineCard
+            routine={pinnedRoutine}
+            isPinned
+            onClick={() => navigate(`/routine/${pinnedRoutine.id}`)}
+          />
+        </div>
+      )}
+
+      {/* All Routines section */}
+      <div className="flex flex-col gap-3">
+        <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>
+          {t('routine:allRoutines')}
+        </span>
+
+        {/* New Routine button */}
+        <div
+          className="flex items-center justify-center gap-2 cursor-pointer transition-colors"
+          style={{
+            borderRadius: 16,
+            border: `1px dashed ${colors.border}`,
+            height: 48,
+            color: colors.textSecondary,
+          }}
+          onClick={() => setShowNewRoutineModal(true)}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bgHover}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <Plus size={18} style={{ color: colors.success }} />
+          <span style={{ fontSize: 14, fontWeight: 600 }}>
+            {t('routine:new')}
+          </span>
+        </div>
+
+        {/* Routine cards */}
+        {otherRoutines.map(routine => (
+          <RoutineCard
+            key={routine.id}
+            routine={routine}
+            onClick={() => navigate(`/routine/${routine.id}`)}
+          />
         ))}
-      </ul>
+      </div>
 
       <NewRoutineFlow
         isOpen={showNewRoutineModal}

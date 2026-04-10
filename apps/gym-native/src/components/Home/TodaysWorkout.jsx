@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Plus, ChevronRight, Pin, Repeat, Layers } from 'lucide-react-native'
+import { Plus, Pin, ChevronRight } from 'lucide-react-native'
 import { useRoutines } from '@gym/shared'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
+import { RoutineCard } from '../Routine'
 import { colors, design } from '../../lib/styles'
 
 function TodaysWorkout({ navigation }) {
@@ -18,7 +19,6 @@ function TodaysWorkout({ navigation }) {
 
   const pinnedRoutine = routines?.find(r => r.is_favorite)
   const hasRoutines = routines && routines.length > 0
-  const [pinnedPressed, setPinnedPressed] = useState(false)
   const [freePressed, setFreePressed] = useState(false)
 
   const handleStartFreeWorkout = () => {
@@ -34,57 +34,13 @@ function TodaysWorkout({ navigation }) {
 
       {/* Pinned routine card */}
       {pinnedRoutine ? (
-        <Pressable
-          onPress={() => navigation.navigate('RoutineDetail', { routineId: pinnedRoutine.id })}
-          onPressIn={() => setPinnedPressed(true)}
-          onPressOut={() => setPinnedPressed(false)}
-          style={{
-            backgroundColor: pinnedPressed ? colors.bgAlt : colors.bgSecondary,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: 14,
-            padding: 16,
-            marginBottom: 10,
-          }}
-        >
-          <View className="flex-row items-start gap-3">
-            <View className="flex-1">
-              <View className="flex-row items-center gap-1.5 mb-2">
-                <Pin size={12} color={colors.success} />
-                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
-                  {t('common:home.pinnedToHome')}
-                </Text>
-              </View>
-              <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize + 1, fontWeight: '700' }}>
-                {pinnedRoutine.name}
-              </Text>
-              {pinnedRoutine.description && (
-                <Text style={{ color: colors.textSecondary, fontSize: design.cardMetaSize, marginTop: 4, lineHeight: 17 }}>
-                  {pinnedRoutine.description}
-                </Text>
-              )}
-              <View className="flex-row items-center gap-2 mt-3">
-                {pinnedRoutine.days_count > 0 && (
-                  <View className="flex-row items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 }}>
-                    <Repeat size={11} color={colors.textSecondary} />
-                    <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '500' }}>
-                      {t('common:home.nDays', { count: pinnedRoutine.days_count })}
-                    </Text>
-                  </View>
-                )}
-                {pinnedRoutine.exercises_count > 0 && (
-                  <View className="flex-row items-center gap-1" style={{ backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 }}>
-                    <Layers size={11} color={colors.textSecondary} />
-                    <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '500' }}>
-                      {t('common:home.nExercises', { count: pinnedRoutine.exercises_count })}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-            <ChevronRight size={18} color={colors.textMuted} style={{ marginTop: 24 }} />
-          </View>
-        </Pressable>
+        <View style={{ marginBottom: 10 }}>
+          <RoutineCard
+            routine={pinnedRoutine}
+            isPinned
+            onPress={() => navigation.navigate('RoutineDetail', { routineId: pinnedRoutine.id })}
+          />
+        </View>
 
       ) : !hasRoutines ? (
         <Pressable
