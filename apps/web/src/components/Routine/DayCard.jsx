@@ -223,7 +223,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
           ) : (
             <>
               {blocks?.length === 0 ? (
-                <p className="text-secondary text-sm">{t('exercise:noExercises')}</p>
+                <p className="text-secondary text-sm">{t('routine:block.noExercises')}</p>
               ) : (
                 blocks?.filter(block => block.routine_exercises?.length > 0).map(block => (
                   <BlockSection key={block.name} block={block} routineDayId={id} />

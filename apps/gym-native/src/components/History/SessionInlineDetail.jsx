@@ -65,7 +65,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     <View
       className="flex-row items-center gap-2 py-2 px-3 rounded"
       style={{
-        backgroundColor: isSetPR ? 'rgba(210, 153, 34, 0.15)' : colors.bgTertiary,
+        backgroundColor: isSetPR ? colors.warningBg : colors.bgTertiary,
         borderLeftWidth: 3,
         borderLeftColor: isSetPR ? colors.warning : 'transparent',
       }}
@@ -217,7 +217,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
               key={set.id}
               className="flex-row items-center gap-3 py-2 px-3 rounded"
               style={{
-                backgroundColor: isSetPR ? 'rgba(210, 153, 34, 0.15)' : colors.bgTertiary,
+                backgroundColor: isSetPR ? colors.warningBg : colors.bgTertiary,
                 borderLeftWidth: 3,
                 borderLeftColor: isSetPR ? colors.warning : 'transparent',
               }}

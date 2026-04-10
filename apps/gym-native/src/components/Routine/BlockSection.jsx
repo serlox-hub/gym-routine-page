@@ -67,7 +67,7 @@ export default function BlockSection({
             <View
               className="flex-row items-center gap-2 px-2 py-1 rounded-t-lg"
               style={{
-                backgroundColor: 'rgba(163, 113, 247, 0.1)',
+                backgroundColor: colors.purpleBg,
                 borderBottomWidth: 1,
                 borderBottomColor: colors.purple,
               }}

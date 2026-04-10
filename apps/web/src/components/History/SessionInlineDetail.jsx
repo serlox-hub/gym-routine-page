@@ -69,7 +69,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     <div
       className="flex items-center gap-2 py-2 px-3 rounded"
       style={{
-        backgroundColor: isSetPR ? 'rgba(210, 153, 34, 0.15)' : colors.bgTertiary,
+        backgroundColor: isSetPR ? colors.warningBg : colors.bgTertiary,
         borderLeft: isSetPR ? `3px solid ${colors.warning}` : '3px solid transparent',
       }}
     >
@@ -165,7 +165,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
           {prData && (
             <span
               className="text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1"
-              style={{ backgroundColor: 'rgba(210, 153, 34, 0.15)', color: colors.warning }}
+              style={{ backgroundColor: colors.warningBg, color: colors.warning }}
             >
               <Trophy size={10} /> PR
             </span>
@@ -219,7 +219,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
               key={set.id}
               className="flex items-center gap-3 py-2 px-3 rounded"
               style={{
-                backgroundColor: isSetPR ? 'rgba(210, 153, 34, 0.15)' : colors.bgTertiary,
+                backgroundColor: isSetPR ? colors.warningBg : colors.bgTertiary,
                 borderLeft: isSetPR ? `3px solid ${colors.warning}` : '3px solid transparent',
               }}
             >

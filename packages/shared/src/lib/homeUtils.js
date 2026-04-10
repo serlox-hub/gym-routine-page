@@ -94,7 +94,7 @@ export function calculateWeeklyDurationMinutes(sessions) {
  * @returns {{ hours: number, minutes: number }}
  */
 export function formatDurationHoursMinutes(totalMinutes) {
-  if (!totalMinutes || totalMinutes < 0) return { hours: 0, minutes: 0 }
+  if (totalMinutes == null || totalMinutes <= 0) return { hours: 0, minutes: 0 }
   return {
     hours: Math.floor(totalMinutes / 60),
     minutes: totalMinutes % 60,

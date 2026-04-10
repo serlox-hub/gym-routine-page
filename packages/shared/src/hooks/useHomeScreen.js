@@ -22,7 +22,7 @@ export function useNextRoutineDay(routineId) {
   })
 
   const { data: lastSession, isLoading: loadingLast, isError: errorLast } = useQuery({
-    queryKey: ['last-session-for-routine', routineId],
+    queryKey: [QUERY_KEYS.LAST_SESSION_FOR_ROUTINE, routineId],
     queryFn: () => fetchLastCompletedSessionForRoutine(routineId),
     enabled: !!routineId,
   })
@@ -50,7 +50,7 @@ export function useWeeklyStats() {
   const to = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59).toISOString()
 
   const { data: sessions, isLoading, isError } = useQuery({
-    queryKey: ['weekly-session-stats', from, to],
+    queryKey: [QUERY_KEYS.WEEKLY_SESSION_STATS, from, to],
     queryFn: () => fetchWeeklySessionStats(from, to),
     staleTime: 1000 * 60 * 5,
   })
@@ -70,7 +70,7 @@ export function useMonthlySessionCount() {
   const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
 
   const { data: count, isLoading, isError } = useQuery({
-    queryKey: ['monthly-session-count', now.getFullYear(), now.getMonth()],
+    queryKey: [QUERY_KEYS.MONTHLY_SESSION_COUNT, now.getFullYear(), now.getMonth()],
     queryFn: () => fetchMonthlySessionCount(from, to),
     staleTime: 1000 * 60 * 5,
   })

@@ -75,7 +75,7 @@ function BlockSection({
               <div
                 className="flex items-center gap-2 px-2 py-1 rounded-t-lg"
                 style={{
-                  backgroundColor: 'rgba(163, 113, 247, 0.1)',
+                  backgroundColor: colors.purpleBg,
                   borderBottom: `1px solid ${colors.purple}`,
                 }}
               >
