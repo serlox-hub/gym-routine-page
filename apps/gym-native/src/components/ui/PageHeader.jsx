@@ -35,9 +35,11 @@ export default function PageHeader({
         <View className="flex-row items-center gap-2 flex-1">
           <Pressable onPress={handleBack} className="flex-row items-center gap-1 -ml-1 active:opacity-70">
             <ChevronLeft size={18} color={colors.textPrimary} />
-            <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '500' }}>
-              {t('common:buttons.back')}
-            </Text>
+            {!title && (
+              <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '500' }}>
+                {t('common:buttons.back')}
+              </Text>
+            )}
           </Pressable>
           <Text className="text-primary text-xl font-bold flex-shrink" numberOfLines={1}>
             {title}

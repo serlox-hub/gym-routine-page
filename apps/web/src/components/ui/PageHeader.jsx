@@ -42,7 +42,7 @@ function PageHeader({
               style={{ color: colors.textPrimary }}
             >
               <ChevronLeft size={18} />
-              <span style={{ fontSize: 16, fontWeight: 500 }}>{t('common:buttons.back')}</span>
+              {!title && <span style={{ fontSize: 16, fontWeight: 500 }}>{t('common:buttons.back')}</span>}
             </button>
           )}
           <h1 className="text-xl font-bold truncate">{title}</h1>
