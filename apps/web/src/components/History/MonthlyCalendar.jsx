@@ -35,9 +35,8 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, sele
         <button
           onClick={goToPrevMonth}
           className="p-2 rounded hover:opacity-80"
-          style={{ backgroundColor: colors.bgTertiary }}
         >
-          <ChevronLeft size={18} style={{ color: colors.textSecondary }} />
+          <ChevronLeft size={18} color={colors.textSecondary} />
         </button>
 
         <div className="flex items-center gap-3">
@@ -49,16 +48,15 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, sele
             className="text-xs px-2 py-1 rounded hover:opacity-80"
             style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
           >
-            Hoy
+            {t('common:time.today')}
           </button>
         </div>
 
         <button
           onClick={goToNextMonth}
           className="p-2 rounded hover:opacity-80"
-          style={{ backgroundColor: colors.bgTertiary }}
         >
-          <ChevronRight size={18} style={{ color: colors.textSecondary }} />
+          <ChevronRight size={18} color={colors.textSecondary} />
         </button>
       </div>
 
@@ -90,13 +88,13 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, sele
               onClick={() => onDayClick?.(dayData)}
               className="aspect-square rounded p-1 flex flex-col cursor-pointer hover:opacity-80"
               style={{
-                backgroundColor: isSelected ? colors.successBg : dayData.isToday ? colors.accentBg : colors.bgTertiary,
-                border: isSelected ? `1px solid ${colors.success}` : dayData.isToday ? `1px solid ${colors.accent}` : '1px solid transparent',
+                backgroundColor: isSelected ? colors.successBg : colors.bgTertiary,
+                border: isSelected ? `1px solid ${colors.success}` : dayData.isToday ? `1px solid ${colors.textMuted}` : '1px solid transparent',
               }}
             >
               <span
                 className="text-xs font-medium"
-                style={{ color: isSelected ? colors.success : dayData.isToday ? colors.accent : colors.textSecondary }}
+                style={{ color: isSelected ? colors.success : dayData.isToday ? colors.textPrimary : colors.textSecondary }}
               >
                 {dayData.day}
               </span>

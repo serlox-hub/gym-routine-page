@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, TrendingUp, Trophy, Share2, Pencil, Plus, X } from 'lucide-react'
+import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, X, FileText, Video } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
-import { LoadingSpinner, ErrorMessage, Card, NotesBadge, ConfirmModal, DropdownMenu } from '../ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
+import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
 import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal.jsx'
 import {
   SENSATION_LABELS,
@@ -154,6 +155,8 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const prData = prsByExercise[exercise.id]
   const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
+  const [showHistory, setShowHistory] = useState(false)
+  const measurementType = exercise.measurement_type || 'weight_reps'
 
   return (
     <Card className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
@@ -162,14 +165,6 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
           <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>
             {getExerciseName(exercise)}
           </h3>
-          {prData && (
-            <span
-              className="text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1"
-              style={{ backgroundColor: colors.warningBg, color: colors.warning }}
-            >
-              <Trophy size={10} /> PR
-            </span>
-          )}
           {exercise.deleted_at && (
             <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.dangerBg, color: colors.danger }}>
               {t('exercise:deleted')}
@@ -178,12 +173,10 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         </div>
         {!exercise.deleted_at && !isEditing && (
           <button
-            onClick={() => navigate(`/exercises/${exercise.id}/progress`)}
-            className="p-1.5 rounded hover:opacity-80"
-            style={{ backgroundColor: colors.bgTertiary }}
-            title={t('exercise:progression')}
+            onClick={() => setShowHistory(true)}
+            className="hover:opacity-80"
           >
-            <TrendingUp size={14} style={{ color: colors.purple }} />
+            <ChevronRight size={16} color={colors.textMuted} />
           </button>
         )}
       </div>
@@ -217,40 +210,50 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             return (
             <div
               key={set.id}
-              className="flex items-center gap-3 py-2 px-3 rounded"
-              style={{
-                backgroundColor: isSetPR ? colors.warningBg : colors.bgTertiary,
-                borderLeft: isSetPR ? `3px solid ${colors.warning}` : '3px solid transparent',
-              }}
+              className="flex items-center gap-3"
+              style={{ fontSize: 13 }}
             >
-              <span
-                className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold"
-                style={{ backgroundColor: isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
-              >
-                {set.set_number}
+              <span style={{ color: isSetPR ? colors.warning : colors.textMuted, fontSize: 12, width: 14, textAlign: 'right', fontWeight: isSetPR ? 700 : 400 }}>
+                {set.set_type === 'dropset' ? 'D' : set.set_number}
               </span>
-              <div className="flex-1 text-sm">
+              <span className="flex-1 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                 {formatSetValue({ ...set, weight_unit: weightUnit })}
+                {isSetPR && (
+                  <span className="inline-flex items-center gap-0.5" style={{ color: colors.warning, fontSize: 10, fontWeight: 600 }}>
+                    <Trophy size={10} /> PR
+                  </span>
+                )}
+              </span>
+              <div className="flex items-center gap-1.5">
+                {set.notes && (
+                  <button onClick={() => onSelectSet(set)} className="hover:opacity-80 p-1">
+                    <FileText size={14} color={colors.textMuted} />
+                  </button>
+                )}
+                {set.video_url && (
+                  <button onClick={() => onSelectSet(set)} className="hover:opacity-80 p-1">
+                    <Video size={14} color={colors.textMuted} />
+                  </button>
+                )}
+                {set.rir_actual !== null && set.rir_actual !== undefined && (
+                  <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'right' }}>
+                    {set.rir_actual}
+                  </span>
+                )}
               </div>
-              {set.set_type === 'dropset' && (
-                <span
-                  className="px-1.5 py-0.5 rounded text-xs font-bold"
-                  style={{ backgroundColor: colors.orangeBg, color: colors.orange }}
-                >
-                  D
-                </span>
-              )}
-              <NotesBadge
-                rir={set.rir_actual}
-                hasNotes={!!set.notes}
-                hasVideo={!!set.video_url}
-                onClick={(set.notes || set.video_url) ? () => onSelectSet(set) : null}
-              />
             </div>
             )
           })
         )}
       </div>
+      <ExerciseHistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        exerciseId={exercise.id}
+        exerciseName={getExerciseName(exercise)}
+        measurementType={measurementType}
+        weightUnit={weightUnit}
+      />
     </Card>
   )
 }
@@ -347,81 +350,26 @@ function SessionInlineDetail({ sessionId }) {
 
   return (
     <div>
-      {/* Actions menu */}
-      {!isEditing && (
-        <div className="flex justify-end mb-3">
-          <DropdownMenu items={[
-            { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
-            { icon: Share2, label: t('common:buttons.share'), onClick: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
-            { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
-          ]} />
-        </div>
-      )}
-
       {/* Metadata */}
-      <Card className="p-4 mb-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <div className="text-xs text-secondary">{t('workout:history.session')}</div>
+      {isEditing ? (
+        <div className="mb-6" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <div className="text-xs text-secondary mb-1">{t('workout:history.session')}</div>
             <div className="text-sm font-medium">
               {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
             </div>
           </div>
-          {(session.routine_name || session.routine_day?.routine?.name) && (
-            <div className="col-span-2">
-              <div className="text-xs text-secondary">{t('routine:title')}</div>
-              <div className="text-sm">
-                {session.routine_name || session.routine_day?.routine?.name}
-              </div>
-            </div>
-          )}
           <div>
-            <div className="text-xs text-secondary">{t('workout:session.date')}</div>
-            <div className="text-sm capitalize">{formatFullDate(session.started_at)}</div>
+            <div className="text-xs text-secondary mb-1">{t('workout:history.endTime')}</div>
+            <input
+              type="time"
+              value={formatEditTime(editCompletedAt || session.completed_at)}
+              onChange={e => handleTimeChange(e.target.value)}
+              className="w-full px-3 py-1.5 rounded-lg text-sm"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
+            />
           </div>
           <div>
-            <div className="text-xs text-secondary">{t('workout:session.time')}</div>
-            <div className="text-sm">{formatTime(session.started_at)}</div>
-          </div>
-
-          {isEditing ? (
-            <div>
-              <div className="text-xs text-secondary mb-1">{t('workout:session.endTime')}</div>
-              <input
-                type="time"
-                value={formatEditTime(editCompletedAt || session.completed_at)}
-                onChange={e => handleTimeChange(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
-              />
-            </div>
-          ) : (
-            <>
-              {session.duration_minutes != null && (
-                <div>
-                  <div className="text-xs text-secondary">{t('workout:summary.duration')}</div>
-                  <div className="text-sm">
-                    {session.duration_minutes > 0 ? `${session.duration_minutes} ${t('common:time.min')}` : `< 1 ${t('common:time.min')}`}
-                  </div>
-                </div>
-              )}
-              {session.overall_feeling && (
-                <div>
-                  <div className="text-xs text-secondary">{t('workout:sensation.label')}</div>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded inline-block mt-1"
-                    style={{ backgroundColor: getSensationColor(session.overall_feeling), color: colors.bgPrimary }}
-                  >
-                    {SENSATION_LABELS[session.overall_feeling]}
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {isEditing ? (
-          <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
             <div className="text-xs text-secondary mb-1">{t('common:labels.notes')}</div>
             <textarea
               value={editNotes}
@@ -432,33 +380,74 @@ function SessionInlineDetail({ sessionId }) {
               style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
             />
           </div>
-        ) : (
-          session.notes && (
-            <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
-              <div className="text-xs text-secondary mb-1">{t('common:labels.notes')}</div>
-              <p className="text-sm">{session.notes}</p>
-            </div>
-          )
-        )}
+        </div>
+      ) : (
+        <div className="mb-6" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* Title + kebab */}
+          <div className="flex items-center justify-between">
+            <span style={{ color: colors.textPrimary, fontSize: 16, fontWeight: 700 }}>
+              {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+            </span>
+            <DropdownMenu items={[
+              { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
+              { icon: Share2, label: t('common:buttons.share'), onClick: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
+              { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
+            ]} />
+          </div>
 
-        {muscleGroups.length > 0 && (
-          <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
-            <div className="text-xs text-secondary mb-2">{t('workout:session.musclesWorked')}</div>
-            <div className="flex flex-wrap gap-1.5">
+          {/* Routine name */}
+          {(session.routine_day?.routine?.name || session.routine_name) && (
+            <span style={{ color: colors.textSecondary, fontSize: 13 }}>
+              {session.routine_day?.routine?.name || session.routine_name}
+            </span>
+          )}
+
+          {/* Date, time, duration, sensation — one line */}
+          <div className="flex items-center flex-wrap gap-x-1" style={{ color: colors.textMuted, fontSize: 12 }}>
+            <span className="capitalize">{formatFullDate(session.started_at)}</span>
+            <span>·</span>
+            <span>{formatTime(session.started_at)}</span>
+            {session.duration_minutes != null && (
+              <>
+                <span>·</span>
+                <span>{session.duration_minutes > 0 ? `${session.duration_minutes} ${t('common:time.min')}` : `< 1 ${t('common:time.min')}`}</span>
+              </>
+            )}
+            {session.overall_feeling && (
+              <>
+                <span>·</span>
+                <span
+                  className="px-1.5 py-0.5 rounded"
+                  style={{ backgroundColor: getSensationColor(session.overall_feeling), color: colors.bgPrimary, fontSize: 10, fontWeight: 600 }}
+                >
+                  {SENSATION_LABELS[session.overall_feeling]}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Notes */}
+          {session.notes && (
+            <p style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>{session.notes}</p>
+          )}
+
+          {/* Muscle groups */}
+          {muscleGroups.length > 0 && (
+            <div className="flex flex-wrap gap-1.5" style={{ marginTop: 6 }}>
               {muscleGroups.map(mg => (
                 <span
                   key={mg.name}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
-                  style={{ backgroundColor: `${getMuscleGroupColor(mg.name)}20`, color: getMuscleGroupColor(mg.name), border: `1px solid ${getMuscleGroupColor(mg.name)}40` }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: `${getMuscleGroupColor(mg.name)}20`, color: getMuscleGroupColor(mg.name), fontSize: 10, fontWeight: 500 }}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getMuscleGroupColor(mg.name) }} />
                   {getMuscleGroupName(mg)}
                 </span>
               ))}
             </div>
-          </div>
-        )}
-      </Card>
+          )}
+        </div>
+      )}
 
       {/* Edit save/cancel */}
       {isEditing && (

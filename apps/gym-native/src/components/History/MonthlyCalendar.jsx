@@ -16,10 +16,7 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
   const { t } = useTranslation()
   const { value: weekStartDay } = usePreference('week_start_day')
   const wsd = weekStartDay || 'monday'
-  const allDays = [
-    t('common:time.mon'), t('common:time.tue'), t('common:time.wed'),
-    t('common:time.thu'), t('common:time.fri'), t('common:time.sat'), t('common:time.sun'),
-  ]
+  const allDays = t('common:daysShort', { returnObjects: true })
   const DAYS_OF_WEEK = wsd === 'sunday' ? [allDays[6], ...allDays.slice(0, 6)] : allDays
   const calendarData = useMemo(
     () => generateCalendarDays(currentDate, sessions, wsd),
@@ -34,7 +31,6 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
         <Pressable
           onPress={() => onDateChange(getPreviousMonth(currentDate))}
           className="p-2 rounded active:opacity-70"
-          style={{ backgroundColor: colors.bgTertiary }}
         >
           <ChevronLeft size={18} color={colors.textSecondary} />
         </Pressable>
@@ -48,14 +44,13 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
             className="px-2 py-1 rounded active:opacity-70"
             style={{ backgroundColor: colors.bgTertiary }}
           >
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>Hoy</Text>
+            <Text className="text-xs" style={{ color: colors.textSecondary }}>{t('common:time.today')}</Text>
           </Pressable>
         </View>
 
         <Pressable
           onPress={() => onDateChange(getNextMonth(currentDate))}
           className="p-2 rounded active:opacity-70"
-          style={{ backgroundColor: colors.bgTertiary }}
         >
           <ChevronRight size={18} color={colors.textSecondary} />
         </Pressable>
@@ -90,14 +85,14 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
               <View
                 className="flex-1 rounded p-1"
                 style={{
-                  backgroundColor: isSelected ? colors.successBg : dayData.isToday ? colors.accentBg : colors.bgTertiary,
+                  backgroundColor: isSelected ? colors.successBg : colors.bgTertiary,
                   borderWidth: isSelected || dayData.isToday ? 1 : 0,
-                  borderColor: isSelected ? colors.success : dayData.isToday ? colors.accent : 'transparent',
+                  borderColor: isSelected ? colors.success : dayData.isToday ? colors.textMuted : 'transparent',
                 }}
               >
                 <Text
                   className="text-xs font-medium"
-                  style={{ color: isSelected ? colors.success : dayData.isToday ? colors.accent : colors.textSecondary }}
+                  style={{ color: isSelected ? colors.success : dayData.isToday ? colors.textPrimary : colors.textSecondary }}
                 >
                   {dayData.day}
                 </Text>
