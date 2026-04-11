@@ -14,13 +14,13 @@ function PreferenceToggle({ label, description, checked, onChange, disabled }) {
         <div
           className="w-10 h-6 rounded-full relative transition-colors"
           style={{
-            backgroundColor: checked ? colors.success : colors.bgTertiary,
+            backgroundColor: checked ? colors.successBg : colors.bgTertiary,
           }}
         >
           <div
             className="w-4 h-4 rounded-full absolute top-1 transition-all"
             style={{
-              backgroundColor: colors.textPrimary,
+              backgroundColor: colors.bgPrimary,
               left: checked ? '22px' : '4px',
             }}
           />

@@ -1,114 +1,68 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, Switch, ScrollView, Pressable, Animated } from 'react-native'
+import { View, Text, ScrollView, Pressable, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Check, X, LogOut, Users } from 'lucide-react-native'
+import { LogOut, Users } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
-import { LoadingSpinner, Card, PlanBadge, PageHeader, ConfirmModal } from '../components/ui'
+import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
 const appVersion = require('../../app.json').expo.version
 
-function PreferenceToggle({ label, description, checked, onChange, disabled }) {
+function SmallPill({ label, active, onPress, disabled }) {
   return (
-    <View className="flex-row items-start gap-3 py-2" style={{ opacity: disabled ? 0.5 : 1 }}>
-      <View className="flex-1">
-        <Text className="font-medium text-sm text-primary">{label}</Text>
-        <Text className="text-xs text-secondary">{description}</Text>
-      </View>
-      <Switch
-        value={checked}
-        onValueChange={onChange}
-        disabled={disabled}
-        trackColor={{ false: colors.bgTertiary, true: colors.success }}
-        thumbColor={colors.textPrimary}
-      />
-    </View>
-  )
-}
-
-function PremiumFeature({ title, description, enabled, comingSoon }) {
-  const { t } = useTranslation()
-  return (
-    <View className="flex-row items-start gap-3 py-1">
-      <View className="mt-0.5">
-        {enabled ? (
-          <Check size={16} color={colors.success} />
-        ) : (
-          <X size={16} color={colors.textSecondary} />
-        )}
-      </View>
-      <View className="flex-1">
-        <View className="flex-row items-center gap-2">
-          <Text
-            className="text-sm"
-            style={{ color: enabled ? colors.textPrimary : colors.textSecondary }}
-          >
-            {title}
-          </Text>
-          {comingSoon && (
-            <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bgTertiary }}>
-              <Text className="text-xs text-secondary">{t('common:preferences.comingSoon')}</Text>
-            </View>
-          )}
-        </View>
-        <Text className="text-xs text-secondary">{description}</Text>
-      </View>
-    </View>
-  )
-}
-
-function TrainingGoalCard({ preferences, onChangeDays, onToggleWidget, disabled, highlightAnim }) {
-  const { t } = useTranslation()
-  const currentDays = preferences?.training_days_per_week
-  const showWidget = preferences?.show_training_goal ?? true
-
-  const borderColor = highlightAnim
-    ? highlightAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [colors.border, colors.success],
-      })
-    : colors.border
-
-  return (
-    <Animated.View style={{ backgroundColor: colors.bgSecondary, borderWidth: 2, borderColor, borderRadius: 12, padding: 16 }}>
-      <Text className="text-sm font-medium text-secondary mb-3">
-        {t('common:preferences.trainingGoalTitle')}
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={{
+        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+        backgroundColor: active ? colors.success : 'transparent',
+      }}
+    >
+      <Text style={{ fontSize: 12, fontWeight: '600', color: active ? colors.bgPrimary : colors.textMuted }}>
+        {label}
       </Text>
+    </Pressable>
+  )
+}
 
-      <View className="gap-4">
-        <View>
-          <Text className="font-medium text-sm text-primary mb-2">
-            {t('common:preferences.trainingDaysPerWeek')}
-          </Text>
-          <View className="flex-row flex-wrap gap-1">
-            {[1, 2, 3, 4, 5, 6, 7].map(n => (
-              <Pressable
-                key={n}
-                onPress={() => onChangeDays(n)}
-                disabled={disabled}
-                className="w-9 h-9 rounded-lg items-center justify-center"
-                style={{ backgroundColor: n === currentDays ? colors.accent : colors.bgTertiary }}
-              >
-                <Text className="text-sm font-medium" style={{ color: n === currentDays ? '#fff' : colors.textSecondary }}>
-                  {n}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        <PreferenceToggle
-          label={t('common:preferences.showWidgetHome')}
-          description={t('common:preferences.showWidgetHomeDescription')}
-          checked={showWidget}
-          onChange={onToggleWidget}
-          disabled={disabled}
-        />
+function CustomToggle({ checked, onChange, disabled }) {
+  return (
+    <Pressable onPress={() => !disabled && onChange(!checked)} style={{ opacity: disabled ? 0.5 : 1 }}>
+      <View style={{
+        width: 48, height: 28, borderRadius: 14,
+        backgroundColor: checked ? colors.success : colors.border,
+      }}>
+        <View style={{
+          width: 20, height: 20, borderRadius: 10,
+          backgroundColor: colors.bgPrimary,
+          position: 'absolute', top: 4,
+          left: checked ? 24 : 4,
+        }} />
       </View>
-    </Animated.View>
+    </Pressable>
+  )
+}
+
+function ToggleRow({ label, description, checked, onChange, disabled }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>{label}</Text>
+        {description && <Text style={{ color: colors.textMuted, fontSize: 12 }}>{description}</Text>}
+      </View>
+      <CustomToggle checked={checked} onChange={onChange} disabled={disabled} />
+    </View>
+  )
+}
+
+function SectionLabel({ children }) {
+  return (
+    <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+      {children}
+    </Text>
   )
 }
 
@@ -131,9 +85,7 @@ export default function PreferencesScreen({ navigation, route }) {
   useEffect(() => {
     if (scrollTo === 'training-goal' && !isLoading) {
       setTimeout(() => {
-        if (goalY.current > 0) {
-          scrollRef.current?.scrollTo({ y: goalY.current - 16, animated: true })
-        }
+        if (goalY.current > 0) scrollRef.current?.scrollTo({ y: goalY.current - 16, animated: true })
         Animated.sequence([
           Animated.timing(highlightAnim, { toValue: 1, duration: 300, useNativeDriver: false }),
           Animated.delay(1000),
@@ -144,24 +96,16 @@ export default function PreferencesScreen({ navigation, route }) {
   }, [scrollTo, isLoading, highlightAnim])
 
   const handleLogoutClick = () => {
-    if (hasActiveSession) {
-      setShowLogoutConfirm(true)
-    } else {
-      handleLogout()
-    }
+    if (hasActiveSession) setShowLogoutConfirm(true)
+    else handleLogout()
   }
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
-    try {
-      await logout()
-    } catch {
-      setIsLoggingOut(false)
-    }
+    try { await logout() } catch { setIsLoggingOut(false) }
   }
 
   const [timerSoundEnabled, setTimerSoundEnabled] = useState(true)
-
   useEffect(() => {
     AsyncStorage.getItem('timer_sound_enabled').then(saved => {
       if (saved !== null) setTimerSoundEnabled(saved === 'true')
@@ -173,220 +117,151 @@ export default function PreferencesScreen({ navigation, route }) {
     AsyncStorage.setItem('timer_sound_enabled', String(value))
   }
 
-  const handleChange = (key, value) => {
-    updatePreference.mutate({ key, value })
-  }
+  const handleChange = (key, value) => updatePreference.mutate({ key, value })
 
   if (isLoading) return <LoadingSpinner />
+
+  const currentDays = preferences?.training_days_per_week
+  const showWidget = preferences?.show_training_goal ?? true
+
+  const borderColor = highlightAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.border, colors.success],
+  })
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <PageHeader title={t('common:preferences.title')} onBack={() => navigation.goBack()} />
 
-      <ScrollView ref={scrollRef} className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="gap-4">
-          {/* Plan Section */}
-          <Card className="p-4">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-sm font-medium text-secondary">{t('common:preferences.yourPlan')}</Text>
-              <PlanBadge isPremium={isPremium} />
-            </View>
+      <ScrollView ref={scrollRef} className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 40, gap: 20 }}>
 
-            <View className="gap-2">
-              <Text className="text-sm font-medium text-primary">{t('common:preferences.premiumBenefits')}</Text>
-              <PremiumFeature
-                title={t('common:preferences.showVideoUpload')}
-                description={t('common:preferences.videoDescription')}
-                enabled={isPremium}
-              />
-              <PremiumFeature
-                title={t('common:preferences.moreFeaturesComingSoon')}
-                description={t('common:preferences.moreFeaturesDescription')}
-                enabled={isPremium}
-                comingSoon
-              />
-            </View>
-          </Card>
+        {/* Your plan */}
+        <View
+          style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 14,
+            borderWidth: 1, borderColor: colors.border,
+          }}
+        >
+          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{t('common:preferences.plan')}</Text>
+          <PlanBadge isPremium={isPremium} />
+        </View>
 
-          {/* General: Language + Weight Unit + Week Start */}
-          <Card className="p-4">
-            <Text className="text-sm font-medium text-secondary mb-4">
-              {t('common:preferences.general')}
-            </Text>
-
-            <View className="gap-4">
-              <View>
-                <Text className="font-medium text-sm text-primary mb-2">
-                  {t('common:preferences.language')}
-                </Text>
-                <View className="flex-row gap-2">
-                  {[
-                    { code: 'es', label: t('common:preferences.spanish') },
-                    { code: 'en', label: t('common:preferences.english') },
-                  ].map(({ code, label }) => {
-                    const isActive = (preferences?.language || 'es') === code
-                    return (
-                      <Pressable
-                        key={code}
-                        onPress={() => handleChange('language', code)}
-                        className="flex-1 py-2 px-3 rounded-lg items-center"
-                        style={{ backgroundColor: isActive ? colors.accent : colors.bgTertiary }}
-                        disabled={updatePreference.isPending}
-                      >
-                        <Text
-                          className="text-sm font-medium"
-                          style={{ color: isActive ? '#fff' : colors.textSecondary }}
-                        >
-                          {label}
-                        </Text>
-                      </Pressable>
-                    )
-                  })}
-                </View>
-              </View>
-
-              <View>
-                <Text className="font-medium text-sm text-primary mb-1">
-                  {t('common:preferences.weightUnit')}
-                </Text>
-                <Text className="text-xs mb-2" style={{ color: colors.textMuted }}>
-                  {t('common:preferences.weightUnitDescription')}
-                </Text>
-                <View className="flex-row gap-2">
-                  {['kg', 'lb'].map((unit) => {
-                    const isActive = (preferences?.weight_unit || 'kg') === unit
-                    return (
-                      <Pressable
-                        key={unit}
-                        onPress={() => handleChange('weight_unit', unit)}
-                        className="flex-1 py-2 px-3 rounded-lg items-center"
-                        style={{ backgroundColor: isActive ? colors.accent : colors.bgTertiary }}
-                        disabled={updatePreference.isPending}
-                      >
-                        <Text
-                          className="text-sm font-medium"
-                          style={{ color: isActive ? '#fff' : colors.textSecondary }}
-                        >
-                          {unit}
-                        </Text>
-                      </Pressable>
-                    )
-                  })}
-                </View>
-              </View>
-
-              <View>
-                <Text className="font-medium text-sm text-primary mb-2">
-                  {t('common:preferences.weekStartDay')}
-                </Text>
-                <View className="flex-row gap-1">
-                  {[{ value: 'monday', label: t('common:preferences.monday') }, { value: 'sunday', label: t('common:preferences.sunday') }].map(({ value, label }) => (
-                    <Pressable
-                      key={value}
-                      onPress={() => handleChange('week_start_day', value)}
-                      disabled={updatePreference.isPending}
-                      className="flex-1 py-2 rounded-lg items-center"
-                      style={{ backgroundColor: (preferences?.week_start_day || 'monday') === value ? colors.accent : colors.bgTertiary }}
-                    >
-                      <Text className="text-sm font-medium" style={{ color: (preferences?.week_start_day || 'monday') === value ? '#fff' : colors.textSecondary }}>
-                        {label}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+        {/* GENERAL */}
+        <View>
+          <SectionLabel>{t('common:preferences.general')}</SectionLabel>
+          <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.language')}</Text>
+              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+                {[{ code: 'es', label: 'ES' }, { code: 'en', label: 'EN' }].map(({ code, label }) => (
+                  <SmallPill key={code} label={label} active={(preferences?.language || 'es') === code}
+                    onPress={() => handleChange('language', code)} disabled={updatePreference.isPending} />
+                ))}
               </View>
             </View>
-          </Card>
-
-          {/* Workout Preferences */}
-          <Card className="p-4">
-            <Text className="text-sm font-medium text-secondary mb-4">
-              {t('common:preferences.duringWorkout')}
-            </Text>
-
-            <View className="gap-2">
-              <PreferenceToggle
-                label={t('common:preferences.timerSound')}
-                description={t('common:preferences.timerSoundDescription')}
-                checked={timerSoundEnabled}
-                onChange={handleTimerSoundChange}
-              />
-
-              <PreferenceToggle
-                label={t('common:preferences.showRir')}
-                description={t('common:preferences.showRirDescription')}
-                checked={preferences?.show_rir_input ?? true}
-                onChange={(value) => handleChange('show_rir_input', value)}
-                disabled={updatePreference.isPending}
-              />
-
-              <PreferenceToggle
-                label={t('common:preferences.showSetNotes')}
-                description={t('common:preferences.showSetNotesDescription')}
-                checked={preferences?.show_set_notes ?? true}
-                onChange={(value) => handleChange('show_set_notes', value)}
-                disabled={updatePreference.isPending}
-              />
-
-              <PreferenceToggle
-                label={t('common:preferences.showSessionNotes')}
-                description={t('common:preferences.showSessionNotesDescription')}
-                checked={preferences?.show_session_notes ?? true}
-                onChange={(value) => handleChange('show_session_notes', value)}
-                disabled={updatePreference.isPending}
-              />
-
-              {canUploadVideo && (
-                <PreferenceToggle
-                  label={t('common:preferences.showVideoUpload')}
-                  description={t('common:preferences.showVideoUploadDescription')}
-                  checked={preferences?.show_video_upload ?? true}
-                  onChange={(value) => handleChange('show_video_upload', value)}
-                  disabled={updatePreference.isPending}
-                />
-              )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weightUnit')}</Text>
+              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+                {['kg', 'lb'].map((unit) => (
+                  <SmallPill key={unit} label={unit} active={(preferences?.weight_unit || 'kg') === unit}
+                    onPress={() => handleChange('weight_unit', unit)} disabled={updatePreference.isPending} />
+                ))}
+              </View>
             </View>
-          </Card>
-
-          {/* Training Goal */}
-          <View onLayout={(e) => { goalY.current = e.nativeEvent.layout.y }}>
-            <TrainingGoalCard
-              preferences={preferences}
-              onChangeDays={(value) => handleChange('training_days_per_week', value)}
-              onToggleWidget={(value) => handleChange('show_training_goal', value)}
-              disabled={updatePreference.isPending}
-              highlightAnim={highlightAnim}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weekStartDay')}</Text>
+              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+                {[
+                  { value: 'monday', label: t('common:preferences.mondayShort') || 'Mon' },
+                  { value: 'sunday', label: t('common:preferences.sundayShort') || 'Sun' },
+                ].map(({ value, label }) => (
+                  <SmallPill key={value} label={label} active={(preferences?.week_start_day || 'monday') === value}
+                    onPress={() => handleChange('week_start_day', value)} disabled={updatePreference.isPending} />
+                ))}
+              </View>
+            </View>
           </View>
+        </View>
 
+        {/* WORKOUT */}
+        <View>
+          <SectionLabel>{t('common:preferences.duringWorkout')}</SectionLabel>
+          <ToggleRow label={t('common:preferences.timerSound')} description={t('common:preferences.timerSoundDescription')}
+            checked={timerSoundEnabled} onChange={handleTimerSoundChange} />
+          <ToggleRow label={t('common:preferences.showRir')} description={t('common:preferences.showRirDescription')}
+            checked={preferences?.show_rir_input ?? true} onChange={(v) => handleChange('show_rir_input', v)} disabled={updatePreference.isPending} />
+          <ToggleRow label={t('common:preferences.showSetNotes')} description={t('common:preferences.showSetNotesDescription')}
+            checked={preferences?.show_set_notes ?? true} onChange={(v) => handleChange('show_set_notes', v)} disabled={updatePreference.isPending} />
+          <ToggleRow label={t('common:preferences.showSessionNotes')} description={t('common:preferences.showSessionNotesDescription')}
+            checked={preferences?.show_session_notes ?? true} onChange={(v) => handleChange('show_session_notes', v)} disabled={updatePreference.isPending} />
+          {canUploadVideo && (
+            <ToggleRow label={t('common:preferences.showVideoUpload')} description={t('common:preferences.showVideoUploadDescription')}
+              checked={preferences?.show_video_upload ?? true} onChange={(v) => handleChange('show_video_upload', v)} disabled={updatePreference.isPending} />
+          )}
+        </View>
+
+        {/* TRAINING GOAL */}
+        <View onLayout={(e) => { goalY.current = e.nativeEvent.layout.y }}>
+          <SectionLabel>{t('common:preferences.trainingGoalTitle')}</SectionLabel>
+          <Animated.View style={{
+            backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor, borderRadius: 12, padding: 16, gap: 16,
+          }}>
+            <View>
+              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500', marginBottom: 10 }}>
+                {t('common:preferences.trainingDaysPerWeek')}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {[1, 2, 3, 4, 5, 6, 7].map(n => (
+                  <Pressable
+                    key={n}
+                    onPress={() => handleChange('training_days_per_week', n)}
+                    disabled={updatePreference.isPending}
+                    style={{
+                      width: 36, height: 36, borderRadius: 18,
+                      alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: n === currentDays ? colors.success : colors.bgTertiary,
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: n === currentDays ? colors.bgPrimary : colors.textMuted }}>
+                      {n}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+            <ToggleRow
+              label={t('common:preferences.showWidgetHome')}
+              description={t('common:preferences.showWidgetHomeDescription')}
+              checked={showWidget}
+              onChange={(v) => handleChange('show_training_goal', v)}
+              disabled={updatePreference.isPending}
+            />
+          </Animated.View>
+        </View>
+
+        {/* Actions */}
+        <View style={{ gap: 8 }}>
           {isAdmin && (
             <Pressable
               onPress={() => navigation.navigate('AdminUsers')}
-              className="flex-row items-center justify-center gap-2 py-3 rounded-lg mt-2"
-              style={{ backgroundColor: colors.bgTertiary }}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}
             >
               <Users size={16} color={colors.textSecondary} />
-              <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-                {t('common:nav.admin')}
-              </Text>
+              <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textSecondary }}>{t('common:nav.admin')}</Text>
             </Pressable>
           )}
-
           <Pressable
             onPress={handleLogoutClick}
-            className="flex-row items-center justify-center gap-2 py-3 rounded-lg mt-2"
-            style={{ backgroundColor: colors.dangerBg }}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.dangerBg }}
           >
             <LogOut size={16} color={colors.danger} />
-            <Text className="text-sm font-medium" style={{ color: colors.danger }}>
-              {t('common:nav.logout')}
-            </Text>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: colors.danger }}>{t('common:nav.logout')}</Text>
           </Pressable>
+          <Text style={{ textAlign: 'center', fontSize: 11, color: colors.textMuted, marginTop: 4 }}>
+            v{appVersion}
+          </Text>
         </View>
-
-        <Text className="text-center text-xs mt-2 mb-4" style={{ color: colors.textSecondary }}>
-          v{appVersion}
-        </Text>
       </ScrollView>
 
       <ConfirmModal

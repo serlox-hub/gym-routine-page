@@ -1,7 +1,25 @@
 import { useTranslation } from 'react-i18next'
-import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import PreferenceToggle from './PreferenceToggle.jsx'
+
+function CustomToggle({ checked, onChange, disabled }) {
+  return (
+    <button
+      onClick={() => !disabled && onChange(!checked)}
+      className="shrink-0"
+      style={{ opacity: disabled ? 0.5 : 1 }}
+    >
+      <div
+        className="w-12 h-7 rounded-full relative transition-colors"
+        style={{ backgroundColor: checked ? colors.success : colors.border }}
+      >
+        <div
+          className="w-5 h-5 rounded-full absolute top-1 transition-all"
+          style={{ backgroundColor: colors.bgPrimary, left: checked ? 24 : 4 }}
+        />
+      </div>
+    </button>
+  )
+}
 
 function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabled, highlight }) {
   const { t } = useTranslation()
@@ -9,29 +27,35 @@ function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabl
   const showWidget = preferences?.show_training_goal ?? true
 
   return (
-    <Card
-      className="p-4 transition-all duration-500"
-      style={{ border: highlight ? `2px solid ${colors.success}` : undefined }}
-    >
-      <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
+    <section>
+      <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
         {t('common:preferences.trainingGoalTitle')}
-      </h2>
-
-      <div className="space-y-4">
+      </span>
+      <div
+        className="rounded-xl transition-all duration-500"
+        style={{
+          backgroundColor: colors.bgSecondary,
+          border: highlight ? `2px solid ${colors.success}` : `1px solid ${colors.border}`,
+          padding: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+        }}
+      >
         <div>
-          <p className="font-medium text-sm mb-2" style={{ color: colors.textPrimary }}>
+          <p style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 500, marginBottom: 10 }}>
             {t('common:preferences.trainingDaysPerWeek')}
           </p>
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex gap-2">
             {[1, 2, 3, 4, 5, 6, 7].map(n => (
               <button
                 key={n}
                 onClick={() => onChangeDays(n)}
                 disabled={disabled}
-                className="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
+                className="w-9 h-9 rounded-full text-sm font-semibold transition-colors"
                 style={{
-                  backgroundColor: n === currentDays ? colors.accent : colors.bgTertiary,
-                  color: n === currentDays ? colors.white : colors.textSecondary,
+                  backgroundColor: n === currentDays ? colors.success : colors.bgTertiary,
+                  color: n === currentDays ? colors.bgPrimary : colors.textMuted,
                 }}
               >
                 {n}
@@ -40,16 +64,19 @@ function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabl
           </div>
         </div>
 
-        <PreferenceToggle
-          label={t('common:preferences.showWidgetHome')}
-          description={t('common:preferences.showWidgetHomeDescription')}
-          checked={showWidget}
-          onChange={onToggleWidget}
-          disabled={disabled}
-        />
-
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <p style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 500 }}>
+              {t('common:preferences.showWidgetHome')}
+            </p>
+            <p style={{ color: colors.textMuted, fontSize: 12 }}>
+              {t('common:preferences.showWidgetHomeDescription')}
+            </p>
+          </div>
+          <CustomToggle checked={showWidget} onChange={onToggleWidget} disabled={disabled} />
+        </div>
       </div>
-    </Card>
+    </section>
   )
 }
 

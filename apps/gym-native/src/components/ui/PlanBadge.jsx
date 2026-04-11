@@ -2,7 +2,7 @@ import Badge from './Badge'
 
 export default function PlanBadge({ isPremium }) {
   return (
-    <Badge variant={isPremium ? 'warning' : 'default'}>
+    <Badge variant={isPremium ? 'success' : 'default'}>
       {isPremium ? 'Premium' : 'Standard'}
     </Badge>
   )
