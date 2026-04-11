@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Share2, Pencil, Plus, FileText, Video, Trophy } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, Button, DropdownMenu } from '../ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
 import { SetNotesView, WorkoutSummaryModal, ExerciseHistoryModal } from '../Workout'
 import {
   SENSATION_LABELS,
@@ -16,7 +16,6 @@ import {
   findPRSetNumbers,
   fetchWorkoutSummary,
   buildPRsByExerciseMap,
-  recalculateExercisePRs,
   buildEmptySetData,
   getSetFieldsForMeasurementType,
   getExerciseName,
@@ -26,7 +25,7 @@ import {
   resolveWeightUnit,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
-import { colors, inputStyle } from '../../lib/styles'
+import { colors } from '../../lib/styles'
 
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
   const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(exercise.measurement_type)
@@ -62,7 +61,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   }
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <Pressable onPress={handleToggleDropset}>
         <Text style={{
           color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted,
@@ -74,56 +73,56 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       </Pressable>
 
       {showWeight && (
-        <View className="flex-row items-center gap-1 flex-1">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
           <TextInput
             value={weight}
             onChangeText={setWeight}
             onBlur={handleSave}
             keyboardType="decimal-pad"
-            style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
+            style={{ flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }}
             placeholderTextColor={colors.textMuted}
           />
-          <Text className="text-xs" style={{ color: colors.textSecondary }}>{weightUnit}</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 10 }}>{weightUnit}</Text>
         </View>
       )}
-      {showWeight && showReps && <Text style={{ color: colors.textSecondary }}>×</Text>}
+      {showWeight && showReps && <Text style={{ color: colors.textMuted, fontSize: 10 }}>×</Text>}
       {showReps && (
-        <View className="flex-row items-center gap-1 flex-1">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
           <TextInput
             value={reps}
             onChangeText={setReps}
             onBlur={handleSave}
             keyboardType="number-pad"
-            style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
+            style={{ flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }}
             placeholderTextColor={colors.textMuted}
           />
-          <Text className="text-xs" style={{ color: colors.textSecondary }}>reps</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 10 }}>reps</Text>
         </View>
       )}
       {showTime && (
-        <View className="flex-row items-center gap-1 flex-1">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
           <TextInput
             value={timeSeconds}
             onChangeText={setTimeSeconds}
             onBlur={handleSave}
             keyboardType="number-pad"
-            style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
+            style={{ flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }}
             placeholderTextColor={colors.textMuted}
           />
-          <Text className="text-xs" style={{ color: colors.textSecondary }}>s</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 10 }}>s</Text>
         </View>
       )}
       {showDistance && (
-        <View className="flex-row items-center gap-1 flex-1">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
           <TextInput
             value={distanceMeters}
             onChangeText={setDistanceMeters}
             onBlur={handleSave}
             keyboardType="decimal-pad"
-            style={[inputStyle, { flex: 1, paddingVertical: 4, textAlign: 'center' }]}
+            style={{ flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }}
             placeholderTextColor={colors.textMuted}
           />
-          <Text className="text-xs" style={{ color: colors.textSecondary }}>m</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 10 }}>m</Text>
         </View>
       )}
       <Pressable
@@ -148,7 +147,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const measurementType = exercise.measurement_type || 'weight_reps'
 
   return (
-    <Card className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
+    <Card className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
       <View className="flex-row items-start justify-between gap-2 mb-3">
         <View className="flex-1 flex-row flex-wrap items-center gap-2">
           <Text
@@ -302,31 +301,14 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
     setEditTimeText(formatTimeFromISO(session.completed_at))
   }
 
-  const handleCancelEdit = () => {
-    setIsEditing(false)
-  }
-
-  const handleSaveMetadata = async () => {
-    const startedAt = new Date(session.started_at)
-    const completedAt = editCompletedAt ? new Date(editCompletedAt) : new Date(session.completed_at)
-    const durationMinutes = Math.round((completedAt - startedAt) / 60000)
-
-    await updateMetadata.mutateAsync({
+  const handleSaveNotes = () => {
+    updateMetadata.mutate({
       sessionId,
-      completedAt: completedAt.toISOString(),
-      durationMinutes: Math.max(0, durationMinutes),
+      completedAt: session.completed_at,
+      durationMinutes: session.duration_minutes,
       overallFeeling: session.overall_feeling,
       notes: editNotes.trim() || null,
     })
-
-    const exerciseIds = session.exercises?.map(e => e.exercise?.id).filter(Boolean) || []
-    if (exerciseIds.length > 0) {
-      try {
-        await Promise.all(exerciseIds.map(eid => recalculateExercisePRs(eid, session.started_at)))
-      } catch { /* no bloquear */ }
-    }
-
-    setIsEditing(false)
   }
 
   const handleUpsertSet = (setData) => {
@@ -351,7 +333,17 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
     if (match) {
       const d = new Date(session.completed_at || session.started_at)
       d.setHours(parseInt(match[1], 10), parseInt(match[2], 10))
-      setEditCompletedAt(d.toISOString())
+      const iso = d.toISOString()
+      setEditCompletedAt(iso)
+      const startedAt = new Date(session.started_at)
+      const durationMinutes = Math.round((d - startedAt) / 60000)
+      updateMetadata.mutate({
+        sessionId,
+        completedAt: iso,
+        durationMinutes: Math.max(0, durationMinutes),
+        overallFeeling: session.overall_feeling,
+        notes: session.notes,
+      })
     } else {
       setEditTimeText(formatTimeFromISO(editCompletedAt || session.completed_at))
     }
@@ -359,17 +351,36 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
 
   return (
     <View>
-      {/* Metadata */}
+      {/* Header — always visible */}
+      <View style={{ marginBottom: 24, gap: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          {isEditing ? (
+            <>
+              <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '700', flex: 1 }} numberOfLines={1}>
+                {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+              </Text>
+              <Pressable onPress={() => setIsEditing(false)} style={{ marginLeft: 12 }}>
+                <Text style={{ color: colors.success, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.done')}</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>
+                {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+              </Text>
+              <DropdownMenu items={[
+                { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit, accent: true },
+                { icon: Share2, label: t('common:buttons.share'), onPress: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
+                { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setShowDeleteConfirm(true), danger: true },
+              ]} />
+            </>
+          )}
+        </View>
+
       {isEditing ? (
-        <View style={{ marginBottom: 24, gap: 12 }}>
+        <View style={{ gap: 8, marginTop: 8 }}>
           <View>
-            <Text className="text-xs text-secondary mb-1">{t('workout:history.session')}</Text>
-            <Text className="text-sm font-medium text-primary">
-              {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
-            </Text>
-          </View>
-          <View>
-            <Text className="text-xs text-secondary mb-1">{t('workout:history.endTime')}</Text>
+            <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endTime')}</Text>
             <TextInput
               value={editTimeText}
               onChangeText={setEditTimeText}
@@ -377,34 +388,24 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
               placeholder="HH:MM"
               placeholderTextColor={colors.textMuted}
               keyboardType="numbers-and-punctuation"
-              style={[inputStyle, { paddingVertical: 6 }]}
+              style={{ color: colors.textPrimary, fontSize: 13, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: colors.border }}
             />
           </View>
           <View>
-            <Text className="text-xs text-secondary mb-1">{t('common:labels.notes')}</Text>
+            <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('common:labels.notes')}</Text>
             <TextInput
               value={editNotes}
               onChangeText={setEditNotes}
+              onBlur={handleSaveNotes}
               placeholder={t('workout:session.notesPlaceholder')}
               placeholderTextColor={colors.textMuted}
               multiline
-              style={[inputStyle, { textAlignVertical: 'top', minHeight: 56 }]}
+              style={{ color: colors.textPrimary, fontSize: 13, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: colors.border, textAlignVertical: 'top', minHeight: 40 }}
             />
           </View>
         </View>
       ) : (
-        <View style={{ marginBottom: 24, gap: 4 }}>
-          {/* Title + kebab */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '700' }}>
-              {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
-            </Text>
-            <DropdownMenu items={[
-              { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit },
-              { icon: Share2, label: t('common:buttons.share'), onPress: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
-              { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setShowDeleteConfirm(true), danger: true },
-            ]} />
-          </View>
+        <>
 
           {/* Routine name */}
           {(session.routine_day?.routine?.name || session.routine_name) && (
@@ -459,23 +460,12 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
               ))}
             </View>
           )}
-        </View>
+        </>
       )}
-
-      {/* Edit save/cancel */}
-      {isEditing && (
-        <View className="flex-row gap-2 mb-4">
-          <Button variant="secondary" className="flex-1" onPress={handleCancelEdit}>
-            {t('common:buttons.cancel')}
-          </Button>
-          <Button className="flex-1" onPress={handleSaveMetadata} loading={updateMetadata.isPending}>
-            {t('common:buttons.save')}
-          </Button>
-        </View>
-      )}
+      </View>
 
       {/* Exercises */}
-      <Text className="text-lg font-bold text-primary mb-3">{t('workout:session.exercises')}</Text>
+      <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', marginBottom: 8 }}>{t('workout:session.exercises')}</Text>
 
       <View className="gap-3">
         {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (

@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, FileText, Video } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs } from '../../hooks/useWorkout.js'
@@ -17,7 +16,6 @@ import {
   findPRSetNumbers,
   fetchWorkoutSummary,
   buildPRsByExerciseMap,
-  recalculateExercisePRs,
   buildEmptySetData,
   getSetFieldsForMeasurementType,
   getExerciseName,
@@ -63,11 +61,11 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     onUpsert(buildPayload({ setType: newType }))
   }
 
-  const inputCls = "w-full text-center text-sm rounded-lg px-2 py-1"
-  const inputSt = { backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }
+  const inputCls = "w-full text-center text-xs rounded px-1.5 py-0.5"
+  const inputSt = { backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}` }
 
   return (
-    <div className="flex items-center gap-3" style={{ fontSize: 13 }}>
+    <div className="flex items-center gap-2" style={{ fontSize: 12 }}>
       <button
         onClick={handleToggleDropset}
         className="shrink-0"
@@ -78,7 +76,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       </button>
 
       {showWeight && (
-        <div className="flex items-center gap-1 flex-1 min-w-0">
+        <div className="flex items-center gap-0.5 flex-1 min-w-0">
           <input
             value={weight}
             onChange={e => setWeight(e.target.value)}
@@ -88,12 +86,12 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>{weightUnit}</span>
+          <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>{weightUnit}</span>
         </div>
       )}
-      {showWeight && showReps && <span style={{ color: colors.textSecondary }}>×</span>}
+      {showWeight && showReps && <span style={{ color: colors.textMuted, fontSize: 10 }}>×</span>}
       {showReps && (
-        <div className="flex items-center gap-1 flex-1 min-w-0">
+        <div className="flex items-center gap-0.5 flex-1 min-w-0">
           <input
             value={reps}
             onChange={e => setReps(e.target.value)}
@@ -102,11 +100,11 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>reps</span>
+          <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>reps</span>
         </div>
       )}
       {showTime && (
-        <div className="flex items-center gap-1 flex-1 min-w-0">
+        <div className="flex items-center gap-0.5 flex-1 min-w-0">
           <input
             value={timeSeconds}
             onChange={e => setTimeSeconds(e.target.value)}
@@ -115,11 +113,11 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>s</span>
+          <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>s</span>
         </div>
       )}
       {showDistance && (
-        <div className="flex items-center gap-1 flex-1 min-w-0">
+        <div className="flex items-center gap-0.5 flex-1 min-w-0">
           <input
             value={distanceMeters}
             onChange={e => setDistanceMeters(e.target.value)}
@@ -129,7 +127,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-xs shrink-0" style={{ color: colors.textSecondary }}>m</span>
+          <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>m</span>
         </div>
       )}
       <button
@@ -142,7 +140,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   )
 }
 
-function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, globalWeightUnit, isEditing, navigate, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
+function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, globalWeightUnit, isEditing, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
   const { t } = useTranslation()
   const { data: override } = useUserExerciseOverride(exercise.id)
   const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
@@ -153,8 +151,8 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const measurementType = exercise.measurement_type || 'weight_reps'
 
   return (
-    <Card className="p-4" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-      <div className="flex items-start justify-between gap-2 mb-3">
+    <Card className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
+      <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>
             {getExerciseName(exercise)}
@@ -253,7 +251,6 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
 }
 
 function SessionInlineDetail({ sessionId, onSessionDeleted }) {
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
   const { data: sessionPRs } = useSessionPRs(sessionId)
@@ -290,29 +287,29 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
     setEditCompletedAt(session.completed_at || '')
   }
 
-  const handleCancelEdit = () => setIsEditing(false)
-
-  const handleSaveMetadata = async () => {
+  const handleSaveTime = () => {
+    if (!editCompletedAt) return
     const startedAt = new Date(session.started_at)
-    const completedAt = editCompletedAt ? new Date(editCompletedAt) : new Date(session.completed_at)
+    const completedAt = new Date(editCompletedAt)
     const durationMinutes = Math.round((completedAt - startedAt) / 60000)
 
-    await updateMetadata.mutateAsync({
+    updateMetadata.mutate({
       sessionId,
       completedAt: completedAt.toISOString(),
       durationMinutes: Math.max(0, durationMinutes),
       overallFeeling: session.overall_feeling,
+      notes: session.notes,
+    })
+  }
+
+  const handleSaveNotes = () => {
+    updateMetadata.mutate({
+      sessionId,
+      completedAt: session.completed_at,
+      durationMinutes: session.duration_minutes,
+      overallFeeling: session.overall_feeling,
       notes: editNotes.trim() || null,
     })
-
-    const exerciseIds = session.exercises?.map(e => e.exercise?.id).filter(Boolean) || []
-    if (exerciseIds.length > 0) {
-      try {
-        await Promise.all(exerciseIds.map(eid => recalculateExercisePRs(eid, session.started_at)))
-      } catch { /* no bloquear */ }
-    }
-
-    setIsEditing(false)
   }
 
   const handleUpsertSet = (setData) => upsertSet.mutate(setData)
@@ -344,50 +341,60 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
 
   return (
     <div>
-      {/* Metadata */}
+      {/* Header — always visible */}
+      <div className="mb-6" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="flex items-center justify-between">
+          {isEditing ? (
+            <>
+              <span className="truncate flex-1 min-w-0" style={{ color: colors.textPrimary, fontSize: 16, fontWeight: 700 }}>
+                {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+              </span>
+              <button onClick={() => setIsEditing(false)} className="shrink-0 ml-3 hover:opacity-80" style={{ color: colors.success, fontSize: 14, fontWeight: 600 }}>
+                {t('common:buttons.done')}
+              </button>
+            </>
+          ) : (
+            <>
+              <span style={{ color: colors.textPrimary, fontSize: 16, fontWeight: 700 }}>
+                {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+              </span>
+              <DropdownMenu items={[
+                { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit, accent: true },
+                { icon: Share2, label: t('common:buttons.share'), onClick: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
+                { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
+              ]} />
+            </>
+          )}
+        </div>
+
       {isEditing ? (
-        <div className="mb-6" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
           <div>
-            <div className="text-xs text-secondary mb-1">{t('workout:history.session')}</div>
-            <div className="text-sm font-medium">
-              {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-secondary mb-1">{t('workout:history.endTime')}</div>
+            <div style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endTime')}</div>
             <input
               type="time"
               value={formatEditTime(editCompletedAt || session.completed_at)}
               onChange={e => handleTimeChange(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg text-sm"
-              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
+              onBlur={handleSaveTime}
+              className="w-full px-2 py-1 rounded text-xs"
+              style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}` }}
             />
           </div>
           <div>
-            <div className="text-xs text-secondary mb-1">{t('common:labels.notes')}</div>
+            <div style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('common:labels.notes')}</div>
             <textarea
               value={editNotes}
               onChange={e => setEditNotes(e.target.value)}
+              onBlur={handleSaveNotes}
               placeholder={t('workout:session.notesPlaceholder')}
               rows={2}
-              className="w-full rounded-lg px-3 py-2 text-sm"
-              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }}
+              className="w-full rounded px-2 py-1 text-xs"
+              style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}`, resize: 'none' }}
             />
           </div>
         </div>
       ) : (
-        <div className="mb-6" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {/* Title + kebab */}
-          <div className="flex items-center justify-between">
-            <span style={{ color: colors.textPrimary, fontSize: 16, fontWeight: 700 }}>
-              {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
-            </span>
-            <DropdownMenu items={[
-              { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
-              { icon: Share2, label: t('common:buttons.share'), onClick: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
-              { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
-            ]} />
-          </div>
+        <>
 
           {/* Routine name */}
           {(session.routine_day?.routine?.name || session.routine_name) && (
@@ -440,32 +447,12 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
               ))}
             </div>
           )}
-        </div>
+        </>
       )}
-
-      {/* Edit save/cancel */}
-      {isEditing && (
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={handleCancelEdit}
-            className="flex-1 py-2 rounded-lg text-sm font-medium"
-            style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-          >
-            {t('common:buttons.cancel')}
-          </button>
-          <button
-            onClick={handleSaveMetadata}
-            disabled={updateMetadata.isPending}
-            className="flex-1 py-2 rounded-lg text-sm font-medium"
-            style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
-          >
-            {updateMetadata.isPending ? t('common:buttons.loading') : t('common:buttons.save')}
-          </button>
-        </div>
-      )}
+      </div>
 
       {/* Exercises */}
-      <h2 className="text-lg font-bold mb-3">{t('workout:session.exercises')}</h2>
+      <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600, marginBottom: 8, display: 'block' }}>{t('workout:session.exercises')}</span>
       <div className="space-y-3">
         {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
           <SessionExerciseBlock
@@ -477,7 +464,6 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
             prsByExercise={prsByExercise}
             globalWeightUnit={globalWeightUnit}
             isEditing={isEditing}
-            navigate={navigate}
             onUpsertSet={handleUpsertSet}
             onDeleteSet={handleDeleteSet}
             onAddSet={handleAddSet}
