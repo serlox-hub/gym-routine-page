@@ -6,7 +6,6 @@ flowchart LR
     classDef tab fill:#1a1a2e,stroke:#00D4FF,color:#fff,stroke-width:2px
     classDef modal fill:#2a2a42,stroke:#7C5CFC,color:#fff,stroke-width:1px,stroke-dasharray:5
     classDef overlay fill:#1a1a2e,stroke:#FF6B35,color:#fff,stroke-width:2px
-    classDef orphan fill:#3a1520,stroke:#f85149,color:#f85149,stroke-width:2px
 
     %% ============ TABS (entry points) ============
     HOME["🏠 Home"]:::tab
@@ -75,12 +74,6 @@ flowchart LR
     BODY --> MEASUREMENT["MeasurementModal"]:::modal
     BODY --> MEAS_CONFIG["MeasurementConfigModal"]:::modal
 
-    %% ============ ORPHAN ============
-    EXERCISES["⚠ Exercises"]:::orphan
-    EX_PROGRESS["⚠ Exercise Progress"]:::orphan
-    EXERCISES -.- EX_PROGRESS
-    EXERCISES -.- EX_FORM["ExerciseFormModal"]:::modal
-    EXERCISES -.- EX_USAGE["ExerciseUsageModal"]:::modal
 ```
 
 ## Legend
@@ -91,7 +84,6 @@ flowchart LR
 | 🔵 Cyan border | Tab (entry point) |
 | 🟣 Purple dashed | Modal / Bottom Sheet |
 | 🟠 Orange border | Overlay (workout session) |
-| 🔴 Red bg + border | Orphan (unreachable) |
 
 ## Shared Components
 
@@ -112,4 +104,3 @@ These are used from **multiple screens**:
 - **8 pages** — Routine Detail, Preferences, Admin, Session Detail, etc.
 - **23 modals** across the app
 - **1 overlay** — Workout Session
-- **2 orphan screens** — Exercises, Exercise Progress

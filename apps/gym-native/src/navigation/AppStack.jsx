@@ -12,8 +12,6 @@ import HistoryScreen from '../screens/HistoryScreen'
 import BodyMetricsScreen from '../screens/BodyMetricsScreen'
 import RoutineDetailScreen from '../screens/RoutineDetailScreen'
 import NewRoutineScreen from '../screens/NewRoutineScreen'
-import ExercisesScreen from '../screens/ExercisesScreen'
-import ExerciseProgressScreen from '../screens/ExerciseProgressScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import AdminUsersScreen from '../screens/AdminUsersScreen'
 import WorkoutOverlay from '../screens/WorkoutOverlay'
@@ -153,8 +151,6 @@ export default function AppStack() {
         <Stack.Screen name="NewRoutine" component={NewRoutineScreen} />
 
         {/* Detalle */}
-        <Stack.Screen name="Exercises" component={ExercisesScreen} />
-        <Stack.Screen name="ExerciseProgress" component={ExerciseProgressScreen} />
         <Stack.Screen name="Preferences" component={PreferencesScreen} />
         <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
       </Stack.Navigator>
