@@ -1,5 +1,6 @@
 {
   "accessDescription": "Acceso al panel de administración de usuarios",
   "noUsers": "No hay usuarios registrados",
-  "registered": "Registrado"
+  "registered": "Registrado",
+  "lastSeen": "Última conexión"
 }

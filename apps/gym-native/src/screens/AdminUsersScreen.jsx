@@ -1,62 +1,60 @@
-import { View, Text, Switch, FlatList } from 'react-native'
+import { View, Text, Pressable, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useIsAdmin } from '../hooks/useAuth'
 import { useAllUsers, useUpdateUserSetting } from '../hooks/useAdmin'
-import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, PageHeader } from '../components/ui'
 import { formatFullDate } from '@gym/shared'
 import { colors } from '../lib/styles'
 
 const FEATURE_FLAGS = [
-  { key: 'can_upload_video', labelKey: 'common:preferences.showVideoUpload', descriptionKey: 'common:preferences.showVideoUploadDescription' },
-  { key: 'is_admin', labelKey: 'common:nav.admin', descriptionKey: 'common:nav.adminDescription' },
+  { key: 'can_upload_video', labelKey: 'common:preferences.showVideoUpload' },
+  { key: 'is_admin', labelKey: 'common:nav.admin' },
 ]
 
-function FeatureToggle({ userId, settingKey, label, description, currentValue, onToggle, isUpdating }) {
-  const isEnabled = currentValue === 'true'
-
+function CustomToggle({ checked, onChange, disabled }) {
   return (
-    <View className="flex-row items-center justify-between py-2">
-      <View className="flex-1 mr-3">
-        <Text className="text-sm font-medium text-primary">{label}</Text>
-        <Text className="text-xs text-secondary">{description}</Text>
+    <Pressable onPress={() => !disabled && onChange(!checked)} style={{ opacity: disabled ? 0.5 : 1 }}>
+      <View style={{
+        width: 48, height: 28, borderRadius: 14,
+        backgroundColor: checked ? colors.success : colors.border,
+      }}>
+        <View style={{
+          width: 20, height: 20, borderRadius: 10,
+          backgroundColor: colors.bgPrimary,
+          position: 'absolute', top: 4,
+          left: checked ? 24 : 4,
+        }} />
       </View>
-      <Switch
-        value={isEnabled}
-        onValueChange={() => onToggle(userId, settingKey, isEnabled ? null : 'true')}
-        disabled={isUpdating}
-        trackColor={{ false: colors.bgTertiary, true: colors.success }}
-        thumbColor={colors.textPrimary}
-      />
-    </View>
+    </Pressable>
   )
 }
 
-function UserCard({ user, onToggleSetting, isUpdating }) {
+function UserRow({ user, onToggleSetting, isUpdating }) {
   const { t } = useTranslation()
   return (
-    <Card className="p-4 mx-4">
-      <View className="mb-3">
-        <Text className="font-medium text-primary">{user.email}</Text>
-        <Text className="text-xs text-secondary">
-          {t('common:admin.registered')}: {formatFullDate(user.created_at)}
-        </Text>
-      </View>
-      <View className="gap-1" style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 }}>
-        {FEATURE_FLAGS.map(flag => (
-          <FeatureToggle
-            key={flag.key}
-            userId={user.id}
-            settingKey={flag.key}
-            label={t(flag.labelKey)}
-            description={t(flag.descriptionKey)}
-            currentValue={user.settings[flag.key]}
-            onToggle={onToggleSetting}
-            isUpdating={isUpdating}
-          />
-        ))}
-      </View>
-    </Card>
+    <View style={{
+      backgroundColor: colors.bgSecondary, borderRadius: 12,
+      borderWidth: 1, borderColor: colors.border, paddingVertical: 12, paddingHorizontal: 16, marginHorizontal: 24,
+    }}>
+      <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 2 }}>{user.email}</Text>
+      <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 10 }}>
+        {t('common:admin.registered')}: {formatFullDate(user.created_at)}
+      </Text>
+      {FEATURE_FLAGS.map(flag => {
+        const isEnabled = user.settings[flag.key] === 'true'
+        return (
+          <View key={flag.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 13 }}>{t(flag.labelKey)}</Text>
+            <CustomToggle
+              checked={isEnabled}
+              onChange={() => onToggleSetting(user.id, flag.key, isEnabled ? null : 'true')}
+              disabled={isUpdating}
+            />
+          </View>
+        )
+      })}
+    </View>
   )
 }
 
@@ -71,12 +69,7 @@ export default function AdminUsersScreen({ navigation }) {
   }
 
   if (isLoadingAdmin) return <LoadingSpinner />
-
-  if (!isAdmin) {
-    navigation.goBack()
-    return null
-  }
-
+  if (!isAdmin) { navigation.goBack(); return null }
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
@@ -88,16 +81,12 @@ export default function AdminUsersScreen({ navigation }) {
         data={users || []}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <UserCard
-            user={item}
-            onToggleSetting={handleToggleSetting}
-            isUpdating={updateSetting.isPending}
-          />
+          <UserRow user={item} onToggleSetting={handleToggleSetting} isUpdating={updateSetting.isPending} />
         )}
-        ItemSeparatorComponent={() => <View className="h-3" />}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         contentContainerStyle={{ paddingBottom: 40 }}
         ListEmptyComponent={
-          <Text className="text-secondary text-center py-8">
+          <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 32, fontSize: 13 }}>
             {t('common:admin.noUsers')}
           </Text>
         }

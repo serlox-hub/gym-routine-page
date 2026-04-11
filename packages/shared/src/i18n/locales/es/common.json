@@ -159,6 +159,7 @@
     "history": "Histórico",
     "preferences": "Preferencias",
     "admin": "Gestión usuarios",
+    "adminDescription": "Acceso a gestión de usuarios",
     "logout": "Cerrar sesión",
     "quickAccess": "Acceso rápido",
     "routines": "Rutinas",
@@ -203,6 +204,7 @@
   },
   "admin": {
     "noUsers": "No hay usuarios registrados",
-    "registered": "Registrado"
+    "registered": "Registrado",
+    "lastSeen": "Última conexión"
   }
 }

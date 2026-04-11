@@ -67,19 +67,19 @@ When adapting a screen to the new theme, follow these rules:
 | History | `a637d6f` | Compact header, unified sets, subtle calendar |
 | Session Edit Mode | `1d118ba` | Auto-save, inline inputs, Done button |
 | Body Metrics | `474dd21` | Adapted to new theme |
-| Preferences | latest | Open sections, lime selection buttons, no Cards |
+| Preferences | latest | Open sections, pills, custom toggles, no Cards |
+| Admin Users | latest | Compact user rows, custom toggles, i18n unified |
 
 ## Pending (ordered by difficulty)
 
 | # | Screen | Difficulty | Notes |
 |---|--------|-----------|-------|
-| 1 | Admin Users | Easy | Simple list, admin only |
-| 2 | New Routine | Easy | Simple form (name, description) |
-| 3 | Login / Signup | Medium | Auth forms. Inputs + buttons + color tokens |
-| 4 | Forgot / Reset Password | Medium | Simple forms with email flow |
-| 5 | Free Workout Session | Medium-High | Shares components with WorkoutSession |
-| 6 | Workout Session | High | Most complex screen — sets, timer, supersets, notes, video |
-| 7 | Landing | High | Marketing page with gradients and animations. Own style — evaluate if needs migration |
+| 1 | New Routine | Easy | Simple form (name, description) |
+| 2 | Login / Signup | Medium | Auth forms. Inputs + buttons + color tokens |
+| 3 | Forgot / Reset Password | Medium | Simple forms with email flow |
+| 4 | Free Workout Session | Medium-High | Shares components with WorkoutSession |
+| 5 | Workout Session | High | Most complex screen — sets, timer, supersets, notes, video |
+| 6 | Landing | High | Marketing page with gradients and animations. Own style — evaluate if needs migration |
 
 ## Removed
 
