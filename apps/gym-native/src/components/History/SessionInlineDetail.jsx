@@ -220,19 +220,19 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                   </View>
                 )}
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: -8 }}>
                 {set.notes && (
-                  <Pressable onPress={() => onSelectSet(set)}>
+                  <Pressable onPress={() => onSelectSet(set)} style={{ padding: 8 }} className="active:opacity-50">
                     <FileText size={14} color={colors.textMuted} />
                   </Pressable>
                 )}
                 {set.video_url && (
-                  <Pressable onPress={() => onSelectSet(set)}>
+                  <Pressable onPress={() => onSelectSet(set)} style={{ padding: 8 }} className="active:opacity-50">
                     <Video size={14} color={colors.textMuted} />
                   </Pressable>
                 )}
                 {set.rir_actual !== null && set.rir_actual !== undefined && (
-                  <Text style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'right' }}>
+                  <Text style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
                     {set.rir_actual}
                   </Text>
                 )}

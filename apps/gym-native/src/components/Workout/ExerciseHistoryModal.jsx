@@ -113,6 +113,7 @@ function HistoryTab({ sessions, weightUnit, timeUnit, distanceUnit, onSelectSet,
             {/* Session header — clickable to navigate */}
             <Pressable
               onPress={() => onSessionClick(session.sessionId, session.date)}
+              className="active:opacity-70"
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 }}
             >
               <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>
@@ -138,19 +139,19 @@ function HistoryTab({ sessions, weightUnit, timeUnit, distanceUnit, onSelectSet,
                   <Text style={{ color: colors.textPrimary, fontSize: 13, flex: 1 }}>
                     {formatSetValue({ ...set, weight_unit: weightUnit }, { timeUnit, distanceUnit })}
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: -8 }}>
                     {set.notes && (
-                      <Pressable onPress={() => onSelectSet(set)}>
+                      <Pressable onPress={() => onSelectSet(set)} style={{ padding: 8 }} className="active:opacity-50">
                         <FileText size={14} color={colors.textMuted} />
                       </Pressable>
                     )}
                     {set.video_url && (
-                      <Pressable onPress={() => onSelectSet(set)}>
+                      <Pressable onPress={() => onSelectSet(set)} style={{ padding: 8 }} className="active:opacity-50">
                         <Video size={14} color={colors.textMuted} />
                       </Pressable>
                     )}
                     {set.rir_actual !== null && set.rir_actual !== undefined && (
-                      <Text style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'right' }}>
+                      <Text style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
                         {set.rir_actual}
                       </Text>
                     )}

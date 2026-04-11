@@ -224,19 +224,19 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                   </span>
                 )}
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-0.5 -my-2">
                 {set.notes && (
-                  <button onClick={() => onSelectSet(set)} className="hover:opacity-80 p-1">
+                  <button onClick={() => onSelectSet(set)} className="p-2 rounded-lg opacity-70 hover:opacity-100 transition-opacity">
                     <FileText size={14} color={colors.textMuted} />
                   </button>
                 )}
                 {set.video_url && (
-                  <button onClick={() => onSelectSet(set)} className="hover:opacity-80 p-1">
+                  <button onClick={() => onSelectSet(set)} className="p-2 rounded-lg opacity-70 hover:opacity-100 transition-opacity">
                     <Video size={14} color={colors.textMuted} />
                   </button>
                 )}
                 {set.rir_actual !== null && set.rir_actual !== undefined && (
-                  <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'right' }}>
+                  <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
                     {set.rir_actual}
                   </span>
                 )}

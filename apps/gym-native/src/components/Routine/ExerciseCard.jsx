@@ -54,6 +54,7 @@ export default function ExerciseCard({
       <>
         <Pressable
           onPress={() => setShowHistory(true)}
+          className="active:opacity-70"
           style={{
             backgroundColor: colors.bgTertiary,
             borderRadius: 8,
