@@ -141,7 +141,16 @@ export default function HistoryScreen({ navigation, route }) {
             {/* Inline session detail */}
             {selectedSessionId ? (
               <View className="mt-4">
-                <SessionInlineDetail key={selectedSessionId} sessionId={selectedSessionId} navigation={navigation} />
+                <SessionInlineDetail key={selectedSessionId} sessionId={selectedSessionId} navigation={navigation} onSessionDeleted={() => {
+                  const remaining = selectedSessions?.filter(s => s.id !== selectedSessionId)
+                  if (remaining?.length > 0) {
+                    setSelectedSessions(remaining)
+                    setSelectedSessionId(remaining[0].id)
+                  } else {
+                    setSelectedSessions(null)
+                    setSelectedSessionId(null)
+                  }
+                }} />
               </View>
             ) : (
               <View className="items-center py-8">

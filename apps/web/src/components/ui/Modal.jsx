@@ -25,8 +25,8 @@ function Modal({
   const isBottom = position === 'bottom'
 
   const overlayClasses = isBottom
-    ? 'fixed inset-0 z-50 flex items-end justify-center'
-    : 'fixed inset-0 z-50 flex items-center justify-center p-4'
+    ? 'fixed inset-0 z-[60] flex items-end justify-center'
+    : 'fixed inset-0 z-[60] flex items-center justify-center p-4'
 
   const contentClasses = isBottom
     ? `w-full ${maxWidth} rounded-t-2xl ${className}`

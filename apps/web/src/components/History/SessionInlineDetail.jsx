@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, X, FileText, Video } from 'lucide-react'
+import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, FileText, Video } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
@@ -63,28 +63,22 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     onUpsert(buildPayload({ setType: newType }))
   }
 
-  const inputCls = "w-16 text-center text-sm rounded-lg px-2 py-1"
+  const inputCls = "w-full text-center text-sm rounded-lg px-2 py-1"
   const inputSt = { backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: `1px solid ${colors.border}` }
 
   return (
-    <div
-      className="flex items-center gap-2 py-2 px-3 rounded"
-      style={{
-        backgroundColor: isSetPR ? colors.warningBg : colors.bgTertiary,
-        borderLeft: isSetPR ? `3px solid ${colors.warning}` : '3px solid transparent',
-      }}
-    >
+    <div className="flex items-center gap-3" style={{ fontSize: 13 }}>
       <button
         onClick={handleToggleDropset}
-        className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0"
-        style={{ backgroundColor: setType === 'dropset' ? colors.orange : isSetPR ? colors.warning : colors.success, color: colors.bgPrimary }}
+        className="shrink-0"
+        style={{ color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted, fontSize: 12, width: 14, textAlign: 'right', fontWeight: isSetPR || setType === 'dropset' ? 700 : 400 }}
         title={setType === 'dropset' ? t('workout:set.removeDropset') : t('workout:set.markDropset')}
       >
         {setType === 'dropset' ? 'D' : set.set_number}
       </button>
 
       {showWeight && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-1 min-w-0">
           <input
             value={weight}
             onChange={e => setWeight(e.target.value)}
@@ -99,7 +93,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       )}
       {showWeight && showReps && <span style={{ color: colors.textSecondary }}>×</span>}
       {showReps && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-1 min-w-0">
           <input
             value={reps}
             onChange={e => setReps(e.target.value)}
@@ -112,7 +106,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         </div>
       )}
       {showTime && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-1 min-w-0">
           <input
             value={timeSeconds}
             onChange={e => setTimeSeconds(e.target.value)}
@@ -125,7 +119,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         </div>
       )}
       {showDistance && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-1 min-w-0">
           <input
             value={distanceMeters}
             onChange={e => setDistanceMeters(e.target.value)}
@@ -140,9 +134,9 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       )}
       <button
         onClick={() => onDelete({ sessionId, sessionExerciseId, setNumber: set.set_number })}
-        className="p-1 rounded hover:opacity-70 shrink-0"
+        className="p-2 rounded-lg opacity-50 hover:opacity-100 transition-opacity shrink-0 -my-2"
       >
-        <X size={14} style={{ color: colors.danger }} />
+        <Trash2 size={14} color={colors.textMuted} />
       </button>
     </div>
   )
@@ -199,7 +193,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             <button
               onClick={() => onAddSet(sessionExerciseId, exercise, maxSetNumber)}
               className="flex items-center justify-center gap-1 w-full py-2 rounded text-xs"
-              style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
+              style={{ border: `1px dashed ${colors.border}`, color: colors.success }}
             >
               <Plus size={14} /> {t('workout:set.addSet')}
             </button>
@@ -258,7 +252,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   )
 }
 
-function SessionInlineDetail({ sessionId }) {
+function SessionInlineDetail({ sessionId, onSessionDeleted }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
@@ -521,7 +515,10 @@ function SessionInlineDetail({ sessionId }) {
             exerciseIds: session.exercises?.map(e => e.exercise?.id).filter(Boolean) || [],
             sessionDate: session.started_at,
           }, {
-            onSuccess: () => setShowDeleteConfirm(false),
+            onSuccess: () => {
+              setShowDeleteConfirm(false)
+              onSessionDeleted?.()
+            },
           })
         }}
         onCancel={() => setShowDeleteConfirm(false)}

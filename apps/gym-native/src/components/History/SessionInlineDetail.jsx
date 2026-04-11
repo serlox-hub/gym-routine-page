@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { View, Text, TextInput, Pressable } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Share2, Pencil, Plus, X, FileText, Video, Trophy } from 'lucide-react-native'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, FileText, Video, Trophy } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, Button, DropdownMenu } from '../ui'
@@ -62,20 +62,13 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   }
 
   return (
-    <View
-      className="flex-row items-center gap-2 py-2 px-3 rounded"
-      style={{
-        backgroundColor: isSetPR ? colors.warningBg : colors.bgTertiary,
-        borderLeftWidth: 3,
-        borderLeftColor: isSetPR ? colors.warning : 'transparent',
-      }}
-    >
-      <Pressable
-        onPress={handleToggleDropset}
-        className="w-6 h-6 rounded-full items-center justify-center"
-        style={{ backgroundColor: setType === 'dropset' ? colors.orange : isSetPR ? colors.warning : colors.success }}
-      >
-        <Text className="text-xs font-bold" style={{ color: colors.bgPrimary }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <Pressable onPress={handleToggleDropset}>
+        <Text style={{
+          color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted,
+          fontSize: 12, width: 14, textAlign: 'right',
+          fontWeight: isSetPR || setType === 'dropset' ? '700' : '400',
+        }}>
           {setType === 'dropset' ? 'D' : set.set_number}
         </Text>
       </Pressable>
@@ -133,8 +126,12 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
           <Text className="text-xs" style={{ color: colors.textSecondary }}>m</Text>
         </View>
       )}
-      <Pressable onPress={() => onDelete({ sessionId, sessionExerciseId, setNumber: set.set_number })} hitSlop={8}>
-        <X size={14} color={colors.danger} />
+      <Pressable
+        onPress={() => onDelete({ sessionId, sessionExerciseId, setNumber: set.set_number })}
+        style={{ padding: 8, marginVertical: -8, opacity: 0.5 }}
+        className="active:opacity-100"
+      >
+        <Trash2 size={14} color={colors.textMuted} />
       </Pressable>
     </View>
   )
@@ -191,11 +188,11 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             ))}
             <Pressable
               onPress={() => onAddSet(sessionExerciseId, exercise, maxSetNumber)}
-              className="flex-row items-center justify-center gap-1 py-2 rounded"
-              style={{ backgroundColor: colors.bgTertiary }}
+              className="flex-row items-center justify-center gap-1 rounded self-center"
+              style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border, paddingVertical: 8, width: '90%' }}
             >
-              <Plus size={14} color={colors.accent} />
-              <Text className="text-xs" style={{ color: colors.accent }}>{t('workout:set.addSet')}</Text>
+              <Plus size={14} color={colors.success} />
+              <Text className="text-xs" style={{ color: colors.success }}>{t('workout:set.addSet')}</Text>
             </Pressable>
           </>
         ) : (
@@ -258,7 +255,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   )
 }
 
-function SessionInlineDetail({ sessionId, navigation: navigationProp }) {
+function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionDeleted }) {
   const navigationHook = useNavigation()
   const navigation = navigationProp || navigationHook
   const { t } = useTranslation()
@@ -528,7 +525,10 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp }) {
             exerciseIds: session.exercises?.map(e => e.exercise?.id).filter(Boolean) || [],
             sessionDate: session.started_at,
           }, {
-            onSuccess: () => setShowDeleteConfirm(false),
+            onSuccess: () => {
+              setShowDeleteConfirm(false)
+              onSessionDeleted?.()
+            },
           })
         }}
         onCancel={() => setShowDeleteConfirm(false)}

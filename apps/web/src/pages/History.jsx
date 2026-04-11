@@ -124,7 +124,16 @@ function History() {
           {/* Inline session detail */}
           {selectedSessionId ? (
             <div className="mt-4">
-              <SessionInlineDetail key={selectedSessionId} sessionId={selectedSessionId} />
+              <SessionInlineDetail key={selectedSessionId} sessionId={selectedSessionId} onSessionDeleted={() => {
+                const remaining = selectedSessions?.filter(s => s.id !== selectedSessionId)
+                if (remaining?.length > 0) {
+                  setSelectedSessions(remaining)
+                  setSelectedSessionId(remaining[0].id)
+                } else {
+                  setSelectedSessions(null)
+                  setSelectedSessionId(null)
+                }
+              }} />
             </div>
           ) : (
             <div className="text-center py-8">
