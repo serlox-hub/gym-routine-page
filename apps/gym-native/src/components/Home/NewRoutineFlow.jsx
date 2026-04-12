@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { View, Text, Pressable, Alert } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { LayoutTemplate, FileText, Upload, Bot } from 'lucide-react-native'
-import { useUserId } from '../../hooks/useAuth'
-import { Card, ImportOptionsModal, LoadingSpinner } from '../ui'
+import { Sparkles, Scissors, LayoutGrid, Upload, ChevronRight, Lock } from 'lucide-react-native'
+import { useUserId, useIsPremium } from '../../hooks/useAuth'
+import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui'
 import {
   TemplatesModal, ImportRoutineModal, ChatbotPromptModal, AdaptRoutineModal,
 } from '../Routine'
@@ -14,6 +14,7 @@ import { colors } from '../../lib/styles'
 function NewRoutineFlow({ isOpen, onClose, navigation }) {
   const { t } = useTranslation()
   const userId = useUserId()
+  const isPremium = useIsPremium()
   const queryClient = useQueryClient()
   const [showTemplates, setShowTemplates] = useState(false)
   const [showImportRoutine, setShowImportRoutine] = useState(false)
@@ -42,73 +43,114 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
     try {
       await importRoutine(pendingImportData, userId, options)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
-    } catch (err) {
-      Alert.alert('Error', `${t('common:import.importError')}: ${err.message}`)
+    } catch {
+      Alert.alert('Error', t('common:import.importError'))
     } finally {
       setIsImporting(false)
       setPendingImportData(null)
     }
   }
 
-  const newRoutineOptions = [
-    {
-      icon: LayoutTemplate,
-      iconColor: colors.success,
-      label: t('routine:newFlow.predefined'),
-      description: 'PPL, Upper/Lower, Full Body, 5/3/1',
-      onPress: () => { onClose(); setShowTemplates(true) },
-    },
-    {
-      icon: FileText,
-      iconColor: colors.accent,
-      label: t('routine:newFlow.createManually'),
-      description: t('routine:newFlow.createManuallyDesc'),
-      onPress: () => { onClose(); navigation.navigate('NewRoutine') },
-    },
-    {
-      icon: Upload,
-      iconColor: colors.success,
-      label: t('routine:newFlow.import'),
-      description: t('routine:newFlow.importDesc'),
-      onPress: () => { onClose(); setShowImportRoutine(true) },
-    },
-    {
-      icon: Bot,
-      iconColor: colors.accent,
-      label: t('routine:newFlow.createWithAI'),
-      description: t('routine:newFlow.createWithAIDesc'),
-      onPress: () => { onClose(); setShowChatbot(true) },
-    },
-  ]
+  const handleAIClick = () => {
+    if (!isPremium) return
+    onClose()
+    setShowChatbot(true)
+  }
 
   return (
     <>
-      {isOpen && (
-        <Pressable
-          onPress={onClose}
-          className="absolute inset-0 z-50 justify-center items-center p-4"
-          style={{ backgroundColor: colors.overlay }}
-        >
-          <Pressable
-            onPress={(e) => e.stopPropagation()}
-            className="w-full bg-surface-card border border-border rounded-lg p-4"
-            style={{ maxWidth: 400 }}
-          >
-            <Text className="text-primary font-semibold mb-4">{t('routine:newFlow.title')}</Text>
-            {newRoutineOptions.map((opt, i) => (
-              <Card key={i} className="p-3 mb-2" onPress={opt.onPress}>
-                <View className="flex-row items-center gap-3">
-                  <opt.icon size={20} color={opt.iconColor} />
-                  <View>
-                    <Text className="text-primary font-medium text-sm">{opt.label}</Text>
-                    <Text className="text-secondary text-xs">{opt.description}</Text>
-                  </View>
+      <Modal isOpen={isOpen} onClose={onClose} position="bottom">
+        <View style={{ padding: 20 }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700', marginBottom: 16 }}>
+            {t('routine:new')}
+          </Text>
+
+          <View style={{ gap: 10 }}>
+            {/* Create with AI */}
+            <Pressable
+              onPress={handleAIClick}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                padding: 14, borderRadius: 12,
+                backgroundColor: isPremium ? colors.success : colors.bgSecondary,
+                borderWidth: 1, borderColor: isPremium ? colors.success : colors.border,
+                opacity: isPremium ? 1 : 0.7,
+              }}
+            >
+              <Sparkles size={20} color={isPremium ? colors.bgPrimary : colors.success} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: isPremium ? colors.bgPrimary : colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
+                  {t('routine:newFlow.createWithAI')}
+                </Text>
+                <Text style={{ color: isPremium ? colors.bgPrimary : colors.textMuted, fontSize: 12, opacity: 0.8 }}>
+                  {t('routine:newFlow.createWithAIDesc')}
+                </Text>
+              </View>
+              {!isPremium && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.successBg, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <Lock size={10} color={colors.success} />
+                  <Text style={{ color: colors.success, fontSize: 11, fontWeight: '600' }}>Premium</Text>
                 </View>
-              </Card>
-            ))}
+              )}
+              <ChevronRight size={18} color={isPremium ? colors.bgPrimary : colors.textMuted} />
+            </Pressable>
+
+            {/* Create manually */}
+            <Pressable
+              onPress={() => { onClose(); navigation.navigate('NewRoutine') }}
+              className="active:opacity-70"
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                padding: 14, borderRadius: 12,
+                backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border,
+              }}
+            >
+              <Scissors size={20} color={colors.success} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
+                  {t('routine:newFlow.createManually')}
+                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+                  {t('routine:newFlow.createManuallyDesc')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color={colors.textMuted} />
+            </Pressable>
+
+            {/* From templates */}
+            <Pressable
+              onPress={() => { onClose(); setShowTemplates(true) }}
+              className="active:opacity-70"
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                padding: 14, borderRadius: 12,
+                backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border,
+              }}
+            >
+              <LayoutGrid size={20} color={colors.success} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
+                  {t('routine:newFlow.predefined')}
+                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+                  {t('routine:newFlow.predefinedDesc')}
+                </Text>
+              </View>
+              <ChevronRight size={18} color={colors.textMuted} />
+            </Pressable>
+          </View>
+
+          {/* Import from file — link style */}
+          <Pressable
+            onPress={() => { onClose(); setShowImportRoutine(true) }}
+            className="active:opacity-70"
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16, paddingVertical: 8 }}
+          >
+            <Upload size={14} color={colors.textMuted} />
+            <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('routine:newFlow.import')}</Text>
           </Pressable>
-        </Pressable>
-      )}
+        </View>
+      </Modal>
 
       {isImporting && (
         <View

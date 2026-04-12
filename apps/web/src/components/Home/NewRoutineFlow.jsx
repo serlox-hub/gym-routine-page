@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LayoutTemplate, FileText, Upload, Bot } from 'lucide-react'
-import { useUserId } from '../../hooks/useAuth.js'
-import { Card, ImportOptionsModal, LoadingSpinner } from '../ui/index.js'
+import { Sparkles, Scissors, LayoutGrid, Upload, ChevronRight, Lock } from 'lucide-react'
+import { useUserId, useIsPremium } from '../../hooks/useAuth.js'
+import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui/index.js'
 import { ChatbotPromptModal, AdaptRoutineModal, TemplatesModal, ImportRoutineModal } from '../Routine/index.js'
 import { QUERY_KEYS, importRoutine, getNotifier } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
@@ -13,6 +13,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const userId = useUserId()
+  const isPremium = useIsPremium()
   const queryClient = useQueryClient()
   const [showChatbotModal, setShowChatbotModal] = useState(false)
   const [showAdaptModal, setShowAdaptModal] = useState(false)
@@ -40,7 +41,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
       await importRoutine(pendingImportData, userId, options)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
     } catch (err) {
-      getNotifier()?.show(`Error al importar: ${err.message}`, 'error')
+      getNotifier()?.show(t('common:import.importError'), 'error')
     } finally {
       setIsImporting(false)
       setImportType(null)
@@ -56,7 +57,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
       await importRoutine(templateData, userId, { updateExercises: false })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
     } catch (err) {
-      getNotifier()?.show(`Error al importar: ${err.message}`, 'error')
+      getNotifier()?.show(t('common:import.importError'), 'error')
     } finally {
       setIsImporting(false)
       setImportType(null)
@@ -68,47 +69,97 @@ function NewRoutineFlow({ isOpen, onClose }) {
     setPendingImportData(null)
   }
 
-  const menuOption = (Icon, iconColor, title, description) => (
-    <div className="flex items-center gap-3">
-      <Icon size={20} style={{ color: iconColor }} />
-      <div>
-        <h4 className="font-medium text-sm" style={{ color: colors.textPrimary }}>{title}</h4>
-        <p className="text-xs" style={{ color: colors.textSecondary }}>{description}</p>
-      </div>
-    </div>
-  )
+  const handleAIClick = () => {
+    if (!isPremium) return
+    onClose()
+    setShowChatbotModal(true)
+  }
 
   return (
     <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: colors.overlay }}
-          onClick={onClose}
-        >
-          <div
-            className="w-full max-w-sm rounded-lg p-4"
-            style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 className="font-semibold mb-4" style={{ color: colors.textPrimary }}>{t('routine:new')}</h3>
-            <div className="space-y-2">
-              <Card className="p-3" onClick={() => { onClose(); setShowTemplatesModal(true) }}>
-                {menuOption(LayoutTemplate, colors.success, t('routine:newFlow.predefined'), t('routine:newFlow.predefinedDesc'))}
-              </Card>
-              <Card className="p-3" onClick={() => { onClose(); navigate('/routines/new') }}>
-                {menuOption(FileText, colors.accent, t('routine:newFlow.createManually'), t('routine:newFlow.createManuallyDesc'))}
-              </Card>
-              <Card className="p-3" onClick={() => { onClose(); setShowImportModal(true) }}>
-                {menuOption(Upload, colors.success, t('routine:newFlow.import'), t('routine:newFlow.importDesc'))}
-              </Card>
-              <Card className="p-3" onClick={() => { onClose(); setShowChatbotModal(true) }}>
-                {menuOption(Bot, colors.accent, t('routine:newFlow.createWithAI'), t('routine:newFlow.createWithAIDesc'))}
-              </Card>
-            </div>
+      <Modal isOpen={isOpen} onClose={onClose} position="bottom" maxWidth="max-w-sm" noBorder>
+        <div style={{ padding: 20 }}>
+          <h3 style={{ color: colors.textPrimary, fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+            {t('routine:new')}
+          </h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Create with AI — highlighted if premium, locked if not */}
+            <button
+              onClick={handleAIClick}
+              className="flex items-center gap-3 rounded-xl transition-opacity"
+              style={{
+                padding: '14px 16px',
+                backgroundColor: isPremium ? colors.success : colors.bgSecondary,
+                border: `1px solid ${isPremium ? colors.success : colors.border}`,
+                opacity: isPremium ? 1 : 0.7,
+              }}
+            >
+              <Sparkles size={20} color={isPremium ? colors.bgPrimary : colors.success} />
+              <div className="flex-1 text-left">
+                <span style={{ color: isPremium ? colors.bgPrimary : colors.textPrimary, fontSize: 14, fontWeight: 600, display: 'block' }}>
+                  {t('routine:newFlow.createWithAI')}
+                </span>
+                <span style={{ color: isPremium ? colors.bgPrimary : colors.textMuted, fontSize: 12, opacity: 0.8 }}>
+                  {t('routine:newFlow.createWithAIDesc')}
+                </span>
+              </div>
+              {!isPremium && (
+                <span className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.successBg, color: colors.success, fontSize: 11, fontWeight: 600 }}>
+                  <Lock size={10} /> Premium
+                </span>
+              )}
+              <ChevronRight size={18} color={isPremium ? colors.bgPrimary : colors.textMuted} className="shrink-0" />
+            </button>
+
+            {/* Create manually */}
+            <button
+              onClick={() => { onClose(); navigate('/routines/new') }}
+              className="flex items-center gap-3 rounded-xl hover:opacity-80 transition-opacity"
+              style={{ padding: '14px 16px', backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
+            >
+              <Scissors size={20} color={colors.success} />
+              <div className="flex-1 text-left">
+                <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600, display: 'block' }}>
+                  {t('routine:newFlow.createManually')}
+                </span>
+                <span style={{ color: colors.textMuted, fontSize: 12 }}>
+                  {t('routine:newFlow.createManuallyDesc')}
+                </span>
+              </div>
+              <ChevronRight size={18} color={colors.textMuted} className="shrink-0" />
+            </button>
+
+            {/* From templates */}
+            <button
+              onClick={() => { onClose(); setShowTemplatesModal(true) }}
+              className="flex items-center gap-3 rounded-xl hover:opacity-80 transition-opacity"
+              style={{ padding: '14px 16px', backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
+            >
+              <LayoutGrid size={20} color={colors.success} />
+              <div className="flex-1 text-left">
+                <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600, display: 'block' }}>
+                  {t('routine:newFlow.predefined')}
+                </span>
+                <span style={{ color: colors.textMuted, fontSize: 12 }}>
+                  {t('routine:newFlow.predefinedDesc')}
+                </span>
+              </div>
+              <ChevronRight size={18} color={colors.textMuted} className="shrink-0" />
+            </button>
           </div>
+
+          {/* Import from file — link style */}
+          <button
+            onClick={() => { onClose(); setShowImportModal(true) }}
+            className="flex items-center justify-center gap-2 w-full mt-4 py-2 hover:opacity-80 transition-opacity"
+            style={{ color: colors.textMuted, fontSize: 13 }}
+          >
+            <Upload size={14} />
+            {t('routine:newFlow.import')}
+          </button>
         </div>
-      )}
+      </Modal>
 
       {showChatbotModal && (
         <ChatbotPromptModal
@@ -154,7 +205,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
 
       {isImporting && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-[60] flex items-center justify-center"
           style={{ backgroundColor: colors.overlay }}
         >
           <div className="flex flex-col items-center gap-3">

@@ -69,12 +69,13 @@ When adapting a screen to the new theme, follow these rules:
 | Body Metrics | `474dd21` | Adapted to new theme |
 | Preferences | latest | Open sections, pills, custom toggles, no Cards |
 | Admin Users | latest | Compact user rows, custom toggles, i18n unified |
+| New Routine Flow | latest | Bottom sheet, AI highlighted/premium-gated, chevrons, import link |
 
 ## Pending (ordered by difficulty)
 
 | # | Screen | Difficulty | Notes |
 |---|--------|-----------|-------|
-| 1 | New Routine | Easy | Simple form (name, description) |
+| 1 | New Routine (form) | Easy | Simple form page (name, description) — the flow modal is done |
 | 2 | Login / Signup | Medium | Auth forms. Inputs + buttons + color tokens |
 | 3 | Forgot / Reset Password | Medium | Simple forms with email flow |
 | 4 | Free Workout Session | Medium-High | Shares components with WorkoutSession |
