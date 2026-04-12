@@ -1,13 +1,13 @@
-import { useState } from 'react'
-import { View, Text, FlatList, Pressable } from 'react-native'
+import { useState, useRef, useEffect } from 'react'
+import { View, Text, FlatList, Pressable, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native'
+import { Pencil, Trash2 } from 'lucide-react-native'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, Button } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'
 import { BodyWeightChart } from '../components/Charts'
-import { calculateBodyWeightStats, calculateWeightTrend, formatShortDate, formatTime } from '@gym/shared'
+import { calculateBodyWeightStats, formatShortDate, formatTime } from '@gym/shared'
 import { colors, design } from '../lib/styles'
 
 function WeightSection() {
@@ -25,17 +25,11 @@ function WeightSection() {
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   const stats = calculateBodyWeightStats(records)
-  const trend = calculateWeightTrend(records)
-  const TrendIcon = trend === 'increasing' ? TrendingUp : trend === 'decreasing' ? TrendingDown : Minus
-  const trendColor = trend === 'increasing' ? colors.danger : trend === 'decreasing' ? colors.success : colors.textSecondary
 
   const handleSubmit = ({ id, weight, notes }) => {
     if (id) {
       updateMutation.mutate({ id, weight, notes }, {
-        onSuccess: () => {
-          setShowModal(false)
-          setEditingRecord(null)
-        }
+        onSuccess: () => { setShowModal(false); setEditingRecord(null) }
       })
     } else {
       recordMutation.mutate({ weight, notes }, {
@@ -62,103 +56,79 @@ function WeightSection() {
   }
 
   const renderRecord = ({ item: record }) => (
-    <Card className="p-3 mx-4">
-      <View className="flex-row items-center justify-between">
-        <View className="flex-1">
-          <View className="flex-row items-baseline gap-2">
-            <Text className="text-lg font-bold text-primary">{record.weight} kg</Text>
-            <Text className="text-xs text-secondary">{formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}</Text>
-          </View>
-          {record.notes && (
-            <Text className="text-xs text-secondary mt-1">{record.notes}</Text>
-          )}
-        </View>
-        <View className="flex-row gap-1">
-          <Pressable onPress={() => handleEdit(record)} className="p-2">
-            <Pencil size={16} color={colors.textSecondary} />
-          </Pressable>
-          <Pressable
-            onPress={() => setRecordToDelete(record.id)}
-            className="p-2"
-            disabled={deleteMutation.isPending}
-          >
-            <Trash2 size={16} color={colors.danger} />
-          </Pressable>
-        </View>
+    <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.weight} kg</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+          {formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}
+        </Text>
       </View>
-    </Card>
+      <View style={{ flexDirection: 'row', gap: 4 }}>
+        <Pressable onPress={() => handleEdit(record)} style={{ padding: 8 }} className="active:opacity-70">
+          <Pencil size={16} color={colors.textMuted} />
+        </Pressable>
+        <Pressable onPress={() => setRecordToDelete(record.id)} disabled={deleteMutation.isPending}
+          style={{ padding: 8 }} className="active:opacity-70">
+          <Trash2 size={16} color={colors.textMuted} />
+        </Pressable>
+      </View>
+    </View>
   )
 
   const ListHeader = () => (
-    <View className="px-4">
+    <View style={{ paddingHorizontal: 16 }}>
       {/* Stats */}
       {stats && (
-        <View className="flex-row flex-wrap gap-3 mb-4">
-          <View className="flex-1" style={{ minWidth: '45%' }}>
-            <Card className="p-3">
-              <Text className="text-xs text-secondary mb-1">{t('body:weight.current')}</Text>
-              <Text className="text-lg font-bold" style={{ color: colors.accent }}>
-                {stats.current} kg
-              </Text>
-            </Card>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.current')}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.current} kg</Text>
           </View>
-          <View className="flex-1" style={{ minWidth: '45%' }}>
-            <Card className="p-3">
-              <View className="flex-row items-center gap-1 mb-1">
-                <Text className="text-xs text-secondary">{t('body:weight.change')}</Text>
-                <TrendIcon size={12} color={trendColor} />
-              </View>
-              <Text className="text-lg font-bold" style={{ color: trendColor }}>
-                {stats.change > 0 ? '+' : ''}{stats.change} kg
-              </Text>
-            </Card>
+          <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.change')}</Text>
+            <Text style={{ color: colors.success, fontSize: 18, fontWeight: '700' }}>
+              {stats.change > 0 ? '+' : ''}{stats.change} kg
+            </Text>
           </View>
-          <View className="flex-1" style={{ minWidth: '45%' }}>
-            <Card className="p-3">
-              <Text className="text-xs text-secondary mb-1">{t('body:weight.min')}</Text>
-              <Text className="text-lg font-bold" style={{ color: colors.success }}>
-                {stats.min} kg
-              </Text>
-            </Card>
+          <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.lowest')}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.min} kg</Text>
           </View>
-          <View className="flex-1" style={{ minWidth: '45%' }}>
-            <Card className="p-3">
-              <Text className="text-xs text-secondary mb-1">{t('body:weight.max')}</Text>
-              <Text className="text-lg font-bold" style={{ color: colors.warning }}>
-                {stats.max} kg
-              </Text>
-            </Card>
+          <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.highest')}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.max} kg</Text>
           </View>
         </View>
       )}
 
       {/* Chart */}
       {records && records.length >= 2 && (
-        <Card className="p-3 mb-4">
+        <View style={{ padding: 12, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border, marginBottom: 16 }}>
           <BodyWeightChart records={records} />
-        </Card>
+        </View>
       )}
 
-      {/* Add Button */}
-      <View className="mb-4">
-        <Button onPress={() => setShowModal(true)}>{t('body:weight.record')}</Button>
-      </View>
+      {/* Record Button */}
+      <Pressable onPress={() => setShowModal(true)}
+        style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', marginBottom: 24 }}>
+        <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('body:weight.record')}</Text>
+      </Pressable>
 
-      <Text className="text-lg font-bold text-primary mb-3">{t('body:weight.history')}</Text>
+      <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '700', marginBottom: 12 }}>{t('body:weight.history')}</Text>
     </View>
   )
 
   return (
-    <View className="flex-1">
+    <View style={{ flex: 1 }}>
       <FlatList
         data={records || []}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderRecord}
-        ItemSeparatorComponent={() => <View className="h-2" />}
+        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         ListHeaderComponent={ListHeader}
         contentContainerStyle={{ paddingBottom: design.tabContentPaddingBottom }}
         ListEmptyComponent={
-          <Text className="text-secondary text-center py-8">
+          <Text style={{ color: colors.textSecondary, textAlign: 'center', paddingVertical: 32, fontSize: 14 }}>
             {t('body:weight.noRecords')}
           </Text>
         }
@@ -187,39 +157,39 @@ function WeightSection() {
 export default function BodyMetricsScreen() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('peso')
+  const [tabWidth, setTabWidth] = useState(0)
+  const slideAnim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: activeTab === 'peso' ? 0 : 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start()
+  }, [activeTab, slideAnim])
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPrimary }} edges={['top']}>
       {/* Tabs */}
       <View
-        className="flex-row mx-4 mt-2 mb-4 p-1 rounded-lg"
-        style={{ backgroundColor: colors.bgTertiary }}
-      >
-        <Pressable
-          onPress={() => setActiveTab('peso')}
-          className="flex-1 py-2 px-4 rounded-md items-center"
-          style={{
-            backgroundColor: activeTab === 'peso' ? colors.bgSecondary : 'transparent',
-          }}
-        >
-          <Text
-            className="text-sm font-medium"
-            style={{ color: activeTab === 'peso' ? colors.textPrimary : colors.textSecondary }}
-          >
-            {t('body:weight.title')}
+        onLayout={(e) => setTabWidth(e.nativeEvent.layout.width)}
+        style={{ flexDirection: 'row', marginHorizontal: 16, marginTop: 8, marginBottom: 20, padding: 4, borderRadius: 10, backgroundColor: colors.bgTertiary }}>
+        {tabWidth > 0 && (
+          <Animated.View style={{
+            position: 'absolute', top: 4, bottom: 4, left: 4, borderRadius: 8,
+            width: (tabWidth - 8) / 2, backgroundColor: colors.success,
+            transform: [{ translateX: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, (tabWidth - 8) / 2] }) }],
+          }} />
+        )}
+        <Pressable onPress={() => setActiveTab('peso')}
+          style={{ flex: 1, paddingVertical: 7, borderRadius: 8, alignItems: 'center', zIndex: 1 }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: activeTab === 'peso' ? colors.bgPrimary : colors.textSecondary }}>
+            {t('body:weight.tab')}
           </Text>
         </Pressable>
-        <Pressable
-          onPress={() => setActiveTab('medidas')}
-          className="flex-1 py-2 px-4 rounded-md items-center"
-          style={{
-            backgroundColor: activeTab === 'medidas' ? colors.bgSecondary : 'transparent',
-          }}
-        >
-          <Text
-            className="text-sm font-medium"
-            style={{ color: activeTab === 'medidas' ? colors.textPrimary : colors.textSecondary }}
-          >
+        <Pressable onPress={() => setActiveTab('medidas')}
+          style={{ flex: 1, paddingVertical: 7, borderRadius: 8, alignItems: 'center', zIndex: 1 }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: activeTab === 'medidas' ? colors.bgPrimary : colors.textSecondary }}>
             {t('body:measurements.title')}
           </Text>
         </Pressable>
@@ -227,7 +197,6 @@ export default function BodyMetricsScreen() {
 
       {activeTab === 'peso' && <WeightSection />}
       {activeTab === 'medidas' && <MeasurementSection />}
-
     </SafeAreaView>
   )
 }

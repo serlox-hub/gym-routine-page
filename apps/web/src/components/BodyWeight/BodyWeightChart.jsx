@@ -26,7 +26,7 @@ function BodyWeightChart({ records, unit = 'kg' }) {
   return (
     <div>
       <h4 className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
-        Evolución
+        {t('body:weight.chartTitle')}
       </h4>
       <div style={{ height: 180 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -56,9 +56,9 @@ function BodyWeightChart({ records, unit = 'kg' }) {
             <Line
               type="monotone"
               dataKey="weight"
-              stroke={colors.accent}
+              stroke={colors.success}
               strokeWidth={2}
-              dot={{ fill: colors.accent, r: 3 }}
+              dot={{ fill: colors.success, r: 3 }}
               activeDot={{ r: 5 }}
             />
           </LineChart>

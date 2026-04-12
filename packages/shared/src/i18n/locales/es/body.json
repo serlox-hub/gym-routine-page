@@ -9,13 +9,14 @@
     "deleteConfirm": "¿Eliminar este registro de peso?",
     "kg": "kg",
     "lb": "lb",
-    "current": "Peso actual",
+    "current": "Actual",
     "change": "Cambio",
-    "min": "Mínimo",
-    "max": "Máximo",
+    "lowest": "Más bajo",
+    "highest": "Más alto",
     "submit": "Registrar",
     "history": "Historial",
     "noRecords": "No hay registros de peso",
+    "chartTitle": "Evolución del peso",
     "trend": "Tendencia"
   },
   "measurements": {
@@ -30,6 +31,7 @@
     "selectType": "Seleccionar tipo de medida",
     "unit": "cm",
     "noRecords": "No hay registros de medidas",
+    "chartTitle": "Evolución",
     "types": {
       "cintura": "Cintura",
       "pecho": "Pecho",

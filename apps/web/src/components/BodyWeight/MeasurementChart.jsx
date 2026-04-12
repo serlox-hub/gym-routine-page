@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   LineChart,
   Line,
@@ -12,6 +13,7 @@ import { getMeasurementLabel, transformMeasurementToChartData } from '@gym/share
 import { colors } from '../../lib/styles.js'
 
 function MeasurementChart({ records, measurementType, unit = 'cm' }) {
+  const { t } = useTranslation()
   const chartData = useMemo(
     () => transformMeasurementToChartData(records, 30),
     [records]
@@ -26,7 +28,7 @@ function MeasurementChart({ records, measurementType, unit = 'cm' }) {
   return (
     <div>
       <h4 className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
-        Evolución
+        {t('body:measurements.chartTitle')}
       </h4>
       <div style={{ height: 180 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -56,9 +58,9 @@ function MeasurementChart({ records, measurementType, unit = 'cm' }) {
             <Line
               type="monotone"
               dataKey="value"
-              stroke={colors.purple}
+              stroke={colors.success}
               strokeWidth={2}
-              dot={{ fill: colors.purple, r: 3 }}
+              dot={{ fill: colors.success, r: 3 }}
               activeDot={{ r: 5 }}
             />
           </LineChart>

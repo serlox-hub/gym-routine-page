@@ -71,13 +71,13 @@ When adapting a screen to the new theme, follow these rules:
 | New Routine Flow | latest | Internal carousel navigation, stepped wizards (AI create 6-step, Adapt 3-step), file import with validation, templates inline, dead modals removed |
 | Login / Signup | latest | Logo + welcome, no Card wrapper, lime CTA, "G" Google button, terms text, i18n unified |
 | Forgot / Reset Password | latest | Same style as Login/Signup, Check icon success states |
+| Body Metrics | latest | Animated tab toggle, bgSecondary+border cards, lime charts, dashed grid lines, tap tooltips with date+time, no area fill in native |
 
 ## Pending (ordered by difficulty)
 
 | # | Screen | Difficulty | Notes |
 |---|--------|-----------|-------|
 | 1 | New Routine (form) | Easy | Simple form page (name, description) — the flow modal is done |
-| 2 | Body Metrics | Medium | Weight + measurements. Adapted to old theme but needs full redesign |
 | 3 | Free Workout Session | Medium-High | Shares components with WorkoutSession |
 | 4 | Workout Session | High | Most complex screen — sets, timer, supersets, notes, video |
 | 5 | Landing | High | Marketing page with gradients and animations. Own style — evaluate if needs migration |
