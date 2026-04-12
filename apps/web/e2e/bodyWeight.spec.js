@@ -86,6 +86,6 @@ test.describe('Protección de rutas de peso corporal', () => {
 
   test('body-metrics requiere autenticación', async ({ page }) => {
     await page.goto('/body-metrics')
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('heading', { name: /bienvenido|iniciar sesión/i })).toBeVisible({ timeout: 10000 })
   })
 })

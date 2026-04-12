@@ -66,21 +66,21 @@ When adapting a screen to the new theme, follow these rules:
 | Routine Detail | `822966c` | Info section, pin toggle, DayCard, ExerciseCard |
 | History | `a637d6f` | Compact header, unified sets, subtle calendar |
 | Session Edit Mode | `1d118ba` | Auto-save, inline inputs, Done button |
-| Body Metrics | `474dd21` | Adapted to new theme |
 | Preferences | latest | Open sections, pills, custom toggles, no Cards |
 | Admin Users | latest | Compact user rows, custom toggles, i18n unified |
 | New Routine Flow | latest | Internal carousel navigation, stepped wizards (AI create 6-step, Adapt 3-step), file import with validation, templates inline, dead modals removed |
+| Login / Signup | latest | Logo + welcome, no Card wrapper, lime CTA, "G" Google button, terms text, i18n unified |
+| Forgot / Reset Password | latest | Same style as Login/Signup, Check icon success states |
 
 ## Pending (ordered by difficulty)
 
 | # | Screen | Difficulty | Notes |
 |---|--------|-----------|-------|
 | 1 | New Routine (form) | Easy | Simple form page (name, description) — the flow modal is done |
-| 2 | Login / Signup | Medium | Auth forms. Inputs + buttons + color tokens |
-| 3 | Forgot / Reset Password | Medium | Simple forms with email flow |
-| 4 | Free Workout Session | Medium-High | Shares components with WorkoutSession |
-| 5 | Workout Session | High | Most complex screen — sets, timer, supersets, notes, video |
-| 6 | Landing | High | Marketing page with gradients and animations. Own style — evaluate if needs migration |
+| 2 | Body Metrics | Medium | Weight + measurements. Adapted to old theme but needs full redesign |
+| 3 | Free Workout Session | Medium-High | Shares components with WorkoutSession |
+| 4 | Workout Session | High | Most complex screen — sets, timer, supersets, notes, video |
+| 5 | Landing | High | Marketing page with gradients and animations. Own style — evaluate if needs migration |
 
 ## Removed
 

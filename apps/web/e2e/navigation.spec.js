@@ -18,13 +18,13 @@ test.describe('Navegación básica', () => {
     await page.goto('/routine/1')
 
     // Esperar a que cargue y verificar que muestra el formulario de login
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('heading', { name: /bienvenido|iniciar sesión/i })).toBeVisible({ timeout: 5000 })
   })
 
   test('página de login accesible directamente', async ({ page }) => {
     await page.goto('/login')
 
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /bienvenido|iniciar sesión/i })).toBeVisible()
   })
 
   test('página de signup accesible directamente', async ({ page }) => {

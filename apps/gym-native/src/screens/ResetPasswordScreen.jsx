@@ -1,14 +1,11 @@
 import { useState } from 'react'
-import {
-  View, Text, TextInput,
-  KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native'
+import { View, Text, TextInput, Pressable, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { validateResetPasswordForm } from '@gym/shared'
-import { Button, Card } from '../components/ui'
-import { inputStyle, colors } from '../lib/styles'
+import { Check } from 'lucide-react-native'
+import { colors } from '../lib/styles'
 
 export default function ResetPasswordScreen({ navigation, onComplete }) {
   const { t } = useTranslation()
@@ -41,77 +38,69 @@ export default function ResetPasswordScreen({ navigation, onComplete }) {
 
   if (success) {
     return (
-      <SafeAreaView className="flex-1 bg-surface">
-        <View className="flex-1 items-center justify-center px-4">
-          <Card className="w-full p-6 items-center">
-            <Text className="text-primary text-2xl font-bold mb-4">
-              {t('auth:resetPassword.success')}
-            </Text>
-            <Text className="text-secondary text-center mb-6">
-              {t('auth:resetPassword.successDescription')}
-            </Text>
-            <Button onPress={onComplete || (() => navigation?.navigate('Login'))} className="w-full">
-              {t('auth:forgotPassword.backToLogin')}
-            </Button>
-          </Card>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPrimary }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16, gap: 16 }}>
+          <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Check size={24} color={colors.success} />
+          </View>
+          <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700' }}>{t('auth:resetPassword.success')}</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: 'center' }}>{t('auth:resetPassword.successDescription')}</Text>
+          <Pressable onPress={onComplete || (() => navigation?.navigate('Login'))}
+            style={{ width: '100%', backgroundColor: colors.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
+            <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('auth:forgotPassword.backToLogin')}</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     )
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-          keyboardShouldPersistTaps="handled"
-          className="px-4"
-        >
-          <Card className="p-6">
-            <Text className="text-primary text-2xl font-bold text-center mb-2">
-              {t('auth:resetPassword.title')}
-            </Text>
-            <Text className="text-secondary text-center mb-6">
-              {t('auth:resetPassword.description')}
-            </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPrimary }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }} keyboardShouldPersistTaps="handled">
+          <View style={{ gap: 32, alignItems: 'center' }}>
 
-            <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">{t('auth:resetPassword.newPassword')}</Text>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder={t('auth:signup.minChars')}
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                autoComplete="new-password"
-                style={inputStyle}
-              />
+            {/* Logo + Title */}
+            <View style={{ alignItems: 'center', gap: 16 }}>
+              <View style={{ width: 64, height: 64, borderRadius: 16, backgroundColor: colors.bgTertiary, overflow: 'hidden' }}>
+                <Image source={require('../../assets/icon.png')} style={{ width: 64, height: 64 }} />
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{t('auth:resetPassword.title')}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 14, textAlign: 'center' }}>{t('auth:resetPassword.description')}</Text>
+              </View>
             </View>
 
-            <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">{t('auth:resetPassword.confirmPassword')}</Text>
-              <TextInput
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder={t('auth:resetPassword.confirmPassword')}
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                autoComplete="new-password"
-                style={inputStyle}
-              />
+            {/* Form */}
+            <View style={{ width: '100%', gap: 16 }}>
+              <View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>{t('auth:resetPassword.newPassword')}</Text>
+                <TextInput value={password} onChangeText={setPassword}
+                  placeholder={t('auth:signup.minChars')} placeholderTextColor={colors.textMuted}
+                  secureTextEntry autoComplete="new-password"
+                  style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }} />
+              </View>
+
+              <View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>{t('auth:resetPassword.confirmPassword')}</Text>
+                <TextInput value={confirmPassword} onChangeText={setConfirmPassword}
+                  placeholder={t('auth:resetPassword.confirmPassword')} placeholderTextColor={colors.textMuted}
+                  secureTextEntry autoComplete="new-password"
+                  style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }} />
+              </View>
+
+              {error ? (
+                <Text style={{ color: colors.danger, fontSize: 12, textAlign: 'center' }}>{error}</Text>
+              ) : null}
+
+              <Pressable onPress={handleSubmit} disabled={isLoading}
+                style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: isLoading ? 0.5 : 1 }}>
+                <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>
+                  {isLoading ? t('common:buttons.loading') : t('auth:resetPassword.submit')}
+                </Text>
+              </Pressable>
             </View>
-
-            {error ? (
-              <Text className="text-danger text-sm text-center mb-4">{error}</Text>
-            ) : null}
-
-            <Button onPress={handleSubmit} loading={isLoading}>
-              {t('auth:resetPassword.submit')}
-            </Button>
-          </Card>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

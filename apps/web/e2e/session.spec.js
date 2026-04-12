@@ -150,12 +150,12 @@ test.describe('Protección de rutas de sesión', () => {
 
   test('history requiere autenticación', async ({ page }) => {
     await page.goto('/history')
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('heading', { name: /bienvenido|iniciar sesión/i })).toBeVisible({ timeout: 10000 })
   })
 
 
   test('free workout requiere autenticación', async ({ page }) => {
     await page.goto('/workout/free')
-    await expect(page.getByRole('heading', { name: /iniciar sesión/i })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('heading', { name: /bienvenido|iniciar sesión/i })).toBeVisible({ timeout: 10000 })
   })
 })

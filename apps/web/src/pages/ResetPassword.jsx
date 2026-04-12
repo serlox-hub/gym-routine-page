@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
 import { validateResetPasswordForm } from '@gym/shared'
-import { Card, Button, Input } from '@/components/ui'
 import { colors } from '../lib/styles.js'
+import { Check } from 'lucide-react'
 
 function ResetPassword() {
   const navigate = useNavigate()
@@ -40,63 +40,66 @@ function ResetPassword() {
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
-        <Card className="w-full max-w-md p-6 text-center">
-          <h1 className="text-2xl font-bold mb-4">{t('auth:resetPassword.success')}</h1>
-          <p className="mb-6" style={{ color: colors.textSecondary }}>
-            {t('auth:resetPassword.successDescription')}
-          </p>
-          <Button className="w-full" onClick={() => navigate('/')}>
+        <div className="w-full max-w-sm text-center" style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: colors.successBg }}>
+            <Check size={24} color={colors.success} />
+          </div>
+          <h1 className="text-xl font-bold" style={{ color: colors.textPrimary }}>{t('auth:resetPassword.success')}</h1>
+          <p className="text-sm" style={{ color: colors.textSecondary }}>{t('auth:resetPassword.successDescription')}</p>
+          <button onClick={() => navigate('/')}
+            className="w-full py-3.5 rounded-xl text-sm font-semibold"
+            style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
             {t('common:nav.home')}
-          </Button>
-        </Card>
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
-      <Card className="w-full max-w-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-2">{t('auth:resetPassword.title')}</h1>
-        <p className="text-center mb-6" style={{ color: colors.textSecondary }}>
-          {t('auth:resetPassword.description')}
-        </p>
+      <div className="w-full max-w-sm" style={{ display: 'flex', flexDirection: 'column', gap: 32, alignItems: 'center' }}>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            id="password"
-            label={t('auth:resetPassword.newPassword')}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t('auth:signup.minChars')}
-            autoComplete="new-password"
-          />
+        {/* Logo + Title */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div className="rounded-2xl overflow-hidden" style={{ width: 64, height: 64, backgroundColor: colors.bgTertiary }}>
+            <img src="/icon-192.png" alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-1" style={{ color: colors.textPrimary }}>{t('auth:resetPassword.title')}</h1>
+            <p className="text-sm" style={{ color: colors.textMuted }}>{t('auth:resetPassword.description')}</p>
+          </div>
+        </div>
 
-          <Input
-            id="confirmPassword"
-            label={t('auth:resetPassword.confirmPassword')}
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder={t('auth:resetPassword.confirmPassword')}
-            autoComplete="new-password"
-          />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="w-full" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>{t('auth:resetPassword.newPassword')}</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder={t('auth:signup.minChars')} autoComplete="new-password"
+              className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }} />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>{t('auth:resetPassword.confirmPassword')}</label>
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder={t('auth:resetPassword.confirmPassword')} autoComplete="new-password"
+              className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }} />
+          </div>
 
           {error && (
-            <p className="text-sm text-center" style={{ color: colors.danger }}>
-              {error}
-            </p>
+            <p className="text-xs text-center" style={{ color: colors.danger }}>{error}</p>
           )}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
+          <button type="submit" disabled={isLoading}
+            className="w-full py-3.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+            style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
             {isLoading ? t('common:buttons.loading') : t('auth:resetPassword.submit')}
-          </Button>
+          </button>
         </form>
-      </Card>
+      </div>
     </div>
   )
 }
