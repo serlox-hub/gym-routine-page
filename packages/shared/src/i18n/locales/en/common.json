@@ -29,7 +29,8 @@
     "seeAll": "See all",
     "seeMore": "See more",
     "seeLess": "See less",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "change": "Change"
   },
   "labels": {
     "name": "Name",

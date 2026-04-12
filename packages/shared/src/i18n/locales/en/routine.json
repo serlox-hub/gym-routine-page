@@ -37,7 +37,7 @@
     "predefined": "Predefined routines",
     "predefinedDesc": "Choose from proven templates",
     "import": "Import routine",
-    "importDesc": "Import from JSON file or text",
+    "importDesc": "Import from file or text",
     "createWithAI": "Create with AI",
     "createWithAIDesc": "Generate a personalized routine with AI",
     "adaptWithAI": "Adapt with AI"
@@ -89,7 +89,8 @@
   "templates": {
     "title": "Predefined routines",
     "description": "Proven routine templates for different goals",
-    "use": "Use this template"
+    "use": "Use this template",
+    "selectHint": "Select a routine. You can customize it later."
   },
   "chatbot": {
     "title": "Create with AI",
@@ -109,7 +110,7 @@
     "copyInstructions": "Copy the prompt and paste it into your favorite AI chatbot",
     "promptInstructions": "Copy this prompt and paste it into ChatGPT, Claude, or another AI chatbot",
     "yourPrompt": "Your prompt",
-    "pasteJSON": "Paste JSON result",
+    "pasteJSON": "Paste result",
     "customGoal": "Custom goal",
     "customDays": "Custom number of days",
     "customLevel": "Custom level",
@@ -126,35 +127,39 @@
       "beginner": "Beginner",
       "intermediate": "Intermediate",
       "advanced": "Advanced"
-    }
+    },
+    "levelsDesc": {
+      "beginner": "Still adding weight every session",
+      "intermediate": "Progress every few weeks",
+      "advanced": "Progress takes months of planning"
+    },
+    "goalQuestion": "What's your training goal?",
+    "notesPlaceholder": "Prefer to avoid deadlifts due to lower back issues",
+    "pasteInstructions": "Paste the prompt you just copied into your favorite chatbot. When the AI returns the result, copy it and paste it below."
   },
   "adapt": {
     "title": "Adapt routine with AI",
-    "pasteResult": "Paste result",
     "step1Title": "Step 1: Prepare your routine",
     "step1Desc": "Copy your current routine as text. It can be from:",
     "step1Sources": ["A spreadsheet (Excel, Google Sheets)", "A PDF or document", "Notes on your phone", "A training app", "A message or email from your trainer"],
-    "step1ExampleTitle": "Example format:",
     "step2Title": "Step 2: Copy the prompt",
     "step2Desc": "This prompt tells the AI how to convert your routine to the correct format:",
-    "step2Hint": "The prompt ends with \"MY ROUTINE TO CONVERT:\" — that's where you'll paste your routine in the next step",
-    "step3Title": "Step 3: Paste prompt + routine in AI",
-    "step3Desc": "Open your favorite chatbot and paste:",
-    "step3Instruction1": "First the <strong>prompt</strong> you copied",
-    "step3Instruction2": "Then <strong>your routine</strong> (from step 1)",
-    "step3Result": "The AI will return the result. Copy it to paste in the next step.",
-    "step4Title": "Step 4: Paste the result",
-    "step4Desc": "Once you have the AI result:",
-    "step4Instructions": ["Copy the result the AI returned", "Press the button below", "Paste it in the text field"]
+    "step3Title": "Step 3: Paste the result",
+    "step3Desc": "Copy the result the AI returned and paste it below."
   },
   "import": {
     "fromFile": "From file",
-    "selectFile": "Select a JSON file",
+    "selectFile": "Select a file",
+    "fromFileDesc": "Import a file exported from this app or a compatible one",
     "pasteText": "Paste text",
-    "pasteDirectly": "Paste the JSON content directly",
-    "pasteContent": "Paste content here",
-    "fromExternal": "From external link",
-    "fromExternalDesc": "Import from a shared link"
+    "pasteDirectly": "Paste the content directly",
+    "pasteTextDesc": "Paste the content of a routine file in a compatible format",
+    "pasteContent": "If you have a routine exported from this app or a compatible one, paste the content here.",
+    "fromExternal": "Adapt with AI",
+    "fromExternalDesc": "Have a routine in PDF, notes, or any format? AI will adapt it to the app",
+    "resultPlaceholder": "Paste the result here...",
+    "fileInstructions": "Select a file exported from this app or a compatible one.",
+    "tapToSelect": "Tap to select a file"
   },
   "volume": {
     "weeklyVolume": "Weekly volume",

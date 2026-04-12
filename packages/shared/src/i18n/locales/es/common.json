@@ -29,7 +29,8 @@
     "seeAll": "Ver todo",
     "seeMore": "Ver más",
     "seeLess": "Ver menos",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "change": "Cambiar"
   },
   "labels": {
     "name": "Nombre",

@@ -46,16 +46,13 @@ test.describe('Crear rutina desde template', () => {
     await pplTemplate.click()
 
     // Esperar modal de opciones de importación
-    const importButton = page.getByRole('button', { name: /importar|crear|confirmar/i }).first()
+    const importButton = page.getByRole('button', { name: /usar esta plantilla/i })
 
     if (await importButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await importButton.click()
 
-      // Verificar que se creó y navegó a la rutina
-      await expect(page).toHaveURL(/\/routine\/\d+/, { timeout: 10000 })
-
-      // Verificar que tiene días (Push, Pull, Legs)
-      await expect(page.getByText(/push|pull|legs|pierna/i).first()).toBeVisible()
+      // Verificar que la rutina PPL aparece en la lista
+      await expect(page.getByText(/push pull legs/i).first()).toBeVisible({ timeout: 10000 })
     }
   })
 

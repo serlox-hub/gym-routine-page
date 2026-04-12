@@ -37,7 +37,7 @@
     "predefined": "Rutinas predefinidas",
     "predefinedDesc": "Elige entre plantillas probadas",
     "import": "Importar rutina",
-    "importDesc": "Importa desde archivo JSON o texto",
+    "importDesc": "Importa desde archivo o texto",
     "createWithAI": "Crear con IA",
     "createWithAIDesc": "Genera una rutina personalizada con IA",
     "adaptWithAI": "Adaptar con IA"
@@ -89,7 +89,8 @@
   "templates": {
     "title": "Rutinas predefinidas",
     "description": "Plantillas de rutinas probadas para diferentes objetivos",
-    "use": "Usar esta plantilla"
+    "use": "Usar esta plantilla",
+    "selectHint": "Selecciona una rutina. Podrás personalizarla después."
   },
   "chatbot": {
     "title": "Crear con IA",
@@ -109,7 +110,7 @@
     "copyInstructions": "Copia el prompt y pégalo en tu chatbot de IA favorito",
     "promptInstructions": "Copia este prompt y pégalo en ChatGPT, Claude u otro chatbot de IA",
     "yourPrompt": "Tu prompt",
-    "pasteJSON": "Pegar resultado JSON",
+    "pasteJSON": "Pegar resultado",
     "customGoal": "Objetivo personalizado",
     "customDays": "Número de días personalizado",
     "customLevel": "Nivel personalizado",
@@ -126,35 +127,39 @@
       "beginner": "Principiante",
       "intermediate": "Intermedio",
       "advanced": "Avanzado"
-    }
+    },
+    "levelsDesc": {
+      "beginner": "Subiendo peso cada sesión",
+      "intermediate": "Progresando cada pocas semanas",
+      "advanced": "Progreso requiere meses de planificación"
+    },
+    "goalQuestion": "¿Cuál es tu objetivo?",
+    "notesPlaceholder": "Ej: Evitar deadlifts por dolor lumbar",
+    "pasteInstructions": "Pega en tu chatbot favorito el prompt que acabas de copiar. Cuando la IA te devuelva el resultado, cópialo y pégalo aquí abajo."
   },
   "adapt": {
     "title": "Adaptar rutina con IA",
-    "pasteResult": "Pegar resultado",
     "step1Title": "Paso 1: Prepara tu rutina",
     "step1Desc": "Copia tu rutina actual en formato texto. Puede ser desde:",
     "step1Sources": ["Una hoja de cálculo (Excel, Google Sheets)", "Un PDF o documento", "Notas de tu móvil", "Una app de entrenamiento", "Un mensaje o email de tu entrenador"],
-    "step1ExampleTitle": "Ejemplo de formato:",
     "step2Title": "Paso 2: Copia el prompt",
     "step2Desc": "Este prompt le dice a la IA cómo convertir tu rutina al formato correcto:",
-    "step2Hint": "El prompt termina con \"MI RUTINA A CONVERTIR:\" — ahí es donde pegarás tu rutina en el siguiente paso",
-    "step3Title": "Paso 3: Pega prompt + rutina en la IA",
-    "step3Desc": "Abre tu chatbot favorito y pega:",
-    "step3Instruction1": "Primero el <strong>prompt</strong> que copiaste",
-    "step3Instruction2": "Después <strong>tu rutina</strong> (del paso 1)",
-    "step3Result": "La IA te devolverá el resultado. Cópialo para pegarlo en el siguiente paso.",
-    "step4Title": "Paso 4: Pega el resultado",
-    "step4Desc": "Una vez tengas el resultado de la IA:",
-    "step4Instructions": ["Copia el resultado que te devolvió la IA", "Pulsa el botón de abajo", "Pégalo en el campo de texto"]
+    "step3Title": "Paso 3: Pega el resultado",
+    "step3Desc": "Copia el resultado que te devolvió la IA y pégalo aquí abajo."
   },
   "import": {
     "fromFile": "Desde archivo",
-    "selectFile": "Selecciona un archivo JSON",
+    "selectFile": "Selecciona un archivo",
+    "fromFileDesc": "Importa un archivo exportado desde esta app u otra compatible",
     "pasteText": "Pegar texto",
-    "pasteDirectly": "Pega el contenido JSON directamente",
-    "pasteContent": "Pega el contenido aquí",
-    "fromExternal": "Desde enlace externo",
-    "fromExternalDesc": "Importa desde un enlace compartido"
+    "pasteDirectly": "Pega el contenido directamente",
+    "pasteTextDesc": "Pega el contenido de un archivo de rutina en formato compatible",
+    "pasteContent": "Si tienes una rutina exportada desde esta app u otra compatible, pega aquí el contenido.",
+    "fromExternal": "Adaptar con IA",
+    "fromExternalDesc": "¿Tienes una rutina en PDF, notas o cualquier formato? La IA la adapta a la app",
+    "resultPlaceholder": "Pega aquí el resultado...",
+    "fileInstructions": "Selecciona un archivo exportado desde esta app u otra compatible.",
+    "tapToSelect": "Toca para seleccionar archivo"
   },
   "volume": {
     "weeklyVolume": "Volumen semanal",

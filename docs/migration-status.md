@@ -69,7 +69,7 @@ When adapting a screen to the new theme, follow these rules:
 | Body Metrics | `474dd21` | Adapted to new theme |
 | Preferences | latest | Open sections, pills, custom toggles, no Cards |
 | Admin Users | latest | Compact user rows, custom toggles, i18n unified |
-| New Routine Flow | latest | Bottom sheet, AI highlighted/premium-gated, chevrons, import link |
+| New Routine Flow | latest | Internal carousel navigation, stepped wizards (AI create 6-step, Adapt 3-step), file import with validation, templates inline, dead modals removed |
 
 ## Pending (ordered by difficulty)
 
