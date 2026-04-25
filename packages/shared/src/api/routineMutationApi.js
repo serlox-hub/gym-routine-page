@@ -10,7 +10,6 @@ export async function createRoutine({ userId, routine }) {
     .insert({
       name: routine.name,
       description: routine.description || null,
-      goal: routine.goal || null,
       user_id: userId,
     })
     .select()

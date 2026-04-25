@@ -6,6 +6,7 @@ import * as DocumentPicker from 'expo-document-picker'
 import * as Clipboard from 'expo-clipboard'
 import { File } from 'expo-file-system'
 import { useUserId, useIsPremium } from '../../hooks/useAuth'
+import { useCreateRoutine } from '../../hooks/useRoutines'
 import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui'
 import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, buildChatbotPrompt, buildAdaptRoutinePrompt } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
@@ -17,7 +18,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 // MENU VIEW
 // ============================================
 
-function MenuView({ onNavigate, isPremium, navigation, t }) {
+function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
   return (
     <View style={{ padding: 20 }}>
       <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700', marginBottom: 16 }}>{t('routine:new')}</Text>
@@ -37,7 +38,7 @@ function MenuView({ onNavigate, isPremium, navigation, t }) {
           )}
           <ChevronRight size={18} color={isPremium ? colors.bgPrimary : colors.textMuted} />
         </Pressable>
-        <Pressable onPress={() => { onNavigate('close'); navigation.navigate('NewRoutine') }} className="active:opacity-70"
+        <Pressable onPress={onCreateManually} className="active:opacity-70"
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
           <Pencil size={20} color={colors.success} />
           <View style={{ flex: 1 }}>
@@ -543,6 +544,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
   const userId = useUserId()
   const isPremium = useIsPremium()
   const queryClient = useQueryClient()
+  const createRoutine = useCreateRoutine()
   const [stack, setStack] = useState(['menu'])
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
@@ -573,6 +575,14 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
   const handleClose = () => {
     onClose()
     setTimeout(() => { setStack(['menu']); slideAnim.setValue(0); setChatbotStep(1); setAdaptStep(1) }, 300)
+  }
+
+  const handleCreateManually = async () => {
+    try {
+      const newRoutine = await createRoutine.mutateAsync({ name: t('routine:defaultName') })
+      handleClose()
+      navigation.navigate('RoutineDetail', { routineId: newRoutine.id, startEditing: true })
+    } catch { /* error handled by mutation */ }
   }
 
   const handleImport = (data) => {
@@ -634,7 +644,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
           }}>
             {stack.map((screen, i) => (
               <View key={`${screen}-${i}`} style={{ width: SCREEN_WIDTH }}>
-                {screen === 'menu' && <MenuView onNavigate={push} isPremium={isPremium} navigation={navigation} t={t} />}
+                {screen === 'menu' && <MenuView onNavigate={push} onCreateManually={handleCreateManually} isPremium={isPremium} t={t} />}
                 {screen === 'templates' && <TemplatesView onSelect={handleTemplateSelect} t={t} />}
                 {screen === 'chatbot' && <ChatbotView onImport={handleImport} step={chatbotStep} setStep={setChatbotStep} t={t} />}
                 {screen === 'import' && <ImportView onImport={handleImport} onNavigate={push} t={t} />}

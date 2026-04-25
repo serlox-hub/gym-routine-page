@@ -1,8 +1,6 @@
 export { default as ExerciseCard } from './ExerciseCard'
 export { default as BlockSection } from './BlockSection'
 export { default as DayCard } from './DayCard'
-export { default as DayEditForm } from './DayEditForm'
-export { default as AddDayModal } from './AddDayModal'
 export { default as RoutineHeader, RoutineEditForm } from './RoutineHeader'
 export { default as MoveToDayModal } from './MoveToDayModal'
 export { default as AddExerciseModal } from './AddExerciseModal'

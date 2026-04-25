@@ -4,45 +4,39 @@ import { Pencil, Download, Trash2, Copy } from 'lucide-react'
 import { useDuplicateRoutine, useRoutineEditForm } from '../../hooks/useRoutines.js'
 import { sanitizeFilename, exportRoutine } from '@gym/shared'
 import { downloadRoutineAsJson } from '../../lib/routineIO.js'
-import { PageHeader, Input, Textarea } from '../ui/index.js'
+import { PageHeader } from '../ui/index.js'
+import { colors } from '../../lib/styles.js'
 
 export function RoutineEditForm({ routine, routineId }) {
   const { t } = useTranslation()
   const { editForm, handleFieldChange } = useRoutineEditForm(routine, routineId)
 
   return (
-    <div className="space-y-3 mb-4">
-      <Input
-        label={t('routine:name')}
-        type="text"
-        value={editForm.name}
-        onChange={(e) => handleFieldChange('name', e.target.value)}
-        placeholder={t('routine:name')}
-        autoFocus
-      />
-      <Textarea
-        label={t('routine:description')}
-        value={editForm.description}
-        onChange={(e) => handleFieldChange('description', e.target.value)}
-        placeholder={`${t('routine:description')}...`}
-        rows={2}
-      />
-      <Input
-        label={t('routine:goal')}
-        type="text"
-        value={editForm.goal}
-        onChange={(e) => handleFieldChange('goal', e.target.value)}
-        placeholder={t('routine:goalPlaceholder')}
-      />
-      <Input
-        label={t('routine:cycleDays')}
-        type="number"
-        value={editForm.cycle_days}
-        onChange={(e) => handleFieldChange('cycle_days', e.target.value)}
-        min={1}
-        max={30}
-        placeholder="7"
-      />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+      <div>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+          {t('routine:name')}
+        </label>
+        <input
+          type="text" value={editForm.name}
+          onChange={(e) => handleFieldChange('name', e.target.value)}
+          placeholder={t('routine:name')} autoFocus
+          className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+          style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+          {t('routine:description')}
+        </label>
+        <textarea
+          value={editForm.description}
+          onChange={(e) => handleFieldChange('description', e.target.value)}
+          placeholder={`${t('routine:description')}...`} rows={2}
+          className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
+          style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
+        />
+      </div>
     </div>
   )
 }
@@ -64,13 +58,25 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
 
   const handleDuplicate = async () => {
     try {
-      const newRoutine = await duplicateRoutine.mutateAsync({
-        routineId: parseInt(routineId)
-      })
+      const newRoutine = await duplicateRoutine.mutateAsync(parseInt(routineId))
       navigate(`/routine/${newRoutine.id}`)
     } catch {
-      // Silent fail - duplicate errors are not critical
+      // Error handled by mutation
     }
+  }
+
+  if (isEditing) {
+    return (
+      <PageHeader
+        title={routine?.name || t('routine:new')}
+        onBack={() => onEditEnd?.()}
+        rightAction={
+          <button onClick={() => onEditEnd?.()} style={{ color: colors.success, fontSize: 14, fontWeight: 600 }}>
+            {t('common:buttons.done')}
+          </button>
+        }
+      />
+    )
   }
 
   const menuItems = [
@@ -80,15 +86,11 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ]
 
-  const editMenuItems = [
-    { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
-  ]
-
   return (
     <PageHeader
-      title={isEditing ? t('routine:edit') : ''}
-      onBack={() => isEditing ? onEditEnd() : navigate('/')}
-      menuItems={isEditing ? editMenuItems : menuItems}
+      title=""
+      onBack={() => navigate(-1)}
+      menuItems={menuItems}
     />
   )
 }

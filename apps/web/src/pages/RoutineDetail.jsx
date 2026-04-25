@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus, Pin, Repeat, Layers } from 'lucide-react'
+import { Plus, Pin, Pencil, Repeat, Layers, CalendarDays } from 'lucide-react'
 import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal } from '../components/ui/index.js'
-import { DayCard, AddDayModal, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, RoutineEditForm, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
+import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui/index.js'
+import { DayCard, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, RoutineEditForm, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
 import { moveItemToPosition } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { colors } from '../lib/styles.js'
@@ -18,7 +18,6 @@ function RoutineDetail() {
   const isEditing = location.pathname.endsWith('/edit')
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
-  const [showAddDay, setShowAddDay] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [selectedDayId, setSelectedDayId] = useState(null)
@@ -55,10 +54,12 @@ function RoutineDetail() {
   const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
   const nextDayNumber = maxDayNumber + 1
 
-  const handleAddDay = async (day) => {
+  const handleAddDay = async () => {
     try {
-      await createDay.mutateAsync({ routineId: parseInt(routineId), day })
-      setShowAddDay(false)
+      await createDay.mutateAsync({
+        routineId: parseInt(routineId),
+        day: { name: t('routine:day.title', { number: nextDayNumber }), sort_order: nextDayNumber },
+      })
     } catch {
       // Error handled by TanStack Query
     }
@@ -291,14 +292,36 @@ function RoutineDetail() {
           )}
 
           {/* Workout Days label */}
-          {!isEditing && days?.length > 0 && (
+          {isEditing ? (
+            <div className="flex items-center justify-between">
+              <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 700 }}>
+                {t('routine:workoutDays')}
+              </span>
+              <span style={{ color: colors.textSecondary, fontSize: 13 }}>
+                {t('common:home.nDays', { count: daysCount })}
+              </span>
+            </div>
+          ) : days?.length > 0 ? (
             <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600, letterSpacing: 0.5 }}>
               {t('routine:workoutDays')}
             </span>
-          )}
+          ) : null}
 
-          {days?.length === 0 && !isEditing ? (
-            <p className="text-secondary">{t('routine:day.noDays')}</p>
+          {days?.length === 0 ? (
+            <div className="flex flex-col items-center py-8" style={{ gap: 12 }}>
+              <CalendarDays size={32} color={colors.textMuted} />
+              <p className="text-sm" style={{ color: colors.textMuted }}>{t('routine:day.noDays')}</p>
+              {!isEditing && (
+                <button
+                  onClick={() => navigate(`/routine/${routineId}/edit`)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mt-2"
+                  style={{ border: `1px solid ${colors.success}`, color: colors.success, backgroundColor: 'transparent' }}
+                >
+                  <Pencil size={16} />
+                  <span className="text-sm font-medium">{t('routine:edit')}</span>
+                </button>
+              )}
+            </div>
           ) : (
             days?.map((day, index) => (
               <DayCard
@@ -325,29 +348,21 @@ function RoutineDetail() {
             ))
           )}
           {isEditing && (
-            <Card
-              className="p-4 border-dashed"
-              onClick={() => setShowAddDay(true)}
+            <button
+              onClick={handleAddDay}
+              className="w-full flex items-center gap-2 justify-center py-3 rounded-xl"
+              style={{ border: `1px dashed ${colors.border}`, color: colors.success, backgroundColor: 'transparent' }}
             >
-              <div className="flex items-center gap-2 justify-center" style={{ color: colors.textSecondary }}>
-                <Plus size={20} />
-                <span>{t('routine:day.add')} {nextDayNumber}</span>
-              </div>
-            </Card>
+              <Plus size={18} />
+              <span className="text-sm font-medium">{t('routine:day.add')}</span>
+            </button>
           )}
       </main>
 
       {days?.length > 0 && (
-        <VolumeSummary days={days} cycleDays={routine?.cycle_days} />
+        <VolumeSummary days={days} />
       )}
 
-      <AddDayModal
-        isOpen={showAddDay}
-        onClose={() => setShowAddDay(false)}
-        onSubmit={handleAddDay}
-        nextDayNumber={nextDayNumber}
-        isPending={createDay.isPending}
-      />
 
       <ConfirmModal
         isOpen={showDeleteConfirm}

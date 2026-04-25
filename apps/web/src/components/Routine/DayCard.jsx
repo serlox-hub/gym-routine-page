@@ -2,18 +2,17 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronDown, Play, Pencil, ArrowUpDown } from 'lucide-react'
-import { Card, ConfirmModal, DropdownMenu, LoadingSpinner } from '../ui/index.js'
+import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, Modal } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { getExistingSupersetIds, moveItemToPosition } from '@gym/shared'
-import DayEditForm from './DayEditForm.jsx'
 import BlockSection from './BlockSection.jsx'
 
 function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { id, sort_order, name, estimated_duration_min } = day
+  const { id, name } = day
   const [isExpanded, setIsExpanded] = useState(false)
 
   // Cargar bloques siempre (necesarios para iniciar workout)
@@ -22,8 +21,8 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
   const updateDay = useUpdateRoutineDay()
-  const [editingDay, setEditingDay] = useState(false)
-  const [dayForm, setDayForm] = useState({ name, duration: estimated_duration_min || '' })
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  const [renameValue, setRenameValue] = useState('')
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
 
   const warmupBlock = blocks?.find(b => b.name === 'Calentamiento')
@@ -35,9 +34,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
   const existingSupersets = getExistingSupersetIds(allExercises)
 
   const handleClick = () => {
-    if (!editingDay) {
-      setIsExpanded(!isExpanded)
-    }
+    setIsExpanded(!isExpanded)
   }
 
   const isThisDayActive = hasActiveSession && activeRoutineDayId === id
@@ -79,21 +76,12 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
     setExerciseToDelete(null)
   }
 
-  const handleSaveDay = () => {
-    const hasChanges = dayForm.name.trim() !== name ||
-      (dayForm.duration || null) !== (estimated_duration_min || null)
-
-    if (dayForm.name.trim() && hasChanges) {
-      updateDay.mutate({
-        dayId: id,
-        routineId,
-        data: {
-          name: dayForm.name.trim(),
-          estimated_duration_min: dayForm.duration ? parseInt(dayForm.duration) : null
-        }
-      })
+  const handleRenameDay = () => {
+    const trimmed = renameValue.trim()
+    if (trimmed && trimmed !== name) {
+      updateDay.mutate({ dayId: id, routineId, data: { name: trimmed } })
     }
-    setEditingDay(false)
+    setShowRenameModal(false)
   }
 
 
@@ -105,14 +93,6 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
         padding: isEditing ? 16 : '12px 14px',
       }}
     >
-      {editingDay ? (
-        <DayEditForm
-          dayNumber={sort_order}
-          form={dayForm}
-          setForm={setDayForm}
-          onSave={handleSaveDay}
-        />
-      ) : (
         <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={handleClick}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <ChevronDown
@@ -130,7 +110,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
               <button
                 onClick={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
                 disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
-                className="disabled:opacity-40"
+                className="p-1 rounded hover:opacity-80 disabled:opacity-40"
               >
                 <Play size={20} style={{ color: colors.success }} />
               </button>
@@ -142,8 +122,8 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                     icon: Pencil,
                     label: t('common:buttons.edit'),
                     onClick: () => {
-                      setDayForm({ name, duration: estimated_duration_min || '' })
-                      setEditingDay(true)
+                      setRenameValue(name)
+                      setShowRenameModal(true)
                     }
                   },
                   totalDays > 1 && {
@@ -163,7 +143,6 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
             )}
           </div>
         </div>
-      )}
 
       {isExpanded && (
         <div className="mt-3 space-y-4">
@@ -240,6 +219,24 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
         onConfirm={handleDeleteExercise}
         onCancel={() => setExerciseToDelete(null)}
       />
+
+      <Modal isOpen={showRenameModal} onClose={() => setShowRenameModal(false)} position="bottom" maxWidth="max-w-lg">
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <h3 style={{ color: colors.textPrimary, fontSize: 18, fontWeight: 700 }}>{t('routine:day.edit')}</h3>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>{t('routine:day.name')}</label>
+            <input type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
+              autoFocus className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
+              onKeyDown={(e) => e.key === 'Enter' && handleRenameDay()} />
+          </div>
+          <button onClick={handleRenameDay} disabled={!renameValue.trim()}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+            style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
+            {t('common:buttons.save')}
+          </button>
+        </div>
+      </Modal>
     </Card>
   )
 }

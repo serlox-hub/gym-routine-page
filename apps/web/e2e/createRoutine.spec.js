@@ -63,47 +63,10 @@ test.describe('Crear rutina desde template', () => {
     // Click en crear manualmente
     await page.getByText(/crear manualmente/i).click()
 
-    // Verificar que navega al formulario de nueva rutina
-    await expect(page).toHaveURL(/\/routines\/new/, { timeout: 5000 })
-
-    // Verificar que el formulario está visible
-    await expect(page.getByText(/nombre/i).first()).toBeVisible()
+    // Verificar que crea la rutina y navega al detalle en modo edición
+    await expect(page).toHaveURL(/\/routine\/\d+\/edit/, { timeout: 10000 })
   })
 
-  test('formulario de nueva rutina tiene campos requeridos', async ({ page }) => {
-    await page.goto('/routines/new')
-
-    // Verificar campos del formulario (placeholder: "Ej: Push Pull Legs")
-    await expect(page.getByPlaceholder(/push pull legs/i)).toBeVisible({ timeout: 5000 })
-
-    // Verificar botón de guardar
-    await expect(page.getByRole('button', { name: /crear rutina/i })).toBeVisible()
-  })
-
-  test('puede crear rutina con nombre y descripción', async ({ page }) => {
-    await page.goto('/routines/new')
-
-    // Esperar a que cargue el formulario
-    const nameInput = page.getByPlaceholder(/push pull legs/i)
-    await expect(nameInput).toBeVisible({ timeout: 10000 })
-
-    // Rellenar nombre
-    await nameInput.fill('Rutina E2E Test')
-
-    // Rellenar descripción si existe
-    const descInput = page.locator('textarea').first()
-
-    if (await descInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await descInput.fill('Descripción de test')
-    }
-
-    // Guardar
-    const saveButton = page.getByRole('button', { name: /guardar|crear/i }).first()
-    await saveButton.click()
-
-    // Verificar que se creó (navega a la rutina o muestra mensaje)
-    await expect(page).toHaveURL(/\/routine\/\d+/, { timeout: 10000 })
-  })
 })
 
 test.describe('Editar rutina existente', () => {

@@ -57,7 +57,7 @@ describe('routineIO - funciones puras (shared)', () => {
       expect(prompt).not.toContain('undefined')
     })
 
-    it('el formato JSON usa placeholder para goal', () => {
+    it('incluye el objetivo del usuario en el prompt', () => {
       const params = {
         objetivo: 'Hipertrofia',
         diasPorSemana: '2'
@@ -65,7 +65,6 @@ describe('routineIO - funciones puras (shared)', () => {
 
       const prompt = buildChatbotPrompt(params)
 
-      expect(prompt).toContain('"goal"')
       expect(prompt).toContain('Hipertrofia')
     })
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Sparkles, Pencil, LayoutGrid, Upload, ChevronRight, ChevronLeft, Lock, Check, Copy, FileText } from 'lucide-react'
 import { useUserId, useIsPremium } from '../../hooks/useAuth.js'
+import { useCreateRoutine } from '../../hooks/useRoutines.js'
 import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui/index.js'
 import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, getNotifier, buildChatbotPrompt, buildAdaptRoutinePrompt } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
@@ -13,8 +14,7 @@ import { colors } from '../../lib/styles.js'
 // MENU VIEW
 // ============================================
 
-function MenuView({ onNavigate, isPremium, t }) {
-  const navigate = useNavigate()
+function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
 
   return (
     <div style={{ padding: 20 }}>
@@ -53,7 +53,7 @@ function MenuView({ onNavigate, isPremium, t }) {
 
         {/* Create manually */}
         <button
-          onClick={() => { onNavigate('close'); navigate('/routines/new') }}
+          onClick={onCreateManually}
           className="flex items-center gap-3 rounded-xl hover:opacity-80 transition-opacity"
           style={{ padding: '14px 16px', backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
         >
@@ -609,9 +609,11 @@ const SCREEN_TITLES = {
 
 function NewRoutineFlow({ isOpen, onClose }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const userId = useUserId()
   const isPremium = useIsPremium()
   const queryClient = useQueryClient()
+  const createRoutine = useCreateRoutine()
   const [stack, setStack] = useState(['menu'])
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
@@ -638,6 +640,14 @@ function NewRoutineFlow({ isOpen, onClose }) {
   const handleClose = () => {
     onClose()
     setTimeout(() => { setStack(['menu']); setChatbotStep(1); setAdaptStep(1) }, 300)
+  }
+
+  const handleCreateManually = async () => {
+    try {
+      const newRoutine = await createRoutine.mutateAsync({ name: t('routine:defaultName') })
+      handleClose()
+      navigate(`/routine/${newRoutine.id}/edit`)
+    } catch { /* error handled by mutation */ }
   }
 
   const handleImport = (data) => {
@@ -702,7 +712,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
           >
             {stack.map((screen, i) => (
               <div key={`${screen}-${i}`} style={{ minWidth: '100%', maxHeight: '75vh', overflowY: 'auto' }}>
-                {screen === 'menu' && <MenuView onNavigate={push} isPremium={isPremium} t={t} />}
+                {screen === 'menu' && <MenuView onNavigate={push} onCreateManually={handleCreateManually} isPremium={isPremium} t={t} />}
                 {screen === 'templates' && <TemplatesView onSelect={handleTemplateSelect} t={t} />}
                 {screen === 'chatbot' && <ChatbotView onImport={handleImport} step={chatbotStep} setStep={setChatbotStep} t={t} />}
                 {screen === 'import' && <ImportView onImport={handleImport} onNavigate={push} t={t} />}

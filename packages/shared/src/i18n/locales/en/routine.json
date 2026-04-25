@@ -1,6 +1,7 @@
 {
   "title": "My Routines",
   "new": "New routine",
+  "defaultName": "My routine",
   "allRoutines": "All Routines",
   "workoutDays": "Workout Days",
   "create": "Create routine",
@@ -18,8 +19,6 @@
   "namePlaceholder": "E.g.: Push Pull Legs",
   "description": "Description",
   "descriptionPlaceholder": "Routine description (optional)",
-  "goal": "Goal",
-  "goalPlaceholder": "E.g.: Hypertrophy, strength...",
   "creating": "Creating routine...",
   "duplicated": "Routine duplicated",
   "duplicating": "Duplicating...",
@@ -49,7 +48,8 @@
     "edit": "Edit day",
     "delete": "Delete day",
     "deleteConfirm": "Delete this day and all its exercises?",
-    "noDays": "No days in this routine",
+    "noDays": "No days in this routine yet",
+    "noDaysHint": "Start by adding your first workout day",
     "duration": "Estimated duration",
     "durationMin": "{{minutes}} min"
   },
@@ -177,6 +177,5 @@
       "mrv": "MRV"
     }
   },
-  "cycleDays": "Cycle days",
   "reorder": "Reorder"
 }

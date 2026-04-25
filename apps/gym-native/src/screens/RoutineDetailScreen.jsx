@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, Pressable } from 'react-native'
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Plus, Pin, Repeat, Layers } from 'lucide-react-native'
+import { Plus, Pin, Pencil, Repeat, Layers, CalendarDays } from 'lucide-react-native'
 import {
   useRoutine, useRoutineDays, useRoutineAllExercises,
   useCreateRoutineDay, useDeleteRoutine, useDeleteRoutineDay,
@@ -10,9 +10,9 @@ import {
   useDuplicateRoutineExercise, useMoveRoutineExerciseToDay,
   useSetFavoriteRoutine,
 } from '../hooks/useRoutines'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, ActiveSessionBanner } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, ConfirmModal, ActiveSessionBanner } from '../components/ui'
 import {
-  DayCard, AddDayModal, RoutineHeader, RoutineEditForm, MoveToDayModal,
+  DayCard, RoutineHeader, RoutineEditForm, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal, VolumeSummary,
 } from '../components/Routine'
 import { moveItemToPosition } from '@gym/shared'
@@ -21,12 +21,11 @@ import { colors } from '../lib/styles'
 
 export default function RoutineDetailScreen({ route, navigation }) {
   const { t } = useTranslation()
-  const { routineId } = route.params
-  const [isEditing, setIsEditing] = useState(false)
+  const { routineId, startEditing } = route.params
+  const [isEditing, setIsEditing] = useState(!!startEditing)
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
 
-  const [showAddDay, setShowAddDay] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [dayToDelete, setDayToDelete] = useState(null)
   const [showMoveModal, setShowMoveModal] = useState(false)
@@ -66,12 +65,17 @@ export default function RoutineDetailScreen({ route, navigation }) {
 
   const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
   const nextDayNumber = maxDayNumber + 1
+  const daysCount = days?.length || 0
 
-  const handleAddDay = async (day) => {
+  const handleAddDay = async () => {
     try {
-      await createDay.mutateAsync({ routineId: parseInt(routineId), day })
-      setShowAddDay(false)
-    } catch { /* handled by TanStack Query */ }
+      await createDay.mutateAsync({
+        routineId: routineId,
+        day: { name: t('routine:day.title', { number: nextDayNumber }), sort_order: nextDayNumber },
+      })
+    } catch (err) {
+      Alert.alert('Error', err?.message || 'Unknown error')
+    }
   }
 
   const handleDeleteRoutine = async () => {
@@ -199,14 +203,33 @@ export default function RoutineDetailScreen({ route, navigation }) {
         )}
 
         {/* Workout Days label */}
-        {!isEditing && days?.length > 0 && (
+        {isEditing ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '700' }}>
+              {t('routine:workoutDays')}
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+              {t('common:home.nDays', { count: daysCount })}
+            </Text>
+          </View>
+        ) : days?.length > 0 ? (
           <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 10 }}>
             {t('routine:workoutDays')}
           </Text>
-        )}
+        ) : null}
 
-        {days?.length === 0 && !isEditing ? (
-          <Text className="text-secondary">{t('routine:day.noDays')}</Text>
+        {days?.length === 0 ? (
+          <View style={{ alignItems: 'center', paddingVertical: 32, gap: 12 }}>
+            <CalendarDays size={32} color={colors.textMuted} />
+            <Text style={{ color: colors.textMuted, fontSize: 14 }}>{t('routine:day.noDays')}</Text>
+            {!isEditing && (
+              <Pressable onPress={() => setIsEditing(true)}
+                style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.success, marginTop: 8 }}>
+                <Pencil size={16} color={colors.success} />
+                <Text style={{ color: colors.success, fontSize: 14, fontWeight: '500' }}>{t('routine:edit')}</Text>
+              </Pressable>
+            )}
+          </View>
         ) : (
           days?.map((day, index) => (
             <DayCard
@@ -260,30 +283,18 @@ export default function RoutineDetailScreen({ route, navigation }) {
         )}
 
         {isEditing && (
-          <Card
-            className="p-4 mb-2"
-            style={{ borderStyle: 'dashed' }}
-            onPress={() => setShowAddDay(true)}
-          >
-            <View className="flex-row items-center gap-2 justify-center">
-              <Plus size={20} color={colors.textSecondary} />
-              <Text className="text-secondary">{t('routine:day.add')} {nextDayNumber}</Text>
-            </View>
-          </Card>
+          <Pressable onPress={handleAddDay}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}>
+            <Plus size={18} color={colors.success} />
+            <Text style={{ color: colors.success, fontSize: 14, fontWeight: '500' }}>{t('routine:day.add')}</Text>
+          </Pressable>
         )}
 
         {days?.length > 0 && (
-          <VolumeSummary days={days} cycleDays={routine?.cycle_days} />
+          <VolumeSummary days={days} />
         )}
       </ScrollView>
 
-      <AddDayModal
-        isOpen={showAddDay}
-        onClose={() => setShowAddDay(false)}
-        onSubmit={handleAddDay}
-        nextDayNumber={nextDayNumber}
-        isPending={createDay.isPending}
-      />
 
       <ConfirmModal
         isOpen={showDeleteConfirm}

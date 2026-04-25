@@ -1,14 +1,13 @@
 import { useState } from 'react'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text, TextInput, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronDown, ChevronRight, Play, Pencil, ArrowUpDown } from 'lucide-react-native'
-import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, ReorderModal } from '../ui'
+import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, Modal, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
 import { getExistingSupersetIds, moveItemToPosition } from '@gym/shared'
-import DayEditForm from './DayEditForm'
 import BlockSection from './BlockSection'
 
 export default function DayCard({
@@ -32,7 +31,7 @@ export default function DayCard({
   navigation: _navigation,
 }) {
   const { t } = useTranslation()
-  const { id, sort_order, name, estimated_duration_min } = day
+  const { id, name } = day
   const [isExpanded, setIsExpanded] = useState(false)
 
   const { data: blocks, isLoading: loadingBlocks } = useRoutineBlocks(id)
@@ -40,8 +39,8 @@ export default function DayCard({
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
   const updateDay = useUpdateRoutineDay()
-  const [editingDay, setEditingDay] = useState(false)
-  const [dayForm, setDayForm] = useState({ name, duration: estimated_duration_min || '' })
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  const [renameValue, setRenameValue] = useState('')
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
   const [showReorderDay, setShowReorderDay] = useState(false)
 
@@ -55,7 +54,7 @@ export default function DayCard({
   const isThisDayActive = hasActiveSession && activeRoutineDayId === id
 
   const handleClick = () => {
-    if (!editingDay) setIsExpanded(!isExpanded)
+    setIsExpanded(!isExpanded)
   }
 
   const handleStartWorkout = () => {
@@ -85,36 +84,20 @@ export default function DayCard({
     setExerciseToDelete(null)
   }
 
-  const handleSaveDay = () => {
-    const hasChanges = dayForm.name.trim() !== name ||
-      (dayForm.duration || null) !== (estimated_duration_min || null)
-    if (dayForm.name.trim() && hasChanges) {
-      updateDay.mutate({
-        dayId: id,
-        routineId,
-        data: {
-          name: dayForm.name.trim(),
-          estimated_duration_min: dayForm.duration ? parseInt(dayForm.duration) : null,
-        },
-      })
+  const handleRenameDay = () => {
+    const trimmed = renameValue.trim()
+    if (trimmed && trimmed !== name) {
+      updateDay.mutate({ dayId: id, routineId, data: { name: trimmed } })
     }
-    setEditingDay(false)
+    setShowRenameModal(false)
   }
 
   return (
     <Card
       className="mb-2"
       style={{ borderRadius: 14, padding: 12, paddingHorizontal: 14 }}
-      onPress={editingDay ? undefined : handleClick}
+      onPress={handleClick}
     >
-      {editingDay ? (
-        <DayEditForm
-          dayNumber={sort_order}
-          form={dayForm}
-          setForm={setDayForm}
-          onSave={handleSaveDay}
-        />
-      ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
             {isExpanded
@@ -128,7 +111,8 @@ export default function DayCard({
               <Pressable
                 onPress={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
                 disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
-                style={{ opacity: (hasActiveSession && !isThisDayActive) ? 0.4 : 1 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{ padding: 4, opacity: (hasActiveSession && !isThisDayActive) ? 0.4 : 1 }}
               >
                 <Play size={20} color={colors.success} />
               </Pressable>
@@ -140,8 +124,8 @@ export default function DayCard({
                     icon: Pencil,
                     label: t('common:buttons.edit'),
                     onClick: () => {
-                      setDayForm({ name, duration: estimated_duration_min || '' })
-                      setEditingDay(true)
+                      setRenameValue(name)
+                      setShowRenameModal(true)
                     },
                   },
                   ...(totalDays > 1 ? [{
@@ -155,7 +139,6 @@ export default function DayCard({
             )}
           </View>
         </View>
-      )}
 
       {isExpanded && (
         <View style={{ marginTop: 12, gap: 16 }}>
@@ -224,6 +207,25 @@ export default function DayCard({
           setShowReorderDay(false)
         }}
       />
+
+      <Modal isOpen={showRenameModal} onClose={() => setShowRenameModal(false)} position="bottom">
+        <ScrollView keyboardShouldPersistTaps="handled">
+          <View style={{ padding: 20, gap: 16 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('routine:day.edit')}</Text>
+            <View>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>{t('routine:day.name')}</Text>
+              <TextInput value={renameValue} onChangeText={setRenameValue}
+                autoFocus placeholderTextColor={colors.textMuted}
+                returnKeyType="done" onSubmitEditing={handleRenameDay}
+                style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }} />
+            </View>
+            <Pressable onPress={handleRenameDay} disabled={!renameValue.trim()}
+              style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', opacity: renameValue.trim() ? 1 : 0.4 }}>
+              <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.save')}</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </Modal>
     </Card>
   )
 }

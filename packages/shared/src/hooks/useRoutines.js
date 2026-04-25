@@ -37,33 +37,37 @@ export function useRoutines() {
 }
 
 export function useRoutine(routineId) {
+  const id = String(routineId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE, routineId],
-    queryFn: () => fetchRoutine(routineId),
+    queryKey: [QUERY_KEYS.ROUTINE, id],
+    queryFn: () => fetchRoutine(id),
     enabled: !!routineId
   })
 }
 
 export function useRoutineDays(routineId) {
+  const id = String(routineId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE_DAYS, routineId],
-    queryFn: () => fetchRoutineDays(routineId),
+    queryKey: [QUERY_KEYS.ROUTINE_DAYS, id],
+    queryFn: () => fetchRoutineDays(id),
     enabled: !!routineId
   })
 }
 
 export function useRoutineDay(dayId) {
+  const id = String(dayId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE_DAY, dayId],
-    queryFn: () => fetchRoutineDay(dayId),
+    queryKey: [QUERY_KEYS.ROUTINE_DAY, id],
+    queryFn: () => fetchRoutineDay(id),
     enabled: !!dayId
   })
 }
 
 export function useRoutineBlocks(dayId) {
+  const id = String(dayId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(dayId)],
-    queryFn: () => fetchRoutineBlocks(dayId),
+    queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, id],
+    queryFn: () => fetchRoutineBlocks(id),
     select: localizeExercisesInList,
     enabled: !!dayId
   })
@@ -74,9 +78,10 @@ export function useRoutineBlocks(dayId) {
  * Util para detectar ejercicios duplicados al anadir uno nuevo
  */
 export function useRoutineAllExercises(routineId) {
+  const id = String(routineId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES, routineId],
-    queryFn: () => fetchRoutineAllExercises(routineId),
+    queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES, id],
+    queryFn: () => fetchRoutineAllExercises(id),
     enabled: !!routineId
   })
 }
@@ -292,7 +297,7 @@ export function useMoveRoutineExerciseToDay() {
 const DEBOUNCE_MS = 500
 
 export function useRoutineEditForm(routine, routineId) {
-  const [editForm, setEditForm] = useState({ name: '', description: '', goal: '', cycle_days: 7 })
+  const [editForm, setEditForm] = useState({ name: '', description: '' })
   const debounceRef = useRef(null)
   const updateRoutine = useUpdateRoutine()
 
@@ -301,8 +306,6 @@ export function useRoutineEditForm(routine, routineId) {
       setEditForm({
         name: routine.name || '',
         description: routine.description || '',
-        goal: routine.goal || '',
-        cycle_days: routine.cycle_days || 7,
       })
     }
   }, [routine])
@@ -314,8 +317,6 @@ export function useRoutineEditForm(routine, routineId) {
       data: {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
-        goal: formData.goal.trim() || null,
-        cycle_days: parseInt(formData.cycle_days) || 7,
       },
     })
   }, [routineId, updateRoutine])

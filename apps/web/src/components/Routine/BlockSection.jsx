@@ -117,7 +117,7 @@ function BlockSection({
         {isEditing && (
           <button
             onClick={(e) => { e.stopPropagation(); onAddExercise?.() }}
-            className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
+            className="w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
             style={{ border: `1px dashed ${colors.border}`, color: isWarmup ? colors.warning : colors.purple }}
           >
             <Plus size={14} />

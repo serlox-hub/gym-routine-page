@@ -46,7 +46,6 @@ test.describe('Import/Export de rutinas', () => {
       routine: {
         name: 'Rutina E2E Test',
         description: 'Rutina creada por test e2e',
-        goal: 'Testing',
         days: [
           {
             name: 'Día Test',

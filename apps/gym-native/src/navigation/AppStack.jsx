@@ -11,7 +11,6 @@ import RoutinesScreen from '../screens/RoutinesScreen'
 import HistoryScreen from '../screens/HistoryScreen'
 import BodyMetricsScreen from '../screens/BodyMetricsScreen'
 import RoutineDetailScreen from '../screens/RoutineDetailScreen'
-import NewRoutineScreen from '../screens/NewRoutineScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import AdminUsersScreen from '../screens/AdminUsersScreen'
 import WorkoutOverlay from '../screens/WorkoutOverlay'
@@ -148,7 +147,6 @@ export default function AppStack() {
 
         {/* Rutinas */}
         <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
-        <Stack.Screen name="NewRoutine" component={NewRoutineScreen} />
 
         {/* Detalle */}
         <Stack.Screen name="Preferences" component={PreferencesScreen} />

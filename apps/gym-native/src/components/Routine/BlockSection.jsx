@@ -106,11 +106,11 @@ export default function BlockSection({
       {isEditing && (
         <Pressable
           onPress={onAddExercise}
-          className="w-full py-2 rounded-lg flex-row items-center justify-center gap-2 active:opacity-70"
+          className="w-full py-3 rounded-xl flex-row items-center justify-center gap-2 active:opacity-70"
           style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}
         >
           <Plus size={14} color={accentColor} />
-          <Text className="text-xs" style={{ color: accentColor }}>
+          <Text style={{ color: accentColor, fontSize: 13 }}>
             {isWarmup ? t('routine:block.addToWarmup') : t('routine:block.addExercise')}
           </Text>
         </Pressable>

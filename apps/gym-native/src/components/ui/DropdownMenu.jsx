@@ -14,7 +14,8 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
     <View>
       <Pressable
         onPress={() => setIsOpen(true)}
-        className="p-1.5 rounded-lg active:opacity-70"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        className="p-2 rounded-lg active:opacity-70"
       >
         <MoreVertical size={triggerSize} color={colors.textPrimary} />
       </Pressable>

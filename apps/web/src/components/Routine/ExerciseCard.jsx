@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, Pencil, Trash2, Loader2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
-import { Card, DropdownMenu } from '../ui/index.js'
+import { ChevronRight, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
+import { Modal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType, getExerciseName } from '@gym/shared'
@@ -10,7 +10,6 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 function ExerciseCard({
   routineExercise,
   routineDayId,
-  onClick,
   isSuperset = false,
   isEditing = false,
   isReordering = false,
@@ -27,13 +26,9 @@ function ExerciseCard({
   const { t } = useTranslation()
   const { exercise, series, reps, rir, rest_seconds, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
 
   const measurementType = measurement_type || exercise.measurement_type || MeasurementType.WEIGHT_REPS
-
-  const Wrapper = isSuperset ? 'div' : Card
-  const wrapperProps = isSuperset
-    ? {}
-    : { className: 'p-2', onClick, style: getMuscleGroupBorderStyle(exercise.muscle_group?.name) }
 
   // Generar opciones de posición para el submenú
   const positionOptions = Array.from({ length: totalExercises }, (_, i) => ({
@@ -95,33 +90,47 @@ function ExerciseCard({
     )
   }
 
-  return (
-    <Wrapper {...wrapperProps}>
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="font-medium text-sm truncate flex-1 min-w-0">{getExerciseName(exercise)}</h4>
-        {isReordering ? (
-          <div className="p-1.5" style={{ color: colors.textSecondary }}>
-            <Loader2 size={14} className="animate-spin" />
-          </div>
-        ) : (
-          <DropdownMenu items={menuItems} triggerSize={14} />
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2 mt-1">
-        <span className="text-xs" style={{ color: colors.textSecondary }}>{series}×{reps}</span>
-        {rir !== null && rir !== undefined && <span className="text-xs" style={{ color: colors.purple }}>RIR {rir}</span>}
-        {rest_seconds > 0 && <span className="text-xs" style={{ color: colors.warning }}>{rest_seconds}s</span>}
-      </div>
+  const handleMenuAction = (action) => {
+    setShowMenu(false)
+    action?.()
+  }
 
-      <ExerciseHistoryModal
-        isOpen={showHistory}
-        onClose={() => setShowHistory(false)}
-        exerciseId={exercise.id}
-        exerciseName={getExerciseName(exercise)}
-        measurementType={measurementType}
-        routineDayId={routineDayId}
-      />
-    </Wrapper>
+  return (
+    <>
+      <div
+        className="rounded-lg cursor-pointer hover:opacity-80"
+        style={{
+          backgroundColor: colors.bgTertiary,
+          padding: '8px 12px',
+          ...(isSuperset ? {} : getMuscleGroupBorderStyle(exercise.muscle_group?.name)),
+        }}
+        onClick={() => setShowMenu(true)}
+      >
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-sm truncate">{getExerciseName(exercise)}</h4>
+            <div className="flex flex-wrap gap-2 mt-1">
+              <span className="text-xs" style={{ color: colors.textSecondary }}>{series}×{reps}</span>
+              {rir !== null && rir !== undefined && <span className="text-xs" style={{ color: colors.purple }}>RIR {rir}</span>}
+              {rest_seconds > 0 && <span className="text-xs" style={{ color: colors.warning }}>{rest_seconds}s</span>}
+            </div>
+          </div>
+          <ChevronRight size={16} color={colors.textMuted} className="shrink-0" />
+        </div>
+      </div>
+      <Modal isOpen={showMenu} onClose={() => setShowMenu(false)} position="bottom" maxWidth="max-w-lg">
+        <div className="py-2 pb-6">
+          {menuItems.map((item, i) => (
+            <button key={i} onClick={() => handleMenuAction(item.onClick)}
+              className="w-full flex items-center gap-3 px-5 py-3 text-sm hover:opacity-80"
+              style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textPrimary }}>
+              {item.icon && <item.icon size={18} style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textSecondary }} />}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </Modal>
+    </>
   )
 }
 

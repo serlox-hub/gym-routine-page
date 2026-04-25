@@ -40,7 +40,6 @@ export function prepareRoutineData(form) {
   return {
     name: form.name.trim(),
     description: form.description?.trim() || null,
-    goal: form.goal?.trim() || null,
   }
 }
 
