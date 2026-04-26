@@ -4,14 +4,7 @@ import { FileText, Video, Clock } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import SetNotesView from './SetNotesView.jsx'
-import { MeasurementType, formatRelativeDate, formatSetValueByType } from '@gym/shared'
-
-function formatPreviousSetValue(set, measurementType, weightUnit, timeUnit, distanceUnit) {
-  if (measurementType === MeasurementType.WEIGHT_REPS && set.weight != null && set.reps != null) {
-    return `${set.weight} × ${set.reps}`
-  }
-  return formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit })
-}
+import { MeasurementType, formatRelativeDate, formatPreviousSetValue } from '@gym/shared'
 
 function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm' }) {
   const { t } = useTranslation()
@@ -48,7 +41,7 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
           const hasVideo = !!set.videoUrl
           const interactive = hasNotes || hasVideo
           const isDropset = set.setType === 'dropset'
-          const valueText = formatPreviousSetValue(set, measurementType, weightUnit, timeUnit, distanceUnit)
+          const valueText = formatPreviousSetValue(set, measurementType, { weightUnit, timeUnit, distanceUnit })
 
           return (
             <button

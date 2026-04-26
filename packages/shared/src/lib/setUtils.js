@@ -268,6 +268,17 @@ export function formatSetValueByType(set, measurementType, { timeUnit = 's', dis
 }
 
 /**
+ * Formatea el valor de una serie en formato compacto para tarjetas de historial.
+ * Diferencia con `formatSetValueByType`: para WEIGHT_REPS omite la unidad (`80 × 8` en vez de `80kg × 8`).
+ */
+export function formatPreviousSetValue(set, measurementType, { weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm' } = {}) {
+  if (measurementType === MeasurementType.WEIGHT_REPS && set.weight != null && set.reps != null) {
+    return `${set.weight} × ${set.reps}`
+  }
+  return formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit })
+}
+
+/**
  * Filtra y ordena series para un ejercicio específico
  * @param {Object} completedSets - Mapa de series completadas
  * @param {string|number} routineExerciseId - ID del ejercicio

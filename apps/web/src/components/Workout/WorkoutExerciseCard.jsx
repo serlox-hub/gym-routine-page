@@ -9,12 +9,11 @@ import ExerciseCardHeader from './ExerciseCardHeader.jsx'
 import ExerciseCardNotes from './ExerciseCardNotes.jsx'
 import NotesToggleBar from './NotesToggleBar.jsx'
 import SetsList from './SetsList.jsx'
-import { useExpandedExercise } from './ExpandedExerciseContext.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType, getExerciseName, usePreference, resolveWeightUnit, hasExerciseNotes } from '@gym/shared'
+import { MeasurementType, getExerciseName, usePreference, resolveWeightUnit, hasExerciseNotes, useExpandedExercise } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [], existingSupersets = [] }) {

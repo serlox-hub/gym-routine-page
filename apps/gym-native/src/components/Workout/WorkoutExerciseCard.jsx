@@ -10,12 +10,11 @@ import ExerciseCardNotes from './ExerciseCardNotes'
 import NotesToggleBar from './NotesToggleBar'
 import EditSessionExerciseModal from './EditSessionExerciseModal'
 import SetsList from './SetsList'
-import { useExpandedExercise } from './ExpandedExerciseContext'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { colors } from '../../lib/styles'
-import { MeasurementType, getHaptics, getExerciseName, usePreference, resolveWeightUnit, hasExerciseNotes } from '@gym/shared'
+import { MeasurementType, getHaptics, getExerciseName, usePreference, resolveWeightUnit, hasExerciseNotes, useExpandedExercise } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorder, currentIndex = 0, totalExercises = 1, positionLabels = [], isReordering = false, existingSupersets = [] }) {

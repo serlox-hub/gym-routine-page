@@ -7,6 +7,7 @@ import {
   buildCompletedSetData,
   formatSetValue,
   formatSetValueByType,
+  formatPreviousSetValue,
   getSetsForExercise,
   buildExtraExerciseConfig,
 } from './setUtils.js'
@@ -461,6 +462,30 @@ describe('setUtils', () => {
     it('formatea distance_time', () => {
       expect(formatSetValueByType({ distanceMeters: 500, timeSeconds: 120 }, 'distance_time'))
         .toBe('500m × 120s')
+    })
+  })
+
+  describe('formatPreviousSetValue', () => {
+    it('omite la unidad para weight_reps (formato compacto)', () => {
+      expect(formatPreviousSetValue({ weight: 80, reps: 8 }, 'weight_reps'))
+        .toBe('80 × 8')
+    })
+
+    it('cae a formatSetValueByType cuando weight o reps faltan', () => {
+      expect(formatPreviousSetValue({ weight: 80 }, 'weight_reps'))
+        .toBe('80kg × undefined')
+    })
+
+    it('reusa formatSetValueByType para otros tipos', () => {
+      expect(formatPreviousSetValue({ reps: 12 }, 'reps_only'))
+        .toBe('12 reps')
+      expect(formatPreviousSetValue({ timeSeconds: 90 }, 'time'))
+        .toBe('90s')
+    })
+
+    it('respeta weightUnit cuando se cae al formatter completo', () => {
+      expect(formatPreviousSetValue({ weight: 80, distanceMeters: 100 }, 'weight_distance', { weightUnit: 'lb' }))
+        .toBe('80lb × 100m')
     })
   })
 

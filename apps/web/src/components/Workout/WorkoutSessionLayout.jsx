@@ -21,13 +21,12 @@ import { Plus, ArrowRightLeft, X, Flag } from 'lucide-react'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui/index.js'
 import RestTimer from './RestTimer.jsx'
 import BlockExerciseList from './BlockExerciseList.jsx'
-import { ExpandedExerciseProvider } from './ExpandedExerciseContext.jsx'
 import EndSessionModal from './EndSessionModal.jsx'
 import ExerciseProgressBar from './ExerciseProgressBar.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
