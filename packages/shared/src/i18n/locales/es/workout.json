@@ -60,7 +60,11 @@
     "title": "Descanso",
     "timer": "Temporizador",
     "skip": "Saltar",
-    "seconds": "{{seconds}} seg"
+    "skipRest": "Saltar descanso",
+    "seconds": "{{seconds}} seg",
+    "of": "de {{time}}",
+    "setsDone": "{{done}} hechas",
+    "setsLeft": "Quedan {{count}}"
   },
   "converter": "Conversor",
   "addExercise": {

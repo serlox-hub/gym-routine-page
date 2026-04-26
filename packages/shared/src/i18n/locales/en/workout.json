@@ -60,7 +60,11 @@
     "title": "Rest",
     "timer": "Timer",
     "skip": "Skip",
-    "seconds": "{{seconds}} sec"
+    "skipRest": "Skip rest",
+    "seconds": "{{seconds}} sec",
+    "of": "of {{time}}",
+    "setsDone": "{{done}} done",
+    "setsLeft": "{{count}} sets left"
   },
   "converter": "Converter",
   "addExercise": {

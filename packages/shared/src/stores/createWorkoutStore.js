@@ -30,6 +30,7 @@ export function workoutStoreState(set, get) {
     restTimerEndTime: null,  // Timestamp cuando termina el timer
     restTimeInitial: 0,
     restTimerMinimized: false,
+    restTimerContext: {},  // { setNumber, totalSets, exerciseName }
 
     // Start a new workout session
     // routineId and routineDayId can be null for free sessions
@@ -216,10 +217,11 @@ export function workoutStoreState(set, get) {
     },
 
     // Rest timer actions
-    startRestTimer: (seconds) => set({
+    startRestTimer: (seconds, context = {}) => set({
       restTimerActive: true,
       restTimerEndTime: Date.now() + seconds * 1000,
       restTimeInitial: seconds,
+      restTimerContext: context,
     }),
 
     // Calcula tiempo restante basado en timestamp real
@@ -235,13 +237,14 @@ export function workoutStoreState(set, get) {
       if (!state.restTimerActive) return
       const remaining = Math.ceil((state.restTimerEndTime - Date.now()) / 1000)
       if (remaining <= 0) {
-        set({ restTimerActive: false, restTimerEndTime: null })
+        set({ restTimerActive: false, restTimerEndTime: null, restTimerContext: {} })
       }
     },
 
     skipRest: () => set({
       restTimerActive: false,
       restTimerEndTime: null,
+      restTimerContext: {},
     }),
 
     adjustRestTime: (delta) => set(state => ({

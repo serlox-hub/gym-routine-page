@@ -100,9 +100,9 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     )
   }
 
-  const handleCompleteSet = (setData, descansoSeg) => {
+  const handleCompleteSet = (setData, descansoSeg, context) => {
     if (descansoSeg && descansoSeg > 0) {
-      startRestTimer(descansoSeg)
+      startRestTimer(descansoSeg, context)
     }
     completeSetMutation.mutate(setData, {
       onSuccess: () => {

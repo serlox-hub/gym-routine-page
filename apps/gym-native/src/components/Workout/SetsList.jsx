@@ -29,6 +29,8 @@ function SetsList({
             <SetRow
               key={`${exerciseKey}-${i + 1}`}
               setNumber={i + 1}
+              totalSets={setsCount}
+              exerciseName={exercise.name}
               sessionExerciseId={exerciseKey}
               exerciseId={exercise.id}
               measurementType={measurementType}

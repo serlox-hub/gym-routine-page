@@ -203,6 +203,31 @@ describe('createWorkoutStore', () => {
       expect(state.getTimeRemaining()).toBeLessThanOrEqual(90)
     })
 
+    it('startRestTimer guarda el contexto opcional (set actual y total)', () => {
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60, { setNumber: 2, totalSets: 4, exerciseName: 'Bench Press' })
+      })
+
+      expect(useWorkoutStore.getState().restTimerContext).toEqual({
+        setNumber: 2,
+        totalSets: 4,
+        exerciseName: 'Bench Press',
+      })
+    })
+
+    it('skipRest limpia el contexto del timer', () => {
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(60, { setNumber: 1, totalSets: 3 })
+      })
+      expect(useWorkoutStore.getState().restTimerContext).toEqual({ setNumber: 1, totalSets: 3 })
+
+      act(() => {
+        useWorkoutStore.getState().skipRest()
+      })
+
+      expect(useWorkoutStore.getState().restTimerContext).toEqual({})
+    })
+
     it('getTimeRemaining returns correct value', () => {
       act(() => {
         useWorkoutStore.getState().startRestTimer(60)

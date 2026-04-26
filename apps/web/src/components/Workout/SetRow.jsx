@@ -19,6 +19,8 @@ import { uploadVideo } from '../../lib/videoStorage.js'
 
 function SetRow({
   setNumber,
+  totalSets,
+  exerciseName,
   sessionExerciseId,
   exerciseId,
   measurementType = MeasurementType.WEIGHT_REPS,
@@ -129,7 +131,7 @@ function SetRow({
         { weight, reps, time, distance, calories, level, pace },
         buildInfo(rir, notes, videoUrl, setType)
       )
-      onComplete(data, descansoSeg)
+      onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
     } else {
       updateSetDetails({
         sessionExerciseId,
@@ -154,7 +156,7 @@ function SetRow({
       { weight, reps, time, distance, calories, level, pace },
       buildInfo(rir, notes, videoUrl)
     )
-    onComplete(data, descansoSeg)
+    onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
   }
 
   const renderInputs = () => {

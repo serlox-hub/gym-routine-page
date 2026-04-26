@@ -19,6 +19,8 @@ import { colors } from '../../lib/styles'
 
 function SetRow({
   setNumber,
+  totalSets,
+  exerciseName,
   sessionExerciseId,
   exerciseId,
   measurementType = MeasurementType.WEIGHT_REPS,
@@ -128,7 +130,7 @@ function SetRow({
         { weight, reps, time, distance, calories, level, pace },
         buildInfo(rir, notes, videoUrl, videoFile, setType),
       )
-      onComplete(data, descansoSeg)
+      onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
     } else {
       updateSetDetails({ sessionExerciseId, setNumber, rirActual: rir, notes, videoUrl, videoFile, setType })
     }
@@ -145,7 +147,7 @@ function SetRow({
       { weight, reps, time, distance, calories, level, pace },
       buildInfo(rir, notes),
     )
-    onComplete(data, descansoSeg)
+    onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
   }
 
   const renderInputs = () => {
