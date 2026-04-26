@@ -91,10 +91,10 @@ function ExerciseSearchList({
                     {isInRoutine && (
                       <span
                         className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full shrink-0"
-                        style={{ backgroundColor: 'rgba(63, 185, 80, 0.15)', color: colors.success }}
+                        style={{ backgroundColor: colors.successBg, color: colors.success }}
                       >
                         <Check size={12} />
-                        {t('routine:exercise.inRoutine')}
+                        {t('exercise:usage.inRoutine')}
                       </span>
                     )}
                   </div>

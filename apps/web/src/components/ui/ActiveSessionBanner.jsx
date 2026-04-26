@@ -35,38 +35,43 @@ function ActiveSessionBanner() {
 
   const isWarning = timeRemaining <= 10 && timeRemaining > 3
   const isCritical = timeRemaining <= 3
-  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : colors.white
+  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : colors.success
 
   return (
     <div
       className="fixed z-50 select-none"
-      style={{ top: 8, left: '50%', ...dragStyle }}
+      style={{ top: 12, left: '50%', ...dragStyle }}
       {...dragProps}
     >
-      <div
-        className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg shadow-lg"
-        style={{ backgroundColor: colors.bgSecondary, border: `2px solid ${colors.accent}` }}
+      <button
+        onClick={handleContinue}
+        className="flex items-center gap-3 pl-4 pr-1.5 py-1.5 rounded-full hover:opacity-90 transition-opacity"
+        style={{
+          backgroundColor: colors.bgSecondary,
+          border: `1px solid ${colors.borderSubtle}`,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+        }}
       >
-        <span className="text-xs font-medium" style={{ color: colors.accent }}>
-          {t('workout:session.active')}
-        </span>
-        {restTimerActive && (
-          <span
-            className={`font-mono font-bold text-lg ${isCritical ? 'animate-pulse' : ''}`}
-            style={{ color: timerColor }}
-          >
-            {formatSecondsToMMSS(timeRemaining)}
+        <div className="flex flex-col items-start leading-tight">
+          <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: colors.textSecondary }}>
+            {t('workout:session.active')}
           </span>
-        )}
-        <button
-          onClick={handleContinue}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer"
-          style={{ backgroundColor: colors.actionPrimaryBg, color: colors.white }}
+          {restTimerActive && timeRemaining > 0 && (
+            <span
+              className={`font-mono font-bold text-sm ${isCritical ? 'animate-pulse' : ''}`}
+              style={{ color: timerColor, fontVariantNumeric: 'tabular-nums' }}
+            >
+              {formatSecondsToMMSS(timeRemaining)}
+            </span>
+          )}
+        </div>
+        <span
+          className="flex items-center justify-center rounded-full"
+          style={{ width: 32, height: 32, backgroundColor: colors.success }}
         >
-          <Play size={14} fill={colors.white} />
-          {t('common:buttons.back')}
-        </button>
-      </div>
+          <Play size={14} color={colors.bgPrimary} fill={colors.bgPrimary} />
+        </span>
+      </button>
     </div>
   )
 }

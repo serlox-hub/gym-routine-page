@@ -143,6 +143,7 @@ export function usePreviousWorkout(exerciseId) {
             paceSeconds: set.pace_seconds,
             rir: set.rir_actual,
             notes: set.notes,
+            videoUrl: set.video_url,
             setType: set.set_type,
           }))
           .sort((a, b) => a.setNumber - b.setNumber)

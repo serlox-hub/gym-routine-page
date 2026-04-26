@@ -153,18 +153,18 @@ export default function SetDetailsModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} position="bottom">
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, paddingTop: 12, gap: 20 }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>
-            {headerLabel}
-          </Text>
-          <Pressable onPress={onClose}
-            style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgTertiary }}>
-            <X size={16} color={colors.textSecondary} />
-          </Pressable>
-        </View>
+      {/* Header (fixed) */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
+        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>
+          {headerLabel}
+        </Text>
+        <Pressable onPress={onClose}
+          style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgTertiary }}>
+          <X size={16} color={colors.textSecondary} />
+        </Pressable>
+      </View>
 
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, paddingTop: 8, gap: 20 }} style={{ flexShrink: 1 }}>
         {/* Set type — Normal / Dropset */}
         <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: colors.bgTertiary }}>
           {['normal', 'dropset'].map((key) => (
@@ -269,13 +269,15 @@ export default function SetDetailsModal({
           </View>
         )}
 
+      </ScrollView>
+
+      {/* Sticky footer with save */}
+      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, gap: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
         {!isEditMode && descansoSeg > 0 && (
-          <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', marginBottom: -8 }}>
+          <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center' }}>
             {t('workout:rest.title')}: {formatRestTimeDisplay(descansoSeg)}
           </Text>
         )}
-
-        {/* Save & start rest */}
         <Pressable onPress={handleSubmit} disabled={buttonDisabled}
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, opacity: buttonDisabled ? 0.5 : 1 }}>
           {isEditMode ? <Save size={18} color={colors.bgPrimary} /> : <Check size={18} color={colors.bgPrimary} />}
@@ -283,7 +285,7 @@ export default function SetDetailsModal({
             {isEditMode ? t('common:buttons.save') : (descansoSeg > 0 ? t('workout:set.saveStartRest') : t('common:buttons.save'))}
           </Text>
         </Pressable>
-      </ScrollView>
+      </View>
     </Modal>
   )
 }

@@ -15,6 +15,7 @@ import PreferencesScreen from '../screens/PreferencesScreen'
 import AdminUsersScreen from '../screens/AdminUsersScreen'
 import WorkoutOverlay from '../screens/WorkoutOverlay'
 import OfflineBanner from '../components/ui/OfflineBanner'
+import ActiveSessionBanner from '../components/ui/ActiveSessionBanner'
 import { colors, design } from '../lib/styles'
 
 const Stack = createNativeStackNavigator()
@@ -153,6 +154,7 @@ export default function AppStack() {
         <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
       </Stack.Navigator>
 
+      <ActiveSessionBanner />
       <WorkoutOverlay />
     </View>
   )

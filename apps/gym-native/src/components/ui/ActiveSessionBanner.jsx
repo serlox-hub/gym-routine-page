@@ -65,38 +65,50 @@ export default function ActiveSessionBanner() {
 
   const isCritical = timeRemaining <= 3
   const isWarning = timeRemaining <= 10 && timeRemaining > 3
-  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : colors.white
+  const timerColor = isCritical ? colors.danger : isWarning ? colors.warning : colors.success
 
   return (
     <Animated.View
       {...panResponder.panHandlers}
       className="absolute self-center z-50"
       style={{
-        top: insets.top + 8,
+        top: insets.top + 12,
         transform: pan.getTranslateTransform(),
       }}
     >
-      <View
-        className="items-center gap-1 px-4 py-2 rounded-lg"
-        style={{ backgroundColor: colors.bgSecondary, borderWidth: 2, borderColor: colors.accent }}
+      <Pressable
+        onPress={handleContinue}
+        className="flex-row items-center active:opacity-90"
+        style={{
+          backgroundColor: colors.bgSecondary,
+          borderWidth: 1,
+          borderColor: colors.borderSubtle,
+          borderRadius: 999,
+          paddingLeft: 16,
+          paddingRight: 6,
+          paddingVertical: 6,
+          gap: 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
+          elevation: 6,
+        }}
       >
-        <Text className="text-xs font-medium" style={{ color: colors.accent }}>
-          {t('workout:session.active')}
-        </Text>
-        {restTimerActive && timeRemaining > 0 && (
-          <Text className="font-mono font-bold text-lg" style={{ color: timerColor }}>
-            {formatSecondsToMMSS(timeRemaining)}
+        <View>
+          <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase' }}>
+            {t('workout:session.active')}
           </Text>
-        )}
-        <Pressable
-          onPress={handleContinue}
-          className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-md active:opacity-70"
-          style={{ backgroundColor: colors.actionPrimaryBg }}
-        >
-          <Play size={14} color={colors.white} fill={colors.white} />
-          <Text className="text-white text-sm font-medium">{t('common:buttons.back')}</Text>
-        </Pressable>
-      </View>
+          {restTimerActive && timeRemaining > 0 && (
+            <Text style={{ color: timerColor, fontSize: 14, fontWeight: '700' }}>
+              {formatSecondsToMMSS(timeRemaining)}
+            </Text>
+          )}
+        </View>
+        <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.success }}>
+          <Play size={14} color={colors.bgPrimary} fill={colors.bgPrimary} />
+        </View>
+      </Pressable>
     </Animated.View>
   )
 }

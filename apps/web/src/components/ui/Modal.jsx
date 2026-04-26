@@ -34,7 +34,9 @@ function Modal({
 
   const contentStyle = {
     ...(noBorder ? modalContentStyle : { ...modalContentStyle, border: `1px solid ${colors.border}` }),
-    ...(isBottom ? { maxHeight: '85vh' } : {}),
+    ...(isBottom ? { maxHeight: '85vh' } : { maxHeight: '90vh' }),
+    display: 'flex',
+    flexDirection: 'column',
   }
 
   return (

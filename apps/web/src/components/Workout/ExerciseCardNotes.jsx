@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { Badge } from '../ui/index.js'
 import { getExerciseInstructions, getStructuredInstructions } from '@gym/shared'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { colors } from '../../lib/styles.js'
@@ -52,67 +51,37 @@ function StructuredInstructions({ instructions }) {
   )
 }
 
-function ExerciseCardNotes({
-  series,
-  reps,
-  rir,
-  rest_seconds,
-  showNotes,
-  onToggleNotes,
-  exercise,
-  notes,
-}) {
+function ExerciseCardNotes({ exercise, notes }) {
   const { t } = useTranslation()
   const structured = getStructuredInstructions(exercise)
   const legacyText = !structured ? getExerciseInstructions(exercise) : ''
   const { data: override } = useUserExerciseOverride(exercise?.id)
   const personalNotes = override?.notes
-  const hasNoteContent = structured || legacyText || notes || personalNotes
+
+  if (!structured && !legacyText && !notes && !personalNotes) return null
 
   return (
-    <>
-      <div className="my-3 pt-3 border-t border-border flex flex-wrap items-center gap-2">
-        <Badge variant="accent">{series}×{reps}</Badge>
-        {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
-        {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
-        {hasNoteContent && (
-          <button
-            onClick={onToggleNotes}
-            className="text-xs px-2 py-1 rounded transition-colors"
-            style={{
-              backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary,
-              color: showNotes ? colors.teal : colors.textSecondary,
-            }}
-          >
-            {showNotes ? `▲ ${t('exercise:hideNotes')}` : `▼ ${t('exercise:showNotes')}`}
-          </button>
-        )}
-      </div>
-
-      {showNotes && hasNoteContent && (
-        <div
-          className="mb-3 p-3 rounded text-sm space-y-2"
-          style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
-        >
-          {structured && <StructuredInstructions instructions={structured} />}
-          {legacyText && (
-            <p style={{ color: colors.textPrimary, whiteSpace: 'pre-line' }}>
-              <span style={{ color: colors.accent }}>{t('exercise:execution')}:</span> {legacyText}
-            </p>
-          )}
-          {personalNotes && (
-            <p style={{ color: colors.textPrimary }}>
-              <span style={{ color: colors.teal }}>{t('exercise:personalNotes')}:</span> {personalNotes}
-            </p>
-          )}
-          {notes && (
-            <p style={{ color: colors.textPrimary }}>
-              <span style={{ color: colors.warning }}>{t('exercise:routineComment')}:</span> {notes}
-            </p>
-          )}
-        </div>
+    <div
+      className="mt-2 p-3 rounded text-sm space-y-2"
+      style={{ backgroundColor: colors.bgAlt, border: `1px solid ${colors.borderSubtle}` }}
+    >
+      {structured && <StructuredInstructions instructions={structured} />}
+      {legacyText && (
+        <p style={{ color: colors.textPrimary, whiteSpace: 'pre-line' }}>
+          <span style={{ color: colors.accent }}>{t('exercise:execution')}:</span> {legacyText}
+        </p>
       )}
-    </>
+      {personalNotes && (
+        <p style={{ color: colors.textPrimary }}>
+          <span style={{ color: colors.teal }}>{t('exercise:personalNotes')}:</span> {personalNotes}
+        </p>
+      )}
+      {notes && (
+        <p style={{ color: colors.textPrimary }}>
+          <span style={{ color: colors.warning }}>{t('exercise:routineComment')}:</span> {notes}
+        </p>
+      )}
+    </div>
   )
 }
 

@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Plus, ArrowRightLeft } from 'lucide-react-native'
+import { Plus, ArrowRightLeft, X, Flag } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
   useSessionExercises, useAddSessionExercise, useRemoveSessionExercise,
@@ -12,13 +12,14 @@ import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '
 import RestTimer from './RestTimer'
 import BlockExerciseList from './BlockExerciseList'
 import EndSessionModal from './EndSessionModal'
-import SessionTimer from './SessionTimer'
+import ExerciseProgressBar from './ExerciseProgressBar'
 import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer } from '@gym/shared'
 import { PRProvider } from './PRContext'
+import { ExpandedExerciseProvider } from './ExpandedExerciseContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { colors } from '../../lib/styles'
 
@@ -61,9 +62,16 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   )
 
   const progress = useMemo(
-    () => calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts),
+    () => calculateExerciseLevelProgress(flatExercises, completedSets, exerciseSetCounts),
     [flatExercises, completedSets, exerciseSetCounts],
   )
+
+  const firstExerciseKey = useMemo(() => {
+    const first = flatExercises.find(e => !e.isWarmup)
+    return first ? (first.sessionExerciseId || first.id) : null
+  }, [flatExercises])
+
+  const { formatted: elapsedTime } = useSessionTimer()
 
   const handlers = useStableHandlers({
     onCompleteSet: (setData, descansoSeg, context) => {
@@ -142,9 +150,6 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   }
 
   const hasExercises = flatExercises.length > 0
-  const titleWithProgress = progress.total > 0
-    ? `${title}  ${progress.completed}/${progress.total}`
-    : title
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
@@ -152,13 +157,23 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
       <PRNotification notification={prNotification} onDismiss={dismissPR} />
 
       <PageHeader
-        title={titleWithProgress}
+        title={title}
         onBack={() => useWorkoutStore.getState().hideWorkout()}
         menuItems={[
-          { icon: Plus, label: t('workout:addExercise.toSession'), onPress: () => setShowAddExercise(true) },
-          { icon: ArrowRightLeft, label: t('workout:set.weightConverter'), onPress: () => setShowConverter(true) },
+          { icon: Plus, label: t('workout:addExercise.toSession'), onClick: () => setShowAddExercise(true) },
+          { icon: ArrowRightLeft, label: t('workout:set.weightConverter'), onClick: () => setShowConverter(true) },
+          { icon: X, label: t('workout:session.abandon'), onClick: () => setShowCancelModal(true), danger: true },
         ]}
       />
+
+      <View className="px-4">
+        <ExerciseProgressBar
+          completed={progress.completed}
+          total={progress.total}
+          pct={progress.setsTotal > 0 ? Math.round((progress.setsCompleted / progress.setsTotal) * 100) : 0}
+          elapsedTime={elapsedTime}
+        />
+      </View>
 
       <KeyboardAvoidingView
         className="flex-1"
@@ -166,7 +181,8 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
         keyboardVerticalOffset={0}
       >
         <PRProvider value={prSets}>
-        <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+        <ExpandedExerciseProvider defaultKey={firstExerciseKey}>
+        <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
           {!hasExercises ? (
             <View className="items-center py-12 px-4">
               <Text className="text-secondary text-sm mb-6">
@@ -175,44 +191,37 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
               <Button onPress={() => setShowAddExercise(true)}>{t('workout:addExercise.toSession')}</Button>
             </View>
           ) : (
-            <BlockExerciseList
-              exercisesByBlock={exercisesByBlock}
-              onCompleteSet={handlers.onCompleteSet}
-              onUncompleteSet={handlers.onUncompleteSet}
-              onRemove={handlers.onRemove}
-              onReplace={handlers.onReplace}
-              flatExercises={flatExercises}
-              onReorder={handlers.onReorder}
-              isReordering={reorderSessionExercisesMutation.isPending}
-              existingSupersets={existingSupersets}
-            />
+            <>
+              <BlockExerciseList
+                exercisesByBlock={exercisesByBlock}
+                onCompleteSet={handlers.onCompleteSet}
+                onUncompleteSet={handlers.onUncompleteSet}
+                onRemove={handlers.onRemove}
+                onReplace={handlers.onReplace}
+                flatExercises={flatExercises}
+                onReorder={handlers.onReorder}
+                isReordering={reorderSessionExercisesMutation.isPending}
+                existingSupersets={existingSupersets}
+              />
+              <Pressable onPress={() => setShowEndModal(true)}
+                disabled={endSessionMutation.isPending || !hasCompletedSets}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  paddingVertical: 14, borderRadius: 12, marginTop: 24,
+                  borderWidth: 1, borderColor: colors.success, backgroundColor: 'transparent',
+                  opacity: (endSessionMutation.isPending || !hasCompletedSets) ? 0.4 : 1,
+                }}>
+                <Flag size={18} color={colors.success} />
+                <Text style={{ color: colors.success, fontSize: 15, fontWeight: '600' }}>
+                  {endSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.finishWorkout')}
+                </Text>
+              </Pressable>
+            </>
           )}
         </ScrollView>
+        </ExpandedExerciseProvider>
         </PRProvider>
       </KeyboardAvoidingView>
-
-      <View
-        className="flex-row items-center gap-3 px-4 py-3"
-        style={{ backgroundColor: colors.bgSecondary, borderTopWidth: 1, borderTopColor: colors.border }}
-      >
-        <Button
-          variant="danger"
-          onPress={() => setShowCancelModal(true)}
-          loading={abandonSessionMutation.isPending}
-          className="flex-1"
-        >
-          {t('common:buttons.cancel')}
-        </Button>
-        <SessionTimer />
-        <Button
-          onPress={() => setShowEndModal(true)}
-          disabled={endSessionMutation.isPending || !hasCompletedSets}
-          loading={endSessionMutation.isPending}
-          className="flex-1"
-        >
-          {t('workout:session.end')}
-        </Button>
-      </View>
 
       <ConfirmModal
         isOpen={showCancelModal}

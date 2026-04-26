@@ -1,6 +1,8 @@
 {
   "session": {
     "active": "Sesión activa",
+    "finishWorkout": "Terminar entrenamiento",
+    "exerciseProgress": "Ejercicio {{current}} de {{total}}",
     "start": "Iniciar",
     "end": "Finalizar entrenamiento",
     "endConfirm": "¿Seguro que quieres finalizar el entrenamiento?",
@@ -25,6 +27,10 @@
   },
   "set": {
     "logSet": "REGISTRAR SERIE {{number}}",
+    "removeLast": "Quitar última",
+    "addSet": "Añadir serie",
+    "lastSession": "Última sesión · {{when}}",
+    "set": "Serie",
     "saveStartRest": "Guardar e iniciar descanso",
     "weightAndReps": "Peso y reps",
     "rirTitle": "@ — Reps en reserva",
@@ -75,7 +81,6 @@
     "setsDone": "{{done}} hechas",
     "setsLeft": "Quedan {{count}}"
   },
-  "converter": "Conversor",
   "addExercise": {
     "title": "Añadir ejercicio",
     "toSession": "Añadir a la sesión",

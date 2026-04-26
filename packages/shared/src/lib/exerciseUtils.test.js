@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { initI18n } from '../i18n/index.js'
-import { getExerciseName, resolveWeightUnit, getExerciseInstructions, getStructuredInstructions, getMuscleGroupName, getEquipmentName, localizeExercise, localizeExercisesInList } from './exerciseUtils.js'
+import { getExerciseName, resolveWeightUnit, getExerciseInstructions, getStructuredInstructions, getMuscleGroupName, getEquipmentName, localizeExercise, localizeExercisesInList, hasExerciseNotes } from './exerciseUtils.js'
 
 beforeAll(() => { initI18n() })
 
@@ -123,6 +123,28 @@ describe('getEquipmentName', () => {
   it('devuelve string vacío para null/undefined', () => {
     expect(getEquipmentName(null)).toBe('')
     expect(getEquipmentName(undefined)).toBe('')
+  })
+})
+
+describe('hasExerciseNotes', () => {
+  it('retorna false si no hay nada', () => {
+    expect(hasExerciseNotes({}, null, null)).toBe(false)
+  })
+
+  it('detecta routine notes (string del bloque)', () => {
+    expect(hasExerciseNotes({}, null, 'comentario rutina')).toBe(true)
+  })
+
+  it('detecta personal notes del override', () => {
+    expect(hasExerciseNotes({}, { notes: 'mi nota' }, null)).toBe(true)
+  })
+
+  it('detecta legacy instructions string', () => {
+    expect(hasExerciseNotes({ instructions: 'baja despacio' }, null, null)).toBe(true)
+  })
+
+  it('detecta structured instructions', () => {
+    expect(hasExerciseNotes({ instructions: { es: { setup: 'pies a la anchura de los hombros' } } }, null, null)).toBe(true)
   })
 })
 

@@ -126,7 +126,7 @@ function SetDetailsModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} position="bottom" maxWidth="max-w-lg" noBorder>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-2">
+      <div className="flex items-center justify-between px-5 pt-5 pb-2 shrink-0">
         <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, letterSpacing: 1.5 }}>
           {headerLabel}
         </span>
@@ -137,7 +137,7 @@ function SetDetailsModal({
         </button>
       </div>
 
-      <div className="px-5 pb-5 space-y-5 mt-3">
+      <div className="px-5 pb-3 space-y-5 mt-3 overflow-y-auto" style={{ flex: 1, minHeight: 0 }}>
         {/* Set type — Normal / Dropset */}
         <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ backgroundColor: colors.bgTertiary }}>
           {['normal', 'dropset'].map((key) => (
@@ -277,13 +277,15 @@ function SetDetailsModal({
           </div>
         )}
 
+      </div>
+
+      {/* Sticky footer with save */}
+      <div className="px-5 pb-5 pt-3 shrink-0 space-y-3" style={{ backgroundColor: colors.bgSecondary, borderTop: `1px solid ${colors.borderSubtle}` }}>
         {!isEditMode && descansoSeg > 0 && (
-          <p className="text-center text-xs -mb-2" style={{ color: colors.textMuted }}>
+          <p className="text-center text-xs" style={{ color: colors.textMuted }}>
             {t('workout:rest.title')}: {formatRestTimeDisplay(descansoSeg)}
           </p>
         )}
-
-        {/* Save & start rest */}
         <button onClick={handleSubmit} disabled={buttonDisabled}
           className="w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
           style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>

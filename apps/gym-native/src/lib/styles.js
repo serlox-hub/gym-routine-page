@@ -81,6 +81,7 @@ export const colors = {
   purpleBg: 'rgba(124, 92, 252, 0.15)',
   purpleAccentBg: 'rgba(124, 92, 252, 0.2)',
   successBg: 'rgba(190, 255, 0, 0.12)',
+  successBgSubtle: 'rgba(190, 255, 0, 0.08)',
   warningBg: 'rgba(210, 153, 34, 0.15)',
   orangeBg: 'rgba(255, 107, 53, 0.15)',
   dangerBg: 'rgba(248, 81, 73, 0.1)',

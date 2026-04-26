@@ -17,16 +17,17 @@ import {
   useWakeLock,
   useTimerEngine,
 } from '../../hooks/useWorkout.js'
-import { Plus, ArrowRightLeft } from 'lucide-react'
-import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, BottomActions, PageHeader } from '../ui/index.js'
+import { Plus, ArrowRightLeft, X, Flag } from 'lucide-react'
+import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui/index.js'
 import RestTimer from './RestTimer.jsx'
 import BlockExerciseList from './BlockExerciseList.jsx'
+import { ExpandedExerciseProvider } from './ExpandedExerciseContext.jsx'
 import EndSessionModal from './EndSessionModal.jsx'
-import SessionTimer from './SessionTimer.jsx'
+import ExerciseProgressBar from './ExerciseProgressBar.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -71,9 +72,16 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   )
 
   const progress = useMemo(
-    () => calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts),
+    () => calculateExerciseLevelProgress(flatExercises, completedSets, exerciseSetCounts),
     [flatExercises, completedSets, exerciseSetCounts]
   )
+
+  const firstExerciseKey = useMemo(() => {
+    const first = flatExercises.find(e => !e.isWarmup)
+    return first ? (first.sessionExerciseId || first.id) : null
+  }, [flatExercises])
+
+  const { formatted: elapsedTime } = useSessionTimer()
 
   useEffect(() => {
     if (!sessionId) {
@@ -172,29 +180,31 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     <>
       <RestTimer />
       <PRNotification notification={prNotification} onDismiss={dismissPR} />
-      <div className="p-4 max-w-2xl mx-auto pb-24">
+      <div className="p-4 max-w-2xl mx-auto pb-32">
         <PageHeader
           title={title}
-          titleExtra={
-            progress.total > 0 && (
-              <span className="text-sm font-normal" style={{ color: colors.textSecondary }}>
-                {progress.completed}/{progress.total}
-              </span>
-            )
-          }
           onBack={() => navigate(-1)}
           menuItems={[
             { icon: Plus, label: t('workout:addExercise.toSession'), onClick: () => setShowAddExercise(true) },
-            { icon: ArrowRightLeft, label: t('workout:converter'), onClick: () => setShowConverter(true) },
+            { icon: ArrowRightLeft, label: t('workout:set.weightConverter'), onClick: () => setShowConverter(true) },
+            { icon: X, label: t('workout:session.abandon'), onClick: () => setShowCancelModal(true), danger: true },
           ]}
-        />
+        >
+          <ExerciseProgressBar
+            completed={progress.completed}
+            total={progress.total}
+            pct={progress.setsTotal > 0 ? Math.round((progress.setsCompleted / progress.setsTotal) * 100) : 0}
+            elapsedTime={elapsedTime}
+          />
+        </PageHeader>
 
       <PRProvider value={prSets}>
+      <ExpandedExerciseProvider defaultKey={firstExerciseKey}>
       <main className="space-y-4">
         {!hasExercises ? (
           <div className="text-center py-12 px-4">
             <p className="text-secondary text-sm mb-6">
-              {t('exercise:noExercises')}
+              {t('workout:addExercise.noExercises')}
             </p>
             <Button
               variant="primary"
@@ -217,22 +227,23 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           />
         )}
       </main>
+      </ExpandedExerciseProvider>
       </PRProvider>
 
-      <BottomActions
-        secondary={{
-          label: abandonSessionMutation.isPending ? t('common:buttons.loading') : t('common:buttons.cancel'),
-          onClick: () => setShowCancelModal(true),
-          disabled: abandonSessionMutation.isPending,
-          danger: true,
+      <button
+        onClick={handleEndWorkout}
+        disabled={endSessionMutation.isPending || !hasCompletedSets}
+        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold mt-6 disabled:opacity-40"
+        style={{
+          backgroundColor: 'transparent',
+          border: `1px solid ${colors.success}`,
+          color: colors.success,
+          fontSize: 15,
         }}
-        center={<SessionTimer />}
-        primary={{
-          label: endSessionMutation.isPending ? t('common:buttons.loading') : t('common:buttons.done'),
-          onClick: handleEndWorkout,
-          disabled: endSessionMutation.isPending || !hasCompletedSets,
-        }}
-      />
+      >
+        <Flag size={18} />
+        {endSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.finishWorkout')}
+      </button>
 
       <ConfirmModal
         isOpen={showCancelModal}

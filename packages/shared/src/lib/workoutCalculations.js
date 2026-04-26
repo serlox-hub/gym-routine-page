@@ -163,6 +163,32 @@ export function countCompletedSets(completedSetsMap, routineExerciseId) {
  * @param {Object} exerciseSetCounts - Mapa de conteo de series por ejercicio (key: sessionExerciseId)
  * @returns {{completed: number, total: number}}
  */
+/**
+ * Cuenta cuántos ejercicios están completos (todas sus series hechas) sobre el total.
+ * Excluye ejercicios de calentamiento.
+ */
+export function calculateExerciseLevelProgress(flatExercises, completedSets, exerciseSetCounts = {}) {
+  if (!flatExercises || flatExercises.length === 0) return { completed: 0, total: 0, setsCompleted: 0, setsTotal: 0 }
+  let completed = 0
+  let total = 0
+  let setsCompleted = 0
+  let setsTotal = 0
+  flatExercises.forEach(exercise => {
+    if (exercise.isWarmup) return
+    total += 1
+    const key = exercise.sessionExerciseId
+    const totalSets = exerciseSetCounts[key] ?? exercise.series ?? 1
+    setsTotal += totalSets
+    let setsDone = 0
+    for (let i = 1; i <= totalSets; i++) {
+      if (completedSets[`${key}-${i}`]) setsDone += 1
+    }
+    setsCompleted += setsDone
+    if (totalSets > 0 && setsDone >= totalSets) completed += 1
+  })
+  return { completed, total, setsCompleted, setsTotal }
+}
+
 export function calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts = {}) {
   if (!flatExercises || flatExercises.length === 0) return { completed: 0, total: 0 }
 

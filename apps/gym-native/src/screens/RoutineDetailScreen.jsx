@@ -10,7 +10,7 @@ import {
   useDuplicateRoutineExercise, useMoveRoutineExerciseToDay,
   useSetFavoriteRoutine,
 } from '../hooks/useRoutines'
-import { LoadingSpinner, ErrorMessage, ConfirmModal, ActiveSessionBanner } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui'
 import {
   DayCard, RoutineHeader, RoutineEditForm, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal, VolumeSummary,
@@ -396,7 +396,6 @@ export default function RoutineDetailScreen({ route, navigation }) {
         isReplacing={isReplacingExercise}
       />
 
-      <ActiveSessionBanner />
     </SafeAreaView>
   )
 }

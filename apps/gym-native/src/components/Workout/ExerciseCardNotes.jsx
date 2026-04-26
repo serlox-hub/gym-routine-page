@@ -1,6 +1,5 @@
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Badge } from '../ui'
 import { getExerciseInstructions, getStructuredInstructions } from '@gym/shared'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { colors } from '../../lib/styles'
@@ -53,63 +52,37 @@ function StructuredInstructions({ instructions }) {
   )
 }
 
-function ExerciseCardNotes({
-  series,
-  reps,
-  rir,
-  rest_seconds,
-  showNotes,
-  onToggleNotes,
-  exercise,
-  notes,
-}) {
+function ExerciseCardNotes({ exercise, notes }) {
   const { t } = useTranslation()
   const structured = getStructuredInstructions(exercise)
   const legacyText = !structured ? getExerciseInstructions(exercise) : ''
   const { data: override } = useUserExerciseOverride(exercise?.id)
   const personalNotes = override?.notes
-  const hasNoteContent = structured || legacyText || notes || personalNotes
+
+  if (!structured && !legacyText && !notes && !personalNotes) return null
 
   return (
-    <>
-      <View className="my-3 pt-3 flex-row flex-wrap items-center gap-2" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
-        <Badge variant="accent">{series}×{reps}</Badge>
-        {rir !== null && <Badge variant="purple">RIR {rir}</Badge>}
-        {rest_seconds > 0 && <Badge variant="default">{rest_seconds}s</Badge>}
-        {hasNoteContent && (
-          <Pressable
-            onPress={onToggleNotes}
-            className="px-2 py-1 rounded active:opacity-70"
-            style={{ backgroundColor: showNotes ? 'rgba(136, 198, 190, 0.2)' : colors.bgTertiary }}
-          >
-            <Text className="text-xs" style={{ color: showNotes ? colors.teal : colors.textSecondary }}>
-              {showNotes ? `▲ ${t('exercise:hideNotes')}` : `▼ ${t('exercise:showNotes')}`}
-            </Text>
-          </Pressable>
-        )}
-      </View>
-
-      {showNotes && hasNoteContent && (
-        <View className="mb-3 p-3 rounded gap-2" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
-          {structured && <StructuredInstructions instructions={structured} />}
-          {legacyText && (
-            <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.accent }}>{t('exercise:execution')}: </Text>{legacyText}
-            </Text>
-          )}
-          {personalNotes && (
-            <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.teal }}>{t('exercise:personalNotes')}: </Text>{personalNotes}
-            </Text>
-          )}
-          {notes && (
-            <Text className="text-sm" style={{ color: colors.textPrimary }}>
-              <Text style={{ color: colors.warning }}>{t('exercise:routineComment')}: </Text>{notes}
-            </Text>
-          )}
-        </View>
+    <View
+      className="mt-2 p-3 rounded gap-2"
+      style={{ backgroundColor: colors.bgAlt, borderWidth: 1, borderColor: colors.borderSubtle }}
+    >
+      {structured && <StructuredInstructions instructions={structured} />}
+      {legacyText && (
+        <Text className="text-sm" style={{ color: colors.textPrimary }}>
+          <Text style={{ color: colors.accent }}>{t('exercise:execution')}: </Text>{legacyText}
+        </Text>
       )}
-    </>
+      {personalNotes && (
+        <Text className="text-sm" style={{ color: colors.textPrimary }}>
+          <Text style={{ color: colors.teal }}>{t('exercise:personalNotes')}: </Text>{personalNotes}
+        </Text>
+      )}
+      {notes && (
+        <Text className="text-sm" style={{ color: colors.textPrimary }}>
+          <Text style={{ color: colors.warning }}>{t('exercise:routineComment')}: </Text>{notes}
+        </Text>
+      )}
+    </View>
   )
 }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   formatSecondsToMMSS,
+  formatElapsedSeconds,
   formatRestTimeDisplay,
   calculateDurationMinutes,
   secondsToMinutes,
@@ -33,6 +34,34 @@ describe('timeUtils', () => {
 
     it('añade padding a segundos de un dígito', () => {
       expect(formatSecondsToMMSS(65)).toBe('1:05')
+    })
+  })
+
+  describe('formatElapsedSeconds', () => {
+    it('formatea 0 segundos como 0:00', () => {
+      expect(formatElapsedSeconds(0)).toBe('0:00')
+    })
+
+    it('formatea menos de un minuto', () => {
+      expect(formatElapsedSeconds(45)).toBe('0:45')
+    })
+
+    it('formatea minutos con padding de segundos', () => {
+      expect(formatElapsedSeconds(125)).toBe('2:05')
+    })
+
+    it('añade el componente horas cuando supera 3600 segundos', () => {
+      expect(formatElapsedSeconds(3661)).toBe('1:01:01')
+    })
+
+    it('formatea con padding de minutos cuando hay horas', () => {
+      expect(formatElapsedSeconds(3605)).toBe('1:00:05')
+    })
+
+    it('protege contra valores negativos o nulos', () => {
+      expect(formatElapsedSeconds(-30)).toBe('0:00')
+      expect(formatElapsedSeconds(null)).toBe('0:00')
+      expect(formatElapsedSeconds(undefined)).toBe('0:00')
     })
   })
 

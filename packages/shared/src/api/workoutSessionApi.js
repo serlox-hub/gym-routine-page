@@ -381,6 +381,7 @@ export async function fetchPreviousWorkout(exerciseId) {
         pace_seconds,
         rir_actual,
         notes,
+        video_url,
         set_type,
         performed_at
       )

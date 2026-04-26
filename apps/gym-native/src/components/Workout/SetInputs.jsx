@@ -14,7 +14,7 @@ const numericInputStyle = {
   borderRadius: 6,
 }
 
-function NumberInput({ value, onChange, disabled, width = 56, inputMode = 'numeric' }) {
+function NumberInput({ value, onChange, disabled, width = 56, inputMode = 'numeric', extraStyle, placeholder = '—' }) {
   const handleChange = (raw) => {
     if (raw === '') { onChange(''); return }
     const normalized = raw.replace(',', '.')
@@ -28,7 +28,9 @@ function NumberInput({ value, onChange, disabled, width = 56, inputMode = 'numer
       onChangeText={handleChange}
       editable={!disabled}
       keyboardType={inputMode === 'decimal' ? 'decimal-pad' : 'number-pad'}
-      style={[numericInputStyle, { width, opacity: disabled ? 0.5 : 1 }]}
+      placeholder={placeholder}
+      placeholderTextColor={colors.textMuted}
+      style={[numericInputStyle, { width, opacity: disabled ? 0.5 : 1 }, extraStyle]}
     />
   )
 }
@@ -84,17 +86,18 @@ function Separator({ text = '×' }) {
   return <Text className="text-sm" style={{ color: colors.textSecondary }}>{text}</Text>
 }
 
-export function WeightRepsInputs({ weight, setWeight, reps, setReps, weightUnit, disabled }) {
+export function WeightRepsInputs({ weight, setWeight, reps, setReps, weightUnit, disabled, hideUnits = false, weightActive = false }) {
+  const activeBorderStyle = weightActive ? { borderColor: colors.success, borderWidth: 1 } : null
   return (
     <>
-      <View className="flex-row items-center gap-1">
-        <NumberInput value={weight} onChange={setWeight} disabled={disabled} inputMode="decimal" />
-        <Label>{weightUnit}</Label>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+        <NumberInput value={weight} onChange={setWeight} disabled={disabled} inputMode="decimal" width={hideUnits ? '100%' : 56} extraStyle={activeBorderStyle} />
+        {!hideUnits && <Label>{weightUnit}</Label>}
       </View>
-      <Separator />
-      <View className="flex-row items-center gap-1">
-        <NumberInput value={reps} onChange={setReps} disabled={disabled} />
-        <Label>reps</Label>
+      {!hideUnits && <Separator />}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+        <NumberInput value={reps} onChange={setReps} disabled={disabled} width={hideUnits ? '100%' : 56} />
+        {!hideUnits && <Label>reps</Label>}
       </View>
     </>
   )

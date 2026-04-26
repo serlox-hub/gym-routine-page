@@ -60,9 +60,9 @@ export default function ExerciseSearchList({
               </View>
             </View>
             {isInRoutine && (
-              <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(63, 185, 80, 0.15)' }}>
+              <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.successBg }}>
                 <Check size={12} color={colors.success} />
-                <Text style={{ fontSize: 12, color: colors.success }}>{t('routine:exercise.inRoutine')}</Text>
+                <Text style={{ fontSize: 12, color: colors.success }}>{t('exercise:usage.inRoutine')}</Text>
               </View>
             )}
           </View>

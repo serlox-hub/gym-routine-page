@@ -7,7 +7,7 @@ const inputStyle = {
   color: colors.textPrimary,
 }
 
-function NumberInput({ value, onChange, disabled, width = 'w-16', inputMode = 'numeric' }) {
+function NumberInput({ value, onChange, disabled, width = 'w-16', inputMode = 'numeric', style, placeholder = '—' }) {
   const handleChange = (e) => {
     const raw = e.target.value
     if (raw === '') {
@@ -28,8 +28,9 @@ function NumberInput({ value, onChange, disabled, width = 'w-16', inputMode = 'n
       value={value}
       onChange={handleChange}
       disabled={disabled}
+      placeholder={placeholder}
       className={`${width} px-2 py-1 rounded text-center text-sm`}
-      style={inputStyle}
+      style={style || inputStyle}
     />
   )
 }
@@ -82,17 +83,18 @@ function TimeInput({ time, setTime, disabled, timeUnit = 's' }) {
   return <NumberInput value={time} onChange={setTime} disabled={disabled} />
 }
 
-export function WeightRepsInputs({ weight, setWeight, reps, setReps, weightUnit, disabled, repsLabel = 'reps' }) {
+export function WeightRepsInputs({ weight, setWeight, reps, setReps, weightUnit, disabled, repsLabel = 'reps', hideUnits = false, weightActive = false }) {
+  const activeStyle = weightActive ? { ...inputStyle, borderColor: colors.success, borderWidth: 1 } : inputStyle
   return (
     <>
-      <div className="flex items-center gap-1">
-        <NumberInput value={weight} onChange={setWeight} disabled={disabled} inputMode="decimal" />
-        <span className="text-xs text-muted">{weightUnit}</span>
+      <div className="flex items-center gap-1 flex-1">
+        <NumberInput value={weight} onChange={setWeight} disabled={disabled} inputMode="decimal" width="w-full" style={activeStyle} />
+        {!hideUnits && <span className="text-xs text-muted">{weightUnit}</span>}
       </div>
-      <span className="text-secondary text-sm">×</span>
-      <div className="flex items-center gap-1">
-        <NumberInput value={reps} onChange={setReps} disabled={disabled} />
-        <span className="text-xs text-muted">{repsLabel}</span>
+      {!hideUnits && <span className="text-secondary text-sm">×</span>}
+      <div className="flex items-center gap-1 flex-1">
+        <NumberInput value={reps} onChange={setReps} disabled={disabled} width="w-full" />
+        {!hideUnits && <span className="text-xs text-muted">{repsLabel}</span>}
       </div>
     </>
   )

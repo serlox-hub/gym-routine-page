@@ -69,6 +69,7 @@ export * from './hooks/usePersonalRecords.js'
 export * from './hooks/useSession.js'
 export * from './hooks/useSessionExercises.js'
 export { useTimerEngine, useRestTimer } from './hooks/useRestTimer.js'
+export { useSessionTimer } from './hooks/useSessionTimer.js'
 export * from './hooks/useTrainingGoals.js'
 export * from './hooks/useHomeScreen.js'
 

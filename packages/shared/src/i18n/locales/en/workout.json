@@ -3,6 +3,8 @@
     "active": "Active session",
     "start": "Start",
     "end": "End workout",
+    "finishWorkout": "Finish workout",
+    "exerciseProgress": "Exercise {{current}} of {{total}}",
     "endConfirm": "Are you sure you want to end the workout?",
     "resume": "Resume workout",
     "abandon": "Abandon",
@@ -27,6 +29,10 @@
     "complete": "Complete set",
     "unmark": "Unmark set",
     "logSet": "LOG SET {{number}}",
+    "removeLast": "Remove last",
+    "addSet": "Add set",
+    "lastSession": "Last session · {{when}}",
+    "set": "Set",
     "saveStartRest": "Save & start rest",
     "weightAndReps": "Weight & reps",
     "rirTitle": "@ — Reps in Reserve",
@@ -75,7 +81,6 @@
     "setsDone": "{{done}} done",
     "setsLeft": "{{count}} sets left"
   },
-  "converter": "Converter",
   "addExercise": {
     "title": "Add exercise",
     "toSession": "Add to session",
