@@ -1,6 +1,7 @@
 // RGB base para derivar variantes con alpha
 export const RGB_ACCENT = '0, 212, 255'
 export const RGB_PURPLE = '124, 92, 252'
+export const RGB_SUCCESS = '190, 255, 0'
 
 // Gradientes reutilizables
 export const gradients = {

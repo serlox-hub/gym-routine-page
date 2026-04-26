@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { colors, RGB_ACCENT } from '../../lib/styles.js'
+import { colors, RGB_SUCCESS } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 import PhoneMockup, { MockupRoutineScreen, MockupWorkoutScreen, MockupProgressScreen } from './PhoneMockup'
 
@@ -7,12 +7,12 @@ function ShowcaseSection() {
   const { t } = useTranslation()
   return (
     <section className="py-24 relative overflow-hidden">
-      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 70% 30%, rgba(${RGB_ACCENT}, 0.06) 0%, transparent 50%)` }} />
+      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 70% 30%, rgba(${RGB_SUCCESS}, 0.06) 0%, transparent 50%)` }} />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
         <AnimatedSection className="text-center mb-16">
           <span
             className="inline-block text-xs font-semibold tracking-widest mb-4 px-3 py-1 rounded-full"
-            style={{ color: colors.accent, backgroundColor: colors.accentBgSubtle, border: `1px solid rgba(${RGB_ACCENT}, 0.2)` }}
+            style={{ color: colors.success, backgroundColor: colors.successBgSubtle, border: `1px solid rgba(${RGB_SUCCESS}, 0.2)` }}
           >
             {t('landing:showcase.tag')}
           </span>

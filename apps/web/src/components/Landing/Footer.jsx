@@ -6,10 +6,10 @@ function Footer() {
   const { t } = useTranslation()
 
   return (
-    <footer className="py-8" style={{ borderTop: `1px solid ${colors.bgTertiary}` }}>
+    <footer className="py-8" style={{ borderTop: `1px solid ${colors.borderSubtle}` }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Dumbbell size={16} style={{ color: colors.accent }} />
+          <Dumbbell size={16} color={colors.success} />
           <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{t('common:appName')}</span>
         </div>
         <p className="text-xs" style={{ color: colors.textMuted }}>
