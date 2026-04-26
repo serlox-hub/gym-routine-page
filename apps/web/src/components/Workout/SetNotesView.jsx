@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import { getVideoUrl } from '../../lib/videoStorage.js'
-import { RIR_LABELS } from '@gym/shared'
+import { getEffortInfo, getEffortLabel } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function VideoPlayer({ videoKey }) {
@@ -64,9 +64,10 @@ function VideoPlayer({ videoKey }) {
   )
 }
 
-function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
+function SetNotesView({ isOpen, onClose, rir, measurementType, notes, videoUrl }) {
   const { t } = useTranslation()
-  const rirInfo = rir !== null && rir !== undefined ? RIR_LABELS[rir] : null
+  const rirInfo = getEffortInfo(rir, measurementType)
+  const effortLabel = getEffortLabel(measurementType)
 
   return (
     <Modal
@@ -102,7 +103,7 @@ function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
             </span>
             <div>
               <div className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                RIR {rirInfo.label}
+                {effortLabel} {rirInfo.label}
               </div>
               <div className="text-xs" style={{ color: colors.textSecondary }}>
                 {rirInfo.description}

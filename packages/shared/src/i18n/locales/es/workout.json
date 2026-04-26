@@ -24,6 +24,15 @@
     "volume": "Volumen"
   },
   "set": {
+    "logSet": "REGISTRAR SERIE {{number}}",
+    "saveStartRest": "Guardar e iniciar descanso",
+    "weightAndReps": "Peso y reps",
+    "rirTitle": "@ — Reps en reserva",
+    "selected": "Seleccionado: {{value}}",
+    "notesPlaceholder": "¿Cómo te sentiste? Técnica, dolor, fatiga…",
+    "addVideoTitle": "Añadir un vídeo de esta serie",
+    "addVideoSubtitle": "Grábalo ahora o elige de la galería",
+    "videoOptional": "Opcional",
     "complete": "Completar serie",
     "unmark": "Desmarcar serie",
     "markDropset": "Marcar como dropset",

@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.js'
+import { RIR_LABELS, RPE_LABELS } from './constants.js'
 
 export const MeasurementType = {
   WEIGHT_REPS: 'weight_reps',
@@ -102,6 +103,19 @@ export function getEffortLabel(measurementType) {
   return measurementTypeUsesReps(measurementType)
     ? t('exercise:effort.rir')
     : t('exercise:effort.effort')
+}
+
+/**
+ * Returns the display info for a stored effort value (rir/rpe)
+ * based on the exercise's measurement type. Returns { label, description } or null.
+ */
+export function getEffortInfo(value, measurementType) {
+  if (value == null) return null
+  const isRir = measurementTypeUsesReps(measurementType)
+  if (isRir) {
+    return { label: RIR_LABELS[value]?.label ?? String(value), description: RIR_LABELS[value]?.description ?? '' }
+  }
+  return { label: RPE_LABELS[value]?.label ?? String(value), description: RPE_LABELS[value]?.description ?? '' }
 }
 
 export function isValidMeasurementType(type) {

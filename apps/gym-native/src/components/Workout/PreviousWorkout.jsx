@@ -55,6 +55,7 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
                   </Text>
                   <NotesBadge
                     rir={set.rir}
+                    measurementType={measurementType}
                     hasNotes={hasNotes}
                     onPress={hasNotes ? () => setSelectedSet(set) : null}
                   />
@@ -72,6 +73,7 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
         rir={selectedSet?.rir}
+        measurementType={measurementType}
         notes={selectedSet?.notes}
       />
     </View>

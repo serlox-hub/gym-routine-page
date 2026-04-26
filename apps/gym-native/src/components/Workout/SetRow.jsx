@@ -209,6 +209,7 @@ function SetRow({
       {(isCompleted || isUploadingVideo || videoUploadError) && (
         <NotesBadge
           rir={setData?.rirActual}
+          measurementType={measurementType}
           hasNotes={hasTextNote}
           hasVideo={hasVideo}
           isUploadingVideo={isUploadingVideo}
@@ -253,12 +254,16 @@ function SetRow({
         onClose={() => setShowModal(false)}
         onSubmit={handleModalSubmit}
         mode={modalMode}
+        setNumber={setNumber}
         descansoSeg={descansoSeg}
         initialRir={initialData?.rirActual}
         initialNote={initialData?.notes}
         initialVideoUrl={initialData?.videoUrl}
         initialSetType={initialData?.setType}
         measurementType={measurementType}
+        weight={weight} setWeight={setWeight}
+        reps={reps} setReps={setReps}
+        weightUnit={weightUnit}
       />
     </View>
   )

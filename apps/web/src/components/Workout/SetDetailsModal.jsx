@@ -1,26 +1,54 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Video, X, Save } from 'lucide-react'
+import { Check, Video, X, Save, ChevronRight, Minus, Plus } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import VideoPlayer from './VideoPlayer.jsx'
-import { colors, inputStyle } from '../../lib/styles.js'
-import { RIR_OPTIONS, SET_TYPE_LABELS, formatRestTimeDisplay, getEffortLabel } from '@gym/shared'
+import { colors } from '../../lib/styles.js'
+import { RIR_OPTIONS, RPE_OPTIONS, formatRestTimeDisplay, getEffortLabel, MeasurementType, measurementTypeUsesReps } from '@gym/shared'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 
+function NumberStepper({ label, value, onChange, step = 1, suffix }) {
+  const handleChange = (delta) => onChange(Math.max(0, (parseFloat(value) || 0) + delta))
+  return (
+    <div className="flex-1">
+      <label className="block text-xs mb-1.5" style={{ color: colors.textSecondary }}>{label}</label>
+      <div className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5"
+        style={{ backgroundColor: colors.bgTertiary }}>
+        <button onClick={() => handleChange(-step)}
+          className="flex items-center justify-center rounded-full hover:opacity-80"
+          style={{ width: 28, height: 28, color: colors.textSecondary }}>
+          <Minus size={16} />
+        </button>
+        <span className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+          {value || 0}{suffix ? <span className="text-sm font-normal opacity-70 ml-1">{suffix}</span> : null}
+        </span>
+        <button onClick={() => handleChange(step)}
+          className="flex items-center justify-center rounded-full hover:opacity-80"
+          style={{ width: 28, height: 28, color: colors.textSecondary }}>
+          <Plus size={16} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function SetDetailsModal({
   isOpen,
   onClose,
   onSubmit,
-  mode = 'complete', // 'complete' | 'edit'
+  mode = 'complete',
+  setNumber,
   initialRir,
   initialNote,
   initialVideoUrl,
   initialSetType = 'normal',
   descansoSeg = 0,
-  measurementType
+  measurementType,
+  weight, setWeight, reps, setReps,
+  weightUnit = 'kg',
 }) {
   const { t } = useTranslation()
   const canUploadVideo = useCanUploadVideo()
@@ -28,6 +56,7 @@ function SetDetailsModal({
   const { value: showSetNotes } = usePreference('show_set_notes')
   const { value: showVideoUpload } = usePreference('show_video_upload')
   const showVideo = canUploadVideo && showVideoUpload
+  const showWeightReps = measurementType === MeasurementType.WEIGHT_REPS
 
   const [rir, setRir] = useState(null)
   const [note, setNote] = useState('')
@@ -66,9 +95,7 @@ function SetDetailsModal({
       if (file.size > MAX_VIDEO_SIZE) {
         const sizeMB = Math.round(file.size / 1024 / 1024)
         setVideoError(`El video pesa ${sizeMB}MB. Máximo permitido: 100MB`)
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
+        if (fileInputRef.current) fileInputRef.current.value = ''
         return
       }
       setVideoError(null)
@@ -82,121 +109,118 @@ function SetDetailsModal({
     setVideoFile(null)
     setVideoUrl(null)
     setHasChanges(true)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleSubmit = () => {
     const existingVideoUrl = (!videoFile && videoUrl) ? initialVideoUrl : null
     onSubmit({ rir, notes: note.trim() || null, videoUrl: existingVideoUrl, videoFile, setType })
-    resetState()
-  }
-
-  const resetState = () => {
-    setRir(null)
-    setNote('')
-    setVideoUrl(null)
-    setVideoFile(null)
-    setVideoError(null)
-    setSetType('normal')
-    setHasChanges(false)
-  }
-
-  const handleClose = () => {
-    resetState()
-    onClose()
   }
 
   const isEditMode = mode === 'edit'
-  const title = isEditMode ? t('workout:set.edit') : t('workout:set.complete')
   const buttonDisabled = isEditMode && !hasChanges
-  const buttonColor = buttonDisabled ? colors.bgTertiary : (isEditMode ? colors.purple : colors.success)
-  const buttonTextColor = buttonDisabled ? colors.textSecondary : colors.white
+  const headerLabel = isEditMode
+    ? t('workout:set.edit').toUpperCase()
+    : t('workout:set.logSet', { number: setNumber || '' })
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      position="bottom"
-      maxWidth="max-w-lg"
-      noBorder
-    >
+    <Modal isOpen={isOpen} onClose={onClose} position="bottom" maxWidth="max-w-lg" noBorder>
       {/* Header */}
-      <div
-        className="p-4 flex justify-between items-center"
-        style={{ borderBottom: `1px solid ${colors.border}` }}
-      >
-        <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-          {title}
-        </h3>
-        <button
-          onClick={handleClose}
-          className="text-xl"
-          style={{ color: colors.textSecondary }}
-        >
-          ✕
+      <div className="flex items-center justify-between px-5 pt-5 pb-2">
+        <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, letterSpacing: 1.5 }}>
+          {headerLabel}
+        </span>
+        <button onClick={onClose}
+          className="flex items-center justify-center rounded-full hover:opacity-80"
+          style={{ width: 32, height: 32, backgroundColor: colors.bgTertiary }}>
+          <X size={16} style={{ color: colors.textSecondary }} />
         </button>
       </div>
 
-      <div className="p-4 space-y-5">
-        <div>
-          <label className="block text-sm mb-3" style={{ color: colors.textSecondary }}>
-            Tipo de serie
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(SET_TYPE_LABELS).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => { setSetType(key); setHasChanges(true) }}
-                className="p-2 rounded-lg text-sm font-bold transition-colors"
-                style={{
-                  backgroundColor: setType === key ? colors.warning : colors.bgTertiary,
-                  color: setType === key ? colors.bgPrimary : colors.textPrimary,
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+      <div className="px-5 pb-5 space-y-5 mt-3">
+        {/* Set type — Normal / Dropset */}
+        <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ backgroundColor: colors.bgTertiary }}>
+          {['normal', 'dropset'].map((key) => (
+            <button key={key}
+              onClick={() => { setSetType(key); setHasChanges(true) }}
+              className="py-2.5 rounded-lg text-sm font-semibold"
+              style={{
+                backgroundColor: setType === key ? colors.success : 'transparent',
+                color: setType === key ? colors.bgPrimary : colors.textSecondary,
+                border: setType === key ? `1px solid ${colors.success}` : 'none',
+              }}>
+              {t(`data:setTypes.${key}`)}
+            </button>
+          ))}
         </div>
 
-        {showRirInput && (
+        {/* Weight & reps */}
+        {showWeightReps && setWeight && setReps && (
           <div>
-            <label className="block text-sm mb-3" style={{ color: colors.textSecondary }}>
-              {getEffortLabel(measurementType)} (opcional)
-            </label>
-            <div className="grid grid-cols-5 gap-2">
-              {RIR_OPTIONS.map(option => (
-                <button
-                  key={option.value}
-                  onClick={() => handleRirChange(option.value)}
-                  className="p-2 rounded-lg text-center transition-colors"
-                  style={{
-                    backgroundColor: rir === option.value ? colors.purple : colors.bgTertiary,
-                    color: rir === option.value ? colors.bgPrimary : colors.textPrimary,
-                  }}
-                >
-                  <div className="text-lg font-bold">{option.label}</div>
-                  <div className="text-xs opacity-75">{option.description}</div>
-                </button>
-              ))}
+            <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
+              {t('workout:set.weightAndReps')}
+            </h4>
+            <div className="flex gap-3">
+              <NumberStepper
+                label={`${t('workout:set.weight')} (${weightUnit})`}
+                value={weight}
+                onChange={(v) => { setWeight(v); setHasChanges(true) }}
+                step={2.5}
+              />
+              <NumberStepper
+                label={t('workout:set.reps')}
+                value={reps}
+                onChange={(v) => { setReps(v); setHasChanges(true) }}
+              />
             </div>
           </div>
         )}
 
-        {/* Nota */}
+        {/* Effort: RIR (with reps) or RPE (without reps) */}
+        {showRirInput && (() => {
+          const usesReps = measurementTypeUsesReps(measurementType)
+          const options = usesReps ? RIR_OPTIONS : RPE_OPTIONS
+          const titleLabel = usesReps ? t('workout:set.rirTitle') : `${getEffortLabel(measurementType)} (${t('common:labels.optional').toLowerCase()})`
+          return (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span style={{ color: colors.textSecondary, fontSize: 13 }}>{titleLabel}</span>
+                {rir != null && (
+                  <span style={{ color: colors.success, fontSize: 13, fontWeight: 600 }}>
+                    {t('workout:set.selected', { value: options.find(o => o.value === rir)?.label ?? rir })}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {options.map(option => (
+                  <button key={option.value} onClick={() => handleRirChange(option.value)}
+                    className="py-3 rounded-xl font-semibold"
+                    style={{
+                      backgroundColor: rir === option.value ? colors.success : colors.bgTertiary,
+                      color: rir === option.value ? colors.bgPrimary : colors.textPrimary,
+                      fontSize: usesReps ? 16 : 11,
+                    }}>
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Notes */}
         {showSetNotes && (
           <div>
-            <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>
-              Nota (opcional)
-            </label>
+            <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
+              {t('workout:set.notes')}
+            </h4>
             <textarea
               value={note}
               onChange={handleNoteChange}
-              placeholder="Ej: Buen pump, molestia en codo..."
-              className="w-full rounded-lg p-3 text-sm resize-none h-16"
-              style={inputStyle}
+              placeholder={t('workout:set.notesPlaceholder')}
+              rows={3}
+              className="w-full rounded-xl p-3 text-sm resize-none outline-none"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none', minHeight: 80 }}
             />
           </div>
         )}
@@ -204,86 +228,67 @@ function SetDetailsModal({
         {/* Video */}
         {showVideo && (
           <div>
-            <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>
-              Video (opcional)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold" style={{ color: colors.textPrimary, fontSize: 14 }}>
+                Video
+              </h4>
+              <span style={{ color: colors.textSecondary, fontSize: 12 }}>
+                {t('workout:set.videoOptional')}
+              </span>
+            </div>
             {videoUrl ? (
-              <div className="relative rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
+              <div className="relative rounded-xl overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
                 {videoFile ? (
-                  <video
-                    src={videoUrl}
-                    controls
-                    className="w-full max-h-40 object-contain"
-                  />
+                  <video src={videoUrl} controls className="w-full max-h-40 object-contain" />
                 ) : (
                   <VideoPlayer videoKey={videoUrl} />
                 )}
-                <button
-                  onClick={handleRemoveVideo}
+                <button onClick={handleRemoveVideo}
                   className="absolute top-2 right-2 p-1 rounded-full"
-                  style={{ backgroundColor: colors.overlay }}
-                >
+                  style={{ backgroundColor: colors.overlay }}>
                   <X size={16} style={{ color: colors.textPrimary }} />
                 </button>
               </div>
             ) : (
               <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="video/*"
-                  onChange={handleVideoSelect}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                  style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-                >
-                  <Video size={18} />
-                  Añadir video
+                <input ref={fileInputRef} type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
+                <button onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:opacity-80"
+                  style={{ backgroundColor: colors.bgTertiary }}>
+                  <div className="flex items-center justify-center rounded-lg"
+                    style={{ width: 40, height: 40, backgroundColor: colors.bgPrimary }}>
+                    <Video size={20} style={{ color: colors.success }} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>
+                      {t('workout:set.addVideoTitle')}
+                    </div>
+                    <div style={{ color: colors.textSecondary, fontSize: 12 }}>
+                      {t('workout:set.addVideoSubtitle')}
+                    </div>
+                  </div>
+                  <ChevronRight size={18} style={{ color: colors.textMuted }} />
                 </button>
-                {videoError ? (
-                  <p className="text-xs mt-1 text-center" style={{ color: colors.danger }}>
-                    {videoError}
-                  </p>
-                ) : (
-                  <p className="text-xs mt-1 text-center" style={{ color: colors.textSecondary }}>
-                    MP4, WebM o MOV. Máx 100MB
-                  </p>
+                {videoError && (
+                  <p className="text-xs mt-1 text-center" style={{ color: colors.danger }}>{videoError}</p>
                 )}
               </>
             )}
           </div>
         )}
 
-        {/* Info descanso (solo en modo complete) */}
         {!isEditMode && descansoSeg > 0 && (
-          <div
-            className="text-center py-2 rounded-lg"
-            style={{ backgroundColor: colors.bgTertiary }}
-          >
-            <span className="text-sm" style={{ color: colors.textSecondary }}>
-              Descanso: <span style={{ color: colors.accent }}>{formatRestTimeDisplay(descansoSeg)}</span>
-            </span>
-          </div>
+          <p className="text-center text-xs -mb-2" style={{ color: colors.textMuted }}>
+            {t('workout:rest.title')}: {formatRestTimeDisplay(descansoSeg)}
+          </p>
         )}
-      </div>
 
-      {/* Footer */}
-      <div className="p-4" style={{ borderTop: `1px solid ${colors.border}` }}>
-        <button
-          onClick={handleSubmit}
-          disabled={buttonDisabled}
-          className="w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-          style={{
-            backgroundColor: buttonColor,
-            color: buttonTextColor,
-            cursor: buttonDisabled ? 'default' : 'pointer',
-          }}
-        >
-          {isEditMode ? <Save size={20} /> : <Check size={20} />}
-          {isEditMode ? t('common:buttons.save') : t('workout:set.complete')}
+        {/* Save & start rest */}
+        <button onClick={handleSubmit} disabled={buttonDisabled}
+          className="w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+          style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
+          {isEditMode ? <Save size={18} /> : <Check size={18} />}
+          {isEditMode ? t('common:buttons.save') : (descansoSeg > 0 ? t('workout:set.saveStartRest') : t('common:buttons.save'))}
         </button>
       </div>
     </Modal>

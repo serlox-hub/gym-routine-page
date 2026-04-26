@@ -64,6 +64,7 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
                 </span>
                 <NotesBadge
                   rir={set.rir}
+                  measurementType={measurementType}
                   hasNotes={hasNotes}
                   onClick={hasNotes ? () => setSelectedSet(set) : null}
                 />
@@ -80,6 +81,7 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
         rir={selectedSet?.rir}
+        measurementType={measurementType}
         notes={selectedSet?.notes}
       />
     </div>

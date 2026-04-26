@@ -40,6 +40,22 @@ export const RIR_LABELS = RIR_OPTIONS.reduce((acc, opt) => {
   return acc
 }, {})
 
+// RPE (Rate of Perceived Exertion) options for non-reps exercises
+// Stored as numeric value 1-5, displayed with descriptive label
+export const RPE_OPTIONS = [
+  { value: 1, get label() { return t('data:rpe.1') } },
+  { value: 2, get label() { return t('data:rpe.2') } },
+  { value: 3, get label() { return t('data:rpe.3') } },
+  { value: 4, get label() { return t('data:rpe.4') } },
+  { value: 5, get label() { return t('data:rpe.5') } },
+]
+
+// RPE Labels lookup (label is the descriptive translation, no separate description)
+export const RPE_LABELS = RPE_OPTIONS.reduce((acc, opt) => {
+  acc[opt.value] = { get label() { return t(`data:rpe.${opt.value}`) }, description: '' }
+  return acc
+}, {})
+
 // Query Keys
 export const QUERY_KEYS = {
   ROUTINES: 'routines',

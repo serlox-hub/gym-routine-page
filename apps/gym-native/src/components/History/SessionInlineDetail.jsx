@@ -492,6 +492,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
         rir={selectedSet?.rir_actual}
+        measurementType={selectedSet?.measurementType}
         notes={selectedSet?.notes}
         videoUrl={selectedSet?.video_url}
       />

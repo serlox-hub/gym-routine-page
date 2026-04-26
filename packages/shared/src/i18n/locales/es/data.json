@@ -23,6 +23,13 @@
     "2": "Controlado",
     "3": "Cómodo"
   },
+  "rpe": {
+    "1": "Fácil",
+    "2": "Moderado",
+    "3": "Duro",
+    "4": "Muy duro",
+    "5": "Máximo"
+  },
   "setTypes": {
     "normal": "Normal",
     "dropset": "Dropset"

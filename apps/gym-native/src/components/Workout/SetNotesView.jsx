@@ -2,12 +2,13 @@ import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui'
 import VideoPlayer from '../ui/VideoPlayer'
-import { RIR_LABELS } from '@gym/shared'
+import { getEffortInfo, getEffortLabel } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
-export default function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) {
+export default function SetNotesView({ isOpen, onClose, rir, measurementType, notes, videoUrl }) {
   const { t } = useTranslation()
-  const rirInfo = rir != null ? RIR_LABELS[rir] : null
+  const rirInfo = getEffortInfo(rir, measurementType)
+  const effortLabel = getEffortLabel(measurementType)
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="p-4">
@@ -34,7 +35,7 @@ export default function SetNotesView({ isOpen, onClose, rir, notes, videoUrl }) 
             </View>
             <View>
               <Text className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                RIR {rirInfo.label}
+                {effortLabel} {rirInfo.label}
               </Text>
               <Text className="text-xs" style={{ color: colors.textSecondary }}>
                 {rirInfo.description}
