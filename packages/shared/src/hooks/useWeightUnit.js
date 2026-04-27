@@ -40,6 +40,12 @@ export function useChangeWeightUnit() {
 
   return useMutation({
     mutationFn: async ({ scope, exerciseId, fromUnit, toUnit, convertHistorical, overrideValue, overrideNotes }) => {
+      // Convertir antes de cambiar la preferencia/override: si la conversión falla,
+      // la unidad efectiva no cambia y los datos quedan consistentes.
+      if (convertHistorical && fromUnit !== toUnit) {
+        await convertUserWeights({ scope, fromUnit, toUnit, exerciseId })
+      }
+
       if (scope === 'global') {
         await upsertPreference({ userId, key: 'weight_unit', value: toUnit })
       } else if (scope === 'exercise') {
@@ -49,10 +55,6 @@ export function useChangeWeightUnit() {
           notes: overrideNotes ?? '',
           weightUnit: overrideValue ?? null,
         })
-      }
-
-      if (convertHistorical && fromUnit !== toUnit) {
-        await convertUserWeights({ scope, fromUnit, toUnit, exerciseId })
       }
     },
     onSuccess: (_data, { scope, exerciseId, toUnit, convertHistorical }) => {
