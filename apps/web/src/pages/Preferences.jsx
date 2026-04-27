@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LogOut, Users } from 'lucide-react'
-import { useChangeWeightUnit } from '@gym/shared'
+import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
 import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui/index.js'
-import { InstallAppSection, TrainingGoalSection, WeightUnitChangeModal } from '../components/Preferences/index.js'
+import { InstallAppSection, TrainingGoalSection, WeightUnitChangeModal, MeasurementUnitChangeModal } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -145,6 +145,24 @@ function Preferences() {
     )
   }
 
+  const changeMeasurementUnit = useChangeMeasurementUnit()
+  const [pendingMeasurementUnit, setPendingMeasurementUnit] = useState(null)
+
+  const handleMeasurementUnitClick = (unit) => {
+    const current = preferences?.measurement_unit || 'cm'
+    if (unit === current) return
+    setPendingMeasurementUnit(unit)
+  }
+
+  const applyMeasurementUnitChange = (convertHistorical) => {
+    const fromUnit = preferences?.measurement_unit || 'cm'
+    const toUnit = pendingMeasurementUnit
+    changeMeasurementUnit.mutate(
+      { fromUnit, toUnit, convertHistorical },
+      { onSuccess: () => setPendingMeasurementUnit(null) },
+    )
+  }
+
   if (isLoading) return <div className="p-4 max-w-2xl mx-auto"><LoadingSpinner /></div>
 
   return (
@@ -189,6 +207,15 @@ function Preferences() {
                 {['kg', 'lb'].map((unit) => (
                   <SmallPill key={unit} label={unit} active={(preferences?.weight_unit || 'kg') === unit}
                     onClick={() => handleWeightUnitClick(unit)} disabled={changeWeightUnit.isPending} />
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+              <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.measurementUnit')}</span>
+              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+                {['cm', 'in'].map((unit) => (
+                  <SmallPill key={unit} label={unit} active={(preferences?.measurement_unit || 'cm') === unit}
+                    onClick={() => handleMeasurementUnitClick(unit)} disabled={changeMeasurementUnit.isPending} />
                 ))}
               </div>
             </div>
@@ -288,6 +315,16 @@ function Preferences() {
         onConvert={() => applyWeightUnitChange(true)}
         onUnitOnly={() => applyWeightUnitChange(false)}
         onCancel={() => setPendingUnit(null)}
+      />
+
+      <MeasurementUnitChangeModal
+        isOpen={!!pendingMeasurementUnit}
+        fromUnit={preferences?.measurement_unit || 'cm'}
+        toUnit={pendingMeasurementUnit || ''}
+        isPending={changeMeasurementUnit.isPending}
+        onConvert={() => applyMeasurementUnitChange(true)}
+        onUnitOnly={() => applyMeasurementUnitChange(false)}
+        onCancel={() => setPendingMeasurementUnit(null)}
       />
     </div>
   )

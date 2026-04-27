@@ -4,11 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { LogOut, Users } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useChangeWeightUnit } from '@gym/shared'
+import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
 import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui'
-import { WeightUnitChangeModal } from '../components/Preferences'
+import { WeightUnitChangeModal, MeasurementUnitChangeModal } from '../components/Preferences'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
 const appVersion = require('../../app.json').expo.version
@@ -139,6 +139,24 @@ export default function PreferencesScreen({ navigation, route }) {
     )
   }
 
+  const changeMeasurementUnit = useChangeMeasurementUnit()
+  const [pendingMeasurementUnit, setPendingMeasurementUnit] = useState(null)
+
+  const handleMeasurementUnitClick = (unit) => {
+    const current = preferences?.measurement_unit || 'cm'
+    if (unit === current) return
+    setPendingMeasurementUnit(unit)
+  }
+
+  const applyMeasurementUnitChange = (convertHistorical) => {
+    const fromUnit = preferences?.measurement_unit || 'cm'
+    const toUnit = pendingMeasurementUnit
+    changeMeasurementUnit.mutate(
+      { fromUnit, toUnit, convertHistorical },
+      { onSuccess: () => setPendingMeasurementUnit(null) },
+    )
+  }
+
   if (isLoading) return <LoadingSpinner />
 
   const currentDays = preferences?.training_days_per_week
@@ -186,6 +204,15 @@ export default function PreferencesScreen({ navigation, route }) {
                 {['kg', 'lb'].map((unit) => (
                   <SmallPill key={unit} label={unit} active={(preferences?.weight_unit || 'kg') === unit}
                     onPress={() => handleWeightUnitClick(unit)} disabled={changeWeightUnit.isPending} />
+                ))}
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.measurementUnit')}</Text>
+              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+                {['cm', 'in'].map((unit) => (
+                  <SmallPill key={unit} label={unit} active={(preferences?.measurement_unit || 'cm') === unit}
+                    onPress={() => handleMeasurementUnitClick(unit)} disabled={changeMeasurementUnit.isPending} />
                 ))}
               </View>
             </View>
@@ -305,6 +332,16 @@ export default function PreferencesScreen({ navigation, route }) {
         onConvert={() => applyWeightUnitChange(true)}
         onUnitOnly={() => applyWeightUnitChange(false)}
         onCancel={() => setPendingUnit(null)}
+      />
+
+      <MeasurementUnitChangeModal
+        isOpen={!!pendingMeasurementUnit}
+        fromUnit={preferences?.measurement_unit || 'cm'}
+        toUnit={pendingMeasurementUnit || ''}
+        isPending={changeMeasurementUnit.isPending}
+        onConvert={() => applyMeasurementUnitChange(true)}
+        onUnitOnly={() => applyMeasurementUnitChange(false)}
+        onCancel={() => setPendingMeasurementUnit(null)}
       />
     </SafeAreaView>
   )
