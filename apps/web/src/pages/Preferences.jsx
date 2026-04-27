@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LogOut, Users } from 'lucide-react'
+import { useChangeWeightUnit } from '@gym/shared'
 import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui/index.js'
-import { InstallAppSection, TrainingGoalSection } from '../components/Preferences/index.js'
+import { InstallAppSection, TrainingGoalSection, WeightUnitChangeModal } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -126,6 +127,24 @@ function Preferences() {
     updatePreference.mutate({ key, value })
   }
 
+  const changeWeightUnit = useChangeWeightUnit()
+  const [pendingUnit, setPendingUnit] = useState(null)
+
+  const handleWeightUnitClick = (unit) => {
+    const current = preferences?.weight_unit || 'kg'
+    if (unit === current) return
+    setPendingUnit(unit)
+  }
+
+  const applyWeightUnitChange = (convertHistorical) => {
+    const fromUnit = preferences?.weight_unit || 'kg'
+    const toUnit = pendingUnit
+    changeWeightUnit.mutate(
+      { scope: 'global', fromUnit, toUnit, convertHistorical },
+      { onSuccess: () => setPendingUnit(null) },
+    )
+  }
+
   if (isLoading) return <div className="p-4 max-w-2xl mx-auto"><LoadingSpinner /></div>
 
   return (
@@ -169,7 +188,7 @@ function Preferences() {
               <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
                 {['kg', 'lb'].map((unit) => (
                   <SmallPill key={unit} label={unit} active={(preferences?.weight_unit || 'kg') === unit}
-                    onClick={() => handleChange('weight_unit', unit)} disabled={updatePreference.isPending} />
+                    onClick={() => handleWeightUnitClick(unit)} disabled={changeWeightUnit.isPending} />
                 ))}
               </div>
             </div>
@@ -258,6 +277,17 @@ function Preferences() {
         isLoading={isLoggingOut}
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutConfirm(false)}
+      />
+
+      <WeightUnitChangeModal
+        isOpen={!!pendingUnit}
+        scope="global"
+        fromUnit={preferences?.weight_unit || 'kg'}
+        toUnit={pendingUnit || ''}
+        isPending={changeWeightUnit.isPending}
+        onConvert={() => applyWeightUnitChange(true)}
+        onUnitOnly={() => applyWeightUnitChange(false)}
+        onCancel={() => setPendingUnit(null)}
       />
     </div>
   )

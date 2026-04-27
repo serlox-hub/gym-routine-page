@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useChangeWeightUnit } from '@gym/shared'
 import { useUserExerciseOverride, useUpsertUserExerciseOverride } from '../../hooks/useExercises'
 import { usePreference } from '../../hooks/usePreferences'
 
-
+import { WeightUnitChangeModal } from '../Preferences'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm'
 import { colors, inputStyle } from '../../lib/styles'
 
@@ -12,10 +13,12 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
   const { t } = useTranslation()
   const { data: override } = useUserExerciseOverride(exerciseId)
   const upsertOverride = useUpsertUserExerciseOverride()
+  const changeWeightUnit = useChangeWeightUnit()
   const { value: globalWeightUnit } = usePreference('weight_unit')
 
   const [notes, setNotes] = useState('')
   const [weightUnit, setWeightUnit] = useState('')
+  const [showConvertModal, setShowConvertModal] = useState(false)
 
   useEffect(() => {
     if (override) {
@@ -24,10 +27,38 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
     }
   }, [override])
 
+  const previousEffectiveUnit = (override?.weight_unit) || globalWeightUnit || 'kg'
+  const newEffectiveUnit = weightUnit || globalWeightUnit || 'kg'
+  const unitChanged = previousEffectiveUnit !== newEffectiveUnit
+
   const handleSave = () => {
+    if (unitChanged) {
+      setShowConvertModal(true)
+      return
+    }
     upsertOverride.mutate({ exerciseId, notes, weightUnit: weightUnit || null }, {
       onSuccess: () => onClose?.(),
     })
+  }
+
+  const applyUnitChange = (convertHistorical) => {
+    changeWeightUnit.mutate(
+      {
+        scope: 'exercise',
+        exerciseId,
+        fromUnit: previousEffectiveUnit,
+        toUnit: newEffectiveUnit,
+        convertHistorical,
+        overrideValue: weightUnit || null,
+        overrideNotes: notes,
+      },
+      {
+        onSuccess: () => {
+          setShowConvertModal(false)
+          onClose?.()
+        },
+      },
+    )
   }
 
   return (
@@ -84,8 +115,19 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
       <ExerciseConfigFormButtons
         onBack={onClose}
         onSubmit={handleSave}
-        isPending={upsertOverride.isPending}
+        isPending={upsertOverride.isPending || changeWeightUnit.isPending}
         submitLabel={t('common:buttons.save')}
+      />
+
+      <WeightUnitChangeModal
+        isOpen={showConvertModal}
+        scope="exercise"
+        fromUnit={previousEffectiveUnit}
+        toUnit={newEffectiveUnit}
+        isPending={changeWeightUnit.isPending}
+        onConvert={() => applyUnitChange(true)}
+        onUnitOnly={() => applyUnitChange(false)}
+        onCancel={() => setShowConvertModal(false)}
       />
     </>
   )

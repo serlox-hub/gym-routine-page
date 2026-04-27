@@ -4,9 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { LogOut, Users } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useChangeWeightUnit } from '@gym/shared'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
 import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui'
+import { WeightUnitChangeModal } from '../components/Preferences'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
 const appVersion = require('../../app.json').expo.version
@@ -119,6 +121,24 @@ export default function PreferencesScreen({ navigation, route }) {
 
   const handleChange = (key, value) => updatePreference.mutate({ key, value })
 
+  const changeWeightUnit = useChangeWeightUnit()
+  const [pendingUnit, setPendingUnit] = useState(null)
+
+  const handleWeightUnitClick = (unit) => {
+    const current = preferences?.weight_unit || 'kg'
+    if (unit === current) return
+    setPendingUnit(unit)
+  }
+
+  const applyWeightUnitChange = (convertHistorical) => {
+    const fromUnit = preferences?.weight_unit || 'kg'
+    const toUnit = pendingUnit
+    changeWeightUnit.mutate(
+      { scope: 'global', fromUnit, toUnit, convertHistorical },
+      { onSuccess: () => setPendingUnit(null) },
+    )
+  }
+
   if (isLoading) return <LoadingSpinner />
 
   const currentDays = preferences?.training_days_per_week
@@ -165,7 +185,7 @@ export default function PreferencesScreen({ navigation, route }) {
               <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
                 {['kg', 'lb'].map((unit) => (
                   <SmallPill key={unit} label={unit} active={(preferences?.weight_unit || 'kg') === unit}
-                    onPress={() => handleChange('weight_unit', unit)} disabled={updatePreference.isPending} />
+                    onPress={() => handleWeightUnitClick(unit)} disabled={changeWeightUnit.isPending} />
                 ))}
               </View>
             </View>
@@ -274,6 +294,17 @@ export default function PreferencesScreen({ navigation, route }) {
         isLoading={isLoggingOut}
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutConfirm(false)}
+      />
+
+      <WeightUnitChangeModal
+        isOpen={!!pendingUnit}
+        scope="global"
+        fromUnit={preferences?.weight_unit || 'kg'}
+        toUnit={pendingUnit || ''}
+        isPending={changeWeightUnit.isPending}
+        onConvert={() => applyWeightUnitChange(true)}
+        onUnitOnly={() => applyWeightUnitChange(false)}
+        onCancel={() => setPendingUnit(null)}
       />
     </SafeAreaView>
   )
