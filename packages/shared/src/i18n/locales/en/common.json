@@ -208,5 +208,15 @@
     "noUsers": "No registered users",
     "registered": "Registered",
     "lastSeen": "Last seen"
+  },
+  "weightUnitChange": {
+    "title": "Change weight unit",
+    "messageGlobal": "You have data saved as {{from}}. How do you want to apply the change to {{to}}?",
+    "messageExercise": "This exercise has data saved as {{from}}. How do you want to apply the change to {{to}}?",
+    "convert": "Convert and change unit",
+    "convertDescription": "Multiplies the saved weights by the conversion factor (e.g. 80 kg → 176.37 lb)",
+    "unitOnly": "Only change unit",
+    "unitOnlyDescription": "Keeps the numbers but changes the label (80 stays as 80 {{to}})",
+    "applying": "Applying..."
   }
 }

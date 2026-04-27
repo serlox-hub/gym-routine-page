@@ -208,5 +208,15 @@
     "noUsers": "No hay usuarios registrados",
     "registered": "Registrado",
     "lastSeen": "Última conexión"
+  },
+  "weightUnitChange": {
+    "title": "Cambiar unidad de peso",
+    "messageGlobal": "Tienes datos guardados como {{from}}. ¿Cómo quieres aplicar el cambio a {{to}}?",
+    "messageExercise": "Este ejercicio tiene datos guardados como {{from}}. ¿Cómo quieres aplicar el cambio a {{to}}?",
+    "convert": "Convertir y cambiar unidad",
+    "convertDescription": "Multiplica los pesos guardados por el factor de conversión (ej: 80 kg → 176,37 lb)",
+    "unitOnly": "Solo cambiar unidad",
+    "unitOnlyDescription": "Mantiene los números pero cambia la etiqueta (80 quedará como 80 {{to}})",
+    "applying": "Aplicando..."
   }
 }
