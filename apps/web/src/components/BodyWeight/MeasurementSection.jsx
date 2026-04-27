@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, Settings, ChevronDown } from 'lucide-react'
 import { useBodyMeasurementHistory, useRecordBodyMeasurement, useUpdateBodyMeasurement, useDeleteBodyMeasurement } from '../../hooks/useBodyMeasurements.js'
 import { usePreferences, useUpdatePreference } from '../../hooks/usePreferences.js'
-import { LoadingSpinner } from '../ui/index.js'
+import { LoadingSpinner, ConfirmModal } from '../ui/index.js'
 import MeasurementChart from './MeasurementChart.jsx'
 import MeasurementModal from './MeasurementModal.jsx'
 import MeasurementConfigModal from './MeasurementConfigModal.jsx'
@@ -26,6 +26,7 @@ function MeasurementSection() {
   const [showRecordModal, setShowRecordModal] = useState(false)
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [editingRecord, setEditingRecord] = useState(null)
+  const [recordToDelete, setRecordToDelete] = useState(null)
 
   useEffect(() => {
     if (enabledMeasurements.length > 0 && !selectedType) {
@@ -66,10 +67,12 @@ function MeasurementSection() {
     setShowRecordModal(true)
   }
 
-  const handleDelete = (id) => {
-    if (confirm(t('body:measurements.deleteConfirm'))) {
-      deleteMutation.mutate({ id, measurementType: selectedType })
-    }
+  const handleDelete = () => {
+    if (!recordToDelete) return
+    deleteMutation.mutate(
+      { id: recordToDelete, measurementType: selectedType },
+      { onSuccess: () => setRecordToDelete(null) }
+    )
   }
 
   const handleCloseModal = () => {
@@ -206,7 +209,7 @@ function MeasurementSection() {
                       style={{ color: colors.textMuted }}>
                       <Pencil size={16} />
                     </button>
-                    <button onClick={() => handleDelete(record.id)}
+                    <button onClick={() => setRecordToDelete(record.id)}
                       className="p-2 hover:opacity-80 disabled:opacity-50"
                       style={{ color: colors.textMuted }} disabled={deleteMutation.isPending}>
                       <Trash2 size={16} />
@@ -237,6 +240,16 @@ function MeasurementSection() {
         enabledMeasurements={enabledMeasurements}
         onSave={handleSaveConfig}
         isPending={updatePreference.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={!!recordToDelete}
+        title={t('body:measurements.delete')}
+        message={t('body:measurements.deleteConfirm')}
+        confirmText={t('common:buttons.delete')}
+        onConfirm={handleDelete}
+        onCancel={() => setRecordToDelete(null)}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   )

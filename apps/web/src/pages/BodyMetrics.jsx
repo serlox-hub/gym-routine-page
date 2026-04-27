@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight.js'
 import { usePreference } from '../hooks/usePreferences.js'
-import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui/index.js'
 import { BodyWeightChart, BodyWeightModal, MeasurementSection } from '../components/BodyWeight/index.js'
 import { calculateBodyWeightStats, formatShortDate, formatTime } from '@gym/shared'
 import { colors } from '../lib/styles.js'
@@ -54,6 +54,7 @@ function WeightSection() {
 
   const [showModal, setShowModal] = useState(false)
   const [editingRecord, setEditingRecord] = useState(null)
+  const [recordToDelete, setRecordToDelete] = useState(null)
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} />
@@ -78,10 +79,11 @@ function WeightSection() {
     setShowModal(true)
   }
 
-  const handleDelete = (id) => {
-    if (confirm(t('body:weight.deleteConfirm'))) {
-      deleteMutation.mutate(id)
-    }
+  const handleDelete = () => {
+    if (!recordToDelete) return
+    deleteMutation.mutate(recordToDelete, {
+      onSuccess: () => setRecordToDelete(null),
+    })
   }
 
   const handleCloseModal = () => {
@@ -151,7 +153,7 @@ function WeightSection() {
                   style={{ color: colors.textMuted }}>
                   <Pencil size={16} />
                 </button>
-                <button onClick={() => handleDelete(record.id)}
+                <button onClick={() => setRecordToDelete(record.id)}
                   className="p-2 hover:opacity-80 disabled:opacity-50"
                   style={{ color: colors.textMuted }} disabled={deleteMutation.isPending}>
                   <Trash2 size={16} />
@@ -169,6 +171,16 @@ function WeightSection() {
         record={editingRecord}
         unit={unit}
         isPending={recordMutation.isPending || updateMutation.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={!!recordToDelete}
+        title={t('body:weight.delete')}
+        message={t('body:weight.deleteConfirm')}
+        confirmText={t('common:buttons.delete')}
+        onConfirm={handleDelete}
+        onCancel={() => setRecordToDelete(null)}
+        isLoading={deleteMutation.isPending}
       />
     </>
   )
