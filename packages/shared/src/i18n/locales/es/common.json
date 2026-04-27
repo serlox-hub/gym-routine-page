@@ -218,5 +218,14 @@
     "unitOnly": "Solo cambiar unidad",
     "unitOnlyDescription": "Mantiene los números pero cambia la etiqueta (80 quedará como 80 {{to}})",
     "applying": "Aplicando..."
+  },
+  "measurementUnitChange": {
+    "title": "Cambiar unidad de medida",
+    "message": "Tienes medidas guardadas como {{from}}. ¿Cómo quieres aplicar el cambio a {{to}}?",
+    "convert": "Convertir y cambiar unidad",
+    "convertDescription": "Multiplica los valores guardados por el factor de conversión (ej: 90 cm → 35,43 in)",
+    "unitOnly": "Solo cambiar unidad",
+    "unitOnlyDescription": "Mantiene los números pero cambia la etiqueta (90 quedará como 90 {{to}})",
+    "applying": "Aplicando..."
   }
 }
