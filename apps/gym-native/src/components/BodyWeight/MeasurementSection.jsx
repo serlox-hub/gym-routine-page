@@ -53,11 +53,11 @@ export default function MeasurementSection() {
 
   const handleSubmit = ({ id, measurementType, value, notes }) => {
     if (id) {
-      updateMutation.mutate({ id, value, unit, notes }, {
+      updateMutation.mutate({ id, value, notes, measurementType }, {
         onSuccess: () => { setShowRecordModal(false); setEditingRecord(null) }
       })
     } else {
-      recordMutation.mutate({ measurementType, value, unit, notes }, {
+      recordMutation.mutate({ measurementType, value, notes }, {
         onSuccess: () => setShowRecordModal(false)
       })
     }
@@ -106,7 +106,7 @@ export default function MeasurementSection() {
   const renderRecord = ({ item: record }) => (
     <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.value} {record.unit}</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.value} {unit}</Text>
         <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
           {formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}
         </Text>

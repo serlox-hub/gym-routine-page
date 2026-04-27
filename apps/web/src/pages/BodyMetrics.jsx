@@ -59,15 +59,15 @@ function WeightSection() {
   if (error) return <ErrorMessage message={error.message} />
 
   const stats = calculateBodyWeightStats(records)
-  const statsUnit = records?.[0]?.weight_unit || globalWeightUnit || 'kg'
+  const unit = globalWeightUnit || 'kg'
 
-  const handleSubmit = ({ id, weight, weightUnit, notes }) => {
+  const handleSubmit = ({ id, weight, notes }) => {
     if (id) {
-      updateMutation.mutate({ id, weight, weightUnit, notes }, {
+      updateMutation.mutate({ id, weight, notes }, {
         onSuccess: () => { setShowModal(false); setEditingRecord(null) }
       })
     } else {
-      recordMutation.mutate({ weight, weightUnit, notes }, {
+      recordMutation.mutate({ weight, notes }, {
         onSuccess: () => setShowModal(false)
       })
     }
@@ -96,21 +96,21 @@ function WeightSection() {
         <div className="grid grid-cols-2 gap-2 mb-4">
           <div className="px-3 py-2.5 rounded-xl" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
             <div className="text-xs mb-0.5" style={{ color: colors.textSecondary }}>{t('body:weight.current')}</div>
-            <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{stats.current} {statsUnit}</div>
+            <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{stats.current} {unit}</div>
           </div>
           <div className="px-3 py-2.5 rounded-xl" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
             <div className="text-xs mb-0.5" style={{ color: colors.textSecondary }}>{t('body:weight.change')}</div>
             <div className="text-lg font-bold" style={{ color: colors.success }}>
-              {stats.change > 0 ? '+' : ''}{stats.change} {statsUnit}
+              {stats.change > 0 ? '+' : ''}{stats.change} {unit}
             </div>
           </div>
           <div className="px-3 py-2.5 rounded-xl" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
             <div className="text-xs mb-0.5" style={{ color: colors.textSecondary }}>{t('body:weight.lowest')}</div>
-            <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{stats.min} {statsUnit}</div>
+            <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{stats.min} {unit}</div>
           </div>
           <div className="px-3 py-2.5 rounded-xl" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
             <div className="text-xs mb-0.5" style={{ color: colors.textSecondary }}>{t('body:weight.highest')}</div>
-            <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{stats.max} {statsUnit}</div>
+            <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{stats.max} {unit}</div>
           </div>
         </div>
       )}
@@ -118,7 +118,7 @@ function WeightSection() {
       {/* Chart */}
       {records && records.length >= 2 && (
         <div className="p-3 rounded-xl mb-4" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
-          <BodyWeightChart records={records} unit={statsUnit} />
+          <BodyWeightChart records={records} unit={unit} />
         </div>
       )}
 
@@ -141,7 +141,7 @@ function WeightSection() {
             <div key={record.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
               style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
               <div className="flex items-baseline gap-2">
-                <span className="text-base font-bold" style={{ color: colors.textPrimary }}>{record.weight} {record.weight_unit || 'kg'}</span>
+                <span className="text-base font-bold" style={{ color: colors.textPrimary }}>{record.weight} {unit}</span>
                 <span className="text-xs" style={{ color: colors.textSecondary }}>
                   {formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}
                 </span>
@@ -167,7 +167,7 @@ function WeightSection() {
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         record={editingRecord}
-        defaultUnit={globalWeightUnit || 'kg'}
+        unit={unit}
         isPending={recordMutation.isPending || updateMutation.isPending}
       />
     </>

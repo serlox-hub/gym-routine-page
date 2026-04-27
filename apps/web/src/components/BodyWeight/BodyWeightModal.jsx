@@ -4,7 +4,7 @@ import { Button, Modal, Input, Textarea } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { parseDecimal } from '@gym/shared'
 
-function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, defaultUnit = 'kg', isPending }) {
+function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg', isPending }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({
     weight: '',
@@ -12,7 +12,6 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, defaultUnit
   })
 
   const isEditing = !!record
-  const unit = record?.weight_unit || defaultUnit
 
   useEffect(() => {
     if (isOpen) {
@@ -35,7 +34,6 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, defaultUnit
     onSubmit({
       id: record?.id,
       weight,
-      weightUnit: unit,
       notes: form.notes.trim() || null,
     })
   }

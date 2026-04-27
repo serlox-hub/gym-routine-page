@@ -51,11 +51,11 @@ function MeasurementSection() {
 
   const handleSubmit = ({ id, measurementType, value, notes }) => {
     if (id) {
-      updateMutation.mutate({ id, value, unit, notes }, {
+      updateMutation.mutate({ id, value, notes, measurementType }, {
         onSuccess: () => { setShowRecordModal(false); setEditingRecord(null) }
       })
     } else {
-      recordMutation.mutate({ measurementType, value, unit, notes }, {
+      recordMutation.mutate({ measurementType, value, notes }, {
         onSuccess: () => setShowRecordModal(false)
       })
     }
@@ -196,7 +196,7 @@ function MeasurementSection() {
                 <div key={record.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
                   style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-base font-bold" style={{ color: colors.textPrimary }}>{record.value} {record.unit}</span>
+                    <span className="text-base font-bold" style={{ color: colors.textPrimary }}>{record.value} {unit}</span>
                     <span className="text-xs" style={{ color: colors.textSecondary }}>
                       {formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}
                     </span>

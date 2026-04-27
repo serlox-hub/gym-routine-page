@@ -27,15 +27,15 @@ function WeightSection() {
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   const stats = calculateBodyWeightStats(records)
-  const statsUnit = records?.[0]?.weight_unit || globalWeightUnit || 'kg'
+  const unit = globalWeightUnit || 'kg'
 
-  const handleSubmit = ({ id, weight, weightUnit, notes }) => {
+  const handleSubmit = ({ id, weight, notes }) => {
     if (id) {
-      updateMutation.mutate({ id, weight, weightUnit, notes }, {
+      updateMutation.mutate({ id, weight, notes }, {
         onSuccess: () => { setShowModal(false); setEditingRecord(null) }
       })
     } else {
-      recordMutation.mutate({ weight, weightUnit, notes }, {
+      recordMutation.mutate({ weight, notes }, {
         onSuccess: () => setShowModal(false)
       })
     }
@@ -61,7 +61,7 @@ function WeightSection() {
   const renderRecord = ({ item: record }) => (
     <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.weight} {record.weight_unit || 'kg'}</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.weight} {unit}</Text>
         <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
           {formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}
         </Text>
@@ -85,21 +85,21 @@ function WeightSection() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
           <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.current')}</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.current} {statsUnit}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.current} {unit}</Text>
           </View>
           <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.change')}</Text>
             <Text style={{ color: colors.success, fontSize: 18, fontWeight: '700' }}>
-              {stats.change > 0 ? '+' : ''}{stats.change} {statsUnit}
+              {stats.change > 0 ? '+' : ''}{stats.change} {unit}
             </Text>
           </View>
           <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.lowest')}</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.min} {statsUnit}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.min} {unit}</Text>
           </View>
           <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.highest')}</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.max} {statsUnit}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.max} {unit}</Text>
           </View>
         </View>
       )}
@@ -107,7 +107,7 @@ function WeightSection() {
       {/* Chart */}
       {records && records.length >= 2 && (
         <View style={{ padding: 12, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border, marginBottom: 16 }}>
-          <BodyWeightChart records={records} unit={statsUnit} />
+          <BodyWeightChart records={records} unit={unit} />
         </View>
       )}
 
@@ -142,7 +142,7 @@ function WeightSection() {
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         record={editingRecord}
-        defaultUnit={globalWeightUnit || 'kg'}
+        unit={unit}
         isPending={recordMutation.isPending || updateMutation.isPending}
       />
 

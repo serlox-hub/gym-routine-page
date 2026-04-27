@@ -16,7 +16,6 @@ export async function convertUserMeasurements({ fromUnit, toUnit }) {
   const factor = getMeasurementConversionFactor(fromUnit, toUnit)
   const { error } = await getClient().rpc('convert_user_measurements', {
     p_factor: factor,
-    p_old_unit: fromUnit,
   })
   if (error) throw error
 }

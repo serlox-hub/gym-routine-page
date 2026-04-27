@@ -31,7 +31,6 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
       id: record?.id,
       measurementType,
       value,
-      unit,
       notes: form.notes.trim() || null,
     })
   }

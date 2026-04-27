@@ -35,7 +35,6 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
       id: record?.id,
       measurementType,
       value,
-      unit,
       notes: form.notes.trim() || null,
     })
   }

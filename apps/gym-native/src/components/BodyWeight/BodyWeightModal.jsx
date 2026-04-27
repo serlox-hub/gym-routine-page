@@ -5,11 +5,10 @@ import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 import { parseDecimal } from '@gym/shared'
 
-export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, defaultUnit = 'kg', isPending }) {
+export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg', isPending }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({ weight: '', notes: '' })
   const isEditing = !!record
-  const unit = record?.weight_unit || defaultUnit
 
   useEffect(() => {
     if (isOpen) {
@@ -31,7 +30,6 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
     onSubmit({
       id: record?.id,
       weight,
-      weightUnit: unit,
       notes: form.notes.trim() || null,
     })
   }
