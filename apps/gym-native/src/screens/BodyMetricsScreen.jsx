@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2 } from 'lucide-react-native'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight'
+import { usePreference } from '../hooks/usePreferences'
 import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'
 import { BodyWeightChart } from '../components/Charts'
@@ -13,6 +14,7 @@ import { colors, design } from '../lib/styles'
 function WeightSection() {
   const { t } = useTranslation()
   const { data: records, isLoading, error } = useBodyWeightHistory()
+  const { value: globalWeightUnit } = usePreference('weight_unit')
   const recordMutation = useRecordBodyWeight()
   const updateMutation = useUpdateBodyWeight()
   const deleteMutation = useDeleteBodyWeight()
@@ -25,14 +27,15 @@ function WeightSection() {
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   const stats = calculateBodyWeightStats(records)
+  const statsUnit = records?.[0]?.weight_unit || globalWeightUnit || 'kg'
 
-  const handleSubmit = ({ id, weight, notes }) => {
+  const handleSubmit = ({ id, weight, weightUnit, notes }) => {
     if (id) {
-      updateMutation.mutate({ id, weight, notes }, {
+      updateMutation.mutate({ id, weight, weightUnit, notes }, {
         onSuccess: () => { setShowModal(false); setEditingRecord(null) }
       })
     } else {
-      recordMutation.mutate({ weight, notes }, {
+      recordMutation.mutate({ weight, weightUnit, notes }, {
         onSuccess: () => setShowModal(false)
       })
     }
@@ -58,7 +61,7 @@ function WeightSection() {
   const renderRecord = ({ item: record }) => (
     <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.weight} kg</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.weight} {record.weight_unit || 'kg'}</Text>
         <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
           {formatShortDate(record.recorded_at)} · {formatTime(record.recorded_at)}
         </Text>
@@ -82,21 +85,21 @@ function WeightSection() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
           <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.current')}</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.current} kg</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.current} {statsUnit}</Text>
           </View>
           <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.change')}</Text>
             <Text style={{ color: colors.success, fontSize: 18, fontWeight: '700' }}>
-              {stats.change > 0 ? '+' : ''}{stats.change} kg
+              {stats.change > 0 ? '+' : ''}{stats.change} {statsUnit}
             </Text>
           </View>
           <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.lowest')}</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.min} kg</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.min} {statsUnit}</Text>
           </View>
           <View style={{ flex: 1, minWidth: '45%', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 2 }}>{t('body:weight.highest')}</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.max} kg</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{stats.max} {statsUnit}</Text>
           </View>
         </View>
       )}
@@ -104,7 +107,7 @@ function WeightSection() {
       {/* Chart */}
       {records && records.length >= 2 && (
         <View style={{ padding: 12, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border, marginBottom: 16 }}>
-          <BodyWeightChart records={records} />
+          <BodyWeightChart records={records} unit={statsUnit} />
         </View>
       )}
 
@@ -139,6 +142,7 @@ function WeightSection() {
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         record={editingRecord}
+        defaultUnit={globalWeightUnit || 'kg'}
         isPending={recordMutation.isPending || updateMutation.isPending}
       />
 

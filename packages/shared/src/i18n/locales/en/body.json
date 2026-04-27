@@ -7,6 +7,7 @@
     "edit": "Edit weight",
     "delete": "Delete record",
     "deleteConfirm": "Delete this weight record?",
+    "label": "Weight",
     "kg": "kg",
     "lb": "lb",
     "current": "Current",
