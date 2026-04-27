@@ -58,7 +58,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg'
           max="500"
           value={form.weight}
           onChange={(e) => setForm(prev => ({ ...prev, weight: e.target.value }))}
-          placeholder="Ej: 75.5"
+          placeholder={t('body:weight.weightPlaceholder')}
           autoFocus
         />
 
@@ -66,7 +66,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg'
           label={`${t('common:labels.notes')} (${t('common:labels.optional')})`}
           value={form.notes}
           onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-          placeholder="Ej: Después de desayunar"
+          placeholder={t('body:weight.notesPlaceholder')}
           rows={2}
         />
 
@@ -78,7 +78,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg'
             type="submit"
             disabled={!form.weight || parseDecimal(form.weight) <= 0 || isPending}
           >
-            {isPending ? t('common:buttons.loading') : isEditing ? t('common:buttons.save') : t('body:weight.submit')}
+            {isPending ? t('common:buttons.loading') : isEditing ? t('common:buttons.save') : t('body:weight.record')}
           </Button>
         </div>
       </form>

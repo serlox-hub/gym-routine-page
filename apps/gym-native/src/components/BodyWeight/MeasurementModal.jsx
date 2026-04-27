@@ -54,7 +54,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
           <TextInput
             value={form.value}
             onChangeText={(text) => setForm(prev => ({ ...prev, value: text }))}
-            placeholder={`Ej: ${unit === 'cm' ? '85.5' : '33.5'}`}
+            placeholder={t(unit === 'cm' ? 'body:measurements.valuePlaceholderCm' : 'body:measurements.valuePlaceholderIn')}
             placeholderTextColor={colors.textSecondary}
             keyboardType="decimal-pad"
             style={inputStyle}
@@ -67,7 +67,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
           <TextInput
             value={form.notes}
             onChangeText={(text) => setForm(prev => ({ ...prev, notes: text }))}
-            placeholder="Ej: En ayunas"
+            placeholder={t('body:measurements.notesPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             multiline
             numberOfLines={2}

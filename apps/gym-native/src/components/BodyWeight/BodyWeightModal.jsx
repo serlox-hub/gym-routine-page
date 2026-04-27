@@ -51,7 +51,7 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
           <TextInput
             value={form.weight}
             onChangeText={(text) => setForm(prev => ({ ...prev, weight: text }))}
-            placeholder="Ej: 75.5"
+            placeholder={t('body:weight.weightPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             keyboardType="decimal-pad"
             style={inputStyle}
@@ -64,7 +64,7 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
           <TextInput
             value={form.notes}
             onChangeText={(text) => setForm(prev => ({ ...prev, notes: text }))}
-            placeholder="Ej: Después de desayunar"
+            placeholder={t('body:weight.notesPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             multiline
             numberOfLines={2}

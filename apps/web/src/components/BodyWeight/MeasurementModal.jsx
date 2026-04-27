@@ -49,7 +49,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="p-6">
       <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textPrimary }}>
-        {isEditing ? `${t('body:measurements.edit')} ${label.toLowerCase()}` : `${t('body:measurements.record')} ${label.toLowerCase()}`}
+        {isEditing ? `${t('common:buttons.edit')} ${label.toLowerCase()}` : `${t('body:measurements.record')} ${label.toLowerCase()}`}
       </h3>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -61,7 +61,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
           max="500"
           value={form.value}
           onChange={(e) => setForm(prev => ({ ...prev, value: e.target.value }))}
-          placeholder={`Ej: ${unit === 'cm' ? '85.5' : '33.5'}`}
+          placeholder={t(unit === 'cm' ? 'body:measurements.valuePlaceholderCm' : 'body:measurements.valuePlaceholderIn')}
           autoFocus
         />
 
@@ -69,7 +69,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
           label={`${t('common:labels.notes')} (${t('common:labels.optional')})`}
           value={form.notes}
           onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-          placeholder="Ej: En ayunas"
+          placeholder={t('body:measurements.notesPlaceholder')}
           rows={2}
         />
 

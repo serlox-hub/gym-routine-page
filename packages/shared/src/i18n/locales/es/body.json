@@ -14,16 +14,16 @@
     "change": "Cambio",
     "lowest": "Más bajo",
     "highest": "Más alto",
-    "submit": "Registrar",
     "history": "Historial",
     "noRecords": "No hay registros de peso",
     "chartTitle": "Evolución del peso",
-    "trend": "Tendencia"
+    "trend": "Tendencia",
+    "weightPlaceholder": "Ej: 75,5",
+    "notesPlaceholder": "Ej: Después de desayunar"
   },
   "measurements": {
     "title": "Medidas Corporales",
     "record": "Registrar medida",
-    "edit": "Editar medida",
     "delete": "Eliminar registro",
     "deleteConfirm": "¿Eliminar este registro de medida?",
     "configure": "Configurar medidas",
@@ -33,6 +33,9 @@
     "unit": "cm",
     "noRecords": "No hay registros de medidas",
     "chartTitle": "Evolución",
+    "valuePlaceholderCm": "Ej: 85,5",
+    "valuePlaceholderIn": "Ej: 33,5",
+    "notesPlaceholder": "Ej: En ayunas",
     "types": {
       "cintura": "Cintura",
       "pecho": "Pecho",

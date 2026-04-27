@@ -18,12 +18,12 @@
     "noRecords": "No weight records",
     "chartTitle": "Weight over time",
     "trend": "Trend",
-    "submit": "Record"
+    "weightPlaceholder": "E.g. 75.5",
+    "notesPlaceholder": "E.g. After breakfast"
   },
   "measurements": {
     "title": "Body Measurements",
     "record": "Record measurement",
-    "edit": "Edit measurement",
     "delete": "Delete record",
     "deleteConfirm": "Delete this measurement record?",
     "configure": "Configure measurements",
@@ -33,6 +33,9 @@
     "unit": "cm",
     "noRecords": "No measurement records",
     "chartTitle": "Progress over time",
+    "valuePlaceholderCm": "E.g. 85.5",
+    "valuePlaceholderIn": "E.g. 33.5",
+    "notesPlaceholder": "E.g. Fasted",
     "types": {
       "cintura": "Waist",
       "pecho": "Chest",
