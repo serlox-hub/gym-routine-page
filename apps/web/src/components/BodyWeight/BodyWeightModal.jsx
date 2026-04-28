@@ -78,7 +78,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg'
             type="submit"
             disabled={!form.weight || parseDecimal(form.weight) <= 0 || isPending}
           >
-            {isPending ? t('common:buttons.loading') : isEditing ? t('common:buttons.save') : t('body:weight.record')}
+            {isPending ? t('common:buttons.loading') : isEditing ? t('common:buttons.save') : t('body:weight.submit')}
           </Button>
         </div>
       </form>

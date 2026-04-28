@@ -79,7 +79,7 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
             disabled={!form.weight || parseDecimal(form.weight) <= 0 || isPending}
             loading={isPending}
           >
-            {isEditing ? t('common:buttons.save') : t('body:weight.record')}
+            {isEditing ? t('common:buttons.save') : t('body:weight.submit')}
           </Button>
         </View>
       </View>

@@ -18,12 +18,14 @@
     "noRecords": "No weight records",
     "chartTitle": "Weight over time",
     "trend": "Trend",
+    "submit": "Record",
     "weightPlaceholder": "E.g. 75.5",
     "notesPlaceholder": "E.g. After breakfast"
   },
   "measurements": {
     "title": "Body Measurements",
     "record": "Record measurement",
+    "submit": "Record",
     "delete": "Delete record",
     "deleteConfirm": "Delete this measurement record?",
     "configure": "Configure measurements",

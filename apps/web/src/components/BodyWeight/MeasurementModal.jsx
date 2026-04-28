@@ -81,7 +81,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
             type="submit"
             disabled={!form.value || parseDecimal(form.value) <= 0 || isPending}
           >
-            {isPending ? t('common:buttons.loading') : isEditing ? t('common:buttons.save') : t('body:measurements.record')}
+            {isPending ? t('common:buttons.loading') : isEditing ? t('common:buttons.save') : t('body:measurements.submit')}
           </Button>
         </div>
       </form>

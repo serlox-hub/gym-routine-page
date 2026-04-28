@@ -82,7 +82,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
             disabled={!form.value || parseDecimal(form.value) <= 0 || isPending}
             loading={isPending}
           >
-            {isEditing ? t('common:buttons.save') : t('body:measurements.record')}
+            {isEditing ? t('common:buttons.save') : t('body:measurements.submit')}
           </Button>
         </View>
       </View>
