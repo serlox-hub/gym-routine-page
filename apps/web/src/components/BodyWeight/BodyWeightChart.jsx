@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   LineChart,
@@ -9,25 +9,47 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { transformBodyWeightToChartData } from '@gym/shared'
+import { CHART_RANGES, filterRecordsByRange, transformBodyWeightToChartData } from '@gym/shared'
+import ChartRangeToggle from './ChartRangeToggle.jsx'
 import { colors } from '../../lib/styles.js'
 
 function BodyWeightChart({ records, unit = 'kg' }) {
   const { t } = useTranslation()
+  const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
+  const filteredRecords = useMemo(
+    () => filterRecordsByRange(records, range),
+    [records, range]
+  )
   const chartData = useMemo(
-    () => transformBodyWeightToChartData(records, 30),
-    [records]
+    () => transformBodyWeightToChartData(filteredRecords, 30),
+    [filteredRecords]
+  )
+
+  if (!records || records.length < 2) return null
+
+  const header = (
+    <div className="flex items-center justify-between mb-2">
+      <h4 className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+        {t('body:weight.chartTitle')}
+      </h4>
+      <ChartRangeToggle value={range} onChange={setRange} />
+    </div>
   )
 
   if (chartData.length < 2) {
-    return null
+    return (
+      <div>
+        {header}
+        <p className="text-center py-8 text-xs" style={{ color: colors.textMuted }}>
+          {t('body:chartRange.noData')}
+        </p>
+      </div>
+    )
   }
 
   return (
     <div>
-      <h4 className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
-        {t('body:weight.chartTitle')}
-      </h4>
+      {header}
       <div style={{ height: 180 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>

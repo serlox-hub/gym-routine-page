@@ -1,18 +1,45 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { LineChart } from 'react-native-gifted-charts'
-import { transformMeasurementToChartData } from '@gym/shared'
+import { CHART_RANGES, filterRecordsByRange, transformMeasurementToChartData } from '@gym/shared'
+import ChartRangeToggle from './ChartRangeToggle.jsx'
 import { colors } from '../../lib/styles'
 
 export default function MeasurementChart({ records, unit = 'cm' }) {
   const { t } = useTranslation()
+  const [chartWidth, setChartWidth] = useState(0)
+  const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
+  const filteredRecords = useMemo(
+    () => filterRecordsByRange(records, range),
+    [records, range]
+  )
   const chartData = useMemo(
-    () => transformMeasurementToChartData(records, 30),
-    [records]
+    () => transformMeasurementToChartData(filteredRecords, 30),
+    [filteredRecords]
   )
 
-  if (chartData.length < 2) return null
+  if (!records || records.length < 2) return null
+
+  const header = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+      <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500' }}>
+        {t('body:measurements.chartTitle')}
+      </Text>
+      <ChartRangeToggle value={range} onChange={setRange} />
+    </View>
+  )
+
+  if (chartData.length < 2) {
+    return (
+      <View>
+        {header}
+        <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', paddingVertical: 32 }}>
+          {t('body:chartRange.noData')}
+        </Text>
+      </View>
+    )
+  }
 
   const lineData = chartData.map((d, i) => ({
     value: d.value,
@@ -27,14 +54,13 @@ export default function MeasurementChart({ records, unit = 'cm' }) {
 
   return (
     <View>
-      <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 8 }}>
-        {t('body:measurements.chartTitle')}
-      </Text>
-      <View style={{ marginLeft: -10 }}>
+      {header}
+      <View onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}>
+        {chartWidth > 0 && (
         <LineChart
           data={lineData}
           height={160}
-          width={280}
+          width={chartWidth}
           adjustToWidth
           color={colors.success}
           dataPointsColor={colors.success}
@@ -53,7 +79,7 @@ export default function MeasurementChart({ records, unit = 'cm' }) {
           noOfSections={4}
           spacing={chartData.length > 15 ? 25 : 40}
           initialSpacing={10}
-          endSpacing={10}
+          endSpacing={20}
           pointerConfig={{
             pointerStripColor: colors.border,
             pointerStripWidth: 1,
@@ -80,6 +106,7 @@ export default function MeasurementChart({ records, unit = 'cm' }) {
             },
           }}
         />
+        )}
       </View>
     </View>
   )
