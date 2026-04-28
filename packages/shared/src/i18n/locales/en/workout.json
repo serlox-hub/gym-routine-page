@@ -83,9 +83,13 @@
   },
   "addExercise": {
     "title": "Add exercise",
-    "toSession": "Add to session",
+    "toSession": "Add exercise",
     "search": "Search exercise...",
     "noExercises": "No exercises available"
+  },
+  "exercise": {
+    "removeFromSession": "Remove from session",
+    "removeFromSessionConfirm": "Remove \"{{name}}\" from this session? It will still be available in the routine."
   },
   "summary": {
     "title": "Summary",

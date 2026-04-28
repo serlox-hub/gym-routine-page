@@ -83,9 +83,13 @@
   },
   "addExercise": {
     "title": "Añadir ejercicio",
-    "toSession": "Añadir a la sesión",
+    "toSession": "Añadir ejercicio",
     "search": "Buscar ejercicio...",
     "noExercises": "No hay ejercicios disponibles"
+  },
+  "exercise": {
+    "removeFromSession": "Quitar de la sesión",
+    "removeFromSessionConfirm": "¿Quitar \"{{name}}\" de esta sesión? Seguirá disponible en la rutina."
   },
   "summary": {
     "title": "Resumen",
