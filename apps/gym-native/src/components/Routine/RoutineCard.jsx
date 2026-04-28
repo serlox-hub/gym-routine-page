@@ -2,11 +2,7 @@ import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Repeat, Layers } from 'lucide-react-native'
-import { colors } from '../../lib/styles'
-
-const CARD_RADIUS = 16
-const CARD_PADDING = 16
-const CARD_GAP = 14
+import { colors, design } from '../../lib/styles'
 
 function StatBadge({ icon: Icon, text }) {
   return (
@@ -38,11 +34,11 @@ function RoutineCard({ routine, isPinned, onPress }) {
       onPressOut={() => setPressed(false)}
       style={{
         backgroundColor: pressed ? colors.bgAlt : colors.bgSecondary,
-        borderRadius: CARD_RADIUS,
-        padding: CARD_PADDING,
+        borderRadius: design.routineCardRadius,
+        padding: design.routineCardPadding,
         borderWidth: 1,
         borderColor: isPinned ? colors.success : colors.border,
-        gap: CARD_GAP,
+        gap: design.routineCardGap,
       }}
     >
       {/* Top: Name + Chevron */}

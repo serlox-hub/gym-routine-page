@@ -43,6 +43,11 @@ export const design = {
   // Animation
   slideAnimDuration: 150,
   swipeThreshold: 60,
+
+  // Routine card
+  routineCardRadius: 16,
+  routineCardPadding: 16,
+  routineCardGap: 14,
 }
 
 export const colors = {

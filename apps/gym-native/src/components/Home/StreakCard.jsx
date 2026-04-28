@@ -12,7 +12,7 @@ import {
   transformSessionsToCycleDurationChart,
   calculateChartMetrics, getTodayDateStr,
 } from '@gym/shared'
-import { Card } from '../ui'
+import { Card, Skeleton } from '../ui'
 import { colors, gradients, design } from '../../lib/styles'
 
 const CYCLE_LENGTH = 7
@@ -158,7 +158,20 @@ function StreakCard() {
     return `${formatShortDate(start)} – ${formatShortDate(end)}`
   }, [referenceDate, weekStartDay])
 
-  if (goal.isLoading) return null
+  if (goal.isLoading) {
+    return (
+      <View className="mb-4">
+        <Card className="p-4">
+          <View className="flex-row items-center justify-between mb-3">
+            <Skeleton width={140} height={20} />
+            <Skeleton width={80} height={28} borderRadius={14} />
+          </View>
+          <Skeleton width="100%" height={32} style={{ marginBottom: 12 }} />
+          <Skeleton width="100%" height={design.chartHeight.native} borderRadius={6} />
+        </Card>
+      </View>
+    )
+  }
   const showStreakInfo = goal.isConfigured && goal.showWidget
 
   const viewedCycleKey = getCurrentCycleKey(CYCLE_LENGTH, referenceDate, weekStartDay)

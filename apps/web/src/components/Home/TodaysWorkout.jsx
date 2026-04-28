@@ -5,12 +5,13 @@ import { useRoutines } from '@gym/shared'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { RoutineCard } from '../Routine/index.js'
+import { Skeleton } from '../ui/index.js'
 import { colors, design } from '../../lib/styles.js'
 
 function TodaysWorkout() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { data: routines } = useRoutines()
+  const { data: routines, isLoading: routinesLoading } = useRoutines()
   const startSessionMutation = useStartSession()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
@@ -33,8 +34,27 @@ function TodaysWorkout() {
       </h2>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {/* Pinned routine card */}
-        {pinnedRoutine ? (
+        {/* Loading skeleton */}
+        {routinesLoading ? (
+          <div
+            style={{
+              backgroundColor: colors.bgSecondary,
+              border: `1px solid ${colors.border}`,
+              borderRadius: design.routineCardRadius,
+              padding: design.routineCardPadding,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: design.routineCardGap,
+            }}
+          >
+            <Skeleton width="60%" height={18} />
+            <Skeleton width="100%" height={28} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Skeleton width={80} height={22} />
+              <Skeleton width={100} height={22} />
+            </div>
+          </div>
+        ) : pinnedRoutine ? (
           <RoutineCard
             routine={pinnedRoutine}
             isPinned

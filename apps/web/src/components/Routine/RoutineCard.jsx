@@ -1,10 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Repeat, Layers } from 'lucide-react'
-import { colors } from '../../lib/styles.js'
-
-const CARD_RADIUS = 16
-const CARD_PADDING = 16
-const CARD_GAP = 14
+import { colors, design } from '../../lib/styles.js'
 
 function StatBadge({ icon: Icon, text }) {
   return (
@@ -33,12 +29,12 @@ function RoutineCard({ routine, isPinned, onClick }) {
       className="cursor-pointer transition-colors"
       style={{
         backgroundColor: colors.bgSecondary,
-        borderRadius: CARD_RADIUS,
-        padding: CARD_PADDING,
+        borderRadius: design.routineCardRadius,
+        padding: design.routineCardPadding,
         border: `1px solid ${isPinned ? colors.success : colors.border}`,
         display: 'flex',
         flexDirection: 'column',
-        gap: CARD_GAP,
+        gap: design.routineCardGap,
       }}
       onClick={onClick}
       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bgAlt}

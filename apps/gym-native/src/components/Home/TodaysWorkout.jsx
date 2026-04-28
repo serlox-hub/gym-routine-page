@@ -6,11 +6,12 @@ import { useRoutines } from '@gym/shared'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { RoutineCard } from '../Routine'
+import { Skeleton } from '../ui'
 import { colors, design } from '../../lib/styles'
 
 function TodaysWorkout({ navigation }) {
   const { t } = useTranslation()
-  const { data: routines } = useRoutines()
+  const { data: routines, isLoading: routinesLoading } = useRoutines()
   const startSessionMutation = useStartSession()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
@@ -32,8 +33,27 @@ function TodaysWorkout({ navigation }) {
         {t('common:home.workout')}
       </Text>
 
-      {/* Pinned routine card */}
-      {pinnedRoutine ? (
+      {/* Loading skeleton */}
+      {routinesLoading ? (
+        <View
+          style={{
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: design.routineCardRadius,
+            padding: design.routineCardPadding,
+            gap: design.routineCardGap,
+            marginBottom: 10,
+          }}
+        >
+          <Skeleton width="60%" height={18} />
+          <Skeleton width="100%" height={28} />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Skeleton width={80} height={22} />
+            <Skeleton width={100} height={22} />
+          </View>
+        </View>
+      ) : pinnedRoutine ? (
         <View style={{ marginBottom: 10 }}>
           <RoutineCard
             routine={pinnedRoutine}
