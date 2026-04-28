@@ -227,5 +227,11 @@
     "unitOnly": "Solo cambiar unidad",
     "unitOnlyDescription": "Mantiene los números pero cambia la etiqueta (90 quedará como 90 {{to}})",
     "applying": "Aplicando..."
+  },
+  "chartRange": {
+    "1m": "1M",
+    "3m": "3M",
+    "all": "Todo",
+    "noData": "Sin datos suficientes en este rango"
   }
 }

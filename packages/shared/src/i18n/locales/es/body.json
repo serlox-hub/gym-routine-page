@@ -1,11 +1,5 @@
 {
   "title": "Métricas Corporales",
-  "chartRange": {
-    "1m": "1M",
-    "3m": "3M",
-    "all": "Todo",
-    "noData": "Sin datos suficientes en este rango"
-  },
   "weight": {
     "title": "Peso Corporal",
     "tab": "Peso",

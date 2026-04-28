@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { CHART_RANGES, filterRecordsByRange, transformBodyWeightToChartData } from '@gym/shared'
-import ChartRangeToggle from './ChartRangeToggle.jsx'
+import { ChartRangeToggle } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
 function BodyWeightChart({ records, unit = 'kg' }) {
@@ -41,7 +41,7 @@ function BodyWeightChart({ records, unit = 'kg' }) {
       <div>
         {header}
         <p className="text-center py-8 text-xs" style={{ color: colors.textMuted }}>
-          {t('body:chartRange.noData')}
+          {t('common:chartRange.noData')}
         </p>
       </div>
     )

@@ -227,5 +227,11 @@
     "unitOnly": "Only change unit",
     "unitOnlyDescription": "Keeps the numbers but changes the label (90 stays as 90 {{to}})",
     "applying": "Applying..."
+  },
+  "chartRange": {
+    "1m": "1M",
+    "3m": "3M",
+    "all": "All",
+    "noData": "Not enough data in this range"
   }
 }

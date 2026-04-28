@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { CHART_RANGES, filterRecordsByRange, getMeasurementLabel, transformMeasurementToChartData } from '@gym/shared'
-import ChartRangeToggle from './ChartRangeToggle.jsx'
+import { ChartRangeToggle } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
 function MeasurementChart({ records, measurementType, unit = 'cm' }) {
@@ -43,7 +43,7 @@ function MeasurementChart({ records, measurementType, unit = 'cm' }) {
       <div>
         {header}
         <p className="text-center py-8 text-xs" style={{ color: colors.textMuted }}>
-          {t('body:chartRange.noData')}
+          {t('common:chartRange.noData')}
         </p>
       </div>
     )

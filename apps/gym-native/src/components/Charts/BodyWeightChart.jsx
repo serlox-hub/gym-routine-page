@@ -35,7 +35,7 @@ export default function BodyWeightChart({ records, unit = 'kg' }) {
       <View>
         {header}
         <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', paddingVertical: 32 }}>
-          {t('body:chartRange.noData')}
+          {t('common:chartRange.noData')}
         </Text>
       </View>
     )

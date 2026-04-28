@@ -1,11 +1,5 @@
 {
   "title": "Body Metrics",
-  "chartRange": {
-    "1m": "1M",
-    "3m": "3M",
-    "all": "All",
-    "noData": "Not enough data in this range"
-  },
   "weight": {
     "title": "Body Weight",
     "tab": "Weight",

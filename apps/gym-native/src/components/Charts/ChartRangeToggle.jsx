@@ -27,7 +27,7 @@ export default function ChartRangeToggle({ value, onChange }) {
             }}
           >
             <Text style={{ fontSize: 11, fontWeight: '600', color: active ? colors.bgPrimary : colors.textMuted }}>
-              {t(`body:chartRange.${opt.key}`)}
+              {t(`common:chartRange.${opt.key}`)}
             </Text>
           </Pressable>
         )

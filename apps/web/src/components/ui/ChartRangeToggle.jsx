@@ -25,7 +25,7 @@ function ChartRangeToggle({ value, onChange }) {
               color: active ? colors.bgPrimary : colors.textMuted,
             }}
           >
-            {t(`body:chartRange.${opt.key}`)}
+            {t(`common:chartRange.${opt.key}`)}
           </button>
         )
       })}
