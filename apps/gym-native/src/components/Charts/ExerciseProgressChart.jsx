@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { LineChart } from 'react-native-gifted-charts'
-import { MeasurementType, transformSessionsToChartData } from '@gym/shared'
+import { CHART_RANGES, MeasurementType, filterRecordsByRange, transformSessionsToChartData } from '@gym/shared'
+import ChartRangeToggle from './ChartRangeToggle.jsx'
 import { colors } from '../../lib/styles'
 
 const TABS = {
@@ -13,38 +14,35 @@ const TABS = {
 
 export default function ExerciseProgressChart({ sessions, measurementType, weightUnit = 'kg' }) {
   const { t } = useTranslation()
+  const [chartWidth, setChartWidth] = useState(0)
+  const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
+  const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
 
   const TAB_CONFIG = {
     [TABS.WEIGHT]: { dataKey: 'best', color: colors.accent, label: t('workout:summary.maxWeight') },
     [TABS.VOLUME]: { dataKey: 'volume', color: colors.success, label: t('workout:summary.totalVolume') },
-    [TABS.E1RM]: { dataKey: 'e1rm', color: colors.purple, label: t('workout:summary.best1RM') },
+    [TABS.E1RM]: { dataKey: 'e1rm', color: colors.purple, label: t('workout:summary.best1rm') },
   }
-  const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
   const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
 
-  const chartData = useMemo(
-    () => transformSessionsToChartData(sessions, measurementType, { weightUnit }),
-    [sessions, measurementType, weightUnit]
+  const filteredSessions = useMemo(
+    () => filterRecordsByRange(sessions, range, 'date'),
+    [sessions, range]
   )
 
+  const chartData = useMemo(
+    () => transformSessionsToChartData(filteredSessions, measurementType, { weightUnit }),
+    [filteredSessions, measurementType, weightUnit]
+  )
+
+  if (!sessions || sessions.length < 2) return null
+
   const { dataKey, color, label } = TAB_CONFIG[activeTab]
-  const lineData = chartData.map(d => ({
-    value: d[dataKey] || 0,
-    label: d.date,
-    dataPointText: undefined,
-  }))
 
-  if (lineData.length < 2) return null
-
-  const values = lineData.map(d => d.value)
-  const minVal = Math.min(...values)
-  const maxVal = Math.max(...values)
-  const yPadding = Math.max(Math.round((maxVal - minVal) * 0.15), 1)
-
-  return (
-    <View>
+  const header = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
       {showVolumeTabs ? (
-        <View className="flex-row gap-2 mb-3">
+        <View className="flex-row gap-2">
           {Object.entries(TAB_CONFIG).map(([key, config]) => (
             <Pressable
               key={key}
@@ -66,16 +64,46 @@ export default function ExerciseProgressChart({ sessions, measurementType, weigh
           ))}
         </View>
       ) : (
-        <Text className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
-          Progresión
+        <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+          {t('exercise:progression')}
         </Text>
       )}
+      <ChartRangeToggle value={range} onChange={setRange} />
+    </View>
+  )
 
-      <View style={{ marginLeft: -10 }}>
+  if (chartData.length < 2) {
+    return (
+      <View>
+        {header}
+        <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', paddingVertical: 32 }}>
+          {t('common:chartRange.noData')}
+        </Text>
+      </View>
+    )
+  }
+
+  const lineData = chartData.map(d => ({
+    value: d[dataKey] || 0,
+    label: d.date,
+    dataPointText: undefined,
+  }))
+
+  const values = lineData.map(d => d.value)
+  const minVal = Math.min(...values)
+  const maxVal = Math.max(...values)
+  const yPadding = Math.max(Math.round((maxVal - minVal) * 0.15), 1)
+
+  return (
+    <View>
+      {header}
+
+      <View style={{ marginLeft: -10 }} onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}>
+        {chartWidth > 0 && (
         <LineChart
           data={lineData}
           height={140}
-          width={280}
+          width={chartWidth}
           adjustToWidth
           color={color}
           dataPointsColor={color}
@@ -96,7 +124,7 @@ export default function ExerciseProgressChart({ sessions, measurementType, weigh
           noOfSections={4}
           spacing={chartData.length > 10 ? 30 : 40}
           initialSpacing={10}
-          endSpacing={10}
+          endSpacing={20}
           pointerConfig={{
             pointerStripColor: colors.border,
             pointerStripWidth: 1,
@@ -119,6 +147,7 @@ export default function ExerciseProgressChart({ sessions, measurementType, weigh
             ),
           }}
         />
+        )}
       </View>
     </View>
   )

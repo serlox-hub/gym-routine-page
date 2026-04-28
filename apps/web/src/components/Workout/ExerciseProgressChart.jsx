@@ -9,7 +9,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { MeasurementType, transformSessionsToChartData } from '@gym/shared'
+import { CHART_RANGES, MeasurementType, filterRecordsByRange, transformSessionsToChartData } from '@gym/shared'
+import { ChartRangeToggle } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
 const TABS = {
@@ -18,9 +19,10 @@ const TABS = {
   E1RM: 'e1rm',
 }
 
-function ExerciseProgressChart({ sessions, chartData: chartDataProp, measurementType, weightUnit = 'kg' }) {
+function ExerciseProgressChart({ sessions, measurementType, weightUnit = 'kg' }) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
+  const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
   const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
 
   const TAB_CONFIG = {
@@ -29,21 +31,26 @@ function ExerciseProgressChart({ sessions, chartData: chartDataProp, measurement
     [TABS.E1RM]: { dataKey: 'e1rm', color: colors.purple, label: t('workout:summary.best1rm') },
   }
 
-  const chartData = useMemo(
-    () => chartDataProp || transformSessionsToChartData(sessions, measurementType, { weightUnit }),
-    [chartDataProp, sessions, measurementType, weightUnit]
+  const filteredSessions = useMemo(
+    () => filterRecordsByRange(sessions, range, 'date'),
+    [sessions, range]
   )
 
-  if (chartData.length < 2) {
+  const chartData = useMemo(
+    () => transformSessionsToChartData(filteredSessions, measurementType, { weightUnit }),
+    [filteredSessions, measurementType, weightUnit]
+  )
+
+  if (!sessions || sessions.length < 2) {
     return null
   }
 
   const { dataKey, color: lineColor, label } = TAB_CONFIG[activeTab]
 
-  return (
-    <div className="mb-4">
+  const header = (
+    <div className="flex items-center justify-between mb-3 gap-2">
       {showVolumeTabs ? (
-        <div className="flex gap-2 mb-3">
+        <div className="flex gap-2">
           {Object.entries(TAB_CONFIG).map(([key, config]) => (
             <button
               key={key}
@@ -59,11 +66,28 @@ function ExerciseProgressChart({ sessions, chartData: chartDataProp, measurement
           ))}
         </div>
       ) : (
-        <h4 className="text-xs font-medium mb-2" style={{ color: colors.textSecondary }}>
+        <h4 className="text-xs font-medium" style={{ color: colors.textSecondary }}>
           {t('exercise:progression')}
         </h4>
       )}
+      <ChartRangeToggle value={range} onChange={setRange} />
+    </div>
+  )
 
+  if (chartData.length < 2) {
+    return (
+      <div className="mb-4">
+        {header}
+        <p className="text-center py-8 text-xs" style={{ color: colors.textMuted }}>
+          {t('common:chartRange.noData')}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-4">
+      {header}
       <div style={{ height: 150 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
