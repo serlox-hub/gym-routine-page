@@ -181,13 +181,34 @@ export async function addSessionExercise({ sessionId, exercise, series, reps, ri
   })
 }
 
-export async function updateSessionExerciseFields(sessionExerciseId, fields) {
-  const { error } = await getClient()
+export async function updateSessionExerciseFields(sessionExerciseId, fields, { propagateToRoutine = false } = {}) {
+  const client = getClient()
+
+  if (!propagateToRoutine) {
+    const { error } = await client
+      .from('session_exercises')
+      .update(fields)
+      .eq('id', sessionExerciseId)
+    if (error) throw error
+    return
+  }
+
+  const { data, error } = await client
     .from('session_exercises')
     .update(fields)
     .eq('id', sessionExerciseId)
+    .select('routine_exercise_id, is_extra')
+    .single()
 
   if (error) throw error
+
+  if (data?.routine_exercise_id && !data?.is_extra) {
+    const { error: routineErr } = await client
+      .from('routine_exercises')
+      .update(fields)
+      .eq('id', data.routine_exercise_id)
+    if (routineErr) throw routineErr
+  }
 }
 
 export async function deleteSessionExercise(sessionExerciseId) {

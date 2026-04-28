@@ -79,10 +79,13 @@ export function useUpdateSessionExerciseFields() {
 
   return useMutation({
     mutationFn: ({ sessionExerciseId, fields }) => {
-      return updateSessionExerciseFields(sessionExerciseId, fields)
+      return updateSessionExerciseFields(sessionExerciseId, fields, { propagateToRoutine: true })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES] })
     },
   })
 }
