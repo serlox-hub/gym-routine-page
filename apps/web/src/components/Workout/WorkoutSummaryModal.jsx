@@ -84,8 +84,8 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
             disabled={isGenerating}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm"
             style={{
-              backgroundColor: colors.accent,
-              color: colors.white,
+              backgroundColor: colors.success,
+              color: colors.textDark,
             }}
           >
             <Share2 size={16} />

@@ -132,14 +132,14 @@ const s = StyleSheet.create({
   brandName: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.accent,
+    color: colors.success,
     letterSpacing: 3,
     textTransform: 'uppercase',
   },
   brandLine: {
     width: 40,
     height: 2,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.success,
     marginTop: 12,
     borderRadius: 1,
   },

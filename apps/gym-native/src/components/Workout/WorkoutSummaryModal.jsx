@@ -50,12 +50,12 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
           <View className="flex-row gap-3 mt-4">
             <Pressable
               className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-lg"
-              style={{ backgroundColor: colors.accent }}
+              style={{ backgroundColor: colors.success }}
               onPress={handleShare}
               disabled={isGenerating}
             >
-              <Share2 size={16} color={colors.white} />
-              <Text style={{ color: colors.white, fontSize: 14, fontWeight: '500' }}>
+              <Share2 size={16} color={colors.textDark} />
+              <Text style={{ color: colors.textDark, fontSize: 14, fontWeight: '500' }}>
                 {isGenerating ? t('common:buttons.loading') : t('common:buttons.share')}
               </Text>
             </Pressable>

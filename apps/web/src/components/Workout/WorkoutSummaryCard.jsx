@@ -162,7 +162,7 @@ const WorkoutSummaryCard = forwardRef(function WorkoutSummaryCard({ summaryData,
         <div style={{
           fontSize: 14,
           fontWeight: 700,
-          color: C.accent,
+          color: C.success,
           letterSpacing: '3px',
           textTransform: 'uppercase',
         }}>
@@ -171,7 +171,7 @@ const WorkoutSummaryCard = forwardRef(function WorkoutSummaryCard({ summaryData,
         <div style={{
           width: 40,
           height: 2,
-          backgroundColor: C.accent,
+          backgroundColor: C.success,
           margin: '12px auto 0',
           borderRadius: 1,
         }} />
