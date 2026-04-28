@@ -188,30 +188,21 @@ function StreakCard() {
   const todayStr = getTodayDateStr()
   const { chartMax, emptyBarValue } = calculateChartMetrics(chartData)
 
-  const restBarData = chartData.map(d => ({
-    value: emptyBarValue,
-    label: d.label,
-    frontColor: colors.borderSubtle,
-    gradientColor: colors.borderSubtle,
-    labelTextStyle: {
-      color: d.dateStr <= todayStr ? colors.success : colors.textMuted,
-      fontSize: design.labelSize,
-      fontWeight: d.dateStr <= todayStr ? '600' : '500',
-    },
-  }))
-
-  const barData = chartData.map(d => ({
-    value: d.durationMinutes > 0 ? d.durationMinutes : emptyBarValue,
-    label: d.label,
-    durationMinutes: d.durationMinutes,
-    frontColor: d.durationMinutes > 0 ? gradients.lime[1] : colors.borderSubtle,
-    gradientColor: d.durationMinutes > 0 ? gradients.lime[0] : colors.borderSubtle,
-    labelTextStyle: {
-      color: d.dateStr <= todayStr ? colors.success : colors.textMuted,
-      fontSize: design.labelSize,
-      fontWeight: d.dateStr <= todayStr ? '600' : '500',
-    },
-  }))
+  const barData = chartData.map(d => {
+    const showLime = !viewedIsRest && d.durationMinutes > 0
+    return {
+      value: d.durationMinutes > 0 ? d.durationMinutes : emptyBarValue,
+      label: d.label,
+      durationMinutes: d.durationMinutes,
+      frontColor: showLime ? gradients.lime[1] : colors.borderSubtle,
+      gradientColor: showLime ? gradients.lime[0] : colors.borderSubtle,
+      labelTextStyle: {
+        color: d.dateStr <= todayStr ? colors.success : colors.textMuted,
+        fontSize: design.labelSize,
+        fontWeight: d.dateStr <= todayStr ? '600' : '500',
+      },
+    }
+  })
 
   return (
     <View className="mb-4">
@@ -293,7 +284,7 @@ function StreakCard() {
           {/* Chart */}
           <View style={{ marginLeft: -10 }}>
             <BarChart
-              data={viewedIsRest ? restBarData : barData}
+              data={barData}
               maxValue={chartMax}
               height={design.chartHeight.native}
               barWidth={36}

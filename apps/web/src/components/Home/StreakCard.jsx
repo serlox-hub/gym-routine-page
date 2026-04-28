@@ -211,12 +211,6 @@ function StreakCard() {
     barValue: d.durationMinutes > 0 ? d.durationMinutes : emptyBarValue,
   }))
 
-  const restChartData = chartData.map(d => ({
-    ...d,
-    durationMinutes: 0,
-    barValue: emptyBarValue,
-  }))
-
   const handleToggleRestCycle = () => {
     const newRestCycles = viewedIsRest
       ? restCycles.filter(k => k !== viewedCycleKey)
@@ -310,7 +304,7 @@ function StreakCard() {
           {/* Chart */}
           <div style={{ height: design.chartHeight.web }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={viewedIsRest ? restChartData : webChartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barGap={4}>
+              <BarChart data={webChartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barGap={4}>
                 <defs>
                   <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={gradients.lime[0]} />
@@ -347,7 +341,7 @@ function StreakCard() {
                   }}
                 />
                 <Bar dataKey="barValue" radius={[design.barRadius, design.barRadius, design.barRadius, design.barRadius]} maxBarSize={40}>
-                  {(viewedIsRest ? restChartData : webChartData).map((entry, index) => (
+                  {webChartData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={!viewedIsRest && entry.durationMinutes > 0 ? 'url(#barGradient)' : colors.borderSubtle}
