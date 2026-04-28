@@ -189,128 +189,131 @@ export default function SetDetailsModal({
         </Pressable>
       </View>
 
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, paddingTop: 8, gap: 20 }} style={{ flexShrink: 1 }}>
-        {/* Set type — Normal / Dropset */}
-        <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: colors.bgTertiary }}>
-          {['normal', 'dropset'].map((key) => (
-            <Pressable key={key}
-              onPress={() => { setSetType(key); setHasChanges(true) }}
-              style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: setType === key ? colors.success : 'transparent' }}>
-              <Text style={{ color: setType === key ? colors.bgPrimary : colors.textSecondary, fontSize: 14, fontWeight: '600' }}>
-                {t(`data:setTypes.${key}`)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Weight & reps */}
-        {showWeightReps && (setWeight || weight !== undefined) && (setReps || reps !== undefined) && (
-          <View>
-            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
-              {t('workout:set.weightAndReps')}
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <NumberStepper label={`${t('workout:set.weight')} (${weightUnit})`}
-                value={localWeight} onChange={handleWeightChange} step={2.5} />
-              <NumberStepper label={t('workout:set.reps')}
-                value={localReps} onChange={handleRepsChange} />
-            </View>
-          </View>
-        )}
-
-        {/* Effort: RIR (with reps) or RPE (without reps) */}
-        {showRirInput && (() => {
-          const usesReps = measurementTypeUsesReps(measurementType)
-          const options = usesReps ? RIR_OPTIONS : RPE_OPTIONS
-          const titleLabel = usesReps ? t('workout:set.rirTitle') : `${getEffortLabel(measurementType)} (${t('common:labels.optional').toLowerCase()})`
-          return (
-            <View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{titleLabel}</Text>
-                {rir != null && (
-                  <Text style={{ color: colors.success, fontSize: 13, fontWeight: '600' }}>
-                    {t('workout:set.selected', { value: options.find(o => o.value === rir)?.label ?? rir })}
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 8 }} style={{ flexShrink: 1 }}>
+        <View style={{ flex: 1, justifyContent: 'space-between', gap: 20 }}>
+          <View style={{ gap: 20 }}>
+            {/* Set type — Normal / Dropset */}
+            <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: colors.bgTertiary }}>
+              {['normal', 'dropset'].map((key) => (
+                <Pressable key={key}
+                  onPress={() => { setSetType(key); setHasChanges(true) }}
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: setType === key ? colors.success : 'transparent' }}>
+                  <Text style={{ color: setType === key ? colors.bgPrimary : colors.textSecondary, fontSize: 14, fontWeight: '600' }}>
+                    {t(`data:setTypes.${key}`)}
                   </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Weight & reps */}
+            {showWeightReps && (setWeight || weight !== undefined) && (setReps || reps !== undefined) && (
+              <View>
+                <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
+                  {t('workout:set.weightAndReps')}
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <NumberStepper label={`${t('workout:set.weight')} (${weightUnit})`}
+                    value={localWeight} onChange={handleWeightChange} step={2.5} />
+                  <NumberStepper label={t('workout:set.reps')}
+                    value={localReps} onChange={handleRepsChange} />
+                </View>
+              </View>
+            )}
+
+            {/* Effort: RIR (with reps) or RPE (without reps) */}
+            {showRirInput && (() => {
+              const usesReps = measurementTypeUsesReps(measurementType)
+              const options = usesReps ? RIR_OPTIONS : RPE_OPTIONS
+              const titleLabel = usesReps ? t('workout:set.rirTitle') : `${getEffortLabel(measurementType)} (${t('common:labels.optional').toLowerCase()})`
+              return (
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{titleLabel}</Text>
+                    {rir != null && (
+                      <Text style={{ color: colors.success, fontSize: 13, fontWeight: '600' }}>
+                        {t('workout:set.selected', { value: options.find(o => o.value === rir)?.label ?? rir })}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {options.map(option => (
+                      <Pressable key={option.value} onPress={() => handleRirChange(option.value)}
+                        style={{ flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', backgroundColor: rir === option.value ? colors.success : colors.bgTertiary }}>
+                        <Text numberOfLines={1} style={{ color: rir === option.value ? colors.bgPrimary : colors.textPrimary, fontSize: usesReps ? 16 : 11, fontWeight: '600' }}>
+                          {option.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              )
+            })()}
+
+            {/* Notes */}
+            {showSetNotes && (
+              <View>
+                <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
+                  {t('workout:set.notes')}
+                </Text>
+                <TextInput
+                  value={note}
+                  onChangeText={(v) => { setNote(v); setHasChanges(true) }}
+                  placeholder={t('workout:set.notesPlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  multiline numberOfLines={3}
+                  style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 12, fontSize: 14, textAlignVertical: 'top', minHeight: 80 }} />
+              </View>
+            )}
+
+            {/* Video */}
+            {showVideo && (
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>Video</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{t('workout:set.videoOptional')}</Text>
+                </View>
+                {videoUri ? (
+                  <View style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: colors.bgTertiary }}>
+                    <SetVideoPreview uri={videoUri} />
+                    <Pressable onPress={handleRemoveVideo}
+                      style={{ position: 'absolute', top: 8, right: 8, padding: 6, borderRadius: 999, backgroundColor: colors.overlay }}>
+                      <X size={16} color={colors.white} />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable onPress={handleVideoSelect}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, backgroundColor: colors.bgTertiary }}>
+                    <View style={{ width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgPrimary }}>
+                      <Video size={20} color={colors.success} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{t('workout:set.addVideoTitle')}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{t('workout:set.addVideoSubtitle')}</Text>
+                    </View>
+                    <ChevronRight size={18} color={colors.textMuted} />
+                  </Pressable>
                 )}
               </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {options.map(option => (
-                  <Pressable key={option.value} onPress={() => handleRirChange(option.value)}
-                    style={{ flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', backgroundColor: rir === option.value ? colors.success : colors.bgTertiary }}>
-                    <Text numberOfLines={1} style={{ color: rir === option.value ? colors.bgPrimary : colors.textPrimary, fontSize: usesReps ? 16 : 11, fontWeight: '600' }}>
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          )
-        })()}
-
-        {/* Notes */}
-        {showSetNotes && (
-          <View>
-            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
-              {t('workout:set.notes')}
-            </Text>
-            <TextInput
-              value={note}
-              onChangeText={(v) => { setNote(v); setHasChanges(true) }}
-              placeholder={t('workout:set.notesPlaceholder')}
-              placeholderTextColor={colors.textMuted}
-              multiline numberOfLines={3}
-              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 12, fontSize: 14, textAlignVertical: 'top', minHeight: 80 }} />
-          </View>
-        )}
-
-        {/* Video */}
-        {showVideo && (
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>Video</Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{t('workout:set.videoOptional')}</Text>
-            </View>
-            {videoUri ? (
-              <View style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: colors.bgTertiary }}>
-                <SetVideoPreview uri={videoUri} />
-                <Pressable onPress={handleRemoveVideo}
-                  style={{ position: 'absolute', top: 8, right: 8, padding: 6, borderRadius: 999, backgroundColor: colors.overlay }}>
-                  <X size={16} color={colors.white} />
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable onPress={handleVideoSelect}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, backgroundColor: colors.bgTertiary }}>
-                <View style={{ width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgPrimary }}>
-                  <Video size={20} color={colors.success} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{t('workout:set.addVideoTitle')}</Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{t('workout:set.addVideoSubtitle')}</Text>
-                </View>
-                <ChevronRight size={18} color={colors.textMuted} />
-              </Pressable>
             )}
           </View>
-        )}
 
+          {/* Save footer: empujado al fondo si cabe, scrollea con el contenido si no */}
+          <View style={{ paddingTop: 12, gap: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
+            {!isEditMode && descansoSeg > 0 && (
+              <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center' }}>
+                {t('workout:rest.title')}: {formatRestTimeDisplay(descansoSeg)}
+              </Text>
+            )}
+            <Pressable onPress={handleSubmit} disabled={buttonDisabled}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, opacity: buttonDisabled ? 0.5 : 1 }}>
+              {isEditMode ? <Save size={18} color={colors.bgPrimary} /> : <Check size={18} color={colors.bgPrimary} />}
+              <Text style={{ color: colors.bgPrimary, fontSize: 15, fontWeight: '700' }}>
+                {isEditMode ? t('common:buttons.save') : (descansoSeg > 0 ? t('workout:set.saveStartRest') : t('common:buttons.save'))}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </ScrollView>
-
-      {/* Sticky footer with save */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, gap: 12, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
-        {!isEditMode && descansoSeg > 0 && (
-          <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center' }}>
-            {t('workout:rest.title')}: {formatRestTimeDisplay(descansoSeg)}
-          </Text>
-        )}
-        <Pressable onPress={handleSubmit} disabled={buttonDisabled}
-          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, opacity: buttonDisabled ? 0.5 : 1 }}>
-          {isEditMode ? <Save size={18} color={colors.bgPrimary} /> : <Check size={18} color={colors.bgPrimary} />}
-          <Text style={{ color: colors.bgPrimary, fontSize: 15, fontWeight: '700' }}>
-            {isEditMode ? t('common:buttons.save') : (descansoSeg > 0 ? t('workout:set.saveStartRest') : t('common:buttons.save'))}
-          </Text>
-        </Pressable>
-      </View>
     </Modal>
   )
 }

@@ -162,161 +162,164 @@ function SetDetailsModal({
         </button>
       </div>
 
-      <div className="px-5 pb-3 space-y-5 mt-3 overflow-y-auto" style={{ flex: 1, minHeight: 0 }}>
-        {/* Set type — Normal / Dropset */}
-        <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ backgroundColor: colors.bgTertiary }}>
-          {['normal', 'dropset'].map((key) => (
-            <button key={key}
-              onClick={() => { setSetType(key); setHasChanges(true) }}
-              className="py-2.5 rounded-lg text-sm font-semibold"
-              style={{
-                backgroundColor: setType === key ? colors.success : 'transparent',
-                color: setType === key ? colors.bgPrimary : colors.textSecondary,
-                border: setType === key ? `1px solid ${colors.success}` : 'none',
-              }}>
-              {t(`data:setTypes.${key}`)}
-            </button>
-          ))}
-        </div>
-
-        {/* Weight & reps */}
-        {showWeightReps && (setWeight || weight !== undefined) && (setReps || reps !== undefined) && (
-          <div>
-            <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
-              {t('workout:set.weightAndReps')}
-            </h4>
-            <div className="flex gap-3">
-              <NumberStepper
-                label={`${t('workout:set.weight')} (${weightUnit})`}
-                value={localWeight}
-                onChange={handleWeightChange}
-                step={2.5}
-              />
-              <NumberStepper
-                label={t('workout:set.reps')}
-                value={localReps}
-                onChange={handleRepsChange}
-              />
+      <div className="px-5 mt-3 overflow-y-auto" style={{ flex: 1, minHeight: 0 }}>
+        <div className="flex flex-col" style={{ minHeight: '100%' }}>
+          <div className="space-y-5">
+            {/* Set type — Normal / Dropset */}
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ backgroundColor: colors.bgTertiary }}>
+              {['normal', 'dropset'].map((key) => (
+                <button key={key}
+                  onClick={() => { setSetType(key); setHasChanges(true) }}
+                  className="py-2.5 rounded-lg text-sm font-semibold"
+                  style={{
+                    backgroundColor: setType === key ? colors.success : 'transparent',
+                    color: setType === key ? colors.bgPrimary : colors.textSecondary,
+                    border: setType === key ? `1px solid ${colors.success}` : 'none',
+                  }}>
+                  {t(`data:setTypes.${key}`)}
+                </button>
+              ))}
             </div>
-          </div>
-        )}
 
-        {/* Effort: RIR (with reps) or RPE (without reps) */}
-        {showRirInput && (() => {
-          const usesReps = measurementTypeUsesReps(measurementType)
-          const options = usesReps ? RIR_OPTIONS : RPE_OPTIONS
-          const titleLabel = usesReps ? t('workout:set.rirTitle') : `${getEffortLabel(measurementType)} (${t('common:labels.optional').toLowerCase()})`
-          return (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span style={{ color: colors.textSecondary, fontSize: 13 }}>{titleLabel}</span>
-                {rir != null && (
-                  <span style={{ color: colors.success, fontSize: 13, fontWeight: 600 }}>
-                    {t('workout:set.selected', { value: options.find(o => o.value === rir)?.label ?? rir })}
+            {/* Weight & reps */}
+            {showWeightReps && (setWeight || weight !== undefined) && (setReps || reps !== undefined) && (
+              <div>
+                <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
+                  {t('workout:set.weightAndReps')}
+                </h4>
+                <div className="flex gap-3">
+                  <NumberStepper
+                    label={`${t('workout:set.weight')} (${weightUnit})`}
+                    value={localWeight}
+                    onChange={handleWeightChange}
+                    step={2.5}
+                  />
+                  <NumberStepper
+                    label={t('workout:set.reps')}
+                    value={localReps}
+                    onChange={handleRepsChange}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Effort: RIR (with reps) or RPE (without reps) */}
+            {showRirInput && (() => {
+              const usesReps = measurementTypeUsesReps(measurementType)
+              const options = usesReps ? RIR_OPTIONS : RPE_OPTIONS
+              const titleLabel = usesReps ? t('workout:set.rirTitle') : `${getEffortLabel(measurementType)} (${t('common:labels.optional').toLowerCase()})`
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span style={{ color: colors.textSecondary, fontSize: 13 }}>{titleLabel}</span>
+                    {rir != null && (
+                      <span style={{ color: colors.success, fontSize: 13, fontWeight: 600 }}>
+                        {t('workout:set.selected', { value: options.find(o => o.value === rir)?.label ?? rir })}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {options.map(option => (
+                      <button key={option.value} onClick={() => handleRirChange(option.value)}
+                        className="py-3 rounded-xl font-semibold"
+                        style={{
+                          backgroundColor: rir === option.value ? colors.success : colors.bgTertiary,
+                          color: rir === option.value ? colors.bgPrimary : colors.textPrimary,
+                          fontSize: usesReps ? 16 : 11,
+                        }}>
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Notes */}
+            {showSetNotes && (
+              <div>
+                <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
+                  {t('workout:set.notes')}
+                </h4>
+                <textarea
+                  value={note}
+                  onChange={handleNoteChange}
+                  placeholder={t('workout:set.notesPlaceholder')}
+                  rows={3}
+                  className="w-full rounded-xl p-3 text-sm resize-none outline-none"
+                  style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none', minHeight: 80 }}
+                />
+              </div>
+            )}
+
+            {/* Video */}
+            {showVideo && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold" style={{ color: colors.textPrimary, fontSize: 14 }}>
+                    Video
+                  </h4>
+                  <span style={{ color: colors.textSecondary, fontSize: 12 }}>
+                    {t('workout:set.videoOptional')}
                   </span>
-                )}
-              </div>
-              <div className="grid grid-cols-5 gap-2">
-                {options.map(option => (
-                  <button key={option.value} onClick={() => handleRirChange(option.value)}
-                    className="py-3 rounded-xl font-semibold"
-                    style={{
-                      backgroundColor: rir === option.value ? colors.success : colors.bgTertiary,
-                      color: rir === option.value ? colors.bgPrimary : colors.textPrimary,
-                      fontSize: usesReps ? 16 : 11,
-                    }}>
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )
-        })()}
-
-        {/* Notes */}
-        {showSetNotes && (
-          <div>
-            <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
-              {t('workout:set.notes')}
-            </h4>
-            <textarea
-              value={note}
-              onChange={handleNoteChange}
-              placeholder={t('workout:set.notesPlaceholder')}
-              rows={3}
-              className="w-full rounded-xl p-3 text-sm resize-none outline-none"
-              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none', minHeight: 80 }}
-            />
-          </div>
-        )}
-
-        {/* Video */}
-        {showVideo && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold" style={{ color: colors.textPrimary, fontSize: 14 }}>
-                Video
-              </h4>
-              <span style={{ color: colors.textSecondary, fontSize: 12 }}>
-                {t('workout:set.videoOptional')}
-              </span>
-            </div>
-            {videoUrl ? (
-              <div className="relative rounded-xl overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
-                {videoFile ? (
-                  <video src={videoUrl} controls className="w-full max-h-40 object-contain" />
+                </div>
+                {videoUrl ? (
+                  <div className="relative rounded-xl overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
+                    {videoFile ? (
+                      <video src={videoUrl} controls className="w-full max-h-40 object-contain" />
+                    ) : (
+                      <VideoPlayer videoKey={videoUrl} />
+                    )}
+                    <button onClick={handleRemoveVideo}
+                      className="absolute top-2 right-2 p-1 rounded-full"
+                      style={{ backgroundColor: colors.overlay }}>
+                      <X size={16} style={{ color: colors.textPrimary }} />
+                    </button>
+                  </div>
                 ) : (
-                  <VideoPlayer videoKey={videoUrl} />
+                  <>
+                    <input ref={fileInputRef} type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
+                    <button onClick={() => fileInputRef.current?.click()}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:opacity-80"
+                      style={{ backgroundColor: colors.bgTertiary }}>
+                      <div className="flex items-center justify-center rounded-lg"
+                        style={{ width: 40, height: 40, backgroundColor: colors.bgPrimary }}>
+                        <Video size={20} style={{ color: colors.success }} />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>
+                          {t('workout:set.addVideoTitle')}
+                        </div>
+                        <div style={{ color: colors.textSecondary, fontSize: 12 }}>
+                          {t('workout:set.addVideoSubtitle')}
+                        </div>
+                      </div>
+                      <ChevronRight size={18} style={{ color: colors.textMuted }} />
+                    </button>
+                    {videoError && (
+                      <p className="text-xs mt-1 text-center" style={{ color: colors.danger }}>{videoError}</p>
+                    )}
+                  </>
                 )}
-                <button onClick={handleRemoveVideo}
-                  className="absolute top-2 right-2 p-1 rounded-full"
-                  style={{ backgroundColor: colors.overlay }}>
-                  <X size={16} style={{ color: colors.textPrimary }} />
-                </button>
               </div>
-            ) : (
-              <>
-                <input ref={fileInputRef} type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
-                <button onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:opacity-80"
-                  style={{ backgroundColor: colors.bgTertiary }}>
-                  <div className="flex items-center justify-center rounded-lg"
-                    style={{ width: 40, height: 40, backgroundColor: colors.bgPrimary }}>
-                    <Video size={20} style={{ color: colors.success }} />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>
-                      {t('workout:set.addVideoTitle')}
-                    </div>
-                    <div style={{ color: colors.textSecondary, fontSize: 12 }}>
-                      {t('workout:set.addVideoSubtitle')}
-                    </div>
-                  </div>
-                  <ChevronRight size={18} style={{ color: colors.textMuted }} />
-                </button>
-                {videoError && (
-                  <p className="text-xs mt-1 text-center" style={{ color: colors.danger }}>{videoError}</p>
-                )}
-              </>
             )}
           </div>
-        )}
 
-      </div>
-
-      {/* Sticky footer with save */}
-      <div className="px-5 pb-5 pt-3 shrink-0 space-y-3" style={{ backgroundColor: colors.bgSecondary, borderTop: `1px solid ${colors.borderSubtle}` }}>
-        {!isEditMode && descansoSeg > 0 && (
-          <p className="text-center text-xs" style={{ color: colors.textMuted }}>
-            {t('workout:rest.title')}: {formatRestTimeDisplay(descansoSeg)}
-          </p>
-        )}
-        <button onClick={handleSubmit} disabled={buttonDisabled}
-          className="w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
-          style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
-          {isEditMode ? <Save size={18} /> : <Check size={18} />}
-          {isEditMode ? t('common:buttons.save') : (descansoSeg > 0 ? t('workout:set.saveStartRest') : t('common:buttons.save'))}
-        </button>
+          {/* Save footer: empujado al fondo si cabe, scrollea con el contenido si no */}
+          <div className="pt-3 pb-5 space-y-3 mt-auto" style={{ borderTop: `1px solid ${colors.borderSubtle}` }}>
+            {!isEditMode && descansoSeg > 0 && (
+              <p className="text-center text-xs" style={{ color: colors.textMuted }}>
+                {t('workout:rest.title')}: {formatRestTimeDisplay(descansoSeg)}
+              </p>
+            )}
+            <button onClick={handleSubmit} disabled={buttonDisabled}
+              className="w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
+              {isEditMode ? <Save size={18} /> : <Check size={18} />}
+              {isEditMode ? t('common:buttons.save') : (descansoSeg > 0 ? t('workout:set.saveStartRest') : t('common:buttons.save'))}
+            </button>
+          </div>
+        </div>
       </div>
     </Modal>
   )
