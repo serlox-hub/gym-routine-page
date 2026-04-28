@@ -12,7 +12,6 @@ import SetsList from './SetsList.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
-import { colors } from '../../lib/styles.js'
 import { MeasurementType, getExerciseName, usePreference, resolveWeightUnit, hasExerciseNotes, useExpandedExercise } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
@@ -72,14 +71,12 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
     onRemove && { label: t('workout:exercise.removeFromSession'), icon: Trash2, onClick: () => setShowRemoveConfirm(true), danger: true },
   ]
 
-  const justCompleted = isCompleted && !collapsed
   const Wrapper = isSuperset ? 'div' : Card
-  const completedBg = justCompleted ? { backgroundColor: colors.successBgSubtle } : null
   const wrapperProps = isSuperset
-    ? { style: completedBg }
+    ? {}
     : {
         className: collapsed ? 'px-4 py-2.5' : 'p-4',
-        style: { ...getMuscleGroupBorderStyle(exercise.muscle_group?.name), ...completedBg },
+        style: getMuscleGroupBorderStyle(exercise.muscle_group?.name),
       }
 
   const hasNotes = hasExerciseNotes(exercise, override, notes)
@@ -91,6 +88,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         muscleGroup={exercise.muscle_group}
         series={series} reps={reps} rir={rir} rest_seconds={rest_seconds}
         collapsed={collapsed}
+        isCompleted={isCompleted}
         onToggleCollapse={toggleExpanded}
         menuItems={menuItems}
       />

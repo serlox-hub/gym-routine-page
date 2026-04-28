@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, CheckCircle2 } from 'lucide-react'
 import { DropdownMenu } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { getMuscleGroupName } from '@gym/shared'
@@ -31,6 +31,7 @@ function ExerciseCardHeader({
   rir,
   rest_seconds,
   collapsed,
+  isCompleted = false,
   onToggleCollapse,
   menuItems,
 }) {
@@ -64,6 +65,7 @@ function ExerciseCardHeader({
       </div>
 
       <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+        {isCompleted && <CheckCircle2 size={18} color={colors.success} />}
         {collapsed ? (
           <button
             onClick={onToggleCollapse}

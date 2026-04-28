@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView } from 'react-native'
-import { ChevronDown } from 'lucide-react-native'
+import { ChevronDown, CheckCircle2 } from 'lucide-react-native'
 import { DropdownMenu } from '../ui'
 import { colors } from '../../lib/styles'
 import { getMuscleGroupName } from '@gym/shared'
@@ -20,6 +20,7 @@ function ExerciseCardHeader({
   rir,
   rest_seconds,
   collapsed,
+  isCompleted = false,
   onToggleCollapse,
   menuItems,
 }) {
@@ -48,6 +49,7 @@ function ExerciseCardHeader({
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {isCompleted ? <CheckCircle2 size={18} color={colors.success} /> : null}
         {collapsed ? (
           <Pressable onPress={onToggleCollapse} hitSlop={8}>
             <ChevronDown size={18} color={colors.textMuted} />
