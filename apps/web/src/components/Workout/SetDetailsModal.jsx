@@ -64,6 +64,8 @@ function SetDetailsModal({
   const [videoFile, setVideoFile] = useState(null)
   const [videoError, setVideoError] = useState(null)
   const [setType, setSetType] = useState('normal')
+  const [localWeight, setLocalWeight] = useState('')
+  const [localReps, setLocalReps] = useState('')
   const [hasChanges, setHasChanges] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -75,8 +77,11 @@ function SetDetailsModal({
       setVideoFile(null)
       setVideoError(null)
       setSetType(initialSetType ?? 'normal')
+      setLocalWeight(weight ?? '')
+      setLocalReps(reps ?? '')
       setHasChanges(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialRir, initialNote, initialVideoUrl, initialSetType])
 
   const handleRirChange = (value) => {
@@ -94,7 +99,7 @@ function SetDetailsModal({
     if (file) {
       if (file.size > MAX_VIDEO_SIZE) {
         const sizeMB = Math.round(file.size / 1024 / 1024)
-        setVideoError(`El video pesa ${sizeMB}MB. Máximo permitido: 100MB`)
+        setVideoError(`${t('workout:set.videoTooLarge')}: ${t('workout:set.videoTooLargeDetail', { size: sizeMB })}`)
         if (fileInputRef.current) fileInputRef.current.value = ''
         return
       }
@@ -112,9 +117,29 @@ function SetDetailsModal({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const handleWeightChange = (v) => {
+    setLocalWeight(v)
+    setWeight?.(v)
+    setHasChanges(true)
+  }
+
+  const handleRepsChange = (v) => {
+    setLocalReps(v)
+    setReps?.(v)
+    setHasChanges(true)
+  }
+
   const handleSubmit = () => {
     const existingVideoUrl = (!videoFile && videoUrl) ? initialVideoUrl : null
-    onSubmit({ rir, notes: note.trim() || null, videoUrl: existingVideoUrl, videoFile, setType })
+    onSubmit({
+      rir,
+      notes: note.trim() || null,
+      videoUrl: existingVideoUrl,
+      videoFile,
+      setType,
+      weight: localWeight,
+      reps: localReps,
+    })
   }
 
   const isEditMode = mode === 'edit'
@@ -155,7 +180,7 @@ function SetDetailsModal({
         </div>
 
         {/* Weight & reps */}
-        {showWeightReps && setWeight && setReps && (
+        {showWeightReps && (setWeight || weight !== undefined) && (setReps || reps !== undefined) && (
           <div>
             <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
               {t('workout:set.weightAndReps')}
@@ -163,14 +188,14 @@ function SetDetailsModal({
             <div className="flex gap-3">
               <NumberStepper
                 label={`${t('workout:set.weight')} (${weightUnit})`}
-                value={weight}
-                onChange={(v) => { setWeight(v); setHasChanges(true) }}
+                value={localWeight}
+                onChange={handleWeightChange}
                 step={2.5}
               />
               <NumberStepper
                 label={t('workout:set.reps')}
-                value={reps}
-                onChange={(v) => { setReps(v); setHasChanges(true) }}
+                value={localReps}
+                onChange={handleRepsChange}
               />
             </div>
           </div>

@@ -63,6 +63,7 @@
     "addSet": "Añadir serie",
     "addVideo": "Añadir video",
     "videoTooLarge": "Video demasiado grande",
+    "videoTooLargeDetail": "{{size}} MB. Máximo permitido: 100 MB",
     "weightConverter": "Conversor de peso",
     "setNumber": "Serie {{number}}",
     "type": {

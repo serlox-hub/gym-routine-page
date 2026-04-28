@@ -1,14 +1,17 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, FileText, Video } from 'lucide-react'
+import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, FileText, Video, SlidersHorizontal } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
+import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
 import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal.jsx'
+import { uploadVideo } from '../../lib/videoStorage.js'
 import {
   SENSATION_LABELS,
+  MeasurementType,
   formatFullDate,
   formatSetValue,
   formatTime,
@@ -29,13 +32,16 @@ import { colors } from '../../lib/styles.js'
 
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
   const { t } = useTranslation()
-  const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(exercise.measurement_type)
+  const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
+  const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(measurementType)
+  const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
 
   const [weight, setWeight] = useState(String(set.weight ?? ''))
   const [reps, setReps] = useState(String(set.reps_completed ?? ''))
   const [timeSeconds, setTimeSeconds] = useState(String(set.time_seconds ?? ''))
   const [distanceMeters, setDistanceMeters] = useState(String(set.distance_meters ?? ''))
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
+  const [showDetails, setShowDetails] = useState(false)
 
   const buildPayload = (overrides = {}) => ({
     sessionId,
@@ -61,22 +67,70 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     onUpsert(buildPayload({ setType: newType }))
   }
 
+  const handleDetailsSubmit = async ({ rir, notes, videoUrl, videoFile, setType: newSetType, weight: newWeight, reps: newReps }) => {
+    setShowDetails(false)
+    setSetType(newSetType)
+    setWeight(String(newWeight ?? ''))
+    setReps(String(newReps ?? ''))
+    const overrides = {
+      rirActual: rir,
+      notes,
+      videoUrl,
+      setType: newSetType,
+      weight: newWeight ? parseFloat(newWeight) : null,
+      repsCompleted: newReps ? parseInt(newReps, 10) : null,
+    }
+    onUpsert(buildPayload(overrides))
+    if (videoFile) {
+      try {
+        const newUrl = await uploadVideo(videoFile)
+        onUpsert(buildPayload({ ...overrides, videoUrl: newUrl }))
+      } catch {
+        // El error queda en la UI; el video previo ya se reflejó en el upsert anterior
+      }
+    }
+  }
+
   const inputCls = "w-full text-center text-xs rounded px-1.5 py-0.5"
   const inputSt = { backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}` }
 
-  return (
-    <div className="flex items-center gap-2" style={{ fontSize: 12 }}>
-      <button
-        onClick={handleToggleDropset}
-        className="shrink-0"
-        style={{ color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted, fontSize: 12, width: 14, textAlign: 'right', fontWeight: isSetPR || setType === 'dropset' ? 700 : 400 }}
-        title={setType === 'dropset' ? t('workout:set.removeDropset') : t('workout:set.markDropset')}
-      >
-        {setType === 'dropset' ? 'D' : set.set_number}
-      </button>
+  const containerStyle = isWeightReps
+    ? { display: 'grid', gridTemplateColumns: '24px 1fr 1fr 32px', alignItems: 'center', gap: 12, fontSize: 12 }
+    : { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }
 
-      {showWeight && (
-        <div className="flex items-center gap-0.5 flex-1 min-w-0">
+  const menu = (
+    <DropdownMenu
+      triggerSize={14}
+      triggerClassName="shrink-0 -my-2"
+      items={[
+        {
+          label: t('common:buttons.edit'),
+          icon: SlidersHorizontal,
+          onClick: () => setShowDetails(true),
+        },
+        {
+          label: t('common:buttons.delete'),
+          icon: Trash2,
+          onClick: () => onDelete({ sessionId, sessionExerciseId, setNumber: set.set_number }),
+          danger: true,
+        },
+      ]}
+    />
+  )
+
+  return (
+    <>
+      <div style={containerStyle}>
+        <button
+          onClick={handleToggleDropset}
+          className="shrink-0"
+          style={{ color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted, fontSize: 12, textAlign: 'center', fontWeight: isSetPR || setType === 'dropset' ? 700 : 400 }}
+          title={setType === 'dropset' ? t('workout:set.removeDropset') : t('workout:set.markDropset')}
+        >
+          {setType === 'dropset' ? 'D' : set.set_number}
+        </button>
+
+        {showWeight && (
           <input
             value={weight}
             onChange={e => setWeight(e.target.value)}
@@ -86,12 +140,8 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>{weightUnit}</span>
-        </div>
-      )}
-      {showWeight && showReps && <span style={{ color: colors.textMuted, fontSize: 10 }}>×</span>}
-      {showReps && (
-        <div className="flex items-center gap-0.5 flex-1 min-w-0">
+        )}
+        {showReps && (
           <input
             value={reps}
             onChange={e => setReps(e.target.value)}
@@ -100,43 +150,52 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             className={inputCls}
             style={inputSt}
           />
-          <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>reps</span>
-        </div>
-      )}
-      {showTime && (
-        <div className="flex items-center gap-0.5 flex-1 min-w-0">
-          <input
-            value={timeSeconds}
-            onChange={e => setTimeSeconds(e.target.value)}
-            onBlur={handleSave}
-            type="number"
-            className={inputCls}
-            style={inputSt}
-          />
-          <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>s</span>
-        </div>
-      )}
-      {showDistance && (
-        <div className="flex items-center gap-0.5 flex-1 min-w-0">
-          <input
-            value={distanceMeters}
-            onChange={e => setDistanceMeters(e.target.value)}
-            onBlur={handleSave}
-            type="number"
-            step="0.1"
-            className={inputCls}
-            style={inputSt}
-          />
-          <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>m</span>
-        </div>
-      )}
-      <button
-        onClick={() => onDelete({ sessionId, sessionExerciseId, setNumber: set.set_number })}
-        className="p-2 rounded-lg opacity-50 hover:opacity-100 transition-opacity shrink-0 -my-2"
-      >
-        <Trash2 size={14} color={colors.textMuted} />
-      </button>
-    </div>
+        )}
+        {showTime && (
+          <div className="flex items-center gap-0.5 flex-1 min-w-0">
+            <input
+              value={timeSeconds}
+              onChange={e => setTimeSeconds(e.target.value)}
+              onBlur={handleSave}
+              type="number"
+              className={inputCls}
+              style={inputSt}
+            />
+            <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>s</span>
+          </div>
+        )}
+        {showDistance && (
+          <div className="flex items-center gap-0.5 flex-1 min-w-0">
+            <input
+              value={distanceMeters}
+              onChange={e => setDistanceMeters(e.target.value)}
+              onBlur={handleSave}
+              type="number"
+              step="0.1"
+              className={inputCls}
+              style={inputSt}
+            />
+            <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>m</span>
+          </div>
+        )}
+        {menu}
+      </div>
+      <SetDetailsModal
+        isOpen={showDetails}
+        onClose={() => setShowDetails(false)}
+        onSubmit={handleDetailsSubmit}
+        mode="edit"
+        setNumber={set.set_number}
+        initialRir={set.rir_actual}
+        initialNote={set.notes}
+        initialVideoUrl={set.video_url}
+        initialSetType={setType}
+        measurementType={measurementType}
+        weightUnit={weightUnit}
+        weight={weight}
+        reps={reps}
+      />
+    </>
   )
 }
 
@@ -171,6 +230,20 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
           <ChevronRight size={16} color={colors.textMuted} />
         )}
       </div>
+      {isEditing && measurementType === MeasurementType.WEIGHT_REPS && sets.length > 0 && (
+        <div className="mb-1.5 px-1" style={{ display: 'grid', gridTemplateColumns: '24px 1fr 1fr 32px', gap: 12 }}>
+          <span style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
+            {t('workout:set.set').toUpperCase()}
+          </span>
+          <span style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
+            {weightUnit?.toUpperCase() || 'KG'}
+          </span>
+          <span style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
+            {t('workout:set.reps').toUpperCase()}
+          </span>
+          <span />
+        </div>
+      )}
       <div className="space-y-2">
         {isEditing ? (
           <>

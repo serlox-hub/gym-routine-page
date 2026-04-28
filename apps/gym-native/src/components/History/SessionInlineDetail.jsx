@@ -2,13 +2,15 @@ import { useState, useMemo } from 'react'
 import { View, Text, TextInput, Pressable } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Share2, Pencil, Plus, FileText, Video, Trophy } from 'lucide-react-native'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, FileText, Video, Trophy, SlidersHorizontal } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
-import { SetNotesView, WorkoutSummaryModal, ExerciseHistoryModal } from '../Workout'
+import { SetNotesView, WorkoutSummaryModal, ExerciseHistoryModal, SetDetailsModal } from '../Workout'
+import { uploadVideo } from '../../lib/videoStorage'
 import {
   SENSATION_LABELS,
+  MeasurementType,
   formatFullDate,
   formatSetValue,
   formatTime,
@@ -28,13 +30,17 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 import { colors } from '../../lib/styles'
 
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
-  const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(exercise.measurement_type)
+  const { t } = useTranslation()
+  const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
+  const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(measurementType)
+  const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
 
   const [weight, setWeight] = useState(String(set.weight ?? ''))
   const [reps, setReps] = useState(String(set.reps_completed ?? ''))
   const [timeSeconds, setTimeSeconds] = useState(String(set.time_seconds ?? ''))
   const [distanceMeters, setDistanceMeters] = useState(String(set.distance_meters ?? ''))
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
+  const [showDetails, setShowDetails] = useState(false)
 
   const buildPayload = (overrides = {}) => ({
     sessionId,
@@ -60,79 +66,189 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     onUpsert(buildPayload({ setType: newType }))
   }
 
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Pressable onPress={handleToggleDropset}>
-        <Text style={{
-          color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted,
-          fontSize: 12, width: 14, textAlign: 'right',
-          fontWeight: isSetPR || setType === 'dropset' ? '700' : '400',
-        }}>
-          {setType === 'dropset' ? 'D' : set.set_number}
-        </Text>
-      </Pressable>
+  const handleDetailsSubmit = async ({ rir, notes, videoUrl, videoFile, setType: newSetType, weight: newWeight, reps: newReps }) => {
+    setShowDetails(false)
+    setSetType(newSetType)
+    setWeight(String(newWeight ?? ''))
+    setReps(String(newReps ?? ''))
+    const overrides = {
+      rirActual: rir,
+      notes,
+      videoUrl,
+      setType: newSetType,
+      weight: newWeight ? parseFloat(newWeight) : null,
+      repsCompleted: newReps ? parseInt(newReps, 10) : null,
+    }
+    onUpsert(buildPayload(overrides))
+    if (videoFile) {
+      try {
+        const newUrl = await uploadVideo(videoFile)
+        onUpsert(buildPayload({ ...overrides, videoUrl: newUrl }))
+      } catch {
+        // Si la subida falla, el upsert previo ya conserva el videoUrl anterior
+      }
+    }
+  }
 
-      {showWeight && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
+  const inputStyle = { flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }
+
+  const menu = (
+    <DropdownMenu
+      triggerSize={14}
+      items={[
+        {
+          label: t('common:buttons.edit'),
+          icon: SlidersHorizontal,
+          onPress: () => setShowDetails(true),
+        },
+        {
+          label: t('common:buttons.delete'),
+          icon: Trash2,
+          onPress: () => onDelete({ sessionId, sessionExerciseId, setNumber: set.set_number }),
+          danger: true,
+        },
+      ]}
+    />
+  )
+
+  if (isWeightReps) {
+    return (
+      <>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Pressable
+            onPress={handleToggleDropset}
+            accessibilityLabel={t(setType === 'dropset' ? 'workout:set.removeDropset' : 'workout:set.markDropset')}
+            style={{ width: 24, alignItems: 'center' }}
+          >
+            <Text style={{
+              color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted,
+              fontSize: 12,
+              fontWeight: isSetPR || setType === 'dropset' ? '700' : '400',
+            }}>
+              {setType === 'dropset' ? 'D' : set.set_number}
+            </Text>
+          </Pressable>
           <TextInput
             value={weight}
             onChangeText={setWeight}
             onBlur={handleSave}
             keyboardType="decimal-pad"
-            style={{ flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }}
+            style={inputStyle}
             placeholderTextColor={colors.textMuted}
           />
-          <Text style={{ color: colors.textMuted, fontSize: 10 }}>{weightUnit}</Text>
-        </View>
-      )}
-      {showWeight && showReps && <Text style={{ color: colors.textMuted, fontSize: 10 }}>×</Text>}
-      {showReps && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
           <TextInput
             value={reps}
             onChangeText={setReps}
             onBlur={handleSave}
             keyboardType="number-pad"
-            style={{ flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }}
+            style={inputStyle}
             placeholderTextColor={colors.textMuted}
           />
-          <Text style={{ color: colors.textMuted, fontSize: 10 }}>reps</Text>
+          <View style={{ width: 32, alignItems: 'center' }}>{menu}</View>
         </View>
-      )}
-      {showTime && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-          <TextInput
-            value={timeSeconds}
-            onChangeText={setTimeSeconds}
-            onBlur={handleSave}
-            keyboardType="number-pad"
-            style={{ flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }}
-            placeholderTextColor={colors.textMuted}
-          />
-          <Text style={{ color: colors.textMuted, fontSize: 10 }}>s</Text>
-        </View>
-      )}
-      {showDistance && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-          <TextInput
-            value={distanceMeters}
-            onChangeText={setDistanceMeters}
-            onBlur={handleSave}
-            keyboardType="decimal-pad"
-            style={{ flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }}
-            placeholderTextColor={colors.textMuted}
-          />
-          <Text style={{ color: colors.textMuted, fontSize: 10 }}>m</Text>
-        </View>
-      )}
-      <Pressable
-        onPress={() => onDelete({ sessionId, sessionExerciseId, setNumber: set.set_number })}
-        style={{ padding: 8, marginVertical: -8, opacity: 0.5 }}
-        className="active:opacity-100"
-      >
-        <Trash2 size={14} color={colors.textMuted} />
-      </Pressable>
-    </View>
+        <SetDetailsModal
+          isOpen={showDetails}
+          onClose={() => setShowDetails(false)}
+          onSubmit={handleDetailsSubmit}
+          mode="edit"
+          setNumber={set.set_number}
+          initialRir={set.rir_actual}
+          initialNote={set.notes}
+          initialVideoUrl={set.video_url}
+          initialSetType={setType}
+          measurementType={measurementType}
+          weightUnit={weightUnit}
+          weight={weight}
+          reps={reps}
+        />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Pressable
+          onPress={handleToggleDropset}
+          accessibilityLabel={t(setType === 'dropset' ? 'workout:set.removeDropset' : 'workout:set.markDropset')}
+        >
+          <Text style={{
+            color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted,
+            fontSize: 12, width: 14, textAlign: 'right',
+            fontWeight: isSetPR || setType === 'dropset' ? '700' : '400',
+          }}>
+            {setType === 'dropset' ? 'D' : set.set_number}
+          </Text>
+        </Pressable>
+
+        {showWeight && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
+            <TextInput
+              value={weight}
+              onChangeText={setWeight}
+              onBlur={handleSave}
+              keyboardType="decimal-pad"
+              style={inputStyle}
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 10 }}>{weightUnit}</Text>
+          </View>
+        )}
+        {showTime && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
+            <TextInput
+              value={timeSeconds}
+              onChangeText={setTimeSeconds}
+              onBlur={handleSave}
+              keyboardType="number-pad"
+              style={inputStyle}
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 10 }}>s</Text>
+          </View>
+        )}
+        {showDistance && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
+            <TextInput
+              value={distanceMeters}
+              onChangeText={setDistanceMeters}
+              onBlur={handleSave}
+              keyboardType="decimal-pad"
+              style={inputStyle}
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 10 }}>m</Text>
+          </View>
+        )}
+        {showReps && !isWeightReps && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
+            <TextInput
+              value={reps}
+              onChangeText={setReps}
+              onBlur={handleSave}
+              keyboardType="number-pad"
+              style={inputStyle}
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 10 }}>reps</Text>
+          </View>
+        )}
+        {menu}
+      </View>
+      <SetDetailsModal
+        isOpen={showDetails}
+        onClose={() => setShowDetails(false)}
+        onSubmit={handleDetailsSubmit}
+        mode="edit"
+        setNumber={set.set_number}
+        initialRir={set.rir_actual}
+        initialNote={set.notes}
+        initialVideoUrl={set.video_url}
+        initialSetType={setType}
+        measurementType={measurementType}
+        weightUnit={weightUnit}
+      />
+    </>
   )
 }
 
@@ -172,6 +288,20 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         )}
       </Pressable>
 
+      {isEditing && measurementType === MeasurementType.WEIGHT_REPS && sets.length > 0 && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, width: 24, textAlign: 'center' }}>
+            {t('workout:set.set').toUpperCase()}
+          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, flex: 1, textAlign: 'center' }}>
+            {weightUnit?.toUpperCase() || 'KG'}
+          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, flex: 1, textAlign: 'center' }}>
+            {t('workout:set.reps').toUpperCase()}
+          </Text>
+          <View style={{ width: 32 }} />
+        </View>
+      )}
       <View className="gap-2">
         {isEditing ? (
           <>
