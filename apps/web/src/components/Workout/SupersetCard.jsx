@@ -1,4 +1,5 @@
 import { Link2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Card } from '../ui/index.js'
 import WorkoutExerciseCard from './WorkoutExerciseCard.jsx'
 import { colors } from '../../lib/styles.js'
@@ -6,6 +7,7 @@ import { formatSupersetLabel } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, onReplace, getReorderProps, existingSupersets = [] }) {
+  const { t } = useTranslation()
   const supersetLabel = formatSupersetLabel(supersetId)
 
   return (
@@ -34,7 +36,7 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
           className="text-xs"
           style={{ color: colors.textSecondary }}
         >
-          ({exercises.length} ejercicios)
+          ({t('routine:superset.exerciseCount', { count: exercises.length })})
         </span>
       </div>
 

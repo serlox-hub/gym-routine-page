@@ -84,7 +84,9 @@
     "title": "Superset",
     "description": "Exercises in the same superset are done without rest between them",
     "noSuperset": "No superset",
-    "group": "Group {{letter}}"
+    "group": "Group {{letter}}",
+    "exerciseCount_one": "{{count}} exercise",
+    "exerciseCount_other": "{{count}} exercises"
   },
   "templates": {
     "title": "Predefined routines",
