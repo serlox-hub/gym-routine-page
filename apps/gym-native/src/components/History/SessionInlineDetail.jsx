@@ -145,10 +145,15 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
   const [showHistory, setShowHistory] = useState(false)
   const measurementType = exercise.measurement_type || 'weight_reps'
+  const isHistoryClickable = !exercise.deleted_at && !isEditing
 
   return (
     <Card className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-      <View className="flex-row items-start justify-between gap-2 mb-3">
+      <Pressable
+        onPress={isHistoryClickable ? () => setShowHistory(true) : undefined}
+        disabled={!isHistoryClickable}
+        className={`flex-row items-start justify-between gap-2 mb-3 ${isHistoryClickable ? 'active:opacity-70' : ''}`}
+      >
         <View className="flex-1 flex-row flex-wrap items-center gap-2">
           <Text
             className={`font-medium ${exercise.deleted_at ? 'line-through' : ''}`}
@@ -162,12 +167,10 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             </View>
           )}
         </View>
-        {!exercise.deleted_at && !isEditing && (
-          <Pressable onPress={() => setShowHistory(true)}>
-            <ChevronRight size={16} color={colors.textMuted} />
-          </Pressable>
+        {isHistoryClickable && (
+          <ChevronRight size={16} color={colors.textMuted} />
         )}
-      </View>
+      </Pressable>
 
       <View className="gap-2">
         {isEditing ? (

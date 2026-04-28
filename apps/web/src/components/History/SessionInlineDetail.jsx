@@ -149,10 +149,14 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
   const [showHistory, setShowHistory] = useState(false)
   const measurementType = exercise.measurement_type || 'weight_reps'
+  const isHistoryClickable = !exercise.deleted_at && !isEditing
 
   return (
     <Card className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-      <div className="flex items-start justify-between gap-2 mb-2">
+      <div
+        onClick={isHistoryClickable ? () => setShowHistory(true) : undefined}
+        className={`flex items-start justify-between gap-2 mb-2 ${isHistoryClickable ? 'cursor-pointer hover:opacity-80' : ''}`}
+      >
         <div className="flex items-center gap-2">
           <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>
             {getExerciseName(exercise)}
@@ -163,13 +167,8 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             </span>
           )}
         </div>
-        {!exercise.deleted_at && !isEditing && (
-          <button
-            onClick={() => setShowHistory(true)}
-            className="hover:opacity-80"
-          >
-            <ChevronRight size={16} color={colors.textMuted} />
-          </button>
+        {isHistoryClickable && (
+          <ChevronRight size={16} color={colors.textMuted} />
         )}
       </div>
       <div className="space-y-2">
