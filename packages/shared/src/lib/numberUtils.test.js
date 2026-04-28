@@ -20,6 +20,12 @@ describe('parseDecimal', () => {
     expect(parseDecimal('0')).toBe(0)
   })
 
+  test('parsea el número 0 (no como falsy)', () => {
+    expect(parseDecimal(0)).toBe(0)
+    expect(parseDecimal('0')).toBe(0)
+    expect(parseDecimal('0,0')).toBe(0)
+  })
+
   test('maneja strings vacíos y null/undefined', () => {
     expect(parseDecimal('')).toBeNaN()
     expect(parseDecimal(null)).toBeNaN()

@@ -466,14 +466,19 @@ describe('setUtils', () => {
   })
 
   describe('formatPreviousSetValue', () => {
-    it('omite la unidad para weight_reps (formato compacto)', () => {
+    it('incluye la unidad para weight_reps', () => {
       expect(formatPreviousSetValue({ weight: 80, reps: 8 }, 'weight_reps'))
-        .toBe('80 × 8')
+        .toBe('80kg × 8')
     })
 
-    it('cae a formatSetValueByType cuando weight o reps faltan', () => {
-      expect(formatPreviousSetValue({ weight: 80 }, 'weight_reps'))
-        .toBe('80kg × undefined')
+    it('preserva el peso 0', () => {
+      expect(formatPreviousSetValue({ weight: 0, reps: 10 }, 'weight_reps'))
+        .toBe('0kg × 10')
+    })
+
+    it('omite la sección de peso si weight es null en weight_reps', () => {
+      expect(formatPreviousSetValue({ weight: null, reps: 12 }, 'weight_reps'))
+        .toBe('12 reps')
     })
 
     it('reusa formatSetValueByType para otros tipos', () => {
@@ -483,7 +488,7 @@ describe('setUtils', () => {
         .toBe('90s')
     })
 
-    it('respeta weightUnit cuando se cae al formatter completo', () => {
+    it('respeta weightUnit', () => {
       expect(formatPreviousSetValue({ weight: 80, distanceMeters: 100 }, 'weight_distance', { weightUnit: 'lb' }))
         .toBe('80lb × 100m')
     })

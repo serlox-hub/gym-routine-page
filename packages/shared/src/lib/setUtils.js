@@ -202,26 +202,26 @@ export function buildCompletedSetData(measurementType, formData, info) {
  */
 export function formatSetValue(set, { timeUnit = 's', distanceUnit = 'm' } = {}) {
   const parts = []
-  if (set.level) {
+  if (set.level != null) {
     parts.push(`Nv${set.level}`)
   }
-  if (set.weight) {
+  if (set.weight != null) {
     parts.push(`${formatNumber(set.weight)}${set.weight_unit || 'kg'}`)
   }
-  if (set.reps_completed) {
+  if (set.reps_completed != null) {
     parts.push(`${set.reps_completed} reps`)
   }
-  if (set.time_seconds) {
+  if (set.time_seconds != null) {
     parts.push(timeUnit === 'min' ? formatSecondsAsMMSS(set.time_seconds) : `${set.time_seconds}s`)
   }
-  if (set.distance_meters) {
+  if (set.distance_meters != null) {
     const val = metersToDistanceUnit(set.distance_meters, distanceUnit)
     parts.push(`${formatNumber(val)}${distanceUnit}`)
   }
-  if (set.pace_seconds) {
+  if (set.pace_seconds != null) {
     parts.push(`${formatSecondsAsMMSS(set.pace_seconds)}/${distanceUnit}`)
   }
-  if (set.calories_burned) {
+  if (set.calories_burned != null) {
     parts.push(`${set.calories_burned}kcal`)
   }
   return parts.join(' × ')
@@ -236,20 +236,27 @@ export function formatSetValue(set, { timeUnit = 's', distanceUnit = 'm' } = {})
 export function formatSetValueByType(set, measurementType, { timeUnit = 's', distanceUnit = 'm' } = {}) {
   const wUnit = set.weightUnit || 'kg'
   const fmtTime = (s) => timeUnit === 'min' ? formatSecondsAsMMSS(s) : `${s}s`
-  const dVal = set.distanceMeters ? metersToDistanceUnit(set.distanceMeters, distanceUnit) : 0
+  const dVal = set.distanceMeters != null ? metersToDistanceUnit(set.distanceMeters, distanceUnit) : 0
+  const fmtWeight = () => `${formatNumber(set.weight)}${wUnit}`
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
-      return `${formatNumber(set.weight)}${wUnit} × ${set.reps}`
+      return set.weight != null
+        ? `${fmtWeight()} × ${set.reps}`
+        : `${set.reps} reps`
     case MeasurementType.REPS_ONLY:
       return `${set.reps} reps`
     case MeasurementType.TIME:
       return fmtTime(set.timeSeconds)
     case MeasurementType.WEIGHT_TIME:
-      return `${formatNumber(set.weight)}${wUnit} × ${fmtTime(set.timeSeconds)}`
+      return set.weight != null
+        ? `${fmtWeight()} × ${fmtTime(set.timeSeconds)}`
+        : fmtTime(set.timeSeconds)
     case MeasurementType.DISTANCE:
       return `${formatNumber(dVal)}${distanceUnit}`
     case MeasurementType.WEIGHT_DISTANCE:
-      return `${formatNumber(set.weight)}${wUnit} × ${formatNumber(dVal)}${distanceUnit}`
+      return set.weight != null
+        ? `${fmtWeight()} × ${formatNumber(dVal)}${distanceUnit}`
+        : `${formatNumber(dVal)}${distanceUnit}`
     case MeasurementType.CALORIES:
       return `${set.caloriesBurned}kcal`
     case MeasurementType.LEVEL_TIME:
@@ -263,18 +270,15 @@ export function formatSetValueByType(set, measurementType, { timeUnit = 's', dis
     case MeasurementType.DISTANCE_PACE:
       return `${formatNumber(dVal)}${distanceUnit} @ ${formatSecondsAsMMSS(set.paceSeconds)}/${distanceUnit}`
     default:
-      return set.weight ? `${formatNumber(set.weight)}${wUnit} × ${set.reps}` : `${set.reps}`
+      return set.weight != null ? `${fmtWeight()} × ${set.reps}` : `${set.reps}`
   }
 }
 
 /**
- * Formatea el valor de una serie en formato compacto para tarjetas de historial.
- * Diferencia con `formatSetValueByType`: para WEIGHT_REPS omite la unidad (`80 × 8` en vez de `80kg × 8`).
+ * Formatea el valor de una serie para las tarjetas de "última sesión".
+ * Mantiene la unidad de peso para que el usuario sepa qué número es peso y cuál reps.
  */
 export function formatPreviousSetValue(set, measurementType, { weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm' } = {}) {
-  if (measurementType === MeasurementType.WEIGHT_REPS && set.weight != null && set.reps != null) {
-    return `${set.weight} × ${set.reps}`
-  }
   return formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit })
 }
 

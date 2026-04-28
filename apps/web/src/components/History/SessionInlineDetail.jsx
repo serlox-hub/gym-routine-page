@@ -26,6 +26,8 @@ import {
   getMuscleGroupColor,
   usePreference,
   resolveWeightUnit,
+  toNullableFloat,
+  toNullableInt,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 import { colors } from '../../lib/styles.js'
@@ -47,10 +49,10 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     sessionId,
     sessionExerciseId,
     setNumber: set.set_number,
-    weight: weight ? parseFloat(weight) : null,
-    repsCompleted: reps ? parseInt(reps, 10) : null,
-    timeSeconds: timeSeconds ? parseInt(timeSeconds, 10) : null,
-    distanceMeters: distanceMeters ? parseFloat(distanceMeters) : null,
+    weight: toNullableFloat(weight),
+    repsCompleted: toNullableInt(reps),
+    timeSeconds: toNullableInt(timeSeconds),
+    distanceMeters: toNullableFloat(distanceMeters),
     paceSeconds: set.pace_seconds,
     rirActual: set.rir_actual,
     notes: set.notes,
@@ -77,8 +79,8 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       notes,
       videoUrl,
       setType: newSetType,
-      weight: newWeight ? parseFloat(newWeight) : null,
-      repsCompleted: newReps ? parseInt(newReps, 10) : null,
+      weight: toNullableFloat(newWeight),
+      repsCompleted: toNullableInt(newReps),
     }
     onUpsert(buildPayload(overrides))
     if (videoFile) {
