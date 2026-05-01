@@ -85,6 +85,14 @@ function History() {
 
   return (
     <div className="p-4 max-w-4xl mx-auto pb-20">
+      <MonthlyCalendar
+        sessions={sessions}
+        onDayClick={handleDayClick}
+        currentDate={currentDate}
+        onDateChange={setCurrentDate}
+        selectedDateKey={selectedDateKey}
+      />
+
       {!sessions || sessions.length === 0 ? (
         <div className="text-center py-12">
           <Calendar size={48} className="mx-auto mb-4" style={{ color: colors.textSecondary }} />
@@ -92,14 +100,6 @@ function History() {
         </div>
       ) : (
         <>
-          <MonthlyCalendar
-            sessions={sessions}
-            onDayClick={handleDayClick}
-            currentDate={currentDate}
-            onDateChange={setCurrentDate}
-            selectedDateKey={selectedDateKey}
-          />
-
           {/* Session selector (when multiple sessions on same day) */}
           {selectedSessions && selectedSessions.length > 1 && (
             <div className="flex gap-2 mt-4 mb-2 overflow-x-auto">

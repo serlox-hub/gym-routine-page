@@ -97,6 +97,14 @@ export default function HistoryScreen({ navigation, route }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
         keyboardShouldPersistTaps="handled"
       >
+        <MonthlyCalendar
+          sessions={sessions}
+          onDayPress={handleDayPress}
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
+          selectedDateKey={selectedDateKey}
+        />
+
         {!sessions || sessions.length === 0 ? (
           <View className="items-center py-12">
             <Calendar size={48} color={colors.textSecondary} />
@@ -104,14 +112,6 @@ export default function HistoryScreen({ navigation, route }) {
           </View>
         ) : (
           <>
-            <MonthlyCalendar
-              sessions={sessions}
-              onDayPress={handleDayPress}
-              currentDate={currentDate}
-              onDateChange={setCurrentDate}
-              selectedDateKey={selectedDateKey}
-            />
-
             {/* Session selector */}
             {selectedSessions && selectedSessions.length > 1 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4 mb-2">
