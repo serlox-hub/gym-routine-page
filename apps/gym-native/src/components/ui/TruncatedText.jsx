@@ -20,7 +20,7 @@ export default function TruncatedText({ text, maxChars = MAX_CHARS, className = 
         {needsTruncation && (
           <Text
             onPress={() => setIsExpanded(!isExpanded)}
-            className="text-accent"
+            className="text-success"
           >
             {' '}{isExpanded ? 'ver menos' : 'ver más'}
           </Text>

@@ -120,7 +120,7 @@ function ExecutionTimer({ seconds }) {
           className="h-full transition-all duration-1000"
           style={{
             width: `${progress}%`,
-            backgroundColor: isDone ? colors.success : isCritical ? colors.danger : colors.accent
+            backgroundColor: isDone ? colors.success : isCritical ? colors.danger : colors.textSecondary
           }}
         />
       </div>

@@ -1,23 +1,25 @@
+import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
 import { Input } from '../ui/index.js'
 
 function DayEditForm({ dayNumber, form, setForm, onSave }) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-2" onClick={e => e.stopPropagation()}>
       <div className="flex items-center gap-3">
-        <span className="text-accent font-semibold shrink-0">{dayNumber}</span>
+        <span className="text-success font-semibold shrink-0">{dayNumber}</span>
         <Input
           type="text"
           value={form.name}
           onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
           className="flex-1 min-w-0"
-          placeholder="Nombre del día"
+          placeholder={t('routine:day.name')}
           autoFocus
         />
       </div>
       <div className="flex items-center gap-2 pl-8">
         <label className="text-sm" style={{ color: colors.textSecondary }}>
-          Duración estimada:
+          {t('routine:day.duration')}:
         </label>
         <Input
           type="number"
@@ -27,11 +29,11 @@ function DayEditForm({ dayNumber, form, setForm, onSave }) {
           placeholder="--"
           min="1"
         />
-        <span className="text-sm" style={{ color: colors.textSecondary }}>min</span>
+        <span className="text-sm" style={{ color: colors.textSecondary }}>{t('common:time.min')}</span>
         <button
           onClick={onSave}
           className="ml-auto px-3 py-1 rounded text-sm"
-          style={{ backgroundColor: colors.accent, color: colors.white }}
+          style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
         >
           OK
         </button>

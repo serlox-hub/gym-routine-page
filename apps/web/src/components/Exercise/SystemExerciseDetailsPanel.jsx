@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Info } from 'lucide-react'
 import { useChangeWeightUnit } from '@gym/shared'
 import { useUserExerciseOverride, useUpsertUserExerciseOverride } from '../../hooks/useExercises.js'
 import { usePreference } from '../../hooks/usePreferences.js'
@@ -63,9 +64,10 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
   return (
     <>
       <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 200px)' }}>
-        <p className="text-xs mb-4 px-3 py-2 rounded-lg" style={{ backgroundColor: colors.accentBgSubtle, color: colors.accent }}>
-          {t('exercise:systemExerciseInfo')}
-        </p>
+        <div className="flex items-start gap-2 mb-4 px-3 py-2 rounded-lg" style={{ border: `1px solid ${colors.border}`, color: colors.textSecondary }}>
+          <Info size={14} className="shrink-0 mt-0.5" />
+          <p className="text-xs">{t('exercise:systemExerciseInfo')}</p>
+        </div>
 
         {/* Personal notes */}
         <div className="mb-4">
@@ -97,8 +99,8 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
                   onClick={() => setWeightUnit(effectiveUnit === unit ? '' : unit)}
                   className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
                   style={{
-                    backgroundColor: isActive ? colors.accent : colors.bgTertiary,
-                    color: isActive ? colors.white : colors.textSecondary,
+                    backgroundColor: isActive ? colors.success : colors.bgTertiary,
+                    color: isActive ? colors.bgPrimary : colors.textSecondary,
                   }}
                 >
                   {unit}

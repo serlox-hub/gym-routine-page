@@ -48,7 +48,7 @@ function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) 
         <Pressable
           onPress={() => setShowPicker(false)}
           className="flex-1 justify-end"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          style={{ backgroundColor: colors.overlaySoft }}
         >
           <Pressable onPress={(e) => e.stopPropagation()} className="bg-surface-block rounded-t-2xl pb-8">
             <Text className="text-primary font-semibold p-4">{t('routine:superset.title')}</Text>
@@ -57,9 +57,9 @@ function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) 
                 key={opt.value}
                 onPress={() => { onChange(opt.value); setShowPicker(false) }}
                 className="px-4 py-3"
-                style={(value || '') === opt.value ? { backgroundColor: colors.accentBgSubtle } : {}}
+                style={(value || '') === opt.value ? { backgroundColor: colors.successBgSubtle } : {}}
               >
-                <Text style={{ color: (value || '') === opt.value ? colors.accent : colors.textPrimary }}>
+                <Text style={{ color: (value || '') === opt.value ? colors.success : colors.textPrimary }}>
                   {opt.label}
                 </Text>
               </Pressable>
@@ -87,7 +87,7 @@ export default function ExerciseConfigForm({
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
       {!hideExerciseName && (
-        <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: colors.accentBgSubtle }}>
+        <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: colors.bgTertiary }}>
           <Text className="text-primary font-medium">{getExerciseName(exercise)}</Text>
         </View>
       )}

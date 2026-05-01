@@ -3,7 +3,6 @@ import { colors } from '../../lib/styles'
 
 const VARIANTS = {
   default: { backgroundColor: colors.bgTertiary, color: colors.textSecondary },
-  accent: { backgroundColor: colors.accentBg, color: colors.accent },
   purple: { backgroundColor: colors.purpleBg, color: colors.purple },
   success: { backgroundColor: colors.successBg, color: colors.success },
   warning: { backgroundColor: colors.warningBg, color: colors.warning },

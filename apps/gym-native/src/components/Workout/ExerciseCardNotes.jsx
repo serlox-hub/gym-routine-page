@@ -12,13 +12,13 @@ function StructuredInstructions({ instructions }) {
     <View className="gap-2">
       {instructions.setup && (
         <Text className="text-sm" style={{ color: colors.textPrimary }}>
-          <Text className="font-medium" style={{ color: colors.accent }}>{t('exercise:setup')}: </Text>
+          <Text className="font-medium" style={{ color: colors.textSecondary }}>{t('exercise:setup')}: </Text>
           {instructions.setup}
         </Text>
       )}
       {instructions.execution && (
         <Text className="text-sm" style={{ color: colors.textPrimary }}>
-          <Text className="font-medium" style={{ color: colors.accent }}>{t('exercise:execution')}: </Text>
+          <Text className="font-medium" style={{ color: colors.textSecondary }}>{t('exercise:execution')}: </Text>
           {instructions.execution}
         </Text>
       )}
@@ -69,7 +69,7 @@ function ExerciseCardNotes({ exercise, notes }) {
       {structured && <StructuredInstructions instructions={structured} />}
       {legacyText && (
         <Text className="text-sm" style={{ color: colors.textPrimary }}>
-          <Text style={{ color: colors.accent }}>{t('exercise:execution')}: </Text>{legacyText}
+          <Text style={{ color: colors.textSecondary }}>{t('exercise:execution')}: </Text>{legacyText}
         </Text>
       )}
       {personalNotes && (

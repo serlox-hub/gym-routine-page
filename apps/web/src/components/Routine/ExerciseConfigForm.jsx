@@ -24,7 +24,7 @@ function ExerciseConfigForm({
       {!hideExerciseName && (
         <div
           className="p-3 rounded-lg"
-          style={{ backgroundColor: colors.accentBgSubtle }}
+          style={{ backgroundColor: colors.bgTertiary }}
         >
           <div className="font-medium" style={{ color: colors.textPrimary }}>
             {getExerciseName(exercise)}
@@ -94,7 +94,7 @@ function ExerciseConfigForm({
         {showSupersetField && (
           <div>
             <Select
-              label="Superset"
+              label={t('routine:superset.title')}
               value={form.superset_group || ''}
               onChange={(e) => setForm(prev => ({ ...prev, superset_group: e.target.value }))}
             >

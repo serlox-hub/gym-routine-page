@@ -94,7 +94,7 @@ export default function HistoryScreen({ navigation, route }) {
       <ScrollView
         className="flex-1 px-4"
         contentContainerStyle={{ paddingBottom: design.tabContentPaddingBottom }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />}
         keyboardShouldPersistTaps="handled"
       >
         <MonthlyCalendar

@@ -7,7 +7,7 @@ export default function DayEditForm({ dayNumber, form, setForm, onSave }) {
   return (
     <View className="gap-2">
       <View className="flex-row items-center gap-3">
-        <Text className="text-accent font-semibold">{dayNumber}</Text>
+        <Text className="text-success font-semibold">{dayNumber}</Text>
         <TextInput
           value={form.name}
           onChangeText={(v) => setForm(prev => ({ ...prev, name: v }))}
@@ -33,9 +33,9 @@ export default function DayEditForm({ dayNumber, form, setForm, onSave }) {
         <Pressable
           onPress={onSave}
           className="ml-auto px-3 py-1 rounded"
-          style={{ backgroundColor: colors.accent }}
+          style={{ backgroundColor: colors.success }}
         >
-          <Text className="text-white text-sm">OK</Text>
+          <Text className="text-sm" style={{ color: colors.bgPrimary }}>OK</Text>
         </Pressable>
       </View>
     </View>

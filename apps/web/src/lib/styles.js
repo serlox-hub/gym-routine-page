@@ -1,5 +1,4 @@
 // RGB base para derivar variantes con alpha
-export const RGB_ACCENT = '0, 212, 255'
 export const RGB_PURPLE = '124, 92, 252'
 export const RGB_SUCCESS = '190, 255, 0'
 
@@ -70,8 +69,6 @@ export const colors = {
   black: '#000000',
 
   // Acentos
-  accent: '#00D4FF',
-  accentHover: '#33DFFF',
   success: '#BEFF00',
   warning: '#d29922',
   danger: '#f85149',
@@ -84,8 +81,6 @@ export const colors = {
   textDark: '#0A0A0F',
 
   // Fondos semánticos (alpha)
-  accentBg: 'rgba(0, 212, 255, 0.15)',
-  accentBgSubtle: 'rgba(0, 212, 255, 0.1)',
   purpleBg: 'rgba(124, 92, 252, 0.15)',
   purpleAccentBg: 'rgba(124, 92, 252, 0.2)',
   successBg: 'rgba(190, 255, 0, 0.12)',
@@ -95,6 +90,7 @@ export const colors = {
   dangerBg: 'rgba(248, 81, 73, 0.1)',
   actionPrimaryBg: 'rgba(190, 255, 0, 0.15)',
   overlay: 'rgba(0, 0, 0, 0.85)',
+  overlaySoft: 'rgba(0, 0, 0, 0.5)',
 }
 
 // Estilos reutilizables para elementos de formulario

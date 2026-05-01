@@ -91,7 +91,7 @@ function HistoryTable({ sessions, weightUnit = 'kg', timeUnit = 's', distanceUni
           onClick={onLoadMore}
           disabled={isFetchingNextPage}
           className="w-full py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50"
-          style={{ backgroundColor: colors.bgTertiary, color: colors.accent }}
+          style={{ backgroundColor: colors.bgTertiary, color: colors.success }}
         >
           {isFetchingNextPage ? t('common:buttons.loading') : t('common:buttons.seeMore')}
         </button>

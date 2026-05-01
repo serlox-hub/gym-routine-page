@@ -11,13 +11,13 @@ function StructuredInstructions({ instructions }) {
     <div className="space-y-2">
       {instructions.setup && (
         <p className="text-sm" style={{ color: colors.textPrimary }}>
-          <span className="font-medium" style={{ color: colors.accent }}>{t('exercise:setup')}: </span>
+          <span className="font-medium" style={{ color: colors.textSecondary }}>{t('exercise:setup')}: </span>
           {instructions.setup}
         </p>
       )}
       {instructions.execution && (
         <p className="text-sm" style={{ color: colors.textPrimary }}>
-          <span className="font-medium" style={{ color: colors.accent }}>{t('exercise:execution')}: </span>
+          <span className="font-medium" style={{ color: colors.textSecondary }}>{t('exercise:execution')}: </span>
           {instructions.execution}
         </p>
       )}
@@ -68,7 +68,7 @@ function ExerciseCardNotes({ exercise, notes }) {
       {structured && <StructuredInstructions instructions={structured} />}
       {legacyText && (
         <p style={{ color: colors.textPrimary, whiteSpace: 'pre-line' }}>
-          <span style={{ color: colors.accent }}>{t('exercise:execution')}:</span> {legacyText}
+          <span style={{ color: colors.textSecondary }}>{t('exercise:execution')}:</span> {legacyText}
         </p>
       )}
       {personalNotes && (

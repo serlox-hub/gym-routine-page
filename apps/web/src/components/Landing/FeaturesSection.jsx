@@ -31,7 +31,7 @@ function FeaturesSection() {
       icon: TrendingUp,
       title: t('landing:features.progress.title'),
       description: t('landing:features.progress.description'),
-      color: colors.accent,
+      color: colors.success,
     },
     {
       icon: Sparkles,

@@ -27,7 +27,7 @@ function StepsSection() {
       title: t('landing:steps.analyze.title'),
       description: t('landing:steps.analyze.description'),
       icon: BarChart3,
-      color: colors.accent,
+      color: colors.success,
     },
   ]
 

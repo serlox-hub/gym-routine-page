@@ -69,7 +69,7 @@ export default function ExecutionTimer({ seconds }) {
           opacity: seconds === 0 ? 0.5 : 1,
         }}
       >
-        <Text className="text-sm font-medium" style={{ color: colors.white }}>▶</Text>
+        <Text className="text-sm font-medium" style={{ color: colors.bgPrimary }}>▶</Text>
       </Pressable>
     )
   }
@@ -97,7 +97,7 @@ export default function ExecutionTimer({ seconds }) {
           className="h-full rounded-full"
           style={{
             width: `${progress}%`,
-            backgroundColor: isDone ? colors.success : isCritical ? colors.danger : colors.accent,
+            backgroundColor: isDone ? colors.success : isCritical ? colors.danger : colors.textSecondary,
           }}
         />
       </View>

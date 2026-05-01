@@ -24,8 +24,6 @@ export default {
         'light': colors.textLight,
         'white': colors.white,
         // Semantic
-        'accent': colors.accent,
-        'accent-hover': colors.accentHover,
         'purple': colors.purple,
         'purple-accent': colors.purpleAccent,
         'purple-bg': colors.purpleBg,
@@ -38,8 +36,6 @@ export default {
         'danger-bg': colors.dangerBg,
         'orange': colors.orange,
         'orange-bg': colors.orangeBg,
-        'accent-bg': colors.accentBg,
-        'accent-bg-subtle': colors.accentBgSubtle,
         'action-primary': colors.actionPrimary,
         'action-primary-bg': colors.actionPrimaryBg,
         'text-dark': colors.textDark,

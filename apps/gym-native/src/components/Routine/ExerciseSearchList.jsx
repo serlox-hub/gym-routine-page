@@ -109,10 +109,10 @@ function ExerciseBadge({ label, dot, accent }) {
   return (
     <View
       className="flex-row items-center gap-1 px-1.5 py-0.5 rounded-full"
-      style={{ backgroundColor: accent ? colors.accentBgSubtle : colors.bgTertiary }}
+      style={{ backgroundColor: accent ? colors.successBgSubtle : colors.bgTertiary }}
     >
       {dot && <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dot }} />}
-      <Text style={{ fontSize: 10, color: accent ? colors.accent : colors.textSecondary }}>{label}</Text>
+      <Text style={{ fontSize: 10, color: accent ? colors.success : colors.textSecondary }}>{label}</Text>
     </View>
   )
 }

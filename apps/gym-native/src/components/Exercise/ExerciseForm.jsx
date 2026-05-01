@@ -21,7 +21,7 @@ const DEFAULT_FORM = {
 function BottomSheetPicker({ visible, onClose, title, options, selected, onSelect }) {
   return (
     <RNModal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <Pressable onPress={onClose} className="flex-1 justify-end" style={{ backgroundColor: colors.overlaySoft }}>
         <Pressable onPress={(e) => e.stopPropagation()} className="bg-surface-block rounded-t-2xl pb-8">
           <Text className="text-primary font-semibold p-4">{title}</Text>
           <ScrollView style={{ maxHeight: 400 }}>
@@ -30,10 +30,10 @@ function BottomSheetPicker({ visible, onClose, title, options, selected, onSelec
                 key={opt.value}
                 onPress={() => { onSelect(opt.value); onClose() }}
                 className="px-4 py-3 flex-row items-center gap-2"
-                style={selected === opt.value ? { backgroundColor: colors.accentBgSubtle } : {}}
+                style={selected === opt.value ? { backgroundColor: colors.successBgSubtle } : {}}
               >
                 {opt.color && <View className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: opt.color }} />}
-                <Text style={{ color: selected === opt.value ? colors.accent : colors.textPrimary }}>
+                <Text style={{ color: selected === opt.value ? colors.success : colors.textPrimary }}>
                   {opt.label}
                 </Text>
               </Pressable>
@@ -106,7 +106,7 @@ export default function ExerciseForm({
   return (
     <View>
       {error && (
-        <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: 'rgba(248,81,73,0.1)' }}>
+        <View className="p-3 rounded-lg mb-4" style={{ backgroundColor: colors.dangerBg }}>
           <Text style={{ color: colors.danger }}>{error}</Text>
         </View>
       )}

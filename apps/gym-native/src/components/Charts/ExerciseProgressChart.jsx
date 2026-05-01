@@ -19,7 +19,7 @@ export default function ExerciseProgressChart({ sessions, measurementType, weigh
   const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
 
   const TAB_CONFIG = {
-    [TABS.WEIGHT]: { dataKey: 'best', color: colors.accent, label: t('workout:summary.maxWeight') },
+    [TABS.WEIGHT]: { dataKey: 'best', color: colors.success, label: t('workout:summary.maxWeight') },
     [TABS.VOLUME]: { dataKey: 'volume', color: colors.success, label: t('workout:summary.totalVolume') },
     [TABS.E1RM]: { dataKey: 'e1rm', color: colors.purple, label: t('workout:summary.best1rm') },
   }

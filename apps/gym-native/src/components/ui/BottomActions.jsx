@@ -35,9 +35,9 @@ export default function BottomActions({ primary, secondary, center }) {
             onPress={primary.onClick}
             disabled={primary.disabled}
             className={`py-2.5 px-4 rounded-lg items-center ${hasSecondary ? 'flex-1' : 'w-full'} ${primary.disabled ? 'opacity-50' : 'active:opacity-70'}`}
-            style={{ backgroundColor: colors.accent }}
+            style={{ backgroundColor: colors.success }}
           >
-            <Text className="text-sm font-medium text-white">{primary.label}</Text>
+            <Text className="text-sm font-medium" style={{ color: colors.bgPrimary }}>{primary.label}</Text>
           </Pressable>
         )}
       </View>

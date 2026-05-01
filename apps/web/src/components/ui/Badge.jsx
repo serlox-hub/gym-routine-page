@@ -5,10 +5,6 @@ const VARIANTS = {
     backgroundColor: colors.bgTertiary,
     color: colors.textSecondary
   },
-  accent: {
-    backgroundColor: colors.accentBg,
-    color: colors.accent
-  },
   purple: {
     backgroundColor: colors.purpleBg,
     color: colors.purple
