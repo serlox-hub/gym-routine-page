@@ -1,12 +1,12 @@
 let _authStore = null
 let _workoutStore = null
-let _initialized = false
 
 export function initStores({ authStore, workoutStore }) {
-  if (_initialized) throw new Error('[gym/shared] initStores() must only be called once')
+  if (_authStore && process.env.NODE_ENV === 'production') {
+    throw new Error('[gym/shared] initStores() must only be called once')
+  }
   _authStore = authStore
   _workoutStore = workoutStore
-  _initialized = true
 }
 
 export function useAuthStore(selector) {
