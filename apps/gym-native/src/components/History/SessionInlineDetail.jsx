@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { View, Text, TextInput, Pressable } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Share2, Pencil, Plus, FileText, Video, Trophy, SlidersHorizontal } from 'lucide-react-native'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, FileText, Video, Trophy, SlidersHorizontal, AlertCircle } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
@@ -27,6 +27,7 @@ import {
   resolveWeightUnit,
   toNullableFloat,
   toNullableInt,
+  getNotifier,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 import { colors } from '../../lib/styles'
@@ -43,6 +44,10 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   const [distanceMeters, setDistanceMeters] = useState(String(set.distance_meters ?? ''))
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
   const [showDetails, setShowDetails] = useState(false)
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [videoUploadError, setVideoUploadError] = useState(false)
+  const [pendingVideoFile, setPendingVideoFile] = useState(null)
 
   const buildPayload = (overrides = {}) => ({
     sessionId,
@@ -68,7 +73,32 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     onUpsert(buildPayload({ setType: newType }))
   }
 
-  const handleDetailsSubmit = async ({ rir, notes, videoUrl, videoFile, setType: newSetType, weight: newWeight, reps: newReps }) => {
+  const uploadVideoInBackground = async (file) => {
+    setIsUploadingVideo(true)
+    setUploadProgress(0)
+    setVideoUploadError(false)
+    setPendingVideoFile(file)
+    try {
+      const uploadedUrl = await uploadVideo(file?.uri, setUploadProgress)
+      onUpsert(buildPayload({ videoUrl: uploadedUrl }))
+      setPendingVideoFile(null)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Video upload failed:', err)
+      setVideoUploadError(true)
+      getNotifier()?.show(t('workout:set.videoUploadError'), 'error')
+    } finally {
+      setIsUploadingVideo(false)
+    }
+  }
+
+  const handleRetryVideoUpload = () => {
+    if (pendingVideoFile) {
+      uploadVideoInBackground(pendingVideoFile)
+    }
+  }
+
+  const handleDetailsSubmit = ({ rir, notes, videoUrl, videoFile, setType: newSetType, weight: newWeight, reps: newReps }) => {
     setShowDetails(false)
     setSetType(newSetType)
     setWeight(String(newWeight ?? ''))
@@ -83,16 +113,54 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     }
     onUpsert(buildPayload(overrides))
     if (videoFile) {
-      try {
-        const newUrl = await uploadVideo(videoFile)
-        onUpsert(buildPayload({ ...overrides, videoUrl: newUrl }))
-      } catch {
-        // Si la subida falla, el upsert previo ya conserva el videoUrl anterior
-      }
+      uploadVideoInBackground(videoFile)
     }
   }
 
   const inputStyle = { flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }
+
+  const badgeStyle = {
+    backgroundColor: colors.bgTertiary,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
+
+  const hasVideo = !!set.video_url
+  const hasNotes = !!set.notes
+  const hasRir = set.rir_actual != null
+
+  const trailingBadges = (
+    <>
+      {hasNotes && (
+        <Pressable onPress={() => setShowDetails(true)} style={badgeStyle} accessibilityLabel={t('workout:set.notes')}>
+          <FileText size={13} color={colors.textSecondary} />
+        </Pressable>
+      )}
+      {videoUploadError && (
+        <Pressable onPress={handleRetryVideoUpload} style={[badgeStyle, { backgroundColor: colors.dangerBg }]} accessibilityLabel={t('common:buttons.retry')}>
+          <AlertCircle size={13} color={colors.danger} />
+        </Pressable>
+      )}
+      {isUploadingVideo && (
+        <View style={[badgeStyle, { paddingHorizontal: 7, paddingVertical: 3 }]}>
+          <Text style={{ color: colors.purple, fontSize: 11, fontWeight: '600' }}>{uploadProgress}%</Text>
+        </View>
+      )}
+      {hasVideo && !isUploadingVideo && !videoUploadError && (
+        <Pressable onPress={() => setShowDetails(true)} style={badgeStyle} accessibilityLabel={t('workout:set.addVideo')}>
+          <Video size={13} color={colors.textSecondary} />
+        </Pressable>
+      )}
+      {hasRir && (
+        <Pressable onPress={() => setShowDetails(true)} style={[badgeStyle, { paddingHorizontal: 7, paddingVertical: 3 }]} accessibilityLabel={t('workout:set.rir')}>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>@{set.rir_actual}</Text>
+        </Pressable>
+      )}
+    </>
+  )
 
   const menu = (
     <DropdownMenu
@@ -111,6 +179,13 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         },
       ]}
     />
+  )
+
+  const trailingActions = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, width: 132 }}>
+      {trailingBadges}
+      {menu}
+    </View>
   )
 
   if (isWeightReps) {
@@ -146,7 +221,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             style={inputStyle}
             placeholderTextColor={colors.textMuted}
           />
-          <View style={{ width: 32, alignItems: 'center' }}>{menu}</View>
+          {trailingActions}
         </View>
         <SetDetailsModal
           isOpen={showDetails}
@@ -235,7 +310,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             <Text style={{ color: colors.textMuted, fontSize: 10 }}>reps</Text>
           </View>
         )}
-        {menu}
+        {trailingActions}
       </View>
       <SetDetailsModal
         isOpen={showDetails}
@@ -301,7 +376,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
           <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, flex: 1, textAlign: 'center' }}>
             {t('workout:set.reps').toUpperCase()}
           </Text>
-          <View style={{ width: 32 }} />
+          <View style={{ width: 132 }} />
         </View>
       )}
       <View className="gap-2">
@@ -626,8 +701,6 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
       <SetNotesView
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
-        rir={selectedSet?.rir_actual}
-        measurementType={selectedSet?.measurementType}
         notes={selectedSet?.notes}
         videoUrl={selectedSet?.video_url}
       />

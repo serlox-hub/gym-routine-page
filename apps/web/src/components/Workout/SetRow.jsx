@@ -10,7 +10,8 @@ import {
   MeasurementType,
   buildCompletedSetData,
   isSetDataValid,
-  metersToDistanceUnit
+  metersToDistanceUnit,
+  getNotifier,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -106,8 +107,11 @@ function SetRow({
       const uploadedUrl = await uploadVideo(file, setUploadProgress)
       updateSetVideo({ sessionExerciseId, setNumber, videoUrl: uploadedUrl })
       setPendingVideoFile(null)
-    } catch {
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Video upload failed:', err)
       setVideoUploadError(true)
+      getNotifier()?.show(t('workout:set.videoUploadError'), 'error')
     } finally {
       setIsUploadingVideo(false)
     }

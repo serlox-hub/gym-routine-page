@@ -64,6 +64,8 @@
     "addVideo": "Añadir video",
     "videoTooLarge": "Video demasiado grande",
     "videoTooLargeDetail": "{{size}} MB. Máximo permitido: 100 MB",
+    "videoUploadError": "Error al subir el vídeo",
+    "videoLoadError": "Error al cargar el vídeo",
     "weightConverter": "Conversor de peso",
     "setNumber": "Serie {{number}}",
     "type": {

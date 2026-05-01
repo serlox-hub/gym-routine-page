@@ -74,7 +74,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
           </>
         )}
       </div>
-      <SetNotesView isOpen={!!selectedSet} onClose={() => setSelectedSet(null)} rir={selectedSet?.rir_actual} measurementType={measurementType} notes={selectedSet?.notes} videoUrl={selectedSet?.video_url} />
+      <SetNotesView isOpen={!!selectedSet} onClose={() => setSelectedSet(null)} notes={selectedSet?.notes} videoUrl={selectedSet?.video_url} />
     </Modal>
   )
 }

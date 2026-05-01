@@ -86,9 +86,8 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
       <SetNotesView
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
-        rir={selectedSet?.rir}
-        measurementType={measurementType}
         notes={selectedSet?.notes}
+        videoUrl={selectedSet?.videoUrl}
       />
     </View>
   )

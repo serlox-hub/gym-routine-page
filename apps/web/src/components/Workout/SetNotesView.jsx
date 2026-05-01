@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import { getVideoUrl } from '../../lib/videoStorage.js'
-import { getEffortInfo, getEffortLabel } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
 function VideoPlayer({ videoKey }) {
+  const { t } = useTranslation()
   const [url, setUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -24,9 +24,9 @@ function VideoPlayer({ videoKey }) {
     setError(null)
     getVideoUrl(videoKey)
       .then(setUrl)
-      .catch(() => setError('Error loading video'))
+      .catch(() => setError(t('workout:set.videoLoadError')))
       .finally(() => setLoading(false))
-  }, [videoKey])
+  }, [videoKey, t])
 
   if (loading) {
     return (
@@ -64,10 +64,8 @@ function VideoPlayer({ videoKey }) {
   )
 }
 
-function SetNotesView({ isOpen, onClose, rir, measurementType, notes, videoUrl }) {
+function SetNotesView({ isOpen, onClose, notes, videoUrl }) {
   const { t } = useTranslation()
-  const rirInfo = getEffortInfo(rir, measurementType)
-  const effortLabel = getEffortLabel(measurementType)
 
   return (
     <Modal
@@ -90,28 +88,6 @@ function SetNotesView({ isOpen, onClose, rir, measurementType, notes, videoUrl }
       </div>
 
       <div className="space-y-3">
-        {rirInfo && (
-          <div
-            className="flex items-center gap-3 p-3 rounded-lg"
-            style={{ backgroundColor: colors.bgTertiary }}
-          >
-            <span
-              className="w-10 h-10 flex items-center justify-center rounded-lg text-lg font-bold"
-              style={{ backgroundColor: colors.purple, color: colors.bgPrimary }}
-            >
-              {rirInfo.label}
-            </span>
-            <div>
-              <div className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                {effortLabel} {rirInfo.label}
-              </div>
-              <div className="text-xs" style={{ color: colors.textSecondary }}>
-                {rirInfo.description}
-              </div>
-            </div>
-          </div>
-        )}
-
         {notes && (
           <div
             className="p-3 rounded-lg"

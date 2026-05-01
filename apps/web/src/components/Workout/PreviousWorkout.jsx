@@ -75,9 +75,8 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
       <SetNotesView
         isOpen={!!selectedSet}
         onClose={() => setSelectedSet(null)}
-        rir={selectedSet?.rir}
-        measurementType={measurementType}
         notes={selectedSet?.notes}
+        videoUrl={selectedSet?.videoUrl}
       />
     </div>
   )

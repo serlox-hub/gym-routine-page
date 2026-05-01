@@ -64,6 +64,8 @@
     "addVideo": "Add video",
     "videoTooLarge": "Video too large",
     "videoTooLargeDetail": "{{size}} MB. Max allowed: 100 MB",
+    "videoUploadError": "Failed to upload video",
+    "videoLoadError": "Failed to load video",
     "weightConverter": "Weight converter",
     "setNumber": "Set {{number}}",
     "type": {

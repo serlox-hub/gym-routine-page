@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Maximize2 } from 'lucide-react-native'
 import { useVideoPlayer, VideoView } from 'expo-video'
 import LoadingSpinner from './LoadingSpinner'
@@ -7,6 +8,7 @@ import { getVideoUrl } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
 
 export default function VideoPlayer({ videoKey }) {
+  const { t } = useTranslation()
   const viewRef = useRef(null)
   const [url, setUrl] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -25,9 +27,9 @@ export default function VideoPlayer({ videoKey }) {
     setError(null)
     getVideoUrl(videoKey)
       .then(setUrl)
-      .catch(() => setError('Error al cargar video'))
+      .catch(() => setError(t('workout:set.videoLoadError')))
       .finally(() => setLoading(false))
-  }, [videoKey])
+  }, [videoKey, t])
 
   const player = useVideoPlayer(url, (p) => {
     p.loop = false
