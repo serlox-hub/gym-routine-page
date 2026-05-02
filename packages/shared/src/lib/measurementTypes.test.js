@@ -10,6 +10,7 @@ import {
   measurementTypeUsesLevel,
   getEffortLabel,
   getEffortInfo,
+  formatEffortBadge,
   getDefaultReps,
   getRepsLabel,
   getRepsPlaceholder,
@@ -197,6 +198,30 @@ describe('measurementTypes', () => {
       const rirInfo = getEffortInfo(1, 'weight_reps')
       const rpeInfo = getEffortInfo(1, 'time')
       expect(rirInfo.label).not.toBe(rpeInfo.label)
+    })
+  })
+
+  describe('formatEffortBadge', () => {
+    it('devuelve string vacío si el valor es null o undefined', () => {
+      expect(formatEffortBadge(null, 'weight_reps')).toBe('')
+      expect(formatEffortBadge(undefined, 'time')).toBe('')
+    })
+
+    it('prefija con "@" la etiqueta RIR para ejercicios con reps', () => {
+      expect(formatEffortBadge(0, 'weight_reps')).toBe('@0')
+      expect(formatEffortBadge(1, 'weight_reps')).toBe('@1')
+      expect(formatEffortBadge(3, 'reps_only')).toBe('@3+')
+      expect(formatEffortBadge(-1, 'weight_reps')).toBe('@F')
+    })
+
+    it('devuelve la etiqueta RPE sin "@" para ejercicios sin reps', () => {
+      const badge = formatEffortBadge(1, 'time')
+      expect(badge).toBeTruthy()
+      expect(badge.startsWith('@')).toBe(false)
+    })
+
+    it('produce badges distintos para mismo valor según measurementType', () => {
+      expect(formatEffortBadge(1, 'weight_reps')).not.toBe(formatEffortBadge(1, 'time'))
     })
   })
 

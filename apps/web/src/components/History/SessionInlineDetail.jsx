@@ -29,6 +29,7 @@ import {
   toNullableFloat,
   toNullableInt,
   getNotifier,
+  formatEffortBadge,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 import { colors } from '../../lib/styles.js'
@@ -164,7 +165,9 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       )}
       {hasRir && (
         <button onClick={() => setShowDetails(true)} style={{ ...badgeStyle, padding: '3px 7px' }} title={t('workout:set.rir')}>
-          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>@{set.rir_actual}</span>
+          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>
+            {formatEffortBadge(set.rir_actual, measurementType)}
+          </span>
         </button>
       )}
     </>
@@ -380,7 +383,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 )}
                 {set.rir_actual !== null && set.rir_actual !== undefined && (
                   <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
-                    {set.rir_actual}
+                    {formatEffortBadge(set.rir_actual, measurementType)}
                   </span>
                 )}
               </div>

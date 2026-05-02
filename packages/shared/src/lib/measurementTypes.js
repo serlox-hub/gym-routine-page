@@ -118,6 +118,16 @@ export function getEffortInfo(value, measurementType) {
   return { label: RPE_LABELS[value]?.label ?? String(value), description: RPE_LABELS[value]?.description ?? '' }
 }
 
+/**
+ * Returns the badge string for a stored effort value: "@1" for RIR, "Fácil" for RPE.
+ * Empty string when value is null/undefined.
+ */
+export function formatEffortBadge(value, measurementType) {
+  if (value == null) return ''
+  const label = getEffortInfo(value, measurementType)?.label ?? String(value)
+  return measurementTypeUsesReps(measurementType) ? `@${label}` : label
+}
+
 export function isValidMeasurementType(type) {
   return MEASUREMENT_TYPES.includes(type)
 }

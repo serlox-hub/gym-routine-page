@@ -12,6 +12,7 @@ import {
   isSetDataValid,
   metersToDistanceUnit,
   getNotifier,
+  formatEffortBadge,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -302,7 +303,9 @@ function SetRow({
       )}
       {isCompleted && setData?.rirActual != null && (
         <button onClick={handleEditClick} style={{ ...smallBadgeStyle, padding: '3px 7px' }} title={t('workout:set.rir')}>
-          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>@{setData.rirActual}</span>
+          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>
+            {formatEffortBadge(setData.rirActual, measurementType)}
+          </span>
         </button>
       )}
       {renderCheckIndicator()}

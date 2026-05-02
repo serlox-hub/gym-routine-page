@@ -4,7 +4,7 @@ import { FileText, Video, Clock } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { usePreviousWorkout } from '../../hooks/useWorkout.js'
 import SetNotesView from './SetNotesView.jsx'
-import { MeasurementType, formatRelativeDate, formatPreviousSetValue } from '@gym/shared'
+import { MeasurementType, formatRelativeDate, formatPreviousSetValue, formatEffortBadge } from '@gym/shared'
 
 function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm' }) {
   const { t } = useTranslation()
@@ -61,7 +61,7 @@ function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_
               <div className="flex items-center justify-center gap-1 mt-0.5" style={{ minHeight: 14 }}>
                 {set.rir != null && (
                   <span className="text-[11px] font-medium" style={{ color: colors.textMuted }}>
-                    @{set.rir}
+                    {formatEffortBadge(set.rir, measurementType)}
                   </span>
                 )}
                 {hasNotes && <FileText size={11} color={colors.textMuted} />}

@@ -12,6 +12,7 @@ import {
   metersToDistanceUnit,
   getNotifier,
   t,
+  formatEffortBadge,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
 import { useCanUploadVideo } from '../../hooks/useAuth'
@@ -284,7 +285,9 @@ function SetRow({
       )}
       {isCompleted && setData?.rirActual != null && (
         <Pressable onPress={handleEditPress} style={{ ...smallBadgeStyle, paddingHorizontal: 7, paddingVertical: 3 }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>@{setData.rirActual}</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>
+            {formatEffortBadge(setData.rirActual, measurementType)}
+          </Text>
         </Pressable>
       )}
       {renderCheckIndicator()}

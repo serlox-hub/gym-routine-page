@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { FileText, Video, Clock } from 'lucide-react-native'
 import { usePreviousWorkout } from '../../hooks/useWorkout'
 import SetNotesView from './SetNotesView'
-import { MeasurementType, formatRelativeDate, formatPreviousSetValue } from '@gym/shared'
+import { MeasurementType, formatRelativeDate, formatPreviousSetValue, formatEffortBadge } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
 export default function PreviousWorkout({ exerciseId, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm' }) {
@@ -71,7 +71,7 @@ export default function PreviousWorkout({ exerciseId, measurementType = Measurem
                 <View className="flex-row items-center" style={{ gap: 4, marginTop: 2, minHeight: 14 }}>
                   {set.rir != null && (
                     <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: '500' }}>
-                      @{set.rir}
+                      {formatEffortBadge(set.rir, measurementType)}
                     </Text>
                   )}
                   {hasNotes && <FileText size={11} color={colors.textMuted} />}
