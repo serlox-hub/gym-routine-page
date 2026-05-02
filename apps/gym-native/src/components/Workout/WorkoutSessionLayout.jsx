@@ -17,7 +17,8 @@ import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession } from '@gym/shared'
+import { usePreference } from '../../hooks/usePreferences'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { navigationRef } from '../../navigation/navigationRef'
@@ -44,14 +45,25 @@ export default function WorkoutSessionLayout({ title }) {
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
   const { checkSetForPR, clearSetPR, prSets, prNotification, dismissPR } = useSessionPRDetection()
+  const { value: weightUnit } = usePreference('weight_unit')
   const endSessionMutation = useEndSession({
-    onSuccess: () => {
-      if (navigationRef.isReady()) {
-        navigationRef.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs', state: { routes: [{ name: 'Home' }] } }],
-        })
-      }
+    onSuccess: ({ session, detectedPRs }) => {
+      if (!navigationRef.isReady()) return
+      const completedSetsSnapshot = useWorkoutStore.getState().completedSets
+      const summaryData = buildWorkoutSummaryFromEndSession(
+        session,
+        detectedPRs,
+        completedSetsSnapshot,
+        sessionExercises,
+        { weightUnit },
+      )
+      navigationRef.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs', state: { routes: [{ name: 'Home' }] } },
+          { name: 'WorkoutSummary', params: { summaryData } },
+        ],
+      })
     },
   })
   const abandonSessionMutation = useAbandonSession()

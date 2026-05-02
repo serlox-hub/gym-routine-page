@@ -26,7 +26,7 @@ import ExerciseProgressBar from './ExerciseProgressBar.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -49,6 +49,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [showConverter, setShowConverter] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
+  const { value: weightUnit } = usePreference('weight_unit')
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -83,8 +84,11 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const { formatted: elapsedTime } = useSessionTimer()
 
   useEffect(() => {
-    if (!sessionId) {
-      navigate(navigateToOnEnd || fallbackRoute)
+    if (sessionId) return
+    if (navigateToOnEnd) {
+      navigate(navigateToOnEnd.to, { state: navigateToOnEnd.state, replace: true })
+    } else {
+      navigate(fallbackRoute, { replace: true })
     }
   }, [sessionId, navigate, fallbackRoute, navigateToOnEnd])
 
@@ -129,8 +133,16 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
 
   const handleConfirmEnd = ({ overallFeeling, notes }) => {
     endSessionMutation.mutate({ overallFeeling, notes }, {
-      onSuccess: () => {
-        setNavigateToOnEnd('/')
+      onSuccess: ({ session, detectedPRs }) => {
+        const completedSetsSnapshot = useWorkoutStore.getState().completedSets
+        const summaryData = buildWorkoutSummaryFromEndSession(
+          session,
+          detectedPRs,
+          completedSetsSnapshot,
+          sessionExercises,
+          { weightUnit },
+        )
+        setNavigateToOnEnd({ to: '/workout/summary', state: { summaryData } })
       }
     })
   }

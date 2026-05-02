@@ -15,6 +15,7 @@ const Home = lazy(() => import('./pages/Home.jsx'))
 const RoutineDetail = lazy(() => import('./pages/RoutineDetail.jsx'))
 const WorkoutSession = lazy(() => import('./pages/WorkoutSession.jsx'))
 const FreeWorkoutSession = lazy(() => import('./pages/FreeWorkoutSession.jsx'))
+const WorkoutSummary = lazy(() => import('./pages/WorkoutSummary.jsx'))
 const History = lazy(() => import('./pages/History.jsx'))
 const Routines = lazy(() => import('./pages/Routines.jsx'))
 const BodyMetrics = lazy(() => import('./pages/BodyMetrics.jsx'))
@@ -102,6 +103,7 @@ function App() {
             <Route path="/routine/:routineId/edit" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
             <Route path="/routine/:routineId/day/:dayId/workout" element={<PrivateRoute><WorkoutSession /></PrivateRoute>} />
             <Route path="/workout/free" element={<PrivateRoute><FreeWorkoutSession /></PrivateRoute>} />
+            <Route path="/workout/summary" element={<PrivateRoute><WorkoutSummary /></PrivateRoute>} />
             <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
             <Route path="/routines" element={<PrivateRoute><Routines /></PrivateRoute>} />
             <Route path="/body-metrics" element={<PrivateRoute><BodyMetrics /></PrivateRoute>} />

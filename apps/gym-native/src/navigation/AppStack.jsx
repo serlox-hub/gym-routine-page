@@ -14,6 +14,7 @@ import RoutineDetailScreen from '../screens/RoutineDetailScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import AdminUsersScreen from '../screens/AdminUsersScreen'
 import WorkoutOverlay from '../screens/WorkoutOverlay'
+import WorkoutSummaryScreen from '../components/Workout/WorkoutSummaryScreen'
 import OfflineBanner from '../components/ui/OfflineBanner'
 import ActiveSessionBanner from '../components/ui/ActiveSessionBanner'
 import { colors, design } from '../lib/styles'
@@ -152,6 +153,13 @@ export default function AppStack() {
         {/* Detalle */}
         <Stack.Screen name="Preferences" component={PreferencesScreen} />
         <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
+
+        {/* Resumen post-sesión */}
+        <Stack.Screen
+          name="WorkoutSummary"
+          component={WorkoutSummaryScreen}
+          options={{ gestureEnabled: false }}
+        />
       </Stack.Navigator>
 
       <ActiveSessionBanner />
