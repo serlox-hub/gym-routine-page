@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import {
-  Dumbbell,
+  ClipboardList,
   CalendarDays,
   TrendingUp,
   Sparkles,
@@ -16,7 +16,7 @@ function FeaturesSection() {
 
   const FEATURES = [
     {
-      icon: Dumbbell,
+      icon: ClipboardList,
       title: t('landing:features.routines.title'),
       description: t('landing:features.routines.description'),
       color: colors.success,

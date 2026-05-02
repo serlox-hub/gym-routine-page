@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { Dumbbell, ChevronRight } from 'lucide-react'
+import { BarChart3, ChevronRight } from 'lucide-react'
 import { colors, RGB_SUCCESS, RGB_PURPLE } from '../../lib/styles.js'
 import PhoneMockup, { MockupRoutineScreen } from './PhoneMockup'
 
@@ -58,7 +58,7 @@ function HeroSection() {
               >
                 <div className="flex items-center gap-2 mb-6">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: colors.successBg }}>
-                    <Dumbbell size={18} color={colors.success} />
+                    <BarChart3 size={18} color={colors.success} />
                   </div>
                   <span className="text-sm font-semibold tracking-wide" style={{ color: colors.success }}>
                     {t('common:appName').toUpperCase()}
