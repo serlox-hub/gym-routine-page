@@ -7,7 +7,7 @@ const TOAST_DURATION = 3000
 const TYPE_CONFIG = {
   success: { Icon: Check, color: colors.success },
   error: { Icon: AlertCircle, color: colors.danger },
-  info: { Icon: Info, color: colors.accent },
+  info: { Icon: Info, color: colors.textSecondary },
 }
 
 let _showToast = null

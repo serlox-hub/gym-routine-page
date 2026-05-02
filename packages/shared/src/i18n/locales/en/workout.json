@@ -3,6 +3,8 @@
     "active": "Active session",
     "start": "Start",
     "end": "End workout",
+    "finishWorkout": "Finish workout",
+    "exerciseProgress": "Exercise {{current}} of {{total}}",
     "endConfirm": "Are you sure you want to end the workout?",
     "resume": "Resume workout",
     "abandon": "Abandon",
@@ -20,11 +22,25 @@
     "notesPlaceholder": "Anything you want to remember about this session?",
     "duration": "Duration",
     "exercises": "Exercises",
+    "musclesWorked": "Muscles worked",
     "volume": "Volume"
   },
   "set": {
     "complete": "Complete set",
     "unmark": "Unmark set",
+    "logSet": "LOG SET {{number}}",
+    "removeLast": "Remove last",
+    "addSet": "Add set",
+    "lastSession": "Last session · {{when}}",
+    "set": "Set",
+    "saveStartRest": "Save & start rest",
+    "weightAndReps": "Weight & reps",
+    "rirTitle": "@ — Reps in Reserve",
+    "selected": "Selected: {{value}}",
+    "notesPlaceholder": "How did it feel? Form cues, pain, fatigue…",
+    "addVideoTitle": "Add a video of this set",
+    "addVideoSubtitle": "Record now or pick from library",
+    "videoOptional": "Optional",
     "markDropset": "Mark as dropset",
     "removeDropset": "Remove dropset",
     "edit": "Edit set",
@@ -47,6 +63,9 @@
     "addSet": "Add set",
     "addVideo": "Add video",
     "videoTooLarge": "Video too large",
+    "videoTooLargeDetail": "{{size}} MB. Max allowed: 100 MB",
+    "videoUploadError": "Failed to upload video",
+    "videoLoadError": "Failed to load video",
     "weightConverter": "Weight converter",
     "setNumber": "Set {{number}}",
     "type": {
@@ -59,14 +78,21 @@
     "title": "Rest",
     "timer": "Timer",
     "skip": "Skip",
-    "seconds": "{{seconds}} sec"
+    "skipRest": "Skip rest",
+    "seconds": "{{seconds}} sec",
+    "of": "of {{time}}",
+    "setsDone": "{{done}} done",
+    "setsLeft": "{{count}} sets left"
   },
-  "converter": "Converter",
   "addExercise": {
     "title": "Add exercise",
-    "toSession": "Add to session",
+    "toSession": "Add exercise",
     "search": "Search exercise...",
     "noExercises": "No exercises available"
+  },
+  "exercise": {
+    "removeFromSession": "Remove from session",
+    "removeFromSessionConfirm": "Remove \"{{name}}\" from this session? It will still be available in the routine."
   },
   "summary": {
     "title": "Summary",
@@ -82,8 +108,12 @@
     "bestSet": "Best set",
     "maxWeight": "Max Weight",
     "maxReps": "Max Reps",
-    "best1RM": "Best 1RM",
-    "best1rm": "Best 1RM",
+    "avgReps": "Avg Reps",
+    "maxTime": "Max Time",
+    "avgTime": "Avg Time",
+    "maxDistance": "Max Dist.",
+    "avgDistance": "Avg Dist.",
+    "best1rm": "Est. 1RM",
     "sessions": "Sessions",
     "noSets": "No completed sets"
   },
@@ -96,7 +126,10 @@
     "endTime": "End time",
     "sessionsThisDay": "sessions on this day",
     "deleteSession": "Delete session",
-    "viewDetail": "View detail"
+    "viewDetail": "View detail",
+    "selectDay": "Select a day to see the details",
+    "noSessionsDay": "No workouts on this day",
+    "recentSessions": "Recent Sessions"
   },
   "share": {
     "dialogTitle": "Share workout"

@@ -9,6 +9,7 @@ import {
   measurementTypeUsesReps,
   measurementTypeUsesLevel,
   getEffortLabel,
+  getEffortInfo,
   getDefaultReps,
   getRepsLabel,
   getRepsPlaceholder,
@@ -171,6 +172,31 @@ describe('measurementTypes', () => {
       expect(getEffortLabel('weight_distance')).toBe('Esfuerzo')
       expect(getEffortLabel('level_time')).toBe('Esfuerzo')
       expect(getEffortLabel('distance_time')).toBe('Esfuerzo')
+    })
+  })
+
+  describe('getEffortInfo', () => {
+    it('devuelve null si el valor es null o undefined', () => {
+      expect(getEffortInfo(null, 'weight_reps')).toBeNull()
+      expect(getEffortInfo(undefined, 'weight_reps')).toBeNull()
+    })
+
+    it('devuelve label de RIR para ejercicios con reps', () => {
+      expect(getEffortInfo(0, 'weight_reps').label).toBe('0')
+      expect(getEffortInfo(3, 'reps_only').label).toBe('3+')
+      expect(getEffortInfo(-1, 'weight_reps').label).toBe('F')
+    })
+
+    it('devuelve label descriptivo de RPE para ejercicios sin reps', () => {
+      // El label viene de i18n — verificamos que existe (no string vacío)
+      expect(getEffortInfo(1, 'time').label).toBeTruthy()
+      expect(getEffortInfo(5, 'distance').label).toBeTruthy()
+    })
+
+    it('devuelve labels diferentes para mismo valor según measurementType', () => {
+      const rirInfo = getEffortInfo(1, 'weight_reps')
+      const rpeInfo = getEffortInfo(1, 'time')
+      expect(rirInfo.label).not.toBe(rpeInfo.label)
     })
   })
 

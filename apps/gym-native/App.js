@@ -9,8 +9,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import Toast from 'react-native-toast-message'
 import RootNavigator from './src/navigation/RootNavigator'
+import { navigationRef } from './src/navigation/navigationRef'
 import { toastConfig } from './src/components/ui/toastConfig'
 import ErrorBoundary from './src/components/ErrorBoundary'
+import { colors } from './src/lib/styles'
 import { supabase } from './src/lib/supabase'
 import { queryClient, initApi, initStores, initNotifications, initHaptics, i18n, initI18n, useLanguageSync } from '@gym/shared'
 import { initReactI18next } from 'react-i18next'
@@ -61,17 +63,18 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <LanguageSync />
         <NavigationContainer
+          ref={navigationRef}
           linking={linking}
           theme={{
             ...DefaultTheme,
             dark: true,
             colors: {
-              primary: '#58a6ff',
-              background: '#0d1117',
-              card: '#161b22',
-              text: '#e6edf3',
-              border: '#30363d',
-              notification: '#f85149',
+              primary: colors.actionPrimary,
+              background: colors.bgPrimary,
+              card: colors.bgSecondary,
+              text: colors.textPrimary,
+              border: colors.border,
+              notification: colors.danger,
             },
           }}
         >

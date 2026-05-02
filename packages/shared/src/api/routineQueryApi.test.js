@@ -22,16 +22,21 @@ beforeEach(() => {
 // ============================================
 
 describe('fetchRoutines', () => {
-  it('returns routines array ordered by id', async () => {
+  it('returns routines array with day and exercise counts', async () => {
     const routines = [
-      { id: 1, name: 'Rutina A', is_favorite: true },
-      { id: 2, name: 'Rutina B', is_favorite: false },
+      { id: 1, name: 'Rutina A', is_favorite: true, routine_days: [
+        { id: 1, routine_exercises: [{ id: 1 }, { id: 2 }] },
+        { id: 2, routine_exercises: [{ id: 3 }] },
+      ] },
+      { id: 2, name: 'Rutina B', is_favorite: false, routine_days: [] },
     ]
     const mock = makeQueryMock({ data: routines, error: null })
     getClient.mockReturnValue({ from: () => mock })
     const result = await fetchRoutines()
-    expect(result).toEqual(routines)
     expect(result).toHaveLength(2)
+    expect(result[0]).toMatchObject({ id: 1, name: 'Rutina A', days_count: 2, exercises_count: 3 })
+    expect(result[0]).not.toHaveProperty('routine_days')
+    expect(result[1]).toMatchObject({ id: 2, days_count: 0, exercises_count: 0 })
   })
 
   it('throws when Supabase returns error', async () => {

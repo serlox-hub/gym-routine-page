@@ -1,4 +1,4 @@
-import { View, Text, TextInput } from 'react-native'
+import { View, Text, TextInput, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Download, Trash2, Copy } from 'lucide-react-native'
 import { File, Paths } from 'expo-file-system'
@@ -6,7 +6,7 @@ import * as Sharing from 'expo-sharing'
 import Toast from 'react-native-toast-message'
 import { useDuplicateRoutine, useRoutineEditForm } from '../../hooks/useRoutines'
 import { sanitizeFilename, exportRoutine } from '@gym/shared'
-import { inputStyle, colors } from '../../lib/styles'
+import { colors } from '../../lib/styles'
 import { PageHeader } from '../ui'
 
 export function RoutineEditForm({ routine, routineId }) {
@@ -14,49 +14,31 @@ export function RoutineEditForm({ routine, routineId }) {
   const { editForm, handleFieldChange } = useRoutineEditForm(routine, routineId)
 
   return (
-    <View className="gap-3 mb-4">
+    <View style={{ gap: 16, marginBottom: 16 }}>
       <View>
-        <Text className="text-secondary text-sm mb-1">{t('routine:name')}</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>
+          {t('routine:name')}
+        </Text>
         <TextInput
           value={editForm.name}
           onChangeText={(v) => handleFieldChange('name', v)}
           placeholder={t('routine:namePlaceholder')}
           placeholderTextColor={colors.textMuted}
           autoFocus
-          style={[inputStyle, { padding: 8, fontSize: 14 }]}
+          style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }}
         />
       </View>
       <View>
-        <Text className="text-secondary text-sm mb-1">{t('routine:description')}</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>
+          {t('routine:description')}
+        </Text>
         <TextInput
           value={editForm.description}
           onChangeText={(v) => handleFieldChange('description', v)}
           placeholder={t('routine:descriptionPlaceholder')}
           placeholderTextColor={colors.textMuted}
-          multiline
-          numberOfLines={2}
-          style={[inputStyle, { padding: 8, fontSize: 14, textAlignVertical: 'top', minHeight: 50 }]}
-        />
-      </View>
-      <View>
-        <Text className="text-secondary text-sm mb-1">{t('routine:goal')}</Text>
-        <TextInput
-          value={editForm.goal}
-          onChangeText={(v) => handleFieldChange('goal', v)}
-          placeholder={t('routine:goalPlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          style={[inputStyle, { padding: 8, fontSize: 14 }]}
-        />
-      </View>
-      <View>
-        <Text className="text-secondary text-sm mb-1">{t('routine:cycleDays')}</Text>
-        <TextInput
-          value={String(editForm.cycle_days)}
-          onChangeText={(v) => handleFieldChange('cycle_days', v)}
-          placeholder="7"
-          placeholderTextColor={colors.textMuted}
-          keyboardType="number-pad"
-          style={[inputStyle, { padding: 8, fontSize: 14 }]}
+          multiline numberOfLines={2}
+          style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14, textAlignVertical: 'top', minHeight: 60 }}
         />
       </View>
     </View>
@@ -91,6 +73,20 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
     }
   }
 
+  if (isEditing) {
+    return (
+      <PageHeader
+        title={routine?.name || t('routine:new')}
+        onBack={onEditEnd}
+        rightContent={
+          <Pressable onPress={onEditEnd}>
+            <Text style={{ color: colors.success, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.done')}</Text>
+          </Pressable>
+        }
+      />
+    )
+  }
+
   const menuItems = [
     { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart },
     { icon: Copy, label: t('routine:duplicate'), onClick: handleDuplicate },
@@ -100,9 +96,8 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
 
   return (
     <PageHeader
-      title={isEditing ? t('routine:edit') : routine?.name || t('routine:day.title')}
-      onBack={isEditing ? onEditEnd : undefined}
-      menuItems={!isEditing ? menuItems : undefined}
+      title=""
+      menuItems={menuItems}
     />
   )
 }

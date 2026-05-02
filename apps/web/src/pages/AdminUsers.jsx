@@ -2,62 +2,54 @@ import { Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useIsAdmin } from '../hooks/useAuth.js'
 import { useAllUsers, useUpdateUserSetting } from '../hooks/useAdmin.js'
-import { LoadingSpinner, ErrorMessage, Card, PageHeader } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, PageHeader } from '../components/ui/index.js'
 import { formatFullDate } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 
-function FeatureToggle({ userId, settingKey, label, description, currentValue, onToggle, isUpdating }) {
-  const isEnabled = currentValue === 'true'
-
+function CustomToggle({ checked, onChange, disabled }) {
   return (
-    <div className="flex items-center justify-between py-2">
-      <div>
-        <div className="text-sm font-medium" style={{ color: colors.textPrimary }}>{label}</div>
-        <div className="text-xs" style={{ color: colors.textSecondary }}>{description}</div>
-      </div>
-      <button
-        onClick={() => onToggle(userId, settingKey, isEnabled ? null : 'true')}
-        disabled={isUpdating}
-        className="relative w-11 h-6 rounded-full transition-colors disabled:opacity-50"
-        style={{ backgroundColor: isEnabled ? colors.success : colors.border }}
+    <button
+      onClick={() => !disabled && onChange(!checked)}
+      className="shrink-0"
+      style={{ opacity: disabled ? 0.5 : 1 }}
+    >
+      <div
+        className="w-12 h-7 rounded-full relative transition-colors"
+        style={{ backgroundColor: checked ? colors.success : colors.border }}
       >
-        <span
-          className="absolute top-1 left-1 w-4 h-4 rounded-full transition-transform"
-          style={{
-            backgroundColor: colors.textPrimary,
-            transform: isEnabled ? 'translateX(20px)' : 'translateX(0)',
-          }}
+        <div
+          className="w-5 h-5 rounded-full absolute top-1 transition-all"
+          style={{ backgroundColor: colors.bgPrimary, left: checked ? 24 : 4 }}
         />
-      </button>
-    </div>
+      </div>
+    </button>
   )
 }
 
-function UserCard({ user, featureFlags, onToggleSetting, isUpdating }) {
+function UserRow({ user, featureFlags, onToggleSetting, isUpdating }) {
   const { t } = useTranslation()
   return (
-    <Card className="p-4">
-      <div className="mb-3">
-        <div className="font-medium" style={{ color: colors.textPrimary }}>{user.email}</div>
-        <div className="text-xs" style={{ color: colors.textSecondary }}>
-          {t('admin:registered')}: {formatFullDate(user.created_at)}
-        </div>
+    <div className="rounded-xl" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, padding: '12px 16px' }}>
+      <div className="flex items-center justify-between mb-2">
+        <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>{user.email}</span>
       </div>
-      <div className="space-y-1" style={{ borderTop: `1px solid ${colors.border}`, paddingTop: '12px' }}>
-        {featureFlags.map(flag => (
-          <FeatureToggle
-            key={flag.key}
-            userId={user.id}
-            settingKey={flag.key}
-            label={flag.label}
-            description={flag.description}
-            currentValue={user.settings[flag.key]}
-            onToggle={onToggleSetting}
-            isUpdating={isUpdating}
-          />
-        ))}
-      </div>
-    </Card>
+      <p style={{ color: colors.textMuted, fontSize: 11, marginBottom: 10 }}>
+        {t('common:admin.registered')}: {formatFullDate(user.created_at)}
+      </p>
+      {featureFlags.map(flag => {
+        const isEnabled = user.settings[flag.key] === 'true'
+        return (
+          <div key={flag.key} className="flex items-center justify-between py-1.5">
+            <span style={{ color: colors.textPrimary, fontSize: 13 }}>{flag.label}</span>
+            <CustomToggle
+              checked={isEnabled}
+              onChange={() => onToggleSetting(user.id, flag.key, isEnabled ? null : 'true')}
+              disabled={isUpdating}
+            />
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -68,8 +60,8 @@ function AdminUsers() {
   const updateSetting = useUpdateUserSetting()
 
   const FEATURE_FLAGS = [
-    { key: 'can_upload_video', label: t('common:preferences.uploadVideos'), description: t('common:preferences.videoDescription') },
-    { key: 'is_admin', label: t('common:nav.admin'), description: t('admin:accessDescription') },
+    { key: 'can_upload_video', label: t('common:preferences.showVideoUpload') },
+    { key: 'is_admin', label: t('common:nav.admin') },
   ]
 
   const handleToggleSetting = (userId, key, value) => {
@@ -78,17 +70,16 @@ function AdminUsers() {
 
   if (isLoadingAdmin) return <LoadingSpinner />
   if (!isAdmin) return <Navigate to="/" replace />
-
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="px-6 pt-4 pb-20 max-w-2xl mx-auto">
       <PageHeader title={t('common:nav.admin')} backTo="/" />
 
-      <div className="space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {users?.map(user => (
-          <UserCard
+          <UserRow
             key={user.id}
             user={user}
             featureFlags={FEATURE_FLAGS}
@@ -99,9 +90,9 @@ function AdminUsers() {
       </div>
 
       {users?.length === 0 && (
-        <div className="text-center py-8" style={{ color: colors.textSecondary }}>
-          {t('admin:noUsers')}
-        </div>
+        <p className="text-center py-8" style={{ color: colors.textMuted, fontSize: 13 }}>
+          {t('common:admin.noUsers')}
+        </p>
       )}
     </div>
   )

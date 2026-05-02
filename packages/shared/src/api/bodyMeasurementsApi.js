@@ -4,7 +4,7 @@ import { parseDecimal } from '../lib/numberUtils.js'
 export async function fetchBodyMeasurementHistory(userId, measurementType) {
   const { data, error } = await getClient()
     .from('body_measurements')
-    .select('id, measurement_type, value, unit, recorded_at, notes')
+    .select('id, measurement_type, value, recorded_at, notes')
     .eq('user_id', userId)
     .eq('measurement_type', measurementType)
     .order('recorded_at', { ascending: false })
@@ -13,14 +13,13 @@ export async function fetchBodyMeasurementHistory(userId, measurementType) {
   return data
 }
 
-export async function createBodyMeasurement({ userId, measurementType, value, unit = 'cm', notes = null, recordedAt = null }) {
+export async function createBodyMeasurement({ userId, measurementType, value, notes = null, recordedAt = null }) {
   const { data, error } = await getClient()
     .from('body_measurements')
     .insert({
       user_id: userId,
       measurement_type: measurementType,
       value: parseDecimal(value),
-      unit,
       notes: notes || null,
       recorded_at: recordedAt || new Date().toISOString(),
     })
@@ -31,10 +30,9 @@ export async function createBodyMeasurement({ userId, measurementType, value, un
   return data
 }
 
-export async function updateBodyMeasurement({ id, value, unit, notes, recordedAt }) {
+export async function updateBodyMeasurement({ id, value, notes, recordedAt }) {
   const updates = {}
   if (value !== undefined) updates.value = parseDecimal(value)
-  if (unit !== undefined) updates.unit = unit
   if (notes !== undefined) updates.notes = notes || null
   if (recordedAt !== undefined) updates.recorded_at = recordedAt
 

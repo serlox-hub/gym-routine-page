@@ -20,6 +20,7 @@
     "search": "Buscar",
     "filter": "Filtrar",
     "retry": "Reintentar",
+    "reload": "Recargar página",
     "accept": "Aceptar",
     "reject": "Rechazar",
     "select": "Seleccionar",
@@ -28,7 +29,9 @@
     "reset": "Restablecer",
     "seeAll": "Ver todo",
     "seeMore": "Ver más",
-    "loading": "Cargando..."
+    "seeLess": "Ver menos",
+    "loading": "Cargando...",
+    "change": "Cambiar"
   },
   "labels": {
     "name": "Nombre",
@@ -51,7 +54,8 @@
     "worst": "Peor",
     "new": "Nuevo",
     "free": "Libre",
-    "other": "Otro"
+    "other": "Otro",
+    "value": "Valor"
   },
   "time": {
     "today": "Hoy",
@@ -116,11 +120,13 @@
     "trainingDaysPerWeek": "Días de entrenamiento por semana",
     "weekStartDay": "La semana empieza en",
     "monday": "Lunes",
+    "mondayShort": "Lun",
     "sunday": "Domingo",
+    "sundayShort": "Dom",
     "removeRest": "Quitar descanso",
     "removeGoal": "Quitar objetivo",
-    "showWidgetHome": "Mostrar widget en inicio",
-    "showWidgetHomeDescription": "Ver el progreso y racha en la pantalla principal",
+    "showWidgetHome": "Mostrar racha y objetivo",
+    "showWidgetHomeDescription": "Ver el conteo de racha, barra de progreso y opción de pausar",
     "general": "General",
     "weightUnit": "Unidad de peso",
     "weightUnitDescription": "Por defecto para todos los ejercicios. Puedes sobrescribirla individualmente",
@@ -156,8 +162,31 @@
     "history": "Histórico",
     "preferences": "Preferencias",
     "admin": "Gestión usuarios",
+    "adminDescription": "Acceso a gestión de usuarios",
     "logout": "Cerrar sesión",
-    "quickAccess": "Acceso rápido"
+    "quickAccess": "Acceso rápido",
+    "routines": "Rutinas",
+    "body": "Cuerpo"
+  },
+  "home": {
+    "greetingMorning": "Buenos días",
+    "greetingAfternoon": "Buenas tardes",
+    "greetingEvening": "Buenas noches",
+    "workout": "Entrenamiento",
+    "noStreakYet": "Sin racha aún",
+    "createRoutine": "Crear rutina",
+    "pinnedToHome": "Fijada en inicio",
+    "pinRoutine": "Fijar una rutina",
+    "pinRoutineDesc": "Muestra tu rutina en la pantalla de inicio",
+    "nDays": "{{count}} días",
+    "nExercises": "{{count}} ejercicios",
+    "thisWeek": "esta semana",
+    "thisMonth": "sesiones este mes",
+    "freeWorkout": "Entrenamiento libre",
+    "workoutDuration": "Duración del entrenamiento",
+    "paused": "pausado",
+    "days": "días",
+    "setWeeklyGoal": "Configura tu objetivo semanal"
   },
   "import": {
     "optionsTitle": "Opciones de importación",
@@ -178,6 +207,32 @@
   },
   "admin": {
     "noUsers": "No hay usuarios registrados",
-    "registered": "Registrado"
+    "registered": "Registrado",
+    "lastSeen": "Última conexión"
+  },
+  "weightUnitChange": {
+    "title": "Cambiar unidad de peso",
+    "messageGlobal": "Tienes datos guardados como {{from}}. ¿Cómo quieres aplicar el cambio a {{to}}?",
+    "messageExercise": "Este ejercicio tiene datos guardados como {{from}}. ¿Cómo quieres aplicar el cambio a {{to}}?",
+    "convert": "Convertir y cambiar unidad",
+    "convertDescription": "Multiplica los pesos guardados por el factor de conversión (ej: 80 kg → 176,37 lb)",
+    "unitOnly": "Solo cambiar unidad",
+    "unitOnlyDescription": "Mantiene los números pero cambia la etiqueta (80 quedará como 80 {{to}})",
+    "applying": "Aplicando..."
+  },
+  "measurementUnitChange": {
+    "title": "Cambiar unidad de medida",
+    "message": "Tienes medidas guardadas como {{from}}. ¿Cómo quieres aplicar el cambio a {{to}}?",
+    "convert": "Convertir y cambiar unidad",
+    "convertDescription": "Multiplica los valores guardados por el factor de conversión (ej: 90 cm → 35,43 in)",
+    "unitOnly": "Solo cambiar unidad",
+    "unitOnlyDescription": "Mantiene los números pero cambia la etiqueta (90 quedará como 90 {{to}})",
+    "applying": "Aplicando..."
+  },
+  "chartRange": {
+    "1m": "1M",
+    "3m": "3M",
+    "all": "Todo",
+    "noData": "Sin datos suficientes en este rango"
   }
 }

@@ -82,6 +82,7 @@ export function useRestTimer() {
   const restTimerActive = useWorkoutStore(state => state.restTimerActive)
   const restTimerEndTime = useWorkoutStore(state => state.restTimerEndTime)
   const restTimeInitial = useWorkoutStore(state => state.restTimeInitial)
+  const restTimerContext = useWorkoutStore(state => state.restTimerContext)
   const getTimeRemaining = useWorkoutStore(state => state.getTimeRemaining)
   const skipRest = useWorkoutStore(state => state.skipRest)
   const adjustRestTime = useWorkoutStore(state => state.adjustRestTime)
@@ -115,6 +116,7 @@ export function useRestTimer() {
     timeRemaining,
     timeInitial: restTimeInitial,
     progress,
+    context: restTimerContext || {},
     skip: skipRest,
     addTime: (delta) => adjustRestTime(delta),
   }

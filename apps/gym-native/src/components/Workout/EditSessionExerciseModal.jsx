@@ -16,18 +16,18 @@ function ViewToggle({ view, onChangeView }) {
       <Pressable
         onPress={() => onChangeView('session')}
         className="flex-1 py-2 items-center"
-        style={view === 'session' ? { backgroundColor: colors.accent } : undefined}
+        style={view === 'session' ? { backgroundColor: colors.success } : undefined}
       >
-        <Text className="text-xs font-semibold" style={{ color: view === 'session' ? colors.white : colors.textSecondary }}>
+        <Text className="text-xs font-semibold" style={{ color: view === 'session' ? colors.textDark : colors.textSecondary }}>
           {t('workout:session.inSession')}
         </Text>
       </Pressable>
       <Pressable
         onPress={() => onChangeView('exercise')}
         className="flex-1 py-2 items-center"
-        style={view === 'exercise' ? { backgroundColor: colors.accent } : undefined}
+        style={view === 'exercise' ? { backgroundColor: colors.success } : undefined}
       >
-        <Text className="text-xs font-semibold" style={{ color: view === 'exercise' ? colors.white : colors.textSecondary }}>
+        <Text className="text-xs font-semibold" style={{ color: view === 'exercise' ? colors.textDark : colors.textSecondary }}>
           {t('exercise:details')}
         </Text>
       </Pressable>

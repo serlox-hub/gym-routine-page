@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { Flame, Link2, Dumbbell, Plus } from 'lucide-react'
+import { Link2, Plus } from 'lucide-react'
 import ExerciseCard from './ExerciseCard.jsx'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { formatSupersetLabel, groupExercisesBySupersetId, getExerciseName, translateBlockName } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function BlockSection({
   block,
@@ -27,26 +26,12 @@ function BlockSection({
 
   return (
     <section className="space-y-2">
-      <div
-        className="flex items-center gap-1.5 px-2 py-1 rounded border-l-2"
-        style={{
-          backgroundColor: colors.bgTertiary,
-          borderLeftColor: isWarmup ? colors.warning : colors.purple,
-        }}
-      >
-        {isWarmup ? (
-          <Flame size={12} style={{ color: colors.warning }} />
-        ) : (
-          <Dumbbell size={12} style={{ color: colors.purple }} />
-        )}
+      <div className="flex items-center gap-1.5">
         <span
-          className="text-xs font-medium uppercase"
-          style={{ color: isWarmup ? colors.warning : colors.purple }}
+          className="text-xs font-semibold uppercase tracking-wide"
+          style={{ color: colors.success }}
         >
-          {translateBlockName(name)}
-        </span>
-        <span className="text-xs" style={{ color: colors.textSecondary }}>
-          ({routine_exercises.length})
+          {translateBlockName(name)} ({routine_exercises.length})
         </span>
         {duration_min && (
           <span className="text-xs ml-auto" style={{ color: colors.textSecondary }}>
@@ -89,7 +74,7 @@ function BlockSection({
               <div
                 className="flex items-center gap-2 px-2 py-1 rounded-t-lg"
                 style={{
-                  backgroundColor: 'rgba(163, 113, 247, 0.1)',
+                  backgroundColor: colors.purpleBg,
                   borderBottom: `1px solid ${colors.purple}`,
                 }}
               >
@@ -98,14 +83,12 @@ function BlockSection({
                   {supersetLabel}
                 </span>
               </div>
-              <div className="divide-y" style={{ borderColor: colors.border }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 8 }}>
                 {group.exercises.map((exercise) => {
                   const index = routine_exercises.findIndex(re => re.id === exercise.id)
                   return (
                     <div
                       key={exercise.id}
-                      className="p-2"
-                      style={getMuscleGroupBorderStyle(exercise.exercise?.muscle_group?.name)}
                     >
                       <ExerciseCard
                         routineExercise={exercise}
@@ -133,7 +116,7 @@ function BlockSection({
         {isEditing && (
           <button
             onClick={(e) => { e.stopPropagation(); onAddExercise?.() }}
-            className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
+            className="w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
             style={{ border: `1px dashed ${colors.border}`, color: isWarmup ? colors.warning : colors.purple }}
           >
             <Plus size={14} />

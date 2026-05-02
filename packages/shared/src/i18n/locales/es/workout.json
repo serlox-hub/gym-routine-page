@@ -1,6 +1,8 @@
 {
   "session": {
     "active": "Sesión activa",
+    "finishWorkout": "Terminar entrenamiento",
+    "exerciseProgress": "Ejercicio {{current}} de {{total}}",
     "start": "Iniciar",
     "end": "Finalizar entrenamiento",
     "endConfirm": "¿Seguro que quieres finalizar el entrenamiento?",
@@ -20,9 +22,23 @@
     "notesPlaceholder": "¿Algo que quieras recordar de esta sesión?",
     "duration": "Duración",
     "exercises": "Ejercicios",
+    "musclesWorked": "Músculos trabajados",
     "volume": "Volumen"
   },
   "set": {
+    "logSet": "REGISTRAR SERIE {{number}}",
+    "removeLast": "Quitar última",
+    "addSet": "Añadir serie",
+    "lastSession": "Última sesión · {{when}}",
+    "set": "Serie",
+    "saveStartRest": "Guardar e iniciar descanso",
+    "weightAndReps": "Peso y reps",
+    "rirTitle": "@ — Reps en reserva",
+    "selected": "Seleccionado: {{value}}",
+    "notesPlaceholder": "¿Cómo te sentiste? Técnica, dolor, fatiga…",
+    "addVideoTitle": "Añadir un vídeo de esta serie",
+    "addVideoSubtitle": "Grábalo ahora o elige de la galería",
+    "videoOptional": "Opcional",
     "complete": "Completar serie",
     "unmark": "Desmarcar serie",
     "markDropset": "Marcar como dropset",
@@ -47,6 +63,9 @@
     "addSet": "Añadir serie",
     "addVideo": "Añadir video",
     "videoTooLarge": "Video demasiado grande",
+    "videoTooLargeDetail": "{{size}} MB. Máximo permitido: 100 MB",
+    "videoUploadError": "Error al subir el vídeo",
+    "videoLoadError": "Error al cargar el vídeo",
     "weightConverter": "Conversor de peso",
     "setNumber": "Serie {{number}}",
     "type": {
@@ -59,14 +78,21 @@
     "title": "Descanso",
     "timer": "Temporizador",
     "skip": "Saltar",
-    "seconds": "{{seconds}} seg"
+    "skipRest": "Saltar descanso",
+    "seconds": "{{seconds}} seg",
+    "of": "de {{time}}",
+    "setsDone": "{{done}} hechas",
+    "setsLeft": "Quedan {{count}}"
   },
-  "converter": "Conversor",
   "addExercise": {
     "title": "Añadir ejercicio",
-    "toSession": "Añadir a la sesión",
+    "toSession": "Añadir ejercicio",
     "search": "Buscar ejercicio...",
     "noExercises": "No hay ejercicios disponibles"
+  },
+  "exercise": {
+    "removeFromSession": "Quitar de la sesión",
+    "removeFromSessionConfirm": "¿Quitar \"{{name}}\" de esta sesión? Seguirá disponible en la rutina."
   },
   "summary": {
     "title": "Resumen",
@@ -82,8 +108,12 @@
     "bestSet": "Mejor serie",
     "maxWeight": "Máx Peso",
     "maxReps": "Máx Reps",
-    "best1RM": "Mejor 1RM",
-    "best1rm": "Mejor 1RM",
+    "avgReps": "Media Reps",
+    "maxTime": "Máx Tiempo",
+    "avgTime": "Media Tiempo",
+    "maxDistance": "Máx Distancia",
+    "avgDistance": "Media Dist.",
+    "best1rm": "Est. 1RM",
     "sessions": "Sesiones",
     "noSets": "Sin series completadas"
   },
@@ -96,7 +126,10 @@
     "endTime": "Hora de fin",
     "sessionsThisDay": "sesiones este día",
     "deleteSession": "Eliminar sesión",
-    "viewDetail": "Ver detalle"
+    "viewDetail": "Ver detalle",
+    "selectDay": "Selecciona un día para ver el detalle",
+    "noSessionsDay": "Sin entrenamientos este día",
+    "recentSessions": "Sesiones recientes"
   },
   "share": {
     "dialogTitle": "Compartir entrenamiento"

@@ -17,7 +17,7 @@ export async function exportRoutine(routineId) {
   // Obtener rutina base
   const { data: routine, error: routineError } = await getClient()
     .from('routines')
-    .select('name, description, goal, cycle_days')
+    .select('name, description')
     .eq('id', routineId)
     .single()
 
@@ -255,8 +255,6 @@ export async function importRoutine(jsonData, userId, options = {}) {
     .insert({
       name: routine.name,
       description: routine.description,
-      goal: routine.goal,
-      cycle_days: routine.cycle_days || 7,
       user_id: userId,
     })
     .select()

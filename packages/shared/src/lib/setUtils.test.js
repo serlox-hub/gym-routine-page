@@ -7,6 +7,7 @@ import {
   buildCompletedSetData,
   formatSetValue,
   formatSetValueByType,
+  formatPreviousSetValue,
   getSetsForExercise,
   buildExtraExerciseConfig,
 } from './setUtils.js'
@@ -461,6 +462,35 @@ describe('setUtils', () => {
     it('formatea distance_time', () => {
       expect(formatSetValueByType({ distanceMeters: 500, timeSeconds: 120 }, 'distance_time'))
         .toBe('500m × 120s')
+    })
+  })
+
+  describe('formatPreviousSetValue', () => {
+    it('incluye la unidad para weight_reps', () => {
+      expect(formatPreviousSetValue({ weight: 80, reps: 8 }, 'weight_reps'))
+        .toBe('80kg × 8')
+    })
+
+    it('preserva el peso 0', () => {
+      expect(formatPreviousSetValue({ weight: 0, reps: 10 }, 'weight_reps'))
+        .toBe('0kg × 10')
+    })
+
+    it('omite la sección de peso si weight es null en weight_reps', () => {
+      expect(formatPreviousSetValue({ weight: null, reps: 12 }, 'weight_reps'))
+        .toBe('12 reps')
+    })
+
+    it('reusa formatSetValueByType para otros tipos', () => {
+      expect(formatPreviousSetValue({ reps: 12 }, 'reps_only'))
+        .toBe('12 reps')
+      expect(formatPreviousSetValue({ timeSeconds: 90 }, 'time'))
+        .toBe('90s')
+    })
+
+    it('respeta weightUnit', () => {
+      expect(formatPreviousSetValue({ weight: 80, distanceMeters: 100 }, 'weight_distance', { weightUnit: 'lb' }))
+        .toBe('80lb × 100m')
     })
   })
 

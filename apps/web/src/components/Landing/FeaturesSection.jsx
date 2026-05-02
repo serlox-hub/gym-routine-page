@@ -8,7 +8,7 @@ import {
   Timer,
   Activity,
 } from 'lucide-react'
-import { colors } from '../../lib/styles.js'
+import { colors, RGB_SUCCESS } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 
 function FeaturesSection() {
@@ -19,25 +19,25 @@ function FeaturesSection() {
       icon: Dumbbell,
       title: t('landing:features.routines.title'),
       description: t('landing:features.routines.description'),
-      color: colors.accent,
+      color: colors.success,
     },
     {
       icon: Timer,
       title: t('landing:features.liveTracking.title'),
       description: t('landing:features.liveTracking.description'),
-      color: colors.success,
+      color: colors.orange,
     },
     {
       icon: TrendingUp,
       title: t('landing:features.progress.title'),
       description: t('landing:features.progress.description'),
-      color: colors.purple,
+      color: colors.success,
     },
     {
       icon: Sparkles,
       title: t('landing:features.ai.title'),
       description: t('landing:features.ai.description'),
-      color: colors.warning,
+      color: colors.purple,
     },
     {
       icon: CalendarDays,
@@ -55,12 +55,12 @@ function FeaturesSection() {
 
   return (
     <section className="py-24 relative">
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(63, 185, 80, 0.04) 0%, transparent 50%)' }} />
+      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 20% 50%, rgba(${RGB_SUCCESS}, 0.04) 0%, transparent 50%)` }} />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
         <AnimatedSection className="text-center mb-16">
           <span
             className="inline-block text-xs font-semibold tracking-widest mb-4 px-3 py-1 rounded-full"
-            style={{ color: colors.success, backgroundColor: 'rgba(63, 185, 80, 0.1)', border: '1px solid rgba(63, 185, 80, 0.2)' }}
+            style={{ color: colors.success, backgroundColor: colors.successBgSubtle, border: `1px solid rgba(${RGB_SUCCESS}, 0.2)` }}
           >
             {t('landing:features.tag')}
           </span>

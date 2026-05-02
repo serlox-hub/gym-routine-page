@@ -20,6 +20,7 @@
     "search": "Search",
     "filter": "Filter",
     "retry": "Retry",
+    "reload": "Reload page",
     "accept": "Accept",
     "reject": "Reject",
     "select": "Select",
@@ -28,7 +29,9 @@
     "reset": "Reset",
     "seeAll": "See all",
     "seeMore": "See more",
-    "loading": "Loading..."
+    "seeLess": "See less",
+    "loading": "Loading...",
+    "change": "Change"
   },
   "labels": {
     "name": "Name",
@@ -51,7 +54,8 @@
     "worst": "Worst",
     "new": "New",
     "free": "Free",
-    "other": "Other"
+    "other": "Other",
+    "value": "Value"
   },
   "time": {
     "today": "Today",
@@ -116,11 +120,13 @@
     "trainingDaysPerWeek": "Training days per week",
     "weekStartDay": "Week starts on",
     "monday": "Monday",
+    "mondayShort": "Mon",
     "sunday": "Sunday",
+    "sundayShort": "Sun",
     "removeRest": "Remove rest",
     "removeGoal": "Remove goal",
-    "showWidgetHome": "Show widget on home",
-    "showWidgetHomeDescription": "See your progress and streak on the home screen",
+    "showWidgetHome": "Show streak and goal",
+    "showWidgetHomeDescription": "Show streak count, progress bar and pause option",
     "general": "General",
     "weightUnit": "Weight unit",
     "weightUnitDescription": "Default for all exercises. You can override it individually",
@@ -156,8 +162,31 @@
     "history": "History",
     "preferences": "Preferences",
     "admin": "User management",
+    "adminDescription": "Access to user management",
     "logout": "Log out",
-    "quickAccess": "Quick access"
+    "quickAccess": "Quick access",
+    "routines": "Routines",
+    "body": "Body"
+  },
+  "home": {
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
+    "workout": "Workout",
+    "noStreakYet": "No streak yet",
+    "createRoutine": "Create Routine",
+    "pinnedToHome": "Pinned to Home",
+    "pinRoutine": "Pin a routine",
+    "pinRoutineDesc": "Show your routine on Home",
+    "nDays": "{{count}} days",
+    "nExercises": "{{count}} exercises",
+    "thisWeek": "this week",
+    "thisMonth": "workouts this month",
+    "freeWorkout": "Free Workout",
+    "workoutDuration": "Workout duration",
+    "paused": "paused",
+    "days": "days",
+    "setWeeklyGoal": "Set a weekly goal"
   },
   "import": {
     "optionsTitle": "Import options",
@@ -178,6 +207,32 @@
   },
   "admin": {
     "noUsers": "No registered users",
-    "registered": "Registered"
+    "registered": "Registered",
+    "lastSeen": "Last seen"
+  },
+  "weightUnitChange": {
+    "title": "Change weight unit",
+    "messageGlobal": "You have data saved as {{from}}. How do you want to apply the change to {{to}}?",
+    "messageExercise": "This exercise has data saved as {{from}}. How do you want to apply the change to {{to}}?",
+    "convert": "Convert and change unit",
+    "convertDescription": "Multiplies the saved weights by the conversion factor (e.g. 80 kg → 176.37 lb)",
+    "unitOnly": "Only change unit",
+    "unitOnlyDescription": "Keeps the numbers but changes the label (80 stays as 80 {{to}})",
+    "applying": "Applying..."
+  },
+  "measurementUnitChange": {
+    "title": "Change measurement unit",
+    "message": "You have measurements saved as {{from}}. How do you want to apply the change to {{to}}?",
+    "convert": "Convert and change unit",
+    "convertDescription": "Multiplies the saved values by the conversion factor (e.g. 90 cm → 35.43 in)",
+    "unitOnly": "Only change unit",
+    "unitOnlyDescription": "Keeps the numbers but changes the label (90 stays as 90 {{to}})",
+    "applying": "Applying..."
+  },
+  "chartRange": {
+    "1m": "1M",
+    "3m": "3M",
+    "all": "All",
+    "noData": "Not enough data in this range"
   }
 }

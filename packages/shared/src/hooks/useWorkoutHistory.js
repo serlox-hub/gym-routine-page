@@ -143,6 +143,7 @@ export function usePreviousWorkout(exerciseId) {
             paceSeconds: set.pace_seconds,
             rir: set.rir_actual,
             notes: set.notes,
+            videoUrl: set.video_url,
             setType: set.set_type,
           }))
           .sort((a, b) => a.setNumber - b.setNumber)
@@ -204,8 +205,10 @@ export function useUpsertCompletedSet() {
 
   return useMutation({
     mutationFn: (setData) => upsertCompletedSet(setData),
-    onSuccess: (_, { sessionId, sessionExerciseId }) => {
+    onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
     },
   })
 }
@@ -219,6 +222,8 @@ export function useDeleteCompletedSet() {
     },
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
     },
   })
 }

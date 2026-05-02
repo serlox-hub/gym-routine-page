@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Animated, Pressable, Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors } from '../../lib/styles'
 import { formatPRNotificationText } from '@gym/shared'
@@ -7,6 +8,7 @@ import { formatPRNotificationText } from '@gym/shared'
 const AUTO_DISMISS_MS = 4000
 
 export default function PRNotification({ notification, onDismiss }) {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const translateY = useRef(new Animated.Value(-100)).current
   const opacity = useRef(new Animated.Value(0)).current
@@ -44,7 +46,7 @@ export default function PRNotification({ notification, onDismiss }) {
         onPress={onDismiss}
         className="px-4 py-3 rounded-xl"
         style={{
-          backgroundColor: colors.warning,
+          backgroundColor: colors.gold,
           shadowColor: colors.black,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.3,
@@ -53,7 +55,7 @@ export default function PRNotification({ notification, onDismiss }) {
         }}
       >
         <Text className="font-bold text-sm" style={{ color: colors.black }}>
-          Nuevo PR
+          {t('workout:summary.newPR')}
         </Text>
         <Text className="text-xs" style={{ color: colors.black }}>
           {formatPRNotificationText(notification)}

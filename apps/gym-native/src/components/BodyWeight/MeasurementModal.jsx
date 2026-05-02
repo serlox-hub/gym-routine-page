@@ -31,7 +31,6 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
       id: record?.id,
       measurementType,
       value,
-      unit,
       notes: form.notes.trim() || null,
     })
   }
@@ -55,7 +54,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
           <TextInput
             value={form.value}
             onChangeText={(text) => setForm(prev => ({ ...prev, value: text }))}
-            placeholder={`Ej: ${unit === 'cm' ? '85.5' : '33.5'}`}
+            placeholder={t(unit === 'cm' ? 'body:measurements.valuePlaceholderCm' : 'body:measurements.valuePlaceholderIn')}
             placeholderTextColor={colors.textSecondary}
             keyboardType="decimal-pad"
             style={inputStyle}
@@ -68,7 +67,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
           <TextInput
             value={form.notes}
             onChangeText={(text) => setForm(prev => ({ ...prev, notes: text }))}
-            placeholder="Ej: En ayunas"
+            placeholder={t('body:measurements.notesPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             multiline
             numberOfLines={2}
@@ -83,7 +82,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
             disabled={!form.value || parseDecimal(form.value) <= 0 || isPending}
             loading={isPending}
           >
-            {isEditing ? t('common:buttons.save') : t('body:measurements.record')}
+            {isEditing ? t('common:buttons.save') : t('body:measurements.submit')}
           </Button>
         </View>
       </View>

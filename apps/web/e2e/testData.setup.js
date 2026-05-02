@@ -96,7 +96,6 @@ setup('create test data', async () => {
       .insert({
         name: 'Rutina E2E Test',
         description: 'Rutina creada automáticamente para tests e2e',
-        goal: 'Testing',
         user_id: userId,
       })
       .select()

@@ -82,10 +82,10 @@ export default class ErrorBoundary extends Component {
               paddingHorizontal: 24,
               paddingVertical: 12,
               borderRadius: 8,
-              backgroundColor: colors.accent,
+              backgroundColor: colors.success,
             }}
           >
-            <Text style={{ fontSize: 14, fontWeight: '500', color: colors.white }}>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: colors.bgPrimary }}>
               {t('common:buttons.retry')}
             </Text>
           </Pressable>

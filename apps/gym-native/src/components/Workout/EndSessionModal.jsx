@@ -18,6 +18,7 @@ export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending 
   }
 
   const handleClose = () => {
+    if (isPending) return
     setNotes('')
     onClose()
   }
@@ -42,11 +43,11 @@ export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending 
       )}
 
       <View className="flex-row gap-3">
-        <Button variant="secondary" className="flex-1" onPress={handleClose}>
+        <Button variant="secondary" className="flex-1" onPress={handleClose} disabled={isPending}>
           {t('common:buttons.cancel')}
         </Button>
         <Button className="flex-1" onPress={handleConfirm} loading={isPending}>
-          {isPending ? t('common:buttons.loading') : t('workout:session.end')}
+          {t('workout:session.end')}
         </Button>
       </View>
     </Modal>

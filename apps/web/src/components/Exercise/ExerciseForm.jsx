@@ -47,10 +47,10 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
               type="button"
               onClick={() => { onChange(g.id); setOpen(false) }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:opacity-80"
-              style={selectedId === g.id ? { backgroundColor: colors.accentBgSubtle } : undefined}
+              style={selectedId === g.id ? { backgroundColor: colors.successBgSubtle } : undefined}
             >
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(g.name) }} />
-              <span style={{ color: selectedId === g.id ? colors.accent : colors.textPrimary }}>{getMuscleGroupName(g)}</span>
+              <span style={{ color: selectedId === g.id ? colors.success : colors.textPrimary }}>{getMuscleGroupName(g)}</span>
             </button>
           ))}
         </div>
@@ -152,7 +152,7 @@ function ExerciseForm({
       {error && (
         <div
           className="p-3 rounded-lg text-sm"
-          style={{ backgroundColor: 'rgba(248, 81, 73, 0.1)', color: colors.danger }}
+          style={{ backgroundColor: colors.dangerBg, color: colors.danger }}
         >
           {error}
         </div>
@@ -224,7 +224,7 @@ function ExerciseForm({
             type="submit"
             disabled={isSubmitting}
             className="w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 mt-4"
-            style={{ backgroundColor: colors.accent, color: colors.white }}
+            style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
           >
             {isSubmitting ? t('common:buttons.loading') : _submitLabel}
           </button>

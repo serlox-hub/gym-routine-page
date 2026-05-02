@@ -43,16 +43,16 @@ function ExerciseSearchBar({
           onClick={() => setShowFilters(true)}
           className="relative p-2 rounded-lg shrink-0"
           style={{
-            backgroundColor: activeFilterCount > 0 ? colors.accentBgSubtle : colors.bgTertiary,
-            color: activeFilterCount > 0 ? colors.accent : colors.textSecondary,
-            border: `1px solid ${activeFilterCount > 0 ? colors.accent : colors.border}`,
+            backgroundColor: activeFilterCount > 0 ? colors.successBgSubtle : colors.bgTertiary,
+            color: activeFilterCount > 0 ? colors.success : colors.textSecondary,
+            border: `1px solid ${activeFilterCount > 0 ? colors.success : colors.border}`,
           }}
         >
           <SlidersHorizontal size={16} />
           {activeFilterCount > 0 && (
             <span
               className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
-              style={{ backgroundColor: colors.accent, color: colors.white }}
+              style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
             >
               {activeFilterCount}
             </span>
@@ -96,7 +96,7 @@ function ExerciseSearchBar({
               <button
                 onClick={handleClearAll}
                 className="text-xs font-medium"
-                style={{ color: colors.accent }}
+                style={{ color: colors.success }}
               >
                 {t('common:buttons.reset')}
               </button>
@@ -172,7 +172,7 @@ function ExerciseSearchBar({
                 checked={showUsage}
                 onChange={(e) => onToggleUsage(e.target.checked)}
                 className="accent-current"
-                style={{ accentColor: colors.accent }}
+                style={{ accentColor: colors.success }}
               />
               <span className="text-xs" style={{ color: colors.textSecondary }}>
                 {t('exercise:showUsage')}
@@ -201,9 +201,9 @@ function ChipOption({ label, isSelected, dot, onClick }) {
       onClick={onClick}
       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors"
       style={{
-        backgroundColor: isSelected ? colors.accentBgSubtle : colors.bgTertiary,
-        color: isSelected ? colors.accent : colors.textSecondary,
-        border: `1px solid ${isSelected ? colors.accent : 'transparent'}`,
+        backgroundColor: isSelected ? colors.successBgSubtle : colors.bgTertiary,
+        color: isSelected ? colors.success : colors.textSecondary,
+        border: `1px solid ${isSelected ? colors.success : 'transparent'}`,
       }}
     >
       {dot && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: dot }} />}
@@ -216,7 +216,7 @@ function ActiveChip({ label, dot, onClear }) {
   return (
     <span
       className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
-      style={{ backgroundColor: colors.accentBgSubtle, color: colors.accent }}
+      style={{ backgroundColor: colors.successBgSubtle, color: colors.success }}
     >
       {dot && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dot }} />}
       {label}

@@ -1,6 +1,5 @@
 import { memo } from 'react'
 import { View, Text } from 'react-native'
-import { Flame } from 'lucide-react-native'
 import WorkoutExerciseCard from './WorkoutExerciseCard'
 import SupersetCard from './SupersetCard'
 import { colors } from '../../lib/styles'
@@ -16,24 +15,13 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
         const totalExercises = countExercisesInBlock(block)
 
         return (
-          <View key={block.blockName} className="gap-3">
-            <View
-              className="flex-row items-center gap-2 px-3 py-2 rounded-lg"
-              style={{
-                backgroundColor: colors.bgTertiary,
-                borderLeftWidth: 4,
-                borderLeftColor: block.isWarmup ? colors.warning : colors.purple,
-              }}
-            >
-              {block.isWarmup && <Flame size={16} color={colors.warning} />}
+          <View key={block.blockName} className="gap-2">
+            <View className="flex-row items-center" style={{ gap: 6 }}>
               <Text
-                className="text-sm font-semibold uppercase"
-                style={{ color: block.isWarmup ? colors.warning : colors.purple, letterSpacing: 1 }}
+                className="text-xs font-semibold uppercase"
+                style={{ color: colors.success, letterSpacing: 1 }}
               >
-                {translateBlockName(block.blockName)}
-              </Text>
-              <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                ({totalExercises})
+                {translateBlockName(block.blockName)} ({totalExercises})
               </Text>
               {block.durationMin && (
                 <Text className="text-xs ml-auto" style={{ color: colors.textSecondary }}>
@@ -53,7 +41,6 @@ function BlockExerciseList({ exercisesByBlock, onCompleteSet, onUncompleteSet, o
                       onUncompleteSet={onUncompleteSet}
                       onRemove={onRemove}
                       onReplace={onReplace}
-                      isWarmup={block.isWarmup}
                       onReorder={onReorder}
                       currentIndex={findExerciseIndex(flatExercises, group.exercise)}
                       totalExercises={totalFlat}

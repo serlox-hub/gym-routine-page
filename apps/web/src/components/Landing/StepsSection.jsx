@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Target, Zap, BarChart3 } from 'lucide-react'
-import { colors } from '../../lib/styles.js'
+import { colors, RGB_PURPLE } from '../../lib/styles.js'
 import AnimatedSection from './AnimatedSection'
 
 function StepsSection() {
@@ -13,18 +13,21 @@ function StepsSection() {
       title: t('landing:steps.create.title'),
       description: t('landing:steps.create.description'),
       icon: Target,
+      color: colors.success,
     },
     {
       number: '02',
       title: t('landing:steps.train.title'),
       description: t('landing:steps.train.description'),
       icon: Zap,
+      color: colors.orange,
     },
     {
       number: '03',
       title: t('landing:steps.analyze.title'),
       description: t('landing:steps.analyze.description'),
       icon: BarChart3,
+      color: colors.success,
     },
   ]
 
@@ -34,7 +37,7 @@ function StepsSection() {
         <AnimatedSection className="text-center mb-16">
           <span
             className="inline-block text-xs font-semibold tracking-widest mb-4 px-3 py-1 rounded-full"
-            style={{ color: colors.purple, backgroundColor: 'rgba(163, 113, 247, 0.1)', border: '1px solid rgba(163, 113, 247, 0.2)' }}
+            style={{ color: colors.purple, backgroundColor: colors.purpleBg, border: `1px solid rgba(${RGB_PURPLE}, 0.25)` }}
           >
             {t('landing:steps.tag')}
           </span>
@@ -54,20 +57,20 @@ function StepsSection() {
                 }}
                 whileHover={{
                   borderColor: colors.purple + '40',
-                  boxShadow: '0 8px 30px rgba(163, 113, 247, 0.08)',
+                  boxShadow: `0 8px 30px rgba(${RGB_PURPLE}, 0.12)`,
                 }}
               >
                 <div className="flex-shrink-0">
                   <div
                     className="w-14 h-14 rounded-xl flex items-center justify-center"
                     style={{
-                      background: `linear-gradient(135deg, ${colors.accentBg}, ${colors.purpleBg})`,
+                      background: `linear-gradient(135deg, ${colors.successBg}, ${colors.purpleBg})`,
                     }}
                   >
                     <span
                       className="text-xl font-extrabold"
                       style={{
-                        background: `linear-gradient(135deg, ${colors.accent}, ${colors.purple})`,
+                        background: `linear-gradient(135deg, ${colors.success}, ${colors.purple})`,
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                       }}
@@ -78,7 +81,7 @@ function StepsSection() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <step.icon size={18} style={{ color: colors.purple }} />
+                    <step.icon size={18} color={step.color} />
                     <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>{step.title}</h3>
                   </div>
                   <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>{step.description}</p>

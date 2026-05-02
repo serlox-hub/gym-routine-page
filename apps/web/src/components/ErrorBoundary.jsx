@@ -42,14 +42,14 @@ export default class ErrorBoundary extends Component {
               className="px-4 py-2 rounded-lg text-sm font-medium"
               style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}
             >
-              Reintentar
+              {t('common:buttons.retry')}
             </button>
             <button
               onClick={this.handleReload}
               className="px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ backgroundColor: colors.accent, color: colors.white }}
+              style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
             >
-              Recargar página
+              {t('common:buttons.reload')}
             </button>
           </div>
         </div>

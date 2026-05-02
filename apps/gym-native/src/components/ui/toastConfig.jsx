@@ -5,8 +5,8 @@ import { colors } from '../../lib/styles'
 const ICONS = {
   success: { Icon: Check, color: colors.success },
   error: { Icon: AlertCircle, color: colors.danger },
-  info: { Icon: Info, color: colors.accent },
-  loading: { Icon: null, color: colors.accent },
+  info: { Icon: Info, color: colors.textSecondary },
+  loading: { Icon: null, color: colors.textSecondary },
 }
 
 function ToastBase({ type, text1, text2 }) {

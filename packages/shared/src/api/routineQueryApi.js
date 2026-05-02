@@ -8,11 +8,17 @@ import { BLOCK_NAMES } from '../lib/constants.js'
 export async function fetchRoutines() {
   const { data, error } = await getClient()
     .from('routines')
-    .select('*')
+    .select('*, routine_days(id, routine_exercises(id))')
     .order('id')
 
   if (error) throw error
-  return data
+
+  return (data || []).map(r => {
+    const days = r.routine_days || []
+    const exerciseCount = days.reduce((sum, d) => sum + (d.routine_exercises?.length || 0), 0)
+    const { routine_days: _, ...routine } = r
+    return { ...routine, days_count: days.length, exercises_count: exerciseCount }
+  })
 }
 
 export async function fetchRoutine(routineId) {

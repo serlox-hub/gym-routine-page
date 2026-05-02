@@ -2,7 +2,7 @@
  * Utilidades para cálculos de entrenamiento
  */
 
-import { MeasurementType } from './measurementTypes.js'
+import { MeasurementType, measurementTypeUsesTime, measurementTypeUsesDistance } from './measurementTypes.js'
 
 /**
  * Calcula el 1RM estimado usando la fórmula Epley
@@ -163,6 +163,32 @@ export function countCompletedSets(completedSetsMap, routineExerciseId) {
  * @param {Object} exerciseSetCounts - Mapa de conteo de series por ejercicio (key: sessionExerciseId)
  * @returns {{completed: number, total: number}}
  */
+/**
+ * Cuenta cuántos ejercicios están completos (todas sus series hechas) sobre el total.
+ * Excluye ejercicios de calentamiento.
+ */
+export function calculateExerciseLevelProgress(flatExercises, completedSets, exerciseSetCounts = {}) {
+  if (!flatExercises || flatExercises.length === 0) return { completed: 0, total: 0, setsCompleted: 0, setsTotal: 0 }
+  let completed = 0
+  let total = 0
+  let setsCompleted = 0
+  let setsTotal = 0
+  flatExercises.forEach(exercise => {
+    if (exercise.isWarmup) return
+    total += 1
+    const key = exercise.sessionExerciseId
+    const totalSets = exerciseSetCounts[key] ?? exercise.series ?? 1
+    setsTotal += totalSets
+    let setsDone = 0
+    for (let i = 1; i <= totalSets; i++) {
+      if (completedSets[`${key}-${i}`]) setsDone += 1
+    }
+    setsCompleted += setsDone
+    if (totalSets > 0 && setsDone >= totalSets) completed += 1
+  })
+  return { completed, total, setsCompleted, setsTotal }
+}
+
 export function calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts = {}) {
   if (!flatExercises || flatExercises.length === 0) return { completed: 0, total: 0 }
 
@@ -251,11 +277,17 @@ export function calculateExerciseStats(sessions, measurementType) {
   if (!sessions || sessions.length === 0) return null
 
   const allSets = sessions.flatMap(s => s.sets)
+  if (allSets.length === 0) return null
 
   let best1RM = 0
   let maxWeight = 0
   let maxReps = 0
+  let avgReps = 0
   let totalVolume = 0
+  let maxTime = 0
+  let avgTime = 0
+  let maxDistance = 0
+  let avgDistance = 0
 
   if (measurementType === MeasurementType.WEIGHT_REPS) {
     best1RM = getBest1RMFromSets(allSets)
@@ -263,14 +295,33 @@ export function calculateExerciseStats(sessions, measurementType) {
     maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
     totalVolume = calculateTotalVolume(allSets)
   } else if (measurementType === MeasurementType.REPS_ONLY) {
-    maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
+    const reps = allSets.map(s => s.reps_completed || 0)
+    maxReps = Math.max(...reps)
+    avgReps = Math.round(reps.reduce((a, b) => a + b, 0) / reps.length)
+  } else if (measurementTypeUsesTime(measurementType)) {
+    const times = allSets.map(s => s.time_seconds || 0).filter(t => t > 0)
+    if (times.length > 0) {
+      maxTime = Math.max(...times)
+      avgTime = Math.round(times.reduce((a, b) => a + b, 0) / times.length)
+    }
+  } else if (measurementTypeUsesDistance(measurementType)) {
+    const distances = allSets.map(s => s.distance || 0).filter(d => d > 0)
+    if (distances.length > 0) {
+      maxDistance = Math.max(...distances)
+      avgDistance = Math.round(distances.reduce((a, b) => a + b, 0) / distances.length * 10) / 10
+    }
   }
 
   return {
     best1RM,
     maxWeight,
     maxReps,
+    avgReps,
     totalVolume,
+    maxTime,
+    avgTime,
+    maxDistance,
+    avgDistance,
     sessionCount: sessions.length,
   }
 }

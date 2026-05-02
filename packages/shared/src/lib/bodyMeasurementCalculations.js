@@ -32,11 +32,7 @@ export function transformMeasurementToChartData(records, limit = 30) {
       return {
         date: date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
         value: record.value,
-        fullDate: date.toLocaleDateString('es-ES', {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'short',
-        }),
+        fullDate: `${date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} · ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`,
       }
     })
     .reverse()

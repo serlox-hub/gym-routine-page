@@ -24,7 +24,7 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
           setIsOpen(true)
         }}
         className={`p-1.5 rounded-lg transition-opacity hover:opacity-80 ${triggerClassName}`}
-        style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+        style={{ color: colors.textPrimary }}
       >
         <MoreVertical size={triggerSize} />
       </button>
@@ -64,7 +64,7 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
                         }}
                         disabled={child.disabled}
                         className="w-full flex items-center gap-3 px-8 py-2.5 text-sm transition-colors hover:opacity-80 disabled:opacity-30"
-                        style={{ color: child.active ? colors.accent : colors.textPrimary }}
+                        style={{ color: child.active ? colors.success : colors.textPrimary }}
                       >
                         <span className="truncate">{child.label}</span>
                       </button>

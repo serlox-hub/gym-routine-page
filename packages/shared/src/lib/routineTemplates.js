@@ -39,7 +39,6 @@ export const ROUTINE_TEMPLATES = [
       routine: {
         name: 'Push Pull Legs',
         description: 'Rutina de 6 días dividida en empuje, tirón y piernas. Ideal para ganar masa muscular.',
-        goal: 'Hipertrofia',
         days: [
           {
             name: 'Día 1 - Push',
@@ -192,7 +191,6 @@ export const ROUTINE_TEMPLATES = [
       routine: {
         name: 'Upper/Lower',
         description: 'Rutina de 4 días dividida en tren superior e inferior. Equilibrio entre volumen y recuperación.',
-        goal: 'Hipertrofia',
         days: [
           {
             name: 'Día 1 - Upper (Fuerza)',
@@ -297,7 +295,6 @@ export const ROUTINE_TEMPLATES = [
       routine: {
         name: 'Full Body',
         description: 'Rutina de cuerpo completo 3 días por semana. Perfecta para principiantes o personas con poco tiempo.',
-        goal: 'Acondicionamiento general',
         days: [
           {
             name: 'Día 1 - Full Body A',
@@ -384,7 +381,6 @@ export const ROUTINE_TEMPLATES = [
       routine: {
         name: '5/3/1 Wendler',
         description: 'Programa de fuerza basado en el método 5/3/1 de Jim Wendler. Progresión lenta pero constante.',
-        goal: 'Fuerza',
         days: [
           {
             name: 'Día 1 - Press Banca',

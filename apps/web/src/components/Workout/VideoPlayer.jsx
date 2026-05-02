@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { getVideoUrl } from '../../lib/videoStorage.js'
 
 function VideoPlayer({ videoKey }) {
+  const { t } = useTranslation()
   const [url, setUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -21,9 +23,9 @@ function VideoPlayer({ videoKey }) {
     setError(null)
     getVideoUrl(videoKey)
       .then(setUrl)
-      .catch(() => setError('Error al cargar video'))
+      .catch(() => setError(t('workout:set.videoLoadError')))
       .finally(() => setLoading(false))
-  }, [videoKey])
+  }, [videoKey, t])
 
   if (loading) {
     return (

@@ -14,7 +14,6 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
   "routine": {
     "name": "Routine name",
     "description": "Short description",
-    "goal": "Goal",
     "days": [
       {
         "name": "Day 1 - Descriptive name",

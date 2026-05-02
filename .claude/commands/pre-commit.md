@@ -58,11 +58,38 @@ Para cada componente (.jsx) modificado:
    - NO debe contener: calculos >5 lineas, transformaciones de datos, logica de negocio
 4. **Props destructuring** en la firma de la funcion.
 5. **Loading/error states**. Si usa datos async (useQuery), debe manejar isLoading y error.
-6. **Sin inline styles** salvo style objects de `lib/styles.js` o valores dinamicos. Usar Tailwind.
-7. **Sin magic numbers**. Usar constantes con nombre descriptivo.
-8. **Sin console.log/console.error** salvo ErrorBoundary con eslint-disable.
+6. **Sin magic numbers**. Usar constantes con nombre descriptivo.
+7. **Sin console.log/console.error** salvo ErrorBoundary con eslint-disable.
 
-## Paso 4: Safe Area en componentes native
+## Paso 4: Design tokens (CRITICO)
+
+Tolerancia cero con valores hardcodeados que deberian ser tokens del sistema de diseño.
+
+### Colores hardcodeados
+
+Buscar hex y rgba en archivos modificados:
+
+```bash
+for f in $(git diff --name-only HEAD | grep '\.jsx$\|\.js$' | grep -v test | grep -v styles\.js | grep -v tailwind | grep -v constants); do
+  grep -nE "#[0-9a-fA-F]{3,8}|rgba?\(" "$f" | grep -v "import\|from\|//\|\.svg\|url(" || true
+done
+```
+
+**Cada coincidencia es sospechosa**. Los unicos sitios validos para hex/rgba son:
+- `lib/styles.js` (definicion de tokens)
+- `tailwind.config.*` (importa desde styles.js)
+- Gradientes en Landing page (usa constantes RGB_ACCENT / RGB_PURPLE)
+
+Todo lo demas DEBE usar `colors.X` de `lib/styles.js`. Si necesitas un color con alpha que no existe, anadelo como token en ambos `styles.js`.
+
+### Tamaños de icono y fuente
+
+No buscar automaticamente, pero al LEER cada componente verificar que:
+- Tamaños de iconos son consistentes con el diseno (12, 14, 16, 18, 20, 24 — no valores raros como 13 o 19)
+- Tamaños de fuente usan valores del sistema (11, 12, 13, 14, 15, 16, 20, 24 — no valores raros)
+- Si un tamaño se repite en multiples componentes del mismo feature, deberia estar en `design` tokens de `styles.js`
+
+## Paso 5: Safe Area en componentes native
 
 Para cada componente en `apps/gym-native/` modificado o creado:
 
@@ -77,19 +104,36 @@ grep -n "position.*absolute" apps/gym-native/src/components/**/*.jsx | grep -v "
 
 Si se encuentra un `top:` o `bottom:` numerico fijo en un elemento absolute sin usar insets, es un problema que debe corregirse.
 
-## Paso 5: Calidad de hooks
+## Paso 6: Calidad de hooks
 
 Para cada hook modificado:
 
 1. **Agrupado por dominio**. Un archivo por dominio (useRoutines.js, useWorkout.js), no hooks sueltos.
 2. **Secciones separadas** con comentarios: QUERIES, MUTATIONS, HELPERS.
 3. **Naming**: `useEntity` para queries, `useCreateEntity`/`useUpdateEntity`/`useDeleteEntity` para mutations.
-4. **Query keys** usando constantes de `QUERY_KEYS`, no strings literales.
-5. **enabled** guard en queries que dependen de parametros opcionales.
-6. **Invalidacion correcta** de queries tras mutations.
-7. **Sin logica de negocio** dentro del hook — delegar a funciones de `lib/`.
+4. **enabled** guard en queries que dependen de parametros opcionales.
+5. **Invalidacion correcta** de queries tras mutations.
+6. **Sin logica de negocio** dentro del hook — delegar a funciones de `lib/`.
 
-## Paso 6: Calidad de utilidades (lib/)
+### Query keys — verificacion automatizada
+
+```bash
+# Buscar query keys literales (string en vez de QUERY_KEYS.X)
+for f in $(git diff --name-only HEAD | grep 'hooks/.*\.js$' | grep -v test); do
+  grep -nE "queryKey:\s*\['" "$f" && echo "^^^ PROBLEMA: query key literal en $f — usar QUERY_KEYS.X" || true
+done
+```
+
+Toda query key DEBE usar constantes de `QUERY_KEYS` en `constants.js`. Si falta una constante, crearla.
+
+### Invalidacion cruzada
+
+Cuando una mutation invalida queries, verificar que invalida TODAS las queries relacionadas. Patron comun que falla: invalidar `ROUTINES` (lista) pero no `ROUTINE` (detalle individual). Verificar especialmente:
+- Si invalida una lista, ¿debe invalidar tambien el detalle?
+- Si invalida un detalle, ¿debe invalidar tambien la lista?
+- ¿Los tipos de los query keys coinciden? (string vs number en el ID)
+
+## Paso 7: Calidad de utilidades (lib/)
 
 Para cada archivo de utilidad modificado:
 
@@ -99,20 +143,68 @@ Para cada archivo de utilidad modificado:
 4. **Nombres descriptivos**. `calculateEpley1RM` no `calc1RM`.
 5. **JSDoc** solo en funciones complejas (>10 lineas o parametros no obvios).
 
-## Paso 7: Tests
+### Falsy checks peligrosos — verificacion automatizada
 
-### Tests unitarios
+```bash
+# Buscar !variable donde variable podria ser 0 legitimamente
+for f in $(git diff --name-only HEAD | grep 'lib/.*\.js$' | grep -v test); do
+  grep -nE "if \(!([a-z]*[Cc]ount|[a-z]*[Mm]in|[a-z]*[Tt]otal|[a-z]*[Nn]um|[a-z]*[Ii]ndex|[a-z]*[Ll]ength|[a-z]*[Ss]ize|[a-z]*[Ww]eight|[a-z]*[Rr]eps|[a-z]*[Ss]ets|[a-z]*[Dd]ays)" "$f" && echo "^^^ REVISAR: falsy check en numero — 0 es valido?" || true
+done
+```
 
-Para cada archivo de logica en `packages/shared/src/lib/` que fue modificado o creado:
+Usar `== null` para null/undefined, comparadores explicitos para numeros. `!variable` solo para booleanos y strings.
 
-1. **Debe existir** `archivo.test.js` junto al archivo.
-2. **Cobertura minima**:
+## Paso 8: Tests (CRITICO)
+
+### Cobertura de tests para archivos modificados
+
+Verificar automaticamente que todo archivo testeable en `packages/shared/` tiene su test:
+
+```bash
+# Buscar archivos modificados en shared que necesitan tests
+for f in $(git diff --name-only HEAD | grep 'packages/shared/src/' | grep '\.js$' | grep -v test | grep -v index\.js); do
+  base=$(basename "$f" .js)
+  dir=$(dirname "$f")
+  # Excluir archivos que no necesitan test
+  if [[ "$base" == "constants" || "$base" == "_client" || "$base" == "_stores" || "$base" == "queryClient" ]]; then
+    continue
+  fi
+  test_file="${dir}/${base}.test.js"
+  if [ ! -f "$test_file" ]; then
+    echo "FALTA TEST: $test_file"
+  else
+    echo "TEST EXISTE: $test_file — verificar que cubra los cambios"
+  fi
+done
+```
+
+**Para archivos sin test** (`FALTA TEST`): crear test si el archivo contiene logica testeable (funciones puras, transformaciones, calculos). No crear tests para: constantes, configuracion, barrels (index.js), clientes (_client.js).
+
+**Para archivos con test existente** (`TEST EXISTE`): LEER el test y verificar que cubre las funciones/ramas modificadas. Si se anadio una nueva funcion exportada o se cambio el comportamiento de una existente, el test debe actualizarse.
+
+### Piramide de testing
+
+Seguir estrictamente la piramide: **muchos tests unitarios** (funciones puras en lib/) > **algunos tests de integracion** (hooks con queries mockeadas) > **pocos tests e2e** (flujos criticos de usuario). No invertir la piramide.
+
+### Requisitos de tests unitarios
+
+1. **Cobertura minima por funcion**:
    - Caso normal (happy path)
    - Edge cases (null, undefined, array vacio, 0)
    - Limites (valores minimos y maximos)
    - Si hay branching, al menos un test por rama
-3. **Tests legibles**: nombre describe que se valida, en espanol.
-4. **Sin archivos de test para**: constantes simples, configuracion, clientes (supabase.js, styles.js, queryClient.js).
+2. **Tests legibles**: nombre describe que se valida, en espanol.
+3. **Ubicacion**: junto al archivo fuente (`archivo.test.js` en el mismo directorio).
+4. **No crear tests "por cubrir"**. Cada test debe validar un comportamiento concreto que aporte valor. Si un test no puede fallar de forma util, no sirve.
+
+### Buenas practicas de testing
+
+1. **Reutilizar setup**. Si multiples tests necesitan el mismo render, fixture o inicializacion, usar `beforeEach` o funciones helper. No repetir el mismo setup en cada test.
+2. **Un assert por comportamiento, no por linea**. Agrupar asserts relacionados en un mismo test si validan el mismo comportamiento (ej. verificar que una funcion devuelve un objeto con shape correcto = un test, no N tests por campo).
+3. **Testar comportamiento, no implementacion**. No testear que se llamo a `useState` o que un ref tiene cierto valor. Testear inputs → outputs y efectos visibles.
+4. **Nombres de test como especificacion**: `'devuelve 0 si el array esta vacio'`, no `'test caso 3'`.
+5. **No mockear lo que no es necesario**. Funciones puras no necesitan mocks. Solo mockear dependencias externas (Supabase, fetch, stores).
+6. **Fixtures reutilizables**. Si varios tests usan los mismos datos de entrada, extraer a constantes al inicio del archivo de test.
 
 ### Tests e2e
 
@@ -123,19 +215,7 @@ Evaluar si los cambios afectan flujos de usuario que deberian tener cobertura e2
 
 Los tests e2e estan en `apps/web/e2e/`. No crear tests nuevos a menos que haya un flujo critico sin cobertura.
 
-Verificar con:
-```bash
-for f in packages/shared/src/lib/*.js; do
-  if [[ ! "$f" == *.test.js ]] && [[ "$(basename $f)" != "constants.js" ]] && [[ "$(basename $f)" != "queryClient.js" ]]; then
-    test_file="${f%.js}.test.js"
-    if [ ! -f "$test_file" ]; then
-      echo "FALTA TEST: $test_file"
-    fi
-  fi
-done
-```
-
-## Paso 8: Internacionalizacion (i18n) (CRITICO)
+## Paso 9: Internacionalizacion (i18n) (CRITICO)
 
 Toda cadena de texto visible al usuario DEBE usar el sistema de i18n. Tolerancia cero con strings hardcodeados.
 
@@ -144,7 +224,6 @@ Toda cadena de texto visible al usuario DEBE usar el sistema de i18n. Tolerancia
 Para cada archivo `.jsx` modificado en `apps/web/src/` y `apps/gym-native/src/`, buscar strings en espanol o ingles hardcodeados que deberian estar traducidos:
 
 ```bash
-# Buscar strings sospechosos en archivos modificados (excluir imports, comments, route names, classNames)
 for f in $(git diff --name-only HEAD | grep '\.jsx$' | grep -v test); do
   grep -nE "'[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+[^']*'|\"[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+[^\"]*\"" "$f" | \
     grep -v "import\|from\|//\|className\|style\|navigate\|console\|key=\|testID\|data-" | \
@@ -165,7 +244,6 @@ done
 Si se anadieron keys nuevas a los JSON de traduccion:
 
 ```bash
-# Comparar keys entre es/ y en/ para cada namespace
 for ns in common auth routine exercise workout body validation data; do
   es_keys=$(jq -r '[paths(scalars)] | map(join(".")) | sort[]' packages/shared/src/i18n/locales/es/${ns}.json)
   en_keys=$(jq -r '[paths(scalars)] | map(join(".")) | sort[]' packages/shared/src/i18n/locales/en/${ns}.json)
@@ -184,8 +262,7 @@ Para cada componente modificado:
 3. **Datos de referencia** — usar helpers: `translateMuscleGroup()`, `translateBlockName()`, `getSensationLabel()`, no `t()` directo para estos
 4. **Shared code** — usar `import { t } from '../i18n/index.js'`, no `useTranslation()` (que es solo para componentes React)
 
-## Paso 9: DRY y duplicacion (CRITICO)
-
+## Paso 10: DRY y duplicacion (CRITICO)
 
 Tolerancia cero con duplicacion. Buscar en TODOS los archivos modificados y compararlos con el resto del codebase:
 
@@ -196,13 +273,7 @@ Tolerancia cero con duplicacion. Buscar en TODOS los archivos modificados y comp
 5. **Logica de componentes web/native**. Los componentes web y native del mismo feature DEBEN compartir toda la logica via `@gym/shared`. Solo el JSX (web) vs View/Text (native) deberia diferir. Si hay calculos, transformaciones, formateo de datos o cualquier logica que no sea puramente de renderizado duplicada entre ambos, extraerla a un hook o util compartido.
 6. **Hooks duplicados**. Si dos hooks en distintas apps hacen lo mismo, unificar en `packages/shared/src/hooks/`.
 
-Para verificar, buscar patrones similares entre los archivos modificados y sus equivalentes web/native:
-```bash
-# Comparar componentes web vs native del mismo feature
-diff <(grep -v 'import\|from\|export' apps/web/src/components/FEATURE/FILE.jsx) <(grep -v 'import\|from\|export' apps/gym-native/src/components/FEATURE/FILE.jsx)
-```
-
-## Paso 10: Paridad web/native (CRITICO)
+## Paso 11: Paridad web/native (CRITICO)
 
 Toda funcionalidad debe implementarse tanto en web como en native. Son dos clientes del mismo producto.
 
@@ -211,30 +282,57 @@ Toda funcionalidad debe implementarse tanto en web como en native. Son dos clien
 3. Verificar que el comportamiento es equivalente (misma logica, diferente UI layer).
 4. La logica de negocio nunca debe duplicarse entre apps — siempre en `@gym/shared`.
 
-### Verificacion estructural obligatoria
+### Verificacion automatizada de claves i18n entre plataformas
 
-Para cada componente modificado que exista en ambas apps, comparar activamente:
+Para cada par de componentes web/native modificados, extraer y comparar las claves t() usadas:
 
 ```bash
-# Listar componentes modificados en web que tienen equivalente native (y viceversa)
-for f in $(git diff --name-only HEAD | grep 'apps/web/src/components/'); do
-  native_equiv=$(echo "$f" | sed 's|apps/web/src/components/|apps/gym-native/src/components/|')
+for f in $(git diff --name-only HEAD | grep 'apps/web/src/' | grep '\.jsx$'); do
+  native_equiv=$(echo "$f" | sed 's|apps/web/src/components/|apps/gym-native/src/components/|; s|apps/web/src/pages/|apps/gym-native/src/screens/|')
+  # Intentar variantes de nombre (Page.jsx vs PageScreen.jsx)
+  if [ ! -f "$native_equiv" ]; then
+    native_equiv=$(echo "$native_equiv" | sed 's|/\([A-Z][a-z]*\)\.jsx|/\1Screen.jsx|')
+  fi
   if [ -f "$native_equiv" ]; then
-    echo "PAR: $f <-> $native_equiv"
+    web_keys=$(grep -oE "t\('[^']+'\)" "$f" | sort -u)
+    native_keys=$(grep -oE "t\('[^']+'\)" "$native_equiv" | sort -u)
+    diff_result=$(diff <(echo "$web_keys") <(echo "$native_keys") 2>/dev/null)
+    if [ -n "$diff_result" ]; then
+      echo "DIFERENCIA i18n: $f vs $native_equiv"
+      echo "$diff_result"
+    fi
   fi
 done
 ```
 
-Para cada par encontrado, LEER ambos archivos y verificar:
+Cualquier diferencia en claves t() entre el par web/native es sospechosa. Verificar manualmente si es intencional (funcionalidad de plataforma) o un error.
+
+### Verificacion estructural obligatoria
+
+Para cada par de componentes web/native encontrado, LEER ambos archivos y verificar:
 - **Mismos estados**: los mismos useState, mismos handlers, misma logica condicional
-- **Mismas claves i18n**: ambos deben usar las mismas `t('namespace:key')` para el mismo texto. Si uno usa `t('routine:delete')` y el otro tiene "Eliminar rutina" hardcodeado, es un error
+- **Mismas claves i18n**: ambos deben usar las mismas `t('namespace:key')` para el mismo texto
 - **Mismo layout conceptual**: misma jerarquia visual (header/body/footer), misma disposicion de elementos
-- **Mismos valores**: validaciones (ej. `<= 7`), tamanhos de iconos, colores, constantes
+- **Mismos valores**: validaciones, tamanhos de iconos, colores, constantes
 - **Mismos datos consumidos**: mismos campos del hook/API
 
-Diferencias aceptables: JSX vs View/Text, onClick vs onPress, className vs style, lucide-react vs lucide-react-native, funcionalidad que depende de APIs de plataforma (ej. html2canvas en web).
+Diferencias aceptables: JSX vs View/Text, onClick vs onPress, className vs style, lucide-react vs lucide-react-native, funcionalidad que depende de APIs de plataforma (ej. html2canvas en web, ActiveSessionBanner en native).
 
-## Paso 11: routineIO.js
+## Paso 12: Performance
+
+Para cada componente modificado, verificar:
+
+### Renders innecesarios
+
+1. **Funciones inline en props de listas**: Si un componente dentro de `.map()` recibe callbacks como `onClick={() => handler(item.id)}`, verificar que no causa re-renders excesivos. Para listas largas (>20 items), considerar useCallback o extraer componente hijo.
+2. **Objetos inline en style**: `style={{ color: X }}` crea un objeto nuevo cada render. Aceptable en componentes simples, pero en listas largas extraer a constante o useMemo.
+3. **Queries sin staleTime**: Queries que se llaman frecuentemente (home screen, listas) deberian tener `staleTime` para evitar refetches innecesarios en cada mount.
+
+### Optimistic updates
+
+Si una mutation afecta UI visible inmediatamente (toggles, likes, reorder), verificar que usa optimistic update con `onMutate` + `onError` rollback. El usuario no deberia esperar al servidor para ver feedback visual.
+
+## Paso 13: routineIO.js
 
 Solo si hay cambios en el modelo de datos (tablas routines, routine_days, routine_blocks, routine_exercises, exercises):
 
@@ -254,6 +352,7 @@ Reportar hallazgos agrupados por severidad:
 - Lint: [resultado]
 - Tests: [resultado]
 - Build: [resultado]
+- E2E: [resultado]
 
 ### Problemas (corregir antes de commit)
 - [archivo:linea] — [descripcion] → [solucion]

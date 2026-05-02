@@ -20,7 +20,7 @@ function BottomActions({
             disabled={secondary.disabled}
             className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{
-              backgroundColor: secondary.danger ? 'rgba(248, 81, 73, 0.15)' : colors.bgTertiary,
+              backgroundColor: secondary.danger ? colors.dangerBg : colors.bgTertiary,
               color: secondary.danger ? colors.danger : colors.textPrimary,
             }}
           >
@@ -34,8 +34,8 @@ function BottomActions({
             disabled={primary.disabled}
             className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 ${hasSecondary ? 'flex-1' : 'w-full'}`}
             style={{
-              backgroundColor: colors.accent,
-              color: colors.white,
+              backgroundColor: colors.success,
+              color: colors.bgPrimary,
             }}
           >
             {primary.label}

@@ -170,6 +170,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 - **Server state**: TanStack Query (in hooks, via @gym/shared)
 - **UI state**: React useState
 - **Cross-component state**: Zustand stores (instances in apps, factories in @gym/shared)
+- **Query key IDs must always be `String()`** — web route params are strings, native route params are numbers. To avoid type mismatches between query registration and invalidation, all hooks in `useRoutines.js` normalize IDs with `String()` before using them in query keys. Always follow this pattern.
 
 ### Error Handling
 - Always handle Supabase errors
@@ -330,6 +331,7 @@ Deletion strategy:
 - ✅ Thin wrappers in apps/ inject platform callbacks, shared hooks do the work
 - ✅ All user-facing text via `t()` — in components via `useTranslation()`, in shared code via `import { t } from '../i18n/index.js'`
 - ✅ Translation keys in both es/ and en/ JSON files
+- ✅ When working on web + React Native shared features, always verify changes work on BOTH platforms. Never assume web-only changes are sufficient
 
 ## Component Architecture: Dumb Components + Testable Utils
 

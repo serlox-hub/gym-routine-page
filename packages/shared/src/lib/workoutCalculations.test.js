@@ -8,6 +8,7 @@ import {
   transformSessionsToChartData,
   countCompletedSets,
   calculateExerciseProgress,
+  calculateExerciseLevelProgress,
   filterSessionsByMonth,
   transformSessionsToDurationChartData,
   calculateAverageDuration,
@@ -235,6 +236,53 @@ describe('workoutCalculations', () => {
         '456-1': { routineExerciseId: 456 },
       }
       expect(countCompletedSets(completedSetsMap, 123)).toBe(0)
+    })
+  })
+
+  describe('calculateExerciseLevelProgress', () => {
+    it('retorna ceros para array vacío', () => {
+      expect(calculateExerciseLevelProgress([], {})).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0 })
+    })
+
+    it('cuenta ejercicios completos solo si todas sus series están hechas', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 2, isWarmup: false },
+        { sessionExerciseId: 2, series: 3, isWarmup: false },
+      ]
+      const completedSets = {
+        '1-1': {}, '1-2': {},
+        '2-1': {},
+      }
+      const result = calculateExerciseLevelProgress(exercises, completedSets)
+      expect(result.completed).toBe(1)
+      expect(result.total).toBe(2)
+    })
+
+    it('expone setsCompleted y setsTotal para barra granular', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 3, isWarmup: false },
+        { sessionExerciseId: 2, series: 2, isWarmup: false },
+      ]
+      const completedSets = { '1-1': {}, '1-2': {}, '2-1': {} }
+      const result = calculateExerciseLevelProgress(exercises, completedSets)
+      expect(result.setsCompleted).toBe(3)
+      expect(result.setsTotal).toBe(5)
+    })
+
+    it('excluye ejercicios de calentamiento', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 1, isWarmup: true },
+        { sessionExerciseId: 2, series: 2, isWarmup: false },
+      ]
+      const result = calculateExerciseLevelProgress(exercises, {})
+      expect(result.total).toBe(1)
+      expect(result.setsTotal).toBe(2)
+    })
+
+    it('respeta exerciseSetCounts cuando difiere de series original', () => {
+      const exercises = [{ sessionExerciseId: 1, series: 3, isWarmup: false }]
+      const result = calculateExerciseLevelProgress(exercises, {}, { 1: 5 })
+      expect(result.setsTotal).toBe(5)
     })
   })
 
@@ -509,9 +557,34 @@ describe('workoutCalculations', () => {
 
       expect(result.sessionCount).toBe(2)
       expect(result.maxReps).toBe(15)
+      expect(result.avgReps).toBe(12)
       expect(result.best1RM).toBe(0)
       expect(result.maxWeight).toBe(0)
       expect(result.totalVolume).toBe(0)
+    })
+
+    it('calcula max y avg para ejercicios de tiempo', () => {
+      const sessions = [
+        { sets: [{ time_seconds: 60 }, { time_seconds: 90 }] },
+        { sets: [{ time_seconds: 120 }] },
+      ]
+      const result = calculateExerciseStats(sessions, 'time')
+
+      expect(result.maxTime).toBe(120)
+      expect(result.avgTime).toBe(90)
+      expect(result.maxWeight).toBe(0)
+    })
+
+    it('calcula max y avg para ejercicios de distancia', () => {
+      const sessions = [
+        { sets: [{ distance: 100 }, { distance: 200 }] },
+        { sets: [{ distance: 150 }] },
+      ]
+      const result = calculateExerciseStats(sessions, 'distance')
+
+      expect(result.maxDistance).toBe(200)
+      expect(result.avgDistance).toBe(150)
+      expect(result.maxWeight).toBe(0)
     })
 
   })

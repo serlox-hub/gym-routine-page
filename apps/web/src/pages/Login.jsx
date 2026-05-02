@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
-import { Card, Button, Input } from '@/components/ui'
 import { colors } from '../lib/styles.js'
 
 function Login() {
@@ -43,98 +42,84 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bgPrimary }}>
-      <Card className="w-full max-w-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">{t('auth:login.title')}</h1>
+      <div className="w-full max-w-sm" style={{ display: 'flex', flexDirection: 'column', gap: 32, alignItems: 'center' }}>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            id="email"
-            label={t('auth:login.email')}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="tu@email.com"
-            autoComplete="email"
-          />
+        {/* Logo + Welcome */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div className="rounded-2xl overflow-hidden" style={{ width: 64, height: 64, backgroundColor: colors.bgTertiary }}>
+            <img src="/icon-192.png" alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-1" style={{ color: colors.textPrimary }}>{t('auth:login.welcome')}</h1>
+            <p className="text-sm" style={{ color: colors.textMuted }}>{t('auth:login.subtitle')}</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="w-full" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+              {t('auth:login.email')}
+            </label>
+            <input
+              id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@email.com" autoComplete="email"
+              className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
+            />
+          </div>
 
           <div>
-            <Input
-              id="password"
-              label={t('auth:login.password')}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+              {t('auth:login.password')}
+            </label>
+            <input
+              id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••" autoComplete="current-password"
+              className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
             />
-            <div className="text-right mt-1">
-              <Link to="/forgot-password" className="text-sm hover:underline" style={{ color: colors.accent }}>
+            <div className="text-right mt-1.5">
+              <Link to="/forgot-password" className="text-xs hover:underline" style={{ color: colors.success }}>
                 {t('auth:login.forgotPassword')}
               </Link>
             </div>
           </div>
 
           {displayError && (
-            <p className="text-sm text-center" style={{ color: colors.danger }}>
-              {displayError}
-            </p>
+            <p className="text-xs text-center" style={{ color: colors.danger }}>{displayError}</p>
           )}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
+          <button type="submit" disabled={isLoading}
+            className="w-full py-3.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+            style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
             {isLoading ? t('common:buttons.loading') : t('auth:login.submit')}
-          </Button>
+          </button>
         </form>
 
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t" style={{ borderColor: colors.border }} />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2" style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary }}>
-              {t('auth:login.orContinueWith')}
-            </span>
-          </div>
+        {/* Divider */}
+        <div className="w-full flex items-center gap-3">
+          <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
+          <span className="text-xs" style={{ color: colors.textMuted }}>{t('auth:login.orContinueWith')}</span>
+          <div className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full flex items-center justify-center gap-2"
-          onClick={loginWithGoogle}
-          disabled={isLoading}
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
-            <path
-              fill="currentColor"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="currentColor"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="currentColor"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="currentColor"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
+        {/* Google */}
+        <button type="button" onClick={loginWithGoogle} disabled={isLoading}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium disabled:opacity-50"
+          style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}>
+          <span className="font-bold">G</span>
           {t('auth:login.google')}
-        </Button>
+        </button>
 
-        <p className="text-center mt-4 text-sm" style={{ color: colors.textSecondary }}>
+        {/* Sign up link */}
+        <p className="text-xs" style={{ color: colors.textMuted }}>
           {t('auth:login.noAccount')}{' '}
-          <Link to="/signup" className="hover:underline" style={{ color: colors.accent }}>
+          <Link to="/signup" className="hover:underline font-semibold" style={{ color: colors.success }}>
             {t('auth:login.createAccount')}
           </Link>
         </p>
-      </Card>
+      </div>
     </div>
   )
 }

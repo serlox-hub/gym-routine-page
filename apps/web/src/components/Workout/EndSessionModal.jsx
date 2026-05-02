@@ -20,6 +20,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
   }
 
   const handleClose = () => {
+    if (isPending) return
     setNotes('')
     onClose()
   }
@@ -45,7 +46,8 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
           </h3>
           <button
             onClick={handleClose}
-            className="p-1.5 rounded hover:opacity-80"
+            disabled={isPending}
+            className="p-1.5 rounded hover:opacity-80 disabled:opacity-50"
             style={{ backgroundColor: colors.bgTertiary }}
           >
             <X size={18} style={{ color: colors.textSecondary }} />
@@ -73,7 +75,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
         )}
 
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={handleClose}>
+          <Button variant="secondary" className="flex-1" onClick={handleClose} disabled={isPending}>
             {t('common:buttons.cancel')}
           </Button>
           <Button

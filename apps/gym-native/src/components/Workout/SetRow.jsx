@@ -1,15 +1,17 @@
 import { useState, useEffect, memo } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { CheckCircle2, FileText, Video, AlertCircle, Trophy } from 'lucide-react-native'
 import useWorkoutStore from '../../stores/workoutStore'
 import { useIsPRSet } from './PRContext'
-import { NotesBadge } from '../ui'
 import SetDetailsModal from './SetDetailsModal'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs'
 import {
   MeasurementType,
   buildCompletedSetData,
   isSetDataValid,
-  metersToDistanceUnit
+  metersToDistanceUnit,
+  getNotifier,
+  t,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
 import { useCanUploadVideo } from '../../hooks/useAuth'
@@ -19,6 +21,8 @@ import { colors } from '../../lib/styles'
 
 function SetRow({
   setNumber,
+  totalSets,
+  exerciseName,
   sessionExerciseId,
   exerciseId,
   measurementType = MeasurementType.WEIGHT_REPS,
@@ -27,10 +31,9 @@ function SetRow({
   distanceUnit = 'm',
   descansoSeg,
   previousSet,
+  isActive = false,
   onComplete,
   onUncomplete,
-  canRemove = false,
-  onRemove,
 }) {
   const setKey = `${sessionExerciseId}-${setNumber}`
   const isCompleted = useWorkoutStore(state => !!state.completedSets[setKey])
@@ -87,11 +90,14 @@ function SetRow({
     setVideoUploadError(false)
     setPendingVideoFile(file)
     try {
-      const uploadedUrl = await uploadVideo(file, setUploadProgress)
+      const uploadedUrl = await uploadVideo(file?.uri, setUploadProgress)
       updateSetVideo({ sessionExerciseId, setNumber, videoUrl: uploadedUrl })
       setPendingVideoFile(null)
-    } catch {
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Video upload failed:', err)
       setVideoUploadError(true)
+      getNotifier()?.show(t('workout:set.videoUploadError'), 'error')
     } finally {
       setIsUploadingVideo(false)
     }
@@ -128,7 +134,7 @@ function SetRow({
         { weight, reps, time, distance, calories, level, pace },
         buildInfo(rir, notes, videoUrl, videoFile, setType),
       )
-      onComplete(data, descansoSeg)
+      onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
     } else {
       updateSetDetails({ sessionExerciseId, setNumber, rirActual: rir, notes, videoUrl, videoFile, setType })
     }
@@ -145,14 +151,24 @@ function SetRow({
       { weight, reps, time, distance, calories, level, pace },
       buildInfo(rir, notes),
     )
-    onComplete(data, descansoSeg)
+    onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
   }
 
   const renderInputs = () => {
-    const props = { disabled: isCompleted }
+    const props = { disabled: isCompleted, hideUnits: true }
+
+    if (measurementType === MeasurementType.WEIGHT_REPS && !isActive) {
+      return (
+        <>
+          <Text style={{ flex: 1, textAlign: 'center', color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{weight || '—'}</Text>
+          <Text style={{ flex: 1, textAlign: 'center', color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{reps || '—'}</Text>
+        </>
+      )
+    }
+
     switch (measurementType) {
       case MeasurementType.WEIGHT_REPS:
-        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} {...props} />
+        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} weightActive={isActive} {...props} />
       case MeasurementType.REPS_ONLY:
         return <RepsOnlyInputs reps={reps} setReps={setReps} {...props} />
       case MeasurementType.TIME:
@@ -185,80 +201,125 @@ function SetRow({
   const initialData = modalMode === 'edit' ? setData : cachedData
   const valid = isValid()
 
-  return (
-    <View
-      className="flex-row items-center gap-3 py-2 px-3 rounded"
-      style={{
-        backgroundColor: isPR ? 'rgba(210, 153, 34, 0.15)' : isCompleted ? 'rgba(63, 185, 80, 0.1)' : colors.bgTertiary,
-        borderLeftWidth: 3,
-        borderLeftColor: isPR ? colors.warning : isCompleted ? colors.success : 'transparent',
-      }}
-    >
-      <View className="flex-row items-center gap-2 flex-1">
-        {renderInputs()}
-      </View>
+  const baseRowStyle = {
+    backgroundColor: isActive ? colors.successBg : 'transparent',
+    opacity: !isCompleted && !isActive ? 0.55 : 1,
+  }
 
+  const setNumberText = (
+    <Text style={{ width: 48, textAlign: 'center', color: isActive ? colors.success : colors.textSecondary, fontSize: 14, fontWeight: '700' }}>
+      {setNumber}
+    </Text>
+  )
+
+  const smallBadgeStyle = {
+    backgroundColor: colors.bgTertiary,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
+
+  const renderCheckIndicator = () => {
+    if (isCompleted) {
+      return (
+        <Pressable onPress={handleCheckPress} className="w-7 h-7 items-center justify-center active:opacity-70">
+          {isPR ? (
+            // 22px iguala el diámetro relleno real del CheckCircle2 (size=26 → r=10 en viewbox 24)
+            <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center' }}>
+              <Trophy size={14} color={colors.bgPrimary} strokeWidth={2.5} />
+            </View>
+          ) : (
+            <CheckCircle2 size={26} color={colors.bgPrimary} fill={colors.success} strokeWidth={2.5} />
+          )}
+        </Pressable>
+      )
+    }
+    if (isActive) {
+      return (
+        <Pressable
+          onPress={handleCheckPress}
+          disabled={!valid}
+          className="w-7 h-7 items-center justify-center active:opacity-70"
+          style={{ opacity: valid ? 1 : 0.6 }}
+        >
+          <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.success }} />
+        </Pressable>
+      )
+    }
+    return (
+      <View className="w-7 h-7 items-center justify-center">
+        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.textMuted }} />
+      </View>
+    )
+  }
+
+  const trailingActions = (
+    <>
       {isCompleted && setData?.setType === 'dropset' && (
         <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.orangeBg }}>
           <Text className="text-xs font-bold" style={{ color: colors.orange }}>D</Text>
         </View>
       )}
-
-      {(isCompleted || isUploadingVideo || videoUploadError) && (
-        <NotesBadge
-          rir={setData?.rirActual}
-          hasNotes={hasTextNote}
-          hasVideo={hasVideo}
-          isUploadingVideo={isUploadingVideo}
-          uploadProgress={uploadProgress}
-          videoUploadError={videoUploadError}
-          onRetryUpload={handleRetryVideoUpload}
-          onPress={isCompleted ? handleEditPress : null}
-        />
-      )}
-
-      <Pressable
-        onPress={handleCheckPress}
-        disabled={!isCompleted && !valid}
-        className="w-8 h-8 rounded-full items-center justify-center active:scale-90"
-        style={{
-          backgroundColor: isCompleted ? colors.success : colors.border,
-          opacity: (!isCompleted && !valid) ? 0.5 : 1,
-        }}
-      >
-        <Text
-          className="text-sm font-bold"
-          style={{
-            color: isCompleted ? colors.bgPrimary : valid ? colors.success : colors.textDisabled,
-          }}
-        >
-          {isCompleted ? '✕' : '✓'}
-        </Text>
-      </Pressable>
-
-      {canRemove && !isCompleted && onRemove && (
-        <Pressable
-          onPress={onRemove}
-          className="w-6 h-6 rounded-full items-center justify-center active:scale-90"
-          style={{ backgroundColor: colors.bgTertiary }}
-        >
-          <Text style={{ color: colors.danger }}>×</Text>
+      {isCompleted && hasTextNote && (
+        <Pressable onPress={handleEditPress} style={smallBadgeStyle}>
+          <FileText size={13} color={colors.textSecondary} />
         </Pressable>
       )}
+      {videoUploadError && (
+        <Pressable onPress={handleRetryVideoUpload} style={{ ...smallBadgeStyle, backgroundColor: colors.dangerBg }}>
+          <AlertCircle size={13} color={colors.danger} />
+        </Pressable>
+      )}
+      {isUploadingVideo && (
+        <View style={{ ...smallBadgeStyle, paddingHorizontal: 7, paddingVertical: 3 }}>
+          <Text style={{ color: colors.purple, fontSize: 11, fontWeight: '600' }}>{uploadProgress}%</Text>
+        </View>
+      )}
+      {isCompleted && hasVideo && !isUploadingVideo && !videoUploadError && (
+        <Pressable onPress={handleEditPress} style={smallBadgeStyle}>
+          <Video size={13} color={colors.textSecondary} />
+        </Pressable>
+      )}
+      {isCompleted && setData?.rirActual != null && (
+        <Pressable onPress={handleEditPress} style={{ ...smallBadgeStyle, paddingHorizontal: 7, paddingVertical: 3 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>@{setData.rirActual}</Text>
+        </Pressable>
+      )}
+      {renderCheckIndicator()}
+    </>
+  )
+
+  return (
+    <>
+      <View className="flex-row items-center py-2.5 px-2 rounded-lg" style={{ gap: 12, ...baseRowStyle }}>
+        {setNumberText}
+        <View className="flex-row items-center flex-1" style={{ gap: 8 }}>
+          {renderInputs()}
+        </View>
+        <View className="flex-row items-center justify-end" style={{ gap: 6, width: 132 }}>
+          {trailingActions}
+        </View>
+      </View>
 
       <SetDetailsModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleModalSubmit}
         mode={modalMode}
+        setNumber={setNumber}
         descansoSeg={descansoSeg}
         initialRir={initialData?.rirActual}
         initialNote={initialData?.notes}
         initialVideoUrl={initialData?.videoUrl}
         initialSetType={initialData?.setType}
         measurementType={measurementType}
+        weight={weight} setWeight={setWeight}
+        reps={reps} setReps={setReps}
+        weightUnit={weightUnit}
       />
-    </View>
+    </>
   )
 }
 

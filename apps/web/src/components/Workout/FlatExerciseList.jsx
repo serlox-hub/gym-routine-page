@@ -1,5 +1,6 @@
 import { WorkoutExerciseCard } from './index.js'
 import { colors } from '../../lib/styles.js'
+import { translateBlockName } from '@gym/shared'
 
 function FlatExerciseList({ exercises, onCompleteSet, onUncompleteSet, onRemove }) {
   return (
@@ -9,9 +10,9 @@ function FlatExerciseList({ exercises, onCompleteSet, onUncompleteSet, onRemove 
           {sessionExercise.is_extra && (
             <div
               className="text-xs font-medium px-2 py-0.5 rounded inline-block mb-1"
-              style={{ backgroundColor: 'rgba(163, 113, 247, 0.15)', color: colors.purple }}
+              style={{ backgroundColor: colors.purpleBg, color: colors.purple }}
             >
-              Añadido
+              {translateBlockName('Añadido')}
             </div>
           )}
           <WorkoutExerciseCard
@@ -19,7 +20,6 @@ function FlatExerciseList({ exercises, onCompleteSet, onUncompleteSet, onRemove 
             onCompleteSet={onCompleteSet}
             onUncompleteSet={onUncompleteSet}
             onRemove={onRemove}
-            isWarmup={sessionExercise.isWarmup}
           />
         </div>
       ))}

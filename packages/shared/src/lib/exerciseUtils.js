@@ -127,3 +127,12 @@ export function getEquipmentName(equipmentType) {
   if (locale === 'en' && equipmentType.name_en) return equipmentType.name_en
   return equipmentType.name || equipmentType.name_es || ''
 }
+
+/**
+ * Whether an exercise has any displayable notes (instructions, personal override, or routine comment).
+ */
+export function hasExerciseNotes(exercise, override, routineNotes) {
+  const structured = getStructuredInstructions(exercise)
+  const legacyText = !structured ? getExerciseInstructions(exercise) : ''
+  return Boolean(structured || legacyText || routineNotes || override?.notes)
+}

@@ -9,7 +9,7 @@ function Input({ label, error, className = '', ...props }) {
         </label>
       )}
       <input
-        className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+        className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-success transition-colors"
         style={inputStyle}
         {...props}
       />

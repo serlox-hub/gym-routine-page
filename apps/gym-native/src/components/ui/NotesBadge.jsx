@@ -1,17 +1,11 @@
 import { View, Text, Pressable } from 'react-native'
 import { FileText, Video, AlertCircle } from 'lucide-react-native'
+import { getEffortInfo } from '@gym/shared'
 import { colors } from '../../lib/styles'
-
-const RIR_LABELS = {
-  [-1]: 'F',
-  0: '0',
-  1: '1',
-  2: '2',
-  3: '3+',
-}
 
 export default function NotesBadge({
   rir,
+  measurementType,
   hasNotes,
   hasVideo,
   isUploadingVideo,
@@ -21,6 +15,7 @@ export default function NotesBadge({
   onPress,
 }) {
   const hasRir = rir !== null && rir !== undefined
+  const effortInfo = hasRir ? getEffortInfo(rir, measurementType) : null
 
   if (!hasRir && !hasNotes && !hasVideo && !isUploadingVideo && !videoUploadError) return null
 
@@ -32,7 +27,7 @@ export default function NotesBadge({
     <>
       {hasRir && (
         <Text className="text-xs font-bold" style={{ color: colors.purple }}>
-          {RIR_LABELS[rir] ?? rir}
+          {effortInfo?.label ?? rir}
         </Text>
       )}
       {hasNotes && <FileText size={12} color={colors.purple} />}

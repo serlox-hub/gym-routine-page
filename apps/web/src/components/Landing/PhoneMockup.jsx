@@ -1,5 +1,5 @@
-import { ChevronRight } from 'lucide-react'
-import { colors, RGB_ACCENT } from '../../lib/styles.js'
+import { ChevronDown, Clock, FileText, ChevronLeft } from 'lucide-react'
+import { colors, RGB_SUCCESS } from '../../lib/styles.js'
 
 function PhoneMockup({ children, className = '' }) {
   return (
@@ -9,7 +9,7 @@ function PhoneMockup({ children, className = '' }) {
         style={{
           aspectRatio: '71.6 / 147.6',
           background: `linear-gradient(145deg, ${colors.border}, ${colors.bgTertiary})`,
-          boxShadow: `0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(${RGB_ACCENT}, 0.1)`,
+          boxShadow: `0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(${RGB_SUCCESS}, 0.1)`,
         }}
       >
         <div className="rounded-[1.6rem] overflow-hidden h-full flex flex-col" style={{ backgroundColor: colors.bgPrimary }}>
@@ -30,212 +30,334 @@ function PhoneMockup({ children, className = '' }) {
   )
 }
 
+// ─── Mockup: Routine Detail ───────────────────────────────────────
 function MockupRoutineScreen() {
   return (
-    <div className="px-2.5 pb-3" style={{ backgroundColor: colors.bgPrimary }}>
-      <div className="flex items-center justify-between mb-2 pt-1">
-        <p className="text-[11px] font-bold" style={{ color: colors.textPrimary }}>Push - Pull - Legs</p>
-        <div className="w-5 h-5 flex items-center justify-center">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2">
-            <path d="M12 5v.01M12 12v.01M12 19v.01" strokeLinecap="round" />
-          </svg>
-        </div>
+    <div className="px-3 pb-3 pt-1.5" style={{ backgroundColor: colors.bgPrimary }}>
+      {/* Title + kebab */}
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-[13px] font-bold leading-tight" style={{ color: colors.textPrimary }}>Push Pull Legs</p>
+        <span className="text-[9px]" style={{ color: colors.textMuted }}>•••</span>
       </div>
+      <p className="text-[8px] mb-2" style={{ color: colors.textSecondary }}>Hipertrofia · 3 días/semana</p>
+
       {/* Day tabs */}
-      <div className="flex gap-1 mb-2.5 overflow-hidden">
+      <div className="flex gap-1 mb-2.5">
         {['Push', 'Pull', 'Legs'].map((day, i) => (
           <div
             key={day}
-            className="px-2 py-0.5 rounded-full text-[9px] font-medium whitespace-nowrap"
+            className="flex-1 py-1 rounded text-[8px] font-semibold text-center"
             style={{
-              backgroundColor: i === 0 ? colors.accentBg : colors.bgTertiary,
-              color: i === 0 ? colors.accent : colors.textSecondary,
-              border: i === 0 ? `1px solid rgba(${RGB_ACCENT}, 0.3)` : '1px solid transparent',
+              backgroundColor: i === 0 ? colors.success : colors.bgTertiary,
+              color: i === 0 ? colors.bgPrimary : colors.textSecondary,
             }}
           >
             {day}
           </div>
         ))}
       </div>
-      {/* Exercise cards */}
-      {[
-        { name: 'Press Banca', sets: '4×8', color: colors.danger, group: 'Pecho' },
-        { name: 'Press Inclinado', sets: '3×10', color: colors.danger, group: 'Pecho' },
-        { name: 'Aperturas Mancuerna', sets: '3×12', color: colors.danger, group: 'Pecho' },
-        { name: 'Press Militar', sets: '4×8', color: colors.purple, group: 'Hombros' },
-        { name: 'Elevaciones Laterales', sets: '3×15', color: colors.purple, group: 'Hombros' },
-        { name: 'Fondos Paralelas', sets: '3×12', color: colors.teal, group: 'Tríceps' },
-        { name: 'Extensión Tríceps', sets: '3×12', color: colors.teal, group: 'Tríceps' },
-        { name: 'Press Francés', sets: '3×10', color: colors.teal, group: 'Tríceps' },
-      ].map((exercise) => (
-        <div
-          key={exercise.name}
-          className="mb-1.5 rounded-lg relative overflow-hidden"
-          style={{ backgroundColor: colors.bgSecondary }}
-        >
-          <div
-            className="absolute left-0 top-0 bottom-0"
-            style={{ width: 3, backgroundColor: exercise.color }}
-          />
-          <div className="pl-2.5 pr-2 py-1.5 text-left">
-            <p className="text-[10px] font-medium leading-tight" style={{ color: colors.textPrimary }}>{exercise.name}</p>
-            <p className="text-[8px] mt-0.5 leading-tight" style={{ color: colors.textSecondary }}>
-              {exercise.group} — {exercise.sets} series
-            </p>
-          </div>
-        </div>
-      ))}
+
+      {/* Block: Calentamiento */}
+      <p className="text-[7px] font-bold uppercase tracking-wider mb-1" style={{ color: colors.success, letterSpacing: 0.8 }}>
+        Calentamiento (2)
+      </p>
+      <ExerciseCard color={colors.warning} name="Movilidad articular" sets="3×10" group="Cuerpo" />
+      <ExerciseCard color={colors.warning} name="Activación escápula" sets="2×12" group="Hombros" />
+
+      {/* Block: Principal */}
+      <p className="text-[7px] font-bold uppercase tracking-wider mb-1 mt-2" style={{ color: colors.success, letterSpacing: 0.8 }}>
+        Principal (6)
+      </p>
+      <ExerciseCard color={colors.danger} name="Press Banca" sets="4×8" group="Pecho" />
+      <ExerciseCard color={colors.danger} name="Press Inclinado Mancuerna" sets="3×10" group="Pecho" />
+      <ExerciseCard color={colors.danger} name="Aperturas en polea" sets="3×12" group="Pecho" />
+      <ExerciseCard color={colors.purple} name="Press Militar" sets="4×8" group="Hombros" />
+      <ExerciseCard color={colors.purple} name="Elevaciones Laterales" sets="3×15" group="Hombros" />
+      <ExerciseCard color={colors.teal} name="Fondos Paralelas" sets="3×12" group="Tríceps" />
+
+      {/* Block: Añadido */}
+      <p className="text-[7px] font-bold uppercase tracking-wider mb-1 mt-2" style={{ color: colors.success, letterSpacing: 0.8 }}>
+        Añadido (1)
+      </p>
+      <ExerciseCard color={colors.teal} name="Extensión Tríceps Polea" sets="3×12" group="Tríceps" />
     </div>
   )
 }
 
+function ExerciseCard({ color, name, sets, group }) {
+  return (
+    <div
+      className="mb-1 rounded relative overflow-hidden"
+      style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.borderSubtle}` }}
+    >
+      <div className="absolute left-0 top-0 bottom-0" style={{ width: 3, backgroundColor: color }} />
+      <div className="pl-2 pr-1.5 py-1 text-left">
+        <p className="text-[9px] font-semibold leading-tight" style={{ color: colors.textPrimary }}>{name}</p>
+        <div className="flex items-center gap-1 mt-0.5">
+          <span className="text-[7px] px-1 py-px rounded" style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary }}>{group}</span>
+          <span className="text-[7px] px-1 py-px rounded" style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary }}>{sets}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Mockup: Workout Session ──────────────────────────────────────
 function MockupWorkoutScreen() {
   return (
-    <div className="px-2.5 pb-3" style={{ backgroundColor: colors.bgPrimary }}>
+    <div className="px-2 pb-3" style={{ backgroundColor: colors.bgPrimary }}>
       {/* Header */}
-      <div className="flex items-center justify-between pt-1 mb-2">
-        <p className="text-[11px] font-bold" style={{ color: colors.textPrimary }}>Sesión activa</p>
-        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bgTertiary, color: colors.success }}>
-          42:15
-        </span>
+      <div className="flex items-center gap-1 pt-1 mb-1.5">
+        <ChevronLeft size={11} color={colors.textPrimary} />
+        <p className="text-[11px] font-bold flex-1" style={{ color: colors.textPrimary }}>Día 3 · Empuje</p>
       </div>
-      {/* Current exercise */}
-      <div className="mb-2.5 p-2 rounded-lg" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
-        <p className="text-[10px] font-medium mb-0.5" style={{ color: colors.textPrimary }}>Press Banca</p>
-        <p className="text-[8px] mb-2" style={{ color: colors.textSecondary }}>4 series × 8 reps</p>
-        {/* Sets table */}
-        <div className="space-y-0.5">
-          <div className="flex text-[7px] px-1" style={{ color: colors.textMuted }}>
-            <span className="w-6">SET</span>
-            <span className="flex-1 text-center">KG</span>
-            <span className="flex-1 text-center">REPS</span>
-            <span className="w-6 text-center">RIR</span>
-            <span className="w-5" />
+
+      {/* Sticky progress */}
+      <div className="mb-2">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[7px] font-semibold" style={{ color: colors.textPrimary }}>Ejercicio 2 de 4</span>
+          <span className="text-[7px]" style={{ color: colors.textSecondary, fontVariantNumeric: 'tabular-nums' }}>18:42</span>
+        </div>
+        <div className="rounded-full overflow-hidden" style={{ height: 3, backgroundColor: colors.bgTertiary }}>
+          <div className="h-full rounded-full" style={{ width: '42%', backgroundColor: colors.success }} />
+        </div>
+      </div>
+
+      {/* Block label */}
+      <p className="text-[7px] font-bold uppercase tracking-wider mb-1" style={{ color: colors.success, letterSpacing: 0.8 }}>
+        Principal (4)
+      </p>
+
+      {/* Exercise card open */}
+      <div
+        className="rounded-md relative mb-1.5"
+        style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, paddingLeft: 6 }}
+      >
+        <div className="absolute left-0 top-2 w-[3px] rounded-r" style={{ height: 24, backgroundColor: colors.danger }} />
+        {/* Title row */}
+        <div className="flex items-center justify-between px-1.5 py-1.5">
+          <p className="text-[9px] font-bold leading-tight" style={{ color: colors.textPrimary }}>Press Banca</p>
+          <span className="text-[8px]" style={{ color: colors.textMuted }}>•••</span>
+        </div>
+        {/* Pills */}
+        <div className="flex items-center gap-1 px-1.5 pb-1.5">
+          <span className="text-[7px] px-1 py-px rounded" style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary }}>Pecho</span>
+          <span className="text-[7px] px-1 py-px rounded" style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary }}>4 × 8 · @2</span>
+          <span className="text-[7px] px-1 py-px rounded" style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary }}>120s</span>
+        </div>
+        {/* Notes toggle */}
+        <div className="mx-1.5 mb-1.5 flex items-center gap-1 rounded px-1.5 py-1" style={{ backgroundColor: colors.bgAlt }}>
+          <FileText size={8} color={colors.textSecondary} />
+          <span className="text-[7px] flex-1" style={{ color: colors.textSecondary }}>Notas y consejos</span>
+          <ChevronDown size={8} color={colors.textSecondary} />
+        </div>
+        {/* Previous session */}
+        <div className="mx-1.5 mb-1.5 rounded p-1.5" style={{ backgroundColor: colors.bgAlt }}>
+          <div className="flex items-center gap-1 mb-1">
+            <Clock size={7} color={colors.textSecondary} />
+            <span className="text-[6px]" style={{ color: colors.textSecondary }}>Última sesión · hace 3 días</span>
           </div>
-          {[
-            { set: 1, kg: '80', reps: '8', rir: '2', done: true },
-            { set: 2, kg: '80', reps: '8', rir: '1', done: true },
-            { set: 3, kg: '82.5', reps: '7', rir: '0', done: true },
-            { set: 4, kg: '82.5', reps: '', rir: '', done: false },
-          ].map((row) => (
-            <div
-              key={row.set}
-              className="flex items-center px-1 py-1 rounded text-[9px]"
-              style={{
-                backgroundColor: row.done ? 'rgba(63, 185, 80, 0.08)' : 'transparent',
-                color: row.done ? colors.textPrimary : colors.textMuted,
-              }}
-            >
-              <span className="w-6 font-medium" style={{ color: row.done ? colors.success : colors.textMuted }}>{row.set}</span>
-              <span className="flex-1 text-center">{row.kg || '\u2014'}</span>
-              <span className="flex-1 text-center">{row.reps || '\u2014'}</span>
-              <span className="w-6 text-center">{row.rir || '\u2014'}</span>
-              <span className="w-5 text-center">
-                {row.done && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={colors.success} strokeWidth="2.5">
-                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-            </div>
-          ))}
+          <div className="flex gap-1">
+            {[
+              { v: '80×8', rir: '@3' },
+              { v: '82.5×8', rir: '@2' },
+              { v: '82.5×7', rir: '@1' },
+              { v: '80×6', rir: '@1' },
+            ].map((s, i) => (
+              <div key={i} className="flex-1 rounded text-center py-0.5" style={{ backgroundColor: colors.border }}>
+                <p className="text-[7px] font-semibold" style={{ color: colors.textPrimary }}>{s.v}</p>
+                <p className="text-[5px]" style={{ color: colors.textMuted }}>{s.rir}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-      {/* Rest timer */}
-      <div className="rounded-lg p-2.5 text-center" style={{ backgroundColor: `rgba(${RGB_ACCENT}, 0.08)`, border: `1px solid rgba(${RGB_ACCENT}, 0.2)` }}>
-        <p className="text-[8px] mb-0.5" style={{ color: colors.accent }}>DESCANSO</p>
-        <p className="text-xl font-mono font-bold" style={{ color: colors.accent }}>1:23</p>
-      </div>
-      {/* Next exercise preview */}
-      <div className="mt-2.5 p-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: colors.bgSecondary }}>
-        <div>
-          <p className="text-[7px]" style={{ color: colors.textMuted }}>SIGUIENTE</p>
-          <p className="text-[9px]" style={{ color: colors.textSecondary }}>Press Inclinado</p>
+        {/* Column headers */}
+        <div className="flex items-center px-1.5 mb-0.5 text-[6px] font-semibold uppercase tracking-wider" style={{ color: colors.textSecondary }}>
+          <span className="w-5 text-center">Set</span>
+          <span className="flex-1 text-center">Kg</span>
+          <span className="flex-1 text-center">Reps</span>
+          <span className="w-12" />
         </div>
-        <ChevronRight size={12} style={{ color: colors.textMuted }} />
-      </div>
-      {/* Previous session comparison */}
-      <div className="mt-2.5 p-2 rounded-lg" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
-        <p className="text-[7px] mb-1.5" style={{ color: colors.textMuted }}>SESIÓN ANTERIOR</p>
+        {/* Set rows */}
         {[
-          { set: 1, kg: '77.5', reps: '8' },
-          { set: 2, kg: '77.5', reps: '8' },
-          { set: 3, kg: '80', reps: '7' },
-          { set: 4, kg: '80', reps: '6' },
+          { n: 1, kg: '80', reps: '8', state: 'done', rir: '@2' },
+          { n: 2, kg: '82.5', reps: '8', state: 'done', rir: '@2' },
+          { n: 3, kg: '85', reps: '—', state: 'active' },
+          { n: 4, kg: '85', reps: '8', state: 'pending' },
         ].map((row) => (
-          <div key={row.set} className="flex items-center text-[8px] py-0.5" style={{ color: colors.textMuted }}>
-            <span className="w-6">S{row.set}</span>
-            <span className="flex-1 text-center">{row.kg} kg</span>
-            <span className="flex-1 text-center">{row.reps} reps</span>
+          <div
+            key={row.n}
+            className="flex items-center px-1.5 py-1 rounded mx-0.5 text-[8px]"
+            style={{
+              backgroundColor: row.state === 'active' ? colors.successBg : 'transparent',
+              opacity: row.state === 'pending' ? 0.55 : 1,
+            }}
+          >
+            <span className="w-5 text-center font-bold" style={{ color: row.state === 'active' ? colors.success : colors.textSecondary }}>{row.n}</span>
+            {row.state === 'active' ? (
+              <>
+                <span className="flex-1 text-center font-semibold rounded mx-0.5 py-px" style={{ color: colors.textPrimary, border: `1px solid ${colors.success}`, backgroundColor: colors.bgSecondary }}>{row.kg}</span>
+                <span className="flex-1 text-center font-semibold rounded mx-0.5 py-px" style={{ color: colors.textMuted, backgroundColor: colors.bgSecondary }}>{row.reps}</span>
+              </>
+            ) : (
+              <>
+                <span className="flex-1 text-center font-semibold" style={{ color: colors.textPrimary }}>{row.kg}</span>
+                <span className="flex-1 text-center font-semibold" style={{ color: colors.textPrimary }}>{row.reps}</span>
+              </>
+            )}
+            <div className="w-12 flex items-center justify-end gap-0.5">
+              {row.state === 'done' && (
+                <>
+                  <span className="text-[6px] px-1 rounded" style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}>{row.rir}</span>
+                  <span className="rounded-full flex items-center justify-center" style={{ width: 12, height: 12, backgroundColor: colors.success }}>
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={colors.bgPrimary} strokeWidth="3.5">
+                      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </>
+              )}
+              {row.state === 'active' && (
+                <span className="rounded-full" style={{ width: 12, height: 12, border: `1.5px solid ${colors.success}` }} />
+              )}
+              {row.state === 'pending' && (
+                <span className="rounded-full" style={{ width: 12, height: 12, border: `1.5px solid ${colors.textMuted}` }} />
+              )}
+            </div>
+          </div>
+        ))}
+        <div className="h-1.5" />
+      </div>
+
+      {/* Collapsed exercise cards */}
+      <CollapsedExerciseCard color={colors.danger} name="Press Inclinado Mancuerna" sets="3 × 10 · @2" rest="120s" />
+      <CollapsedExerciseCard color={colors.danger} name="Aperturas en polea" sets="3 × 12" rest="90s" />
+      <CollapsedExerciseCard color={colors.purple} name="Press Militar" sets="4 × 8 · @2" rest="120s" />
+      <CollapsedExerciseCard color={colors.teal} name="Fondos Paralelas" sets="3 × 12" rest="90s" />
+
+      {/* Finish button */}
+      <div className="mt-2 rounded text-center py-1" style={{ border: `1px solid ${colors.success}` }}>
+        <span className="text-[8px] font-semibold" style={{ color: colors.success }}>⚑ Terminar entrenamiento</span>
+      </div>
+    </div>
+  )
+}
+
+function CollapsedExerciseCard({ color, name, sets, rest }) {
+  return (
+    <div
+      className="mb-1 rounded-md relative flex items-center"
+      style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, paddingLeft: 6 }}
+    >
+      <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r" style={{ backgroundColor: color }} />
+      <div className="flex-1 px-1.5 py-1.5">
+        <p className="text-[8px] font-semibold leading-tight" style={{ color: colors.textPrimary }} >{name}</p>
+        <div className="flex gap-1 mt-0.5">
+          <span className="text-[6px] px-1 py-px rounded" style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary }}>{sets}</span>
+          <span className="text-[6px] px-1 py-px rounded" style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary }}>{rest}</span>
+        </div>
+      </div>
+      <ChevronDown size={10} color={colors.textMuted} className="mr-1.5" />
+    </div>
+  )
+}
+
+// ─── Mockup: Exercise Progress ────────────────────────────────────
+function MockupProgressScreen() {
+  return (
+    <div className="px-3 pb-3 pt-1" style={{ backgroundColor: colors.bgPrimary }}>
+      <div className="flex items-center gap-1 mb-1">
+        <ChevronLeft size={11} color={colors.textPrimary} />
+        <p className="text-[11px] font-bold flex-1" style={{ color: colors.textPrimary }}>Press Banca</p>
+      </div>
+      <p className="text-[7px] mb-2" style={{ color: colors.textSecondary }}>Progreso · últimos 3 meses</p>
+
+      {/* Range tabs */}
+      <div className="flex gap-1 mb-2 p-0.5 rounded" style={{ backgroundColor: colors.bgTertiary }}>
+        {['1m', '3m', '6m', '1y'].map((r, i) => (
+          <div
+            key={r}
+            className="flex-1 py-0.5 rounded text-[7px] font-semibold text-center"
+            style={{
+              backgroundColor: i === 1 ? colors.success : 'transparent',
+              color: i === 1 ? colors.bgPrimary : colors.textSecondary,
+            }}
+          >
+            {r}
           </div>
         ))}
       </div>
-    </div>
-  )
-}
 
-function MockupProgressScreen() {
-  return (
-    <div className="px-2.5 pb-3" style={{ backgroundColor: colors.bgPrimary }}>
-      <div className="pt-1 mb-2">
-        <p className="text-[11px] font-bold" style={{ color: colors.textPrimary }}>Press Banca</p>
-        <p className="text-[8px]" style={{ color: colors.textSecondary }}>Progreso últimos 3 meses</p>
-      </div>
-      {/* Fake chart */}
-      <div className="rounded-lg p-2.5 mb-2.5" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
+      {/* Chart */}
+      <div className="rounded p-2 mb-2" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.borderSubtle}` }}>
         <svg viewBox="0 0 240 100" className="w-full">
           <defs>
             <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={colors.accent} stopOpacity="0.3" />
-              <stop offset="100%" stopColor={colors.accent} stopOpacity="0" />
+              <stop offset="0%" stopColor={colors.success} stopOpacity="0.3" />
+              <stop offset="100%" stopColor={colors.success} stopOpacity="0" />
             </linearGradient>
           </defs>
-          {/* Grid lines */}
           {[20, 40, 60, 80].map((y) => (
-            <line key={y} x1="0" y1={y} x2="240" y2={y} stroke={colors.bgTertiary} strokeWidth="0.5" />
+            <line key={y} x1="0" y1={y} x2="240" y2={y} stroke={colors.borderSubtle} strokeWidth="0.5" strokeDasharray="2,3" />
           ))}
-          {/* Area */}
           <path d="M0,85 L30,78 L60,72 L90,65 L120,58 L150,48 L180,42 L210,35 L240,25 L240,100 L0,100Z" fill="url(#chartGrad)" />
-          {/* Line */}
-          <path d="M0,85 L30,78 L60,72 L90,65 L120,58 L150,48 L180,42 L210,35 L240,25" fill="none" stroke={colors.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          {/* Dots */}
+          <path d="M0,85 L30,78 L60,72 L90,65 L120,58 L150,48 L180,42 L210,35 L240,25" fill="none" stroke={colors.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           {[
             [0, 85], [30, 78], [60, 72], [90, 65], [120, 58], [150, 48], [180, 42], [210, 35], [240, 25],
           ].map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r="3" fill={colors.bgPrimary} stroke={colors.accent} strokeWidth="1.5" />
+            <circle key={i} cx={x} cy={y} r="2.5" fill={colors.bgPrimary} stroke={colors.success} strokeWidth="1.5" />
           ))}
         </svg>
-        <div className="flex justify-between mt-1.5 text-[7px]" style={{ color: colors.textMuted }}>
+        <div className="flex justify-between mt-1 text-[6px]" style={{ color: colors.textMuted }}>
           <span>Dic</span><span>Ene</span><span>Feb</span><span>Mar</span>
         </div>
       </div>
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-1.5 mb-2.5">
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-3 gap-1 mb-2">
         {[
-          { label: '1RM Est.', value: '102.5kg', color: colors.accent },
-          { label: 'Máx Peso', value: '90kg', color: colors.purple },
-          { label: 'Volumen', value: '12,400', color: colors.success },
+          { label: 'Mejor 1RM', value: '102.5kg' },
+          { label: 'Máx peso', value: '90kg' },
+          { label: 'Volumen', value: '12.4k' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-lg p-1.5 text-center" style={{ backgroundColor: colors.bgSecondary }}>
-            <p className="text-[7px]" style={{ color: colors.textMuted }}>{stat.label}</p>
-            <p className="text-[10px] font-bold mt-0.5" style={{ color: stat.color }}>{stat.value}</p>
+          <div key={stat.label} className="rounded p-1 text-center" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.borderSubtle}` }}>
+            <p className="text-[6px]" style={{ color: colors.textMuted }}>{stat.label}</p>
+            <p className="text-[9px] font-bold mt-0.5" style={{ color: colors.textPrimary }}>{stat.value}</p>
           </div>
         ))}
       </div>
+
+      {/* PR list */}
+      <p className="text-[7px] font-semibold mb-1" style={{ color: colors.textSecondary }}>Récords personales</p>
+      <div className="grid grid-cols-2 gap-1 mb-2">
+        {[
+          { label: '1RM', value: '102.5kg', date: '8 Mar' },
+          { label: 'Mejor reps', value: '12 @ 80kg', date: '4 Mar' },
+          { label: 'Mejor volumen', value: '2.4k kg', date: '8 Mar' },
+          { label: 'Mejor serie', value: '90 × 6', date: '24 Feb' },
+        ].map(pr => (
+          <div key={pr.label} className="rounded p-1" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.borderSubtle}` }}>
+            <p className="text-[6px]" style={{ color: colors.textMuted }}>{pr.label}</p>
+            <p className="text-[8px] font-bold" style={{ color: colors.success }}>{pr.value}</p>
+            <p className="text-[6px]" style={{ color: colors.textMuted }}>{pr.date}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Recent sessions */}
-      <p className="text-[8px] font-medium mb-1" style={{ color: colors.textSecondary }}>Últimas sesiones</p>
+      <p className="text-[7px] font-semibold mb-1" style={{ color: colors.textSecondary }}>Últimas sesiones</p>
       {[
-        { date: '8 Mar', weight: '87.5 kg', reps: '8 reps' },
-        { date: '4 Mar', weight: '85 kg', reps: '8 reps' },
-        { date: '28 Feb', weight: '85 kg', reps: '7 reps' },
-        { date: '24 Feb', weight: '82.5 kg', reps: '8 reps' },
-        { date: '20 Feb', weight: '82.5 kg', reps: '7 reps' },
+        { date: '8 Mar', best: '87.5×8', volume: '2.4k' },
+        { date: '4 Mar', best: '85×8', volume: '2.3k' },
+        { date: '28 Feb', best: '85×7', volume: '2.1k' },
+        { date: '24 Feb', best: '82.5×8', volume: '2.2k' },
+        { date: '20 Feb', best: '82.5×7', volume: '2.0k' },
+        { date: '16 Feb', best: '80×8', volume: '1.9k' },
       ].map((session) => (
-        <div key={session.date} className="flex justify-between items-center py-1 text-[8px]" style={{ borderBottom: `1px solid ${colors.bgTertiary}` }}>
+        <div key={session.date} className="flex justify-between items-center py-0.5 text-[7px]" style={{ borderBottom: `1px solid ${colors.borderSubtle}` }}>
           <span style={{ color: colors.textSecondary }}>{session.date}</span>
           <div className="flex gap-2">
-            <span style={{ color: colors.textPrimary }}>{session.weight}</span>
-            <span style={{ color: colors.textSecondary }}>{session.reps}</span>
+            <span style={{ color: colors.textPrimary }}>{session.best}</span>
+            <span style={{ color: colors.textMuted }}>{session.volume}</span>
           </div>
         </div>
       ))}

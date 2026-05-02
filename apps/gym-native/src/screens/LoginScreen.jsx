@@ -1,17 +1,8 @@
 import { useState } from 'react'
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native'
+import { View, Text, TextInput, Pressable, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
-import { Button, Card, GoogleIcon } from '../components/ui'
 import { colors } from '../lib/styles'
 
 export default function LoginScreen({ navigation }) {
@@ -37,90 +28,77 @@ export default function LoginScreen({ navigation }) {
   const displayError = localError || error
 
   return (
-    <SafeAreaView className="flex-1 bg-surface">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-          keyboardShouldPersistTaps="handled"
-          className="px-4"
-        >
-          <Card className="p-6">
-            <Text className="text-primary text-2xl font-bold text-center mb-6">
-              {t('auth:login.title')}
-            </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPrimary }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }} keyboardShouldPersistTaps="handled">
+          <View style={{ gap: 32, alignItems: 'center' }}>
 
-            <View className="mb-4">
-              <Text className="text-primary text-sm font-medium mb-1">{t('auth:login.email')}</Text>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="tu@email.com"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                className="w-full px-3 py-2.5 rounded-lg bg-surface border border-border text-primary"
-              />
+            {/* Logo + Welcome */}
+            <View style={{ alignItems: 'center', gap: 16 }}>
+              <View style={{ width: 64, height: 64, borderRadius: 16, backgroundColor: colors.bgTertiary, overflow: 'hidden' }}>
+                <Image source={require('../../assets/icon.png')} style={{ width: 64, height: 64 }} />
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{t('auth:login.welcome')}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 14 }}>{t('auth:login.subtitle')}</Text>
+              </View>
             </View>
 
-            <View className="mb-1">
-              <Text className="text-primary text-sm font-medium mb-1">{t('auth:login.password')}</Text>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                autoComplete="current-password"
-                className="w-full px-3 py-2.5 rounded-lg bg-surface border border-border text-primary"
-              />
+            {/* Form */}
+            <View style={{ width: '100%', gap: 16 }}>
+              <View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>{t('auth:login.email')}</Text>
+                <TextInput value={email} onChangeText={setEmail}
+                  placeholder="tu@email.com" placeholderTextColor={colors.textMuted}
+                  keyboardType="email-address" autoCapitalize="none" autoComplete="email"
+                  style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }} />
+              </View>
+
+              <View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>{t('auth:login.password')}</Text>
+                <TextInput value={password} onChangeText={setPassword}
+                  placeholder="••••••••" placeholderTextColor={colors.textMuted}
+                  secureTextEntry autoComplete="current-password"
+                  style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }} />
+                <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={{ alignSelf: 'flex-end', marginTop: 6 }}>
+                  <Text style={{ color: colors.success, fontSize: 12 }}>{t('auth:login.forgotPassword')}</Text>
+                </Pressable>
+              </View>
+
+              {displayError ? (
+                <Text style={{ color: colors.danger, fontSize: 12, textAlign: 'center' }}>{displayError}</Text>
+              ) : null}
+
+              <Pressable onPress={handleLogin} disabled={isLoading}
+                style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: isLoading ? 0.5 : 1 }}>
+                <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>
+                  {isLoading ? t('common:buttons.loading') : t('auth:login.submit')}
+                </Text>
+              </Pressable>
             </View>
 
-            <Pressable
-              onPress={() => navigation.navigate('ForgotPassword')}
-              className="self-end mb-4"
-            >
-              <Text className="text-accent text-sm">{t('auth:login.forgotPassword')}</Text>
+            {/* Divider */}
+            <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t('auth:login.orContinueWith')}</Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            </View>
+
+            {/* Google */}
+            <Pressable onPress={loginWithGoogle} disabled={isLoading}
+              style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.bgTertiary, opacity: isLoading ? 0.5 : 1 }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '700' }}>G</Text>
+              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>{t('auth:login.google')}</Text>
             </Pressable>
 
-            {displayError && (
-              <Text className="text-danger text-sm text-center mb-4">
-                {displayError}
-              </Text>
-            )}
-
-            <Button onPress={handleLogin} loading={isLoading} className="mb-4">
-              {t('auth:login.submit')}
-            </Button>
-
-            <View className="flex-row items-center gap-3 mb-4">
-              <View className="flex-1 h-px bg-border" />
-              <Text className="text-secondary text-xs">{t('common:labels.or')}</Text>
-              <View className="flex-1 h-px bg-border" />
-            </View>
-
-            <Pressable
-              onPress={loginWithGoogle}
-              disabled={isLoading}
-              className="flex-row items-center justify-center gap-2 py-2.5 rounded-lg mb-4 border border-border"
-              style={{ backgroundColor: colors.white, opacity: isLoading ? 0.5 : 1 }}
-            >
-              <GoogleIcon size={20} />
-              <Text className="text-base font-medium" style={{ color: colors.textDark }}>
-                {t('auth:login.google')}
-              </Text>
-            </Pressable>
-
+            {/* Sign up link */}
             <Pressable onPress={() => navigation.navigate('Signup')}>
-              <Text className="text-secondary text-sm text-center">
+              <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center' }}>
                 {t('auth:login.noAccount')}{' '}
-                <Text className="text-accent">{t('auth:login.createAccount')}</Text>
+                <Text style={{ color: colors.success, fontWeight: '600' }}>{t('auth:login.createAccount')}</Text>
               </Text>
             </Pressable>
-          </Card>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

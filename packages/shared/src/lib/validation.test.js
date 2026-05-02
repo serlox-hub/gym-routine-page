@@ -108,28 +108,24 @@ describe('validation', () => {
       const form = {
         name: '  Mi rutina  ',
         description: '  Descripción  ',
-        goal: '  Hipertrofia  ',
       }
       const result = prepareRoutineData(form)
       expect(result).toEqual({
         name: 'Mi rutina',
         description: 'Descripción',
-        goal: 'Hipertrofia',
       })
     })
 
     it('convierte campos vacíos a null', () => {
-      const form = { name: 'Mi rutina', description: '', goal: '   ' }
+      const form = { name: 'Mi rutina', description: '' }
       const result = prepareRoutineData(form)
       expect(result.description).toBeNull()
-      expect(result.goal).toBeNull()
     })
 
     it('maneja campos undefined', () => {
       const form = { name: 'Mi rutina' }
       const result = prepareRoutineData(form)
       expect(result.description).toBeNull()
-      expect(result.goal).toBeNull()
     })
   })
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import { View, Text } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { ChevronDown, ChevronRight } from 'lucide-react-native'
 import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, getMuscleGroupName, useMuscleGroups, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
 import { useRoutineBlocks } from '../../hooks/useRoutines'
 import { colors } from '../../lib/styles'
@@ -8,18 +9,32 @@ import { colors } from '../../lib/styles'
 function VolumeSummary({ days, cycleDays = 7 }) {
   const { t } = useTranslation()
   const [allDaysBlocks, setAllDaysBlocks] = useState([])
+  const [isExpanded, setIsExpanded] = useState(false)
 
   if (!days?.length) return null
 
   return (
-    <View className="mt-4 px-4 mb-4">
-      <Text className="text-sm font-medium mb-3" style={{ color: colors.textSecondary }}>
-        {t('routine:volumeSummary')}
-      </Text>
+    <View className="mt-4 mb-4">
+      <Pressable
+        onPress={() => setIsExpanded(!isExpanded)}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+      >
+        <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+          {t('routine:volumeSummary')}
+        </Text>
+        {isExpanded
+          ? <ChevronDown size={14} color={colors.textSecondary} />
+          : <ChevronRight size={14} color={colors.textSecondary} />
+        }
+      </Pressable>
       {days.map((day, i) => (
         <DayBlocksCollector key={day.id} dayId={day.id} index={i} onBlocks={setAllDaysBlocks} />
       ))}
-      <VolumeBars allDaysBlocks={allDaysBlocks} cycleDays={cycleDays} totalDays={days.length} />
+      {isExpanded && (
+        <View style={{ marginTop: 12 }}>
+          <VolumeBars allDaysBlocks={allDaysBlocks} cycleDays={cycleDays} totalDays={days.length} />
+        </View>
+      )}
     </View>
   )
 }

@@ -5,7 +5,7 @@ import { Modal, Button } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 import { parseDecimal } from '@gym/shared'
 
-export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }) {
+export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg', isPending }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({ weight: '', notes: '' })
   const isEditing = !!record
@@ -47,11 +47,11 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
 
       <View className="gap-4">
         <View>
-          <Text className="text-sm font-medium text-secondary mb-1">{t('body:weight.kg')} *</Text>
+          <Text className="text-sm font-medium text-secondary mb-1">{t('body:weight.label')} ({unit}) *</Text>
           <TextInput
             value={form.weight}
             onChangeText={(text) => setForm(prev => ({ ...prev, weight: text }))}
-            placeholder="Ej: 75.5"
+            placeholder={t('body:weight.weightPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             keyboardType="decimal-pad"
             style={inputStyle}
@@ -64,7 +64,7 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
           <TextInput
             value={form.notes}
             onChangeText={(text) => setForm(prev => ({ ...prev, notes: text }))}
-            placeholder="Ej: Después de desayunar"
+            placeholder={t('body:weight.notesPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             multiline
             numberOfLines={2}
@@ -79,7 +79,7 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
             disabled={!form.weight || parseDecimal(form.weight) <= 0 || isPending}
             loading={isPending}
           >
-            {isEditing ? t('common:buttons.save') : t('body:weight.record')}
+            {isEditing ? t('common:buttons.save') : t('body:weight.submit')}
           </Button>
         </View>
       </View>

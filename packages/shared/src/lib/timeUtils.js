@@ -14,6 +14,21 @@ export function formatSecondsToMMSS(seconds) {
 }
 
 /**
+ * Formatea segundos transcurridos en formato MM:SS o H:MM:SS si supera la hora.
+ * @param {number} seconds - Segundos totales
+ * @returns {string} Formato "MM:SS" o "H:MM:SS"
+ */
+export function formatElapsedSeconds(seconds) {
+  const safe = Math.max(0, Math.floor(seconds || 0))
+  const hours = Math.floor(safe / 3600)
+  const minutes = Math.floor((safe % 3600) / 60)
+  const secs = safe % 60
+  return hours > 0
+    ? `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    : `${minutes}:${secs.toString().padStart(2, '0')}`
+}
+
+/**
  * Formatea segundos para mostrar en descanso (ej: "45s", "2min", "1:30")
  * @param {number} seconds - Segundos totales
  * @returns {string}

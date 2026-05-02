@@ -16,9 +16,9 @@ function ViewToggle({ view, onChangeView, labels }) {
           key={key}
           onPress={() => onChangeView(key)}
           className="flex-1 py-2 items-center"
-          style={view === key ? { backgroundColor: colors.accent } : undefined}
+          style={view === key ? { backgroundColor: colors.success } : undefined}
         >
-          <Text className="text-xs font-semibold" style={{ color: view === key ? colors.white : colors.textSecondary }}>
+          <Text className="text-xs font-semibold" style={{ color: view === key ? colors.textDark : colors.textSecondary }}>
             {label}
           </Text>
         </Pressable>

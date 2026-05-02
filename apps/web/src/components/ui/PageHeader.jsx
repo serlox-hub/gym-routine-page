@@ -9,6 +9,7 @@ function PageHeader({
   backTo,
   onBack,
   menuItems,
+  rightAction,
   children
 }) {
   const navigate = useNavigate()
@@ -35,18 +36,21 @@ function PageHeader({
           {showBack && (
             <button
               onClick={handleBack}
-              className="p-1 -ml-1 rounded hover:opacity-80 shrink-0"
-              style={{ color: colors.textSecondary }}
+              className="-ml-1 p-1.5 rounded hover:opacity-80 shrink-0"
+              style={{ color: colors.textPrimary }}
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={20} />
             </button>
           )}
           <h1 className="text-xl font-bold truncate">{title}</h1>
           {titleExtra}
         </div>
-        {menuItems && menuItems.length > 0 && (
-          <DropdownMenu items={menuItems} />
-        )}
+        <div className="flex items-center gap-2">
+          {rightAction}
+          {menuItems && menuItems.length > 0 && (
+            <DropdownMenu items={menuItems} />
+          )}
+        </div>
       </div>
       {children}
     </header>

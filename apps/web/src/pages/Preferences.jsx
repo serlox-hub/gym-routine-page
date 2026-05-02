@@ -1,22 +1,110 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Check, X } from 'lucide-react'
-import { Card, LoadingSpinner, PlanBadge, PageHeader } from '../components/ui/index.js'
-import { PreferenceToggle, InstallAppSection, TrainingGoalSection } from '../components/Preferences/index.js'
+import { LogOut, Users } from 'lucide-react'
+import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
+import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui/index.js'
+import { InstallAppSection, TrainingGoalSection, WeightUnitChangeModal, MeasurementUnitChangeModal } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
-import { useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
+import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
+import useWorkoutStore from '../stores/workoutStore.js'
 import { colors } from '../lib/styles.js'
+
+function SmallPill({ label, active, onClick, disabled }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+      style={{
+        backgroundColor: active ? colors.success : 'transparent',
+        color: active ? colors.bgPrimary : colors.textMuted,
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+function CustomToggle({ checked, onChange, disabled }) {
+  return (
+    <button
+      onClick={() => !disabled && onChange(!checked)}
+      className="shrink-0"
+      style={{ opacity: disabled ? 0.5 : 1 }}
+    >
+      <div
+        className="w-12 h-7 rounded-full relative transition-colors"
+        style={{ backgroundColor: checked ? colors.success : colors.border }}
+      >
+        <div
+          className="w-5 h-5 rounded-full absolute top-1 transition-all"
+          style={{
+            backgroundColor: colors.bgPrimary,
+            left: checked ? 24 : 4,
+          }}
+        />
+      </div>
+    </button>
+  )
+}
+
+function ToggleRow({ label, description, checked, onChange, disabled }) {
+  return (
+    <div className="flex items-center gap-3 py-3">
+      <div className="flex-1 min-w-0">
+        <p style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 500 }}>{label}</p>
+        {description && <p style={{ color: colors.textMuted, fontSize: 12 }}>{description}</p>}
+      </div>
+      <CustomToggle checked={checked} onChange={onChange} disabled={disabled} />
+    </div>
+  )
+}
 
 function Preferences() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { t } = useTranslation()
+  const { logout } = useAuth()
   const { data: preferences, isLoading } = usePreferences()
   const updatePreference = useUpdatePreference()
   const canUploadVideo = useCanUploadVideo()
   const isPremium = useIsPremium()
+  const { isAdmin } = useIsAdmin()
+  const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
+  const goalRef = useRef(null)
+  const [highlight, setHighlight] = useState(false)
 
-  // Preferencia de sonido guardada en localStorage (funciona offline)
+  useEffect(() => {
+    if (location.state?.scrollTo === 'training-goal' && !isLoading) {
+      setTimeout(() => {
+        goalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setHighlight(true)
+        setTimeout(() => setHighlight(false), 1800)
+      }, 300)
+    }
+  }, [location.state, isLoading])
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const handleLogoutClick = () => {
+    if (hasActiveSession) {
+      setShowLogoutConfirm(true)
+    } else {
+      handleLogout()
+    }
+  }
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      navigate('/')
+    } catch {
+      setIsLoggingOut(false)
+    }
+  }
+
   const [timerSoundEnabled, setTimerSoundEnabled] = useState(() => {
     try {
       const saved = localStorage.getItem('timer_sound_enabled')
@@ -39,227 +127,206 @@ function Preferences() {
     updatePreference.mutate({ key, value })
   }
 
-  if (isLoading) {
-    return (
-      <div className="p-4 max-w-2xl mx-auto">
-        <LoadingSpinner />
-      </div>
+  const changeWeightUnit = useChangeWeightUnit()
+  const [pendingUnit, setPendingUnit] = useState(null)
+
+  const handleWeightUnitClick = (unit) => {
+    const current = preferences?.weight_unit || 'kg'
+    if (unit === current) return
+    setPendingUnit(unit)
+  }
+
+  const applyWeightUnitChange = (convertHistorical) => {
+    const fromUnit = preferences?.weight_unit || 'kg'
+    const toUnit = pendingUnit
+    changeWeightUnit.mutate(
+      { scope: 'global', fromUnit, toUnit, convertHistorical },
+      { onSuccess: () => setPendingUnit(null) },
     )
   }
 
+  const changeMeasurementUnit = useChangeMeasurementUnit()
+  const [pendingMeasurementUnit, setPendingMeasurementUnit] = useState(null)
+
+  const handleMeasurementUnitClick = (unit) => {
+    const current = preferences?.measurement_unit || 'cm'
+    if (unit === current) return
+    setPendingMeasurementUnit(unit)
+  }
+
+  const applyMeasurementUnitChange = (convertHistorical) => {
+    const fromUnit = preferences?.measurement_unit || 'cm'
+    const toUnit = pendingMeasurementUnit
+    changeMeasurementUnit.mutate(
+      { fromUnit, toUnit, convertHistorical },
+      { onSuccess: () => setPendingMeasurementUnit(null) },
+    )
+  }
+
+  if (isLoading) return <div className="p-4 max-w-2xl mx-auto"><LoadingSpinner /></div>
+
   return (
-    <div className="p-4 max-w-2xl mx-auto">
+    <div className="px-6 pt-4 pb-20 max-w-2xl mx-auto">
       <PageHeader title={t('common:preferences.title')} onBack={() => navigate(-1)} />
 
-      <main className="space-y-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-              {t('common:preferences.plan')}
-            </h2>
-            <PlanBadge isPremium={isPremium} />
-          </div>
+      <main style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-              {t('common:preferences.premiumBenefits')}
-            </h3>
-            <ul className="space-y-2">
-              <PremiumFeature
-                title={t('common:preferences.uploadVideos')}
-                description={t('common:preferences.videoDescription')}
-                enabled={isPremium}
-              />
-              <PremiumFeature
-                title={t('common:preferences.comingSoon')}
-                description={t('common:preferences.comingSoonDesc')}
-                enabled={isPremium}
-                comingSoon
-              />
-            </ul>
-          </div>
-        </Card>
+        {/* Your plan */}
+        <div
+          className="flex items-center justify-between rounded-xl"
+          style={{ backgroundColor: colors.bgSecondary, padding: '12px 16px', border: `1px solid ${colors.border}` }}
+        >
+          <span style={{ color: colors.textSecondary, fontSize: 13 }}>{t('common:preferences.plan')}</span>
+          <PlanBadge isPremium={isPremium} />
+        </div>
 
-        <Card className="p-4">
-          <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
+        {/* GENERAL */}
+        <section>
+          <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
             {t('common:preferences.general')}
-          </h2>
-
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-                {t('common:preferences.language')}
-              </h3>
-              <div className="flex gap-2">
+          </span>
+          <div
+            className="rounded-xl"
+            style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, overflow: 'hidden' }}
+          >
+            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+              <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.language')}</span>
+              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
                 {[
-                  { code: 'es', label: t('common:preferences.spanish') },
-                  { code: 'en', label: t('common:preferences.english') },
-                ].map(({ code, label }) => {
-                  const isActive = (preferences?.language || 'es') === code
-                  return (
-                    <button
-                      key={code}
-                      onClick={() => handleChange('language', code)}
-                      className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
-                      style={{
-                        backgroundColor: isActive ? colors.accent : colors.bgTertiary,
-                        color: isActive ? '#fff' : colors.textSecondary,
-                      }}
-                      disabled={updatePreference.isPending}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
+                  { code: 'es', label: 'ES' },
+                  { code: 'en', label: 'EN' },
+                ].map(({ code, label }) => (
+                  <SmallPill key={code} label={label} active={(preferences?.language || 'es') === code}
+                    onClick={() => handleChange('language', code)} disabled={updatePreference.isPending} />
+                ))}
               </div>
             </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
-                {t('common:preferences.weightUnit')}
-              </h3>
-              <p className="text-xs mb-2" style={{ color: colors.textMuted }}>
-                {t('common:preferences.weightUnitDescription')}
-              </p>
-              <div className="flex gap-2">
-                {['kg', 'lb'].map((unit) => {
-                  const isActive = (preferences?.weight_unit || 'kg') === unit
-                  return (
-                    <button
-                      key={unit}
-                      onClick={() => handleChange('weight_unit', unit)}
-                      className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
-                      style={{
-                        backgroundColor: isActive ? colors.accent : colors.bgTertiary,
-                        color: isActive ? '#fff' : colors.textSecondary,
-                      }}
-                      disabled={updatePreference.isPending}
-                    >
-                      {unit}
-                    </button>
-                  )
-                })}
+            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+              <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weightUnit')}</span>
+              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+                {['kg', 'lb'].map((unit) => (
+                  <SmallPill key={unit} label={unit} active={(preferences?.weight_unit || 'kg') === unit}
+                    onClick={() => handleWeightUnitClick(unit)} disabled={changeWeightUnit.isPending} />
+                ))}
               </div>
             </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-                {t('common:preferences.weekStartDay')}
-              </h3>
-              <div className="flex gap-1">
-                {[{ value: 'monday', label: t('common:preferences.monday') }, { value: 'sunday', label: t('common:preferences.sunday') }].map(({ value, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => handleChange('week_start_day', value)}
-                    disabled={updatePreference.isPending}
-                    className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
-                    style={{
-                      backgroundColor: (preferences?.week_start_day || 'monday') === value ? colors.accent : colors.bgTertiary,
-                      color: (preferences?.week_start_day || 'monday') === value ? colors.white : colors.textSecondary,
-                    }}
-                  >
-                    {label}
-                  </button>
+            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+              <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.measurementUnit')}</span>
+              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+                {['cm', 'in'].map((unit) => (
+                  <SmallPill key={unit} label={unit} active={(preferences?.measurement_unit || 'cm') === unit}
+                    onClick={() => handleMeasurementUnitClick(unit)} disabled={changeMeasurementUnit.isPending} />
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between" style={{ padding: '14px 16px' }}>
+              <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weekStartDay')}</span>
+              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+                {[
+                  { value: 'monday', label: t('common:preferences.mondayShort') || 'Mon' },
+                  { value: 'sunday', label: t('common:preferences.sundayShort') || 'Sun' },
+                ].map(({ value, label }) => (
+                  <SmallPill key={value} label={label} active={(preferences?.week_start_day || 'monday') === value}
+                    onClick={() => handleChange('week_start_day', value)} disabled={updatePreference.isPending} />
                 ))}
               </div>
             </div>
           </div>
-        </Card>
+        </section>
 
-        <Card className="p-4">
-          <h2 className="text-sm font-medium mb-4" style={{ color: colors.textSecondary }}>
+        {/* WORKOUT */}
+        <section>
+          <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
             {t('common:preferences.duringWorkout')}
-          </h2>
-
-          <div className="space-y-4">
-            <PreferenceToggle
-              label={t('common:preferences.timerSound')}
-              description={t('common:preferences.timerSoundDesc')}
-              checked={timerSoundEnabled}
-              onChange={handleTimerSoundChange}
-            />
-
-            <PreferenceToggle
-              label={t('common:preferences.showRir')}
-              description={t('common:preferences.showRirDesc')}
-              checked={preferences?.show_rir_input ?? true}
-              onChange={(value) => handleChange('show_rir_input', value)}
-              disabled={updatePreference.isPending}
-            />
-
-            <PreferenceToggle
-              label={t('common:preferences.showSetNotes')}
-              description={t('common:preferences.showSetNotesDesc')}
-              checked={preferences?.show_set_notes ?? true}
-              onChange={(value) => handleChange('show_set_notes', value)}
-              disabled={updatePreference.isPending}
-            />
-
-            <PreferenceToggle
-              label={t('common:preferences.showSessionNotes')}
-              description={t('common:preferences.showSessionNotesDesc')}
-              checked={preferences?.show_session_notes ?? true}
-              onChange={(value) => handleChange('show_session_notes', value)}
-              disabled={updatePreference.isPending}
-            />
-
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <ToggleRow label={t('common:preferences.timerSound')} description={t('common:preferences.timerSoundDesc')}
+              checked={timerSoundEnabled} onChange={handleTimerSoundChange} />
+            <ToggleRow label={t('common:preferences.showRir')} description={t('common:preferences.showRirDesc')}
+              checked={preferences?.show_rir_input ?? true} onChange={(v) => handleChange('show_rir_input', v)} disabled={updatePreference.isPending} />
+            <ToggleRow label={t('common:preferences.showSetNotes')} description={t('common:preferences.showSetNotesDesc')}
+              checked={preferences?.show_set_notes ?? true} onChange={(v) => handleChange('show_set_notes', v)} disabled={updatePreference.isPending} />
+            <ToggleRow label={t('common:preferences.showSessionNotes')} description={t('common:preferences.showSessionNotesDesc')}
+              checked={preferences?.show_session_notes ?? true} onChange={(v) => handleChange('show_session_notes', v)} disabled={updatePreference.isPending} />
             {canUploadVideo && (
-              <PreferenceToggle
-                label={t('common:preferences.showVideoUpload')}
-                description={t('common:preferences.videoDescription')}
-                checked={preferences?.show_video_upload ?? true}
-                onChange={(value) => handleChange('show_video_upload', value)}
-                disabled={updatePreference.isPending}
-              />
+              <ToggleRow label={t('common:preferences.showVideoUpload')} description={t('common:preferences.videoDescription')}
+                checked={preferences?.show_video_upload ?? true} onChange={(v) => handleChange('show_video_upload', v)} disabled={updatePreference.isPending} />
             )}
           </div>
-        </Card>
+        </section>
 
-        <TrainingGoalSection
-          preferences={preferences}
-          onChangeDays={(value) => handleChange('training_days_per_week', value)}
-          onToggleWidget={(value) => handleChange('show_training_goal', value)}
-          disabled={updatePreference.isPending}
-        />
+        {/* TRAINING GOAL */}
+        <div ref={goalRef}>
+          <TrainingGoalSection
+            preferences={preferences}
+            onChangeDays={(value) => handleChange('training_days_per_week', value)}
+            onToggleWidget={(value) => handleChange('show_training_goal', value)}
+            disabled={updatePreference.isPending}
+            highlight={highlight}
+          />
+        </div>
 
         <InstallAppSection />
 
-        <p className="text-center text-xs mt-2" style={{ color: colors.textMuted }}>
-          v{__APP_VERSION__}
-        </p>
-      </main>
-    </div>
-  )
-}
-
-function PremiumFeature({ title, description, enabled, comingSoon }) {
-  const { t } = useTranslation()
-  return (
-    <li className="flex items-start gap-3">
-      <div className="mt-0.5">
-        {enabled ? (
-          <Check size={16} style={{ color: colors.success }} />
-        ) : (
-          <X size={16} style={{ color: colors.textSecondary }} />
-        )}
-      </div>
-      <div>
-        <p className="text-sm" style={{ color: enabled ? colors.textPrimary : colors.textSecondary }}>
-          {title}
-          {comingSoon && (
-            <span
-              className="ml-2 text-xs px-1.5 py-0.5 rounded"
-              style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+        {/* Actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/admin/users')}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
+              style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
             >
-              {t('common:preferences.comingSoon')}
-            </span>
+              <Users size={16} />
+              {t('common:nav.admin')}
+            </button>
           )}
-        </p>
-        <p className="text-xs" style={{ color: colors.textSecondary }}>
-          {description}
-        </p>
-      </div>
-    </li>
+          <button
+            onClick={handleLogoutClick}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
+            style={{ backgroundColor: colors.dangerBg, color: colors.danger }}
+          >
+            <LogOut size={16} />
+            {t('common:nav.logout')}
+          </button>
+          <p className="text-center text-xs mt-1" style={{ color: colors.textMuted }}>
+            v{__APP_VERSION__}
+          </p>
+        </div>
+      </main>
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title={t('auth:logout.activeSession')}
+        message={t('auth:logout.confirm')}
+        confirmText={t('common:nav.logout')}
+        cancelText={t('common:buttons.continue')}
+        loadingText={t('common:buttons.loading')}
+        isLoading={isLoggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
+
+      <WeightUnitChangeModal
+        isOpen={!!pendingUnit}
+        scope="global"
+        fromUnit={preferences?.weight_unit || 'kg'}
+        toUnit={pendingUnit || ''}
+        isPending={changeWeightUnit.isPending}
+        onConvert={() => applyWeightUnitChange(true)}
+        onUnitOnly={() => applyWeightUnitChange(false)}
+        onCancel={() => setPendingUnit(null)}
+      />
+
+      <MeasurementUnitChangeModal
+        isOpen={!!pendingMeasurementUnit}
+        fromUnit={preferences?.measurement_unit || 'cm'}
+        toUnit={pendingMeasurementUnit || ''}
+        isPending={changeMeasurementUnit.isPending}
+        onConvert={() => applyMeasurementUnitChange(true)}
+        onUnitOnly={() => applyMeasurementUnitChange(false)}
+        onCancel={() => setPendingMeasurementUnit(null)}
+      />
+    </div>
   )
 }
 

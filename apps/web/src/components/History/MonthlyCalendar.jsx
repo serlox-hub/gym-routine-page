@@ -11,7 +11,7 @@ import {
 } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
-function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
+function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, selectedDateKey }) {
   const { t } = useTranslation()
   const { value: weekStartDay } = usePreference('week_start_day')
   const wsd = weekStartDay || 'monday'
@@ -35,9 +35,8 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
         <button
           onClick={goToPrevMonth}
           className="p-2 rounded hover:opacity-80"
-          style={{ backgroundColor: colors.bgTertiary }}
         >
-          <ChevronLeft size={18} style={{ color: colors.textSecondary }} />
+          <ChevronLeft size={18} color={colors.textSecondary} />
         </button>
 
         <div className="flex items-center gap-3">
@@ -49,16 +48,15 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
             className="text-xs px-2 py-1 rounded hover:opacity-80"
             style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
           >
-            Hoy
+            {t('common:time.today')}
           </button>
         </div>
 
         <button
           onClick={goToNextMonth}
           className="p-2 rounded hover:opacity-80"
-          style={{ backgroundColor: colors.bgTertiary }}
         >
-          <ChevronRight size={18} style={{ color: colors.textSecondary }} />
+          <ChevronRight size={18} color={colors.textSecondary} />
         </button>
       </div>
 
@@ -82,38 +80,38 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
             return <div key={`empty-${index}`} className="aspect-square" />
           }
 
-          const hasWorkout = dayData.sessions.length > 0
+          const isSelected = selectedDateKey === dayData.dateKey
 
           return (
             <div
               key={dayData.dateKey}
-              onClick={() => hasWorkout && onDayClick?.(dayData)}
-              className={`aspect-square rounded p-1 flex flex-col ${hasWorkout ? 'cursor-pointer hover:opacity-80' : ''}`}
+              onClick={() => onDayClick?.(dayData)}
+              className="aspect-square rounded p-1 flex flex-col cursor-pointer hover:opacity-80"
               style={{
-                backgroundColor: dayData.isToday ? colors.accentBg : colors.bgTertiary,
-                border: dayData.isToday ? `1px solid ${colors.accent}` : '1px solid transparent',
+                backgroundColor: isSelected ? colors.successBg : colors.bgTertiary,
+                border: isSelected ? `1px solid ${colors.success}` : dayData.isToday ? `1px solid ${colors.textMuted}` : '1px solid transparent',
               }}
             >
               <span
                 className="text-xs font-medium"
-                style={{ color: dayData.isToday ? colors.accent : colors.textSecondary }}
+                style={{ color: isSelected ? colors.success : dayData.isToday ? colors.textPrimary : colors.textSecondary }}
               >
                 {dayData.day}
               </span>
 
               {/* Indicadores de grupos musculares */}
               {dayData.muscleGroups.length > 0 && (
-                <div className="grid grid-cols-4 gap-0.5 mt-auto">
+                <div className="grid grid-cols-4 gap-0.5 md:gap-1 lg:gap-1.5 mt-auto">
                   {dayData.muscleGroups.slice(0, 8).map(mg => (
                     <div
                       key={mg}
-                      className="w-1.5 h-1.5 rounded-full"
+                      className="w-1.5 h-1.5 md:w-2 md:h-2 lg:w-2.5 lg:h-2.5 xl:w-3 xl:h-3 rounded-full"
                       style={{ backgroundColor: MUSCLE_GROUP_COLORS[mg] || colors.textSecondary }}
                       title={mg}
                     />
                   ))}
                   {dayData.muscleGroups.length > 8 && (
-                    <span className="text-[6px] leading-none col-span-4 text-center" style={{ color: colors.textSecondary }}>
+                    <span className="text-[6px] md:text-[8px] lg:text-[10px] leading-none col-span-4 text-center" style={{ color: colors.textSecondary }}>
                       +{dayData.muscleGroups.length - 8}
                     </span>
                   )}
@@ -124,20 +122,6 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange }) {
         })}
       </div>
 
-      {/* Leyenda */}
-      <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(MUSCLE_GROUP_COLORS).map(([name, color]) => (
-            <div key={name} className="flex items-center gap-1">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-xs" style={{ color: colors.textSecondary }}>{name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

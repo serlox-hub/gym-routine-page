@@ -1,16 +1,10 @@
 import { FileText, Video, AlertCircle } from 'lucide-react'
+import { getEffortInfo } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
-const RIR_LABELS = {
-  [-1]: 'F',
-  0: '0',
-  1: '1',
-  2: '2',
-  3: '3+',
-}
-
-function NotesBadge({ rir, hasNotes, hasVideo, isUploadingVideo, uploadProgress = 0, videoUploadError, onRetryUpload, onClick }) {
+function NotesBadge({ rir, measurementType, hasNotes, hasVideo, isUploadingVideo, uploadProgress = 0, videoUploadError, onRetryUpload, onClick }) {
   const hasRir = rir !== null && rir !== undefined
+  const effortInfo = hasRir ? getEffortInfo(rir, measurementType) : null
 
   if (!hasRir && !hasNotes && !hasVideo && !isUploadingVideo && !videoUploadError) return null
 
@@ -47,7 +41,7 @@ function NotesBadge({ rir, hasNotes, hasVideo, isUploadingVideo, uploadProgress 
     <>
       {hasRir && (
         <span className="text-xs font-bold" style={{ color: colors.purple }}>
-          {RIR_LABELS[rir] ?? rir}
+          {effortInfo?.label ?? rir}
         </span>
       )}
       {hasNotes && <FileText size={12} style={{ color: colors.purple }} />}

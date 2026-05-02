@@ -40,6 +40,22 @@ export const RIR_LABELS = RIR_OPTIONS.reduce((acc, opt) => {
   return acc
 }, {})
 
+// RPE (Rate of Perceived Exertion) options for non-reps exercises
+// Stored as numeric value 1-5, displayed with descriptive label
+export const RPE_OPTIONS = [
+  { value: 1, get label() { return t('data:rpe.1') } },
+  { value: 2, get label() { return t('data:rpe.2') } },
+  { value: 3, get label() { return t('data:rpe.3') } },
+  { value: 4, get label() { return t('data:rpe.4') } },
+  { value: 5, get label() { return t('data:rpe.5') } },
+]
+
+// RPE Labels lookup (label is the descriptive translation, no separate description)
+export const RPE_LABELS = RPE_OPTIONS.reduce((acc, opt) => {
+  acc[opt.value] = { get label() { return t(`data:rpe.${opt.value}`) }, description: '' }
+  return acc
+}, {})
+
 // Query Keys
 export const QUERY_KEYS = {
   ROUTINES: 'routines',
@@ -67,6 +83,9 @@ export const QUERY_KEYS = {
   TRAINING_GOAL_SESSIONS: 'training-goal-sessions',
   MUSCLE_GROUPS: 'muscle-groups',
   EQUIPMENT_TYPES: 'equipment-types',
+  LAST_SESSION_FOR_ROUTINE: 'last-session-for-routine',
+  WEEKLY_SESSION_STATS: 'weekly-session-stats',
+  MONTHLY_SESSION_COUNT: 'monthly-session-count',
 }
 
 // Timer
@@ -151,15 +170,15 @@ export const MUSCLE_GROUP_COLORS = {
   'Hombros': '#a371f7',
   'Bíceps': '#d29922',
   'Tríceps': '#39d2c0',
-  'Cuádriceps': '#226f2dff',
+  'Cuádriceps': '#226f2d',
   'Isquiotibiales': '#f0883e',
   'Pantorrillas': '#c69178',
-  'Abdominales': '#abe79fff',
+  'Abdominales': '#abe79f',
   'Glúteos': '#db61a2',
   'Antebrazo': '#8b949e',
-  'Cardio': '#dd23d9ff',
-  'Movilidad': '#ddddddff',
-  'Cuerpo Completo': '#1d3bdfff',
+  'Cardio': '#dd23d9',
+  'Movilidad': '#dddddd',
+  'Cuerpo Completo': '#1d3bdf',
 }
 
 export function getMuscleGroupColor(name) {

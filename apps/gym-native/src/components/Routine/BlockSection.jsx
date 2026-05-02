@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Flame, Link2, Dumbbell, Plus } from 'lucide-react-native'
+import { Link2, Plus } from 'lucide-react-native'
 import ExerciseCard from './ExerciseCard'
 import { Card } from '../ui'
 import { colors } from '../../lib/styles'
@@ -8,6 +8,7 @@ import { formatSupersetLabel, groupExercisesBySupersetId, translateBlockName } f
 
 export default function BlockSection({
   block,
+  routineDayId,
   isEditing = false,
   isReordering = false,
   onAddExercise,
@@ -28,25 +29,12 @@ export default function BlockSection({
 
   return (
     <View className="gap-2">
-      <View
-        className="flex-row items-center gap-1.5 px-2 py-1 rounded"
-        style={{
-          backgroundColor: colors.bgTertiary,
-          borderLeftWidth: 2,
-          borderLeftColor: accentColor,
-        }}
-      >
-        {isWarmup ? (
-          <Flame size={12} color={accentColor} />
-        ) : (
-          <Dumbbell size={12} color={accentColor} />
-        )}
-        <Text className="text-xs font-medium uppercase" style={{ color: accentColor }}>
-          {translateBlockName(name)}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Text style={{ color: colors.success, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          {translateBlockName(name)} ({routine_exercises.length})
         </Text>
-        <Text className="text-secondary text-xs">({routine_exercises.length})</Text>
         {duration_min && (
-          <Text className="text-secondary text-xs ml-auto">~{duration_min} min</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, marginLeft: 'auto' }}>~{duration_min} min</Text>
         )}
       </View>
 
@@ -56,6 +44,7 @@ export default function BlockSection({
             <ExerciseCard
               key={group.exercise.id}
               routineExercise={group.exercise}
+              routineDayId={routineDayId}
               isEditing={isEditing}
               isReordering={isReordering}
               onEdit={() => onEditExercise?.(group.exercise)}
@@ -80,7 +69,7 @@ export default function BlockSection({
             <View
               className="flex-row items-center gap-2 px-2 py-1 rounded-t-lg"
               style={{
-                backgroundColor: 'rgba(163, 113, 247, 0.1)',
+                backgroundColor: colors.purpleBg,
                 borderBottomWidth: 1,
                 borderBottomColor: colors.purple,
               }}
@@ -90,10 +79,12 @@ export default function BlockSection({
                 {supersetLabel}
               </Text>
             </View>
+            <View style={{ gap: 8, padding: 8 }}>
             {group.exercises.map((exercise) => (
               <ExerciseCard
                 key={exercise.id}
                 routineExercise={exercise}
+                routineDayId={routineDayId}
                 isSuperset
                 isEditing={isEditing}
                 isReordering={isReordering}
@@ -107,6 +98,7 @@ export default function BlockSection({
                 totalExercises={routine_exercises.length}
               />
             ))}
+            </View>
           </Card>
         )
       })}
@@ -114,11 +106,11 @@ export default function BlockSection({
       {isEditing && (
         <Pressable
           onPress={onAddExercise}
-          className="w-full py-2 rounded-lg flex-row items-center justify-center gap-2 active:opacity-70"
+          className="w-full py-3 rounded-xl flex-row items-center justify-center gap-2 active:opacity-70"
           style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}
         >
           <Plus size={14} color={accentColor} />
-          <Text className="text-xs" style={{ color: accentColor }}>
+          <Text style={{ color: accentColor, fontSize: 13 }}>
             {isWarmup ? t('routine:block.addToWarmup') : t('routine:block.addExercise')}
           </Text>
         </Pressable>

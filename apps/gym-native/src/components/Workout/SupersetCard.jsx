@@ -1,5 +1,6 @@
 import { View, Text } from 'react-native'
 import { Link2 } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 import { Card } from '../ui'
 import WorkoutExerciseCard from './WorkoutExerciseCard'
 import { colors } from '../../lib/styles'
@@ -7,6 +8,7 @@ import { formatSupersetLabel } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 export default function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, onRemove, onReplace, existingSupersets = [] }) {
+  const { t } = useTranslation()
   const supersetLabel = formatSupersetLabel(supersetId)
 
   return (
@@ -24,7 +26,7 @@ export default function SupersetCard({ exercises, supersetId, onCompleteSet, onU
           {supersetLabel}
         </Text>
         <Text className="text-xs" style={{ color: colors.textSecondary }}>
-          ({exercises.length} ejercicios)
+          ({t('routine:superset.exerciseCount', { count: exercises.length })})
         </Text>
       </View>
 

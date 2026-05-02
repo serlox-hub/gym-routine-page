@@ -38,9 +38,9 @@ export default function MoveToDayModal({ isOpen, onClose, onSubmit, days, curren
               onPress={() => setSelectedDayId(day.id)}
               className="p-3 rounded-lg"
               style={{
-                backgroundColor: selectedDayId === day.id ? colors.accentBg : colors.bgTertiary,
+                backgroundColor: selectedDayId === day.id ? colors.successBg : colors.bgTertiary,
                 borderWidth: 1,
-                borderColor: selectedDayId === day.id ? colors.accent : 'transparent',
+                borderColor: selectedDayId === day.id ? colors.success : 'transparent',
               }}
             >
               <Text className="text-primary">{day.name}</Text>

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { Info } from 'lucide-react-native'
+import { useChangeWeightUnit } from '@gym/shared'
 import { useUserExerciseOverride, useUpsertUserExerciseOverride } from '../../hooks/useExercises'
 import { usePreference } from '../../hooks/usePreferences'
 
-
+import { WeightUnitChangeModal } from '../Preferences'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm'
 import { colors, inputStyle } from '../../lib/styles'
 
@@ -12,10 +14,12 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
   const { t } = useTranslation()
   const { data: override } = useUserExerciseOverride(exerciseId)
   const upsertOverride = useUpsertUserExerciseOverride()
+  const changeWeightUnit = useChangeWeightUnit()
   const { value: globalWeightUnit } = usePreference('weight_unit')
 
   const [notes, setNotes] = useState('')
   const [weightUnit, setWeightUnit] = useState('')
+  const [showConvertModal, setShowConvertModal] = useState(false)
 
   useEffect(() => {
     if (override) {
@@ -24,17 +28,46 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
     }
   }, [override])
 
+  const previousEffectiveUnit = (override?.weight_unit) || globalWeightUnit || 'kg'
+  const newEffectiveUnit = weightUnit || globalWeightUnit || 'kg'
+  const unitChanged = previousEffectiveUnit !== newEffectiveUnit
+
   const handleSave = () => {
+    if (unitChanged) {
+      setShowConvertModal(true)
+      return
+    }
     upsertOverride.mutate({ exerciseId, notes, weightUnit: weightUnit || null }, {
       onSuccess: () => onClose?.(),
     })
   }
 
+  const applyUnitChange = (convertHistorical) => {
+    changeWeightUnit.mutate(
+      {
+        scope: 'exercise',
+        exerciseId,
+        fromUnit: previousEffectiveUnit,
+        toUnit: newEffectiveUnit,
+        convertHistorical,
+        overrideValue: weightUnit || null,
+        overrideNotes: notes,
+      },
+      {
+        onSuccess: () => {
+          setShowConvertModal(false)
+          onClose?.()
+        },
+      },
+    )
+  }
+
   return (
     <>
       <ScrollView className="p-4" style={{ maxHeight: 400 }} keyboardShouldPersistTaps="handled">
-        <View className="px-3 py-2 rounded-lg mb-4" style={{ backgroundColor: colors.accentBgSubtle }}>
-          <Text style={{ fontSize: 12, color: colors.accent }}>{t('exercise:systemExerciseInfo')}</Text>
+        <View className="flex-row items-start px-3 py-2 rounded-lg mb-4" style={{ borderWidth: 1, borderColor: colors.border, gap: 8 }}>
+          <Info size={14} color={colors.textSecondary} style={{ marginTop: 1 }} />
+          <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }}>{t('exercise:systemExerciseInfo')}</Text>
         </View>
 
         {/* Personal notes */}
@@ -68,10 +101,10 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
                   onPress={() => setWeightUnit(effectiveUnit === unit ? '' : unit)}
                   className="flex-1 py-2 rounded-lg items-center"
                   style={{
-                    backgroundColor: isActive ? colors.accent : colors.bgTertiary,
+                    backgroundColor: isActive ? colors.success : colors.bgTertiary,
                   }}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: '500', color: isActive ? colors.white : colors.textSecondary }}>
+                  <Text style={{ fontSize: 14, fontWeight: '500', color: isActive ? colors.bgPrimary : colors.textSecondary }}>
                     {unit}
                   </Text>
                 </Pressable>
@@ -84,8 +117,19 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
       <ExerciseConfigFormButtons
         onBack={onClose}
         onSubmit={handleSave}
-        isPending={upsertOverride.isPending}
+        isPending={upsertOverride.isPending || changeWeightUnit.isPending}
         submitLabel={t('common:buttons.save')}
+      />
+
+      <WeightUnitChangeModal
+        isOpen={showConvertModal}
+        scope="exercise"
+        fromUnit={previousEffectiveUnit}
+        toUnit={newEffectiveUnit}
+        isPending={changeWeightUnit.isPending}
+        onConvert={() => applyUnitChange(true)}
+        onUnitOnly={() => applyUnitChange(false)}
+        onCancel={() => setShowConvertModal(false)}
       />
     </>
   )

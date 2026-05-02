@@ -37,33 +37,37 @@ export function useRoutines() {
 }
 
 export function useRoutine(routineId) {
+  const id = String(routineId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE, routineId],
-    queryFn: () => fetchRoutine(routineId),
+    queryKey: [QUERY_KEYS.ROUTINE, id],
+    queryFn: () => fetchRoutine(id),
     enabled: !!routineId
   })
 }
 
 export function useRoutineDays(routineId) {
+  const id = String(routineId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE_DAYS, routineId],
-    queryFn: () => fetchRoutineDays(routineId),
+    queryKey: [QUERY_KEYS.ROUTINE_DAYS, id],
+    queryFn: () => fetchRoutineDays(id),
     enabled: !!routineId
   })
 }
 
 export function useRoutineDay(dayId) {
+  const id = String(dayId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE_DAY, dayId],
-    queryFn: () => fetchRoutineDay(dayId),
+    queryKey: [QUERY_KEYS.ROUTINE_DAY, id],
+    queryFn: () => fetchRoutineDay(id),
     enabled: !!dayId
   })
 }
 
 export function useRoutineBlocks(dayId) {
+  const id = String(dayId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(dayId)],
-    queryFn: () => fetchRoutineBlocks(dayId),
+    queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, id],
+    queryFn: () => fetchRoutineBlocks(id),
     select: localizeExercisesInList,
     enabled: !!dayId
   })
@@ -74,9 +78,10 @@ export function useRoutineBlocks(dayId) {
  * Util para detectar ejercicios duplicados al anadir uno nuevo
  */
 export function useRoutineAllExercises(routineId) {
+  const id = String(routineId)
   return useQuery({
-    queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES, routineId],
-    queryFn: () => fetchRoutineAllExercises(routineId),
+    queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES, id],
+    queryFn: () => fetchRoutineAllExercises(id),
     enabled: !!routineId
   })
 }
@@ -145,8 +150,39 @@ export function useSetFavoriteRoutine() {
 
   return useMutation({
     mutationFn: ({ routineId, isFavorite }) => apiSetFavoriteRoutine({ routineId, isFavorite }),
-    onSuccess: () => {
+    onMutate: async ({ routineId, isFavorite }) => {
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.ROUTINE] })
+
+      const prevRoutines = queryClient.getQueryData([QUERY_KEYS.ROUTINES])
+      const prevRoutine = queryClient.getQueryData([QUERY_KEYS.ROUTINE, routineId])
+        ?? queryClient.getQueryData([QUERY_KEYS.ROUTINE, String(routineId)])
+
+      // Optimistic update en la lista
+      queryClient.setQueryData([QUERY_KEYS.ROUTINES], old =>
+        old?.map(r => r.id === routineId
+          ? { ...r, is_favorite: isFavorite }
+          : isFavorite ? { ...r, is_favorite: false } : r
+        )
+      )
+
+      // Optimistic update en el detalle
+      queryClient.setQueriesData({ queryKey: [QUERY_KEYS.ROUTINE] }, old =>
+        old?.id === routineId ? { ...old, is_favorite: isFavorite } : old
+      )
+
+      return { prevRoutines, prevRoutine, routineId }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevRoutines) queryClient.setQueryData([QUERY_KEYS.ROUTINES], context.prevRoutines)
+      if (context?.prevRoutine) {
+        queryClient.setQueryData([QUERY_KEYS.ROUTINE, context.routineId], context.prevRoutine)
+        queryClient.setQueryData([QUERY_KEYS.ROUTINE, String(context.routineId)], context.prevRoutine)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE] })
     },
   })
 }
@@ -261,7 +297,7 @@ export function useMoveRoutineExerciseToDay() {
 const DEBOUNCE_MS = 500
 
 export function useRoutineEditForm(routine, routineId) {
-  const [editForm, setEditForm] = useState({ name: '', description: '', goal: '', cycle_days: 7 })
+  const [editForm, setEditForm] = useState({ name: '', description: '' })
   const debounceRef = useRef(null)
   const updateRoutine = useUpdateRoutine()
 
@@ -270,8 +306,6 @@ export function useRoutineEditForm(routine, routineId) {
       setEditForm({
         name: routine.name || '',
         description: routine.description || '',
-        goal: routine.goal || '',
-        cycle_days: routine.cycle_days || 7,
       })
     }
   }, [routine])
@@ -283,8 +317,6 @@ export function useRoutineEditForm(routine, routineId) {
       data: {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
-        goal: formData.goal.trim() || null,
-        cycle_days: parseInt(formData.cycle_days) || 7,
       },
     })
   }, [routineId, updateRoutine])

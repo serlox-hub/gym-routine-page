@@ -1,7 +1,8 @@
 import { colors } from '../../lib/styles.js'
 
-function Card({ children, className = '', onClick, style = {} }) {
+function Card({ children, className = '', onClick, style = {}, noHover = false }) {
   const clickableClasses = onClick ? 'cursor-pointer transition-colors' : ''
+  const enableHover = onClick && !noHover
 
   return (
     <div
@@ -12,8 +13,8 @@ function Card({ children, className = '', onClick, style = {} }) {
         borderColor: colors.border,
         ...style,
       }}
-      onMouseEnter={onClick ? (e) => e.currentTarget.style.backgroundColor = colors.bgAlt : undefined}
-      onMouseLeave={onClick ? (e) => e.currentTarget.style.backgroundColor = colors.bgSecondary : undefined}
+      onMouseEnter={enableHover ? (e) => e.currentTarget.style.backgroundColor = colors.bgAlt : undefined}
+      onMouseLeave={enableHover ? (e) => e.currentTarget.style.backgroundColor = colors.bgSecondary : undefined}
       onClick={onClick}
     >
       {children}

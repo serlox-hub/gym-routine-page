@@ -1,4 +1,4 @@
-import { View, Modal as RNModal, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Modal as RNModal, Pressable, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function Modal({
@@ -25,13 +25,12 @@ export default function Modal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <Pressable
-          onPress={onClose}
+        <View
           className={`flex-1 ${isBottom ? 'justify-end' : 'justify-center items-center p-4'}`}
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', paddingTop: insets.top }}
         >
-          <Pressable
-            onPress={(e) => e.stopPropagation()}
+          <Pressable onPress={onClose} style={StyleSheet.absoluteFillObject} />
+          <View
             className={`bg-surface-card border border-border ${isBottom ? 'w-full rounded-t-2xl' : 'w-full rounded-lg'} ${className}`}
             style={{
               maxWidth: isBottom ? undefined : 400,
@@ -40,11 +39,9 @@ export default function Modal({
               flexShrink: 1,
             }}
           >
-            <View style={{ flexShrink: 1 }}>
-              {children}
-            </View>
-          </Pressable>
-        </Pressable>
+            {children}
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </RNModal>
   )

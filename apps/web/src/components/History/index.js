@@ -1,2 +1,2 @@
 export { default as MonthlyCalendar } from './MonthlyCalendar.jsx'
-export { default as DurationChart } from './DurationChart.jsx'
+export { default as SessionInlineDetail } from './SessionInlineDetail.jsx'

@@ -5,7 +5,7 @@ function PlanBadge({ isPremium }) {
     return (
       <span
         className="px-2 py-0.5 text-xs font-medium rounded-full"
-        style={{ backgroundColor: 'rgba(210, 153, 34, 0.15)', color: colors.warning }}
+        style={{ backgroundColor: colors.successBg, color: colors.success }}
       >
         Premium
       </span>

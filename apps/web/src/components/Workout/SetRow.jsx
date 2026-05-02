@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CheckCircle2, FileText, Video, AlertCircle, Trophy } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { useIsPRSet } from './PRContext.jsx'
-import { NotesBadge } from '../ui/index.js'
 import SetDetailsModal from './SetDetailsModal.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs.jsx'
 import {
   MeasurementType,
   buildCompletedSetData,
   isSetDataValid,
-  metersToDistanceUnit
+  metersToDistanceUnit,
+  getNotifier,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -19,6 +20,8 @@ import { uploadVideo } from '../../lib/videoStorage.js'
 
 function SetRow({
   setNumber,
+  totalSets,
+  exerciseName,
   sessionExerciseId,
   exerciseId,
   measurementType = MeasurementType.WEIGHT_REPS,
@@ -27,10 +30,9 @@ function SetRow({
   distanceUnit = 'm',
   descansoSeg,
   previousSet,
+  isActive = false,
   onComplete,
   onUncomplete,
-  canRemove = false,
-  onRemove
 }) {
   const { t } = useTranslation()
   const isCompleted = useWorkoutStore(state => state.isSetCompleted(sessionExerciseId, setNumber))
@@ -105,8 +107,11 @@ function SetRow({
       const uploadedUrl = await uploadVideo(file, setUploadProgress)
       updateSetVideo({ sessionExerciseId, setNumber, videoUrl: uploadedUrl })
       setPendingVideoFile(null)
-    } catch {
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Video upload failed:', err)
       setVideoUploadError(true)
+      getNotifier()?.show(t('workout:set.videoUploadError'), 'error')
     } finally {
       setIsUploadingVideo(false)
     }
@@ -129,7 +134,7 @@ function SetRow({
         { weight, reps, time, distance, calories, level, pace },
         buildInfo(rir, notes, videoUrl, setType)
       )
-      onComplete(data, descansoSeg)
+      onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
     } else {
       updateSetDetails({
         sessionExerciseId,
@@ -154,15 +159,25 @@ function SetRow({
       { weight, reps, time, distance, calories, level, pace },
       buildInfo(rir, notes, videoUrl)
     )
-    onComplete(data, descansoSeg)
+    onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
   }
 
   const renderInputs = () => {
-    const props = { disabled: isCompleted }
+    const props = { disabled: isCompleted, hideUnits: true }
+
+    // Weight/reps: show as text when completed or pending (not active), as inputs only when active
+    if (measurementType === MeasurementType.WEIGHT_REPS && !isActive) {
+      return (
+        <>
+          <span className="flex-1 text-center" style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>{weight || '—'}</span>
+          <span className="flex-1 text-center" style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>{reps || '—'}</span>
+        </>
+      )
+    }
 
     switch (measurementType) {
       case MeasurementType.WEIGHT_REPS:
-        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} {...props} />
+        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} weightActive={isActive} {...props} />
       case MeasurementType.REPS_ONLY:
         return <RepsOnlyInputs reps={reps} setReps={setReps} {...props} />
       case MeasurementType.TIME:
@@ -193,80 +208,150 @@ function SetRow({
   const hasTextNote = !!setData?.notes
   const hasVideo = !!setData?.videoUrl
   const initialData = modalMode === 'edit' ? setData : cachedData
+  const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
 
-  return (
-    <div
-      className="flex items-center gap-3 py-2 px-3 rounded"
-      style={{
-        backgroundColor: isPR ? 'rgba(210, 153, 34, 0.15)' : isCompleted ? 'rgba(63, 185, 80, 0.1)' : colors.bgTertiary,
-        borderLeft: isPR ? `3px solid ${colors.warning}` : isCompleted ? `3px solid ${colors.success}` : '3px solid transparent',
-      }}
-    >
-      <div className="flex items-center gap-2 flex-1">
-        {renderInputs()}
-      </div>
+  const baseRowStyle = {
+    backgroundColor: isActive ? colors.successBg : 'transparent',
+    opacity: !isCompleted && !isActive ? 0.55 : 1,
+  }
 
-      {isCompleted && setData?.setType === 'dropset' && (
-        <span
-          className="px-1.5 py-0.5 rounded text-xs font-bold"
-          style={{ backgroundColor: colors.orangeBg, color: colors.orange }}
+  const setNumberStyle = {
+    textAlign: 'center',
+    color: isActive ? colors.success : colors.textSecondary,
+    fontSize: 14,
+    fontWeight: 700,
+  }
+
+  const smallBadgeStyle = {
+    backgroundColor: colors.bgTertiary,
+    borderRadius: 6,
+    padding: '4px 6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    border: 'none',
+  }
+
+  const renderCheckIndicator = () => {
+    if (isCompleted) {
+      return (
+        <button
+          onClick={handleCheckClick}
+          className="w-7 h-7 flex items-center justify-center hover:opacity-80"
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+          title={t('workout:set.unmark')}
         >
+          {isPR ? (
+            // 22px iguala el diámetro relleno real del CheckCircle2 (size=26 → r=10 en viewbox 24)
+            <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: colors.gold, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Trophy size={14} color={colors.bgPrimary} strokeWidth={2.5} />
+            </div>
+          ) : (
+            <CheckCircle2 size={26} color={colors.bgPrimary} fill={colors.success} strokeWidth={2.5} />
+          )}
+        </button>
+      )
+    }
+    if (isActive) {
+      return (
+        <button
+          onClick={handleCheckClick}
+          disabled={!isValid()}
+          className="w-7 h-7 flex items-center justify-center hover:opacity-80"
+          style={{ background: 'transparent', border: 'none', cursor: isValid() ? 'pointer' : 'default', opacity: isValid() ? 1 : 0.6 }}
+          title={t('workout:set.complete')}
+        >
+          <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${colors.success}`, display: 'inline-block' }} />
+        </button>
+      )
+    }
+    return (
+      <span className="w-7 h-7 flex items-center justify-center">
+        <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${colors.textMuted}`, display: 'inline-block' }} />
+      </span>
+    )
+  }
+
+  const trailingActions = (
+    <>
+      {isCompleted && setData?.setType === 'dropset' && (
+        <span className="px-1.5 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: colors.orangeBg, color: colors.orange }}>
           D
         </span>
       )}
-
-      {(isCompleted || isUploadingVideo || videoUploadError) && (
-        <NotesBadge
-          rir={setData?.rirActual}
-          hasNotes={hasTextNote}
-          hasVideo={hasVideo}
-          isUploadingVideo={isUploadingVideo}
-          uploadProgress={uploadProgress}
-          videoUploadError={videoUploadError}
-          onRetryUpload={handleRetryVideoUpload}
-          onClick={isCompleted ? handleEditClick : null}
-        />
+      {isCompleted && hasTextNote && (
+        <button onClick={handleEditClick} style={smallBadgeStyle} title={t('workout:set.notes')}>
+          <FileText size={13} color={colors.textSecondary} />
+        </button>
       )}
+      {videoUploadError && (
+        <button onClick={handleRetryVideoUpload} style={{ ...smallBadgeStyle, backgroundColor: colors.dangerBg }} title={t('common:buttons.retry')}>
+          <AlertCircle size={13} color={colors.danger} />
+        </button>
+      )}
+      {isUploadingVideo && (
+        <span style={{ ...smallBadgeStyle, padding: '3px 7px', cursor: 'default' }}>
+          <span style={{ color: colors.purple, fontSize: 11, fontWeight: 600 }}>{uploadProgress}%</span>
+        </span>
+      )}
+      {isCompleted && hasVideo && !isUploadingVideo && !videoUploadError && (
+        <button onClick={handleEditClick} style={smallBadgeStyle} title={t('workout:set.addVideo')}>
+          <Video size={13} color={colors.textSecondary} />
+        </button>
+      )}
+      {isCompleted && setData?.rirActual != null && (
+        <button onClick={handleEditClick} style={{ ...smallBadgeStyle, padding: '3px 7px' }} title={t('workout:set.rir')}>
+          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>@{setData.rirActual}</span>
+        </button>
+      )}
+      {renderCheckIndicator()}
+    </>
+  )
 
-      <button
-        onClick={handleCheckClick}
-        disabled={!isCompleted && !isValid()}
-        className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
-        style={{
-          backgroundColor: isCompleted ? colors.success : colors.border,
-          color: isCompleted ? colors.bgPrimary : isValid() ? colors.success : colors.textDisabled,
-          cursor: (!isCompleted && !isValid()) ? 'default' : 'pointer',
-          opacity: (!isCompleted && !isValid()) ? 0.5 : 1,
-        }}
-        title={isCompleted ? t('workout:set.unmark') : t('workout:set.complete')}
-      >
-        {isCompleted ? '✕' : '✓'}
-      </button>
+  return (
+    <>
+      {isWeightReps ? (
+        <div
+          className="grid items-center gap-3 py-2.5 px-2 rounded-lg"
+          style={{ gridTemplateColumns: '48px 1fr 1fr 132px', ...baseRowStyle }}
+        >
+          <span style={setNumberStyle}>{setNumber}</span>
+          {renderInputs()}
+          <div className="flex items-center justify-end gap-1.5">
+            {trailingActions}
+          </div>
+        </div>
+      ) : (
+        <div
+          className="flex items-center gap-3 py-2.5 px-2 rounded-lg"
+          style={baseRowStyle}
+        >
+          <span style={{ ...setNumberStyle, width: 48, flexShrink: 0 }}>{setNumber}</span>
+          <div className="flex items-center gap-2 flex-1">
+            {renderInputs()}
+          </div>
+          {trailingActions}
+        </div>
+      )}
 
       <SetDetailsModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleModalSubmit}
         mode={modalMode}
+        setNumber={setNumber}
         descansoSeg={descansoSeg}
         initialRir={initialData?.rirActual}
         initialNote={initialData?.notes}
         initialVideoUrl={initialData?.videoUrl}
         initialSetType={initialData?.setType}
         measurementType={measurementType}
+        weight={weight} setWeight={setWeight}
+        reps={reps} setReps={setReps}
+        weightUnit={weightUnit}
       />
-
-      {canRemove && !isCompleted && onRemove && (
-        <button
-          onClick={onRemove}
-          className="w-6 h-6 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
-          style={{ backgroundColor: colors.bgTertiary, color: colors.danger }}
-          title="Eliminar serie"
-        >
-          ×
-        </button>
-      )}
-    </div>
+    </>
   )
 }
 

@@ -4,7 +4,7 @@ import { Button, Modal, Input, Textarea } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { parseDecimal } from '@gym/shared'
 
-function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }) {
+function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg', isPending }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({
     weight: '',
@@ -51,14 +51,14 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label={`${t('body:weight.kg')} *`}
+          label={`${t('body:weight.label')} (${unit}) *`}
           type="number"
           step="0.1"
           min="0.1"
           max="500"
           value={form.weight}
           onChange={(e) => setForm(prev => ({ ...prev, weight: e.target.value }))}
-          placeholder="Ej: 75.5"
+          placeholder={t('body:weight.weightPlaceholder')}
           autoFocus
         />
 
@@ -66,7 +66,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, isPending }
           label={`${t('common:labels.notes')} (${t('common:labels.optional')})`}
           value={form.notes}
           onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-          placeholder="Ej: Después de desayunar"
+          placeholder={t('body:weight.notesPlaceholder')}
           rows={2}
         />
 

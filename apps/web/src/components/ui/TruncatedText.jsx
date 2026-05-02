@@ -25,7 +25,7 @@ function TruncatedText({ text, maxChars = MAX_CHARS, className = '', style = {} 
         <button
           onClick={handleToggle}
           className="ml-1 hover:underline"
-          style={{ color: colors.accent }}
+          style={{ color: colors.success }}
         >
           {isExpanded ? 'ver menos' : 'ver más'}
         </button>

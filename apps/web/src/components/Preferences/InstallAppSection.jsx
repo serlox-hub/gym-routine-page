@@ -32,7 +32,7 @@ function InstallAppSection() {
         {t('common:preferences.app')}
       </h2>
       <div className="flex items-start gap-3">
-        <Smartphone size={20} style={{ color: colors.accent }} className="mt-0.5 flex-shrink-0" />
+        <Smartphone size={20} color={colors.success} className="mt-0.5 flex-shrink-0" />
         <div className="flex-1">
           <p className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
             {t('common:preferences.addToHome')}
