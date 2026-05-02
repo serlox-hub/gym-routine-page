@@ -51,12 +51,12 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
                   {item.icon && (
                     <item.icon
                       size={18}
-                      color={item.danger ? colors.danger : item.accent ? colors.success : colors.textSecondary}
+                      color={item.danger ? colors.danger : colors.textSecondary}
                     />
                   )}
                   <Text
                     className="text-base"
-                    style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textPrimary }}
+                    style={{ color: item.danger ? colors.danger : colors.textPrimary }}
                   >
                     {item.label}
                   </Text>

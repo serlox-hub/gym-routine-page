@@ -88,7 +88,7 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
   }
 
   const menuItems = [
-    { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart, accent: true },
+    { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart },
     { icon: Copy, label: t('routine:duplicate'), onClick: handleDuplicate },
     { icon: Download, label: t('common:buttons.export'), onClick: handleExport },
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },

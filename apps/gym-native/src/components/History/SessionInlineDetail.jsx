@@ -579,7 +579,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
                 {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </Text>
               <DropdownMenu items={[
-                { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit, accent: true },
+                { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit },
                 { icon: Share2, label: t('common:buttons.share'), onPress: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
                 { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setShowDeleteConfirm(true), danger: true },
               ]} />

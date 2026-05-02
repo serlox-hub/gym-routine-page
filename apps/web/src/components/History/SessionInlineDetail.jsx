@@ -510,7 +510,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
                 {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </span>
               <DropdownMenu items={[
-                { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit, accent: true },
+                { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
                 { icon: Share2, label: t('common:buttons.share'), onClick: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
                 { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
               ]} />

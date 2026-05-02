@@ -82,9 +82,9 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
                 }}
                 disabled={item.disabled}
                 className={ITEM_CLASS}
-                style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textPrimary }}
+                style={{ color: item.danger ? colors.danger : colors.textPrimary }}
               >
-                {item.icon && <item.icon size={18} style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textSecondary }} />}
+                {item.icon && <item.icon size={18} style={{ color: item.danger ? colors.danger : colors.textSecondary }} />}
                 {item.label}
               </button>
             )
