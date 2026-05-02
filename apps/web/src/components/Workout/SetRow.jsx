@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, FileText, Video, AlertCircle } from 'lucide-react'
+import { CheckCircle2, FileText, Video, AlertCircle, Trophy } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { useIsPRSet } from './PRContext.jsx'
@@ -211,7 +211,7 @@ function SetRow({
   const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
 
   const baseRowStyle = {
-    backgroundColor: isPR ? colors.warningBg : isActive ? colors.successBg : 'transparent',
+    backgroundColor: isActive ? colors.successBg : 'transparent',
     opacity: !isCompleted && !isActive ? 0.55 : 1,
   }
 
@@ -242,7 +242,14 @@ function SetRow({
           style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
           title={t('workout:set.unmark')}
         >
-          <CheckCircle2 size={26} color={colors.bgPrimary} fill={colors.success} strokeWidth={2.5} />
+          {isPR ? (
+            // 22px iguala el diámetro relleno real del CheckCircle2 (size=26 → r=10 en viewbox 24)
+            <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: colors.gold, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Trophy size={14} color={colors.bgPrimary} strokeWidth={2.5} />
+            </div>
+          ) : (
+            <CheckCircle2 size={26} color={colors.bgPrimary} fill={colors.success} strokeWidth={2.5} />
+          )}
         </button>
       )
     }

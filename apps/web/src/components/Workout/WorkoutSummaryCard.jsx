@@ -51,16 +51,16 @@ function PRItem({ exerciseName, details }) {
       alignItems: 'center',
       gap: 8,
       padding: '8px 12px',
-      backgroundColor: C.warningBg,
+      backgroundColor: C.goldBg,
       borderRadius: 8,
-      borderLeft: `3px solid ${C.warning}`,
+      borderLeft: `3px solid ${C.gold}`,
     }}>
       <span style={{ fontSize: 14 }}>{TROPHY}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 13,
           fontWeight: 600,
-          color: C.warning,
+          color: C.gold,
           fontFamily: FONT,
         }}>
           {exerciseName}
@@ -117,7 +117,7 @@ function ExerciseRow({ name, setsCompleted, bestSet, hasPR }) {
           <span style={{ fontSize: 10 }}>{TROPHY}</span>
           <span style={{
             fontSize: 11,
-            color: C.warning,
+            color: C.gold,
             fontFamily: FONT,
             fontWeight: 600,
           }}>
@@ -223,12 +223,12 @@ const WorkoutSummaryCard = forwardRef(function WorkoutSummaryCard({ summaryData,
           <div style={{
             fontSize: 11,
             fontWeight: 700,
-            color: C.warning,
+            color: C.gold,
             letterSpacing: '1.5px',
             textTransform: 'uppercase',
             marginBottom: 10,
           }}>
-            Records personales
+            {t('workout:summary.personalRecords')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {prs.slice(0, 3).map((pr) => (

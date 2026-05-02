@@ -75,6 +75,7 @@ export const colors = {
   teal: '#88c6be',
   pink: '#db61a2',
   orange: '#FF6B35',
+  gold: '#F5B800',
   actionPrimary: '#BEFF00',
   textDark: '#0A0A0F',
 
@@ -85,6 +86,7 @@ export const colors = {
   successBgSubtle: 'rgba(190, 255, 0, 0.08)',
   warningBg: 'rgba(210, 153, 34, 0.15)',
   orangeBg: 'rgba(255, 107, 53, 0.15)',
+  goldBg: 'rgba(245, 184, 0, 0.15)',
   dangerBg: 'rgba(248, 81, 73, 0.1)',
   actionPrimaryBg: 'rgba(190, 255, 0, 0.15)',
   overlay: 'rgba(0, 0, 0, 0.85)',

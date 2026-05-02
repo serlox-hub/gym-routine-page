@@ -34,6 +34,8 @@ export default {
         'danger-bg': colors.dangerBg,
         'orange': colors.orange,
         'orange-bg': colors.orangeBg,
+        'gold': colors.gold,
+        'gold-bg': colors.goldBg,
         'action-primary': colors.actionPrimary,
         'action-primary-bg': colors.actionPrimaryBg,
         'text-dark': colors.textDark,

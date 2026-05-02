@@ -1,17 +1,19 @@
+import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
 import { formatPRNotificationText } from '@gym/shared'
 
 function PRNotification({ notification, onDismiss }) {
+  const { t } = useTranslation()
   if (!notification) return null
 
   return (
     <>
       <div
         className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-lg cursor-pointer max-w-sm w-[calc(100%-2rem)]"
-        style={{ backgroundColor: colors.warning, color: colors.black, animation: 'pr-slide-down 0.3s ease-out' }}
+        style={{ backgroundColor: colors.gold, color: colors.black, animation: 'pr-slide-down 0.3s ease-out' }}
         onClick={onDismiss}
       >
-        <div className="font-bold text-sm">Nuevo PR</div>
+        <div className="font-bold text-sm">{t('workout:summary.newPR')}</div>
         <div className="text-xs">
           {formatPRNotificationText(notification)}
         </div>

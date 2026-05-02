@@ -18,7 +18,7 @@ function PRItem({ exerciseName, details }) {
   const valueStr = details.map(d => `${d.newValue} ${d.unit}`).join(' · ')
   return (
     <View style={s.prItem}>
-      <Trophy size={16} color={colors.warning} />
+      <Trophy size={16} color={colors.gold} />
       <View style={s.prContent}>
         <Text style={s.prName} numberOfLines={1}>{exerciseName}</Text>
         <Text style={s.prValue}>{valueStr}</Text>
@@ -38,7 +38,7 @@ function ExerciseRow({ name, setsCompleted, bestSet, hasPR }) {
       </View>
       {hasPR && bestSet ? (
         <View style={s.exercisePR}>
-          <Trophy size={11} color={colors.warning} />
+          <Trophy size={11} color={colors.gold} />
           <Text style={s.exercisePRText}>{bestSet}</Text>
         </View>
       ) : null}
@@ -196,7 +196,7 @@ const s = StyleSheet.create({
   prsSectionTitle: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.warning,
+    color: colors.gold,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     marginBottom: 10,
@@ -207,10 +207,10 @@ const s = StyleSheet.create({
     gap: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(210, 153, 34, 0.15)',
+    backgroundColor: colors.goldBg,
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: colors.warning,
+    borderLeftColor: colors.gold,
     marginBottom: 6,
   },
   prContent: {
@@ -219,7 +219,7 @@ const s = StyleSheet.create({
   prName: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.warning,
+    color: colors.gold,
   },
   prValue: {
     fontSize: 11,
@@ -264,7 +264,7 @@ const s = StyleSheet.create({
   },
   exercisePRText: {
     fontSize: 11,
-    color: colors.warning,
+    color: colors.gold,
     fontWeight: '600',
   },
   moreText: {
