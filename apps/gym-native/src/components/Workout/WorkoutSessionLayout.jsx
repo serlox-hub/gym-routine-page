@@ -20,9 +20,10 @@ import useWorkoutStore from '../../stores/workoutStore'
 import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider } from '@gym/shared'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
+import { navigationRef } from '../../navigation/navigationRef'
 import { colors } from '../../lib/styles'
 
-export default function WorkoutSessionLayout({ title, navigation, fallbackRoute: _fallbackRoute = 'Home' }) {
+export default function WorkoutSessionLayout({ title }) {
   const { t } = useTranslation()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
@@ -43,7 +44,16 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
   const { checkSetForPR, clearSetPR, prSets, prNotification, dismissPR } = useSessionPRDetection()
-  const endSessionMutation = useEndSession()
+  const endSessionMutation = useEndSession({
+    onSuccess: () => {
+      if (navigationRef.isReady()) {
+        navigationRef.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs', state: { routes: [{ name: 'Home' }] } }],
+        })
+      }
+    },
+  })
   const abandonSessionMutation = useAbandonSession()
   const addSessionExerciseMutation = useAddSessionExercise()
   const removeSessionExerciseMutation = useRemoveSessionExercise()
@@ -122,11 +132,7 @@ export default function WorkoutSessionLayout({ title, navigation, fallbackRoute:
   }
 
   const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    endSessionMutation.mutate({ overallFeeling, notes }, {
-      onSuccess: () => {
-        navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
-      },
-    })
+    endSessionMutation.mutate({ overallFeeling, notes })
   }
 
   const handleAbandonWorkout = () => {

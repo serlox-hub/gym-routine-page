@@ -119,7 +119,7 @@ export function useStartSession({ onStartError } = {}) {
   })
 }
 
-export function useEndSession() {
+export function useEndSession({ onSuccess: onSuccessCb } = {}) {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startedAt = useWorkoutStore(state => state.startedAt)
@@ -161,10 +161,16 @@ export function useEndSession() {
 
       return { session: sessionData, detectedPRs }
     },
-    onSuccess: () => {
-      endSession()
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+    onSuccess: (data) => {
+      onSuccessCb?.(data)
+      // Diferir la limpieza del store para que la transición de navegación del
+      // consumer (p.ej. el overlay nativo) se aplique antes de que la UI de sesión
+      // se desmonte. Si no, la pantalla de debajo aparece un instante.
+      setTimeout(() => {
+        endSession()
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+      }, 0)
     },
   })
 }
