@@ -1,5 +1,6 @@
 import { MeasurementType, WEIGHT_MEASUREMENT_TYPES, REPS_MEASUREMENT_TYPES } from './measurementTypes.js'
 import { calculateEpley1RM } from './workoutCalculations.js'
+import { t } from '../i18n/index.js'
 
 // ============================================
 // TRACKABLE METRICS PER MEASUREMENT TYPE
@@ -237,7 +238,7 @@ export function detectNewPersonalRecords(currentStats, previousBests, measuremen
           details.push({
             type: 'repPR',
             repCount,
-            label: 'PR a reps',
+            label: t('workout:pr.repPR', { repCount }),
             newValue: weight,
             oldValue: previousAtN,
             unit: 'kg',
@@ -342,7 +343,7 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, measure
           repCount: N,
           value: setData.weight,
           previousValue: preSessionPerRep[N] ?? null,
-          label: 'PR a reps',
+          label: t('workout:pr.repPR', { repCount: N }),
           unit: 'kg',
         })
         if (!updatedRunningBests.bestPerReps) updatedRunningBests.bestPerReps = { ...runningPerRep }
@@ -496,10 +497,22 @@ export function findPRSetNumbers(sets, prData) {
 // PR NOTIFICATION FORMATTING
 // ============================================
 
+// Prioridad de records cuando una serie dispara varios PRs simultáneos.
+// repPR (más específico) > best1rm (señal de fuerza global) > bestWeight (heaviest).
+// Resto en orden de aparición.
+const RECORD_PRIORITY = { repPR: 0, best1rm: 1, bestWeight: 2 }
+
 export function formatPRNotificationText(notification) {
-  const record = notification.records[0]
+  const records = notification.records
+  if (!records || records.length === 0) return notification.exerciseName
+  const sorted = [...records].sort((a, b) => {
+    const pa = RECORD_PRIORITY[a.type] ?? 99
+    const pb = RECORD_PRIORITY[b.type] ?? 99
+    return pa - pb
+  })
+  const record = sorted[0]
   const improvement = record.previousValue
-    ? ` (anterior: ${record.previousValue})`
+    ? ` (${t('workout:set.previous').toLowerCase()}: ${record.previousValue})`
     : ''
   return `${notification.exerciseName}: ${record.label} ${record.value} ${record.unit}${improvement}`
 }

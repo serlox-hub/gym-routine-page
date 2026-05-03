@@ -795,6 +795,38 @@ describe('sessionStatsCalculation', () => {
       }
       expect(formatPRNotificationText(notification)).toBe('Sentadilla: 1RM 120 kg')
     })
+
+    it('formatea repPR con su label interpolado', () => {
+      const notification = {
+        exerciseName: 'Press Banca',
+        records: [{ type: 'repPR', repCount: 5, label: 'PR a 5 reps', value: 110, unit: 'kg', previousValue: 100 }],
+      }
+      expect(formatPRNotificationText(notification)).toBe('Press Banca: PR a 5 reps 110 kg (anterior: 100)')
+    })
+
+    it('prioriza repPR sobre best1rm y bestWeight cuando coexisten', () => {
+      const notification = {
+        exerciseName: 'Press Banca',
+        records: [
+          { type: 'bestWeight', label: 'Peso', value: 110, unit: 'kg', previousValue: 100 },
+          { type: 'best1rm', label: '1RM Est.', value: 132, unit: 'kg', previousValue: 120 },
+          { type: 'repPR', repCount: 5, label: 'PR a 5 reps', value: 110, unit: 'kg', previousValue: 100 },
+        ],
+      }
+      // repPR tiene la prioridad más alta
+      expect(formatPRNotificationText(notification)).toBe('Press Banca: PR a 5 reps 110 kg (anterior: 100)')
+    })
+
+    it('prioriza best1rm sobre bestWeight si no hay repPR', () => {
+      const notification = {
+        exerciseName: 'Press Banca',
+        records: [
+          { type: 'bestWeight', label: 'Peso', value: 110, unit: 'kg', previousValue: 100 },
+          { type: 'best1rm', label: '1RM Est.', value: 132, unit: 'kg', previousValue: 120 },
+        ],
+      }
+      expect(formatPRNotificationText(notification)).toBe('Press Banca: 1RM Est. 132 kg (anterior: 120)')
+    })
   })
 
   // ============================================

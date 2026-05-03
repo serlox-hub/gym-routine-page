@@ -144,6 +144,7 @@
     "oneRM": "1RM",
     "volume": "Volumen",
     "time": "Tiempo",
-    "distance": "Distancia"
+    "distance": "Distancia",
+    "repPR": "PR a {{repCount}} reps"
   }
 }
