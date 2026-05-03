@@ -22,11 +22,16 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
   const { generateAndShare, isGenerating } = useShareWorkoutSummary()
   const { data: sessionCount } = useCompletedSessionCount()
 
+  // Slides: tarjeta resumen + 1 PR card por cada rep-PR detectado.
   const slides = useMemo(() => {
     if (!summaryData) return []
     const result = [{ kind: 'summary' }]
     for (const pr of summaryData.prs || []) {
-      result.push({ kind: 'pr', pr })
+      for (const detail of pr.details || []) {
+        if (detail.type === 'repPR') {
+          result.push({ kind: 'pr', exerciseName: pr.exerciseName, record: detail })
+        }
+      }
     }
     return result
   }, [summaryData])
@@ -66,7 +71,7 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
           {item.kind === 'summary' ? (
             <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
           ) : (
-            <PRCard pr={item.pr} date={summaryData.date} />
+            <PRCard exerciseName={item.exerciseName} record={item.record} date={summaryData.date} />
           )}
         </View>
       </View>
@@ -82,7 +87,7 @@ export default function WorkoutSummaryModal({ summaryData, isOpen, onClose }) {
             {slide.kind === 'summary' ? (
               <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
             ) : (
-              <PRCard pr={slide.pr} date={summaryData.date} />
+              <PRCard exerciseName={slide.exerciseName} record={slide.record} date={summaryData.date} />
             )}
           </ViewShot>
         ))}

@@ -19,11 +19,16 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
   const { generateAndShare, generateAndDownload, isGenerating } = useShareWorkoutSummary()
   const { data: sessionCount } = useCompletedSessionCount()
 
+  // Slides: tarjeta resumen + 1 PR card por cada rep-PR detectado.
   const slides = useMemo(() => {
     if (!summaryData) return []
     const result = [{ kind: 'summary' }]
     for (const pr of summaryData.prs || []) {
-      result.push({ kind: 'pr', pr })
+      for (const detail of pr.details || []) {
+        if (detail.type === 'repPR') {
+          result.push({ kind: 'pr', exerciseName: pr.exerciseName, record: detail })
+        }
+      }
     }
     return result
   }, [summaryData])
@@ -71,7 +76,8 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
             ) : (
               <PRCard
                 ref={cardRefs.current[i]}
-                pr={slide.pr}
+                exerciseName={slide.exerciseName}
+                record={slide.record}
                 date={summaryData.date}
               />
             )}
@@ -127,7 +133,7 @@ function WorkoutSummaryModal({ summaryData, onClose }) {
                   {slide.kind === 'summary' ? (
                     <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
                   ) : (
-                    <PRCard pr={slide.pr} date={summaryData.date} />
+                    <PRCard exerciseName={slide.exerciseName} record={slide.record} date={summaryData.date} />
                   )}
                 </div>
               </div>

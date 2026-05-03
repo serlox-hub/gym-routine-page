@@ -23,12 +23,18 @@ export default function WorkoutSummary() {
 
   const summaryData = location.state?.summaryData
 
-  // Slides: tarjeta resumen + 1 PR card por cada ejercicio con records
+  // Slides: tarjeta resumen + 1 PR card por cada rep-PR detectado.
+  // Ignoramos otros tipos (bestWeight, best1rm, volumen, etc.) — solo se
+  // surfacian en la sección de PRs de la tarjeta resumen.
   const slides = useMemo(() => {
     if (!summaryData) return []
     const result = [{ kind: 'summary' }]
     for (const pr of summaryData.prs || []) {
-      result.push({ kind: 'pr', pr })
+      for (const detail of pr.details || []) {
+        if (detail.type === 'repPR') {
+          result.push({ kind: 'pr', exerciseName: pr.exerciseName, record: detail })
+        }
+      }
     }
     return result
   }, [summaryData])
@@ -82,7 +88,8 @@ export default function WorkoutSummary() {
             ) : (
               <PRCard
                 ref={cardRefs.current[i]}
-                pr={slide.pr}
+                exerciseName={slide.exerciseName}
+                record={slide.record}
                 date={summaryData.date}
               />
             )}
@@ -129,7 +136,7 @@ export default function WorkoutSummary() {
                 {slide.kind === 'summary' ? (
                   <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
                 ) : (
-                  <PRCard pr={slide.pr} date={summaryData.date} />
+                  <PRCard exerciseName={slide.exerciseName} record={slide.record} date={summaryData.date} />
                 )}
               </div>
             </div>
