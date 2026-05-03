@@ -1,37 +1,93 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Share2, Download, Home } from 'lucide-react'
+import { Share2, Download, Home, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCompletedSessionCount } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 import { useShareWorkoutSummary } from '../hooks/useShareWorkoutSummary.js'
 import WorkoutSummaryCard from '../components/Workout/WorkoutSummaryCard.jsx'
+import PRCard from '../components/Workout/PRCard.jsx'
+
+const CARD_W = 540
+const CARD_H = 960
+const SCALE = 0.55
+const SCALED_W = CARD_W * SCALE
+const SCALED_H = CARD_H * SCALE
 
 export default function WorkoutSummary() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const cardRef = useRef(null)
   const { generateAndShare, generateAndDownload, isGenerating } = useShareWorkoutSummary()
   const { data: sessionCount } = useCompletedSessionCount()
 
   const summaryData = location.state?.summaryData
 
+  // Slides: tarjeta resumen + 1 PR card por cada ejercicio con records
+  const slides = useMemo(() => {
+    if (!summaryData) return []
+    const result = [{ kind: 'summary' }]
+    for (const pr of summaryData.prs || []) {
+      result.push({ kind: 'pr', pr })
+    }
+    return result
+  }, [summaryData])
+
+  // Refs a las tarjetas full-size (off-screen) para captura
+  const cardRefs = useRef([])
+  cardRefs.current = slides.map((_, i) => cardRefs.current[i] || { current: null })
+
+  const scrollerRef = useRef(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
+
   useEffect(() => {
     if (!summaryData) navigate('/', { replace: true })
   }, [summaryData, navigate])
 
+  const handleScroll = useCallback(() => {
+    const el = scrollerRef.current
+    if (!el) return
+    const slideStep = SCALED_W + 16
+    const idx = Math.round(el.scrollLeft / slideStep)
+    if (idx !== currentIndex && idx >= 0 && idx < slides.length) {
+      setCurrentIndex(idx)
+    }
+  }, [currentIndex, slides.length])
+
+  const goToSlide = useCallback((idx) => {
+    const el = scrollerRef.current
+    if (!el) return
+    const slideStep = SCALED_W + 16
+    el.scrollTo({ left: idx * slideStep, behavior: 'smooth' })
+  }, [])
+
   if (!summaryData) return <Navigate to="/" replace />
 
-  const handleShare = () => generateAndShare(cardRef.current, summaryData.date)
-  const handleDownload = () => generateAndDownload(cardRef.current, summaryData.date)
+  const handleShare = () => generateAndShare(cardRefs.current[currentIndex]?.current, summaryData.date)
+  const handleDownload = () => generateAndDownload(cardRefs.current[currentIndex]?.current, summaryData.date)
   const handleHome = () => navigate('/', { replace: true })
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bgPrimary }}>
-      {/* Card a tamaño real fuera de pantalla para captura */}
+      {/* Cards a tamaño real fuera de pantalla para captura */}
       <div style={{ position: 'fixed', left: -9999, top: 0, zIndex: -1 }}>
-        <WorkoutSummaryCard ref={cardRef} summaryData={summaryData} sessionNumber={sessionCount} />
+        {slides.map((slide, i) => (
+          <div key={i}>
+            {slide.kind === 'summary' ? (
+              <WorkoutSummaryCard
+                ref={cardRefs.current[i]}
+                summaryData={summaryData}
+                sessionNumber={sessionCount}
+              />
+            ) : (
+              <PRCard
+                ref={cardRefs.current[i]}
+                pr={slide.pr}
+                date={summaryData.date}
+              />
+            )}
+          </div>
+        ))}
       </div>
 
       <header className="px-4 pt-6 pb-2 text-center">
@@ -40,17 +96,84 @@ export default function WorkoutSummary() {
         </h1>
       </header>
 
-      <div className="flex-1 flex items-center justify-center overflow-hidden py-4 px-4">
-        <div style={{
-          transform: 'scale(0.55)',
-          transformOrigin: 'center center',
-          borderRadius: 16,
-          overflow: 'hidden',
-          boxShadow: `0 20px 60px ${colors.overlaySoft}`,
-          flexShrink: 0,
-        }}>
-          <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
+      {/* Carrusel scrolleable horizontal */}
+      <div className="flex-1 flex flex-col items-center justify-center overflow-hidden py-4">
+        <div
+          ref={scrollerRef}
+          onScroll={handleScroll}
+          style={{
+            display: 'flex',
+            gap: 16,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            scrollSnapType: 'x mandatory',
+            scrollbarWidth: 'none',
+            paddingInline: `calc(50% - ${SCALED_W / 2}px)`,
+            width: '100%',
+          }}
+        >
+          {slides.map((slide, i) => (
+            <div
+              key={i}
+              style={{
+                flexShrink: 0,
+                width: SCALED_W,
+                height: SCALED_H,
+                scrollSnapAlign: 'center',
+                borderRadius: 16,
+                overflow: 'hidden',
+                boxShadow: `0 20px 60px ${colors.overlaySoft}`,
+              }}
+            >
+              <div style={{ transform: `scale(${SCALE})`, transformOrigin: 'top left' }}>
+                {slide.kind === 'summary' ? (
+                  <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
+                ) : (
+                  <PRCard pr={slide.pr} date={summaryData.date} />
+                )}
+              </div>
+            </div>
+          ))}
         </div>
+
+        {slides.length > 1 && (
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              onClick={() => goToSlide(Math.max(0, currentIndex - 1))}
+              disabled={currentIndex === 0}
+              className="p-2 rounded-full disabled:opacity-30"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}
+              aria-label="Previous"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <div className="flex gap-1.5">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goToSlide(i)}
+                  aria-label={`Slide ${i + 1}`}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: i === currentIndex ? colors.success : colors.bgTertiary,
+                    transition: 'background-color 0.2s',
+                  }}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => goToSlide(Math.min(slides.length - 1, currentIndex + 1))}
+              disabled={currentIndex === slides.length - 1}
+              className="p-2 rounded-full disabled:opacity-30"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}
+              aria-label="Next"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
       </div>
 
       <div
