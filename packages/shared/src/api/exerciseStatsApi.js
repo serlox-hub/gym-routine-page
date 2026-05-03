@@ -45,13 +45,19 @@ export async function upsertExerciseSessionStats(statsArray) {
 // FETCH BESTS (para detección de PRs)
 // ============================================
 
-export async function fetchExerciseBests(exerciseIds) {
+export async function fetchExerciseBests(exerciseIds, { beforeDate } = {}) {
   if (!exerciseIds || exerciseIds.length === 0) return {}
 
-  const { data, error } = await getClient()
+  let query = getClient()
     .from('exercise_session_stats')
     .select('exercise_id, best_weight, best_reps, best_1rm, total_volume, best_time_seconds, best_distance_meters, best_pace_seconds, best_per_reps')
     .in('exercise_id', exerciseIds)
+
+  if (beforeDate) {
+    query = query.lt('session_date', beforeDate)
+  }
+
+  const { data, error } = await query
 
   if (error) throw error
 
@@ -281,7 +287,15 @@ export async function recalculateExercisePRs(exerciseId, afterDate) {
 export async function fetchSessionPRs(sessionId) {
   const { data, error } = await getClient()
     .from('exercise_session_stats')
-    .select('exercise_id, is_pr_weight, is_pr_reps, is_pr_1rm, is_pr_volume, is_pr_time, is_pr_distance, is_pr_pace')
+    .select(`
+      exercise_id,
+      best_weight, best_reps, best_1rm, total_volume,
+      best_time_seconds, best_distance_meters, best_pace_seconds,
+      best_per_reps,
+      is_pr_weight, is_pr_reps, is_pr_1rm, is_pr_volume,
+      is_pr_time, is_pr_distance, is_pr_pace,
+      pr_rep_counts
+    `)
     .eq('session_id', sessionId)
 
   if (error) throw error

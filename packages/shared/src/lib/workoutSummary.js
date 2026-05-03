@@ -2,7 +2,7 @@ import { formatSetValue } from './setUtils.js'
 import { buildPRsByExerciseMap } from './workoutCalculations.js'
 import { getExerciseName } from './exerciseUtils.js'
 import { fetchSessionDetail } from '../api/workoutSessionApi.js'
-import { fetchSessionPRs } from '../api/exerciseStatsApi.js'
+import { fetchSessionPRs, fetchExerciseBests } from '../api/exerciseStatsApi.js'
 import { fetchUserExerciseWeightUnits } from '../api/exerciseApi.js'
 import { transformSessionDetailData } from './workoutTransforms.js'
 import { t, getCurrentLocale } from '../i18n/index.js'
@@ -168,12 +168,25 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
 }
 
 /**
+ * Construye un detail de PR con type/newValue/oldValue/unit/repCount.
+ * Compatible con el shape que producen detectNewPersonalRecords y los formatters
+ * de prCardFormat.
+ */
+function buildPRDetail({ type, newValue, oldValue, unit, repCount }) {
+  return { type, newValue, oldValue: oldValue ?? null, unit, ...(repCount != null && { repCount }) }
+}
+
+/**
  * Construye datos del resumen desde los datos de SessionDetail (para compartir desde historial).
  *
  * @param {Object} session - de useSessionDetail (con .exercises[].exercise, .exercises[].sets)
- * @param {Array} sessionPRs - de useSessionPRs [{exercise_id, is_pr_weight, is_pr_reps, ...}]
+ * @param {Array} sessionPRs - de useSessionPRs (incluye stats y flags)
+ * @param {Object} previousBests - bests agregados de cada ejercicio ANTES de esta sesión
+ *                                 (de fetchExerciseBests con beforeDate). Se usa para
+ *                                 poblar oldValue en cada detail. Si se omite, los oldValue
+ *                                 quedan a null.
  */
-export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit = 'kg', weightUnitByExerciseId = {} } = {}) {
+export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit = 'kg', weightUnitByExerciseId = {}, previousBests = {} } = {}) {
   if (!session) return null
 
   const prMap = buildPRsByExerciseMap(sessionPRs)
@@ -186,19 +199,51 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
     hasPR: !!prMap[exercise?.id],
   }))
 
-  // Construir PRs con formato simplificado para la tarjeta
+  // Construir PRs con shape completo (type/oldValue/repCount) para alimentar
+  // las tarjetas de PR del carrusel.
   const prs = []
   for (const { exercise } of (session.exercises || [])) {
     const pr = prMap[exercise?.id]
     if (!pr) continue
     const unit = getUnit(exercise?.id)
+    const prevBests = previousBests[exercise?.id] || {}
     const details = []
-    if (pr.is_pr_weight && pr.best_weight) details.push({ label: t('workout:pr.weight'), newValue: pr.best_weight, unit })
-    if (pr.is_pr_1rm && pr.best_1rm) details.push({ label: t('workout:pr.oneRM'), newValue: pr.best_1rm, unit })
-    if (pr.is_pr_reps && pr.best_reps) details.push({ label: t('workout:pr.reps'), newValue: pr.best_reps, unit: 'reps' })
-    if (pr.is_pr_volume && pr.total_volume) details.push({ label: t('workout:pr.volume'), newValue: pr.total_volume, unit })
-    if (pr.is_pr_time && pr.best_time_seconds) details.push({ label: t('workout:pr.time'), newValue: pr.best_time_seconds, unit: 's' })
-    if (pr.is_pr_distance && pr.best_distance_meters) details.push({ label: t('workout:pr.distance'), newValue: pr.best_distance_meters, unit: 'm' })
+
+    if (pr.is_pr_weight && pr.best_weight) {
+      details.push(buildPRDetail({ type: 'bestWeight', newValue: pr.best_weight, oldValue: prevBests.bestWeight, unit }))
+    }
+    if (pr.is_pr_1rm && pr.best_1rm) {
+      details.push(buildPRDetail({ type: 'best1rm', newValue: pr.best_1rm, oldValue: prevBests.best1rm, unit }))
+    }
+    if (pr.is_pr_reps && pr.best_reps) {
+      details.push(buildPRDetail({ type: 'bestReps', newValue: pr.best_reps, oldValue: prevBests.bestReps, unit: 'reps' }))
+    }
+    if (pr.is_pr_volume && pr.total_volume) {
+      details.push(buildPRDetail({ type: 'totalVolume', newValue: pr.total_volume, oldValue: prevBests.totalVolume, unit }))
+    }
+    if (pr.is_pr_time && pr.best_time_seconds) {
+      details.push(buildPRDetail({ type: 'bestTimeSeconds', newValue: pr.best_time_seconds, oldValue: prevBests.bestTimeSeconds, unit: 's' }))
+    }
+    if (pr.is_pr_distance && pr.best_distance_meters) {
+      details.push(buildPRDetail({ type: 'bestDistanceMeters', newValue: pr.best_distance_meters, oldValue: prevBests.bestDistanceMeters, unit: 'm' }))
+    }
+
+    if (Array.isArray(pr.pr_rep_counts) && pr.best_per_reps) {
+      const prevPerReps = prevBests.bestPerReps || {}
+      for (const repCount of pr.pr_rep_counts) {
+        const key = String(repCount)
+        const newValue = pr.best_per_reps[key]
+        if (newValue == null) continue
+        details.push(buildPRDetail({
+          type: 'repPR',
+          newValue,
+          oldValue: prevPerReps[key] ?? null,
+          unit,
+          repCount,
+        }))
+      }
+    }
+
     if (details.length > 0) {
       prs.push({ exerciseName: getExerciseName(exercise), details })
     }
@@ -229,6 +274,17 @@ export async function fetchWorkoutSummary(sessionId, { weightUnit = 'kg' } = {})
   ])
   const session = transformSessionDetailData(rawSession)
   const exerciseIds = (session?.exercises || []).map(e => e.exercise?.id).filter(Boolean)
-  const weightUnitByExerciseId = await fetchUserExerciseWeightUnits(exerciseIds)
-  return buildWorkoutSummaryFromSession(session, prs, { weightUnit, weightUnitByExerciseId })
+
+  // Bests históricos hasta justo antes de esta sesión, para poblar oldValue
+  // en cada detail (línea "anterior · X" en las tarjetas de PR).
+  const [weightUnitByExerciseId, previousBests] = await Promise.all([
+    fetchUserExerciseWeightUnits(exerciseIds),
+    fetchExerciseBests(exerciseIds, { beforeDate: session.started_at }),
+  ])
+
+  return buildWorkoutSummaryFromSession(session, prs, {
+    weightUnit,
+    weightUnitByExerciseId,
+    previousBests,
+  })
 }

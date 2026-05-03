@@ -202,5 +202,37 @@ describe('workoutSummary', () => {
       expect(summary.prs).toHaveLength(0)
       expect(summary.exercises[0].hasPR).toBe(false)
     })
+
+    it('details llevan type/oldValue cuando se pasa previousBests', () => {
+      const previousBests = { 1: { bestWeight: 90, best1rm: 117 } }
+      const summary = buildWorkoutSummaryFromSession(session, sessionPRs, { previousBests })
+      const weight = summary.prs[0].details.find(d => d.type === 'bestWeight')
+      const onerm = summary.prs[0].details.find(d => d.type === 'best1rm')
+      expect(weight).toMatchObject({ type: 'bestWeight', newValue: 100, oldValue: 90, unit: 'kg' })
+      expect(onerm).toMatchObject({ type: 'best1rm', newValue: 127, oldValue: 117, unit: 'kg' })
+    })
+
+    it('details de pr_rep_counts generan registros tipo repPR con repCount y oldValue', () => {
+      const sessionPRsWithRepPR = [{
+        ...sessionPRs[0],
+        pr_rep_counts: [5, 8],
+        best_per_reps: { '5': 100, '8': 80 },
+      }]
+      const previousBests = {
+        1: { bestWeight: 90, best1rm: 117, bestPerReps: { '5': 95, '8': null } },
+      }
+      const summary = buildWorkoutSummaryFromSession(session, sessionPRsWithRepPR, { previousBests })
+      const repPRs = summary.prs[0].details.filter(d => d.type === 'repPR')
+      expect(repPRs).toHaveLength(2)
+      const at5 = repPRs.find(r => r.repCount === 5)
+      const at8 = repPRs.find(r => r.repCount === 8)
+      expect(at5).toMatchObject({ type: 'repPR', repCount: 5, newValue: 100, oldValue: 95 })
+      expect(at8).toMatchObject({ type: 'repPR', repCount: 8, newValue: 80, oldValue: null })
+    })
+
+    it('oldValue queda null si previousBests no se pasa', () => {
+      const summary = buildWorkoutSummaryFromSession(session, sessionPRs)
+      expect(summary.prs[0].details[0].oldValue).toBeNull()
+    })
   })
 })
