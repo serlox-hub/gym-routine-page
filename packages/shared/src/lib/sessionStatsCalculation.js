@@ -7,7 +7,7 @@ import { calculateEpley1RM } from './workoutCalculations.js'
 
 // Métricas calculadas para stats/charts (se guardan en exercise_session_stats)
 const METRIC_MAP = {
-  [MeasurementType.WEIGHT_REPS]: ['weight', 'reps', '1rm', 'volume'],
+  [MeasurementType.WEIGHT_REPS]: ['weight', 'reps', '1rm', 'volume', 'repPR'],
   [MeasurementType.REPS_ONLY]: ['reps'],
   [MeasurementType.TIME]: ['time'],
   [MeasurementType.WEIGHT_TIME]: ['weight', 'time'],
@@ -22,16 +22,10 @@ const METRIC_MAP = {
 }
 
 // Métricas que disparan PRs (subconjunto de METRIC_MAP).
-// Solo tipos con una métrica unificada clara disparan PRs:
-// - weight_reps: 1RM (combina peso×reps)
-// - reps_only: reps
-// - time: tiempo
-// - distance: distancia
-// - distance_pace: ritmo (combina distancia/tiempo)
-// Tipos compuestos sin fórmula unificada no disparan PRs:
-// - weight_time, weight_distance, distance_time, calories, level_*
+// weight_reps: modelo Strong/Hevy → weight (heaviest ever) + 1RM est. + repPR
+// (mejor peso por cada rep count exacto). Otros tipos: una métrica unificada.
 const PR_METRIC_MAP = {
-  [MeasurementType.WEIGHT_REPS]: ['1rm'],
+  [MeasurementType.WEIGHT_REPS]: ['1rm', 'weight', 'repPR'],
   [MeasurementType.REPS_ONLY]: ['reps'],
   [MeasurementType.TIME]: ['time'],
   [MeasurementType.WEIGHT_TIME]: [],
@@ -106,6 +100,20 @@ export function calculateSessionExerciseStats(sets, measurementType) {
     stats.bestPaceSeconds = paces.length > 0 ? Math.min(...paces) : null
   }
 
+  if (metrics.includes('repPR')) {
+    // Mejor peso de la sesión por cada rep_count exacto. Ej: { "5": 100, "8": 80 }
+    const perRep = {}
+    for (const s of sets) {
+      if (s.weight && s.reps_completed && s.weight > 0 && s.reps_completed > 0) {
+        const key = String(s.reps_completed)
+        if (!perRep[key] || s.weight > perRep[key]) {
+          perRep[key] = s.weight
+        }
+      }
+    }
+    stats.bestPerReps = Object.keys(perRep).length > 0 ? perRep : null
+  }
+
   return stats
 }
 
@@ -136,6 +144,14 @@ export function mergeExerciseStats(target, source) {
   if (source.bestPaceSeconds && (!target.bestPaceSeconds || source.bestPaceSeconds < target.bestPaceSeconds)) {
     target.bestPaceSeconds = source.bestPaceSeconds
   }
+  if (source.bestPerReps) {
+    if (!target.bestPerReps) target.bestPerReps = {}
+    for (const [reps, weight] of Object.entries(source.bestPerReps)) {
+      if (!target.bestPerReps[reps] || weight > target.bestPerReps[reps]) {
+        target.bestPerReps[reps] = weight
+      }
+    }
+  }
 }
 
 // ============================================
@@ -161,6 +177,7 @@ const DEFAULT_FLAGS = {
   isPrTime: false,
   isPrDistance: false,
   isPrPace: false,
+  prRepCounts: null,
 }
 
 export function detectNewPersonalRecords(currentStats, previousBests, measurementType) {
@@ -197,6 +214,40 @@ export function detectNewPersonalRecords(currentStats, previousBests, measuremen
         unit: PACE_FIELD.unit,
         improvement,
       })
+    }
+  }
+
+  // Rep-PR-por-rep-count (modelo Strong/Hevy). Solo dispara si previousBests
+  // tiene al menos una entrada en bestPerReps — sin eso no hay historial
+  // rep-by-rep para comparar (caso de primera sesión o transitorio).
+  if (!prMetrics || prMetrics.includes('repPR')) {
+    const currentBPR = currentStats.bestPerReps
+    const previousBPR = previousBests.bestPerReps
+    const hasRepPRHistory = previousBPR && Object.keys(previousBPR).length > 0
+    if (currentBPR && hasRepPRHistory) {
+      const prCounts = []
+      for (const [repsKey, weight] of Object.entries(currentBPR)) {
+        const repCount = parseInt(repsKey, 10)
+        const previousAtN = previousBPR[repsKey] ?? null
+        if (!previousAtN || weight > previousAtN) {
+          prCounts.push(repCount)
+          const improvement = previousAtN
+            ? Math.round(((weight - previousAtN) / previousAtN) * 100)
+            : null
+          details.push({
+            type: 'repPR',
+            repCount,
+            label: 'PR a reps',
+            newValue: weight,
+            oldValue: previousAtN,
+            unit: 'kg',
+            improvement,
+          })
+        }
+      }
+      if (prCounts.length > 0) {
+        flags.prRepCounts = prCounts.sort((a, b) => a - b)
+      }
     }
   }
 
@@ -268,6 +319,42 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, measure
     }
   }
 
+  // Rep-PR-por-rep-count (modelo Strong/Hevy): el set @ W kg × N reps es PR si W
+  // supera el mejor peso histórico a exactamente N reps, o si es la primera vez a
+  // N reps con historial general del ejercicio.
+  //
+  // Guard: solo dispara si preSessionBests.bestPerReps tiene al menos una entrada.
+  // Esto evita falsos positivos en la primera sesión del ejercicio (no hay historial
+  // de rep-by-rep) o durante el período transitorio antes de que el backfill llene
+  // best_per_reps en filas existentes.
+  if (metrics.includes('repPR') && setData.weight && setData.reps_completed) {
+    const preSessionPerRep = preSessionBests.bestPerReps
+    const hasRepPRHistory = preSessionPerRep && Object.keys(preSessionPerRep).length > 0
+
+    if (hasRepPRHistory) {
+      const N = setData.reps_completed
+      const runningPerRep = runningBests.bestPerReps || {}
+      const threshold = Math.max(runningPerRep[N] || 0, preSessionPerRep[N] || 0)
+
+      if (setData.weight > threshold) {
+        newRecords.push({
+          type: 'repPR',
+          repCount: N,
+          value: setData.weight,
+          previousValue: preSessionPerRep[N] ?? null,
+          label: 'PR a reps',
+          unit: 'kg',
+        })
+        if (!updatedRunningBests.bestPerReps) updatedRunningBests.bestPerReps = { ...runningPerRep }
+        updatedRunningBests.bestPerReps[N] = setData.weight
+      } else if ((runningPerRep[N] || 0) < setData.weight) {
+        // No es PR pero mejora el running bests interno
+        if (!updatedRunningBests.bestPerReps) updatedRunningBests.bestPerReps = { ...runningPerRep }
+        updatedRunningBests.bestPerReps[N] = setData.weight
+      }
+    }
+  }
+
   return { newRecords, updatedRunningBests }
 }
 
@@ -284,6 +371,8 @@ export function recalculatePRFlags(sessionsOrderedByDate) {
   for (let i = 0; i < sessionsOrderedByDate.length; i++) {
     const session = sessionsOrderedByDate[i]
     const isFirst = i === 0
+    // prRepCounts no se recalcula aquí — esta función es la versión cliente
+    // simplificada; la fuente de verdad es el RPC recalculate_exercise_prs.
     const flags = {
       isPrWeight: false,
       isPrReps: false,
@@ -292,6 +381,7 @@ export function recalculatePRFlags(sessionsOrderedByDate) {
       isPrTime: false,
       isPrDistance: false,
       isPrPace: false,
+      prRepCounts: null,
     }
 
     if (!isFirst) {

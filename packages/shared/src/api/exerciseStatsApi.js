@@ -21,6 +21,7 @@ export async function upsertExerciseSessionStats(statsArray) {
     best_time_seconds: s.bestTimeSeconds ?? null,
     best_distance_meters: s.bestDistanceMeters ?? null,
     best_pace_seconds: s.bestPaceSeconds ?? null,
+    best_per_reps: s.bestPerReps ?? null,
     is_pr_weight: s.isPrWeight ?? false,
     is_pr_reps: s.isPrReps ?? false,
     is_pr_1rm: s.isPr1rm ?? false,
@@ -28,6 +29,7 @@ export async function upsertExerciseSessionStats(statsArray) {
     is_pr_time: s.isPrTime ?? false,
     is_pr_distance: s.isPrDistance ?? false,
     is_pr_pace: s.isPrPace ?? false,
+    pr_rep_counts: s.prRepCounts ?? null,
   }))
 
   const { data, error } = await getClient()
@@ -48,7 +50,7 @@ export async function fetchExerciseBests(exerciseIds) {
 
   const { data, error } = await getClient()
     .from('exercise_session_stats')
-    .select('exercise_id, best_weight, best_reps, best_1rm, total_volume, best_time_seconds, best_distance_meters, best_pace_seconds')
+    .select('exercise_id, best_weight, best_reps, best_1rm, total_volume, best_time_seconds, best_distance_meters, best_pace_seconds, best_per_reps')
     .in('exercise_id', exerciseIds)
 
   if (error) throw error
@@ -65,6 +67,7 @@ export async function fetchExerciseBests(exerciseIds) {
         bestTimeSeconds: null,
         bestDistanceMeters: null,
         bestPaceSeconds: null,
+        bestPerReps: null,
         sessionCount: 0,
       }
     }
@@ -84,6 +87,15 @@ export async function fetchExerciseBests(exerciseIds) {
     if (t && (!b.bestTimeSeconds || t > b.bestTimeSeconds)) b.bestTimeSeconds = t
     if (d && (!b.bestDistanceMeters || d > b.bestDistanceMeters)) b.bestDistanceMeters = d
     if (p && (!b.bestPaceSeconds || p < b.bestPaceSeconds)) b.bestPaceSeconds = p
+    if (row.best_per_reps && typeof row.best_per_reps === 'object') {
+      if (!b.bestPerReps) b.bestPerReps = {}
+      for (const [reps, weight] of Object.entries(row.best_per_reps)) {
+        const numWeight = Number(weight) || 0
+        if (numWeight > 0 && (!b.bestPerReps[reps] || numWeight > b.bestPerReps[reps])) {
+          b.bestPerReps[reps] = numWeight
+        }
+      }
+    }
   }
 
   return bests
