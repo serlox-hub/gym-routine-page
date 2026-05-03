@@ -109,6 +109,35 @@ export function calculateSessionExerciseStats(sets, measurementType) {
   return stats
 }
 
+/**
+ * Combina dos stats del mismo ejercicio (ej. calentamiento + principal).
+ * Maxima los `best*`, suma `totalVolume` y `totalSets`, mínima `bestPaceSeconds`.
+ */
+export function mergeExerciseStats(target, source) {
+  if (source.bestWeight && (!target.bestWeight || source.bestWeight > target.bestWeight)) {
+    target.bestWeight = source.bestWeight
+  }
+  if (source.bestReps && (!target.bestReps || source.bestReps > target.bestReps)) {
+    target.bestReps = source.bestReps
+  }
+  if (source.best1rm && (!target.best1rm || source.best1rm > target.best1rm)) {
+    target.best1rm = source.best1rm
+  }
+  if (source.totalVolume) {
+    target.totalVolume = (target.totalVolume || 0) + source.totalVolume
+  }
+  target.totalSets = (target.totalSets || 0) + (source.totalSets || 0)
+  if (source.bestTimeSeconds && (!target.bestTimeSeconds || source.bestTimeSeconds > target.bestTimeSeconds)) {
+    target.bestTimeSeconds = source.bestTimeSeconds
+  }
+  if (source.bestDistanceMeters && (!target.bestDistanceMeters || source.bestDistanceMeters > target.bestDistanceMeters)) {
+    target.bestDistanceMeters = source.bestDistanceMeters
+  }
+  if (source.bestPaceSeconds && (!target.bestPaceSeconds || source.bestPaceSeconds < target.bestPaceSeconds)) {
+    target.bestPaceSeconds = source.bestPaceSeconds
+  }
+}
+
 // ============================================
 // PR DETECTION (END OF SESSION)
 // ============================================

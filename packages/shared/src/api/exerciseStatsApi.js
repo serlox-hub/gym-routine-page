@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { calculateSessionExerciseStats, mergeExerciseStats } from '../lib/sessionStatsCalculation.js'
 
 // ============================================
 // UPSERT SESSION STATS (al finalizar sesión)
@@ -156,6 +157,100 @@ export async function fetchExerciseAllTimeStats(exerciseId) {
 // ============================================
 // PR FLAGS UPDATE (para recalculación)
 // ============================================
+
+/**
+ * Recalcula `exercise_session_stats` para una sesión a partir de los `completed_sets`
+ * actuales y propaga los flags `is_pr_*` desde su fecha. Se llama tras editar/borrar
+ * un set en el historial para evitar que los stats queden desincronizados.
+ */
+export async function recalculateSessionStats(sessionId) {
+  if (!sessionId) return { affectedExerciseIds: [] }
+
+  const client = getClient()
+
+  const { data: session, error: sErr } = await client
+    .from('workout_sessions')
+    .select('user_id, started_at')
+    .eq('id', sessionId)
+    .single()
+  if (sErr) throw sErr
+
+  const { data: sessionExercises, error: seErr } = await client
+    .from('session_exercises')
+    .select('id, exercise_id, exercise:exercises!inner ( measurement_type )')
+    .eq('session_id', sessionId)
+  if (seErr) throw seErr
+
+  const { data: sets, error: setsErr } = await client
+    .from('completed_sets')
+    .select('session_exercise_id, weight, reps_completed, time_seconds, distance_meters, pace_seconds')
+    .eq('session_id', sessionId)
+  if (setsErr) throw setsErr
+
+  const exerciseMap = {}
+  const exerciseIds = new Set()
+  for (const se of sessionExercises || []) {
+    const mt = se.exercise?.measurement_type || 'weight_reps'
+    exerciseMap[se.id] = { exerciseId: se.exercise_id, measurementType: mt }
+    exerciseIds.add(se.exercise_id)
+  }
+
+  const setsByExercise = {}
+  for (const s of sets || []) {
+    if (!setsByExercise[s.session_exercise_id]) setsByExercise[s.session_exercise_id] = []
+    setsByExercise[s.session_exercise_id].push(s)
+  }
+
+  const statsPerExercise = {}
+  for (const [seId, exSets] of Object.entries(setsByExercise)) {
+    const info = exerciseMap[seId]
+    if (!info) continue
+    const stats = calculateSessionExerciseStats(exSets, info.measurementType)
+    if (!stats) continue
+    if (!statsPerExercise[info.exerciseId]) {
+      statsPerExercise[info.exerciseId] = stats
+    } else {
+      mergeExerciseStats(statsPerExercise[info.exerciseId], stats)
+    }
+  }
+
+  const statsRows = []
+  for (const exerciseId of exerciseIds) {
+    const stats = statsPerExercise[exerciseId]
+    if (!stats) continue
+    statsRows.push({
+      userId: session.user_id,
+      exerciseId,
+      sessionId,
+      sessionDate: session.started_at,
+      ...stats,
+    })
+  }
+
+  if (statsRows.length > 0) {
+    await upsertExerciseSessionStats(statsRows)
+  }
+
+  // Si tras la edición un ejercicio quedó sin sets en esta sesión, borrar la fila stale
+  // para que no perdure como PR fantasma.
+  const exercisesWithSets = new Set(statsRows.map(r => r.exerciseId))
+  const exercisesToDelete = Array.from(exerciseIds).filter(eid => !exercisesWithSets.has(eid))
+  if (exercisesToDelete.length > 0) {
+    const { error: delErr } = await client
+      .from('exercise_session_stats')
+      .delete()
+      .eq('session_id', sessionId)
+      .in('exercise_id', exercisesToDelete)
+    if (delErr) throw delErr
+  }
+
+  // Recalcula flags is_pr_* desde esta sesión hacia adelante para cada ejercicio afectado
+  await Promise.all(
+    Array.from(exerciseIds).map(eid => recalculateExercisePRs(eid, session.started_at))
+  )
+
+  return { affectedExerciseIds: Array.from(exerciseIds) }
+}
 
 export async function recalculateExercisePRs(exerciseId, afterDate) {
   const { error } = await getClient()

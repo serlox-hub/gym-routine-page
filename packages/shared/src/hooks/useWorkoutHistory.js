@@ -17,6 +17,7 @@ import {
   fetchExerciseAllTimeStats,
   fetchSessionPRs,
   recalculateExercisePRs,
+  recalculateSessionStats,
 } from '../api/exerciseStatsApi.js'
 import { transformSessionDetailData } from '../lib/workoutTransforms.js'
 import { localizeExercisesInList, localizeExercise } from '../lib/exerciseUtils.js'
@@ -204,9 +205,15 @@ export function useUpsertCompletedSet() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (setData) => upsertCompletedSet(setData),
+    mutationFn: async (setData) => {
+      const result = await upsertCompletedSet(setData)
+      // Recalcular stats y PRs para que ediciones post-sesión no dejen exercise_session_stats desincronizado
+      try { await recalculateSessionStats(setData.sessionId) } catch { /* no bloquear UI */ }
+      return result
+    },
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, 'prs', sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
     },
@@ -217,11 +224,14 @@ export function useDeleteCompletedSet() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ sessionId, sessionExerciseId, setNumber }) => {
-      return deleteCompletedSet({ sessionId, sessionExerciseId, setNumber })
+    mutationFn: async ({ sessionId, sessionExerciseId, setNumber }) => {
+      const result = await deleteCompletedSet({ sessionId, sessionExerciseId, setNumber })
+      try { await recalculateSessionStats(sessionId) } catch { /* no bloquear UI */ }
+      return result
     },
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, 'prs', sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
     },

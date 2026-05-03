@@ -8,6 +8,7 @@ import {
 import {
   calculateSessionExerciseStats,
   detectNewPersonalRecords,
+  mergeExerciseStats,
 } from '../lib/sessionStatsCalculation.js'
 import {
   fetchActiveSession,
@@ -281,31 +282,6 @@ async function computeSessionStats({ sessionId, sessionDate, userId, completedSe
   } catch {
     // No bloquear el fin de sesión si falla el cálculo de stats
     return []
-  }
-}
-
-function mergeExerciseStats(target, source) {
-  if (source.bestWeight && (!target.bestWeight || source.bestWeight > target.bestWeight)) {
-    target.bestWeight = source.bestWeight
-  }
-  if (source.bestReps && (!target.bestReps || source.bestReps > target.bestReps)) {
-    target.bestReps = source.bestReps
-  }
-  if (source.best1rm && (!target.best1rm || source.best1rm > target.best1rm)) {
-    target.best1rm = source.best1rm
-  }
-  if (source.totalVolume) {
-    target.totalVolume = (target.totalVolume || 0) + source.totalVolume
-  }
-  target.totalSets = (target.totalSets || 0) + (source.totalSets || 0)
-  if (source.bestTimeSeconds && (!target.bestTimeSeconds || source.bestTimeSeconds > target.bestTimeSeconds)) {
-    target.bestTimeSeconds = source.bestTimeSeconds
-  }
-  if (source.bestDistanceMeters && (!target.bestDistanceMeters || source.bestDistanceMeters > target.bestDistanceMeters)) {
-    target.bestDistanceMeters = source.bestDistanceMeters
-  }
-  if (source.bestPaceSeconds && (!target.bestPaceSeconds || source.bestPaceSeconds < target.bestPaceSeconds)) {
-    target.bestPaceSeconds = source.bestPaceSeconds
   }
 }
 

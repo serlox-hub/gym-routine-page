@@ -7,6 +7,7 @@ import {
   detectNewPersonalRecords,
   evaluateSetForPR,
   recalculatePRFlags,
+  mergeExerciseStats,
 } from './sessionStatsCalculation.js'
 
 describe('sessionStatsCalculation', () => {
@@ -700,6 +701,38 @@ describe('sessionStatsCalculation', () => {
         records: [{ label: '1RM', value: 120, unit: 'kg', previousValue: null }],
       }
       expect(formatPRNotificationText(notification)).toBe('Sentadilla: 1RM 120 kg')
+    })
+  })
+
+  // ============================================
+  // mergeExerciseStats
+  // ============================================
+
+  describe('mergeExerciseStats', () => {
+    it('toma el máximo de cada best y suma totalVolume y totalSets', () => {
+      const target = { bestWeight: 80, bestReps: 10, best1rm: 100, totalVolume: 500, totalSets: 3 }
+      mergeExerciseStats(target, { bestWeight: 100, bestReps: 8, best1rm: 95, totalVolume: 400, totalSets: 2 })
+      expect(target).toEqual({
+        bestWeight: 100,
+        bestReps: 10,
+        best1rm: 100,
+        totalVolume: 900,
+        totalSets: 5,
+      })
+    })
+
+    it('mantiene el bestPaceSeconds más bajo (menor = mejor)', () => {
+      const target = { bestPaceSeconds: 300 }
+      mergeExerciseStats(target, { bestPaceSeconds: 250 })
+      expect(target.bestPaceSeconds).toBe(250)
+    })
+
+    it('ignora source con valores undefined o 0', () => {
+      const target = { bestWeight: 100, totalSets: 4 }
+      mergeExerciseStats(target, { bestWeight: 0, totalSets: undefined, bestReps: 5 })
+      expect(target.bestWeight).toBe(100)
+      expect(target.bestReps).toBe(5)
+      expect(target.totalSets).toBe(4)
     })
   })
 })
