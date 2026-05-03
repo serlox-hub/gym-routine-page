@@ -159,11 +159,10 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
     exercises,
     prs: (detectedPRs || []).map(pr => ({
       exerciseName: pr.exerciseName,
-      details: pr.details.map(d => ({
-        label: d.label,
-        newValue: d.newValue,
-        unit: d.unit,
-      })),
+      // Preservamos type/oldValue/repCount para que las tarjetas de PR del
+      // carrusel puedan formatear correctamente ("× N reps", "anterior · X",
+      // "primera vez a N reps", etc.)
+      details: pr.details.map(d => ({ ...d })),
     })),
   }
 }
