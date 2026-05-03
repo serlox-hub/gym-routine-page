@@ -89,7 +89,9 @@ export default function BodyWeightChart({ records, unit = 'kg' }) {
             shiftPointerLabelX: -50,
             pointerLabelWidth: 100,
             pointerLabelHeight: 44,
-            activatePointersOnLongPress: false,
+            activatePointersOnLongPress: true,
+            activatePointersInstantlyOnTouch: true,
+            activatePointersDelay: 150,
             autoAdjustPointerLabelPosition: true,
             pointerLabelComponent: (items) => {
               const idx = items[0]?.index ?? lineData.findIndex(d => d.value === items[0]?.value)

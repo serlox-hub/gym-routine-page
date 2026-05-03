@@ -132,6 +132,10 @@ export default function ExerciseProgressChart({ sessions, measurementType, weigh
             radius: 5,
             pointerLabelWidth: 100,
             pointerLabelHeight: 40,
+            activatePointersOnLongPress: true,
+            activatePointersInstantlyOnTouch: true,
+            activatePointersDelay: 150,
+            autoAdjustPointerLabelPosition: true,
             pointerLabelComponent: (items) => (
               <View
                 className="rounded px-2 py-1"
