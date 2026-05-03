@@ -15,7 +15,10 @@ function StatBox({ value, label }) {
 }
 
 function PRItem({ exerciseName, details }) {
-  const valueStr = details.map(d => `${d.newValue} ${d.unit}`).join(' · ')
+  const valueStr = details.map(d => {
+    const label = d.label ? `${d.label} ` : ''
+    return `${label}${d.newValue} ${d.unit}`
+  }).join(' · ')
   return (
     <View style={s.prItem}>
       <Trophy size={16} color={colors.gold} />

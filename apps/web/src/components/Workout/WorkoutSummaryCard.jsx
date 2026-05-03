@@ -44,7 +44,10 @@ function StatBox({ value, label }) {
 }
 
 function PRItem({ exerciseName, details }) {
-  const valueStr = details.map(d => `${d.newValue} ${d.unit}`).join(' · ')
+  const valueStr = details.map(d => {
+    const label = d.label ? `${d.label} ` : ''
+    return `${label}${d.newValue} ${d.unit}`
+  }).join(' · ')
   return (
     <div style={{
       display: 'flex',
