@@ -1,5 +1,5 @@
-import { useMemo, useState, useRef } from 'react'
-import { View, Text, Pressable, Animated, useWindowDimensions } from 'react-native'
+import { useMemo, useState, useRef, useCallback } from 'react'
+import { View, Text, Pressable, Animated, PanResponder, useWindowDimensions } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { BarChart } from 'react-native-gifted-charts'
 import LinearGradient from 'react-native-linear-gradient'
@@ -18,6 +18,9 @@ import { colors, gradients, design } from '../../lib/styles'
 const CYCLE_LENGTH = 7
 const MAX_BACK = -12
 const SWIPE_THRESHOLD = design.swipeThreshold
+const LONG_PRESS_DELAY_MS = 250
+const TAP_MAX_DISTANCE_PX = 10
+const MOVE_CANCEL_THRESHOLD_PX = 8
 
 function SetupBanner() {
   const { t } = useTranslation()
@@ -93,32 +96,37 @@ function PaginationDots({ current, min, max }) {
   )
 }
 
-function StreakCard() {
+function StreakCard({ onScrubbingChange }) {
   const { t } = useTranslation()
   const { width: screenWidth } = useWindowDimensions()
+  const navigation = useNavigation()
   const goal = useTrainingGoal()
   const updatePreference = useUpdateTrainingGoal()
   const [cycleOffset, setCycleOffset] = useState(0)
+  const [focusedBarIndex, setFocusedBarIndex] = useState(-1)
   const translateX = useRef(new Animated.Value(0)).current
   const touchStartX = useRef(0)
   const isAnimating = useRef(false)
   const offsetRef = useRef(cycleOffset)
   offsetRef.current = cycleOffset
+  const chartWidthRef = useRef(0)
+  const barDataRef = useRef([])
+  const chartTouchActiveRef = useRef(false)
+  const longPressTimerRef = useRef(null)
+  const scrubbingRef = useRef(false)
+  const pressInfoRef = useRef({ time: 0, locationX: 0, pageX: 0 })
+  const onScrubbingChangeRef = useRef(onScrubbingChange)
+  onScrubbingChangeRef.current = onScrubbingChange
 
-  const handleTouchStart = (e) => {
-    if (isAnimating.current) return
-    touchStartX.current = e.nativeEvent.pageX
+  const setScrubbing = (active) => {
+    if (scrubbingRef.current === active) return
+    scrubbingRef.current = active
+    onScrubbingChangeRef.current?.(active)
   }
 
-  const handleTouchEnd = (e) => {
-    if (isAnimating.current) return
-    const diff = e.nativeEvent.pageX - touchStartX.current
-    if (Math.abs(diff) < SWIPE_THRESHOLD) return
-
-    const direction = diff > 0 ? -1 : 1
+  const triggerSwipe = useCallback((direction) => {
     const newOffset = offsetRef.current + direction
     if (newOffset < MAX_BACK || newOffset > 0) return
-
     isAnimating.current = true
     const slideOut = direction > 0 ? -screenWidth : screenWidth
     Animated.timing(translateX, { toValue: slideOut, duration: design.slideAnimDuration, useNativeDriver: true }).start(() => {
@@ -129,6 +137,22 @@ function StreakCard() {
         isAnimating.current = false
       })
     })
+  }, [screenWidth, translateX])
+
+  const handleTouchStart = (e) => {
+    if (isAnimating.current) return
+    touchStartX.current = e.nativeEvent.pageX
+  }
+
+  const handleTouchEnd = (e) => {
+    if (isAnimating.current) return
+    if (chartTouchActiveRef.current) {
+      chartTouchActiveRef.current = false
+      return
+    }
+    const diff = e.nativeEvent.pageX - touchStartX.current
+    if (Math.abs(diff) < SWIPE_THRESHOLD) return
+    triggerSwipe(diff > 0 ? -1 : 1)
   }
 
   const { streak, restCycles = [], sessions = [], daysPerCycle, weekStartDay = 'monday' } = goal.isConfigured ? goal : {}
@@ -157,6 +181,73 @@ function StreakCard() {
     const { start, end } = getCycleDateRange(CYCLE_LENGTH, referenceDate, weekStartDay)
     return `${formatShortDate(start)} – ${formatShortDate(end)}`
   }, [referenceDate, weekStartDay])
+
+  const barIndexFromX = (x) => {
+    const w = chartWidthRef.current
+    const data = barDataRef.current
+    if (!w || !data.length) return -1
+    const slot = w / data.length
+    return Math.max(0, Math.min(data.length - 1, Math.floor(x / slot)))
+  }
+
+  const chartPanResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponderCapture: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponderCapture: () => true,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: (e) => {
+      chartTouchActiveRef.current = true
+      const { locationX, pageX } = e.nativeEvent
+      pressInfoRef.current = { time: Date.now(), locationX, pageX }
+      const idx = barIndexFromX(locationX)
+      longPressTimerRef.current = setTimeout(() => {
+        setScrubbing(true)
+        const item = barDataRef.current[idx]
+        setFocusedBarIndex(item?.durationMinutes > 0 ? idx : -1)
+      }, LONG_PRESS_DELAY_MS)
+    },
+    onPanResponderMove: (e, gs) => {
+      if (scrubbingRef.current) {
+        const idx = barIndexFromX(e.nativeEvent.locationX)
+        const item = barDataRef.current[idx]
+        const next = item?.durationMinutes > 0 ? idx : -1
+        setFocusedBarIndex((prev) => (prev === next ? prev : next))
+        return
+      }
+      if (Math.abs(gs.dx) > MOVE_CANCEL_THRESHOLD_PX) {
+        clearTimeout(longPressTimerRef.current)
+      }
+    },
+    onPanResponderRelease: (e, gs) => {
+      clearTimeout(longPressTimerRef.current)
+      if (scrubbingRef.current) {
+        setScrubbing(false)
+        setFocusedBarIndex(-1)
+        return
+      }
+      const elapsed = Date.now() - pressInfoRef.current.time
+      const dx = Math.abs(gs.dx)
+      const dy = Math.abs(gs.dy)
+      if (dx < TAP_MAX_DISTANCE_PX && dy < TAP_MAX_DISTANCE_PX && elapsed < LONG_PRESS_DELAY_MS) {
+        const idx = barIndexFromX(pressInfoRef.current.locationX)
+        const item = barDataRef.current[idx]
+        if (item?.durationMinutes > 0 && item.dateStr) {
+          navigation.navigate('History', { date: item.dateStr })
+        }
+        return
+      }
+      if (Math.abs(gs.dx) >= SWIPE_THRESHOLD) {
+        triggerSwipe(gs.dx > 0 ? -1 : 1)
+      }
+    },
+    onPanResponderTerminate: () => {
+      clearTimeout(longPressTimerRef.current)
+      setScrubbing(false)
+      setFocusedBarIndex(-1)
+      chartTouchActiveRef.current = false
+    },
+  }), [navigation, triggerSwipe])
 
   if (goal.isLoading) {
     return (
@@ -194,6 +285,8 @@ function StreakCard() {
       value: d.durationMinutes > 0 ? d.durationMinutes : emptyBarValue,
       label: d.label,
       durationMinutes: d.durationMinutes,
+      dateStr: d.dateStr,
+      disablePress: true,
       frontColor: showLime ? gradients.lime[1] : colors.borderSubtle,
       gradientColor: showLime ? gradients.lime[0] : colors.borderSubtle,
       labelTextStyle: {
@@ -203,6 +296,7 @@ function StreakCard() {
       },
     }
   })
+  barDataRef.current = barData
 
   return (
     <View className="mb-4">
@@ -282,7 +376,11 @@ function StreakCard() {
           </View>
 
           {/* Chart */}
-          <View style={{ marginLeft: -10 }}>
+          <View
+            style={{ marginLeft: -10 }}
+            onLayout={(e) => { chartWidthRef.current = e.nativeEvent.layout.width }}
+            {...chartPanResponder.panHandlers}
+          >
             <BarChart
               data={barData}
               maxValue={chartMax}
@@ -303,6 +401,7 @@ function StreakCard() {
               noOfSections={3}
               adjustToWidth
               showGradient={!viewedIsRest}
+              focusedBarIndex={focusedBarIndex}
               renderTooltip={(item) => {
                 if (!item.durationMinutes) return null
                 return (

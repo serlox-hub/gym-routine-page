@@ -6,6 +6,7 @@ import {
   formatRelativeDate,
   getDaysDifference,
   getDateKey,
+  parseDateInput,
 } from './dateUtils.js'
 
 describe('dateUtils', () => {
@@ -90,6 +91,28 @@ describe('dateUtils', () => {
 
     it('maneja fechas sin hora', () => {
       expect(getDateKey('2024-01-15')).toBe('2024-01-15')
+    })
+  })
+
+  describe('parseDateInput', () => {
+    it('devuelve la misma instancia si recibe un Date', () => {
+      const d = new Date('2024-06-15T12:00:00Z')
+      expect(parseDateInput(d)).toBe(d)
+    })
+
+    it('parsea YYYY-MM-DD como medianoche local (sin desplazamiento de zona horaria)', () => {
+      const d = parseDateInput('2024-06-15')
+      expect(d.getFullYear()).toBe(2024)
+      expect(d.getMonth()).toBe(5)
+      expect(d.getDate()).toBe(15)
+      expect(d.getHours()).toBe(0)
+    })
+
+    it('parsea ISO timestamp con hora', () => {
+      const d = parseDateInput('2024-06-15T14:30:00Z')
+      expect(d.getFullYear()).toBe(2024)
+      expect(d.getMonth()).toBe(5)
+      expect(d.getDate()).toBe(15)
     })
   })
 })

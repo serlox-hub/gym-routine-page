@@ -32,7 +32,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
   const hasNextPage = isDay ? hasDayNext : hasGlobalNext
   const isFetchingNextPage = isDay ? fetchingDayNext : fetchingGlobalNext
 
-  const handleSessionClick = (sessionId, date) => { onClose(); navigate('/history', { state: { sessionId, sessionDate: date } }) }
+  const handleSessionClick = (sessionId, date) => { onClose(); navigate('/history', { state: { sessionId, date } }) }
   const stats = useMemo(() => calculateExerciseStats(summarySessions, measurementType), [summarySessions, measurementType])
 
   return (

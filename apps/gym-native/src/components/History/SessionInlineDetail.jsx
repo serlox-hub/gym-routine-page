@@ -460,7 +460,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         weightUnit={weightUnit}
         onSessionClick={(sid, date) => {
           setShowHistory(false)
-          navigation.navigate('MainTabs', { screen: 'History', params: { sessionId: sid, sessionDate: date } })
+          navigation.navigate('MainTabs', { screen: 'History', params: { sessionId: sid, date } })
         }}
       />
     </Card>

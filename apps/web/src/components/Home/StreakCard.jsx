@@ -93,6 +93,7 @@ function PaginationDots({ current, min, max }) {
 
 function StreakCard() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const goal = useTrainingGoal()
   const updatePreference = useUpdateTrainingGoal()
   const [cycleOffset, setCycleOffset] = useState(0)
@@ -340,13 +341,26 @@ function StreakCard() {
                     )
                   }}
                 />
-                <Bar dataKey="barValue" radius={[design.barRadius, design.barRadius, design.barRadius, design.barRadius]} maxBarSize={40}>
-                  {webChartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={!viewedIsRest && entry.durationMinutes > 0 ? 'url(#barGradient)' : colors.borderSubtle}
-                    />
-                  ))}
+                <Bar
+                  dataKey="barValue"
+                  radius={[design.barRadius, design.barRadius, design.barRadius, design.barRadius]}
+                  maxBarSize={40}
+                  onClick={(data) => {
+                    if (data?.durationMinutes > 0 && data.dateStr) {
+                      navigate('/history', { state: { date: data.dateStr } })
+                    }
+                  }}
+                >
+                  {webChartData.map((entry, index) => {
+                    const clickable = !viewedIsRest && entry.durationMinutes > 0
+                    return (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={clickable ? 'url(#barGradient)' : colors.borderSubtle}
+                        cursor={clickable ? 'pointer' : 'default'}
+                      />
+                    )
+                  })}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

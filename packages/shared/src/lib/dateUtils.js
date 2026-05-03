@@ -58,3 +58,17 @@ export function getDaysDifference(date1, date2 = new Date()) {
 export function getDateKey(dateStr) {
   return dateStr.split('T')[0]
 }
+
+/**
+ * Parses a date input into a Date. Accepts a Date instance, an ISO timestamp,
+ * or YYYY-MM-DD (interpreted as local midnight to avoid timezone shifts).
+ * @param {Date|string} date
+ * @returns {Date}
+ */
+export function parseDateInput(date) {
+  if (date instanceof Date) return date
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return new Date(`${date}T00:00:00`)
+  }
+  return new Date(date)
+}

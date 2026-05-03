@@ -91,7 +91,7 @@ export default function ExerciseCard({
           routineDayId={routineDayId}
           onSessionClick={(sessionId, date) => {
             setShowHistory(false)
-            navigation.navigate('MainTabs', { screen: 'History', params: { sessionId, sessionDate: date } })
+            navigation.navigate('MainTabs', { screen: 'History', params: { sessionId, date } })
           }}
         />
       </>

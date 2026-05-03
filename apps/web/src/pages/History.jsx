@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react'
-import { useWorkoutHistory, formatTime, groupSessionsByDate } from '@gym/shared'
+import { useWorkoutHistory, formatTime, groupSessionsByDate, parseDateInput } from '@gym/shared'
 import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
 import { MonthlyCalendar } from '../components/History/index.js'
 import SessionInlineDetail from '../components/History/SessionInlineDetail.jsx'
@@ -18,39 +18,34 @@ function History() {
   const [selectedDateKey, setSelectedDateKey] = useState(null)
   const autoSelectedRef = useRef(null)
 
-  // Navegar a sesión específica si viene por location.state
+  // Navegar a un día (con sesión opcional) si viene por location.state.
+  // `date` acepta ISO timestamp o YYYY-MM-DD. `sessionId` es opcional: si está y existe en el día, se abre esa; si no, la primera del día.
+  const incomingDate = location.state?.date
   const incomingSessionId = location.state?.sessionId
-  const incomingSessionDate = location.state?.sessionDate
   useEffect(() => {
-    if (!incomingSessionId) return
+    if (!incomingDate) return
 
-    // Cambiar al mes de la sesión si es diferente al actual
-    if (incomingSessionDate) {
-      const sessionDate = new Date(incomingSessionDate)
-      if (sessionDate.getFullYear() !== currentDate.getFullYear() || sessionDate.getMonth() !== currentDate.getMonth()) {
-        setCurrentDate(sessionDate)
-        return
-      }
+    const target = parseDateInput(incomingDate)
+    if (target.getFullYear() !== currentDate.getFullYear() || target.getMonth() !== currentDate.getMonth()) {
+      setCurrentDate(target)
+      return
     }
 
     if (!sessions || sessions.length === 0) return
-    const sessionsByDate = groupSessionsByDate(sessions)
-    for (const [dateKey, daySessions] of sessionsByDate) {
-      const match = daySessions.find(s => s.id === incomingSessionId)
-      if (match) {
-        setSelectedDateKey(dateKey)
-        setSelectedSessions(daySessions)
-        setSelectedSessionId(incomingSessionId)
-        autoSelectedRef.current = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
-        window.history.replaceState({}, '')
-        return
-      }
-    }
-  }, [incomingSessionId, incomingSessionDate, sessions, currentDate])
+    const dateKey = target.toDateString()
+    const daySessions = groupSessionsByDate(sessions).get(dateKey) ?? []
+    const sessionToOpen = (incomingSessionId && daySessions.find(s => s.id === incomingSessionId)) || daySessions[0]
+
+    setSelectedDateKey(dateKey)
+    setSelectedSessions(daySessions.length ? daySessions : null)
+    setSelectedSessionId(sessionToOpen?.id ?? null)
+    autoSelectedRef.current = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
+    window.history.replaceState({}, '')
+  }, [incomingDate, incomingSessionId, sessions, currentDate])
 
   // Auto-seleccionar día de hoy al cargar (skip si hay incoming)
   useEffect(() => {
-    if (incomingSessionId) return
+    if (incomingDate) return
     if (!sessions || sessions.length === 0) return
     const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
     if (autoSelectedRef.current === monthKey) return
@@ -67,7 +62,7 @@ function History() {
       setSelectedSessions(null)
       setSelectedSessionId(null)
     }
-  }, [incomingSessionId, sessions, currentDate])
+  }, [incomingDate, sessions, currentDate])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
