@@ -3,15 +3,14 @@ import { View, Text, FlatList, Pressable, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import ViewShot from 'react-native-view-shot'
-import { Share2, Home } from 'lucide-react-native'
+import { Share2, Home, X } from 'lucide-react-native'
 import { useCompletedSessionCount } from '@gym/shared'
 import { useShareWorkoutSummary } from '../../hooks/useShareWorkoutSummary'
-import WorkoutSummaryCard from './WorkoutSummaryCard'
-import PRCard from './PRCard'
+import WorkoutSummaryCard, { SUMMARY_CARD_ASPECT } from './WorkoutSummaryCard'
+import PRCard, { PR_CARD_ASPECT } from './PRCard'
 import { colors } from '../../lib/styles'
 
 const CARD_W = 540
-const CARD_H = 960
 
 function goHome(navigation) {
   navigation.reset({
@@ -27,7 +26,6 @@ export default function WorkoutSummaryScreen({ route, navigation }) {
 
   const summaryData = route?.params?.summaryData
 
-  // Slides: tarjeta resumen + 1 PR card por cada ejercicio con records
   // Slides: tarjeta resumen + 1 PR card por cada rep-PR detectado.
   const slides = useMemo(() => {
     if (!summaryData) return []
@@ -50,8 +48,25 @@ export default function WorkoutSummaryScreen({ route, navigation }) {
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const screenWidth = Dimensions.get('window').width
-  // El preview escala el card 540x960 al ancho de pantalla menos un poco de margen
-  const previewScale = Math.min((screenWidth - 32) / CARD_W, 0.7)
+
+  // Medimos el área disponible y calculamos width que cabe en alto/ancho.
+  // Usamos el aspect MÁS ALTO (summary card es más alto que PR card) para
+  // que TODOS los slides quepan dentro del área. Después cada card se
+  // renderiza con ese width.
+  const [carouselH, setCarouselH] = useState(0)
+  const previewW = useMemo(() => {
+    const maxW = screenWidth - 32
+    // El summary card es el más alto (aspect menor); su altura limita el width.
+    const tallestAspect = Math.min(SUMMARY_CARD_ASPECT, PR_CARD_ASPECT)
+    if (!carouselH) return Math.min(maxW, 540)
+    const availableH = carouselH - 36 // dots + breathing room
+    const wByHeight = availableH * tallestAspect
+    return Math.min(maxW, wByHeight)
+  }, [screenWidth, carouselH])
+  const summaryPreviewH = previewW / SUMMARY_CARD_ASPECT
+  const prPreviewH = previewW / PR_CARD_ASPECT
+  const slideH = Math.max(summaryPreviewH, prPreviewH)
+
   const slideWidth = screenWidth
 
   useEffect(() => {
@@ -71,21 +86,26 @@ export default function WorkoutSummaryScreen({ route, navigation }) {
     if (ref) generateAndShare(ref, summaryData?.date)
   }, [currentIndex, generateAndShare, summaryData])
 
-  const handleDismiss = () => goHome(navigation)
+  const fromHistory = route?.params?.fromHistory
+  const handleDismiss = () => {
+    if (fromHistory) navigation.goBack()
+    else goHome(navigation)
+  }
 
   if (!summaryData) return null
 
   const renderSlide = ({ item }) => (
-    <View style={{ width: slideWidth, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ width: CARD_W * previewScale, height: CARD_H * previewScale, overflow: 'hidden', borderRadius: 16 }}>
-        <View style={{ transform: [{ scale: previewScale }, { translateX: -CARD_W * (1 - previewScale) / 2 }, { translateY: -CARD_H * (1 - previewScale) / 2 }] }}>
-          {item.kind === 'summary' ? (
-            <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
-          ) : (
-            <PRCard exerciseName={item.exerciseName} record={item.record} date={summaryData.date} />
-          )}
-        </View>
-      </View>
+    <View style={{ width: slideWidth, height: slideH, alignItems: 'center', justifyContent: 'center' }}>
+      {item.kind === 'summary' ? (
+        <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} width={previewW} />
+      ) : (
+        <PRCard
+          exerciseName={item.exerciseName}
+          record={item.record}
+          date={summaryData.date}
+          width={previewW}
+        />
+      )}
     </View>
   )
 
@@ -108,17 +128,20 @@ export default function WorkoutSummaryScreen({ route, navigation }) {
         <Text className="text-primary text-xl font-bold text-center">{t('workout:summary.title')}</Text>
       </View>
 
-      <View className="flex-1 justify-center">
-        <FlatList
-          data={slides}
-          keyExtractor={(_, i) => `slide-${i}`}
-          renderItem={renderSlide}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onViewableItemsChanged={handleViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-        />
+      <View className="flex-1 justify-center" onLayout={(e) => setCarouselH(e.nativeEvent.layout.height)}>
+        <View style={{ height: slideH }}>
+          <FlatList
+            data={slides}
+            extraData={previewW}
+            keyExtractor={(_, i) => `slide-${i}`}
+            renderItem={renderSlide}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onViewableItemsChanged={handleViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+          />
+        </View>
 
         {slides.length > 1 ? (
           <View className="flex-row justify-center gap-2 mt-4">
@@ -166,9 +189,11 @@ export default function WorkoutSummaryScreen({ route, navigation }) {
             borderColor: colors.border,
           }}
         >
-          <Home size={16} color={colors.textPrimary} />
+          {fromHistory
+            ? <X size={16} color={colors.textPrimary} />
+            : <Home size={16} color={colors.textPrimary} />}
           <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
-            {t('common:nav.home')}
+            {fromHistory ? t('common:buttons.close') : t('common:nav.home')}
           </Text>
         </Pressable>
       </View>

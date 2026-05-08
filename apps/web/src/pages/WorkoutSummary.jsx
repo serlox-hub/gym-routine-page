@@ -1,18 +1,15 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Share2, Download, Home, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Share2, Download, Home, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCompletedSessionCount } from '@gym/shared'
 import { colors } from '../lib/styles.js'
 import { useShareWorkoutSummary } from '../hooks/useShareWorkoutSummary.js'
-import WorkoutSummaryCard from '../components/Workout/WorkoutSummaryCard.jsx'
-import PRCard from '../components/Workout/PRCard.jsx'
+import WorkoutSummaryCard, { SUMMARY_CARD_ASPECT } from '../components/Workout/WorkoutSummaryCard.jsx'
+import PRCard, { PR_CARD_ASPECT } from '../components/Workout/PRCard.jsx'
 
-const CARD_W = 540
-const CARD_H = 960
-const SCALE = 0.55
-const SCALED_W = CARD_W * SCALE
-const SCALED_H = CARD_H * SCALE
+// El preview se acota al menor entre el ancho disponible y un máximo razonable
+const MAX_PREVIEW_W = 360
 
 export default function WorkoutSummary() {
   const { t } = useTranslation()
@@ -22,10 +19,9 @@ export default function WorkoutSummary() {
   const { data: sessionCount } = useCompletedSessionCount()
 
   const summaryData = location.state?.summaryData
+  const fromHistory = location.state?.fromHistory
 
   // Slides: tarjeta resumen + 1 PR card por cada rep-PR detectado.
-  // Ignoramos otros tipos (bestWeight, best1rm, volumen, etc.) — solo se
-  // surfacian en la sección de PRs de la tarjeta resumen.
   const slides = useMemo(() => {
     if (!summaryData) return []
     const result = [{ kind: 'summary' }]
@@ -45,33 +41,63 @@ export default function WorkoutSummary() {
 
   const scrollerRef = useRef(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [containerW, setContainerW] = useState(0)
+  const [containerH, setContainerH] = useState(0)
+
+  // Calculamos previewW respetando ancho y alto del contenedor.
+  // El summary card es el más alto (aspect menor); su altura limita.
+  const tallestAspect = Math.min(SUMMARY_CARD_ASPECT, PR_CARD_ASPECT)
+  const previewW = (() => {
+    const maxByW = Math.min(containerW || MAX_PREVIEW_W, MAX_PREVIEW_W)
+    if (!containerH) return maxByW
+    const availH = containerH - 60 // dots + breathing room
+    const maxByH = availH * tallestAspect
+    return Math.max(120, Math.min(maxByW, maxByH))
+  })()
+  const summaryPreviewH = previewW / SUMMARY_CARD_ASPECT
+  const prPreviewH = previewW / PR_CARD_ASPECT
+  const slideH = Math.max(summaryPreviewH, prPreviewH)
 
   useEffect(() => {
     if (!summaryData) navigate('/', { replace: true })
   }, [summaryData, navigate])
 
+  useEffect(() => {
+    const el = scrollerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerW(entry.contentRect.width)
+      setContainerH(entry.contentRect.height)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const handleScroll = useCallback(() => {
     const el = scrollerRef.current
     if (!el) return
-    const slideStep = SCALED_W + 16
+    const slideStep = previewW + 16
     const idx = Math.round(el.scrollLeft / slideStep)
     if (idx !== currentIndex && idx >= 0 && idx < slides.length) {
       setCurrentIndex(idx)
     }
-  }, [currentIndex, slides.length])
+  }, [currentIndex, slides.length, previewW])
 
   const goToSlide = useCallback((idx) => {
     const el = scrollerRef.current
     if (!el) return
-    const slideStep = SCALED_W + 16
+    const slideStep = previewW + 16
     el.scrollTo({ left: idx * slideStep, behavior: 'smooth' })
-  }, [])
+  }, [previewW])
 
   if (!summaryData) return <Navigate to="/" replace />
 
   const handleShare = () => generateAndShare(cardRefs.current[currentIndex]?.current, summaryData.date)
   const handleDownload = () => generateAndDownload(cardRefs.current[currentIndex]?.current, summaryData.date)
-  const handleHome = () => navigate('/', { replace: true })
+  const handleDismiss = () => {
+    if (fromHistory) navigate(-1)
+    else navigate('/', { replace: true })
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bgPrimary }}>
@@ -115,8 +141,9 @@ export default function WorkoutSummary() {
             overflowY: 'hidden',
             scrollSnapType: 'x mandatory',
             scrollbarWidth: 'none',
-            paddingInline: `calc(50% - ${SCALED_W / 2}px)`,
+            paddingInline: `calc(50% - ${previewW / 2}px)`,
             width: '100%',
+            flexShrink: 0,
           }}
         >
           {slides.map((slide, i) => (
@@ -124,21 +151,19 @@ export default function WorkoutSummary() {
               key={i}
               style={{
                 flexShrink: 0,
-                width: SCALED_W,
-                height: SCALED_H,
+                width: previewW,
+                height: slideH,
                 scrollSnapAlign: 'center',
-                borderRadius: 16,
-                overflow: 'hidden',
-                boxShadow: `0 20px 60px ${colors.overlaySoft}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <div style={{ transform: `scale(${SCALE})`, transformOrigin: 'top left' }}>
-                {slide.kind === 'summary' ? (
-                  <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} />
-                ) : (
-                  <PRCard exerciseName={slide.exerciseName} record={slide.record} date={summaryData.date} />
-                )}
-              </div>
+              {slide.kind === 'summary' ? (
+                <WorkoutSummaryCard summaryData={summaryData} sessionNumber={sessionCount} width={previewW} />
+              ) : (
+                <PRCard exerciseName={slide.exerciseName} record={slide.record} date={summaryData.date} width={previewW} />
+              )}
             </div>
           ))}
         </div>
@@ -212,7 +237,7 @@ export default function WorkoutSummary() {
           </button>
         </div>
         <button
-          onClick={handleHome}
+          onClick={handleDismiss}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm"
           style={{
             backgroundColor: colors.bgTertiary,
@@ -220,8 +245,8 @@ export default function WorkoutSummary() {
             border: `1px solid ${colors.border}`,
           }}
         >
-          <Home size={16} />
-          {t('common:nav.home')}
+          {fromHistory ? <X size={16} /> : <Home size={16} />}
+          {fromHistory ? t('common:buttons.close') : t('common:nav.home')}
         </button>
       </div>
     </div>
