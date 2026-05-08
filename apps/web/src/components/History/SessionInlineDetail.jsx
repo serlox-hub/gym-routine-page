@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, FileText, Video, SlidersHorizontal, AlertCircle } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs } from '../../hooks/useWorkout.js'
@@ -7,7 +8,6 @@ import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '
 import SetNotesView from '../Workout/SetNotesView.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
-import WorkoutSummaryModal from '../Workout/WorkoutSummaryModal.jsx'
 import { uploadVideo } from '../../lib/videoStorage.js'
 import {
   SENSATION_LABELS,
@@ -406,6 +406,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
 
 function SessionInlineDetail({ sessionId, onSessionDeleted }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { data: session, isLoading, error } = useSessionDetail(sessionId)
   const { data: sessionPRs } = useSessionPRs(sessionId)
   const deleteSession = useDeleteSession()
@@ -415,7 +416,6 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
 
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [summaryData, setSummaryData] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
@@ -514,7 +514,10 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
               </span>
               <DropdownMenu items={[
                 { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
-                { icon: Share2, label: t('common:buttons.share'), onClick: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
+                { icon: Share2, label: t('common:buttons.share'), onClick: async () => {
+                  const summaryData = await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })
+                  navigate('/workout/summary', { state: { summaryData, fromHistory: true } })
+                } },
                 { icon: Trash2, label: t('common:buttons.delete'), onClick: () => setShowDeleteConfirm(true), danger: true },
               ]} />
             </>
@@ -633,13 +636,6 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
         notes={selectedSet?.notes}
         videoUrl={selectedSet?.video_url}
       />
-
-      {summaryData && (
-        <WorkoutSummaryModal
-          summaryData={summaryData}
-          onClose={() => setSummaryData(null)}
-        />
-      )}
 
       <ConfirmModal
         isOpen={showDeleteConfirm}

@@ -6,7 +6,7 @@ import { Trash2, ChevronRight, Share2, Pencil, Plus, FileText, Video, Trophy, Sl
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
-import { SetNotesView, WorkoutSummaryModal, ExerciseHistoryModal, SetDetailsModal } from '../Workout'
+import { SetNotesView, ExerciseHistoryModal, SetDetailsModal } from '../Workout'
 import { uploadVideo } from '../../lib/videoStorage'
 import {
   SENSATION_LABELS,
@@ -480,7 +480,6 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
 
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [summaryData, setSummaryData] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
@@ -583,7 +582,10 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
               </Text>
               <DropdownMenu items={[
                 { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit },
-                { icon: Share2, label: t('common:buttons.share'), onPress: async () => setSummaryData(await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })) },
+                { icon: Share2, label: t('common:buttons.share'), onPress: async () => {
+                  const summaryData = await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })
+                  navigation.navigate('WorkoutSummary', { summaryData, fromHistory: true })
+                } },
                 { icon: Trash2, label: t('common:buttons.delete'), onPress: () => setShowDeleteConfirm(true), danger: true },
               ]} />
             </>
@@ -706,12 +708,6 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
         onClose={() => setSelectedSet(null)}
         notes={selectedSet?.notes}
         videoUrl={selectedSet?.video_url}
-      />
-
-      <WorkoutSummaryModal
-        summaryData={summaryData}
-        isOpen={!!summaryData}
-        onClose={() => setSummaryData(null)}
       />
 
       <ConfirmModal
