@@ -1,14 +1,14 @@
 import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Timer, Trophy } from 'lucide-react-native'
-import { useWeeklyStats, useMonthlySessionCount, formatDurationHoursMinutes } from '@gym/shared'
+import { useWeeklyStats, useWeeklyPRCount, formatDurationHoursMinutes } from '@gym/shared'
 import { Card } from '../ui'
 import { colors, design } from '../../lib/styles'
 
 function StatsRow() {
   const { t } = useTranslation()
   const { totalMinutes, isLoading: loadingWeekly, isError: errorWeekly } = useWeeklyStats()
-  const { count, isLoading: loadingMonthly, isError: errorMonthly } = useMonthlySessionCount()
+  const { count, isLoading: loadingPRs, isError: errorPRs } = useWeeklyPRCount()
   const { hours, minutes } = formatDurationHoursMinutes(totalMinutes)
 
   const durationParts = hours > 0
@@ -29,12 +29,12 @@ function StatsRow() {
         </Text>
       </Card>
       <Card className="flex-1 p-4">
-        <Trophy size={16} color={colors.purple} />
+        <Trophy size={16} color={colors.gold} />
         <Text style={{ color: colors.textPrimary, fontSize: design.statValueSize.large, fontWeight: '700', letterSpacing: -0.5, marginTop: 8 }}>
-          {loadingMonthly || errorMonthly ? '—' : String(count)}
+          {loadingPRs || errorPRs ? '—' : String(count)}
         </Text>
         <Text style={{ color: colors.textSecondary, fontSize: design.labelSize, fontWeight: '500' }}>
-          {t('common:home.thisMonth')}
+          {t('common:home.prsThisWeek')}
         </Text>
       </Card>
     </View>

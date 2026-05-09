@@ -85,7 +85,7 @@ export const QUERY_KEYS = {
   EQUIPMENT_TYPES: 'equipment-types',
   LAST_SESSION_FOR_ROUTINE: 'last-session-for-routine',
   WEEKLY_SESSION_STATS: 'weekly-session-stats',
-  MONTHLY_SESSION_COUNT: 'monthly-session-count',
+  WEEKLY_PR_COUNT: 'weekly-pr-count',
 }
 
 // Timer

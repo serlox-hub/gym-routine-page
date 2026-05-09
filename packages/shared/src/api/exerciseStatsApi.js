@@ -302,6 +302,18 @@ export async function fetchSessionPRs(sessionId) {
   return data
 }
 
+export async function fetchWeeklyPRCount(from, to) {
+  const { count, error } = await getClient()
+    .from('exercise_session_stats')
+    .select('*', { count: 'exact', head: true })
+    .gte('session_date', from)
+    .lte('session_date', to)
+    .or('is_pr_weight.eq.true,is_pr_reps.eq.true,is_pr_1rm.eq.true,is_pr_volume.eq.true,is_pr_time.eq.true,is_pr_distance.eq.true,is_pr_pace.eq.true')
+
+  if (error) throw error
+  return count || 0
+}
+
 export async function fetchSessionsWithPRs(sessionIds) {
   if (!sessionIds || sessionIds.length === 0) return {}
 

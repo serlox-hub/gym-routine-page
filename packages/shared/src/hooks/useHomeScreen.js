@@ -4,9 +4,9 @@ import { fetchRoutineDays } from '../api/routineQueryApi.js'
 import {
   fetchLastCompletedSessionForRoutine,
   fetchWeeklySessionStats,
-  fetchMonthlySessionCount,
 } from '../api/workoutSessionApi.js'
-import { getNextRoutineDay, calculateWeeklyDurationMinutes } from '../lib/homeUtils.js'
+import { fetchWeeklyPRCount } from '../api/exerciseStatsApi.js'
+import { getNextRoutineDay, calculateWeeklyDurationMinutes, toDateStr } from '../lib/homeUtils.js'
 import { getCycleDateRange } from '../lib/streakUtils.js'
 import { usePreference } from './usePreferences.js'
 
@@ -61,17 +61,20 @@ export function useWeeklyStats() {
 }
 
 // ============================================
-// MONTHLY SESSION COUNT
+// WEEKLY PR COUNT
 // ============================================
 
-export function useMonthlySessionCount() {
-  const now = new Date()
-  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
+export function useWeeklyPRCount() {
+  const { value: weekStartDay } = usePreference('week_start_day')
+  const wsd = weekStartDay || 'monday'
+  const { start, end } = getCycleDateRange(7, new Date(), wsd)
+
+  const from = toDateStr(start)
+  const to = toDateStr(end)
 
   const { data: count, isLoading, isError } = useQuery({
-    queryKey: [QUERY_KEYS.MONTHLY_SESSION_COUNT, now.getFullYear(), now.getMonth()],
-    queryFn: () => fetchMonthlySessionCount(from, to),
+    queryKey: [QUERY_KEYS.WEEKLY_PR_COUNT, from, to],
+    queryFn: () => fetchWeeklyPRCount(from, to),
     staleTime: 1000 * 60 * 5,
   })
 

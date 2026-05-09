@@ -346,18 +346,6 @@ export async function fetchWeeklySessionStats(from, to) {
   return data || []
 }
 
-export async function fetchMonthlySessionCount(from, to) {
-  const { count, error } = await getClient()
-    .from('workout_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'completed')
-    .gte('completed_at', from)
-    .lte('completed_at', to)
-
-  if (error) throw error
-  return count || 0
-}
-
 // ============================================
 // EXERCISE HISTORY
 // ============================================

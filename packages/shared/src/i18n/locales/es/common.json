@@ -187,7 +187,7 @@
     "nDays": "{{count}} días",
     "nExercises": "{{count}} ejercicios",
     "thisWeek": "esta semana",
-    "thisMonth": "sesiones este mes",
+    "prsThisWeek": "PRs esta semana",
     "freeWorkout": "Entrenamiento libre",
     "workoutDuration": "Duración del entrenamiento",
     "paused": "pausado",

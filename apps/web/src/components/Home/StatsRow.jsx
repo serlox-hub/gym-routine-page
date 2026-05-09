@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import { Timer, Trophy } from 'lucide-react'
-import { useWeeklyStats, useMonthlySessionCount, formatDurationHoursMinutes } from '@gym/shared'
+import { useWeeklyStats, useWeeklyPRCount, formatDurationHoursMinutes } from '@gym/shared'
 import { Card } from '../ui/index.js'
 import { colors, design } from '../../lib/styles.js'
 
 function StatsRow() {
   const { t } = useTranslation()
   const { totalMinutes, isLoading: loadingWeekly, isError: errorWeekly } = useWeeklyStats()
-  const { count, isLoading: loadingMonthly, isError: errorMonthly } = useMonthlySessionCount()
+  const { count, isLoading: loadingPRs, isError: errorPRs } = useWeeklyPRCount()
   const { hours, minutes } = formatDurationHoursMinutes(totalMinutes)
 
   const durationParts = hours > 0
@@ -28,12 +28,12 @@ function StatsRow() {
         </p>
       </Card>
       <Card className="flex-1 p-4">
-        <Trophy size={16} style={{ color: colors.purple }} />
+        <Trophy size={16} style={{ color: colors.gold }} />
         <p style={{ color: colors.textPrimary, fontSize: design.statValueSize.large, fontWeight: 700, letterSpacing: -0.5, marginTop: 8 }}>
-          {loadingMonthly || errorMonthly ? '—' : count}
+          {loadingPRs || errorPRs ? '—' : count}
         </p>
         <p style={{ color: colors.textSecondary, fontSize: design.labelSize, fontWeight: 500 }}>
-          {t('common:home.thisMonth')}
+          {t('common:home.prsThisWeek')}
         </p>
       </Card>
     </section>
