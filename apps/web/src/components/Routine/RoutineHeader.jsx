@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Download, Trash2, Copy } from 'lucide-react'
+import { Pencil, Download, Trash2, Copy, ClipboardCopy } from 'lucide-react'
 import { useDuplicateRoutine, useRoutineEditForm } from '../../hooks/useRoutines.js'
-import { sanitizeFilename, exportRoutine } from '@gym/shared'
+import { sanitizeFilename, exportRoutine, formatRoutineAsText, getNotifier } from '@gym/shared'
 import { downloadRoutineAsJson } from '../../lib/routineIO.js'
 import { PageHeader } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
@@ -56,6 +56,17 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
     }
   }
 
+  const handleCopyAsText = async () => {
+    try {
+      const data = await exportRoutine(parseInt(routineId))
+      const text = formatRoutineAsText(data)
+      await navigator.clipboard.writeText(text)
+      getNotifier()?.show(t('routine:copiedToClipboard'), 'success')
+    } catch {
+      getNotifier()?.show(t('routine:copyAsTextFailed'), 'error')
+    }
+  }
+
   const handleDuplicate = async () => {
     try {
       const newRoutine = await duplicateRoutine.mutateAsync(parseInt(routineId))
@@ -82,6 +93,7 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
   const menuItems = [
     { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart },
     { icon: Copy, label: t('routine:duplicate'), onClick: handleDuplicate },
+    { icon: ClipboardCopy, label: t('routine:copyAsText'), onClick: handleCopyAsText },
     { icon: Download, label: t('common:buttons.export'), onClick: handleExport },
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ]

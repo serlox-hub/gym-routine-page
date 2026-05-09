@@ -1,11 +1,12 @@
 import { View, Text, TextInput, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Download, Trash2, Copy } from 'lucide-react-native'
+import { Pencil, Download, Trash2, Copy, ClipboardCopy } from 'lucide-react-native'
 import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
+import * as Clipboard from 'expo-clipboard'
 import Toast from 'react-native-toast-message'
 import { useDuplicateRoutine, useRoutineEditForm } from '../../hooks/useRoutines'
-import { sanitizeFilename, exportRoutine } from '@gym/shared'
+import { sanitizeFilename, exportRoutine, formatRoutineAsText } from '@gym/shared'
 import { colors } from '../../lib/styles'
 import { PageHeader } from '../ui'
 
@@ -73,6 +74,17 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
     }
   }
 
+  const handleCopyAsText = async () => {
+    try {
+      const data = await exportRoutine(parseInt(routineId))
+      const text = formatRoutineAsText(data)
+      await Clipboard.setStringAsync(text)
+      Toast.show({ type: 'success', text1: t('routine:copiedToClipboard') })
+    } catch {
+      Toast.show({ type: 'error', text1: t('routine:copyAsTextFailed') })
+    }
+  }
+
   if (isEditing) {
     return (
       <PageHeader
@@ -90,6 +102,7 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
   const menuItems = [
     { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart },
     { icon: Copy, label: t('routine:duplicate'), onClick: handleDuplicate },
+    { icon: ClipboardCopy, label: t('routine:copyAsText'), onClick: handleCopyAsText },
     { icon: Download, label: t('common:buttons.export'), onClick: handleExport },
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ]
