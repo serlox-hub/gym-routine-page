@@ -249,6 +249,7 @@ export function workoutStoreState(set, get) {
 
     adjustRestTime: (delta) => set(state => ({
       restTimerEndTime: state.restTimerEndTime ? state.restTimerEndTime + delta * 1000 : null,
+      restTimeInitial: Math.max(1, state.restTimeInitial + delta),
     })),
 
     setRestTimerMinimized: (minimized) => set({ restTimerMinimized: minimized }),

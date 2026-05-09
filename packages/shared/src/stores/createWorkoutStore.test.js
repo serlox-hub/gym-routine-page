@@ -277,6 +277,7 @@ describe('createWorkoutStore', () => {
 
       const newRemaining = useWorkoutStore.getState().getTimeRemaining()
       expect(newRemaining).toBeGreaterThanOrEqual(initialRemaining + 29)
+      expect(useWorkoutStore.getState().restTimeInitial).toBe(90)
     })
 
     it('adjusts rest time negatively', () => {
@@ -292,6 +293,16 @@ describe('createWorkoutStore', () => {
       const newRemaining = useWorkoutStore.getState().getTimeRemaining()
       expect(newRemaining).toBeLessThan(initialRemaining)
       expect(newRemaining).toBeGreaterThanOrEqual(initialRemaining - 21)
+      expect(useWorkoutStore.getState().restTimeInitial).toBe(40)
+    })
+
+    it('clamps restTimeInitial to a positive value when adjusting below zero', () => {
+      act(() => {
+        useWorkoutStore.getState().startRestTimer(10)
+        useWorkoutStore.getState().adjustRestTime(-100)
+      })
+
+      expect(useWorkoutStore.getState().restTimeInitial).toBeGreaterThanOrEqual(1)
     })
 
     it('sets timer minimized state', () => {
