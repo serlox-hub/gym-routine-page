@@ -66,16 +66,23 @@ export default function ExerciseForm({
     formRef.current = { form, selectedMuscleGroupId }
   }, [form, selectedMuscleGroupId])
 
+  // Depende de los valores planos para no resetear el form cada vez que el
+  // padre recrea el objeto initialData.
+  const initialName = initialData?.name
+  const initialMeasurementType = initialData?.measurement_type
+  const initialInstructions = initialData?.instructions
+  const initialMuscleGroupId = initialData?.muscle_group_id
   useEffect(() => {
-    if (initialData) {
-      setForm({
-        name: initialData.name || '',
-        measurement_type: initialData.measurement_type || MeasurementType.WEIGHT_REPS,
-        instructions: initialData.instructions || '',
-      })
-      setSelectedMuscleGroupId(initialData.muscle_group_id || null)
+    if (initialName === undefined && initialMeasurementType === undefined && initialInstructions === undefined && initialMuscleGroupId === undefined) {
+      return
     }
-  }, [initialData])
+    setForm({
+      name: initialName || '',
+      measurement_type: initialMeasurementType || MeasurementType.WEIGHT_REPS,
+      instructions: initialInstructions || '',
+    })
+    setSelectedMuscleGroupId(initialMuscleGroupId || null)
+  }, [initialName, initialMeasurementType, initialInstructions, initialMuscleGroupId])
 
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 

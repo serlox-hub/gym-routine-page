@@ -36,7 +36,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
         style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}`, color: selected ? colors.textPrimary : colors.textSecondary }}
       >
         {selected && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(selected.name) }} />}
-        <span className="flex-1">{selected ? getMuscleGroupName(selected) : t('exercise:noMuscleGroup')}</span>
+        <span className="flex-1">{selected ? getMuscleGroupName(selected) : t('exercise:selectMuscleGroup')}</span>
         <ChevronDown size={14} style={{ color: colors.textSecondary }} />
       </button>
       {open && (
@@ -97,17 +97,23 @@ function ExerciseForm({
   const formRef = useRef({ form, selectedMuscleGroupId })
   formRef.current = { form, selectedMuscleGroupId }
 
-  // Populate form with initial data
+  // Populate form with initial data. Depende de los valores planos para no
+  // resetear el form cada vez que el padre recrea el objeto initialData.
+  const initialName = initialData?.name
+  const initialMeasurementType = initialData?.measurement_type
+  const initialInstructions = initialData?.instructions
+  const initialMuscleGroupId = initialData?.muscle_group_id
   useEffect(() => {
-    if (initialData) {
-      setForm({
-        name: initialData.name || '',
-        measurement_type: initialData.measurement_type || MeasurementType.WEIGHT_REPS,
-        instructions: initialData.instructions || '',
-      })
-      setSelectedMuscleGroupId(initialData.muscle_group_id || null)
+    if (initialName === undefined && initialMeasurementType === undefined && initialInstructions === undefined && initialMuscleGroupId === undefined) {
+      return
     }
-  }, [initialData])
+    setForm({
+      name: initialName || '',
+      measurement_type: initialMeasurementType || MeasurementType.WEIGHT_REPS,
+      instructions: initialInstructions || '',
+    })
+    setSelectedMuscleGroupId(initialMuscleGroupId || null)
+  }, [initialName, initialMeasurementType, initialInstructions, initialMuscleGroupId])
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))

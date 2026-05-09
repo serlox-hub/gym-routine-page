@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCreateExercise } from '../../hooks/useExercises.js'
 import { Modal, Button } from '../ui/index.js'
@@ -36,6 +36,12 @@ export default function ExercisePickerModal({
     onSelect(newExercise)
   }
 
+  const trimmedSearch = searchTerm.trim()
+  const initialFormData = useMemo(
+    () => trimmedSearch ? { name: trimmedSearch } : null,
+    [trimmedSearch],
+  )
+
   return (
     <Modal
       isOpen={isOpen}
@@ -54,7 +60,7 @@ export default function ExercisePickerModal({
               id="create-exercise-form"
               onSubmit={handleCreateExercise}
               isSubmitting={createExercise.isPending}
-              initialData={searchTerm.trim() ? { name: searchTerm.trim() } : null}
+              initialData={initialFormData}
               compact
               hideSubmitButton
             />
@@ -66,7 +72,7 @@ export default function ExercisePickerModal({
               disabled={createExercise.isPending}
               className="flex-1"
             >
-              {createExercise.isPending ? t('common:buttons.loading') : t('common:buttons.save')}
+              {createExercise.isPending ? t('common:buttons.loading') : t('exercise:create')}
             </Button>
             <Button variant="secondary" onClick={() => setIsCreatingNew(false)}>{t('common:buttons.cancel')}</Button>
           </div>

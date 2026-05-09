@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCreateExercise } from '../../hooks/useExercises'
@@ -35,6 +35,12 @@ export default function ExercisePickerModal({
     onSelect(newExercise)
   }
 
+  const trimmedSearch = searchTerm.trim()
+  const initialFormData = useMemo(
+    () => trimmedSearch ? { name: trimmedSearch } : null,
+    [trimmedSearch],
+  )
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="p-6" position="bottom">
       <Text className="text-primary text-lg font-semibold mb-4">
@@ -47,7 +53,7 @@ export default function ExercisePickerModal({
             <ExerciseForm
               onSubmit={handleCreateExercise}
               isSubmitting={createExercise.isPending}
-              initialData={searchTerm.trim() ? { name: searchTerm.trim() } : null}
+              initialData={initialFormData}
               compact
               hideSubmitButton
             />
