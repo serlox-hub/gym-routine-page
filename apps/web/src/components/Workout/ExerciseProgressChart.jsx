@@ -28,7 +28,7 @@ function ExerciseProgressChart({ sessions, measurementType, weightUnit = 'kg' })
   const TAB_CONFIG = {
     [TABS.WEIGHT]: { dataKey: 'best', color: colors.success, label: t('workout:summary.maxWeight') },
     [TABS.VOLUME]: { dataKey: 'volume', color: colors.success, label: t('workout:summary.totalVolume') },
-    [TABS.E1RM]: { dataKey: 'e1rm', color: colors.purple, label: t('workout:summary.best1rm') },
+    [TABS.E1RM]: { dataKey: 'e1rm', color: colors.success, label: t('workout:summary.best1rm') },
   }
 
   const filteredSessions = useMemo(
