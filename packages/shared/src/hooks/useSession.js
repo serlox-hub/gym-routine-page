@@ -171,6 +171,7 @@ export function useEndSession({ onSuccess: onSuccessCb } = {}) {
         endSession()
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS] })
       }, 0)
     },
   })

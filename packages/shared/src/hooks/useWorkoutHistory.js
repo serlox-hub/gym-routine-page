@@ -197,6 +197,7 @@ export function useUpdateSessionMetadata() {
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS] })
     },
   })
 }
@@ -250,6 +251,7 @@ export function useDeleteSession() {
       queryClient.removeQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS] })
 
       // Recalcular PRs de los ejercicios afectados
       if (exerciseIds?.length > 0 && sessionDate) {
