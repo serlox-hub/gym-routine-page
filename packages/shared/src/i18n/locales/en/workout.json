@@ -94,7 +94,9 @@
   },
   "exercise": {
     "removeFromSession": "Remove from session",
-    "removeFromSessionConfirm": "Remove \"{{name}}\" from this session? It will still be available in the routine."
+    "removeFromSessionConfirm": "Remove \"{{name}}\" from this session? It will still be available in the routine.",
+    "updateFailed": "Could not save the exercise. Try again.",
+    "reorderFailed": "Could not reorder the exercise. Try again."
   },
   "summary": {
     "title": "Summary",

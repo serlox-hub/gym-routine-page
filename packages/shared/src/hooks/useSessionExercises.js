@@ -14,6 +14,8 @@ import {
 import { getClient } from '../api/_client.js'
 import { useWorkoutStore } from './_stores.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
+import { getNotifier } from '../notifications.js'
+import { t } from '../i18n/index.js'
 
 // ============================================
 // SESSION EXERCISES QUERIES & MUTATIONS
@@ -140,13 +142,29 @@ export function useRemoveSessionExercise() {
 export function useUpdateSessionExerciseFields() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
+  const queryKey = [QUERY_KEYS.SESSION_EXERCISES, sessionId]
 
   return useMutation({
     mutationFn: ({ sessionExerciseId, fields }) => {
       return updateSessionExerciseFields(sessionExerciseId, fields, { propagateToRoutine: true })
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
+    onMutate: async ({ sessionExerciseId, fields }) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, (old) => {
+        if (!old) return old
+        return old.map(item => item.id === sessionExerciseId ? { ...item, ...fields } : item)
+      })
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKey, context.previous)
+      }
+      getNotifier()?.show(t('workout:exercise.updateFailed'), 'error')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAY] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES] })
@@ -157,13 +175,32 @@ export function useUpdateSessionExerciseFields() {
 export function useReorderSessionExercises() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
+  const queryKey = [QUERY_KEYS.SESSION_EXERCISES, sessionId]
 
   return useMutation({
     mutationFn: async (orderedExerciseIds) => {
       await reorderSessionExercises(orderedExerciseIds)
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
+    onMutate: async (orderedExerciseIds) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, (old) => {
+        if (!old) return old
+        const orderMap = Object.fromEntries(orderedExerciseIds.map((id, i) => [id, i + 1]))
+        return [...old]
+          .map(item => ({ ...item, sort_order: orderMap[item.id] ?? item.sort_order }))
+          .sort((a, b) => a.sort_order - b.sort_order)
+      })
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKey, context.previous)
+      }
+      getNotifier()?.show(t('workout:exercise.reorderFailed'), 'error')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
     },
   })
 }

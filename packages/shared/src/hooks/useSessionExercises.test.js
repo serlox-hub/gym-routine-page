@@ -25,9 +25,19 @@ vi.mock('../api/workoutApi.js', () => ({
   insertSessionExercise: vi.fn(),
   deleteCompletedSetsByExercise: vi.fn(),
   updateSessionExerciseExerciseId: vi.fn(),
+  updateSessionExerciseFields: vi.fn(),
   deleteSessionExercise: vi.fn(),
   reorderSessionExercises: vi.fn(),
 }))
+
+vi.mock('../notifications.js', () => {
+  const show = vi.fn()
+  return {
+    getNotifier: () => ({ show }),
+    initNotifications: vi.fn(),
+    _notifierShow: show,
+  }
+})
 
 import {
   fetchSessionExercises,
@@ -35,23 +45,32 @@ import {
   insertSessionExercise,
   deleteSessionExercise,
   reorderSessionExercises,
+  updateSessionExerciseFields,
 } from '../api/workoutApi.js'
+import * as notificationsMock from '../notifications.js'
+import { QUERY_KEYS } from '../lib/constants.js'
 
 import {
   useSessionExercises,
   useAddSessionExercise,
   useRemoveSessionExercise,
   useReorderSessionExercises,
+  useUpdateSessionExerciseFields,
 } from './useSessionExercises.js'
 
-function createWrapper() {
+function createWrapperWithClient() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   })
-  return ({ children }) => React.createElement(QueryClientProvider, { client: queryClient }, children)
+  const wrapper = ({ children }) => React.createElement(QueryClientProvider, { client: queryClient }, children)
+  return { wrapper, queryClient }
+}
+
+function createWrapper() {
+  return createWrapperWithClient().wrapper
 }
 
 const FAKE_SESSION_EXERCISES = [
@@ -167,5 +186,75 @@ describe('useSessionExercises — mutations', () => {
     })
 
     expect(reorderSessionExercises).toHaveBeenCalledWith(orderedIds)
+  })
+
+  it('useUpdateSessionExerciseFields: aplica el cambio al cache de forma optimista antes del servidor', async () => {
+    const { wrapper, queryClient } = createWrapperWithClient()
+    queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'], FAKE_SESSION_EXERCISES)
+    let resolveUpdate
+    updateSessionExerciseFields.mockReturnValueOnce(new Promise(resolve => { resolveUpdate = resolve }))
+
+    const { result } = renderHook(() => useUpdateSessionExerciseFields(), { wrapper })
+
+    act(() => {
+      result.current.mutate({ sessionExerciseId: 'se-1', fields: { reps: '12', rir: 1 } })
+    })
+
+    await waitFor(() => {
+      const cached = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])
+      expect(cached.find(e => e.id === 'se-1')).toMatchObject({ reps: '12', rir: 1 })
+    })
+
+    await act(async () => { resolveUpdate() })
+  })
+
+  it('useUpdateSessionExerciseFields: hace rollback al estado anterior si el servidor falla', async () => {
+    const { wrapper, queryClient } = createWrapperWithClient()
+    queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'], FAKE_SESSION_EXERCISES)
+    updateSessionExerciseFields.mockRejectedValueOnce(new Error('network'))
+
+    const { result } = renderHook(() => useUpdateSessionExerciseFields(), { wrapper })
+
+    await act(async () => {
+      await result.current.mutateAsync({ sessionExerciseId: 'se-1', fields: { reps: '12' } }).catch(() => {})
+    })
+
+    const cached = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])
+    expect(cached.find(e => e.id === 'se-1').reps).toBe('10')
+    expect(notificationsMock._notifierShow).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+
+  it('useReorderSessionExercises: aplica el orden al cache de forma optimista', async () => {
+    const { wrapper, queryClient } = createWrapperWithClient()
+    queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'], FAKE_SESSION_EXERCISES)
+    let resolveReorder
+    reorderSessionExercises.mockReturnValueOnce(new Promise(resolve => { resolveReorder = resolve }))
+
+    const { result } = renderHook(() => useReorderSessionExercises(), { wrapper })
+
+    act(() => { result.current.mutate(['se-2', 'se-1']) })
+
+    await waitFor(() => {
+      const cached = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])
+      expect(cached.map(e => e.id)).toEqual(['se-2', 'se-1'])
+    })
+
+    await act(async () => { resolveReorder() })
+  })
+
+  it('useReorderSessionExercises: hace rollback si el servidor falla', async () => {
+    const { wrapper, queryClient } = createWrapperWithClient()
+    queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'], FAKE_SESSION_EXERCISES)
+    reorderSessionExercises.mockRejectedValueOnce(new Error('network'))
+
+    const { result } = renderHook(() => useReorderSessionExercises(), { wrapper })
+
+    await act(async () => {
+      await result.current.mutateAsync(['se-2', 'se-1']).catch(() => {})
+    })
+
+    const cached = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])
+    expect(cached.map(e => e.id)).toEqual(['se-1', 'se-2'])
+    expect(notificationsMock._notifierShow).toHaveBeenCalledWith(expect.any(String), 'error')
   })
 })

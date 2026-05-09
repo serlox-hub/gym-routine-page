@@ -94,7 +94,9 @@
   },
   "exercise": {
     "removeFromSession": "Quitar de la sesión",
-    "removeFromSessionConfirm": "¿Quitar \"{{name}}\" de esta sesión? Seguirá disponible en la rutina."
+    "removeFromSessionConfirm": "¿Quitar \"{{name}}\" de esta sesión? Seguirá disponible en la rutina.",
+    "updateFailed": "No se pudo guardar el ejercicio. Inténtalo de nuevo.",
+    "reorderFailed": "No se pudo reordenar el ejercicio. Inténtalo de nuevo."
   },
   "summary": {
     "title": "Resumen",
