@@ -68,9 +68,14 @@ describe('formatRoutineAsText', () => {
     expect(out).not.toContain('desc')
   })
 
-  it('incluye las notas del ejercicio en línea aparte', () => {
+  it('omite las notas del ejercicio', () => {
     const out = formatRoutineAsText(baseExportData)
-    expect(out).toContain('  Hacer lento en excéntrica')
+    expect(out).not.toContain('Hacer lento en excéntrica')
+  })
+
+  it('incluye un footer con el link a la app', () => {
+    const out = formatRoutineAsText(baseExportData)
+    expect(out).toMatch(/diariogym\.com\s*$/)
   })
 
   it('muestra heading del bloque solo cuando hay calentamiento Y principal', () => {

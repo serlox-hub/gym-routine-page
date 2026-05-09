@@ -27,6 +27,7 @@
   "copyAsText": "Copy as text",
   "copiedToClipboard": "Routine copied to clipboard",
   "copyAsTextFailed": "Could not copy routine",
+  "createdWithApp": "Created with {{appUrl}}",
   "volumeSummary": "Volume summary",
   "volumeReference": "Reference ranges based on Israetel et al. (Renaissance Periodization) and Schoenfeld et al. (2017)",
   "favorite": "Favorite",

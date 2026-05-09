@@ -1,4 +1,4 @@
-import { BLOCK_NAMES } from './constants.js'
+import { APP_URL, BLOCK_NAMES } from './constants.js'
 import { t } from '../i18n/index.js'
 
 /**
@@ -35,10 +35,12 @@ export function formatRoutineAsText(exportData) {
       }
       for (const ex of block.exercises) {
         lines.push(formatExerciseLine(ex))
-        if (ex.notes) lines.push(`  ${ex.notes}`)
       }
     }
   }
+
+  lines.push('')
+  lines.push(t('routine:createdWithApp', { appUrl: APP_URL }))
 
   return lines.join('\n')
 }
