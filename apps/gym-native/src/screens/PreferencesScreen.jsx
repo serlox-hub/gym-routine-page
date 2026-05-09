@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, ScrollView, Pressable, Animated } from 'react-native'
+import { View, Text, ScrollView, Pressable, Animated, Alert, AppState } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { LogOut, Users } from 'lucide-react-native'
@@ -11,6 +11,12 @@ import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../componen
 import { WeightUnitChangeModal, MeasurementUnitChangeModal } from '../components/Preferences'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
+import {
+  REST_NOTIFICATIONS_ENABLED_KEY,
+  getNotificationPermissionStatus,
+  requestNotificationPermission,
+  openNotificationSettings,
+} from '../lib/restTimerNotifications'
 const appVersion = require('../../app.json').expo.version
 
 function SmallPill({ label, active, onPress, disabled }) {
@@ -117,6 +123,58 @@ export default function PreferencesScreen({ navigation, route }) {
   const handleTimerSoundChange = (value) => {
     setTimerSoundEnabled(value)
     AsyncStorage.setItem('timer_sound_enabled', String(value))
+  }
+
+  const [restNotificationsEnabled, setRestNotificationsEnabled] = useState(true)
+  const [systemNotifPermission, setSystemNotifPermission] = useState(null)
+
+  useEffect(() => {
+    AsyncStorage.getItem(REST_NOTIFICATIONS_ENABLED_KEY).then(saved => {
+      if (saved !== null) setRestNotificationsEnabled(saved === 'true')
+    })
+    getNotificationPermissionStatus().then(setSystemNotifPermission)
+  }, [])
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        getNotificationPermissionStatus().then(setSystemNotifPermission)
+      }
+    })
+    return () => subscription.remove()
+  }, [])
+
+  const persistRestNotifications = (value) => {
+    setRestNotificationsEnabled(value)
+    AsyncStorage.setItem(REST_NOTIFICATIONS_ENABLED_KEY, String(value))
+  }
+
+  const handleRestNotificationsChange = async (value) => {
+    if (!value) {
+      persistRestNotifications(false)
+      return
+    }
+    const current = systemNotifPermission ?? (await getNotificationPermissionStatus())
+    if (current.granted) {
+      persistRestNotifications(true)
+      return
+    }
+    if (current.canAskAgain) {
+      const result = await requestNotificationPermission()
+      setSystemNotifPermission(result)
+      if (result.granted) {
+        persistRestNotifications(true)
+      }
+      return
+    }
+    Alert.alert(
+      t('common:preferences.restNotificationsBlockedTitle'),
+      t('common:preferences.restNotificationsBlockedBody'),
+      [
+        { text: t('common:buttons.cancel'), style: 'cancel' },
+        { text: t('common:preferences.openSettings'), onPress: openNotificationSettings },
+      ],
+    )
   }
 
   const handleChange = (key, value) => updatePreference.mutate({ key, value })
@@ -236,6 +294,16 @@ export default function PreferencesScreen({ navigation, route }) {
           <SectionLabel>{t('common:preferences.duringWorkout')}</SectionLabel>
           <ToggleRow label={t('common:preferences.timerSound')} description={t('common:preferences.timerSoundDescription')}
             checked={timerSoundEnabled} onChange={handleTimerSoundChange} />
+          <ToggleRow
+            label={t('common:preferences.restNotifications')}
+            description={
+              restNotificationsEnabled && systemNotifPermission && !systemNotifPermission.granted
+                ? t('common:preferences.restNotificationsSystemDisabled')
+                : t('common:preferences.restNotificationsDescription')
+            }
+            checked={restNotificationsEnabled && (systemNotifPermission?.granted ?? false)}
+            onChange={handleRestNotificationsChange}
+          />
           <ToggleRow label={t('common:preferences.showRir')} description={t('common:preferences.showRirDescription')}
             checked={preferences?.show_rir_input ?? true} onChange={(v) => handleChange('show_rir_input', v)} disabled={updatePreference.isPending} />
           <ToggleRow label={t('common:preferences.showSetNotes')} description={t('common:preferences.showSetNotesDescription')}

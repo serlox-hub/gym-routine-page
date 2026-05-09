@@ -60,7 +60,14 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0A0A0F"
+        }
+      ]
     ],
     "extra": {
       "eas": {

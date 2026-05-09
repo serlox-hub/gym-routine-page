@@ -53,7 +53,7 @@ export function useTimerEngine({ playSound, vibrateDevice, onTimerStart, onTimer
     const store = getWorkoutStore()
     const unsubscribe = store.subscribe((state, prevState) => {
       if (state.restTimerActive && !prevState.restTimerActive) {
-        onTimerStart?.()
+        onTimerStart?.(state.restTimerEndTime)
         startInterval()
       } else if (!state.restTimerActive && prevState.restTimerActive) {
         onTimerEnd?.()
@@ -62,6 +62,7 @@ export function useTimerEngine({ playSound, vibrateDevice, onTimerStart, onTimer
 
       if (state.restTimerEndTime !== prevState.restTimerEndTime &&
           state.restTimerEndTime && state.restTimerActive) {
+        onTimerStart?.(state.restTimerEndTime)
         stopInterval()
         startInterval()
       }

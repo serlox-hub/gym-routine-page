@@ -82,7 +82,9 @@
     "seconds": "{{seconds}} seg",
     "of": "de {{time}}",
     "setsDone": "{{done}} hechas",
-    "setsLeft": "Quedan {{count}}"
+    "setsLeft": "Quedan {{count}}",
+    "notificationTitle": "Descanso terminado",
+    "notificationBody": "Toca para volver a la sesión"
   },
   "addExercise": {
     "title": "Añadir ejercicio",

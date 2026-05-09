@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTimerEngine as sharedTimerEngine, useRestTimer } from '@gym/shared'
+import { scheduleRestEndNotification, cancelRestEndNotification } from '../lib/restTimerNotifications'
 
 // Re-export useRestTimer from shared (reads store state, no platform code)
 export { useRestTimer }
@@ -28,16 +29,18 @@ function isSoundEnabled() {
   return timerSoundEnabled
 }
 
-function onTimerStart() {
+function onTimerStart(endTime) {
   // Refresh sound preference on timer start
   AsyncStorage.getItem('timer_sound_enabled').then(val => {
     timerSoundEnabled = val === null || val === 'true'
   })
   activateKeepAwakeAsync()
+  scheduleRestEndNotification(endTime)
 }
 
 function onTimerEnd() {
   deactivateKeepAwake()
+  cancelRestEndNotification()
 }
 
 // Wrap shared engine with RN callbacks

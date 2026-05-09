@@ -82,7 +82,9 @@
     "seconds": "{{seconds}} sec",
     "of": "of {{time}}",
     "setsDone": "{{done}} done",
-    "setsLeft": "{{count}} sets left"
+    "setsLeft": "{{count}} sets left",
+    "notificationTitle": "Rest finished",
+    "notificationBody": "Tap to return to your session"
   },
   "addExercise": {
     "title": "Add exercise",

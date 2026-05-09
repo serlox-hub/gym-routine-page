@@ -19,6 +19,7 @@ import { initReactI18next } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
 import useAuthStore from './src/stores/authStore'
 import useWorkoutStore from './src/stores/workoutStore'
+import { setupNotificationHandler, setupAndroidChannel } from './src/lib/restTimerNotifications'
 
 if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
   Sentry.init({
@@ -39,6 +40,9 @@ initHaptics({
   onExerciseComplete: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
   onPRDetected: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
 })
+
+setupNotificationHandler()
+setupAndroidChannel()
 
 SplashScreen.preventAutoHideAsync()
 
