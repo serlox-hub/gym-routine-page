@@ -2,13 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, Animated, Alert, AppState } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { LogOut, Users } from 'lucide-react-native'
+import { LogOut, Users, MessageSquare, Inbox } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
 import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui'
-import { WeightUnitChangeModal, MeasurementUnitChangeModal } from '../components/Preferences'
+import { WeightUnitChangeModal, MeasurementUnitChangeModal, FeedbackModal } from '../components/Preferences'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
 import {
@@ -85,6 +85,7 @@ export default function PreferencesScreen({ navigation, route }) {
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
   const scrollRef = useRef(null)
   const goalY = useRef(0)
   const highlightAnim = useRef(new Animated.Value(0)).current
@@ -355,16 +356,37 @@ export default function PreferencesScreen({ navigation, route }) {
           </Animated.View>
         </View>
 
+        {/* HELP */}
+        <View>
+          <SectionLabel>{t('common:feedback.sectionTitle')}</SectionLabel>
+          <Pressable
+            onPress={() => setShowFeedback(true)}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}
+          >
+            <MessageSquare size={16} color={colors.textSecondary} />
+            <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textSecondary }}>{t('common:feedback.sendButton')}</Text>
+          </Pressable>
+        </View>
+
         {/* Actions */}
         <View style={{ gap: 8 }}>
           {isAdmin && (
-            <Pressable
-              onPress={() => navigation.navigate('AdminUsers')}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}
-            >
-              <Users size={16} color={colors.textSecondary} />
-              <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textSecondary }}>{t('common:nav.admin')}</Text>
-            </Pressable>
+            <>
+              <Pressable
+                onPress={() => navigation.navigate('AdminUsers')}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}
+              >
+                <Users size={16} color={colors.textSecondary} />
+                <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textSecondary }}>{t('common:nav.admin')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate('AdminFeedback')}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}
+              >
+                <Inbox size={16} color={colors.textSecondary} />
+                <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textSecondary }}>{t('common:admin.feedbackButton')}</Text>
+              </Pressable>
+            </>
           )}
           <Pressable
             onPress={handleLogoutClick}
@@ -410,6 +432,11 @@ export default function PreferencesScreen({ navigation, route }) {
         onConvert={() => applyMeasurementUnitChange(true)}
         onUnitOnly={() => applyMeasurementUnitChange(false)}
         onCancel={() => setPendingMeasurementUnit(null)}
+      />
+
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
       />
     </SafeAreaView>
   )

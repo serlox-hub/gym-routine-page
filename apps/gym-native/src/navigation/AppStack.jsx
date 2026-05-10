@@ -13,6 +13,7 @@ import BodyMetricsScreen from '../screens/BodyMetricsScreen'
 import RoutineDetailScreen from '../screens/RoutineDetailScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import AdminUsersScreen from '../screens/AdminUsersScreen'
+import AdminFeedbackScreen from '../screens/AdminFeedbackScreen'
 import WorkoutOverlay from '../screens/WorkoutOverlay'
 import WorkoutSummaryScreen from '../components/Workout/WorkoutSummaryScreen'
 import OfflineBanner from '../components/ui/OfflineBanner'
@@ -153,6 +154,7 @@ export default function AppStack() {
         {/* Detalle */}
         <Stack.Screen name="Preferences" component={PreferencesScreen} />
         <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
+        <Stack.Screen name="AdminFeedback" component={AdminFeedbackScreen} />
 
         {/* Resumen post-sesión */}
         <Stack.Screen

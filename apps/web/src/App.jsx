@@ -21,6 +21,7 @@ const Routines = lazy(() => import('./pages/Routines.jsx'))
 const BodyMetrics = lazy(() => import('./pages/BodyMetrics.jsx'))
 const Preferences = lazy(() => import('./pages/Preferences.jsx'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
+const AdminFeedback = lazy(() => import('./pages/AdminFeedback.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
 const Signup = lazy(() => import('./pages/Signup.jsx'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'))
@@ -109,6 +110,7 @@ function App() {
             <Route path="/body-metrics" element={<PrivateRoute><BodyMetrics /></PrivateRoute>} />
             <Route path="/preferences" element={<PrivateRoute><Preferences /></PrivateRoute>} />
             <Route path="/admin/users" element={<PrivateRoute><AdminUsers /></PrivateRoute>} />
+            <Route path="/admin/feedback" element={<PrivateRoute><AdminFeedback /></PrivateRoute>} />
             </Routes>
           </Suspense>
           <ConditionalTabBar />

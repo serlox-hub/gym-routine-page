@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LogOut, Users } from 'lucide-react'
+import { LogOut, Users, MessageSquare, Inbox } from 'lucide-react'
 import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
 import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui/index.js'
-import { InstallAppSection, TrainingGoalSection, WeightUnitChangeModal, MeasurementUnitChangeModal } from '../components/Preferences/index.js'
+import { InstallAppSection, TrainingGoalSection, WeightUnitChangeModal, MeasurementUnitChangeModal, FeedbackModal } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -86,6 +86,7 @@ function Preferences() {
   }, [location.state, isLoading])
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
 
   const handleLogoutClick = () => {
     if (hasActiveSession) {
@@ -268,17 +269,42 @@ function Preferences() {
 
         <InstallAppSection />
 
+        {/* HELP */}
+        <section>
+          <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
+            {t('common:feedback.sectionTitle')}
+          </span>
+          <button
+            onClick={() => setShowFeedback(true)}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
+            style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
+          >
+            <MessageSquare size={16} />
+            {t('common:feedback.sendButton')}
+          </button>
+        </section>
+
         {/* Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {isAdmin && (
-            <button
-              onClick={() => navigate('/admin/users')}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
-              style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
-            >
-              <Users size={16} />
-              {t('common:nav.admin')}
-            </button>
+            <>
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
+                style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
+              >
+                <Users size={16} />
+                {t('common:nav.admin')}
+              </button>
+              <button
+                onClick={() => navigate('/admin/feedback')}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
+                style={{ backgroundColor: colors.bgSecondary, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
+              >
+                <Inbox size={16} />
+                {t('common:admin.feedbackButton')}
+              </button>
+            </>
           )}
           <button
             onClick={handleLogoutClick}
@@ -325,6 +351,11 @@ function Preferences() {
         onConvert={() => applyMeasurementUnitChange(true)}
         onUnitOnly={() => applyMeasurementUnitChange(false)}
         onCancel={() => setPendingMeasurementUnit(null)}
+      />
+
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
       />
     </div>
   )
