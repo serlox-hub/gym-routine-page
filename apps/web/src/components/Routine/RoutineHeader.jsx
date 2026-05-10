@@ -58,9 +58,13 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
 
   const handleCopyAsText = async () => {
     try {
-      const data = await exportRoutine(parseInt(routineId))
-      const text = formatRoutineAsText(data)
-      await navigator.clipboard.writeText(text)
+      // Safari iOS exige que la llamada al portapapeles se inicie síncrona desde
+      // el click. Si hacemos `await exportRoutine` antes del writeText se pierde
+      // la user activation. Por eso usamos ClipboardItem con Promise<Blob>: el
+      // navegador resuelve la promesa internamente sin invalidar el gesto.
+      const blobPromise = exportRoutine(parseInt(routineId))
+        .then(data => new Blob([formatRoutineAsText(data)], { type: 'text/plain' }))
+      await navigator.clipboard.write([new ClipboardItem({ 'text/plain': blobPromise })])
       getNotifier()?.show(t('routine:copiedToClipboard'), 'success')
     } catch {
       getNotifier()?.show(t('routine:copyAsTextFailed'), 'error')
