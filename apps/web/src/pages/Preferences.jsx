@@ -256,6 +256,46 @@ function Preferences() {
           </div>
         </section>
 
+        {/* REMINDERS */}
+        <section>
+          <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
+            {t('common:preferences.remindersTitle')}
+          </span>
+          <div
+            className="rounded-xl"
+            style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, overflow: 'hidden' }}
+          >
+            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+              <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weightReminder')}</span>
+              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+                {[0, 3, 7, 14, 30].map(days => (
+                  <SmallPill
+                    key={days}
+                    label={days === 0 ? t('common:preferences.reminderOff') : t('common:preferences.reminderDays', { count: days })}
+                    active={Number(preferences?.body_weight_reminder_days) === days}
+                    onClick={() => handleChange('body_weight_reminder_days', days)}
+                    disabled={updatePreference.isPending}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between" style={{ padding: '14px 16px' }}>
+              <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.measurementsReminder')}</span>
+              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+                {[0, 7, 14, 30, 60].map(days => (
+                  <SmallPill
+                    key={days}
+                    label={days === 0 ? t('common:preferences.reminderOff') : t('common:preferences.reminderDays', { count: days })}
+                    active={Number(preferences?.body_measurements_reminder_days) === days}
+                    onClick={() => handleChange('body_measurements_reminder_days', days)}
+                    disabled={updatePreference.isPending}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* TRAINING GOAL */}
         <div ref={goalRef}>
           <TrainingGoalSection

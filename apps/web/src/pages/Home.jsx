@@ -1,4 +1,4 @@
-import { GreetingHeader, StreakCard, StatsRow, TodaysWorkout } from '../components/Home/index.js'
+import { GreetingHeader, StreakCard, StatsRow, TodaysWorkout, RemindersBanner } from '../components/Home/index.js'
 
 function Home() {
   return (
@@ -6,6 +6,7 @@ function Home() {
       <GreetingHeader />
       <StreakCard />
       <StatsRow />
+      <RemindersBanner />
       <TodaysWorkout />
     </div>
   )

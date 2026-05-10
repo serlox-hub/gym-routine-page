@@ -13,6 +13,19 @@ export async function fetchBodyMeasurementHistory(userId, measurementType) {
   return data
 }
 
+export async function fetchLatestBodyMeasurement(userId) {
+  const { data, error } = await getClient()
+    .from('body_measurements')
+    .select('id, measurement_type, value, recorded_at')
+    .eq('user_id', userId)
+    .order('recorded_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
 export async function createBodyMeasurement({ userId, measurementType, value, notes = null, recordedAt = null }) {
   const { data, error } = await getClient()
     .from('body_measurements')

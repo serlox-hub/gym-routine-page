@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   fetchBodyMeasurementHistory,
+  fetchLatestBodyMeasurement,
   createBodyMeasurement,
   updateBodyMeasurement,
   deleteBodyMeasurement,
 } from './bodyMeasurementsApi.js'
-import { makeQueryMock, makeClientMock } from './_testUtils.js'
+import { makeClientMock } from './_testUtils.js'
 
 vi.mock('./_client.js', () => ({
   getClient: vi.fn(),
@@ -41,6 +42,39 @@ describe('fetchBodyMeasurementHistory', () => {
     }))
 
     await expect(fetchBodyMeasurementHistory('user-1', 'waist')).rejects.toThrow('DB error')
+  })
+})
+
+// ============================================
+// fetchLatestBodyMeasurement
+// ============================================
+
+describe('fetchLatestBodyMeasurement', () => {
+  it('devuelve el ultimo registro de cualquier tipo de medida', async () => {
+    const fakeLatest = { id: 'bm-9', measurement_type: 'waist', value: 80, recorded_at: '2026-05-01' }
+    getClient.mockReturnValue(makeClientMock({
+      body_measurements: { data: fakeLatest, error: null },
+    }))
+
+    const result = await fetchLatestBodyMeasurement('user-1')
+    expect(result).toEqual(fakeLatest)
+  })
+
+  it('devuelve null si el usuario no tiene medidas', async () => {
+    getClient.mockReturnValue(makeClientMock({
+      body_measurements: { data: null, error: null },
+    }))
+
+    expect(await fetchLatestBodyMeasurement('user-1')).toBeNull()
+  })
+
+  it('lanza error si la query falla', async () => {
+    const fakeError = new Error('DB error')
+    getClient.mockReturnValue(makeClientMock({
+      body_measurements: { data: null, error: fakeError },
+    }))
+
+    await expect(fetchLatestBodyMeasurement('user-1')).rejects.toThrow('DB error')
   })
 })
 

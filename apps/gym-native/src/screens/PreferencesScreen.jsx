@@ -317,6 +317,41 @@ export default function PreferencesScreen({ navigation, route }) {
           )}
         </View>
 
+        {/* REMINDERS */}
+        <View>
+          <SectionLabel>{t('common:preferences.remindersTitle')}</SectionLabel>
+          <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 14, flexShrink: 1 }}>{t('common:preferences.weightReminder')}</Text>
+              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+                {[0, 3, 7, 14, 30].map(days => (
+                  <SmallPill
+                    key={days}
+                    label={days === 0 ? t('common:preferences.reminderOff') : t('common:preferences.reminderDays', { count: days })}
+                    active={Number(preferences?.body_weight_reminder_days) === days}
+                    onPress={() => handleChange('body_weight_reminder_days', days)}
+                    disabled={updatePreference.isPending}
+                  />
+                ))}
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 14, flexShrink: 1 }}>{t('common:preferences.measurementsReminder')}</Text>
+              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+                {[0, 7, 14, 30, 60].map(days => (
+                  <SmallPill
+                    key={days}
+                    label={days === 0 ? t('common:preferences.reminderOff') : t('common:preferences.reminderDays', { count: days })}
+                    active={Number(preferences?.body_measurements_reminder_days) === days}
+                    onPress={() => handleChange('body_measurements_reminder_days', days)}
+                    disabled={updatePreference.isPending}
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* TRAINING GOAL */}
         <View onLayout={(e) => { goalY.current = e.nativeEvent.layout.y }}>
           <SectionLabel>{t('common:preferences.trainingGoalTitle')}</SectionLabel>

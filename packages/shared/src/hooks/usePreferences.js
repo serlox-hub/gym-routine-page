@@ -19,6 +19,8 @@ const DEFAULT_VALUES = {
   show_training_goal: true,
   week_start_day: 'monday',
   language: 'es',
+  body_weight_reminder_days: 0,
+  body_measurements_reminder_days: 0,
 }
 
 // ============================================

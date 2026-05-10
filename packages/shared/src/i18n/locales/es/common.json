@@ -146,6 +146,13 @@
     "comingSoonDesc": "Más funcionalidades en camino",
     "moreFeaturesComingSoon": "Más funcionalidades próximamente",
     "moreFeaturesDescription": "Estamos trabajando en nuevas características para ti",
+    "remindersTitle": "Recordatorios",
+    "weightReminder": "Recordar pesarse",
+    "weightReminderDescription": "Avisar en la home si llevas X días sin registrar tu peso",
+    "measurementsReminder": "Recordar medirse",
+    "measurementsReminderDescription": "Avisar en la home si llevas X días sin registrar tus medidas",
+    "reminderOff": "Off",
+    "reminderDays": "{{count}}d",
     "daysPerCycle": "Días por ciclo",
     "rest": "Descanso",
     "streak_one": "{{count}} semana de racha",
@@ -173,6 +180,11 @@
     "quickAccess": "Acceso rápido",
     "routines": "Rutinas",
     "body": "Cuerpo"
+  },
+  "reminders": {
+    "weightTitle": "Hace {{count}} días sin registrar tu peso",
+    "measurementsTitle": "Hace {{count}} días sin registrar tus medidas",
+    "cta": "Registrar"
   },
   "home": {
     "greetingMorning": "Buenos días",

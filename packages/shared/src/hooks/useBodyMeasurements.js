@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import {
   fetchBodyMeasurementHistory,
+  fetchLatestBodyMeasurement,
   createBodyMeasurement,
   updateBodyMeasurement,
   deleteBodyMeasurement,
@@ -22,6 +23,16 @@ export function useBodyMeasurementHistory(measurementType) {
   })
 }
 
+export function useLatestBodyMeasurement() {
+  const userId = useUserId()
+
+  return useQuery({
+    queryKey: [QUERY_KEYS.BODY_MEASUREMENT_LATEST, userId],
+    queryFn: () => fetchLatestBodyMeasurement(userId),
+    enabled: !!userId,
+  })
+}
+
 // ============================================
 // MUTATIONS
 // ============================================
@@ -35,6 +46,9 @@ export function useRecordBodyMeasurement() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.BODY_MEASUREMENT_HISTORY, userId, data.measurement_type]
+      })
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.BODY_MEASUREMENT_LATEST, userId]
       })
     },
   })
@@ -50,6 +64,9 @@ export function useUpdateBodyMeasurement() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.BODY_MEASUREMENT_HISTORY, userId, data.measurement_type]
       })
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.BODY_MEASUREMENT_LATEST, userId]
+      })
     },
   })
 }
@@ -63,6 +80,9 @@ export function useDeleteBodyMeasurement() {
     onSuccess: (_, { measurementType }) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.BODY_MEASUREMENT_HISTORY, userId, measurementType]
+      })
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.BODY_MEASUREMENT_LATEST, userId]
       })
     },
   })

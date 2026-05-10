@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { GreetingHeader, StreakCard, StatsRow, TodaysWorkout } from '../components/Home'
+import { GreetingHeader, StreakCard, StatsRow, TodaysWorkout, RemindersBanner } from '../components/Home'
 import { design } from '../lib/styles'
 
 export default function HomeScreen({ navigation }) {
@@ -15,6 +15,7 @@ export default function HomeScreen({ navigation }) {
         <GreetingHeader navigation={navigation} />
         <StreakCard onScrubbingChange={(active) => setScrollEnabled(!active)} />
         <StatsRow />
+        <RemindersBanner navigation={navigation} />
         <TodaysWorkout navigation={navigation} />
       </ScrollView>
     </SafeAreaView>

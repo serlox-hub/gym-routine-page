@@ -146,6 +146,13 @@
     "comingSoonDesc": "More features on the way",
     "moreFeaturesComingSoon": "More features coming soon",
     "moreFeaturesDescription": "We're working on new features for you",
+    "remindersTitle": "Reminders",
+    "weightReminder": "Weight reminder",
+    "weightReminderDescription": "Show a banner on home if you haven't logged your weight in X days",
+    "measurementsReminder": "Measurements reminder",
+    "measurementsReminderDescription": "Show a banner on home if you haven't logged your measurements in X days",
+    "reminderOff": "Off",
+    "reminderDays": "{{count}}d",
     "daysPerCycle": "Days per cycle",
     "rest": "Rest",
     "streak_one": "{{count}} week streak",
@@ -173,6 +180,11 @@
     "quickAccess": "Quick access",
     "routines": "Routines",
     "body": "Body"
+  },
+  "reminders": {
+    "weightTitle": "It's been {{count}} days since you logged your weight",
+    "measurementsTitle": "It's been {{count}} days since you logged your measurements",
+    "cta": "Log now"
   },
   "home": {
     "greetingMorning": "Good morning",
