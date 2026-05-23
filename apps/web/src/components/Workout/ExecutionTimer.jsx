@@ -83,7 +83,6 @@ function ExecutionTimer({ seconds }) {
     setRemaining(seconds)
   }
 
-  const progress = seconds > 0 ? ((seconds - remaining) / seconds) * 100 : 0
   const isCritical = remaining <= 3 && remaining > 0
   const isDone = remaining === 0 && !isRunning
 
@@ -111,19 +110,6 @@ function ExecutionTimer({ seconds }) {
       >
         {formatSecondsToMMSS(remaining)}
       </span>
-
-      <div
-        className="w-12 h-1 rounded-full overflow-hidden"
-        style={{ backgroundColor: colors.border }}
-      >
-        <div
-          className="h-full transition-all duration-1000"
-          style={{
-            width: `${progress}%`,
-            backgroundColor: isDone ? colors.success : isCritical ? colors.danger : colors.textSecondary
-          }}
-        />
-      </div>
 
       <button
         onClick={handleStop}

@@ -54,7 +54,6 @@ export default function ExecutionTimer({ seconds }) {
     setRemaining(seconds)
   }
 
-  const progress = seconds > 0 ? ((seconds - remaining) / seconds) * 100 : 0
   const isCritical = remaining <= 3 && remaining > 0
   const isDone = remaining === 0 && !isRunning
 
@@ -88,19 +87,6 @@ export default function ExecutionTimer({ seconds }) {
       >
         {formatSecondsToMMSS(remaining)}
       </Text>
-
-      <View
-        className="w-12 h-1 rounded-full overflow-hidden"
-        style={{ backgroundColor: colors.border }}
-      >
-        <View
-          className="h-full rounded-full"
-          style={{
-            width: `${progress}%`,
-            backgroundColor: isDone ? colors.success : isCritical ? colors.danger : colors.textSecondary,
-          }}
-        />
-      </View>
 
       <Pressable onPress={handleStop} className="active:opacity-70">
         <Text className="text-xs" style={{ color: colors.textSecondary }}>✕</Text>
