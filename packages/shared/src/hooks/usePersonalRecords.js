@@ -3,6 +3,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { evaluateSetForPR } from '../lib/sessionStatsCalculation.js'
 import { fetchExerciseBests } from '../api/exerciseStatsApi.js'
+import { fetchUserExerciseOverride } from '../api/exerciseApi.js'
+import { resolveWeightUnit } from '../lib/exerciseUtils.js'
+import { useUserId } from './useAuth.js'
 import { useWorkoutStore } from './_stores.js'
 import { getHaptics } from '../haptics.js'
 
@@ -13,6 +16,7 @@ import { getHaptics } from '../haptics.js'
 export function useSessionPRDetection() {
   const sessionId = useWorkoutStore(state => state.sessionId)
   const queryClient = useQueryClient()
+  const userId = useUserId()
 
   // Pre-session bests cache: { [exerciseId]: { bestWeight, ... } | 'loading' | 'none' }
   const preSessionBestsRef = useRef({})
@@ -74,11 +78,27 @@ export function useSessionPRDetection() {
 
     const runningBests = runningBestsRef.current[exerciseId] || {}
 
+    // Resolver la unidad de peso efectiva del ejercicio (override > preferencia global).
+    // El override puede no estar en caché si nunca se montó la card del ejercicio,
+    // así que se hace fetch como fallback.
+    let override = queryClient.getQueryData([QUERY_KEYS.EXERCISES, 'override', exerciseId])
+    if (override === undefined) {
+      try {
+        override = await fetchUserExerciseOverride(exerciseId)
+        queryClient.setQueryData([QUERY_KEYS.EXERCISES, 'override', exerciseId], override)
+      } catch {
+        override = null
+      }
+    }
+    const userPrefs = queryClient.getQueryData([QUERY_KEYS.USER_PREFERENCES, userId])
+    const weightUnit = resolveWeightUnit(override, userPrefs)
+
     const { newRecords, updatedRunningBests } = evaluateSetForPR(
       dbFormatSet,
       runningBests,
       preBests,
       measurementType,
+      weightUnit,
     )
 
     runningBestsRef.current[exerciseId] = updatedRunningBests
@@ -100,7 +120,7 @@ export function useSessionPRDetection() {
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => setPRNotification(null), 4000)
     }
-  }, [sessionId, queryClient])
+  }, [sessionId, queryClient, userId])
 
   // Limpiar timer al desmontar
   useEffect(() => {

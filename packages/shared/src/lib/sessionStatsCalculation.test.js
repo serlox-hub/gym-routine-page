@@ -687,6 +687,61 @@ describe('sessionStatsCalculation', () => {
       const result3 = evaluateSetForPR(set3, result1.updatedRunningBests, preBests, 'weight_reps')
       expect(result3.newRecords.find(r => r.type === 'repPR')).toBeDefined()
     })
+
+    // ============================================
+    // weight unit propagation
+    // ============================================
+
+    it('por defecto usa "kg" como unidad cuando no se pasa weightUnit', () => {
+      const set = { weight: 110, reps_completed: 5 }
+      const preBests = { best1rm: 120, bestWeight: 100, bestPerReps: { '5': 100 } }
+
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+
+      expect(newRecords.find(r => r.type === 'bestWeight').unit).toBe('kg')
+      expect(newRecords.find(r => r.type === 'best1rm').unit).toBe('kg')
+      expect(newRecords.find(r => r.type === 'repPR').unit).toBe('kg')
+    })
+
+    it('propaga weightUnit a records de peso, 1RM y repPR', () => {
+      const set = { weight: 110, reps_completed: 5 }
+      const preBests = { best1rm: 120, bestWeight: 100, bestPerReps: { '5': 100 } }
+
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps', 'lb')
+
+      expect(newRecords.find(r => r.type === 'bestWeight').unit).toBe('lb')
+      expect(newRecords.find(r => r.type === 'best1rm').unit).toBe('lb')
+      expect(newRecords.find(r => r.type === 'repPR').unit).toBe('lb')
+    })
+
+    it('usa labels traducidas vía i18n (no hardcoded)', () => {
+      const set = { weight: 110, reps_completed: 5 }
+      const preBests = { best1rm: 120, bestWeight: 100, bestPerReps: { '5': 100 } }
+
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+
+      // Las labels vienen del namespace workout:pr (idioma de los tests = es por defecto)
+      expect(newRecords.find(r => r.type === 'bestWeight').label).toBe('Peso')
+      expect(newRecords.find(r => r.type === 'best1rm').label).toBe('1RM')
+    })
+
+    it('weightUnit no afecta a records que no son de peso (reps/tiempo/distancia/pace)', () => {
+      const repsSet = { reps_completed: 20 }
+      const repsResult = evaluateSetForPR(repsSet, {}, { bestReps: 15 }, 'reps_only', 'lb')
+      expect(repsResult.newRecords.find(r => r.type === 'bestReps').unit).toBe('reps')
+
+      const timeSet = { time_seconds: 120 }
+      const timeResult = evaluateSetForPR(timeSet, {}, { bestTimeSeconds: 90 }, 'time', 'lb')
+      expect(timeResult.newRecords.find(r => r.type === 'bestTimeSeconds').unit).toBe('s')
+
+      const distSet = { distance_meters: 6000 }
+      const distResult = evaluateSetForPR(distSet, {}, { bestDistanceMeters: 5000 }, 'distance', 'lb')
+      expect(distResult.newRecords.find(r => r.type === 'bestDistanceMeters').unit).toBe('m')
+
+      const paceSet = { distance_meters: 5000, pace_seconds: 280 }
+      const paceResult = evaluateSetForPR(paceSet, {}, { bestDistanceMeters: 5000, bestPaceSeconds: 300 }, 'distance_pace', 'lb')
+      expect(paceResult.newRecords.find(r => r.type === 'bestPaceSeconds').unit).toBe('s/km')
+    })
   })
 
   // ============================================

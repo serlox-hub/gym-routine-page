@@ -161,6 +161,7 @@
     "volume": "Volumen",
     "time": "Tiempo",
     "distance": "Distancia",
+    "pace": "Ritmo",
     "repPR": "PR a {{repCount}} reps"
   }
 }

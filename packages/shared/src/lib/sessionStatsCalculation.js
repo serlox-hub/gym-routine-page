@@ -159,16 +159,34 @@ export function mergeExerciseStats(target, source) {
 // PR DETECTION (END OF SESSION)
 // ============================================
 
+// Mapa de stat → clave i18n para el label que se muestra en la notificación de PR
+// y en los registros de detalle. Se evalúa con t() en cada uso para respetar el
+// idioma activo (no se puede hacer a nivel de módulo).
+const PR_LABEL_KEY = {
+  bestWeight: 'workout:pr.weight',
+  bestReps: 'workout:pr.reps',
+  best1rm: 'workout:pr.oneRM',
+  totalVolume: 'workout:pr.volume',
+  bestTimeSeconds: 'workout:pr.time',
+  bestDistanceMeters: 'workout:pr.distance',
+  bestPaceSeconds: 'workout:pr.pace',
+}
+
+function getPRLabel(stat) {
+  const key = PR_LABEL_KEY[stat]
+  return key ? t(key) : ''
+}
+
 const PR_FIELDS = [
-  { stat: 'bestWeight', flag: 'isPrWeight', label: 'Peso', unit: 'kg', metric: 'weight' },
-  { stat: 'bestReps', flag: 'isPrReps', label: 'Repeticiones', unit: 'reps', metric: 'reps' },
-  { stat: 'best1rm', flag: 'isPr1rm', label: '1RM Est.', unit: 'kg', metric: '1rm' },
-  { stat: 'totalVolume', flag: 'isPrVolume', label: 'Volumen', unit: 'kg', metric: 'volume' },
-  { stat: 'bestTimeSeconds', flag: 'isPrTime', label: 'Tiempo', unit: 's', metric: 'time' },
-  { stat: 'bestDistanceMeters', flag: 'isPrDistance', label: 'Distancia', unit: 'm', metric: 'distance' },
+  { stat: 'bestWeight', flag: 'isPrWeight', unit: 'kg', metric: 'weight' },
+  { stat: 'bestReps', flag: 'isPrReps', unit: 'reps', metric: 'reps' },
+  { stat: 'best1rm', flag: 'isPr1rm', unit: 'kg', metric: '1rm' },
+  { stat: 'totalVolume', flag: 'isPrVolume', unit: 'kg', metric: 'volume' },
+  { stat: 'bestTimeSeconds', flag: 'isPrTime', unit: 's', metric: 'time' },
+  { stat: 'bestDistanceMeters', flag: 'isPrDistance', unit: 'm', metric: 'distance' },
 ]
 
-const PACE_FIELD = { stat: 'bestPaceSeconds', flag: 'isPrPace', label: 'Ritmo', unit: 's/km', metric: 'pace' }
+const PACE_FIELD = { stat: 'bestPaceSeconds', flag: 'isPrPace', unit: 's/km', metric: 'pace' }
 
 const DEFAULT_FLAGS = {
   isPrWeight: false,
@@ -189,14 +207,14 @@ export function detectNewPersonalRecords(currentStats, previousBests, measuremen
 
   const prMetrics = measurementType ? getPRMetrics(measurementType) : null
 
-  for (const { stat, flag, label, unit, metric } of PR_FIELDS) {
+  for (const { stat, flag, unit, metric } of PR_FIELDS) {
     if (prMetrics && !prMetrics.includes(metric)) continue
     const current = currentStats[stat]
     const previous = previousBests[stat]
     if (current && previous && current > previous) {
       flags[flag] = true
       const improvement = Math.round(((current - previous) / previous) * 100)
-      details.push({ type: stat, label, newValue: current, oldValue: previous, unit, improvement })
+      details.push({ type: stat, label: getPRLabel(stat), newValue: current, oldValue: previous, unit, improvement })
     }
   }
 
@@ -209,7 +227,7 @@ export function detectNewPersonalRecords(currentStats, previousBests, measuremen
       const improvement = Math.round(((previousPace - currentPace) / previousPace) * 100)
       details.push({
         type: PACE_FIELD.stat,
-        label: PACE_FIELD.label,
+        label: getPRLabel(PACE_FIELD.stat),
         newValue: currentPace,
         oldValue: previousPace,
         unit: PACE_FIELD.unit,
@@ -259,7 +277,7 @@ export function detectNewPersonalRecords(currentStats, previousBests, measuremen
 // REAL-TIME PR DETECTION (PER SET)
 // ============================================
 
-export function evaluateSetForPR(setData, runningBests, preSessionBests, measurementType) {
+export function evaluateSetForPR(setData, runningBests, preSessionBests, measurementType, weightUnit = 'kg') {
   const metrics = getPRMetrics(measurementType)
   const newRecords = []
   const updatedRunningBests = { ...runningBests }
@@ -269,30 +287,30 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, measure
   const checks = []
 
   if (metrics.includes('weight') && setData.weight) {
-    checks.push({ key: 'bestWeight', value: setData.weight, label: 'Peso', unit: 'kg', higherIsBetter: true })
+    checks.push({ key: 'bestWeight', value: setData.weight, label: getPRLabel('bestWeight'), unit: weightUnit, higherIsBetter: true })
   }
 
   if (metrics.includes('reps') && setData.reps_completed) {
-    checks.push({ key: 'bestReps', value: setData.reps_completed, label: 'Repeticiones', unit: 'reps', higherIsBetter: true })
+    checks.push({ key: 'bestReps', value: setData.reps_completed, label: getPRLabel('bestReps'), unit: 'reps', higherIsBetter: true })
   }
 
   if (metrics.includes('1rm') && setData.weight && setData.reps_completed) {
     const e1rm = calculateEpley1RM(setData.weight, setData.reps_completed)
     if (e1rm > 0) {
-      checks.push({ key: 'best1rm', value: e1rm, label: '1RM Est.', unit: 'kg', higherIsBetter: true })
+      checks.push({ key: 'best1rm', value: e1rm, label: getPRLabel('best1rm'), unit: weightUnit, higherIsBetter: true })
     }
   }
 
   if (metrics.includes('time') && setData.time_seconds) {
-    checks.push({ key: 'bestTimeSeconds', value: setData.time_seconds, label: 'Tiempo', unit: 's', higherIsBetter: true })
+    checks.push({ key: 'bestTimeSeconds', value: setData.time_seconds, label: getPRLabel('bestTimeSeconds'), unit: 's', higherIsBetter: true })
   }
 
   if (metrics.includes('distance') && setData.distance_meters) {
-    checks.push({ key: 'bestDistanceMeters', value: setData.distance_meters, label: 'Distancia', unit: 'm', higherIsBetter: true })
+    checks.push({ key: 'bestDistanceMeters', value: setData.distance_meters, label: getPRLabel('bestDistanceMeters'), unit: 'm', higherIsBetter: true })
   }
 
   if (metrics.includes('pace') && setData.pace_seconds) {
-    checks.push({ key: 'bestPaceSeconds', value: setData.pace_seconds, label: 'Ritmo', unit: 's/km', higherIsBetter: false })
+    checks.push({ key: 'bestPaceSeconds', value: setData.pace_seconds, label: getPRLabel('bestPaceSeconds'), unit: 's/km', higherIsBetter: false })
   }
 
   for (const { key, value, label, unit, higherIsBetter } of checks) {
@@ -344,7 +362,7 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, measure
           value: setData.weight,
           previousValue: preSessionPerRep[N] ?? null,
           label: t('workout:pr.repPR', { repCount: N }),
-          unit: 'kg',
+          unit: weightUnit,
         })
         if (!updatedRunningBests.bestPerReps) updatedRunningBests.bestPerReps = { ...runningPerRep }
         updatedRunningBests.bestPerReps[N] = setData.weight
