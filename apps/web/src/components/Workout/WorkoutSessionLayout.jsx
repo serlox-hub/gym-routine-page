@@ -191,7 +191,10 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     <>
       <RestTimer />
       <PRNotification notification={prNotification} onDismiss={dismissPR} />
-      <div className="p-4 max-w-2xl mx-auto pb-32">
+      {/* Scroll interno (no scroll del body) para evitar el bug de iOS Safari
+          que rompe `position: sticky` cuando el teclado está abierto. */}
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div className="p-4 max-w-2xl pb-32 w-full overflow-y-auto flex-1">
         <PageHeader
           title={title}
           onBack={() => navigate(-1)}
@@ -287,6 +290,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         onClose={() => setShowConverter(false)}
       />
 
+    </div>
     </div>
     </>
   )
