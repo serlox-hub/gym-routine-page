@@ -335,8 +335,13 @@ export function buildPRsByExerciseMap(sessionPRs) {
   if (!sessionPRs) return {}
   const map = {}
   for (const pr of sessionPRs) {
+    // Un rep-PR (pr_rep_counts) puede existir sin disparar ningún is_pr_*
+    // (ej. nuevo récord a N reps sin superar el bestWeight ni el best1RM).
+    // Si no lo incluimos aquí, los slides de PR card se pierden al compartir
+    // desde el histórico.
+    const hasRepPR = Array.isArray(pr.pr_rep_counts) && pr.pr_rep_counts.length > 0
     const hasPR = pr.is_pr_weight || pr.is_pr_reps || pr.is_pr_1rm || pr.is_pr_volume ||
-      pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace
+      pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace || hasRepPR
     if (hasPR) map[pr.exercise_id] = pr
   }
   return map

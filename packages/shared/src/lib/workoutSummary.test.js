@@ -234,5 +234,25 @@ describe('workoutSummary', () => {
       const summary = buildWorkoutSummaryFromSession(session, sessionPRs)
       expect(summary.prs[0].details[0].oldValue).toBeNull()
     })
+
+    it('incluye ejercicio con solo rep-PR (sin ningún is_pr_*) — regresión share desde histórico', () => {
+      const sessionPRsRepOnly = [{
+        exercise_id: 1,
+        is_pr_weight: false,
+        is_pr_reps: false,
+        is_pr_1rm: false,
+        is_pr_volume: false,
+        is_pr_time: false,
+        is_pr_distance: false,
+        is_pr_pace: false,
+        pr_rep_counts: [13],
+        best_per_reps: { '13': 10 },
+      }]
+      const previousBests = { 1: { bestPerReps: { '13': 8 } } }
+      const summary = buildWorkoutSummaryFromSession(session, sessionPRsRepOnly, { previousBests })
+      expect(summary.prs).toHaveLength(1)
+      const repPR = summary.prs[0].details.find(d => d.type === 'repPR')
+      expect(repPR).toMatchObject({ type: 'repPR', repCount: 13, newValue: 10, oldValue: 8 })
+    })
   })
 })
