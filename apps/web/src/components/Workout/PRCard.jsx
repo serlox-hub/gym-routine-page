@@ -126,13 +126,13 @@ const PRCard = forwardRef(function PRCard({ exerciseName, date, record, width = 
             fontSize: 52 * k,
             fontWeight: 800,
             color: C.gold,
-            lineHeight: `${58 * k}px`,
+            lineHeight: `${68 * k}px`,
           }}>{value}</div>
           {previous && (
             <div style={{
               fontSize: 13 * k,
               color: C.textMuted,
-              marginTop: 6 * k,
+              marginTop: 12 * k,
             }}>{previous}</div>
           )}
         </div>

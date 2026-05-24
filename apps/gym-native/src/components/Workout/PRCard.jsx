@@ -98,14 +98,14 @@ const PRCard = forwardRef(function PRCard({ exerciseName, date, record, width = 
             fontSize: 52 * k,
             fontWeight: '800',
             color: colors.gold,
-            lineHeight: 58 * k,
+            lineHeight: 68 * k,
             textAlign: 'center',
           }}>{value}</Text>
           {previous ? (
             <Text style={{
               fontSize: 13 * k,
               color: colors.textMuted,
-              marginTop: 6 * k,
+              marginTop: 12 * k,
               textAlign: 'center',
             }}>{previous}</Text>
           ) : null}

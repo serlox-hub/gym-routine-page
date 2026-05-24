@@ -40,6 +40,7 @@ export default function WorkoutSummary() {
   cardRefs.current = slides.map((_, i) => cardRefs.current[i] || { current: null })
 
   const scrollerRef = useRef(null)
+  const carouselAreaRef = useRef(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [containerW, setContainerW] = useState(0)
   const [containerH, setContainerH] = useState(0)
@@ -62,8 +63,11 @@ export default function WorkoutSummary() {
     if (!summaryData) navigate('/', { replace: true })
   }, [summaryData, navigate])
 
+  // Medimos el contenedor padre (no el scroller) para evitar feedback loop:
+  // si midiéramos el scroller, su altura depende de slideH que depende de
+  // containerH y las cards se encogen progresivamente.
   useEffect(() => {
-    const el = scrollerRef.current
+    const el = carouselAreaRef.current
     if (!el) return
     const ro = new ResizeObserver(([entry]) => {
       setContainerW(entry.contentRect.width)
@@ -130,7 +134,7 @@ export default function WorkoutSummary() {
       </header>
 
       {/* Carrusel scrolleable horizontal */}
-      <div className="flex-1 flex flex-col items-center justify-center overflow-hidden py-4">
+      <div ref={carouselAreaRef} className="flex-1 flex flex-col items-center justify-center overflow-hidden py-4">
         <div
           ref={scrollerRef}
           onScroll={handleScroll}
