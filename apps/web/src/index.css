@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Fondo de las safe areas (status bar y home indicator) en iOS PWA.
+   Sin esto se ven blancas porque html/body por defecto no tienen color. */
+@layer base {
+  html,
+  body {
+    @apply bg-surface;
+  }
+}
