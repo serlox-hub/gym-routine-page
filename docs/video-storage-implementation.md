@@ -22,7 +22,7 @@ Sistema de almacenamiento de videos usando MinIO self-hosted en Raspberry Pi, ac
 │                     │      │                             │
 │ • Auth              │      │  MinIO (puerto 9000/9001)   │
 │ • PostgreSQL        │      │  Cloudflare Tunnel          │
-│ • Edge Functions    │      │  HDD 7TB                    │
+│ • Edge Functions    │      │  SSD 250GB (USB-SATA)       │
 │   - video-upload    │      │                             │
 │   - video-url       │      │  URL: videos.diariogym.com  │
 └─────────────────────┘      └─────────────────────────────┘
@@ -37,6 +37,17 @@ Sistema de almacenamiento de videos usando MinIO self-hosted en Raspberry Pi, ac
 - **MinIO** - Storage S3-compatible
 - **Cloudflare Tunnel** - Exposición segura a internet
 
+### Hardware
+
+- **Disco**: SSD Samsung 850 EVO 250GB conectado por USB-SATA (adaptador JMicron JM20329, VID `152d:2329`)
+- **Montaje**: `/mnt/videos` (entrada en `/etc/fstab` con `nofail` — el sistema arranca aunque el SSD esté desconectado)
+
+⚠️ **El adaptador JMicron es notoriamente flakey**. Si las subidas empiezan a colgarse:
+1. `lsusb | grep JMicron` — si no aparece, el cable o el adaptador han cascado
+2. `lsblk` — si no aparece `sda`/`sdb`, mismo síntoma
+3. `mountpoint /mnt/videos` — si dice "is not a mountpoint", el SSD se desmontó
+4. Reasentar cable USB → `sudo mount -a` → `docker restart minio`
+
 ### Ubicaciones importantes
 
 | Qué | Dónde |
@@ -45,6 +56,7 @@ Sistema de almacenamiento de videos usando MinIO self-hosted en Raspberry Pi, ac
 | Credenciales MinIO | `~/minio-config/.env` |
 | Datos de videos | `/mnt/videos/minio-data` |
 | Config Cloudflare | `/etc/cloudflared/config.yml` |
+| Monitor de salud | `/usr/local/bin/check-minio.sh` (cron cada 5 min) |
 
 ### Comandos útiles
 
@@ -86,6 +98,44 @@ Password: [ver archivo .env]
 Access Key: [en Supabase Edge Function secrets]
 Secret Key: [en Supabase Edge Function secrets]
 ```
+
+### Monitorización
+
+Un script vigila el storage cada 15 minutos y envía alerta cuando algo se rompe (mount caído, container parado, endpoint `/health/live` no responde).
+
+**Componentes en la Pi**:
+
+| Qué | Dónde |
+|-----|-------|
+| Script | `/usr/local/bin/check-minio.sh` |
+| Config (topic ntfy) | `/etc/default/minio-monitor` |
+| Estado actual | `/var/lib/minio-monitor/state` (`OK` o `FAIL`) |
+| Log | `/var/log/minio-monitor.log` |
+| Cron | `*/15 * * * * /usr/local/bin/check-minio.sh` (crontab de root) |
+
+**Qué comprueba**:
+1. `/mnt/videos` montado → si no, intenta `mount -a` antes de marcar fallo (auto-recovery).
+2. Container `minio` en estado `running`.
+3. `GET http://127.0.0.1:9000/minio/health/live` → 200.
+
+**Sólo notifica en transiciones** (OK → FAIL o FAIL → OK), no spam.
+
+**Canal de notificación**: [ntfy.sh](https://ntfy.sh) (gratis, sin cuenta). El topic concreto está en `/etc/default/minio-monitor` en la Pi — NO debe commitearse al repo (es un canal público; quien lo conozca puede leer las alertas).
+
+Para suscribirse desde móvil: instalar app **ntfy** (iOS/Android) → añadir el topic. O en navegador: `https://ntfy.sh/<topic>`.
+
+Para cambiar de topic (rotar si se filtra) o de canal (Slack, etc.):
+```bash
+sudo nano /etc/default/minio-monitor   # cambiar NTFY_TOPIC
+```
+
+Para enviar una notificación de prueba al topic actual (verifica que el canal funciona sin esperar un fallo real):
+```bash
+source /etc/default/minio-monitor
+curl -d "test" -H "Title: Prueba manual" "https://ntfy.sh/$NTFY_TOPIC"
+```
+
+Si `NTFY_TOPIC` se deja vacío, el script sigue funcionando pero sólo loguea a `/var/log/minio-monitor.log`.
 
 ## App React
 
