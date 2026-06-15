@@ -2,6 +2,7 @@ import { supabase } from './supabase.js'
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB (límite de Cloudflare free)
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo']
+const STALL_TIMEOUT_MS = 30_000
 
 /**
  * Sube un video a MinIO a través de Edge Function
@@ -32,18 +33,35 @@ export async function uploadVideo(file, onProgress) {
 
   const { uploadUrl, key } = data
 
-  // 2. Subir directamente a MinIO con progreso
+  // 2. Subir directamente a MinIO con progreso + stall detection
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
+    let stallTimer = null
+
+    const resetStallTimer = () => {
+      if (stallTimer) clearTimeout(stallTimer)
+      stallTimer = setTimeout(() => {
+        xhr.abort()
+        reject(new Error('Subida atascada: sin actividad durante 30 segundos'))
+      }, STALL_TIMEOUT_MS)
+    }
+
+    const cleanup = () => {
+      if (stallTimer) clearTimeout(stallTimer)
+    }
 
     xhr.upload.addEventListener('progress', (e) => {
+      resetStallTimer()
       if (e.lengthComputable && onProgress) {
         const percent = Math.round((e.loaded / e.total) * 100)
         onProgress(percent)
       }
     })
 
+    xhr.upload.addEventListener('loadend', resetStallTimer)
+
     xhr.addEventListener('load', () => {
+      cleanup()
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(key)
       } else {
@@ -52,11 +70,17 @@ export async function uploadVideo(file, onProgress) {
     })
 
     xhr.addEventListener('error', () => {
+      cleanup()
       reject(new Error('Error de red al subir el video'))
+    })
+
+    xhr.addEventListener('abort', () => {
+      cleanup()
     })
 
     xhr.open('PUT', uploadUrl)
     xhr.setRequestHeader('Content-Type', file.type)
+    resetStallTimer()
     xhr.send(file)
   })
 }

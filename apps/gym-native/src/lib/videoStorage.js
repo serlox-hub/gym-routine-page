@@ -3,6 +3,8 @@ import { createUploadTask } from 'expo-file-system/legacy'
 import { supabase } from './supabase'
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+const STALL_TIMEOUT_MS = 30_000
+const STALL_CHECK_INTERVAL_MS = 5_000
 
 /**
  * Sube un video a MinIO a través de Edge Function
@@ -39,23 +41,54 @@ export async function uploadVideo(fileUri, onProgress) {
 
   if (onProgress) onProgress(0)
 
-  const uploadTask = createUploadTask(uploadUrl, fileUri, {
-    httpMethod: 'PUT',
-    headers: { 'Content-Type': contentType },
-  }, (progress) => {
-    if (onProgress) {
-      const percent = Math.round((progress.totalBytesSent / progress.totalBytesExpectedToSend) * 100)
-      onProgress(percent)
+  return new Promise((resolve, reject) => {
+    let lastProgressAt = Date.now()
+    let stallTimer = null
+    let settled = false
+
+    const uploadTask = createUploadTask(uploadUrl, fileUri, {
+      httpMethod: 'PUT',
+      headers: { 'Content-Type': contentType },
+    }, (progress) => {
+      lastProgressAt = Date.now()
+      if (onProgress && progress.totalBytesExpectedToSend > 0) {
+        const percent = Math.round((progress.totalBytesSent / progress.totalBytesExpectedToSend) * 100)
+        onProgress(percent)
+      }
+    })
+
+    const cleanup = () => {
+      settled = true
+      if (stallTimer) clearTimeout(stallTimer)
     }
+
+    const checkStall = () => {
+      if (settled) return
+      if (Date.now() - lastProgressAt > STALL_TIMEOUT_MS) {
+        cleanup()
+        uploadTask.cancelAsync().catch(() => {})
+        reject(new Error('Subida atascada: sin actividad durante 30 segundos'))
+        return
+      }
+      stallTimer = setTimeout(checkStall, STALL_CHECK_INTERVAL_MS)
+    }
+
+    stallTimer = setTimeout(checkStall, STALL_CHECK_INTERVAL_MS)
+
+    uploadTask.uploadAsync()
+      .then(result => {
+        cleanup()
+        if (!result || result.status < 200 || result.status >= 300) {
+          reject(new Error('Error al subir el video'))
+        } else {
+          resolve(key)
+        }
+      })
+      .catch(err => {
+        cleanup()
+        reject(err)
+      })
   })
-
-  const result = await uploadTask.uploadAsync()
-
-  if (!result || result.status < 200 || result.status >= 300) {
-    throw new Error('Error al subir el video')
-  }
-
-  return key
 }
 
 /**
