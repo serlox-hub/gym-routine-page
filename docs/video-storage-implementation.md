@@ -42,11 +42,15 @@ Sistema de almacenamiento de videos usando MinIO self-hosted en Raspberry Pi, ac
 - **Disco**: SSD Samsung 850 EVO 250GB conectado por USB-SATA (adaptador JMicron JM20329, VID `152d:2329`)
 - **Montaje**: `/mnt/videos` (entrada en `/etc/fstab` con `nofail` — el sistema arranca aunque el SSD esté desconectado)
 
-⚠️ **El adaptador JMicron es notoriamente flakey**. Si las subidas empiezan a colgarse:
+⚠️ **El adaptador JMicron es notoriamente flakey** (incidencias registradas: 2026-06-15, 2026-07-11/12 — el adaptador suelta el SSD del bus USB y deja las subidas fallando al 100%). Considerar sustituirlo por uno con chip **ASMedia ASM1153E**. Si las subidas empiezan a colgarse:
 1. `lsusb | grep JMicron` — si no aparece, el cable o el adaptador han cascado
 2. `lsblk` — si no aparece `sda`/`sdb`, mismo síntoma
 3. `mountpoint /mnt/videos` — si dice "is not a mountpoint", el SSD se desmontó
 4. Reasentar cable USB → `sudo mount -a` → `docker restart minio`
+
+**El monitor `check-minio.sh` ahora intenta los pasos 1–4 automáticamente** (ver [Monitorización](#monitorización)). Solo hace falta tu mano si el adaptador está **físicamente muerto** (no reaparece en el bus ni tras el reset USB por software).
+
+> **Síntoma clásico "mount fantasma"**: el adaptador suelta el disco y éste re-enumera con otro nombre (`sda`↔`sdb`), pero la entrada de mount vieja sigue viva → `mountpoint` dice OK y `/minio/health/live` responde 200, pero **toda lectura/escritura da `Input/output error`**. Por eso el monitor hace una prueba de I/O real (fichero canario), no solo `mountpoint`.
 
 ### Ubicaciones importantes
 
@@ -120,6 +124,18 @@ Un script vigila el storage cada 15 minutos y envía alerta cuando algo se rompe
 4. `GET http://127.0.0.1:9000/minio/health/live` → 200.
 
 **Sólo notifica en transiciones** (OK → FAIL o FAIL → OK), no spam.
+
+**Fuente de verdad del script**: [`scripts/raspberry-pi/check-minio.sh`](../scripts/raspberry-pi/check-minio.sh) en este repo. Para desplegar cambios a la Pi:
+```bash
+scp scripts/raspberry-pi/check-minio.sh pi@<pi>:/tmp/ && \
+  ssh pi@<pi> 'sudo install -m 0755 /tmp/check-minio.sh /usr/local/bin/check-minio.sh'
+```
+
+**Auto-reparación** (cuando algún check falla, antes de resignarse a alertar):
+- **Nivel 1** — el disco sigue presente en el bus (`blkid -U <uuid>` lo encuentra) pero el mount quedó fantasma / con I/O error → `docker stop minio` → `umount` → `fsck -y` → `mount -a` → `docker start minio`.
+- **Nivel 2** — el disco desapareció del bus USB → **reset del puerto USB** (unbind/bind del hub padre vía sysfs; la ruta USB del disco se cachea en `/var/lib/minio-monitor/usb_path` cuando está sano). Si reaparece, aplica Nivel 1.
+- **Salvaguardas**: siempre notifica el resultado por ntfy (aunque se auto-repare, para dejar rastro de la incidencia) y aplica **rate-limit** (`MAX_REPAIRS_PER_HOUR=3`, configurable en `/etc/default/minio-monitor`) para no entrar en bucle de reinicios si el hardware agoniza.
+- **Límite**: no puede recuperar un cable/adaptador **físicamente muerto** (si no reaparece ni tras el reset USB, alerta para intervención manual).
 
 **Canal de notificación**: [ntfy.sh](https://ntfy.sh) (gratis, sin cuenta). El topic concreto está en `/etc/default/minio-monitor` en la Pi — NO debe commitearse al repo (es un canal público; quien lo conozca puede leer las alertas).
 
