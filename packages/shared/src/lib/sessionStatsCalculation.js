@@ -156,6 +156,30 @@ export function mergeExerciseStats(target, source) {
 }
 
 // ============================================
+// REP-PR DOMINANCE HELPER
+// ============================================
+
+// Regla de dominancia: hacer más reps al mismo peso es estrictamente mejor, así
+// que un set W×N "cubre" implícitamente W×M para todo M < N. Por eso el récord a
+// N reps debe compararse contra el mejor peso conseguido a N reps *o más*, no solo
+// a exactamente N. Esto evita marcar como PR un 100×8 cuando ya se hizo 100×9.
+//
+// Devuelve el máximo peso entre las entradas con rep count >= minReps (o > minReps
+// si strictlyGreater=true) de uno o varios objetos bestPerReps. 0 si no hay ninguna.
+export function maxWeightAtRepsOrAbove(minReps, strictlyGreater, ...maps) {
+  let best = 0
+  for (const map of maps) {
+    if (!map) continue
+    for (const [repsKey, weight] of Object.entries(map)) {
+      const reps = parseInt(repsKey, 10)
+      const qualifies = strictlyGreater ? reps > minReps : reps >= minReps
+      if (qualifies && weight > best) best = weight
+    }
+  }
+  return best
+}
+
+// ============================================
 // PR DETECTION (END OF SESSION)
 // ============================================
 
@@ -247,18 +271,25 @@ export function detectNewPersonalRecords(currentStats, previousBests, measuremen
       const prCounts = []
       for (const [repsKey, weight] of Object.entries(currentBPR)) {
         const repCount = parseInt(repsKey, 10)
-        const previousAtN = previousBPR[repsKey] ?? null
-        if (!previousAtN || weight > previousAtN) {
+        // Dominancia: el récord a N reps se compara contra el mejor peso a N reps
+        // o más — tanto del histórico (M >= N) como de la propia sesión (M > N,
+        // porque más reps al mismo peso domina). El mismo rep count ya está
+        // agregado como máximo en currentBPR[N].
+        const historicalThreshold = maxWeightAtRepsOrAbove(repCount, false, previousBPR)
+        const sameSessionDom = maxWeightAtRepsOrAbove(repCount, true, currentBPR)
+        const threshold = Math.max(historicalThreshold, sameSessionDom)
+        if (weight > threshold) {
           prCounts.push(repCount)
-          const improvement = previousAtN
-            ? Math.round(((weight - previousAtN) / previousAtN) * 100)
+          const oldValue = threshold > 0 ? threshold : null
+          const improvement = oldValue
+            ? Math.round(((weight - oldValue) / oldValue) * 100)
             : null
           details.push({
             type: 'repPR',
             repCount,
             label: t('workout:pr.repPR', { repCount }),
             newValue: weight,
-            oldValue: previousAtN,
+            oldValue,
             unit: 'kg',
             improvement,
           })
@@ -353,7 +384,10 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, measure
     if (hasRepPRHistory) {
       const N = setData.reps_completed
       const runningPerRep = runningBests.bestPerReps || {}
-      const threshold = Math.max(runningPerRep[N] || 0, preSessionPerRep[N] || 0)
+      // Dominancia: comparar contra el mejor peso a N reps o más (M >= N), tanto de
+      // los sets ya hechos en la sesión como del histórico. Así un 100×8 posterior a
+      // un 100×9 no dispara PR (running[9]=100 ya cubre 8 reps).
+      const threshold = maxWeightAtRepsOrAbove(N, false, runningPerRep, preSessionPerRep)
 
       if (setData.weight > threshold) {
         newRecords.push({

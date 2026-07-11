@@ -5,6 +5,7 @@ import { fetchSessionDetail } from '../api/workoutSessionApi.js'
 import { fetchSessionPRs, fetchExerciseBests } from '../api/exerciseStatsApi.js'
 import { fetchUserExerciseWeightUnits } from '../api/exerciseApi.js'
 import { transformSessionDetailData } from './workoutTransforms.js'
+import { maxWeightAtRepsOrAbove } from './sessionStatsCalculation.js'
 import { t, getCurrentLocale } from '../i18n/index.js'
 
 /**
@@ -234,10 +235,18 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
         const key = String(repCount)
         const newValue = pr.best_per_reps[key]
         if (newValue == null) continue
+        // Dominancia: el "anterior" es el mejor peso batido a N reps o más — del
+        // histórico (M >= N) y de la propia sesión a más reps (M > N). Coincide con
+        // el umbral usado en detectNewPersonalRecords para no mostrar dos valores
+        // distintos según la vista.
+        const threshold = Math.max(
+          maxWeightAtRepsOrAbove(repCount, false, prevPerReps),
+          maxWeightAtRepsOrAbove(repCount, true, pr.best_per_reps),
+        )
         details.push(buildPRDetail({
           type: 'repPR',
           newValue,
-          oldValue: prevPerReps[key] ?? null,
+          oldValue: threshold > 0 ? threshold : null,
           unit,
           repCount,
         }))

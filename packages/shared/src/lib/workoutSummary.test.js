@@ -230,6 +230,21 @@ describe('workoutSummary', () => {
       expect(at8).toMatchObject({ type: 'repPR', repCount: 8, newValue: 80, oldValue: null })
     })
 
+    it('oldValue de rep-PR usa el envelope (mejor peso a N reps o más), no solo el rep count exacto', () => {
+      const sessionPRsWithRepPR = [{
+        ...sessionPRs[0],
+        pr_rep_counts: [8],
+        best_per_reps: { '8': 100 },
+      }]
+      const previousBests = {
+        // A 8 reps el previo exacto es 90, pero a 10 reps se hizo 95 → domina 8 reps
+        1: { bestWeight: 90, best1rm: 117, bestPerReps: { '8': 90, '10': 95 } },
+      }
+      const summary = buildWorkoutSummaryFromSession(session, sessionPRsWithRepPR, { previousBests })
+      const at8 = summary.prs[0].details.find(d => d.type === 'repPR' && d.repCount === 8)
+      expect(at8).toMatchObject({ type: 'repPR', repCount: 8, newValue: 100, oldValue: 95 })
+    })
+
     it('oldValue queda null si previousBests no se pasa', () => {
       const summary = buildWorkoutSummaryFromSession(session, sessionPRs)
       expect(summary.prs[0].details[0].oldValue).toBeNull()

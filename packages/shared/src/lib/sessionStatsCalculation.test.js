@@ -668,6 +668,20 @@ describe('sessionStatsCalculation', () => {
       expect(newRecords.find(r => r.type === 'repPR')).toBeUndefined()
     })
 
+    it('weight_reps: NO dispara repPR dominado por más reps al mismo peso en la sesión (100×9 luego 100×8)', () => {
+      const preBests = { best1rm: 130, bestPerReps: { '9': 90 } }
+
+      // Set 1: 100×9 → repPR (supera 90 histórico a 9+ reps)
+      const set1 = { weight: 100, reps_completed: 9 }
+      const result1 = evaluateSetForPR(set1, {}, preBests, 'weight_reps')
+      expect(result1.newRecords.find(r => r.type === 'repPR')).toBeDefined()
+
+      // Set 2: 100×8 — dominado por el 100×9 ya hecho, NO es PR
+      const set2 = { weight: 100, reps_completed: 8 }
+      const result2 = evaluateSetForPR(set2, result1.updatedRunningBests, preBests, 'weight_reps')
+      expect(result2.newRecords.find(r => r.type === 'repPR')).toBeUndefined()
+    })
+
     it('weight_reps: repPR intra-sesión contra running bests', () => {
       const preBests = { best1rm: 130, bestPerReps: { '5': 100 } }
 
@@ -961,6 +975,14 @@ describe('sessionStatsCalculation', () => {
       const previous = { bestPerReps: { '5': 100 } }
       const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
       expect(flags.prRepCounts).toBeNull()
+    })
+
+    it('NO marca un rep count dominado por más reps al mismo peso en la misma sesión (100×9 y 100×8 → solo 9)', () => {
+      const current = { best1rm: 130, bestPerReps: { '9': 100, '8': 100 } }
+      const previous = { best1rm: 120, bestPerReps: { '9': 90, '8': 90 } }
+      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      // 100×9 supera su récord; 100×8 queda dominado por el 100×9 de la misma sesión
+      expect(flags.prRepCounts).toEqual([9])
     })
 
     it('prRepCounts viene ordenado ascendente', () => {
