@@ -56,7 +56,7 @@ Sistema de almacenamiento de videos usando MinIO self-hosted en Raspberry Pi, ac
 | Credenciales MinIO | `~/minio-config/.env` |
 | Datos de videos | `/mnt/videos/minio-data` |
 | Config Cloudflare | `/etc/cloudflared/config.yml` |
-| Monitor de salud | `/usr/local/bin/check-minio.sh` (cron cada 5 min) |
+| Monitor de salud | `/usr/local/bin/check-minio.sh` (cron cada 15 min) |
 
 ### Comandos útiles
 
@@ -101,7 +101,7 @@ Secret Key: [en Supabase Edge Function secrets]
 
 ### Monitorización
 
-Un script vigila el storage cada 15 minutos y envía alerta cuando algo se rompe (mount caído, container parado, endpoint `/health/live` no responde).
+Un script vigila el storage cada 15 minutos y envía alerta cuando algo se rompe (mount caído, container parado, endpoint `/health/live` no responde, o el disco no acepta escrituras — "mount fantasma").
 
 **Componentes en la Pi**:
 
@@ -115,8 +115,9 @@ Un script vigila el storage cada 15 minutos y envía alerta cuando algo se rompe
 
 **Qué comprueba**:
 1. `/mnt/videos` montado → si no, intenta `mount -a` antes de marcar fallo (auto-recovery).
-2. Container `minio` en estado `running`.
-3. `GET http://127.0.0.1:9000/minio/health/live` → 200.
+2. **I/O real**: escribe y lee un fichero canario (`.minio-monitor-canary`) en `/mnt/videos`. Detecta el **"mount fantasma"** — el adaptador USB-SATA suelta el SSD pero la entrada de mount sigue viva — que los otros checks NO ven: `mountpoint` sigue dando OK y `/health/live` responde 200 aunque toda escritura falle con `Input/output error`. Este fue el caso real que dejó las subidas fallando al 100% sin que saltara ninguna alerta.
+3. Container `minio` en estado `running`.
+4. `GET http://127.0.0.1:9000/minio/health/live` → 200.
 
 **Sólo notifica en transiciones** (OK → FAIL o FAIL → OK), no spam.
 
