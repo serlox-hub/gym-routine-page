@@ -145,7 +145,9 @@
     "viewDetail": "View detail",
     "selectDay": "Select a day to see the details",
     "noSessionsDay": "No workouts on this day",
-    "recentSessions": "Recent Sessions"
+    "recentSessions": "Recent Sessions",
+    "repeatWorkout": "Repeat workout",
+    "repeatConfirm": "A new session will start copying this day's exercises."
   },
   "share": {
     "dialogTitle": "Share workout"

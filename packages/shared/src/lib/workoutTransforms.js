@@ -158,6 +158,42 @@ export function buildSessionExercisesFromBlocks(blocks) {
 }
 
 /**
+ * Construye los datos para insertar en session_exercises copiando los ejercicios
+ * de una sesión ya realizada (formato de transformSessionDetailData).
+ * Se usa para "repetir entrenamiento" desde el histórico.
+ * Ignora ejercicios eliminados (soft-deleted), que ya no se pueden realizar.
+ * @param {Array} exercises - Ejercicios de la sesión origen (session.exercises)
+ * @returns {Array} Array de objetos listos para el RPC start_workout_session
+ */
+export function buildSessionExercisesFromSession(exercises) {
+  if (!exercises) return []
+
+  const sessionExercises = []
+  let sortOrder = 1
+
+  exercises.forEach(ex => {
+    const exerciseId = ex.exercise?.id ?? ex.exercise_id
+    if (!exerciseId || ex.exercise?.deleted_at) return
+
+    sessionExercises.push({
+      exercise_id: exerciseId,
+      routine_exercise_id: null,
+      sort_order: sortOrder++,
+      series: ex.series,
+      reps: ex.reps,
+      rir: ex.rir ?? null,
+      rest_seconds: ex.rest_seconds ?? null,
+      notes: ex.notes ?? null,
+      superset_group: ex.superset_group ?? null,
+      is_extra: ex.is_extra || false,
+      is_warmup: ex.is_warmup || false,
+    })
+  })
+
+  return sessionExercises
+}
+
+/**
  * Construye la cache de session_exercises a partir de la respuesta del RPC y los bloques.
  * Usa sort_order como clave de correspondencia (1:1 con buildSessionExercisesFromBlocks).
  */
@@ -213,6 +249,10 @@ export function transformSessionDetailData(rawSession) {
       exercise: se.exercise,
       series: se.series,
       reps: se.reps,
+      rir: se.rir ?? null,
+      rest_seconds: se.rest_seconds ?? null,
+      notes: se.notes ?? null,
+      superset_group: se.superset_group ?? null,
       is_extra: se.is_extra,
       is_warmup: se.is_warmup || false,
       sets: (se.completed_sets || []).sort((a, b) => a.set_number - b.set_number),

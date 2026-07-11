@@ -100,14 +100,16 @@ export function useStartSession({ onStartError } = {}) {
   const startSession = useWorkoutStore(state => state.startSession)
 
   return useMutation({
-    mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [] } = {}) => {
-      const exercises = buildSessionExercisesFromBlocks(blocks)
+    mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [], exercises: providedExercises = null } = {}) => {
+      const exercises = providedExercises ?? buildSessionExercisesFromBlocks(blocks)
       return startWorkoutSession({ routineDayId, routineName, dayName, exercises })
     },
     onSuccess: (data, { routineDayId = null, routineId = null, blocks = [] } = {}) => {
       startSession(data.id, routineDayId, routineId)
 
-      if (data.session_exercises?.length > 0) {
+      // Solo cacheamos si venimos de una rutina (blocks). Al copiar desde el
+      // histórico no hay blocks, así que la pantalla de sesión hará fetch.
+      if (data.session_exercises?.length > 0 && blocks.length > 0) {
         const cacheData = buildSessionExercisesCache(data.session_exercises, blocks)
         queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, data.id], cacheData)
       }

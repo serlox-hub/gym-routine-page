@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest'
 import {
   transformSessionExercises,
   buildSessionExercisesFromBlocks,
+  buildSessionExercisesFromSession,
   buildRoutineExerciseMap,
   groupExercisesByBlock,
   groupExercisesBySupersetId,
   buildDefaultExerciseOrder,
+  transformSessionDetailData,
 } from './workoutTransforms.js'
 
 describe('workoutTransforms', () => {
@@ -418,6 +420,127 @@ describe('workoutTransforms', () => {
 
       expect(result[0].exercise_id).toBe(1)
       expect(result[1].exercise_id).toBe(2)
+    })
+  })
+
+  describe('buildSessionExercisesFromSession', () => {
+    it('retorna array vacío para null/undefined', () => {
+      expect(buildSessionExercisesFromSession(null)).toEqual([])
+      expect(buildSessionExercisesFromSession(undefined)).toEqual([])
+    })
+
+    it('copia los ejercicios de una sesión al formato del RPC', () => {
+      const exercises = [
+        {
+          sessionExerciseId: 500,
+          exercise: { id: 10, name: 'Press banca' },
+          series: 4,
+          reps: '8-10',
+          rir: 2,
+          rest_seconds: 120,
+          notes: 'Controlar bajada',
+          superset_group: null,
+          is_extra: false,
+          is_warmup: false,
+        },
+      ]
+      const result = buildSessionExercisesFromSession(exercises)
+
+      expect(result).toEqual([
+        {
+          exercise_id: 10,
+          routine_exercise_id: null,
+          sort_order: 1,
+          series: 4,
+          reps: '8-10',
+          rir: 2,
+          rest_seconds: 120,
+          notes: 'Controlar bajada',
+          superset_group: null,
+          is_extra: false,
+          is_warmup: false,
+        },
+      ])
+    })
+
+    it('reasigna sort_order secuencial y omite ejercicios eliminados', () => {
+      const exercises = [
+        { exercise: { id: 1 }, series: 3, reps: '10', is_warmup: true },
+        { exercise: { id: 2, deleted_at: '2026-01-01' }, series: 3, reps: '10' },
+        { exercise: { id: 3 }, series: 3, reps: '10', superset_group: 5, is_extra: true },
+      ]
+      const result = buildSessionExercisesFromSession(exercises)
+
+      expect(result).toHaveLength(2)
+      expect(result[0]).toMatchObject({ exercise_id: 1, sort_order: 1, is_warmup: true })
+      expect(result[1]).toMatchObject({ exercise_id: 3, sort_order: 2, superset_group: 5, is_extra: true })
+    })
+  })
+
+  describe('transformSessionDetailData', () => {
+    it('retorna null si no hay sesión', () => {
+      expect(transformSessionDetailData(null)).toBe(null)
+    })
+
+    it('convierte session_exercises en exercises ordenados con sus sets', () => {
+      const raw = {
+        id: 1,
+        started_at: '2026-07-12T10:00:00Z',
+        session_exercises: [
+          {
+            id: 20,
+            sort_order: 2,
+            series: 3,
+            reps: '10',
+            rir: 1,
+            rest_seconds: 90,
+            notes: 'ok',
+            superset_group: 4,
+            is_extra: true,
+            is_warmup: false,
+            exercise: { id: 2, name: 'Fondos' },
+            completed_sets: [
+              { set_number: 2, weight: 20 },
+              { set_number: 1, weight: 10 },
+            ],
+          },
+          {
+            id: 10,
+            sort_order: 1,
+            series: 2,
+            reps: '12',
+            exercise: { id: 1, name: 'Press' },
+            completed_sets: [],
+          },
+        ],
+      }
+
+      const result = transformSessionDetailData(raw)
+
+      // Ordenado por sort_order
+      expect(result.exercises.map(e => e.sessionExerciseId)).toEqual([10, 20])
+      // Sets ordenados por set_number
+      expect(result.exercises[1].sets.map(s => s.set_number)).toEqual([1, 2])
+      // Campos copiados para poder repetir el entrenamiento
+      expect(result.exercises[0]).toMatchObject({
+        series: 2,
+        reps: '12',
+        rir: null,
+        rest_seconds: null,
+        notes: null,
+        superset_group: null,
+        is_warmup: false,
+      })
+      expect(result.exercises[1]).toMatchObject({
+        rir: 1,
+        rest_seconds: 90,
+        notes: 'ok',
+        superset_group: 4,
+        is_extra: true,
+      })
+      // session_exercises eliminado del resultado, resto preservado
+      expect(result.session_exercises).toBeUndefined()
+      expect(result.started_at).toBe('2026-07-12T10:00:00Z')
     })
   })
 })

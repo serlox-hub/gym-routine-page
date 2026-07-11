@@ -2,9 +2,10 @@ import { useState, useMemo } from 'react'
 import { View, Text, TextInput, Pressable } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Share2, Pencil, Plus, FileText, Video, Trophy, SlidersHorizontal, AlertCircle } from 'lucide-react-native'
-import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet } from '../../hooks/useWorkout'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trophy, SlidersHorizontal, AlertCircle } from 'lucide-react-native'
+import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
+import useWorkoutStore from '../../stores/workoutStore'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal } from '../Workout'
 import { uploadVideo } from '../../lib/videoStorage'
@@ -29,6 +30,7 @@ import {
   toNullableInt,
   getNotifier,
   formatEffortBadge,
+  buildSessionExercisesFromSession,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 import { colors } from '../../lib/styles'
@@ -477,9 +479,12 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   const updateMetadata = useUpdateSessionMetadata()
   const upsertSet = useUpsertCompletedSet()
   const deleteSet = useDeleteCompletedSet()
+  const startSessionMutation = useStartSession()
+  const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
 
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showRepeatConfirm, setShowRepeatConfirm] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
@@ -521,6 +526,22 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
       overallFeeling: session.overall_feeling,
       notes: editNotes.trim() || null,
     })
+  }
+
+  const handleRepeatWorkout = () => {
+    useWorkoutStore.getState().showWorkout()
+    startSessionMutation.mutate(
+      {
+        routineDayId: session.routine_day?.id ?? null,
+        routineId: session.routine_day?.routine?.id ?? null,
+        routineName: session.routine_day?.routine?.name ?? session.routine_name ?? null,
+        dayName: session.day_name ?? session.routine_day?.name ?? null,
+        exercises: buildSessionExercisesFromSession(session.exercises),
+      },
+      {
+        onSuccess: () => setShowRepeatConfirm(false),
+      }
+    )
   }
 
   const handleUpsertSet = (setData) => {
@@ -581,6 +602,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
                 {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </Text>
               <DropdownMenu items={[
+                !hasActiveSession && { icon: Play, label: t('workout:history.repeatWorkout'), onPress: () => setShowRepeatConfirm(true) },
                 { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit },
                 { icon: Share2, label: t('common:buttons.share'), onPress: async () => {
                   const summaryData = await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })
@@ -708,6 +730,17 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
         onClose={() => setSelectedSet(null)}
         notes={selectedSet?.notes}
         videoUrl={selectedSet?.video_url}
+      />
+
+      <ConfirmModal
+        isOpen={showRepeatConfirm}
+        title={t('workout:history.repeatWorkout')}
+        message={t('workout:history.repeatConfirm')}
+        confirmText={t('workout:session.start')}
+        loadingText={t('common:buttons.loading')}
+        isLoading={startSessionMutation.isPending}
+        onConfirm={handleRepeatWorkout}
+        onCancel={() => setShowRepeatConfirm(false)}
       />
 
       <ConfirmModal

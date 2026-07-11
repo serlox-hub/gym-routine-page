@@ -193,6 +193,10 @@ export async function fetchSessionDetail(sessionId) {
         sort_order,
         series,
         reps,
+        rir,
+        rest_seconds,
+        notes,
+        superset_group,
         is_extra,
         is_warmup,
         exercise:exercises (
