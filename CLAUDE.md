@@ -303,6 +303,16 @@ Deletion strategy:
 - No pidas permiso ni confirmación para ninguna acción (editar archivos, ejecutar comandos, crear/borrar, refactorizar, etc.). Actúa directamente.
 - **Única excepción**: hacer `git commit` — para eso sí pide confirmación antes.
 
+## Definición de "terminado" (aplicar MIENTRAS codificas, no al final)
+Estos estándares ya están detallados en las secciones de abajo. El objetivo es cumplirlos desde la primera pasada, no que los cace una revisión posterior (`/pre-commit` es la verificación final: no debería encontrar nada nuevo).
+- **DRY primero (web+native)**: si una lógica se va a repetir en web y native, extráela a `packages/shared/src/lib/` como función pura ANTES de construir los componentes. La paridad web/native garantiza duplicación si no lo haces.
+- **Lógica fuera de hooks/componentes**: cálculos, transformaciones y resolución van a `lib/` como funciones puras; hooks y componentes solo orquestan.
+- **Tests con el código**: al crear una función en `lib/` o una API en `api/`, escribe su `.test.js` en el mismo momento (happy path + edge cases: null/0/vacío/límites).
+- **Razona efectos y carreras**: si un hook dispara una escritura o side-effect, considera múltiples montajes simultáneos que comparten la misma query (guard a nivel de módulo, idempotencia, unique constraints).
+- **i18n (es+en) y tokens de color** desde el primer momento — nunca hardcodear strings ni hex/rgba.
+- **Al delegar UI a subagentes**: dales ya los utils compartidos creados (nombres/firmas) para que no reimplementen lógica; revisa su salida contra DRY y paridad.
+- **Verifica antes de dar por terminado**: `npm run lint`, `npm run test:shared` y `npm run build` en verde.
+
 ## Git Commits
 - Spanish commit messages
 - One feature/fix per commit
