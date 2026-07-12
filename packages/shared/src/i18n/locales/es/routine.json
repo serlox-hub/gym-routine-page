@@ -183,5 +183,8 @@
       "mrv": "MRV"
     }
   },
-  "reorder": "Reordenar"
+  "reorder": "Reordenar",
+  "moveToPosition": "Mover a posición",
+  "position": "Posición {{number}}",
+  "currentPosition": "(actual)"
 }

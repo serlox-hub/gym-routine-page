@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
-import { Modal } from '../ui/index.js'
+import { Modal, ReorderModal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType, getExerciseName } from '@gym/shared'
@@ -27,23 +27,16 @@ function ExerciseCard({
   const { exercise, series, reps, rir, rest_seconds, measurement_type } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+  const [showReorder, setShowReorder] = useState(false)
 
   const measurementType = measurement_type || exercise.measurement_type || MeasurementType.WEIGHT_REPS
-
-  // Generar opciones de posición para el submenú
-  const positionOptions = Array.from({ length: totalExercises }, (_, i) => ({
-    label: `${i + 1}. ${positionLabels[i] || ''}`,
-    onClick: () => onReorderToPosition?.(i),
-    active: i === currentIndex,
-    disabled: i === currentIndex || isReordering,
-  }))
 
   const menuItems = [
     { icon: Pencil, label: t('common:buttons.edit'), onClick: onEdit },
     { icon: Repeat2, label: t('routine:exercise.replace'), onClick: onReplace },
     { icon: Copy, label: t('routine:exercise.duplicateExercise'), onClick: onDuplicate },
     { icon: FolderInput, label: t('routine:exercise.moveToDay'), onClick: onMoveToDay },
-    totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), children: positionOptions, disabled: isReordering },
+    totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onClick: () => setShowReorder(true), disabled: isReordering },
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ].filter(Boolean)
 
@@ -121,8 +114,8 @@ function ExerciseCard({
       <Modal isOpen={showMenu} onClose={() => setShowMenu(false)} position="bottom" maxWidth="max-w-lg">
         <div className="py-2 pb-6">
           {menuItems.map((item, i) => (
-            <button key={i} onClick={() => handleMenuAction(item.onClick)}
-              className="w-full flex items-center gap-3 px-5 py-3 text-sm hover:opacity-80"
+            <button key={i} onClick={() => handleMenuAction(item.onClick)} disabled={item.disabled}
+              className="w-full flex items-center gap-3 px-5 py-3 text-sm hover:opacity-80 disabled:opacity-40"
               style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textPrimary }}>
               {item.icon && <item.icon size={18} style={{ color: item.danger ? colors.danger : item.accent ? colors.success : colors.textSecondary }} />}
               {item.label}
@@ -130,6 +123,14 @@ function ExerciseCard({
           ))}
         </div>
       </Modal>
+      <ReorderModal
+        isOpen={showReorder}
+        onClose={() => setShowReorder(false)}
+        totalItems={totalExercises}
+        currentIndex={currentIndex}
+        positionLabels={positionLabels}
+        onSelect={(i) => { setShowReorder(false); onReorderToPosition?.(i) }}
+      />
     </>
   )
 }
