@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable } from 'react-native'
+import { View, Text, TextInput } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Download, Trash2, Copy, ClipboardCopy } from 'lucide-react-native'
 import { File, Paths } from 'expo-file-system'
@@ -90,11 +90,6 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
       <PageHeader
         title={routine?.name || t('routine:new')}
         onBack={onEditEnd}
-        rightContent={
-          <Pressable onPress={onEditEnd}>
-            <Text style={{ color: colors.success, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.done')}</Text>
-          </Pressable>
-        }
       />
     )
   }

@@ -85,11 +85,6 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
       <PageHeader
         title={routine?.name || t('routine:new')}
         onBack={() => onEditEnd?.()}
-        rightAction={
-          <button onClick={() => onEditEnd?.()} style={{ color: colors.success, fontSize: 14, fontWeight: 600 }}>
-            {t('common:buttons.done')}
-          </button>
-        }
       />
     )
   }
