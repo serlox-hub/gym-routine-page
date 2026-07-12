@@ -7,7 +7,7 @@ import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise,
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
-import { getExistingSupersetIds, moveItemToPosition } from '@gym/shared'
+import { getExistingSupersetIds, moveItemToPosition, useSelectedGym } from '@gym/shared'
 import BlockSection from './BlockSection'
 
 export default function DayCard({
@@ -36,6 +36,7 @@ export default function DayCard({
 
   const { data: blocks, isLoading: loadingBlocks } = useRoutineBlocks(id)
   const startSessionMutation = useStartSession()
+  const { gymId } = useSelectedGym()
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
   const updateDay = useUpdateRoutineDay()
@@ -60,7 +61,7 @@ export default function DayCard({
   const handleStartWorkout = () => {
     useWorkoutStore.getState().showWorkout()
     startSessionMutation.mutate(
-      { routineDayId: id, routineId: parseInt(routineId), routineName, dayName: name, blocks }
+      { routineDayId: id, routineId: parseInt(routineId), routineName, dayName: name, blocks, gymId }
     )
   }
 

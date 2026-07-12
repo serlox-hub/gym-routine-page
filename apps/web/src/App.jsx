@@ -20,6 +20,7 @@ const History = lazy(() => import('./pages/History.jsx'))
 const Routines = lazy(() => import('./pages/Routines.jsx'))
 const BodyMetrics = lazy(() => import('./pages/BodyMetrics.jsx'))
 const Preferences = lazy(() => import('./pages/Preferences.jsx'))
+const Gyms = lazy(() => import('./pages/Gyms.jsx'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
 const AdminFeedback = lazy(() => import('./pages/AdminFeedback.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
@@ -69,7 +70,7 @@ function SessionRestorer() {
   return null
 }
 
-const HIDE_TAB_BAR_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/workout', '/preferences', '/admin', '/routine/']
+const HIDE_TAB_BAR_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/workout', '/preferences', '/gyms', '/admin', '/routine/']
 
 function ConditionalTabBar() {
   const { isAuthenticated } = useAuth()
@@ -109,6 +110,7 @@ function App() {
             <Route path="/routines" element={<PrivateRoute><Routines /></PrivateRoute>} />
             <Route path="/body-metrics" element={<PrivateRoute><BodyMetrics /></PrivateRoute>} />
             <Route path="/preferences" element={<PrivateRoute><Preferences /></PrivateRoute>} />
+            <Route path="/gyms" element={<PrivateRoute><Gyms /></PrivateRoute>} />
             <Route path="/admin/users" element={<PrivateRoute><AdminUsers /></PrivateRoute>} />
             <Route path="/admin/feedback" element={<PrivateRoute><AdminFeedback /></PrivateRoute>} />
             </Routes>

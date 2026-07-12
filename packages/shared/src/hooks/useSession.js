@@ -70,6 +70,7 @@ export function useRestoreActiveSession({ onVisibilityChange } = {}) {
           sessionId: activeSession.id,
           routineDayId: activeSession.routine_day_id,
           routineId: activeSession.routine_days?.routine_id || null,
+          gymId: activeSession.gym_id ?? null,
           startedAt: activeSession.started_at,
           completedSets,
           cachedSetData: completedSets,
@@ -100,12 +101,12 @@ export function useStartSession({ onStartError } = {}) {
   const startSession = useWorkoutStore(state => state.startSession)
 
   return useMutation({
-    mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [], exercises: providedExercises = null } = {}) => {
+    mutationFn: async ({ routineDayId = null, routineName = null, dayName = null, blocks = [], exercises: providedExercises = null, gymId = null } = {}) => {
       const exercises = providedExercises ?? buildSessionExercisesFromBlocks(blocks)
-      return startWorkoutSession({ routineDayId, routineName, dayName, exercises })
+      return startWorkoutSession({ routineDayId, routineName, dayName, exercises, gymId })
     },
-    onSuccess: (data, { routineDayId = null, routineId = null, blocks = [] } = {}) => {
-      startSession(data.id, routineDayId, routineId)
+    onSuccess: (data, { routineDayId = null, routineId = null, blocks = [], gymId = null } = {}) => {
+      startSession(data.id, routineDayId, routineId, data.gym_id ?? gymId ?? null)
 
       // Solo cacheamos si venimos de una rutina (blocks). Al copiar desde el
       // histórico no hay blocks, así que la pantalla de sesión hará fetch.
@@ -126,6 +127,7 @@ export function useEndSession({ onSuccess: onSuccessCb } = {}) {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const startedAt = useWorkoutStore(state => state.startedAt)
+  const gymId = useWorkoutStore(state => state.gymId)
   const endSession = useWorkoutStore(state => state.endSession)
   const userId = useUserId()
 
@@ -158,6 +160,7 @@ export function useEndSession({ onSuccess: onSuccessCb } = {}) {
         sessionId,
         sessionDate: startedAt,
         userId,
+        gymId,
         completedSets,
         queryClient,
       })
@@ -193,7 +196,7 @@ function storeSetToDbFormat(storeSet) {
   }
 }
 
-async function computeSessionStats({ sessionId, sessionDate, userId, completedSets, queryClient }) {
+async function computeSessionStats({ sessionId, sessionDate, userId, gymId = null, completedSets, queryClient }) {
   try {
     // Obtener session_exercises (del cache o fetch)
     let sessionExercises = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, sessionId])
@@ -245,7 +248,7 @@ async function computeSessionStats({ sessionId, sessionDate, userId, completedSe
       }
     }
 
-    const previousBests = await fetchExerciseBests(exerciseIds)
+    const previousBests = await fetchExerciseBests(exerciseIds, { gymId })
 
     // Detectar PRs y preparar filas para upsert
     const statsRows = []
@@ -263,6 +266,7 @@ async function computeSessionStats({ sessionId, sessionDate, userId, completedSe
         exerciseId,
         sessionId,
         sessionDate,
+        gymId,
         ...stats,
         ...flags,
       })

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, Animated, Alert, AppState } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { LogOut, Users, MessageSquare, Inbox } from 'lucide-react-native'
+import { LogOut, Users, MessageSquare, Inbox, Dumbbell, ChevronRight } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
@@ -288,6 +288,22 @@ export default function PreferencesScreen({ navigation, route }) {
               </View>
             </View>
           </View>
+        </View>
+
+        {/* GYMS */}
+        <View>
+          <SectionLabel>{t('common:gym.title')}</SectionLabel>
+          <Pressable
+            onPress={() => navigation.navigate('Gyms')}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}
+          >
+            <Dumbbell size={18} color={colors.textSecondary} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>{t('common:gym.manage')}</Text>
+              <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 1 }}>{t('common:gym.manageDescription')}</Text>
+            </View>
+            <ChevronRight size={18} color={colors.textMuted} />
+          </Pressable>
         </View>
 
         {/* WORKOUT */}

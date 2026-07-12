@@ -22,6 +22,7 @@ export async function upsertExerciseSessionStats(statsArray) {
     best_distance_meters: s.bestDistanceMeters ?? null,
     best_pace_seconds: s.bestPaceSeconds ?? null,
     best_per_reps: s.bestPerReps ?? null,
+    gym_id: s.gymId ?? null,
     is_pr_weight: s.isPrWeight ?? false,
     is_pr_reps: s.isPrReps ?? false,
     is_pr_1rm: s.isPr1rm ?? false,
@@ -45,7 +46,7 @@ export async function upsertExerciseSessionStats(statsArray) {
 // FETCH BESTS (para detección de PRs)
 // ============================================
 
-export async function fetchExerciseBests(exerciseIds, { beforeDate } = {}) {
+export async function fetchExerciseBests(exerciseIds, { beforeDate, gymId } = {}) {
   if (!exerciseIds || exerciseIds.length === 0) return {}
 
   let query = getClient()
@@ -55,6 +56,11 @@ export async function fetchExerciseBests(exerciseIds, { beforeDate } = {}) {
 
   if (beforeDate) {
     query = query.lt('session_date', beforeDate)
+  }
+
+  // PRs por gimnasio: los bests se calculan dentro del contexto del gym.
+  if (gymId != null) {
+    query = query.eq('gym_id', gymId)
   }
 
   const { data, error } = await query
@@ -111,11 +117,12 @@ export async function fetchExerciseBests(exerciseIds, { beforeDate } = {}) {
 // CHART DATA (reemplaza fetchExerciseHistorySummary para gráficos)
 // ============================================
 
-export async function fetchExerciseChartData({ exerciseId, routineDayId }) {
+export async function fetchExerciseChartData({ exerciseId, routineDayId, gymId }) {
   let query = getClient()
     .from('exercise_session_stats')
     .select(`
       session_date,
+      gym_id,
       best_weight,
       best_reps,
       best_1rm,
@@ -139,6 +146,12 @@ export async function fetchExerciseChartData({ exerciseId, routineDayId }) {
     query = query.eq('session.routine_day_id', routineDayId)
   }
 
+  // Filtro por gym (vista de un solo gimnasio). Para el overlay se omite y se
+  // agrupa por gym_id en el cliente.
+  if (gymId != null) {
+    query = query.eq('gym_id', gymId)
+  }
+
   const { data, error } = await query
 
   if (error) throw error
@@ -149,11 +162,17 @@ export async function fetchExerciseChartData({ exerciseId, routineDayId }) {
 // ALL-TIME STATS
 // ============================================
 
-export async function fetchExerciseAllTimeStats(exerciseId) {
-  const { data, error } = await getClient()
+export async function fetchExerciseAllTimeStats({ exerciseId, gymId } = {}) {
+  let query = getClient()
     .from('exercise_session_stats')
     .select('best_weight, best_reps, best_1rm, total_volume, best_time_seconds, best_distance_meters, best_pace_seconds')
     .eq('exercise_id', exerciseId)
+
+  if (gymId != null) {
+    query = query.eq('gym_id', gymId)
+  }
+
+  const { data, error } = await query
 
   if (error) throw error
   if (!data || data.length === 0) return null
@@ -188,7 +207,7 @@ export async function recalculateSessionStats(sessionId) {
 
   const { data: session, error: sErr } = await client
     .from('workout_sessions')
-    .select('user_id, started_at')
+    .select('user_id, started_at, gym_id')
     .eq('id', sessionId)
     .single()
   if (sErr) throw sErr
@@ -241,6 +260,7 @@ export async function recalculateSessionStats(sessionId) {
       exerciseId,
       sessionId,
       sessionDate: session.started_at,
+      gymId: session.gym_id,
       ...stats,
     })
   }
@@ -262,19 +282,21 @@ export async function recalculateSessionStats(sessionId) {
     if (delErr) throw delErr
   }
 
-  // Recalcula flags is_pr_* desde esta sesión hacia adelante para cada ejercicio afectado
+  // Recalcula flags is_pr_* desde esta sesión hacia adelante para cada ejercicio
+  // afectado, dentro del gym de la sesión.
   await Promise.all(
-    Array.from(exerciseIds).map(eid => recalculateExercisePRs(eid, session.started_at))
+    Array.from(exerciseIds).map(eid => recalculateExercisePRs(eid, session.started_at, session.gym_id))
   )
 
-  return { affectedExerciseIds: Array.from(exerciseIds) }
+  return { affectedExerciseIds: Array.from(exerciseIds), gymId: session.gym_id }
 }
 
-export async function recalculateExercisePRs(exerciseId, afterDate) {
+export async function recalculateExercisePRs(exerciseId, afterDate, gymId = null) {
   const { error } = await getClient()
     .rpc('recalculate_exercise_prs', {
       p_exercise_id: exerciseId,
       p_after_date: afterDate,
+      p_gym_id: gymId,
     })
 
   if (error) throw error

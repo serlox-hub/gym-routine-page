@@ -6,7 +6,7 @@ import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, Modal } from '../ui/i
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
-import { getExistingSupersetIds, moveItemToPosition } from '@gym/shared'
+import { getExistingSupersetIds, moveItemToPosition, useSelectedGym } from '@gym/shared'
 import BlockSection from './BlockSection.jsx'
 
 function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
@@ -17,6 +17,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
 
   // Cargar bloques siempre (necesarios para iniciar workout)
   const { data: blocks, isLoading: loadingBlocks } = useRoutineBlocks(id)
+  const { gymId } = useSelectedGym()
   const startSessionMutation = useStartSession()
   const reorderExercises = useReorderRoutineExercises()
   const deleteExercise = useDeleteRoutineExercise()
@@ -42,7 +43,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
   const handleStartWorkout = (e) => {
     e.stopPropagation()
     startSessionMutation.mutate(
-      { routineDayId: id, routineId: parseInt(routineId), routineName, dayName: name, blocks },
+      { routineDayId: id, routineId: parseInt(routineId), routineName, dayName: name, blocks, gymId },
       {
         onSuccess: () => navigate(`/routine/${routineId}/day/${id}/workout`)
       }

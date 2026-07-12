@@ -49,7 +49,7 @@ function getStatCards(stats, measurementType, weightUnit, distanceUnit, t) {
   return []
 }
 
-function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm' }) {
+function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm', chartRows, overlayGyms }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return (
@@ -61,11 +61,21 @@ function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUn
 
   const statCards = getStatCards(stats, measurementType, weightUnit, distanceUnit, t)
 
+  // En modo gym-aware el gráfico se dibuja desde chartRows (filas de stats por gym)
+  const usesChartRows = Array.isArray(chartRows)
+  const chartSource = usesChartRows ? (chartRows?.length ?? 0) : sessions.length
+
   return (
     <div className="space-y-4">
       {/* Chart */}
-      {sessions.length >= 2 ? (
-        <ExerciseProgressChart sessions={sessions} measurementType={measurementType} weightUnit={weightUnit} />
+      {chartSource >= 2 ? (
+        <ExerciseProgressChart
+          sessions={sessions}
+          chartRows={usesChartRows ? chartRows : undefined}
+          overlayGyms={overlayGyms}
+          measurementType={measurementType}
+          weightUnit={weightUnit}
+        />
       ) : (
         <p className="text-center text-secondary py-4 text-sm">
           {t('exercise:progressMinSessions')}

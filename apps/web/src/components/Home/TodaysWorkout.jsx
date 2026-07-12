@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, ChevronRight } from 'lucide-react'
-import { useRoutines } from '@gym/shared'
+import { useRoutines, useSelectedGym } from '@gym/shared'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { RoutineCard } from '../Routine/index.js'
@@ -12,6 +12,7 @@ function TodaysWorkout() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { data: routines, isLoading: routinesLoading } = useRoutines()
+  const { gymId } = useSelectedGym()
   const startSessionMutation = useStartSession()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
@@ -22,7 +23,7 @@ function TodaysWorkout() {
   const hasRoutines = routines && routines.length > 0
 
   const handleStartFreeWorkout = () => {
-    startSessionMutation.mutate(undefined, {
+    startSessionMutation.mutate({ gymId }, {
       onSuccess: () => navigate('/workout/free'),
     })
   }

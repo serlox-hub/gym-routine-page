@@ -7,7 +7,7 @@ import { getClient } from './_client.js'
 export async function fetchActiveSession() {
   const { data, error } = await getClient()
     .from('workout_sessions')
-    .select('id, routine_day_id, started_at, routine_days(routine_id)')
+    .select('id, routine_day_id, gym_id, started_at, routine_days(routine_id)')
     .eq('status', 'in_progress')
     .order('started_at', { ascending: false })
     .limit(1)
@@ -31,12 +31,13 @@ export async function fetchCompletedSetsForSession(sessionId) {
 // SESSION - MUTATIONS
 // ============================================
 
-export async function startWorkoutSession({ routineDayId, routineName, dayName, exercises }) {
+export async function startWorkoutSession({ routineDayId, routineName, dayName, exercises, gymId = null }) {
   const { data, error } = await getClient().rpc('start_workout_session', {
     p_routine_day_id: routineDayId,
     p_routine_name: routineName,
     p_day_name: dayName,
     p_exercises: exercises,
+    p_gym_id: gymId,
   })
 
   if (error) throw error
@@ -138,6 +139,12 @@ export async function fetchWorkoutHistory({ from, to }) {
       notes,
       routine_name,
       day_name,
+      gym_id,
+      gym:gyms (
+        id,
+        name,
+        is_default
+      ),
       routine_day:routine_days (
         id,
         name,
@@ -180,6 +187,12 @@ export async function fetchSessionDetail(sessionId) {
       notes,
       routine_name,
       day_name,
+      gym_id,
+      gym:gyms (
+        id,
+        name,
+        is_default
+      ),
       routine_day:routine_days (
         id,
         name,

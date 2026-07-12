@@ -1,14 +1,16 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle } from 'lucide-react'
+import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
+import { useSelectedGym, useReassignSessionGym, getGymDisplayName } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
+import GymSelector from '../Workout/GymSelector.jsx'
 import { uploadVideo } from '../../lib/videoStorage.js'
 import {
   SENSATION_LABELS,
@@ -416,11 +418,14 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
   const upsertSet = useUpsertCompletedSet()
   const deleteSet = useDeleteCompletedSet()
   const startSessionMutation = useStartSession()
+  const reassignGym = useReassignSessionGym()
+  const { hasMultiple, gymId: selectedGymId } = useSelectedGym()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
 
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showRepeatConfirm, setShowRepeatConfirm] = useState(false)
+  const [showGymSelector, setShowGymSelector] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
@@ -481,6 +486,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
         routineName: session.routine_day?.routine?.name ?? session.routine_name ?? null,
         dayName: session.day_name ?? session.routine_day?.name ?? null,
         exercises: buildSessionExercisesFromSession(session.exercises),
+        gymId: selectedGymId,
       },
       {
         onSuccess: () => {
@@ -494,6 +500,13 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
       }
     )
   }
+
+  const handleReassignGym = (newGymId) => {
+    if (newGymId == null || String(newGymId) === String(session.gym_id)) return
+    reassignGym.mutate({ sessionId, newGymId })
+  }
+
+  const gymName = session.gym ? getGymDisplayName(session.gym, t('common:gym.defaultName')) : null
 
   const handleUpsertSet = (setData) => upsertSet.mutate(setData)
   const handleDeleteSet = (setData) => deleteSet.mutate(setData)
@@ -583,11 +596,27 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
       ) : (
         <>
 
-          {/* Routine name */}
-          {(session.routine_day?.routine?.name || session.routine_name) && (
-            <span style={{ color: colors.textSecondary, fontSize: 13 }}>
-              {session.routine_day?.routine?.name || session.routine_name}
-            </span>
+          {/* Routine name + gym */}
+          {(session.routine_day?.routine?.name || session.routine_name || (hasMultiple && gymName)) && (
+            <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+              {(session.routine_day?.routine?.name || session.routine_name) && (
+                <span style={{ color: colors.textSecondary, fontSize: 13 }}>
+                  {session.routine_day?.routine?.name || session.routine_name}
+                </span>
+              )}
+              {hasMultiple && gymName && (
+                <button
+                  onClick={() => setShowGymSelector(true)}
+                  disabled={reassignGym.isPending}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity disabled:opacity-50"
+                  style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+                  title={t('common:gym.reassignSession')}
+                >
+                  <Dumbbell size={11} style={{ color: colors.textMuted }} />
+                  <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>{gymName}</span>
+                </button>
+              )}
+            </div>
           )}
 
           {/* Date, time, duration, sensation — one line */}
@@ -690,6 +719,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
             sessionId,
             exerciseIds: session.exercises?.map(e => e.exercise?.id).filter(Boolean) || [],
             sessionDate: session.started_at,
+            gymId: session.gym_id,
           }, {
             onSuccess: () => {
               setShowDeleteConfirm(false)
@@ -698,6 +728,13 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
           })
         }}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <GymSelector
+        isOpen={showGymSelector}
+        onClose={() => setShowGymSelector(false)}
+        selectedGymId={session.gym_id}
+        onSelect={handleReassignGym}
       />
     </div>
   )

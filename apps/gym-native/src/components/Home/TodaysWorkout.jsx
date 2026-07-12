@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, ChevronRight } from 'lucide-react-native'
-import { useRoutines } from '@gym/shared'
+import { useRoutines, useSelectedGym } from '@gym/shared'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { RoutineCard } from '../Routine'
@@ -13,6 +13,7 @@ function TodaysWorkout({ navigation }) {
   const { t } = useTranslation()
   const { data: routines, isLoading: routinesLoading } = useRoutines()
   const startSessionMutation = useStartSession()
+  const { gymId } = useSelectedGym()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
   const isFreeSessionActive = hasActiveSession && activeRoutineDayId === null
@@ -24,7 +25,7 @@ function TodaysWorkout({ navigation }) {
 
   const handleStartFreeWorkout = () => {
     useWorkoutStore.getState().showWorkout()
-    startSessionMutation.mutate(undefined)
+    startSessionMutation.mutate({ gymId })
   }
 
   return (

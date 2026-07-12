@@ -88,6 +88,7 @@ export const QUERY_KEYS = {
   LAST_SESSION_FOR_ROUTINE: 'last-session-for-routine',
   WEEKLY_SESSION_STATS: 'weekly-session-stats',
   WEEKLY_PR_COUNT: 'weekly-pr-count',
+  GYMS: 'gyms',
 }
 
 // Timer

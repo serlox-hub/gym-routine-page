@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LogOut, Users, MessageSquare, Inbox } from 'lucide-react'
+import { LogOut, Users, MessageSquare, Inbox, Dumbbell, ChevronRight } from 'lucide-react'
 import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
 import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui/index.js'
 import { InstallAppSection, TrainingGoalSection, WeightUnitChangeModal, MeasurementUnitChangeModal, FeedbackModal } from '../components/Preferences/index.js'
@@ -233,6 +233,25 @@ function Preferences() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* GYMS */}
+        <section>
+          <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>
+            {t('common:gym.title')}
+          </span>
+          <button
+            onClick={() => navigate('/gyms')}
+            className="w-full flex items-center gap-3 rounded-xl text-left hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, padding: '14px 16px' }}
+          >
+            <Dumbbell size={18} style={{ color: colors.textMuted }} className="shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 500 }}>{t('common:gym.manage')}</p>
+              <p style={{ color: colors.textMuted, fontSize: 12 }}>{t('common:gym.manageDescription')}</p>
+            </div>
+            <ChevronRight size={18} style={{ color: colors.textMuted }} className="shrink-0" />
+          </button>
         </section>
 
         {/* WORKOUT */}

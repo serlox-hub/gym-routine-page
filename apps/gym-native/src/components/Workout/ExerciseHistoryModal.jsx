@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { View, Text, Pressable, ScrollView, ActivityIndicator, Animated } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, FileText, Video } from 'lucide-react-native'
-import { useExerciseHistory } from '../../hooks/useWorkout'
+import { ChevronRight, ChevronDown, FileText, Video } from 'lucide-react-native'
+import { useExerciseHistory, useExerciseChartData } from '../../hooks/useWorkout'
 import { LoadingSpinner, Modal } from '../ui'
 import SetNotesView from './SetNotesView'
+import GymSelector from './GymSelector'
 import { colors } from '../../lib/styles'
 import {
   MeasurementType,
@@ -14,8 +15,12 @@ import {
   formatSetValue,
   formatShortDate,
   formatSecondsToMMSS,
+  useSelectedGym,
 } from '@gym/shared'
 import { ExerciseProgressChart } from '../Charts'
+
+// gymFilter: id concreto → un gym, 'all' → overlay de todos los gyms
+const ALL_GYMS = 'all'
 
 
 function StatCard({ label, value }) {
@@ -56,7 +61,7 @@ function getStatCards(stats, measurementType, weightUnit, distanceUnit, t) {
   return []
 }
 
-function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm' }) {
+function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm', chartRows, overlayGyms }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
@@ -67,7 +72,13 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUni
   return (
     <View style={{ gap: 16 }}>
       {sessions.length >= 2 ? (
-        <ExerciseProgressChart sessions={sessions} measurementType={measurementType} weightUnit={weightUnit} />
+        <ExerciseProgressChart
+          sessions={sessions}
+          measurementType={measurementType}
+          weightUnit={weightUnit}
+          chartRows={chartRows}
+          overlayGyms={overlayGyms}
+        />
       ) : (
         <Text className="text-secondary text-center py-4 text-sm">
           {t('exercise:progressMinSessions')}
@@ -184,18 +195,29 @@ export default function ExerciseHistoryModal({
   const slideAnim = useRef(new Animated.Value(scope === 'day' ? 0 : 1)).current
   const [toggleWidth, setToggleWidth] = useState(0)
 
+  const { gyms, gymId: defaultGymId, hasMultiple } = useSelectedGym()
+  // Filtro de gym para las gráficas: id concreto, o ALL_GYMS para overlay
+  const [gymFilter, setGymFilter] = useState(defaultGymId)
+  const [showGymSelector, setShowGymSelector] = useState(false)
+
   // Fetch both scopes in parallel — switch is instant
   const { data: dayData, isLoading: loadingDay, fetchNextPage: fetchDayNext, hasNextPage: hasDayNext, isFetchingNextPage: fetchingDayNext } = useExerciseHistory(exerciseId, routineDayId)
   const { data: globalData, isLoading: loadingGlobal, fetchNextPage: fetchGlobalNext, hasNextPage: hasGlobalNext, isFetchingNextPage: fetchingGlobalNext } = useExerciseHistory(exerciseId, null)
 
   const isDay = scope === 'day'
+  const chartDayId = isDay ? routineDayId : null
+
+  // Chart data por gym: cuando hay overlay usamos todas las filas (gymId=null)
+  const isOverlay = gymFilter === ALL_GYMS
+  const chartGymId = hasMultiple ? (isOverlay ? null : gymFilter) : null
+  const { data: chartRows, isLoading: loadingChart } = useExerciseChartData(exerciseId, chartDayId, chartGymId)
 
   useEffect(() => {
     Animated.timing(slideAnim, { toValue: isDay ? 0 : 1, duration: 200, useNativeDriver: false }).start()
   }, [isDay, slideAnim])
   const data = isDay ? dayData : globalData
   const sessions = useMemo(() => data?.pages.flat() ?? [], [data])
-  const isLoading = isDay ? loadingDay : loadingGlobal
+  const isLoading = (isDay ? loadingDay : loadingGlobal) || (hasMultiple && loadingChart)
   const fetchNextPage = isDay ? fetchDayNext : fetchGlobalNext
   const hasNextPage = isDay ? hasDayNext : hasGlobalNext
   const isFetchingNextPage = isDay ? fetchingDayNext : fetchingGlobalNext
@@ -203,6 +225,19 @@ export default function ExerciseHistoryModal({
   const stats = useMemo(() => {
     return calculateExerciseStats(sessions, measurementType)
   }, [sessions, measurementType])
+
+  const gymFilterLabel = useMemo(() => {
+    if (isOverlay) return t('common:gym.allGyms')
+    const g = gyms.find(gym => String(gym.id) === String(gymFilter))
+    if (!g) return t('common:gym.allGyms')
+    return g.is_default && !g.name ? t('common:gym.defaultName') : g.name
+  }, [isOverlay, gyms, gymFilter, t])
+
+  // Gyms con nombre resuelto para las leyendas del overlay
+  const overlayGyms = useMemo(
+    () => gyms.map(g => ({ id: g.id, name: g.is_default && !g.name ? t('common:gym.defaultName') : g.name })),
+    [gyms, t]
+  )
 
   const handleSessionClick = (sessionId, date) => {
     onClose()
@@ -251,6 +286,39 @@ export default function ExerciseHistoryModal({
             </View>
           )}
         </View>
+
+        {hasMultiple && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
+            <Pressable
+              onPress={() => setShowGymSelector(true)}
+              className="active:opacity-80"
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 6,
+                paddingHorizontal: 10, paddingVertical: 4,
+                borderRadius: 999, backgroundColor: colors.bgTertiary,
+                borderWidth: 1, borderColor: colors.border,
+              }}
+            >
+              <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{gymFilterLabel}</Text>
+              <ChevronDown size={13} color={colors.textMuted} />
+            </Pressable>
+            <Pressable
+              onPress={() => setGymFilter(isOverlay ? defaultGymId : ALL_GYMS)}
+              className="active:opacity-80"
+              style={{
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: 10, paddingVertical: 4,
+                borderRadius: 999,
+                backgroundColor: isOverlay ? `${colors.success}20` : colors.bgTertiary,
+                borderWidth: 1, borderColor: isOverlay ? colors.success : colors.border,
+              }}
+            >
+              <Text style={{ color: isOverlay ? colors.success : colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
+                {t('common:gym.compareGyms')}
+              </Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {/* Content — single scroll */}
@@ -264,6 +332,8 @@ export default function ExerciseHistoryModal({
               stats={stats}
               measurementType={measurementType}
               weightUnit={weightUnit}
+              chartRows={hasMultiple ? chartRows : undefined}
+              overlayGyms={isOverlay ? overlayGyms : undefined}
             />
             <HistoryTab
               sessions={sessions}
@@ -296,6 +366,14 @@ export default function ExerciseHistoryModal({
         onClose={() => setSelectedSet(null)}
         notes={selectedSet?.notes}
         videoUrl={selectedSet?.video_url}
+      />
+
+      <GymSelector
+        isOpen={showGymSelector}
+        onClose={() => setShowGymSelector(false)}
+        selectedGymId={isOverlay ? null : gymFilter}
+        onSelect={(id) => setGymFilter(id ?? ALL_GYMS)}
+        allowAllGyms
       />
     </Modal>
   )

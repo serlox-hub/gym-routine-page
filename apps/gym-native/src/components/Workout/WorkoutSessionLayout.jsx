@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { View, Text, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Plus, ArrowRightLeft, X, Flag } from 'lucide-react-native'
+import { Plus, ArrowRightLeft, X, Flag, Dumbbell } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
   useSessionExercises, useAddSessionExercise, useRemoveSessionExercise,
@@ -13,11 +13,12 @@ import RestTimer from './RestTimer'
 import BlockExerciseList from './BlockExerciseList'
 import EndSessionModal from './EndSessionModal'
 import ExerciseProgressBar from './ExerciseProgressBar'
+import GymSelector from './GymSelector'
 import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useSelectedGym, useSetSelectedGym, updateSessionGym, getGymDisplayName } from '@gym/shared'
 import { usePreference } from '../../hooks/usePreferences'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
@@ -30,6 +31,12 @@ export default function WorkoutSessionLayout({ title }) {
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
   const completedSets = useWorkoutStore(state => state.completedSets)
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
+  const sessionGymId = useWorkoutStore(state => state.gymId)
+  const setSessionGym = useWorkoutStore(state => state.setSessionGym)
+
+  const { gyms, hasMultiple } = useSelectedGym()
+  const { setSelectedGym } = useSetSelectedGym()
+  const [showGymSelector, setShowGymSelector] = useState(false)
 
   useWakeLock()
   useTimerEngine()
@@ -168,6 +175,17 @@ export default function WorkoutSessionLayout({ title }) {
 
   const hasExercises = flatExercises.length > 0
 
+  const handleSelectGym = async (gymId) => {
+    setSessionGym(gymId)
+    setSelectedGym(gymId)
+    try {
+      await updateSessionGym({ sessionId, gymId })
+    } catch { /* la sesión local ya refleja el cambio */ }
+  }
+
+  const currentGym = gyms.find(g => String(g.id) === String(sessionGymId))
+  const currentGymName = currentGym ? getGymDisplayName(currentGym, t('common:gym.defaultName')) : null
+
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <RestTimer />
@@ -190,6 +208,21 @@ export default function WorkoutSessionLayout({ title }) {
           pct={progress.setsTotal > 0 ? Math.round((progress.setsCompleted / progress.setsTotal) * 100) : 0}
           elapsedTime={elapsedTime}
         />
+        {hasMultiple && currentGymName && (
+          <Pressable
+            onPress={() => setShowGymSelector(true)}
+            className="self-start active:opacity-80"
+            style={{
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              marginTop: 8, paddingHorizontal: 10, paddingVertical: 4,
+              borderRadius: 999, backgroundColor: colors.bgTertiary,
+              borderWidth: 1, borderColor: colors.border,
+            }}
+          >
+            <Dumbbell size={13} color={colors.textMuted} />
+            <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{currentGymName}</Text>
+          </Pressable>
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -269,6 +302,13 @@ export default function WorkoutSessionLayout({ title }) {
       <WeightConverterModal
         isOpen={showConverter}
         onClose={() => setShowConverter(false)}
+      />
+
+      <GymSelector
+        isOpen={showGymSelector}
+        onClose={() => setShowGymSelector(false)}
+        selectedGymId={sessionGymId}
+        onSelect={handleSelectGym}
       />
     </SafeAreaView>
   )

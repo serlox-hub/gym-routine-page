@@ -17,16 +17,17 @@ import {
   useWakeLock,
   useTimerEngine,
 } from '../../hooks/useWorkout.js'
-import { Plus, ArrowRightLeft, X, Flag } from 'lucide-react'
+import { Plus, ArrowRightLeft, X, Flag, Dumbbell } from 'lucide-react'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui/index.js'
 import RestTimer from './RestTimer.jsx'
 import BlockExerciseList from './BlockExerciseList.jsx'
 import EndSessionModal from './EndSessionModal.jsx'
 import ExerciseProgressBar from './ExerciseProgressBar.jsx'
+import GymSelector from './GymSelector.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference, useSelectedGym, useSetSelectedGym, updateSessionGym, getGymDisplayName } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -36,6 +37,11 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const startRestTimer = useWorkoutStore(state => state.startRestTimer)
   const completedSets = useWorkoutStore(state => state.completedSets)
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
+  const sessionGymId = useWorkoutStore(state => state.gymId)
+  const setSessionGym = useWorkoutStore(state => state.setSessionGym)
+
+  const { gyms, hasMultiple } = useSelectedGym()
+  const { setSelectedGym } = useSetSelectedGym()
 
   useWakeLock()
   useTimerEngine()
@@ -48,6 +54,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [showConverter, setShowConverter] = useState(false)
+  const [showGymSelector, setShowGymSelector] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
   const { value: weightUnit } = usePreference('weight_unit')
 
@@ -174,6 +181,17 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExerciseId })
   }
 
+  const handleSelectGym = async (gymId) => {
+    setSessionGym(gymId)
+    setSelectedGym(gymId)
+    try {
+      await updateSessionGym({ sessionId, gymId })
+    } catch { /* la sesión local ya refleja el cambio */ }
+  }
+
+  const currentGym = gyms.find(g => String(g.id) === String(sessionGymId))
+  const currentGymName = currentGym ? getGymDisplayName(currentGym, t('common:gym.defaultName')) : null
+
   const handleReorderExercise = (currentIndex, newIndex) => {
     if (currentIndex === newIndex) return
 
@@ -207,6 +225,16 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             pct={progress.setsTotal > 0 ? Math.round((progress.setsCompleted / progress.setsTotal) * 100) : 0}
             elapsedTime={elapsedTime}
           />
+          {hasMultiple && currentGymName && (
+            <button
+              onClick={() => setShowGymSelector(true)}
+              className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full hover:opacity-80 transition-opacity"
+              style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+            >
+              <Dumbbell size={13} style={{ color: colors.textMuted }} />
+              <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>{currentGymName}</span>
+            </button>
+          )}
         </PageHeader>
 
       <PRProvider value={prSets}>
@@ -285,6 +313,13 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
       <WeightConverterModal
         isOpen={showConverter}
         onClose={() => setShowConverter(false)}
+      />
+
+      <GymSelector
+        isOpen={showGymSelector}
+        onClose={() => setShowGymSelector(false)}
+        selectedGymId={sessionGymId}
+        onSelect={handleSelectGym}
       />
 
     </div>

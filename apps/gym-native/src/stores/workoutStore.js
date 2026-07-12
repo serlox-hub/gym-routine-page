@@ -12,8 +12,8 @@ const useWorkoutStore = create(
       showWorkout: () => set({ workoutVisible: true }),
       hideWorkout: () => set({ workoutVisible: false }),
       // Override session actions to manage workoutVisible
-      startSession: (sessionId, routineDayId, routineId = null) => set({
-        sessionId, routineDayId, routineId,
+      startSession: (sessionId, routineDayId, routineId = null, gymId = null) => set({
+        sessionId, routineDayId, routineId, gymId,
         startedAt: new Date().toISOString(),
         completedSets: {}, cachedSetData: {},
         exerciseSetCounts: {}, pendingSets: {},
@@ -22,15 +22,15 @@ const useWorkoutStore = create(
         workoutVisible: true,
       }),
       endSession: () => set({
-        sessionId: null, routineDayId: null, routineId: null,
+        sessionId: null, routineDayId: null, routineId: null, gymId: null,
         startedAt: null, completedSets: {}, cachedSetData: {},
         exerciseSetCounts: {}, pendingSets: {},
         restTimerActive: false, restTimerEndTime: null,
         restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: false,
       }),
-      restoreSession: ({ sessionId, routineDayId, routineId, startedAt, completedSets, cachedSetData }) => set({
-        sessionId, routineDayId, routineId, startedAt, completedSets, cachedSetData,
+      restoreSession: ({ sessionId, routineDayId, routineId, gymId = null, startedAt, completedSets, cachedSetData }) => set({
+        sessionId, routineDayId, routineId, gymId, startedAt, completedSets, cachedSetData,
         restTimerActive: false, restTimerEndTime: null,
         restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: false,

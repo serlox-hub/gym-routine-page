@@ -2,12 +2,13 @@ import { useState, useMemo } from 'react'
 import { View, Text, TextInput, Pressable } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trophy, SlidersHorizontal, AlertCircle } from 'lucide-react-native'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trophy, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
+import { useSelectedGym, useReassignSessionGym, getGymDisplayName } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
-import { SetNotesView, ExerciseHistoryModal, SetDetailsModal } from '../Workout'
+import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
 import { uploadVideo } from '../../lib/videoStorage'
 import {
   SENSATION_LABELS,
@@ -480,11 +481,14 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   const upsertSet = useUpsertCompletedSet()
   const deleteSet = useDeleteCompletedSet()
   const startSessionMutation = useStartSession()
+  const reassignSessionGym = useReassignSessionGym()
+  const { hasMultiple } = useSelectedGym()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
 
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showRepeatConfirm, setShowRepeatConfirm] = useState(false)
+  const [showGymSelector, setShowGymSelector] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
@@ -537,12 +541,20 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
         routineName: session.routine_day?.routine?.name ?? session.routine_name ?? null,
         dayName: session.day_name ?? session.routine_day?.name ?? null,
         exercises: buildSessionExercisesFromSession(session.exercises),
+        gymId: session.gym_id ?? null,
       },
       {
         onSuccess: () => setShowRepeatConfirm(false),
       }
     )
   }
+
+  const handleReassignGym = (newGymId) => {
+    if (newGymId == null || String(newGymId) === String(session.gym_id)) return
+    reassignSessionGym.mutate({ sessionId, newGymId })
+  }
+
+  const currentGymName = session.gym ? getGymDisplayName(session.gym, t('common:gym.defaultName')) : null
 
   const handleUpsertSet = (setData) => {
     upsertSet.mutate(setData)
@@ -644,12 +656,30 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
       ) : (
         <>
 
-          {/* Routine name */}
-          {(session.routine_day?.routine?.name || session.routine_name) && (
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              {session.routine_day?.routine?.name || session.routine_name}
-            </Text>
-          )}
+          {/* Routine name + gym badge */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            {(session.routine_day?.routine?.name || session.routine_name) && (
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+                {session.routine_day?.routine?.name || session.routine_name}
+              </Text>
+            )}
+            {hasMultiple && currentGymName && (
+              <Pressable
+                onPress={() => setShowGymSelector(true)}
+                className="active:opacity-80"
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 5,
+                  paddingHorizontal: 8, paddingVertical: 3,
+                  borderRadius: 999, backgroundColor: colors.bgTertiary,
+                  borderWidth: 1, borderColor: colors.border,
+                  opacity: reassignSessionGym.isPending ? 0.5 : 1,
+                }}
+              >
+                <Dumbbell size={12} color={colors.textMuted} />
+                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{currentGymName}</Text>
+              </Pressable>
+            )}
+          </View>
 
           {/* Date, time, duration, sensation — one line */}
           <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
@@ -755,6 +785,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
             sessionId,
             exerciseIds: session.exercises?.map(e => e.exercise?.id).filter(Boolean) || [],
             sessionDate: session.started_at,
+            gymId: session.gym_id,
           }, {
             onSuccess: () => {
               setShowDeleteConfirm(false)
@@ -763,6 +794,13 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
           })
         }}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <GymSelector
+        isOpen={showGymSelector}
+        onClose={() => setShowGymSelector(false)}
+        selectedGymId={session.gym_id}
+        onSelect={handleReassignGym}
       />
     </View>
   )

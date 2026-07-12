@@ -15,6 +15,7 @@ import { getHaptics } from '../haptics.js'
 
 export function useSessionPRDetection() {
   const sessionId = useWorkoutStore(state => state.sessionId)
+  const gymId = useWorkoutStore(state => state.gymId)
   const queryClient = useQueryClient()
   const userId = useUserId()
 
@@ -56,7 +57,7 @@ export function useSessionPRDetection() {
     if (!preBests) {
       preSessionBestsRef.current[exerciseId] = 'loading'
       try {
-        const allBests = await fetchExerciseBests([exerciseId])
+        const allBests = await fetchExerciseBests([exerciseId], { gymId })
         preBests = allBests[exerciseId] || null
         preSessionBestsRef.current[exerciseId] = preBests || 'none'
       } catch {
@@ -120,7 +121,7 @@ export function useSessionPRDetection() {
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => setPRNotification(null), 4000)
     }
-  }, [sessionId, queryClient, userId])
+  }, [sessionId, gymId, queryClient, userId])
 
   // Limpiar timer al desmontar
   useEffect(() => {

@@ -109,6 +109,7 @@ describe('startWorkoutSession', () => {
       p_routine_name: 'Fuerza',
       p_day_name: 'Día 1',
       p_exercises: [{ id: 'ex-1', series: 3 }],
+      p_gym_id: null,
     })
   })
 

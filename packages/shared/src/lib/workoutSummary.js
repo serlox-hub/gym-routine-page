@@ -283,12 +283,13 @@ export async function fetchWorkoutSummary(sessionId, { weightUnit = 'kg' } = {})
   ])
   const session = transformSessionDetailData(rawSession)
   const exerciseIds = (session?.exercises || []).map(e => e.exercise?.id).filter(Boolean)
+  const gymId = rawSession?.gym_id ?? null
 
-  // Bests históricos hasta justo antes de esta sesión, para poblar oldValue
-  // en cada detail (línea "anterior · X" en las tarjetas de PR).
+  // Bests históricos hasta justo antes de esta sesión, dentro del mismo gym, para
+  // poblar oldValue en cada detail (línea "anterior · X" en las tarjetas de PR).
   const [weightUnitByExerciseId, previousBests] = await Promise.all([
     fetchUserExerciseWeightUnits(exerciseIds),
-    fetchExerciseBests(exerciseIds, { beforeDate: session.started_at }),
+    fetchExerciseBests(exerciseIds, { beforeDate: session.started_at, gymId }),
   ])
 
   return buildWorkoutSummaryFromSession(session, prs, {

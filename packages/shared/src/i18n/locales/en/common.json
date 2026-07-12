@@ -285,5 +285,27 @@
     "3m": "3M",
     "all": "All",
     "noData": "Not enough data in this range"
+  },
+  "gym": {
+    "title": "Gyms",
+    "defaultName": "My gym",
+    "select": "Select gym",
+    "current": "Current gym",
+    "changeForSession": "Change session gym",
+    "add": "Add gym",
+    "rename": "Rename gym",
+    "delete": "Delete gym",
+    "deleteConfirm": "Delete \"{{name}}\"?",
+    "name": "Gym name",
+    "namePlaceholder": "E.g. Neighborhood gym",
+    "manage": "Manage gyms",
+    "manageDescription": "Track your progress separately at each gym",
+    "empty": "You don't have any gyms yet",
+    "allGyms": "All gyms",
+    "compareGyms": "Compare",
+    "cannotDeleteWithSessions": "You can't delete a gym with sessions. Rename it if needed.",
+    "reassignSession": "Change session gym",
+    "sessionCount_one": "{{count}} session",
+    "sessionCount_other": "{{count}} sessions"
   }
 }

@@ -159,18 +159,18 @@ export function usePreviousWorkout(exerciseId) {
 // EXERCISE STATS QUERIES (from exercise_session_stats)
 // ============================================
 
-export function useExerciseChartData(exerciseId, routineDayId = null) {
+export function useExerciseChartData(exerciseId, routineDayId = null, gymId = null) {
   return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'chart', exerciseId, routineDayId],
-    queryFn: () => fetchExerciseChartData({ exerciseId, routineDayId }),
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'chart', exerciseId, routineDayId, gymId ?? 'all'],
+    queryFn: () => fetchExerciseChartData({ exerciseId, routineDayId, gymId }),
     enabled: !!exerciseId,
   })
 }
 
-export function useExerciseAllTimeStats(exerciseId) {
+export function useExerciseAllTimeStats(exerciseId, gymId = null) {
   return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'alltime', exerciseId],
-    queryFn: () => fetchExerciseAllTimeStats(exerciseId),
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'alltime', exerciseId, gymId ?? 'all'],
+    queryFn: () => fetchExerciseAllTimeStats({ exerciseId, gymId }),
     enabled: !!exerciseId,
   })
 }
@@ -243,21 +243,21 @@ export function useDeleteSession() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ sessionId, exerciseIds, sessionDate }) => {
+    mutationFn: async ({ sessionId, exerciseIds, sessionDate, gymId = null }) => {
       await deleteWorkoutSession(sessionId)
-      return { sessionId, exerciseIds, sessionDate }
+      return { sessionId, exerciseIds, sessionDate, gymId }
     },
-    onSuccess: async ({ sessionId, exerciseIds, sessionDate }) => {
+    onSuccess: async ({ sessionId, exerciseIds, sessionDate, gymId }) => {
       queryClient.removeQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS] })
 
-      // Recalcular PRs de los ejercicios afectados
+      // Recalcular PRs de los ejercicios afectados (dentro del gym de la sesión)
       if (exerciseIds?.length > 0 && sessionDate) {
         try {
           await Promise.all(
-            exerciseIds.map(eid => recalculateExercisePRs(eid, sessionDate))
+            exerciseIds.map(eid => recalculateExercisePRs(eid, sessionDate, gymId))
           )
         } catch {
           // No bloquear si falla la recalculación

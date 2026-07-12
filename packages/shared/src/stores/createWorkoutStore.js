@@ -11,6 +11,7 @@ export function workoutStoreState(set, get) {
     sessionId: null,
     routineDayId: null,
     routineId: null,
+    gymId: null,
     startedAt: null,
 
     // Completed sets during this session (optimistic UI cache)
@@ -34,10 +35,11 @@ export function workoutStoreState(set, get) {
 
     // Start a new workout session
     // routineId and routineDayId can be null for free sessions
-    startSession: (sessionId, routineDayId, routineId = null) => set({
+    startSession: (sessionId, routineDayId, routineId = null, gymId = null) => set({
       sessionId,
       routineDayId,
       routineId,
+      gymId,
       startedAt: new Date().toISOString(),
       completedSets: {},
       cachedSetData: {},
@@ -50,10 +52,11 @@ export function workoutStoreState(set, get) {
     }),
 
     // Restore session from backend
-    restoreSession: ({ sessionId, routineDayId, routineId, startedAt, completedSets, cachedSetData }) => set({
+    restoreSession: ({ sessionId, routineDayId, routineId, gymId = null, startedAt, completedSets, cachedSetData }) => set({
       sessionId,
       routineDayId,
       routineId,
+      gymId,
       startedAt,
       completedSets,
       cachedSetData,
@@ -63,11 +66,15 @@ export function workoutStoreState(set, get) {
       restTimerMinimized: false,
     }),
 
+    // Change the gym of the active session (quick change from the session header)
+    setSessionGym: (gymId) => set({ gymId }),
+
     // End current session
     endSession: () => set({
       sessionId: null,
       routineDayId: null,
       routineId: null,
+      gymId: null,
       startedAt: null,
       completedSets: {},
       cachedSetData: {},

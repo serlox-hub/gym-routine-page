@@ -285,5 +285,27 @@
     "3m": "3M",
     "all": "Todo",
     "noData": "Sin datos suficientes en este rango"
+  },
+  "gym": {
+    "title": "Gimnasios",
+    "defaultName": "Mi gimnasio",
+    "select": "Seleccionar gimnasio",
+    "current": "Gimnasio actual",
+    "changeForSession": "Cambiar gimnasio de la sesión",
+    "add": "Añadir gimnasio",
+    "rename": "Renombrar gimnasio",
+    "delete": "Eliminar gimnasio",
+    "deleteConfirm": "¿Eliminar \"{{name}}\"?",
+    "name": "Nombre del gimnasio",
+    "namePlaceholder": "Ej: Gimnasio del barrio",
+    "manage": "Gestionar gimnasios",
+    "manageDescription": "Trackea tu progreso por separado en cada gimnasio",
+    "empty": "Aún no tienes gimnasios",
+    "allGyms": "Todos los gimnasios",
+    "compareGyms": "Comparar",
+    "cannotDeleteWithSessions": "No puedes eliminar un gimnasio con sesiones. Renómbralo si lo necesitas.",
+    "reassignSession": "Cambiar gimnasio de la sesión",
+    "sessionCount_one": "{{count}} sesión",
+    "sessionCount_other": "{{count}} sesiones"
   }
 }
