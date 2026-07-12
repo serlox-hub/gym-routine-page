@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { View, Text, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { Plus, ArrowRightLeft, X, Flag, Dumbbell } from 'lucide-react-native'
+import { Plus, ArrowRightLeft, X, Flag, ChevronDown } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
   useSessionExercises, useAddSessionExercise, useRemoveSessionExercise,
@@ -207,22 +207,23 @@ export default function WorkoutSessionLayout({ title }) {
           total={progress.total}
           pct={progress.setsTotal > 0 ? Math.round((progress.setsCompleted / progress.setsTotal) * 100) : 0}
           elapsedTime={elapsedTime}
+          gymSlot={hasMultiple && currentGymName ? (
+            <Pressable
+              onPress={() => setShowGymSelector(true)}
+              className="active:opacity-80"
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: 180,
+                paddingLeft: 8, paddingRight: 6, paddingVertical: 2,
+                borderRadius: 999, backgroundColor: colors.bgTertiary,
+                borderWidth: 1, borderColor: colors.border,
+              }}
+            >
+              <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '600' }}>{t('common:gym.label')}:</Text>
+              <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', flexShrink: 1 }}>{currentGymName}</Text>
+              <ChevronDown size={12} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
         />
-        {hasMultiple && currentGymName && (
-          <Pressable
-            onPress={() => setShowGymSelector(true)}
-            className="self-start active:opacity-80"
-            style={{
-              flexDirection: 'row', alignItems: 'center', gap: 6,
-              marginTop: 8, paddingHorizontal: 10, paddingVertical: 4,
-              borderRadius: 999, backgroundColor: colors.bgTertiary,
-              borderWidth: 1, borderColor: colors.border,
-            }}
-          >
-            <Dumbbell size={13} color={colors.textMuted} />
-            <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{currentGymName}</Text>
-          </Pressable>
-        )}
       </View>
 
       <KeyboardAvoidingView

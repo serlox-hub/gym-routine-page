@@ -288,6 +288,7 @@
   },
   "gym": {
     "title": "Gyms",
+    "label": "Gym",
     "defaultName": "My gym",
     "select": "Select gym",
     "current": "Current gym",

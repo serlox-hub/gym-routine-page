@@ -17,7 +17,7 @@ import {
   useWakeLock,
   useTimerEngine,
 } from '../../hooks/useWorkout.js'
-import { Plus, ArrowRightLeft, X, Flag, Dumbbell } from 'lucide-react'
+import { Plus, ArrowRightLeft, X, Flag, ChevronDown } from 'lucide-react'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui/index.js'
 import RestTimer from './RestTimer.jsx'
 import BlockExerciseList from './BlockExerciseList.jsx'
@@ -224,17 +224,19 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             total={progress.total}
             pct={progress.setsTotal > 0 ? Math.round((progress.setsCompleted / progress.setsTotal) * 100) : 0}
             elapsedTime={elapsedTime}
+            gymSlot={hasMultiple && currentGymName ? (
+              <button
+                onClick={() => setShowGymSelector(true)}
+                className="inline-flex items-center gap-1 max-w-[50vw] pl-2 pr-1.5 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+                style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+                title={t('common:gym.changeForSession')}
+              >
+                <span style={{ color: colors.textMuted, fontSize: 12, fontWeight: 600 }}>{t('common:gym.label')}:</span>
+                <span className="truncate" style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>{currentGymName}</span>
+                <ChevronDown size={12} style={{ color: colors.textMuted }} />
+              </button>
+            ) : null}
           />
-          {hasMultiple && currentGymName && (
-            <button
-              onClick={() => setShowGymSelector(true)}
-              className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
-            >
-              <Dumbbell size={13} style={{ color: colors.textMuted }} />
-              <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>{currentGymName}</span>
-            </button>
-          )}
         </PageHeader>
 
       <PRProvider value={prSets}>
