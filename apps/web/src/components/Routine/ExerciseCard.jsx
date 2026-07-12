@@ -10,7 +10,6 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 function ExerciseCard({
   routineExercise,
   routineDayId,
-  isSuperset = false,
   isEditing = false,
   isReordering = false,
   onEdit,
@@ -95,7 +94,7 @@ function ExerciseCard({
         style={{
           backgroundColor: colors.bgTertiary,
           padding: '8px 12px',
-          ...(isSuperset ? {} : getMuscleGroupBorderStyle(exercise.muscle_group?.name)),
+          ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
         }}
         onClick={() => setShowMenu(true)}
       >

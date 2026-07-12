@@ -85,7 +85,6 @@ export default function BlockSection({
                 key={exercise.id}
                 routineExercise={exercise}
                 routineDayId={routineDayId}
-                isSuperset
                 isEditing={isEditing}
                 isReordering={isReordering}
                 onEdit={() => onEditExercise?.(exercise)}

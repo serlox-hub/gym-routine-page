@@ -12,7 +12,6 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 export default function ExerciseCard({
   routineExercise,
   routineDayId,
-  isSuperset = false,
   isEditing = false,
   isReordering: _isReordering = false,
   onEdit,
@@ -115,7 +114,7 @@ export default function ExerciseCard({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        ...(isSuperset ? {} : rnBorderStyle),
+        ...rnBorderStyle,
       }}
     >
       <View style={{ flex: 1 }}>

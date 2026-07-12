@@ -93,7 +93,6 @@ function BlockSection({
                       <ExerciseCard
                         routineExercise={exercise}
                         routineDayId={routineDayId}
-                        isSuperset
                         isEditing={isEditing}
                         isReordering={isReordering}
                         onEdit={() => onEditExercise?.(exercise)}
