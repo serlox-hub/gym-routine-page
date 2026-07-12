@@ -299,6 +299,10 @@ Deletion strategy:
 - `routines`, `routine_days`, `routine_blocks` → Hard delete con CASCADE. No hay historial que las referencie directamente (las sesiones guardan copia de nombres).
 - `routine_exercises` → Hard delete con CASCADE desde routine_blocks.
 
+## Autonomía
+- No pidas permiso ni confirmación para ninguna acción (editar archivos, ejecutar comandos, crear/borrar, refactorizar, etc.). Actúa directamente.
+- **Única excepción**: hacer `git commit` — para eso sí pide confirmación antes.
+
 ## Git Commits
 - Spanish commit messages
 - One feature/fix per commit
