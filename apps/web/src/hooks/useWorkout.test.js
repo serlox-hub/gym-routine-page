@@ -179,6 +179,39 @@ describe('useWorkout hooks', () => {
       expect(useWorkoutStore.getState().getTimeRemaining()).toBeLessThanOrEqual(remainingBefore)
     })
 
+    it('reanuda el conteo si el timer ya estaba activo al montar (volver tras «atrás»)', () => {
+      // Simula un timer en marcha antes de que el engine se monte, como al
+      // volver a la sesión tras navegar atrás (el engine se desmonta y remonta).
+      useWorkoutStore.setState({
+        restTimerActive: true,
+        restTimerEndTime: Date.now() + 60000,
+        restTimeInitial: 60,
+      })
+
+      const { result } = renderHook(() => useRestTimerWithEngine())
+
+      expect(result.current.timeRemaining).toBe(60)
+
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+
+      // Sin el fix el intervalo nunca arranca y el tiempo se queda congelado en 60
+      expect(result.current.timeRemaining).toBe(59)
+    })
+
+    it('limpia el timer si ya expiró mientras estábamos fuera', () => {
+      useWorkoutStore.setState({
+        restTimerActive: true,
+        restTimerEndTime: Date.now() - 5000,
+        restTimeInitial: 60,
+      })
+
+      renderHook(() => useRestTimerWithEngine())
+
+      expect(useWorkoutStore.getState().restTimerActive).toBe(false)
+    })
+
     it('multiple renders dont create multiple intervals', () => {
       const { result, rerender } = renderHook(() => useRestTimerWithEngine())
 
@@ -232,16 +265,18 @@ describe('useWorkout hooks', () => {
       expect(result.current.timeInitial).toBe(90)
     })
 
-    it('progress reaches 100 when time is 0', () => {
+    it('progress se acerca a 100 (acotado) cuando queda muy poco tiempo', () => {
       useWorkoutStore.setState({
         restTimerActive: true,
-        restTimerEndTime: Date.now(),
+        restTimerEndTime: Date.now() + 500, // ~1s restante: sigue activo
         restTimeInitial: 60,
       })
 
       const { result } = renderHook(() => useRestTimerWithEngine())
 
-      expect(result.current.progress).toBe(100)
+      expect(result.current.isActive).toBe(true)
+      expect(result.current.progress).toBeGreaterThan(97)
+      expect(result.current.progress).toBeLessThanOrEqual(100)
     })
 
     it('progress handles very short timer', () => {

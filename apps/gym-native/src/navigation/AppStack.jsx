@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { House, TimerReset, ClipboardList, Activity } from 'lucide-react-native'
-import { useRestoreActiveSession, useSyncPendingSets } from '../hooks/useWorkout'
+import { useRestoreActiveSession, useSyncPendingSets, useTimerEngine } from '../hooks/useWorkout'
 import HomeScreen from '../screens/HomeScreen'
 import RoutinesScreen from '../screens/RoutinesScreen'
 import HistoryScreen from '../screens/HistoryScreen'
@@ -142,6 +142,10 @@ function MainTabs() {
 export default function AppStack() {
   useRestoreActiveSession()
   useSyncPendingSets()
+  // Motor del temporizador a nivel global (siempre montado) para que el
+  // descanso siga contando y el pill de ActiveSessionBanner se actualice
+  // aunque el usuario salga de la pantalla de sesión.
+  useTimerEngine()
 
   return (
     <View style={{ flex: 1 }}>

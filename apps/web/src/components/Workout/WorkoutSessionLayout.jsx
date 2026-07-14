@@ -15,7 +15,6 @@ import {
   useReplaceSessionExercise,
   useReorderSessionExercises,
   useWakeLock,
-  useTimerEngine,
 } from '../../hooks/useWorkout.js'
 import { Plus, ArrowRightLeft, X, Flag, ChevronDown } from 'lucide-react'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui/index.js'
@@ -44,7 +43,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const { setSelectedGym } = useSetSelectedGym()
 
   useWakeLock()
-  useTimerEngine()
 
   const hasCompletedSets = Object.keys(completedSets).length > 0
 

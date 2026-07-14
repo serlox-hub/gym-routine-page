@@ -7,7 +7,7 @@ import BottomTabBar from './components/ui/BottomTabBar.jsx'
 import OfflineBanner from './components/ui/OfflineBanner.jsx'
 import { useAuth } from './hooks/useAuth.js'
 import { colors } from './lib/styles.js'
-import { useRestoreActiveSession, useSyncPendingSets } from './hooks/useWorkout.js'
+import { useRestoreActiveSession, useSyncPendingSets, useTimerEngine } from './hooks/useWorkout.js'
 import { useLanguageSync } from '@gym/shared'
 
 const Landing = lazy(() => import('./pages/Landing.jsx'))
@@ -67,6 +67,10 @@ function LanguageSync() {
 function SessionRestorer() {
   useRestoreActiveSession()
   useSyncPendingSets()
+  // El motor del temporizador se monta aquí (nivel global, siempre montado) y
+  // no dentro de la sesión, para que el descanso siga contando y el pill de
+  // ActiveSessionBanner se actualice también fuera de la página de sesión.
+  useTimerEngine()
   return null
 }
 

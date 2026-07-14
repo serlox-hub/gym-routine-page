@@ -68,6 +68,21 @@ export function useTimerEngine({ playSound, vibrateDevice, onTimerStart, onTimer
       }
     })
 
+    // El subscribe solo reacciona a transiciones. Si al montar el timer ya
+    // estaba activo (p. ej. al volver a la sesión tras navegar «atrás»), hay
+    // que reanudar el intervalo manualmente; de lo contrario el tiempo se
+    // queda congelado. Si ya expiró estando fuera, lo cerramos (el subscribe
+    // dispara onTimerEnd para limpiar).
+    const state = store.getState()
+    if (state.restTimerActive) {
+      if (state.getTimeRemaining() > 0) {
+        onTimerStart?.(state.restTimerEndTime)
+        startInterval()
+      } else {
+        state.tickTimer()
+      }
+    }
+
     return () => {
       unsubscribe()
       stopInterval()
