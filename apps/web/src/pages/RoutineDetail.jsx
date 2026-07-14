@@ -54,6 +54,16 @@ function RoutineDetail() {
   const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
   const nextDayNumber = maxDayNumber + 1
 
+  const handleStartEdit = () => navigate(`/routine/${routineId}/edit`, { state: { cameFromView: true } })
+
+  const handleEndEdit = () => {
+    // Si entramos a edición desde la vista, retrocedemos en el historial para no
+    // dejar una entrada duplicada (evita el bucle vista↔edición al pulsar «atrás»).
+    // Si entramos directos (rutina recién creada), reemplazamos por la vista.
+    if (location.state?.cameFromView) navigate(-1)
+    else navigate(`/routine/${routineId}`, { replace: true })
+  }
+
   const handleAddDay = async () => {
     try {
       await createDay.mutateAsync({
@@ -206,8 +216,8 @@ function RoutineDetail() {
         routine={routine}
         routineId={routineId}
         isEditing={isEditing}
-        onEditStart={() => navigate(`/routine/${routineId}/edit`)}
-        onEditEnd={() => navigate(`/routine/${routineId}`)}
+        onEditStart={handleStartEdit}
+        onEditEnd={handleEndEdit}
         onDelete={() => setShowDeleteConfirm(true)}
       />
 
@@ -313,7 +323,7 @@ function RoutineDetail() {
               <p className="text-sm" style={{ color: colors.textMuted }}>{t('routine:day.noDays')}</p>
               {!isEditing && (
                 <button
-                  onClick={() => navigate(`/routine/${routineId}/edit`)}
+                  onClick={handleStartEdit}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mt-2"
                   style={{ border: `1px solid ${colors.success}`, color: colors.success, backgroundColor: 'transparent' }}
                 >
