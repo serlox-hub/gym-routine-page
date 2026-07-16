@@ -2,7 +2,7 @@
   "_meta": {
     "description": "Catálogo de ejercicios del sistema para seed en Supabase",
     "version": 5,
-    "total_exercises": 269,
+    "total_exercises": 270,
     "muscle_groups": [
       "Pecho",
       "Espalda",
@@ -1692,45 +1692,63 @@
       "equipment": "cable"
     },
     {
-      "name_es": "Jalón al pecho con barra V",
-      "name_en": "V-Bar Lat Pulldown",
+      "name_es": "Jalón al pecho agarre neutro estrecho",
+      "name_en": "Close Neutral-Grip Lat Pulldown",
       "muscle_group": "Espalda",
       "secondary_muscles": [
-        "Bíceps",
-        "Antebrazo"
+        "Antebrazo",
+        "Bíceps"
       ],
       "measurement_type": "weight_reps",
       "instructions": {
-        "es": {
-          "setup": "Coloca el accesorio V en la polea alta. Siéntate con los muslos bajo las almohadillas y agarra con las palmas enfrentadas.",
-          "execution": "Tira del accesorio hacia el pecho alto llevando los codos hacia abajo y cerca del cuerpo. Aprieta las escápulas. Sube controladamente.",
-          "cues": [
-            "Codos pegados al torso",
-            "Saca pecho para encontrarte con la V",
-            "Contracción fuerte abajo"
-          ],
-          "mistakes": [
-            "Echar el cuerpo hacia atrás para compensar peso",
-            "Abrir los codos hacia fuera",
-            "Soltar la tensión arriba de golpe"
-          ]
-        },
         "en": {
-          "setup": "Attach the V-bar to the high pulley. Sit with thighs under pads and grip with palms facing each other.",
-          "execution": "Pull the attachment to your upper chest, driving elbows down and close to your body. Squeeze your shoulder blades. Return up with control.",
           "cues": [
-            "Elbows tight to the torso",
-            "Push chest out to meet the V-bar",
-            "Strong contraction at the bottom"
+            "Keep elbows tight to your body",
+            "Pull toward the sternum, not the chin",
+            "Slight torso lean back"
           ],
-          "mistakes": [
-            "Leaning back to compensate for heavy weight",
-            "Flaring elbows outward",
-            "Releasing tension suddenly at the top"
-          ]
+          "setup": "Attach a close neutral-grip handle (triangle or V-bar) to the high pulley. Sit with thighs secured under the pads and grab with palms facing each other.",
+          "execution": "Pull the handle down toward your lower chest/sternum keeping elbows close to your body. Squeeze your lats at the bottom and return the weight under control to full extension."
+        },
+        "es": {
+          "cues": [
+            "Codos pegados al cuerpo",
+            "Tira hacia el esternón, no hacia la barbilla",
+            "Inclina ligeramente el torso hacia atrás"
+          ],
+          "setup": "Coloca un agarre neutro estrecho (triángulo o barra V) en la polea alta. Siéntate con los muslos bien sujetos bajo las almohadillas y agarra con las palmas enfrentadas.",
+          "execution": "Tira del agarre hacia el pecho inferior/esternón llevando los codos cerca del cuerpo. Aprieta los dorsales abajo y vuelve controlando el peso hasta extensión completa."
         }
       },
-      "equipment": "barbell"
+      "equipment": "cable"
+    },
+    {
+      "name_es": "Jalón al pecho agarre neutro ancho",
+      "name_en": "Wide Neutral-Grip Lat Pulldown",
+      "muscle_group": "Espalda",
+      "secondary_muscles": [],
+      "measurement_type": "weight_reps",
+      "instructions": {
+        "en": {
+          "cues": [
+            "Drive elbows down and slightly back",
+            "Keep chest up, avoid rounding your back",
+            "Brief pause at the bottom for peak contraction"
+          ],
+          "setup": "Attach a wide neutral-grip handle to the high pulley. Sit with thighs secured under the pads and grab the handle with palms facing each other.",
+          "execution": "Pull the handle down to your upper chest while slightly arching your back. Squeeze your lats at the bottom and return the weight under control to full arm extension."
+        },
+        "es": {
+          "cues": [
+            "Codos hacia abajo y ligeramente hacia atrás",
+            "Pecho alto, no encorvar la espalda",
+            "Pausa breve abajo para máxima contracción"
+          ],
+          "setup": "Coloca un agarre neutro ancho en la polea alta. Siéntate con los muslos bien sujetos bajo las almohadillas y agarra con las palmas enfrentadas.",
+          "execution": "Tira del agarre hacia el pecho superior arqueando ligeramente la espalda. Aprieta los dorsales abajo y vuelve controlando el peso hasta extensión completa de brazos."
+        }
+      },
+      "equipment": "cable"
     },
     {
       "name_es": "Jalón al pecho con cuerda",
@@ -2267,48 +2285,6 @@
       "equipment": "cable"
     },
     {
-      "name_es": "Remo en barra T",
-      "name_en": "T-Bar Row",
-      "muscle_group": "Espalda",
-      "secondary_muscles": [
-        "Bíceps",
-        "Antebrazo",
-        "Hombros"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Colócate a horcajadas sobre la barra T. Inclínate con la cadera a unos 45°. Agarra las asas con ambas manos. Rodillas ligeramente flexionadas, espalda neutra.",
-          "execution": "Tira de la barra hacia el pecho llevando los codos hacia atrás. Aprieta las escápulas en la contracción. Baja con control hasta extensión.",
-          "cues": [
-            "Espalda plana, pecho fuera",
-            "Codos hacia el techo",
-            "Aprieta fuerte arriba 1 segundo"
-          ],
-          "mistakes": [
-            "Redondear la espalda baja",
-            "Incorporarse para usar impulso",
-            "Dejar caer el peso en la bajada"
-          ]
-        },
-        "en": {
-          "setup": "Straddle the T-bar. Hinge at the hips to about 45°. Grip the handles with both hands. Slight knee bend, neutral spine.",
-          "execution": "Pull the bar toward your chest, driving elbows back. Squeeze shoulder blades at the contraction. Lower with control to full extension.",
-          "cues": [
-            "Flat back, chest out",
-            "Elbows toward the ceiling",
-            "Hard squeeze at the top for 1 second"
-          ],
-          "mistakes": [
-            "Rounding the lower back",
-            "Standing up to cheat the weight",
-            "Dropping the weight on the way down"
-          ]
-        }
-      },
-      "equipment": "barbell"
-    },
-    {
       "name_es": "Remo en barra T con agarre neutro",
       "name_en": "Neutral-Grip T-Bar Row",
       "muscle_group": "Espalda",
@@ -2348,6 +2324,34 @@
         }
       },
       "equipment": "barbell"
+    },
+    {
+      "name_es": "Remo en máquina T",
+      "name_en": "T-Bar Row Machine",
+      "muscle_group": "Espalda",
+      "secondary_muscles": [],
+      "measurement_type": "weight_reps",
+      "instructions": {
+        "en": {
+          "cues": [
+            "Keep chest pressed against the pad throughout",
+            "Squeeze shoulder blades at peak contraction",
+            "No momentum or swinging"
+          ],
+          "setup": "Rest your chest on the machine pad. Grab the handles with both hands and unlock the weight.",
+          "execution": "Pull the handles toward your chest while keeping your torso pressed against the pad. Squeeze your shoulder blades at the top and lower the weight under control."
+        },
+        "es": {
+          "cues": [
+            "Pecho siempre en contacto con la almohadilla",
+            "Aprieta escápulas al final del tirón",
+            "No usar impulso ni balanceo"
+          ],
+          "setup": "Apoya el pecho en la almohadilla de la máquina T-bar. Agarra las asas con ambas manos y desbloquea el peso.",
+          "execution": "Tira de las asas hacia el pecho manteniendo el torso apoyado en la almohadilla. Aprieta las escápulas arriba y baja el peso de forma controlada."
+        }
+      },
+      "equipment": "machine"
     },
     {
       "name_es": "Remo en máquina",
