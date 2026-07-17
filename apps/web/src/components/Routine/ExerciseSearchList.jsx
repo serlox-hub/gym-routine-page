@@ -6,6 +6,7 @@ import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseN
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 import { Card } from '../ui/index.js'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
+import ExerciseThumbnail from '../Exercise/ExerciseThumbnail.jsx'
 
 function ExerciseSearchList({
   exercises, muscleGroups, equipmentTypes, isLoading, onSelect,
@@ -70,7 +71,8 @@ function ExerciseSearchList({
                 className="w-full text-left"
               >
                 <Card className="p-3 transition-colors hover:opacity-90" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <ExerciseThumbnail gifKey={exercise.gif_key} alt={getExerciseName(exercise)} />
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate" style={{ color: colors.textPrimary }}>
                         {getExerciseName(exercise)}

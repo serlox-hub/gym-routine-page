@@ -7,6 +7,7 @@ import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseN
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 import { Card } from '../ui'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar'
+import ExerciseThumbnail from '../Exercise/ExerciseThumbnail'
 
 export default function ExerciseSearchList({
   exercises, muscleGroups, equipmentTypes, isLoading, onSelect,
@@ -41,7 +42,8 @@ export default function ExerciseSearchList({
     return (
       <Pressable onPress={() => onSelect(exercise)} className="mx-0.5">
         <Card className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-          <View className="flex-row items-center justify-between gap-2">
+          <View className="flex-row items-center gap-3">
+            <ExerciseThumbnail gifKey={exercise.gif_key} alt={getExerciseName(exercise)} />
             <View className="flex-1" style={{ minWidth: 0 }}>
               <Text className="font-medium text-sm" style={{ color: colors.textPrimary }} numberOfLines={1}>
                 {getExerciseName(exercise)}
