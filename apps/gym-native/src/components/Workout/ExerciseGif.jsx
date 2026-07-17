@@ -57,6 +57,7 @@ function ExerciseGif({ gifKey, size = 'sm', alt = '', onExpand, dimension = 96 }
         style={{ width: '100%', height: '100%' }}
         contentFit="contain"
         transition={150}
+        cachePolicy="memory-disk"
         onLoad={() => setLoaded(true)}
         onError={() => setError(true)}
         accessibilityLabel={alt}

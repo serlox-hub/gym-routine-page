@@ -13,13 +13,12 @@ import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
-import { MeasurementType, getHaptics, getExerciseName, usePreference, resolveWeightUnit, hasExerciseNotes, useExpandedExercise } from '@gym/shared'
+import { MeasurementType, getHaptics, getExerciseName, usePreference, resolveWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorder, currentIndex = 0, totalExercises = 1, positionLabels = [], isReordering = false, existingSupersets = [] }) {
   const { t } = useTranslation()
   const { id, sessionExerciseId, exercise, series, reps, rir, notes, rest_seconds } = sessionExercise
-  const [showNotes, setShowNotes] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
@@ -35,6 +34,9 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const { expanded, toggle: toggleExpanded } = useExpandedExercise(exerciseKey)
   const collapsed = !expanded
+  // Notas montadas perezosamente y ocultadas (no desmontadas) al cerrar, para no
+  // re-pedir el GIF que contienen al alternarlas; se olvida la apertura al colapsar
+  const { open: showNotes, mounted: notesMounted, toggle: toggleNotes } = useLazyMountToggle(collapsed)
 
   const routineDayId = useWorkoutStore(state => state.routineDayId)
   const setsCount = useWorkoutStore(state => state.exerciseSetCounts[exerciseKey] ?? series)
@@ -91,10 +93,14 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         <>
           {hasNotes && (
             <View style={{ marginTop: 14 }}>
-              <NotesToggleBar showNotes={showNotes} onToggle={() => setShowNotes(!showNotes)} />
+              <NotesToggleBar showNotes={showNotes} onToggle={toggleNotes} />
             </View>
           )}
-          {showNotes && <ExerciseCardNotes exercise={exercise} notes={notes} />}
+          {notesMounted && (
+            <View style={{ display: showNotes ? 'flex' : 'none' }}>
+              <ExerciseCardNotes exercise={exercise} notes={notes} />
+            </View>
+          )}
           <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} measurementType={measurementType} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
         </>
       )}

@@ -59,6 +59,7 @@ function ExerciseGifViewer({ isOpen, onClose, gifKey, exerciseName = '' }) {
               style={{ width: '100%', height: '100%' }}
               contentFit="contain"
               transition={150}
+              cachePolicy="memory-disk"
               onLoad={() => setLoaded(true)}
               onError={() => setError(true)}
               accessibilityLabel={exerciseName}
