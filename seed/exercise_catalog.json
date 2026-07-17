@@ -2,7 +2,7 @@
   "_meta": {
     "description": "Catálogo de ejercicios del sistema para seed en Supabase",
     "version": 5,
-    "total_exercises": 270,
+    "total_exercises": 255,
     "muscle_groups": [
       "Pecho",
       "Espalda",
@@ -996,47 +996,6 @@
       "equipment": "bodyweight"
     },
     {
-      "name_es": "Flexiones con peso",
-      "name_en": "Weighted Push-Ups",
-      "muscle_group": "Pecho",
-      "secondary_muscles": [
-        "Tríceps",
-        "Hombros"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Colocá un disco o chaleco con peso en la espalda alta. Posición de flexión estándar con cuerpo recto.",
-          "execution": "Bajá el pecho al suelo manteniendo el cuerpo rígido. Empujá hacia arriba con fuerza.",
-          "cues": [
-            "El peso debe quedar centrado en la espalda alta",
-            "Mismo estándar que flexiones normales",
-            "Abdomen extra apretado por el peso"
-          ],
-          "mistakes": [
-            "Peso mal colocado que se resbala",
-            "Compensar con la cadera",
-            "Reducir el rango por el peso extra"
-          ]
-        },
-        "en": {
-          "setup": "Place a plate or weighted vest on your upper back. Standard push-up position with body straight.",
-          "execution": "Lower chest to the floor keeping body rigid. Push up powerfully.",
-          "cues": [
-            "Weight centered on upper back",
-            "Same standard as regular push-ups",
-            "Extra core bracing due to weight"
-          ],
-          "mistakes": [
-            "Weight poorly positioned and sliding",
-            "Compensating with the hips",
-            "Reducing range due to extra weight"
-          ]
-        }
-      },
-      "equipment": "bodyweight"
-    },
-    {
       "name_es": "Flexiones inclinadas",
       "name_en": "Incline Push-Ups",
       "muscle_group": "Pecho",
@@ -1569,47 +1528,6 @@
       "equipment": "cable"
     },
     {
-      "name_es": "Jalón al pecho agarre neutro",
-      "name_en": "Neutral-Grip Lat Pulldown",
-      "muscle_group": "Espalda",
-      "secondary_muscles": [
-        "Bíceps",
-        "Antebrazo"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Siéntate con los muslos bajo las almohadillas. Agarra el accesorio de agarre neutro con las palmas enfrentadas.",
-          "execution": "Tira de los codos hacia abajo y cerca del cuerpo hasta que las manos lleguen a la altura del pecho. Aprieta las escápulas. Sube con control manteniendo tensión.",
-          "cues": [
-            "Codos pegados al cuerpo",
-            "Aprieta escápulas al final del tirón",
-            "Pecho alto, no te hundas"
-          ],
-          "mistakes": [
-            "Separar los codos del cuerpo",
-            "Inclinar el torso excesivamente",
-            "Usar impulso en lugar de fuerza controlada"
-          ]
-        },
-        "en": {
-          "setup": "Sit with thighs secured under pads. Grip the neutral-grip attachment with palms facing each other.",
-          "execution": "Drive your elbows down and close to your body until your hands reach chest level. Squeeze shoulder blades. Return up with control, keeping tension.",
-          "cues": [
-            "Elbows close to your body",
-            "Squeeze shoulder blades at the bottom",
-            "Chest up, don't slouch"
-          ],
-          "mistakes": [
-            "Flaring elbows away from the body",
-            "Leaning the torso too far back",
-            "Using momentum instead of controlled strength"
-          ]
-        }
-      },
-      "equipment": "cable"
-    },
-    {
       "name_es": "Jalón al pecho agarre ancho",
       "name_en": "Wide-Grip Lat Pulldown",
       "muscle_group": "Espalda",
@@ -1746,46 +1664,6 @@
           ],
           "setup": "Coloca un agarre neutro ancho en la polea alta. Siéntate con los muslos bien sujetos bajo las almohadillas y agarra con las palmas enfrentadas.",
           "execution": "Tira del agarre hacia el pecho superior arqueando ligeramente la espalda. Aprieta los dorsales abajo y vuelve controlando el peso hasta extensión completa de brazos."
-        }
-      },
-      "equipment": "cable"
-    },
-    {
-      "name_es": "Jalón al pecho con cuerda",
-      "name_en": "Rope Lat Pulldown",
-      "muscle_group": "Espalda",
-      "secondary_muscles": [
-        "Bíceps"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Coloca la cuerda en la polea alta. Siéntate con los muslos bajo las almohadillas y agarra cada extremo de la cuerda.",
-          "execution": "Tira separando los extremos de la cuerda mientras los llevas hacia los lados del pecho. Aprieta las escápulas abriendo la cuerda al final. Sube con control.",
-          "cues": [
-            "Separa la cuerda al final del movimiento",
-            "Codos hacia las caderas",
-            "Aprieta escápulas como si sujetaras un lápiz"
-          ],
-          "mistakes": [
-            "No separar la cuerda al final del recorrido",
-            "Echar el torso excesivamente hacia atrás",
-            "Usar impulso en lugar de tracción controlada"
-          ]
-        },
-        "en": {
-          "setup": "Attach the rope to the high pulley. Sit with thighs under pads and grip each end of the rope.",
-          "execution": "Pull down while spreading the rope ends apart toward each side of your chest. Squeeze shoulder blades, opening the rope at the bottom. Return up with control.",
-          "cues": [
-            "Spread the rope apart at the bottom",
-            "Elbows toward your hips",
-            "Squeeze shoulder blades like holding a pencil"
-          ],
-          "mistakes": [
-            "Not splitting the rope at the bottom",
-            "Excessive backward lean",
-            "Using momentum instead of controlled pulling"
-          ]
         }
       },
       "equipment": "cable"
@@ -2285,47 +2163,6 @@
       "equipment": "cable"
     },
     {
-      "name_es": "Remo en barra T con agarre neutro",
-      "name_en": "Neutral-Grip T-Bar Row",
-      "muscle_group": "Espalda",
-      "secondary_muscles": [
-        "Bíceps",
-        "Antebrazo"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Colócate a horcajadas sobre la barra T. Usa el accesorio de agarre neutro (palmas enfrentadas). Inclinación de torso a ~45°, espalda neutra.",
-          "execution": "Tira hacia el abdomen con los codos pegados al cuerpo. Aprieta las escápulas arriba. Baja con control.",
-          "cues": [
-            "Codos cerca del torso",
-            "Espalda plana durante todo el movimiento",
-            "Contracción firme arriba"
-          ],
-          "mistakes": [
-            "Redondear la espalda baja",
-            "Separar los codos del cuerpo",
-            "Usar impulso con el torso"
-          ]
-        },
-        "en": {
-          "setup": "Straddle the T-bar. Use the neutral-grip attachment (palms facing). Torso at ~45°, neutral spine.",
-          "execution": "Pull toward your abdomen with elbows close to your body. Squeeze shoulder blades at the top. Lower with control.",
-          "cues": [
-            "Elbows close to the torso",
-            "Flat back throughout the movement",
-            "Firm contraction at the top"
-          ],
-          "mistakes": [
-            "Rounding the lower back",
-            "Flaring elbows away from the body",
-            "Using torso momentum to cheat"
-          ]
-        }
-      },
-      "equipment": "barbell"
-    },
-    {
       "name_es": "Remo en máquina T",
       "name_en": "T-Bar Row Machine",
       "muscle_group": "Espalda",
@@ -2388,46 +2225,6 @@
             "Lifting chest off the pad to use momentum",
             "Pulling with arms only, no scapular retraction",
             "Releasing the weight abruptly"
-          ]
-        }
-      },
-      "equipment": "machine"
-    },
-    {
-      "name_es": "Remo en máquina convergente",
-      "name_en": "Converging Machine Row",
-      "muscle_group": "Espalda",
-      "secondary_muscles": [
-        "Bíceps"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Siéntate con el pecho contra la almohadilla. Agarra las asas independientes. El movimiento convergente imita un remo con mancuernas.",
-          "execution": "Tira de ambas asas hacia ti de forma simultánea, retrayendo las escápulas. Las manos convergen al final. Aprieta y vuelve con control.",
-          "cues": [
-            "Deja que las manos se acerquen al final",
-            "Aprieta las escápulas en la contracción",
-            "Pecho contra la almohadilla siempre"
-          ],
-          "mistakes": [
-            "Despegar el pecho para usar impulso",
-            "No aprovechar el rango convergente",
-            "Soltar la tensión en la vuelta"
-          ]
-        },
-        "en": {
-          "setup": "Sit with chest against the pad. Grip the independent handles. The converging path mimics a dumbbell row.",
-          "execution": "Pull both handles toward you simultaneously, retracting shoulder blades. Hands converge at the end. Squeeze and return with control.",
-          "cues": [
-            "Let the hands come together at the end",
-            "Squeeze shoulder blades at the contraction",
-            "Chest stays against the pad throughout"
-          ],
-          "mistakes": [
-            "Lifting chest off pad for momentum",
-            "Not using the full converging range",
-            "Releasing tension on the return"
           ]
         }
       },
@@ -2516,47 +2313,6 @@
         }
       },
       "equipment": "barbell"
-    },
-    {
-      "name_es": "Remo Helms",
-      "name_en": "Helms Row",
-      "muscle_group": "Espalda",
-      "secondary_muscles": [
-        "Bíceps",
-        "Hombros"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Coloca un banco inclinado a unos 30-45°. Túmbate boca abajo con el pecho apoyado en el banco. Toma una mancuerna en cada mano, brazos colgando.",
-          "execution": "Rema ambas mancuernas hacia las caderas llevando los codos hacia atrás. Aprieta las escápulas arriba. Baja con control hasta extensión completa.",
-          "cues": [
-            "El pecho no se despega del banco",
-            "Codos hacia las caderas",
-            "Sin impulso: el banco te obliga a usar técnica pura"
-          ],
-          "mistakes": [
-            "Despegar el pecho del banco",
-            "Usar poca inclinación, limitando el rango",
-            "No bajar las mancuernas completamente"
-          ]
-        },
-        "en": {
-          "setup": "Set an incline bench to 30-45°. Lie face down with chest supported on the bench. Hold a dumbbell in each hand, arms hanging.",
-          "execution": "Row both dumbbells toward your hips, driving elbows back. Squeeze shoulder blades at the top. Lower with control to full extension.",
-          "cues": [
-            "Chest stays on the bench",
-            "Elbows drive toward the hips",
-            "No momentum — the bench forces strict form"
-          ],
-          "mistakes": [
-            "Lifting chest off the bench",
-            "Too little incline, limiting range of motion",
-            "Not lowering dumbbells fully"
-          ]
-        }
-      },
-      "equipment": "dumbbell"
     },
     {
       "name_es": "Remo con mancuernas en banco inclinado",
@@ -3534,44 +3290,6 @@
         }
       },
       "equipment": "machine"
-    },
-    {
-      "name_es": "Elevaciones laterales inclinado en banco",
-      "name_en": "Incline Bench Lateral Raise",
-      "muscle_group": "Hombros",
-      "secondary_muscles": [],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Inclina un banco a unos 30-45°. Recuéstate de lado con el brazo de trabajo colgando perpendicular al suelo, mancuerna en mano.",
-          "execution": "Eleva la mancuerna lateralmente hasta la altura del hombro manteniendo ligera flexión de codo. Baja controladamente. La inclinación del banco aumenta la tensión en la parte baja del recorrido.",
-          "cues": [
-            "Mantén el cuerpo pegado al banco",
-            "Movimiento lento y controlado",
-            "Siente el estiramiento abajo"
-          ],
-          "mistakes": [
-            "Rotar el torso para ayudarse",
-            "Usar impulso desde la posición inclinada",
-            "Rango de movimiento incompleto"
-          ]
-        },
-        "en": {
-          "setup": "Set a bench to 30-45°. Lie on your side with the working arm hanging perpendicular to the floor, dumbbell in hand.",
-          "execution": "Raise the dumbbell laterally to shoulder height with a slight elbow bend. Lower under control. The incline increases tension at the bottom of the range.",
-          "cues": [
-            "Keep your body pressed against the bench",
-            "Slow and controlled movement",
-            "Feel the stretch at the bottom"
-          ],
-          "mistakes": [
-            "Rotating the torso to assist",
-            "Using momentum from the inclined position",
-            "Incomplete range of motion"
-          ]
-        }
-      },
-      "equipment": "dumbbell"
     },
     {
       "name_es": "Elevaciones frontales con mancuernas",
@@ -4730,86 +4448,6 @@
       "equipment": "cable"
     },
     {
-      "name_es": "Curl en polea baja con barra EZ",
-      "name_en": "EZ-Bar Cable Curl",
-      "muscle_group": "Bíceps",
-      "secondary_muscles": [
-        "Antebrazo"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Polea en posición baja con accesorio de barra EZ. De pie frente a la máquina, agarra las curvas interiores con palmas hacia arriba.",
-          "execution": "Flexiona los codos subiendo la barra EZ hacia los hombros. El agarre angular es más cómodo para las muñecas. Baja controladamente manteniendo la tensión.",
-          "cues": [
-            "Muñecas cómodas en el agarre angular",
-            "Codos fijos al costado",
-            "Resiste la bajada"
-          ],
-          "mistakes": [
-            "Balancear el cuerpo",
-            "Dejar que los codos se adelanten",
-            "Perder tensión al bajar rápido"
-          ]
-        },
-        "en": {
-          "setup": "Set cable to lowest position with an EZ bar attachment. Stand facing the machine, grip the inner curves palms up.",
-          "execution": "Curl the EZ bar toward your shoulders. The angled grip is easier on the wrists. Lower under control maintaining tension.",
-          "cues": [
-            "Wrists comfortable in the angled grip",
-            "Elbows fixed at your sides",
-            "Resist on the way down"
-          ],
-          "mistakes": [
-            "Swinging the body",
-            "Letting elbows drift forward",
-            "Losing tension by lowering too fast"
-          ]
-        }
-      },
-      "equipment": "cable"
-    },
-    {
-      "name_es": "Curl en polea baja con cuerda",
-      "name_en": "Rope Cable Curl",
-      "muscle_group": "Bíceps",
-      "secondary_muscles": [
-        "Antebrazo"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Polea en posición baja con accesorio de cuerda. De pie frente a la máquina, agarra los extremos de la cuerda con agarre neutro.",
-          "execution": "Flexiona los codos subiendo la cuerda. Al llegar arriba, separa los extremos y supina (gira las palmas hacia arriba) para una contracción máxima. Baja controladamente.",
-          "cues": [
-            "Separa y supina arriba para máxima contracción",
-            "Codos fijos",
-            "Agarre neutro durante la subida"
-          ],
-          "mistakes": [
-            "No separar la cuerda arriba",
-            "Usar impulso del cuerpo",
-            "Mover los codos"
-          ]
-        },
-        "en": {
-          "setup": "Set cable to lowest position with rope attachment. Stand facing the machine, grip rope ends with neutral grip.",
-          "execution": "Curl the rope upward. At the top, split the rope ends apart and supinate (turn palms up) for maximum contraction. Lower under control.",
-          "cues": [
-            "Split and supinate at top for peak contraction",
-            "Elbows fixed",
-            "Neutral grip during the curl"
-          ],
-          "mistakes": [
-            "Not splitting the rope at top",
-            "Using body momentum",
-            "Moving elbows"
-          ]
-        }
-      },
-      "equipment": "cable"
-    },
-    {
       "name_es": "Curl en polea alta",
       "name_en": "High Cable Curl",
       "muscle_group": "Bíceps",
@@ -4922,46 +4560,6 @@
         }
       },
       "equipment": "dumbbell"
-    },
-    {
-      "name_es": "Curl 21s con barra",
-      "name_en": "Barbell 21s Curl",
-      "muscle_group": "Bíceps",
-      "secondary_muscles": [
-        "Antebrazo"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "De pie con barra recta o EZ, agarre supino a la anchura de los hombros. Codos pegados al costado.",
-          "execution": "Haz 7 repeticiones de la parte baja a la mitad (90°), 7 de la mitad hasta arriba, y 7 con rango completo. Todo sin descanso entre bloques.",
-          "cues": [
-            "7 abajo + 7 arriba + 7 completas = 1 serie",
-            "Usa menos peso del habitual",
-            "Codos siempre fijos"
-          ],
-          "mistakes": [
-            "Usar demasiado peso (vas a necesitar menos de lo que crees)",
-            "Hacer trampa con el cuerpo en las últimas repeticiones",
-            "No diferenciar bien los rangos parciales"
-          ]
-        },
-        "en": {
-          "setup": "Stand with a straight or EZ bar, underhand grip at shoulder width. Elbows pinned to sides.",
-          "execution": "Do 7 reps from the bottom to midpoint (90°), 7 from midpoint to top, and 7 full range. All without rest between blocks.",
-          "cues": [
-            "7 bottom + 7 top + 7 full = 1 set",
-            "Use less weight than you think",
-            "Elbows always fixed"
-          ],
-          "mistakes": [
-            "Using too much weight (you'll need less than expected)",
-            "Cheating with the body on the last reps",
-            "Not clearly differentiating the partial ranges"
-          ]
-        }
-      },
-      "equipment": "barbell"
     },
     {
       "name_es": "Curl arrastre con barra",
@@ -6376,46 +5974,6 @@
       "equipment": "bodyweight"
     },
     {
-      "name_es": "Dead hang con peso",
-      "name_en": "Weighted Dead Hang",
-      "muscle_group": "Antebrazo",
-      "secondary_muscles": [
-        "Espalda"
-      ],
-      "measurement_type": "weight_time",
-      "instructions": {
-        "es": {
-          "setup": "Coloca peso extra con un cinturón de lastre o sujeta una mancuerna entre los pies. Cuélgate con agarre prono, brazos extendidos.",
-          "execution": "Mantén la posición colgado con brazos rectos. El peso extra desafía el agarre. Respira de forma controlada. Aguanta el máximo tiempo posible.",
-          "cues": [
-            "Brazos completamente rectos",
-            "Respiración controlada",
-            "Aguanta hasta que el agarre falle"
-          ],
-          "mistakes": [
-            "Flexionar los codos para aliviar tensión",
-            "Balancear el cuerpo por el peso extra",
-            "Empezar con demasiado peso"
-          ]
-        },
-        "en": {
-          "setup": "Add weight via a dip belt or hold a dumbbell between your feet. Hang with an overhand grip, arms extended.",
-          "execution": "Hold the hanging position with straight arms. The extra weight challenges your grip. Breathe steadily. Hold as long as possible.",
-          "cues": [
-            "Arms fully straight",
-            "Controlled breathing",
-            "Hold until grip fails"
-          ],
-          "mistakes": [
-            "Bending elbows to relieve tension",
-            "Swinging the body due to extra weight",
-            "Starting with too much weight"
-          ]
-        }
-      },
-      "equipment": "bodyweight"
-    },
-    {
       "name_es": "Agarre con pinza de disco",
       "name_en": "Plate Pinch Hold",
       "muscle_group": "Antebrazo",
@@ -7056,47 +6614,6 @@
             "Leaning forward unnecessarily",
             "Not going deep enough",
             "Gripping the handles too hard, taking work from the legs"
-          ]
-        }
-      },
-      "equipment": "machine"
-    },
-    {
-      "name_es": "Prensa de piernas",
-      "name_en": "Leg Press",
-      "muscle_group": "Cuádriceps",
-      "secondary_muscles": [
-        "Glúteos",
-        "Isquiotibiales"
-      ],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Siéntate con la espalda y el glúteo bien apoyados en el asiento. Pies al ancho de hombros en el centro de la plataforma.",
-          "execution": "Desbloquea y baja la plataforma controladamente hasta que las rodillas formen 90° o ligeramente más. Empuja de vuelta sin bloquear las rodillas arriba.",
-          "cues": [
-            "Glúteo pegado al asiento en todo momento",
-            "Empuja con toda la planta del pie",
-            "No bloquees las rodillas arriba"
-          ],
-          "mistakes": [
-            "Despegar el glúteo del asiento al bajar demasiado",
-            "Bloquear las rodillas completamente arriba",
-            "Usar un rango de movimiento demasiado corto"
-          ]
-        },
-        "en": {
-          "setup": "Sit with your back and glutes pressed firmly into the seat. Feet shoulder-width in the center of the platform.",
-          "execution": "Unlock and lower the platform with control until knees reach 90° or slightly more. Push back up without locking your knees at the top.",
-          "cues": [
-            "Glutes glued to the seat at all times",
-            "Push through the entire foot",
-            "Don't lock out knees at the top"
-          ],
-          "mistakes": [
-            "Glutes lifting off the seat from going too deep",
-            "Fully locking the knees at the top",
-            "Using too short a range of motion"
           ]
         }
       },
@@ -9038,44 +8555,6 @@
       "equipment": "band"
     },
     {
-      "name_es": "Elevación lateral de cadera",
-      "name_en": "Side-Lying Hip Raise",
-      "muscle_group": "Glúteos",
-      "secondary_muscles": [],
-      "measurement_type": "reps_only",
-      "instructions": {
-        "es": {
-          "setup": "Túmbate de lado con las piernas extendidas y apiladas. Apoya la cabeza en el brazo inferior y coloca la mano superior delante del cuerpo para estabilizarte.",
-          "execution": "Eleva la pierna superior manteniéndola recta, sin rotar la cadera. Sube hasta unos 45° y baja controladamente sin apoyar la pierna entre reps.",
-          "cues": [
-            "Pierna recta sin flexionar rodilla",
-            "Cadera estable, no rotar",
-            "Movimiento desde el glúteo medio"
-          ],
-          "mistakes": [
-            "Rotar la cadera hacia atrás para elevar más",
-            "Flexionar la rodilla de la pierna de trabajo",
-            "Balancear la pierna con impulso"
-          ]
-        },
-        "en": {
-          "setup": "Lie on your side with legs extended and stacked. Rest your head on the lower arm and place the top hand in front for stability.",
-          "execution": "Raise the top leg keeping it straight, without rotating the hip. Lift to about 45° and lower under control without resting the leg between reps.",
-          "cues": [
-            "Straight leg, no knee bending",
-            "Stable hip, no rotation",
-            "Movement from the glute medius"
-          ],
-          "mistakes": [
-            "Rolling the hip backward to lift higher",
-            "Bending the knee of the working leg",
-            "Swinging the leg with momentum"
-          ]
-        }
-      },
-      "equipment": "bodyweight"
-    },
-    {
       "name_es": "Frog pump",
       "name_en": "Frog Pump",
       "muscle_group": "Glúteos",
@@ -9492,44 +8971,6 @@
         }
       },
       "equipment": "machine"
-    },
-    {
-      "name_es": "Tibialis raise",
-      "name_en": "Tibialis Raise",
-      "muscle_group": "Pantorrillas",
-      "secondary_muscles": [],
-      "measurement_type": "reps_only",
-      "instructions": {
-        "es": {
-          "setup": "De pie con la espalda apoyada en una pared y los talones a unos 30 cm de la base. Puedes hacerlo también al borde de un escalón con los talones en el borde.",
-          "execution": "Levanta las puntas de los pies hacia las espinillas contrayendo el tibial anterior. Mantén 1-2 segundos arriba y baja controladamente.",
-          "cues": [
-            "Contrae el músculo de la espinilla",
-            "Movimiento lento y controlado",
-            "Mantén la contracción arriba"
-          ],
-          "mistakes": [
-            "Ir demasiado rápido sin contracción",
-            "No levantar las puntas lo suficiente",
-            "Perder el equilibrio por no apoyarse"
-          ]
-        },
-        "en": {
-          "setup": "Stand with your back against a wall, heels about 30 cm from the base. You can also do this on a step edge with heels on the edge.",
-          "execution": "Lift your toes toward your shins by contracting the tibialis anterior. Hold 1-2 seconds at the top and lower under control.",
-          "cues": [
-            "Contract the shin muscle",
-            "Slow and controlled movement",
-            "Hold the contraction at the top"
-          ],
-          "mistakes": [
-            "Going too fast without contraction",
-            "Not lifting toes high enough",
-            "Losing balance from not bracing"
-          ]
-        }
-      },
-      "equipment": "bodyweight"
     },
     {
       "name_es": "Crunch en suelo",
@@ -10308,44 +9749,6 @@
             "Pulling the neck with hands",
             "Using momentum by bouncing off the floor",
             "Excessively arching the lower back on the descent"
-          ]
-        }
-      },
-      "equipment": "bodyweight"
-    },
-    {
-      "name_es": "Sit-up con peso",
-      "name_en": "Weighted Sit-Up",
-      "muscle_group": "Abdominales",
-      "secondary_muscles": [],
-      "measurement_type": "weight_reps",
-      "instructions": {
-        "es": {
-          "setup": "Tumbado boca arriba con rodillas flexionadas y pies sujetos. Sujeta un disco contra el pecho o por encima de la cabeza con brazos extendidos.",
-          "execution": "Eleva todo el torso hasta quedar sentado manteniendo el peso fijo. Baja con control. El peso por encima de la cabeza es más difícil que contra el pecho.",
-          "cues": [
-            "El peso no se mueve respecto al cuerpo",
-            "Exhala fuerte al subir",
-            "Controla la bajada, no te dejes caer"
-          ],
-          "mistakes": [
-            "Dejar que el peso caiga hacia delante al subir",
-            "Usar impulso para completar la repetición",
-            "Redondear excesivamente la espalda"
-          ]
-        },
-        "en": {
-          "setup": "Lie face up with knees bent and feet anchored. Hold a plate against your chest or overhead with arms extended.",
-          "execution": "Lift your entire torso up to seated while keeping the weight fixed. Lower with control. Overhead is harder than chest position.",
-          "cues": [
-            "Weight stays locked relative to your body",
-            "Exhale hard on the way up",
-            "Control the descent, don't just drop"
-          ],
-          "mistakes": [
-            "Letting the weight fall forward on the way up",
-            "Using momentum to complete the rep",
-            "Excessively rounding the back"
           ]
         }
       },
