@@ -29,6 +29,9 @@ apps/web/playwright-report/
 /playwright/.cache/
 apps/web/.auth/
 
+# Claude Code (worktrees transitorios de agentes; el resto de .claude/ sí se versiona)
+.claude/worktrees/
+
 # Planning
 .planning/
 backup/
