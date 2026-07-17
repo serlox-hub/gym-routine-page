@@ -2,7 +2,7 @@
  * Utilidades para manipulación de arrays
  */
 
-import { normalizeSearchText } from './textUtils.js'
+import { fuzzyMatchScore } from './textUtils.js'
 
 /**
  * Reordena un elemento en un array moviéndolo arriba o abajo
@@ -91,23 +91,6 @@ export function moveItemToPosition(array, id, newIndex) {
 }
 
 /**
- * Filtra un array por término de búsqueda en una propiedad
- * @param {Array} array - Array a filtrar
- * @param {string} searchTerm - Término de búsqueda
- * @param {string} property - Propiedad donde buscar (default: 'name')
- * @returns {Array} Array filtrado
- */
-export function filterBySearchTerm(array, searchTerm, property = 'name') {
-  if (!array) return []
-  if (!searchTerm || !searchTerm.trim()) return array
-
-  const searchNormalized = normalizeSearchText(searchTerm.trim())
-  return array.filter(item =>
-    normalizeSearchText(item[property]).includes(searchNormalized)
-  )
-}
-
-/**
  * Encuentra el índice de un ejercicio por sessionExerciseId o id
  * @param {Array} exercises - Array de ejercicios
  * @param {Object} exercise - Ejercicio a buscar
@@ -140,27 +123,47 @@ export function getReorderProps(exercises, exercise, onReorder) {
 }
 
 /**
- * Filtra ejercicios por término de búsqueda y grupo muscular
+ * Filtra y ordena ejercicios para el buscador: búsqueda flexible por
+ * subsecuencia (case- y tilde-insensitive) + filtros de músculo/equipo/origen +
+ * ranking por relevancia. Lógica única compartida por web y native (paridad por
+ * construcción). Pura, sin estado.
+ *
  * @param {Array} exercises - Array de ejercicios
- * @param {string} searchTerm - Término de búsqueda
- * @param {number|null} muscleGroupId - ID del grupo muscular (null para todos)
- * @returns {Array} Ejercicios filtrados
+ * @param {Object} [filters]
+ * @param {string} [filters.search] - Término de búsqueda (vacío => sin filtro ni reordenación)
+ * @param {number|null} [filters.muscleGroupId] - ID de grupo muscular (null => todos)
+ * @param {number|null} [filters.equipmentTypeId] - ID de tipo de equipo (null => todos)
+ * @param {'all'|'custom'|'system'} [filters.sourceFilter] - Origen ('all' por defecto)
+ * @param {Function} [filters.getName] - Accessor del nombre a buscar (default: e => e.name).
+ *                                       Web/native pasan getExerciseName (nombre traducido).
+ * @returns {Array} Ejercicios filtrados; ordenados por relevancia solo si hay búsqueda
  */
-export function filterExercises(exercises, searchTerm, muscleGroupId) {
+export function filterExercises(exercises, filters = {}) {
   if (!exercises) return []
 
-  let filtered = exercises
+  const {
+    search = '',
+    muscleGroupId = null,
+    equipmentTypeId = null,
+    sourceFilter = 'all',
+    getName = e => e.name,
+  } = filters
 
-  if (searchTerm && searchTerm.trim()) {
-    const searchNormalized = normalizeSearchText(searchTerm.trim())
-    filtered = filtered.filter(e =>
-      normalizeSearchText(e.name).includes(searchNormalized)
-    )
-  }
+  const hasSearch = (search || '').trim().length > 0
 
-  if (muscleGroupId) {
-    filtered = filtered.filter(e => e.muscle_group_id === muscleGroupId)
-  }
+  const result = exercises
+    .map(e => ({ e, score: fuzzyMatchScore(getName(e), search) }))
+    .filter(({ e, score }) => {
+      if (score === null) return false
+      if (muscleGroupId && e.muscle_group_id !== muscleGroupId) return false
+      if (equipmentTypeId && e.equipment_type?.id !== equipmentTypeId) return false
+      if (sourceFilter === 'custom' && e.is_system) return false
+      if (sourceFilter === 'system' && !e.is_system) return false
+      return true
+    })
 
-  return filtered
+  // Ordena por relevancia solo al buscar; sin búsqueda conserva el orden original.
+  if (hasSearch) result.sort((a, b) => b.score - a.score)
+
+  return result.map(({ e }) => e)
 }

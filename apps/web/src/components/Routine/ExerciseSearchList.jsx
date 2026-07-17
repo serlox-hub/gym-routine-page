@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseName, normalizeSearchText } from '@gym/shared'
+import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 import { Card } from '../ui/index.js'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
@@ -25,16 +25,16 @@ function ExerciseSearchList({
   const currentSearch = onSearchChange ? search : internalSearch
   const handleSearchChange = onSearchChange || setInternalSearch
 
-  const filteredExercises = useMemo(() => {
-    if (!exercises) return []
-    return exercises.filter(ex => {
-      const matchesSearch = normalizeSearchText(getExerciseName(ex)).includes(normalizeSearchText(currentSearch))
-      const matchesMuscle = !selectedMuscleGroup || ex.muscle_group_id === selectedMuscleGroup
-      const matchesEquipment = !selectedEquipmentType || ex.equipment_type?.id === selectedEquipmentType
-      const matchesSource = sourceFilter === 'all' || (sourceFilter === 'custom' ? !ex.is_system : ex.is_system)
-      return matchesSearch && matchesMuscle && matchesEquipment && matchesSource
-    })
-  }, [exercises, currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter])
+  const filteredExercises = useMemo(
+    () => filterExercises(exercises, {
+      search: currentSearch,
+      muscleGroupId: selectedMuscleGroup,
+      equipmentTypeId: selectedEquipmentType,
+      sourceFilter,
+      getName: getExerciseName,
+    }),
+    [exercises, currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter]
+  )
 
   return (
     <>

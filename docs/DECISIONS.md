@@ -19,6 +19,14 @@ Formato por entrada: `## AAAA-MM · Título` y bullets `**Clave:** motivo/gotcha
 - **Catálogo: lazy-load en viewport, no tap-to-play** (póster estático descartado: exigiría extraer 266 primeros frames).
 - ⚠️ **Pendiente:** bucket sirve con `Cache-Control: no-cache`; pasar a `immutable` o el egress se dispara.
 
+## 2026-07 · Búsqueda flexible por subsecuencia (buscador de ejercicios)
+- **Qué:** el buscador pasó de `includes()` (substring exacto) a matching por **subsecuencia** (`fuzzyMatchScore` en `lib/textUtils.js`): los chars de la query aparecen en orden, no necesariamente contiguos ("pmr" → "Peso Muerto Rumano"; "press banca" encuentra "Press de banca"). Siempre activa (no se limita por longitud de query); es el ranking, no un filtro, quien evita el ruido.
+- **Por qué dos punteros y no regex `.*p.*m.*r.*`:** construir un regex desde input del usuario obliga a escapar metacaracteres (`.` `(` `[`…) y expone a ReDoS. El escaneo es equivalente y devuelve puntuación para ordenar.
+- **Ranking por tramos** (mayor = más parecido): exacta total > prefijo > interior contiguo > subsecuencia dispersa. Dentro de cada tramo desempata la **cobertura** (`q.length/nombre.length`, escala 0..100 « la separación de 1000 entre tramos → solo desempata), luego dispersión y posición. Así lo contiguo/compacto/más cubierto sale primero (petición explícita del usuario).
+- **Orden solo al buscar:** con query vacía se conserva el orden original de la lista (navegación por grupo muscular); `Array.sort` es estable (ES2019) → empates mantienen orden de entrada.
+- **DRY:** `fuzzyMatchScore` es la primitiva; `filterExercises(exercises, {search, muscleGroupId, equipmentTypeId, sourceFilter, getName})` (`lib/arrayUtils.js`) es la **única** lógica de filtrado+ranking del buscador, consumida por `ExerciseSearchList` web **y** native (paridad por construcción). `getName` accessor (default `e=>e.name`) → web/native pasan `getExerciseName` para el nombre traducido.
+- **Gotcha:** la query colapsa espacios (`\s+` → ''), así que el orden de tokens importa ("banca press" NO encuentra "Press de banca"); reordenar tokens quedó fuera de alcance.
+
 ## 2026-07 · Hispanización de instrucciones (LatAm → España)
 - **Qué:** `instructions.es` del seed original (025, catálogo v5) estaba en español latino. Normalizado a **español de España** (catálogo **v6**, migración **050**). **62/269** ejercicios afectados; el bloque `en` no se toca. Dos pasadas: (1) voseo→tuteo, (2) léxico.
 - **Voseo — no es quitar acentos:** hay cambios de raíz (`volvé→vuelve`, `apretá→aprieta`, `extendé→extiende`, `sentí→siente`, `repetí→repite`) e irregulares (`mantené→mantén`, `sostené→sostén`), y enclíticos con tilde (`bajala→bájala`, `aprovechala→aprovéchala`, `sentate→siéntate`). Se usó **mapa curado** (no regex genérico) para acertar cada forma.

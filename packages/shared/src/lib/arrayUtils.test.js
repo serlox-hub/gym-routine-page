@@ -4,7 +4,6 @@ import {
   swapArrayElements,
   calculateNextSortOrder,
   findIndexById,
-  filterBySearchTerm,
   filterExercises,
   findExerciseIndex,
   getReorderProps,
@@ -108,75 +107,81 @@ describe('arrayUtils', () => {
     })
   })
 
-  describe('filterBySearchTerm', () => {
-    const array = [
-      { name: 'Press banca' },
-      { name: 'Press militar' },
-      { name: 'Curl bíceps' },
-    ]
-
-    it('filtra por término de búsqueda', () => {
-      const result = filterBySearchTerm(array, 'press')
-      expect(result).toHaveLength(2)
-    })
-
-    it('es case insensitive', () => {
-      const result = filterBySearchTerm(array, 'PRESS')
-      expect(result).toHaveLength(2)
-    })
-
-    it('retorna todo si no hay término', () => {
-      expect(filterBySearchTerm(array, '')).toEqual(array)
-      expect(filterBySearchTerm(array, null)).toEqual(array)
-    })
-
-    it('retorna array vacío si array es null', () => {
-      expect(filterBySearchTerm(null, 'test')).toEqual([])
-    })
-
-    it('busca en propiedad personalizada', () => {
-      const items = [{ title: 'Foo' }, { title: 'Bar' }]
-      const result = filterBySearchTerm(items, 'foo', 'title')
-      expect(result).toHaveLength(1)
-    })
-
-    it('trim del término de búsqueda', () => {
-      const result = filterBySearchTerm(array, '  press  ')
-      expect(result).toHaveLength(2)
-    })
-  })
-
   describe('filterExercises', () => {
     const exercises = [
-      { name: 'Press banca', muscle_group_id: 1 },
-      { name: 'Press militar', muscle_group_id: 2 },
-      { name: 'Curl bíceps', muscle_group_id: 3 },
-      { name: 'Extensión tríceps', muscle_group_id: 3 },
+      { name: 'Press banca', muscle_group_id: 1, is_system: true, equipment_type: { id: 10 } },
+      { name: 'Press militar', muscle_group_id: 2, is_system: true, equipment_type: { id: 10 } },
+      { name: 'Curl bíceps', muscle_group_id: 3, is_system: false, equipment_type: { id: 20 } },
+      { name: 'Extensión tríceps', muscle_group_id: 3, is_system: true, equipment_type: { id: 20 } },
     ]
 
     it('filtra por término de búsqueda', () => {
-      const result = filterExercises(exercises, 'press', null)
+      const result = filterExercises(exercises, { search: 'press' })
       expect(result).toHaveLength(2)
     })
 
     it('filtra por grupo muscular', () => {
-      const result = filterExercises(exercises, '', 3)
+      const result = filterExercises(exercises, { muscleGroupId: 3 })
       expect(result).toHaveLength(2)
     })
 
-    it('filtra por ambos criterios', () => {
-      const result = filterExercises(exercises, 'press', 1)
+    it('filtra por tipo de equipo', () => {
+      const result = filterExercises(exercises, { equipmentTypeId: 10 })
+      expect(result).toHaveLength(2)
+    })
+
+    it('filtra por origen (custom / system)', () => {
+      expect(filterExercises(exercises, { sourceFilter: 'custom' })).toHaveLength(1)
+      expect(filterExercises(exercises, { sourceFilter: 'system' })).toHaveLength(3)
+    })
+
+    it('combina búsqueda y grupo muscular', () => {
+      const result = filterExercises(exercises, { search: 'press', muscleGroupId: 1 })
       expect(result).toHaveLength(1)
       expect(result[0].name).toBe('Press banca')
     })
 
     it('retorna todo sin filtros', () => {
-      const result = filterExercises(exercises, '', null)
-      expect(result).toHaveLength(4)
+      expect(filterExercises(exercises)).toHaveLength(4)
+      expect(filterExercises(exercises, {})).toHaveLength(4)
     })
 
     it('retorna array vacío si exercises es null', () => {
-      expect(filterExercises(null, 'test', 1)).toEqual([])
+      expect(filterExercises(null, { search: 'test' })).toEqual([])
+    })
+
+    it('search null/undefined se trata como sin búsqueda (no crashea)', () => {
+      expect(filterExercises(exercises, { search: null })).toHaveLength(4)
+      expect(filterExercises(exercises, { search: undefined })).toHaveLength(4)
+    })
+
+    it('usa el accessor getName para el nombre traducido', () => {
+      const list = [
+        { name: 'x', label: 'Peso muerto rumano' },
+        { name: 'y', label: 'Curl bíceps' },
+      ]
+      const result = filterExercises(list, { search: 'rum', getName: e => e.label })
+      expect(result).toHaveLength(1)
+      expect(result[0].label).toBe('Peso muerto rumano')
+    })
+
+    it('coincide por subsecuencia dispersa', () => {
+      const list = [
+        { name: 'Peso muerto rumano', muscle_group_id: 5 },
+        { name: 'Press banca', muscle_group_id: 1 },
+      ]
+      const result = filterExercises(list, { search: 'pmr' })
+      expect(result).toHaveLength(1)
+      expect(result[0].name).toBe('Peso muerto rumano')
+    })
+
+    it('ordena por relevancia (prefijo primero)', () => {
+      const list = [
+        { name: 'Banca press invertido', muscle_group_id: 1 },
+        { name: 'Press banca', muscle_group_id: 1 },
+      ]
+      const result = filterExercises(list, { search: 'press' })
+      expect(result[0].name).toBe('Press banca')
     })
   })
 
