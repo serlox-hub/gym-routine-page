@@ -76,6 +76,7 @@ export const colors = {
   pink: '#db61a2',
   orange: '#FF6B35',
   gold: '#F5B800',
+  gifBg: '#F4F4F6', // panel claro para enmarcar GIFs de ejercicio, que vienen sobre fondo blanco (issue #6)
   actionPrimary: '#BEFF00',
   textDark: '#0A0A0F',
 
