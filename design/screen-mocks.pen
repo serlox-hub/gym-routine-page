@@ -52162,6 +52162,1244 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "vMiyG",
+      "x": 5652,
+      "y": 0,
+      "name": "PR Card · variante A",
+      "width": 540,
+      "height": 960,
+      "fill": "#0E0E10",
+      "layout": "vertical",
+      "padding": [
+        40,
+        32
+      ],
+      "justifyContent": "space_between",
+      "children": [
+        {
+          "type": "frame",
+          "id": "iIz0D",
+          "name": "topA",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 28,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "xftU7",
+              "name": "hdrA",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "FeC3e",
+                  "fill": "#A3E635",
+                  "content": "GYM TRACKER",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700",
+                  "letterSpacing": 3
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 1,
+                  "id": "b21YgW",
+                  "fill": "#A3E635",
+                  "width": 40,
+                  "height": 2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WEXkW",
+              "name": "heroA",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ZKWVn",
+                  "fill": "#F5F5F7",
+                  "content": "BENCH PRESS",
+                  "lineHeight": 1.2,
+                  "fontFamily": "Inter",
+                  "fontSize": 28,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "f1A3rB",
+                  "fill": "#6B7280",
+                  "content": "tuesday, apr 22",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "uveQn",
+          "name": "prA",
+          "width": "fill_container",
+          "fill": "#1C1C1E",
+          "cornerRadius": 20,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#2C2C2E"
+          },
+          "layout": "vertical",
+          "gap": 14,
+          "padding": [
+            40,
+            24
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "hY850",
+              "fill": "#FFC107",
+              "content": "🏆",
+              "lineHeight": 1,
+              "fontFamily": "Inter",
+              "fontSize": 88,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "TE4hO",
+              "fill": "#FFC107",
+              "content": "NEW PERSONAL RECORD",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "700",
+              "letterSpacing": 2
+            },
+            {
+              "type": "text",
+              "id": "paINa",
+              "fill": "#FFC107",
+              "content": "110 kg",
+              "lineHeight": 1,
+              "fontFamily": "Inter",
+              "fontSize": 64,
+              "fontWeight": "800"
+            },
+            {
+              "type": "text",
+              "id": "HeNQf",
+              "fill": "#9CA3AF",
+              "content": "1RM Estimate",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "q0TTeU",
+              "fill": "#6B7280",
+              "content": "previous · 105 kg",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ZFLi5",
+          "name": "footerA",
+          "width": "fill_container",
+          "stroke": {
+            "thickness": {
+              "top": 1
+            },
+            "fill": "#2C2C2E"
+          },
+          "layout": "vertical",
+          "padding": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "iL2PI",
+              "fill": "#6B7280",
+              "content": "app.gymtracker.io",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal",
+              "letterSpacing": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "spbbT",
+      "x": 6292,
+      "y": 0,
+      "name": "PR Card · variante B",
+      "width": 540,
+      "height": 960,
+      "fill": "#0E0E10",
+      "layout": "vertical",
+      "padding": [
+        40,
+        32
+      ],
+      "justifyContent": "space_between",
+      "children": [
+        {
+          "type": "frame",
+          "id": "BnCpU",
+          "name": "topB",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 28,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "sbZGf",
+              "name": "hdrB",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Hv328",
+                  "fill": "#A3E635",
+                  "content": "GYM TRACKER",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700",
+                  "letterSpacing": 3
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 1,
+                  "id": "S4uwW",
+                  "fill": "#A3E635",
+                  "width": 40,
+                  "height": 2
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Y9jv7",
+              "name": "heroB",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "SGHlX",
+                  "fill": "#F5F5F7",
+                  "content": "BENCH PRESS",
+                  "lineHeight": 1.2,
+                  "fontFamily": "Inter",
+                  "fontSize": 28,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "w966H",
+                  "fill": "#6B7280",
+                  "content": "tuesday, apr 22",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Fu6O4",
+          "name": "prSecB",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 14,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "X0NPO",
+              "fill": "#FFC107",
+              "content": "🏆  NEW PERSONAL RECORDS",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "700",
+              "letterSpacing": 2
+            },
+            {
+              "type": "frame",
+              "id": "w3zMs",
+              "name": "rec1",
+              "width": "fill_container",
+              "fill": "#FFC10719",
+              "cornerRadius": 12,
+              "stroke": {
+                "thickness": {
+                  "left": 3
+                },
+                "fill": "#FFC107"
+              },
+              "gap": 14,
+              "padding": [
+                14,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C4DdtI",
+                  "name": "rec1L",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cDCFV",
+                      "fill": "#9CA3AF",
+                      "content": "HEAVIEST EVER",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "text",
+                      "id": "ekYnq",
+                      "fill": "#6B7280",
+                      "content": "previous · 100 kg",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Hfpb1",
+                  "fill": "#FFC107",
+                  "content": "102.5 kg",
+                  "lineHeight": 1,
+                  "fontFamily": "Inter",
+                  "fontSize": 24,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "dayU3",
+              "name": "rec2",
+              "width": "fill_container",
+              "fill": "#FFC10719",
+              "cornerRadius": 12,
+              "stroke": {
+                "thickness": {
+                  "left": 3
+                },
+                "fill": "#FFC107"
+              },
+              "gap": 14,
+              "padding": [
+                14,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "oPGUf",
+                  "name": "rec2L",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "CaQK2",
+                      "fill": "#9CA3AF",
+                      "content": "1RM ESTIMATE",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "text",
+                      "id": "imLtD",
+                      "fill": "#6B7280",
+                      "content": "previous · 117 kg",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "EkoOU",
+                  "fill": "#FFC107",
+                  "content": "122 kg",
+                  "lineHeight": 1,
+                  "fontFamily": "Inter",
+                  "fontSize": 24,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "XbgkG",
+              "name": "rec3",
+              "width": "fill_container",
+              "fill": "#FFC10719",
+              "cornerRadius": 12,
+              "stroke": {
+                "thickness": {
+                  "left": 3
+                },
+                "fill": "#FFC107"
+              },
+              "gap": 14,
+              "padding": [
+                14,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "A98A5",
+                  "name": "rec3L",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "BlWik",
+                      "fill": "#9CA3AF",
+                      "content": "5-REP PR",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    },
+                    {
+                      "type": "text",
+                      "id": "LnlbX",
+                      "fill": "#6B7280",
+                      "content": "first time at 5 reps",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "gWREC",
+                  "fill": "#FFC107",
+                  "content": "90 kg",
+                  "lineHeight": 1,
+                  "fontFamily": "Inter",
+                  "fontSize": 24,
+                  "fontWeight": "800"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "sJ7Xq",
+          "name": "footerB",
+          "width": "fill_container",
+          "stroke": {
+            "thickness": {
+              "top": 1
+            },
+            "fill": "#2C2C2E"
+          },
+          "layout": "vertical",
+          "padding": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "GOPAY",
+              "fill": "#6B7280",
+              "content": "app.gymtracker.io",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal",
+              "letterSpacing": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Iuiuw",
+      "x": 6932,
+      "y": 0,
+      "name": "PR Card · variante A2 (Peso × Reps)",
+      "width": 540,
+      "height": 960,
+      "fill": "#0E0E10",
+      "layout": "vertical",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "kj1q7",
+          "name": "cardA2",
+          "width": 420,
+          "height": 560,
+          "fill": "#1C1C1E",
+          "cornerRadius": 24,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#2C2C2E"
+          },
+          "layout": "vertical",
+          "padding": [
+            24,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "IFdl0",
+              "name": "topA2",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 20,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "YEPEV",
+                  "name": "hdrA2",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "m64Rk4",
+                      "fill": "#A3E635",
+                      "content": "DIARIO GYM",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "letterSpacing": 3
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 1,
+                      "id": "wiBpm",
+                      "fill": "#A3E635",
+                      "width": 40,
+                      "height": 2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EJPBe",
+                  "name": "heroA2",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Q5Jzx",
+                      "fill": "#F5F5F7",
+                      "content": "BENCH PRESS",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Inter",
+                      "fontSize": 28,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "m3jhV",
+                      "fill": "#6B7280",
+                      "content": "tuesday, apr 22",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "V8t4Ca",
+              "name": "prA2",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "g0kRI",
+                  "fill": "#FFC107",
+                  "content": "🏆",
+                  "lineHeight": 1,
+                  "fontFamily": "Inter",
+                  "fontSize": 64,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "rVZAU",
+                  "fill": "#FFC107",
+                  "content": "NEW PERSONAL RECORD",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "letterSpacing": 2
+                },
+                {
+                  "type": "text",
+                  "id": "h0s2vD",
+                  "fill": "#FFC107",
+                  "content": "100 kg × 5",
+                  "lineHeight": 1,
+                  "fontFamily": "Inter",
+                  "fontSize": 52,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "HO8H1",
+                  "fill": "#6B7280",
+                  "content": "previous · 95 kg × 5",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "sDTXO",
+              "name": "footerA2",
+              "width": "fill_container",
+              "stroke": {
+                "thickness": {
+                  "top": 1
+                },
+                "fill": "#2C2C2E"
+              },
+              "layout": "vertical",
+              "padding": [
+                16,
+                0,
+                0,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "h9MO7",
+                  "fill": "#6B7280",
+                  "content": "www.diariogym.com",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal",
+                  "letterSpacing": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "CRvmK",
+      "x": 7572,
+      "y": 0,
+      "name": "Session Summary Card",
+      "width": 540,
+      "height": 960,
+      "fill": "#0E0E10",
+      "layout": "vertical",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "mgi0K",
+          "name": "cardS",
+          "width": 440,
+          "fill": "#1C1C1E",
+          "cornerRadius": 24,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#2C2C2E"
+          },
+          "layout": "vertical",
+          "gap": 22,
+          "padding": [
+            28,
+            24
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "uvsTO",
+              "name": "topS",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "R9fS9",
+                  "name": "hdrS",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MAv2Q",
+                      "fill": "#A3E635",
+                      "content": "DIARIO GYM",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 3
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 1,
+                      "id": "BAezl",
+                      "fill": "#A3E635",
+                      "width": 36,
+                      "height": 2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "SMVyi",
+                  "name": "heroS",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MrZOW",
+                      "fill": "#F5F5F7",
+                      "content": "DAY 4 · PUSH",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Inter",
+                      "fontSize": 22,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "TTsXJ",
+                      "fill": "#9CA3AF",
+                      "content": "Push / Pull / Legs",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "b4ffr",
+                      "fill": "#6B7280",
+                      "content": "tuesday, apr 22",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ALji2",
+              "name": "statsS",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 14,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "SPDfk",
+                  "name": "bigStat",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "pNTDn",
+                      "fill": "#A3E635",
+                      "content": "1:14:32",
+                      "lineHeight": 1,
+                      "fontFamily": "Inter",
+                      "fontSize": 52,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tBAZg",
+                      "fill": "#9CA3AF",
+                      "content": "SESSION DURATION",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "JTtmy",
+                  "name": "smRow",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ppCLv",
+                      "name": "s1",
+                      "width": "fill_container",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#2C2C2E"
+                      },
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": [
+                        10,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xloAf",
+                          "fill": "#F5F5F7",
+                          "content": "6",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "R7w9r7",
+                          "fill": "#9CA3AF",
+                          "content": "EXERCISES",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "600",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ewLam",
+                      "name": "s2",
+                      "width": "fill_container",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#2C2C2E"
+                      },
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": [
+                        10,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "UmeRL",
+                          "fill": "#F5F5F7",
+                          "content": "21",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Ao6at",
+                          "fill": "#9CA3AF",
+                          "content": "SETS",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "600",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "s4mqUQ",
+                      "name": "s3",
+                      "width": "fill_container",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#2C2C2E"
+                      },
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": [
+                        10,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "dietM",
+                          "fill": "#F5F5F7",
+                          "content": "#23",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "wwvXK",
+                          "fill": "#9CA3AF",
+                          "content": "SESSION",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "600",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "V4qfi",
+              "name": "prBadge",
+              "fill": "#FFC10719",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": {
+                  "left": 3
+                },
+                "fill": "#FFC107"
+              },
+              "gap": 8,
+              "padding": [
+                10,
+                16
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "UroW7",
+                  "fill": "#FFC107",
+                  "content": "🏆",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "kNpn9",
+                  "fill": "#FFC107",
+                  "content": "3 PERSONAL RECORDS",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.5
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "VpEyo",
+              "name": "exList",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "V9dHEE",
+                  "fill": "#9CA3AF",
+                  "content": "EXERCISES",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "frame",
+                  "id": "ErDS2",
+                  "name": "row1",
+                  "width": "fill_container",
+                  "padding": [
+                    3,
+                    0
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cHJQg",
+                      "fill": "#F5F5F7",
+                      "content": "Bench Press",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ILRBY",
+                      "fill": "#9CA3AF",
+                      "content": "4 series",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "SYBoD",
+                  "name": "row2",
+                  "width": "fill_container",
+                  "padding": [
+                    3,
+                    0
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "D3MWCh",
+                      "fill": "#F5F5F7",
+                      "content": "Incline DB Press",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "B2S2GN",
+                      "fill": "#9CA3AF",
+                      "content": "3 series",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ttD3G",
+                  "name": "row3",
+                  "width": "fill_container",
+                  "padding": [
+                    3,
+                    0
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "GGFOS",
+                      "fill": "#F5F5F7",
+                      "content": "Cable Fly",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "IEB6u",
+                      "fill": "#9CA3AF",
+                      "content": "3 series",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "lEjSW",
+                  "name": "row4",
+                  "width": "fill_container",
+                  "padding": [
+                    3,
+                    0
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rgTz5",
+                      "fill": "#F5F5F7",
+                      "content": "Tricep Pushdown",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "l054X",
+                      "fill": "#9CA3AF",
+                      "content": "4 series",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "lH0De",
+                  "name": "row5",
+                  "width": "fill_container",
+                  "padding": [
+                    3,
+                    0
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p61Kxk",
+                      "fill": "#F5F5F7",
+                      "content": "Overhead Tricep",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "K1opRv",
+                      "fill": "#9CA3AF",
+                      "content": "3 series",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mWrSx",
+              "name": "footerS",
+              "width": "fill_container",
+              "stroke": {
+                "thickness": {
+                  "top": 1
+                },
+                "fill": "#2C2C2E"
+              },
+              "layout": "vertical",
+              "padding": [
+                14,
+                0,
+                0,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C0ctyF",
+                  "fill": "#6B7280",
+                  "content": "www.diariogym.com",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal",
+                  "letterSpacing": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
