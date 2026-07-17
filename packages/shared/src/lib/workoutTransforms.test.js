@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   transformSessionExercises,
   buildSessionExercisesFromBlocks,
+  buildSessionExercisesCache,
   buildSessionExercisesFromSession,
   buildRoutineExerciseMap,
   groupExercisesByBlock,
@@ -541,6 +542,84 @@ describe('workoutTransforms', () => {
       // session_exercises eliminado del resultado, resto preservado
       expect(result.session_exercises).toBeUndefined()
       expect(result.started_at).toBe('2026-07-12T10:00:00Z')
+    })
+  })
+
+  describe('buildSessionExercisesCache', () => {
+    const blocks = [
+      {
+        name: 'Principal',
+        is_warmup: false,
+        routine_exercises: [
+          { id: 201, sort_order: 1, series: 4, reps: '8', exercise: { id: 1, name: 'Press banca', gif_key: 'bench-press', is_system: true } },
+          { id: 202, sort_order: 2, exercise: { id: 2, name: 'Sentadilla' } },
+        ],
+      },
+    ]
+    const sessionExercises = [
+      { id: 10, exercise_id: 1, sort_order: 1 },
+      { id: 11, exercise_id: 2, sort_order: 2 },
+    ]
+
+    it('propaga gif_key del ejercicio de la rutina para que el GIF se vea en la sesión recién iniciada', () => {
+      const result = buildSessionExercisesCache(sessionExercises, blocks)
+      expect(result[0].exercise.gif_key).toBe('bench-press')
+    })
+
+    it('usa null (no undefined) cuando el ejercicio no trae gif_key, igualando la forma de fetchSessionExercises', () => {
+      const result = buildSessionExercisesCache(sessionExercises, blocks)
+      expect(result[1].exercise.gif_key).toBeNull()
+    })
+
+    it('propaga is_system y lo normaliza a null cuando falta, igualando la forma de fetchSessionExercises', () => {
+      const result = buildSessionExercisesCache(sessionExercises, blocks)
+      expect(result[0].exercise.is_system).toBe(true)
+      expect(result[1].exercise.is_system).toBeNull()
+    })
+
+    // Fija el set de claves del objeto exercise: si fetchSessionExercises (sessionExercisesApi.js)
+    // gana/pierde un campo y no se replica aquí, este test rompe (era la causa del bug del GIF).
+    it('produce exactamente las mismas claves de exercise que el select de fetchSessionExercises', () => {
+      const result = buildSessionExercisesCache(sessionExercises, blocks)
+      expect(Object.keys(result[0].exercise).sort()).toEqual([
+        'gif_key', 'id', 'instructions', 'is_system', 'measurement_type', 'muscle_group', 'name', 'name_en',
+      ])
+    })
+
+    it('aplica defaults y routine_exercise_id null cuando el session_exercise no casa con ningún bloque', () => {
+      const result = buildSessionExercisesCache([{ id: 99, exercise_id: 7, sort_order: 99 }], blocks)
+      expect(result[0]).toMatchObject({
+        routine_exercise_id: null,
+        series: 3,
+        reps: '10',
+        is_warmup: false,
+        is_extra: false,
+      })
+      expect(result[0].exercise.gif_key).toBeNull()
+    })
+
+    it('copia los campos de la rutina y marca is_warmup en un bloque de calentamiento', () => {
+      const warmupBlocks = [
+        {
+          name: 'Calentamiento',
+          is_warmup: true,
+          routine_exercises: [
+            { id: 301, sort_order: 1, series: 2, reps: '15', rir: 3, rest_seconds: 60, notes: 'suave', superset_group: 5, exercise: { id: 9, name: 'Movilidad' } },
+          ],
+        },
+      ]
+      const result = buildSessionExercisesCache([{ id: 30, exercise_id: 9, sort_order: 1 }], warmupBlocks)
+      expect(result[0]).toMatchObject({
+        routine_exercise_id: 301,
+        series: 2,
+        reps: '15',
+        rir: 3,
+        rest_seconds: 60,
+        notes: 'suave',
+        superset_group: 5,
+        is_warmup: true,
+        is_extra: false,
+      })
     })
   })
 })

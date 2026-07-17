@@ -223,12 +223,18 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
       superset_group: re?.superset_group ?? null,
       is_extra: false,
       is_warmup: re?.is_warmup || false,
+      // Forma DUPLICADA de fetchSessionExercises (sessionExercisesApi.js): al sembrar la
+      // caché desde rutina no hay fetch, así que todo campo del ejercicio que consuma la
+      // sesión debe replicarse aquí + en el select de fetchRoutineDayExercises, o faltará
+      // solo en sesiones recién iniciadas desde rutina (el staleTime lo enmascara).
       exercise: {
         id: exercise.id,
         name: exercise.name,
         name_en: exercise.name_en || null,
         instructions: exercise.instructions || null,
+        gif_key: exercise.gif_key ?? null,
         measurement_type: exercise.measurement_type || 'weight_reps',
+        is_system: exercise.is_system ?? null,
         muscle_group: exercise.muscle_group || null,
       },
       routine_exercise: null,

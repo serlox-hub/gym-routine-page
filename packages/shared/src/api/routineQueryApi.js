@@ -69,6 +69,7 @@ export async function fetchRoutineDayExercises(dayId) {
         measurement_type,
         is_system,
         instructions,
+        gif_key,
         muscle_group:muscle_groups!muscle_group_id (
           id,
           name:name_es,
