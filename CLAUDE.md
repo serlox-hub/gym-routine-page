@@ -188,7 +188,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 
 **Rules:**
 1. **NUNCA** usar hex/rgba hardcodeados en componentes. Siempre `colors.X` importado desde `lib/styles.js`
-2. **Nuevo color** → añadirlo a `colors` en AMBOS `styles.js` (web + native) y a AMBOS `tailwind.config` (web + native)
+2. **Nuevo color** → añadirlo a `colors` en AMBOS `styles.js` (web + native). Añadirlo además a AMBOS `tailwind.config` **solo si se va a usar como clase utilitaria** (`bg-x`, `text-x`); los tokens que solo se usan inline vía `colors.X` (como `teal`, `pink`, `gifBg`) no hace falta duplicarlos en los configs
 3. **Tailwind configs** importan desde `styles.js` — nunca hardcodear valores en los configs
 4. **Opacidades decorativas** (gradientes, sombras en Landing) → usar constantes `RGB_ACCENT` / `RGB_PURPLE` exportadas desde `styles.js` con template literals: `` `rgba(${RGB_ACCENT}, 0.08)` ``
 5. **No duplicar tokens semánticos** — si dos tokens tienen el mismo valor hex, usar uno solo (ej: `orange` cubre tanto el acento naranja como el color de dropset)
@@ -312,6 +312,14 @@ Estos estándares ya están detallados en las secciones de abajo. El objetivo es
 - **i18n (es+en) y tokens de color** desde el primer momento — nunca hardcodear strings ni hex/rgba.
 - **Al delegar UI a subagentes**: dales ya los utils compartidos creados (nombres/firmas) para que no reimplementen lógica; revisa su salida contra DRY y paridad.
 - **Verifica antes de dar por terminado**: `npm run lint`, `npm run test:shared` y `npm run build` en verde.
+
+## Contexto para futuros agentes (documentación durable en el repo)
+Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo necesario para que una sesión/agente futuro, sin contexto previo, entienda **por qué** se tomó una decisión y **cómo** está implementado algo no evidente. Dónde va cada cosa:
+- **Convenciones / arquitectura / patrones nuevos o cambiados** → actualizar este `CLAUDE.md` (p. ej. nueva categoría de token, nuevo archivo crítico en `lib/`, nueva convención).
+- **Decisiones no obvias y "cómo se implementó X" a nivel feature** → entrada en `docs/DECISIONS.md` (log append-only: fecha, qué, **por qué**, cómo, alternativas descartadas, gotchas). Ej.: por qué una subcarpeta concreta en un bucket, por qué una dependencia nativa concreta, por qué una versión de esquema.
+- **"Porqué" local no evidente** (valor mágico, workaround, orden que importa) → comentario inline con el *por qué*, no el *qué*.
+- **Env vars / config nuevas** → `.env.example` de ambas apps + descripción.
+**Escueto y denso**: este contexto crece sin límite y lo cargan agentes futuros, así que cada línea debe aportar algo **no derivable leyendo el código**. Nada de relleno ni de repetir lo que ya está en el código o aquí. No documentar lo obvio: apuntar solo a decisiones, trade-offs, gotchas e implementaciones no triviales, en el mínimo de palabras que preserve el valor.
 
 ## Git Commits
 - Spanish commit messages
