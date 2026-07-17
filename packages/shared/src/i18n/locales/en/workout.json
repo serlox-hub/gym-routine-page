@@ -4,7 +4,7 @@
     "start": "Start",
     "end": "End workout",
     "finishWorkout": "Finish workout",
-    "exerciseProgress": "Exercise {{current}} of {{total}}",
+    "setProgress": "Set {{current}} of {{total}}",
     "endConfirm": "Are you sure you want to end the workout?",
     "resume": "Resume workout",
     "abandon": "Abandon",

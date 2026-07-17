@@ -241,7 +241,12 @@ describe('workoutCalculations', () => {
 
   describe('calculateExerciseLevelProgress', () => {
     it('retorna ceros para array vacío', () => {
-      expect(calculateExerciseLevelProgress([], {})).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0 })
+      expect(calculateExerciseLevelProgress([], {})).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, segments: [] })
+    })
+
+    it('retorna ceros para flatExercises null/undefined', () => {
+      expect(calculateExerciseLevelProgress(null, {})).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, segments: [] })
+      expect(calculateExerciseLevelProgress(undefined, undefined)).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, segments: [] })
     })
 
     it('cuenta ejercicios completos solo si todas sus series están hechas', () => {
@@ -283,6 +288,28 @@ describe('workoutCalculations', () => {
       const exercises = [{ sessionExerciseId: 1, series: 3, isWarmup: false }]
       const result = calculateExerciseLevelProgress(exercises, {}, { 1: 5 })
       expect(result.setsTotal).toBe(5)
+    })
+
+    it('devuelve un segmento por ejercicio no-warmup con su desglose de series', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 4, isWarmup: false },
+        { sessionExerciseId: 2, series: 3, isWarmup: false },
+      ]
+      const completedSets = { '1-1': {}, '1-2': {}, '1-3': {}, '1-4': {}, '2-1': {} }
+      const result = calculateExerciseLevelProgress(exercises, completedSets)
+      expect(result.segments).toEqual([
+        { sessionExerciseId: 1, setsTotal: 4, setsDone: 4, fillPct: 100 },
+        { sessionExerciseId: 2, setsTotal: 3, setsDone: 1, fillPct: (1 / 3) * 100 },
+      ])
+    })
+
+    it('segments excluye calentamiento y refleja exerciseSetCounts dinámico', () => {
+      const exercises = [
+        { sessionExerciseId: 1, series: 1, isWarmup: true },
+        { sessionExerciseId: 2, series: 3, isWarmup: false },
+      ]
+      const result = calculateExerciseLevelProgress(exercises, { '2-1': {} }, { 2: 5 })
+      expect(result.segments).toEqual([{ sessionExerciseId: 2, setsTotal: 5, setsDone: 1, fillPct: 20 }])
     })
   })
 

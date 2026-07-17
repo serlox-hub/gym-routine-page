@@ -157,36 +157,37 @@ export function countCompletedSets(completedSetsMap, routineExerciseId) {
 }
 
 /**
- * Calcula el progreso de series completadas en una sesión (excluye calentamiento)
- * @param {Array} flatExercises - Lista plana de ejercicios con sessionExerciseId y series
- * @param {Object} completedSets - Mapa de series completadas (key: sessionExerciseId-setNumber)
- * @param {Object} exerciseSetCounts - Mapa de conteo de series por ejercicio (key: sessionExerciseId)
- * @returns {{completed: number, total: number}}
- */
-/**
- * Cuenta cuántos ejercicios están completos (todas sus series hechas) sobre el total.
+ * Progreso de una sesión, a nivel de series y de ejercicios, con desglose por ejercicio.
  * Excluye ejercicios de calentamiento.
+ * @param {Array} flatExercises - Lista plana de ejercicios con sessionExerciseId y series
+ * @param {Object} completedSets - Mapa de series completadas (key: `sessionExerciseId-setNumber`)
+ * @param {Object} exerciseSetCounts - Conteo dinámico de series por ejercicio (key: sessionExerciseId)
+ * @returns {{completed: number, total: number, setsCompleted: number, setsTotal: number,
+ *   segments: Array<{sessionExerciseId: (string|number), setsTotal: number, setsDone: number, fillPct: number}>}}
+ *   `segments` = un tramo por ejercicio no-warmup (para la barra segmentada); `fillPct` es el
+ *   % de relleno de ese tramo (geometría lista para pintar, sin cálculo en el componente).
+ *   Los agregados se derivan de `segments`.
  */
 export function calculateExerciseLevelProgress(flatExercises, completedSets, exerciseSetCounts = {}) {
-  if (!flatExercises || flatExercises.length === 0) return { completed: 0, total: 0, setsCompleted: 0, setsTotal: 0 }
-  let completed = 0
-  let total = 0
-  let setsCompleted = 0
-  let setsTotal = 0
-  flatExercises.forEach(exercise => {
-    if (exercise.isWarmup) return
-    total += 1
-    const key = exercise.sessionExerciseId
-    const totalSets = exerciseSetCounts[key] ?? exercise.series ?? 1
-    setsTotal += totalSets
-    let setsDone = 0
-    for (let i = 1; i <= totalSets; i++) {
-      if (completedSets[`${key}-${i}`]) setsDone += 1
-    }
-    setsCompleted += setsDone
-    if (totalSets > 0 && setsDone >= totalSets) completed += 1
-  })
-  return { completed, total, setsCompleted, setsTotal }
+  const segments = []
+  if (flatExercises) {
+    flatExercises.forEach(exercise => {
+      if (exercise.isWarmup) return
+      const key = exercise.sessionExerciseId
+      const setsTotal = exerciseSetCounts[key] ?? exercise.series ?? 1
+      let setsDone = 0
+      for (let i = 1; i <= setsTotal; i++) {
+        if (completedSets?.[`${key}-${i}`]) setsDone += 1
+      }
+      const fillPct = setsTotal > 0 ? (setsDone / setsTotal) * 100 : 0
+      segments.push({ sessionExerciseId: key, setsTotal, setsDone, fillPct })
+    })
+  }
+  const total = segments.length
+  const completed = segments.filter(s => s.setsTotal > 0 && s.setsDone >= s.setsTotal).length
+  const setsCompleted = segments.reduce((sum, s) => sum + s.setsDone, 0)
+  const setsTotal = segments.reduce((sum, s) => sum + s.setsTotal, 0)
+  return { completed, total, setsCompleted, setsTotal, segments }
 }
 
 export function calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts = {}) {

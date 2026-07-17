@@ -215,9 +215,9 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           ]}
         >
           <ExerciseProgressBar
-            completed={progress.completed}
-            total={progress.total}
-            pct={progress.setsTotal > 0 ? Math.round((progress.setsCompleted / progress.setsTotal) * 100) : 0}
+            setsCompleted={progress.setsCompleted}
+            setsTotal={progress.setsTotal}
+            segments={progress.segments}
             elapsedTime={elapsedTime}
             gymSlot={hasMultiple && currentGymName ? (
               <button

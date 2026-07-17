@@ -2,7 +2,7 @@
   "session": {
     "active": "Sesión activa",
     "finishWorkout": "Terminar entrenamiento",
-    "exerciseProgress": "Ejercicio {{current}} de {{total}}",
+    "setProgress": "Serie {{current}} de {{total}}",
     "start": "Iniciar",
     "end": "Finalizar entrenamiento",
     "endConfirm": "¿Seguro que quieres finalizar el entrenamiento?",
