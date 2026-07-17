@@ -1,12 +1,13 @@
 import {
   useSyncPendingSets as _useSyncPendingSets,
   useCompleteSet,
+  useUpdateCompletedSet,
   useUpdateSetVideo,
   useUpdateSetDetails,
   useUncompleteSet,
 } from '@gym/shared'
 
-export { useCompleteSet, useUpdateSetVideo, useUpdateSetDetails, useUncompleteSet }
+export { useCompleteSet, useUpdateCompletedSet, useUpdateSetVideo, useUpdateSetDetails, useUncompleteSet }
 
 export function useSyncPendingSets() {
   return _useSyncPendingSets({

@@ -164,6 +164,81 @@ export function useSyncPendingSets({ onVisibilityChange, onConnectivityChange } 
   return Object.keys(pendingSets).length
 }
 
+// Persist an in-place edit of an already-completed set's measurement values
+// (weight/reps/time/...) without uncompleting it. No rest timer, no completion
+// haptic — this is an edit, not a completion. Reuses the same optimistic + offline
+// queue machinery as useCompleteSet so edits survive connectivity drops.
+export function useUpdateCompletedSet() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+  const updateCompletedSetValues = useWorkoutStore(state => state.updateCompletedSetValues)
+  const addPendingSet = useWorkoutStore(state => state.addPendingSet)
+
+  return useMutation({
+    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl, setType }) => {
+      return upsertCompletedSet({
+        sessionId,
+        sessionExerciseId,
+        setNumber,
+        weight,
+        weightUnit,
+        repsCompleted,
+        timeSeconds,
+        distanceMeters,
+        paceSeconds,
+        rirActual,
+        notes,
+        videoUrl,
+        setType,
+      })
+    },
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+    onMutate: (variables) => {
+      // Optimistic in-place update of the measurement values
+      updateCompletedSetValues(variables.sessionExerciseId, variables.setNumber, {
+        weight: variables.weight,
+        repsCompleted: variables.repsCompleted,
+        timeSeconds: variables.timeSeconds,
+        distanceMeters: variables.distanceMeters,
+        paceSeconds: variables.paceSeconds,
+        level: variables.level,
+        caloriesBurned: variables.caloriesBurned,
+      })
+    },
+    onSuccess: (_data, variables) => {
+      try {
+        getWorkoutStore().getState().removePendingSet(variables.sessionExerciseId, variables.setNumber)
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+      } catch {
+        // No bloquear el flujo si falla la actualización post-sync
+      }
+    },
+    onError: (_error, variables) => {
+      try {
+        // Mantener el optimistic update y encolar para reintentar (mismo formato que useCompleteSet)
+        addPendingSet(variables.sessionExerciseId, variables.setNumber, {
+          sessionId,
+          sessionExerciseId: variables.sessionExerciseId,
+          setNumber: variables.setNumber,
+          weight: variables.weight,
+          weightUnit: variables.weightUnit,
+          repsCompleted: variables.repsCompleted,
+          timeSeconds: variables.timeSeconds,
+          distanceMeters: variables.distanceMeters,
+          paceSeconds: variables.paceSeconds,
+          rirActual: variables.rirActual,
+          notes: variables.notes,
+          videoUrl: variables.videoUrl,
+          setType: variables.setType,
+        })
+      } catch {
+        // No bloquear si falla encolar el pending set
+      }
+    },
+  })
+}
+
 export function useUpdateSetVideo() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)

@@ -169,6 +169,67 @@ describe('createWorkoutStore', () => {
       expect(stateAfter.completedSets).toEqual(stateBefore.completedSets)
     })
 
+    it('setCachedSetData caches values for a not-completed set', () => {
+      act(() => {
+        useWorkoutStore.getState().setCachedSetData(1, 2, { weight: 60, repsCompleted: 8 })
+      })
+
+      const state = useWorkoutStore.getState()
+      expect(state.completedSets['1-2']).toBeUndefined()
+      expect(state.cachedSetData['1-2'].weight).toBe(60)
+      expect(state.cachedSetData['1-2'].repsCompleted).toBe(8)
+      expect(state.cachedSetData['1-2'].sessionExerciseId).toBe(1)
+      expect(state.cachedSetData['1-2'].setNumber).toBe(2)
+    })
+
+    it('setCachedSetData merges into existing cache without dropping fields', () => {
+      act(() => {
+        useWorkoutStore.getState().setCachedSetData(1, 2, { weight: 60, repsCompleted: 8 })
+        useWorkoutStore.getState().setCachedSetData(1, 2, { weight: 65 })
+      })
+
+      const cached = useWorkoutStore.getState().cachedSetData['1-2']
+      expect(cached.weight).toBe(65)
+      expect(cached.repsCompleted).toBe(8)
+    })
+
+    it('updateCompletedSetValues edits a completed set in place, preserving metadata', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 100, repsCompleted: 10, rirActual: 2, notes: 'nota', dbId: 999 })
+        useWorkoutStore.getState().updateCompletedSetValues(1, 1, { weight: 105, repsCompleted: 9 })
+      })
+
+      const state = useWorkoutStore.getState()
+      expect(state.isSetCompleted(1, 1)).toBe(true)
+      expect(state.completedSets['1-1'].weight).toBe(105)
+      expect(state.completedSets['1-1'].repsCompleted).toBe(9)
+      expect(state.completedSets['1-1'].rirActual).toBe(2)
+      expect(state.completedSets['1-1'].notes).toBe('nota')
+      expect(state.completedSets['1-1'].dbId).toBe(999)
+      expect(state.cachedSetData['1-1'].weight).toBe(105)
+    })
+
+    it('updateCompletedSetValues ignores undefined fields (keeps existing values)', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 100, repsCompleted: 10 })
+        useWorkoutStore.getState().updateCompletedSetValues(1, 1, { weight: 110, repsCompleted: undefined })
+      })
+
+      const set = useWorkoutStore.getState().completedSets['1-1']
+      expect(set.weight).toBe(110)
+      expect(set.repsCompleted).toBe(10)
+    })
+
+    it('updateCompletedSetValues does nothing if the set is not completed', () => {
+      act(() => {
+        useWorkoutStore.getState().updateCompletedSetValues(1, 5, { weight: 50 })
+      })
+
+      const state = useWorkoutStore.getState()
+      expect(state.completedSets['1-5']).toBeUndefined()
+      expect(state.cachedSetData['1-5']).toBeUndefined()
+    })
+
     it('rollbackSet removes set from completedSets and cachedSetData', () => {
       act(() => {
         useWorkoutStore.getState().completeSet(1, 1, { weight: 100 })

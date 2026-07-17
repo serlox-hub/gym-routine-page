@@ -192,6 +192,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 3. **Tailwind configs** importan desde `styles.js` — nunca hardcodear valores en los configs
 4. **Opacidades decorativas** (gradientes, sombras en Landing) → usar constantes `RGB_ACCENT` / `RGB_PURPLE` exportadas desde `styles.js` con template literals: `` `rgba(${RGB_ACCENT}, 0.08)` ``
 5. **No duplicar tokens semánticos** — si dos tokens tienen el mismo valor hex, usar uno solo (ej: `orange` cubre tanto el acento naranja como el color de dropset)
+6. **`success` (lima `#BEFF00`) NO se usa en alpha sobre fondos oscuros** — al ser amarillo-verde sin azul, en translúcido vira a oliva/caqui (ningún nivel de opacidad lo corrige). Usar el lima solo en **sólido** (borde, barra, icono, texto, check). Para marcar "hecho"/superficies, sólido o un neutro elevado — no un wash lima.
 
 **Token categories:**
 - Fondos: `bgPrimary`, `bgSecondary`, `bgAlt`, `bgTertiary`, `bgHover`

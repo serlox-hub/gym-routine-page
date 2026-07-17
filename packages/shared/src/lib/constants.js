@@ -7,6 +7,10 @@ export const APP_URL = 'www.diariogym.com'
 // Summary Card
 export const SUMMARY_MAX_EXERCISES = 8
 
+// Sesión activa: debounce para persistir ediciones de series (peso/reps/…) mientras
+// se teclea, evitando spam de escrituras a store/DB/AsyncStorage. Compartido web+native.
+export const SET_EDIT_DEBOUNCE_MS = 600
+
 // Block names (DB identifiers — always Spanish in the database)
 export const BLOCK_NAMES = {
   WARMUP: 'Calentamiento',

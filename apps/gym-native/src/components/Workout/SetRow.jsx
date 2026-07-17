@@ -1,18 +1,16 @@
-import { useState, useEffect, memo } from 'react'
+import { useState, memo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { CheckCircle2, FileText, Video, AlertCircle, Trophy } from 'lucide-react-native'
-import useWorkoutStore from '../../stores/workoutStore'
 import { useIsPRSet } from './PRContext'
 import SetDetailsModal from './SetDetailsModal'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs'
 import {
   MeasurementType,
   buildCompletedSetData,
-  isSetDataValid,
-  metersToDistanceUnit,
   getNotifier,
   t,
   formatEffortBadge,
+  useSetInputs,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
 import { useCanUploadVideo } from '../../hooks/useAuth'
@@ -32,15 +30,19 @@ function SetRow({
   distanceUnit = 'm',
   descansoSeg,
   previousSet,
+  repsTarget,
   isActive = false,
   onComplete,
   onUncomplete,
 }) {
-  const setKey = `${sessionExerciseId}-${setNumber}`
-  const isCompleted = useWorkoutStore(state => !!state.completedSets[setKey])
-  const setData = useWorkoutStore(state => state.completedSets[setKey])
-  const cachedData = useWorkoutStore(state => state.cachedSetData[setKey])
   const isPR = useIsPRSet(sessionExerciseId, setNumber)
+
+  // Estado + persistencia de inputs (compartido web/native; ver useSetInputs)
+  const {
+    weight, setWeight, reps, setReps, time, setTime, distance, setDistance,
+    calories, setCalories, level, setLevel, pace, setPace,
+    isCompleted, setData, cachedData, isValid, repsPlaceholder,
+  } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, measurementType, weightUnit, distanceUnit, previousSet, repsTarget })
 
   const { data: preferences } = usePreferences()
   const canUploadVideo = useCanUploadVideo()
@@ -50,36 +52,14 @@ function SetRow({
   const [uploadProgress, setUploadProgress] = useState(0)
   const [videoUploadError, setVideoUploadError] = useState(false)
   const [pendingVideoFile, setPendingVideoFile] = useState(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalMode, setModalMode] = useState('complete')
 
   const showRirInput = preferences?.show_rir_input ?? true
   const showSetNotes = preferences?.show_set_notes ?? true
   const showVideoUpload = preferences?.show_video_upload ?? true
   const showVideo = canUploadVideo && showVideoUpload
   const shouldShowModal = showRirInput || showSetNotes || showVideo
-
-  const [weight, setWeight] = useState(setData?.weight ?? '')
-  const [reps, setReps] = useState(setData?.repsCompleted ?? '')
-  const [time, setTime] = useState(setData?.timeSeconds ?? '')
-  const [distance, setDistance] = useState(setData?.distanceMeters ?? '')
-  const [calories, setCalories] = useState(setData?.caloriesBurned ?? '')
-  const [level, setLevel] = useState(setData?.level ?? '')
-  const [pace, setPace] = useState(setData?.paceSeconds ?? '')
-  const [showModal, setShowModal] = useState(false)
-  const [modalMode, setModalMode] = useState('complete')
-
-  useEffect(() => {
-    if (previousSet && !setData && !cachedData) {
-      if (previousSet.weight != null) setWeight(previousSet.weight)
-      if (previousSet.reps != null) setReps(previousSet.reps)
-      if (previousSet.timeSeconds != null) setTime(previousSet.timeSeconds)
-      if (previousSet.distanceMeters != null) setDistance(metersToDistanceUnit(previousSet.distanceMeters, distanceUnit))
-      if (previousSet.caloriesBurned != null) setCalories(previousSet.caloriesBurned)
-      if (previousSet.level != null) setLevel(previousSet.level)
-      if (previousSet.paceSeconds != null) setPace(previousSet.paceSeconds)
-    }
-  }, [previousSet, setData, cachedData, distanceUnit])
-
-  const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace })
 
   const buildInfo = (rir, notes, videoUrl = null, videoFile = null, setType = 'normal') => ({
     sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl, videoFile, setType,
@@ -156,22 +136,15 @@ function SetRow({
   }
 
   const renderInputs = () => {
-    const props = { disabled: isCompleted, hideUnits: true }
-
-    if (measurementType === MeasurementType.WEIGHT_REPS && !isActive) {
-      return (
-        <>
-          <Text style={{ flex: 1, textAlign: 'center', color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{weight || '—'}</Text>
-          <Text style={{ flex: 1, textAlign: 'center', color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{reps || '—'}</Text>
-        </>
-      )
-    }
+    // Todas las filas son editables; la fila activa muestra sus inputs con caja (active),
+    // el resto son ghost (caja al enfocar). El timer se oculta en series completadas.
+    const props = { disabled: false, hideUnits: true, showTimer: !isCompleted, active: isActive }
 
     switch (measurementType) {
       case MeasurementType.WEIGHT_REPS:
-        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} weightActive={isActive} {...props} />
+        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} repsPlaceholder={repsPlaceholder} {...props} />
       case MeasurementType.REPS_ONLY:
-        return <RepsOnlyInputs reps={reps} setReps={setReps} {...props} />
+        return <RepsOnlyInputs reps={reps} setReps={setReps} repsPlaceholder={repsPlaceholder} {...props} />
       case MeasurementType.TIME:
         return <TimeInputs time={time} setTime={setTime} timeUnit={timeUnit} {...props} />
       case MeasurementType.WEIGHT_TIME:
@@ -202,13 +175,19 @@ function SetRow({
   const initialData = modalMode === 'edit' ? setData : cachedData
   const valid = isValid()
 
+  // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
+  // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten
+  // relleno neutro sutil; la barra lima distingue lo hecho; la activa muestra sus inputs
+  // en caja lima (ver renderInputs); pendiente = transparente.
+  // (Todas llevan 3px de borde izq. transparente para no descuadrar el layout.)
   const baseRowStyle = {
-    backgroundColor: isActive ? colors.successBg : 'transparent',
-    opacity: !isCompleted && !isActive ? 0.55 : 1,
+    backgroundColor: (isCompleted || isActive) ? colors.bgHover : 'transparent',
+    borderLeftWidth: 3,
+    borderLeftColor: isCompleted ? colors.success : 'transparent',
   }
 
   const setNumberText = (
-    <Text style={{ width: 48, textAlign: 'center', color: isActive ? colors.success : colors.textSecondary, fontSize: 14, fontWeight: '700' }}>
+    <Text style={{ width: 48, textAlign: 'center', color: (isActive || isCompleted) ? colors.success : colors.textSecondary, fontSize: 14, fontWeight: '700' }}>
       {setNumber}
     </Text>
   )
@@ -237,22 +216,16 @@ function SetRow({
         </Pressable>
       )
     }
-    if (isActive) {
-      return (
-        <Pressable
-          onPress={handleCheckPress}
-          disabled={!valid}
-          className="w-7 h-7 items-center justify-center active:opacity-70"
-          style={{ opacity: valid ? 1 : 0.6 }}
-        >
-          <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.success }} />
-        </Pressable>
-      )
-    }
+    // Cualquier fila con datos válidos se puede completar; isActive solo colorea el borde
     return (
-      <View className="w-7 h-7 items-center justify-center">
-        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.textMuted }} />
-      </View>
+      <Pressable
+        onPress={handleCheckPress}
+        disabled={!valid}
+        className="w-7 h-7 items-center justify-center active:opacity-70"
+        style={{ opacity: valid ? 1 : 0.6 }}
+      >
+        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: isActive ? colors.success : colors.textMuted }} />
+      </Pressable>
     )
   }
 

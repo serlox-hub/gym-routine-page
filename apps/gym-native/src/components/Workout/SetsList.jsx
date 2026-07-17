@@ -17,6 +17,7 @@ function SetsList({
   timeUnit,
   distanceUnit,
   rest_seconds,
+  reps,
   onCompleteSet,
   onUncompleteSet,
   onRemoveSet,
@@ -70,6 +71,7 @@ function SetsList({
               distanceUnit={distanceUnit}
               descansoSeg={rest_seconds}
               previousSet={previousSet}
+              repsTarget={reps}
               isActive={activeSetNumber === i + 1}
               onComplete={onCompleteSet}
               onUncomplete={onUncompleteSet}

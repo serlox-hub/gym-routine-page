@@ -120,6 +120,37 @@ export function workoutStoreState(set, get) {
       return state.cachedSetData[`${sessionExerciseId}-${setNumber}`]
     },
 
+    // Cache edited values of a NOT-completed set so they survive collapse/navigation
+    // and out-of-order completion. Merges measurement values into the cache entry.
+    setCachedSetData: (sessionExerciseId, setNumber, values) => set(state => {
+      const key = `${sessionExerciseId}-${setNumber}`
+      return {
+        cachedSetData: {
+          ...state.cachedSetData,
+          [key]: { sessionExerciseId, setNumber, ...state.cachedSetData[key], ...values },
+        },
+      }
+    }),
+
+    // Edit the measurement values of an already-completed set in place, without
+    // uncompleting it. Preserves dbId/rir/notes/videoUrl/setType/completedAt.
+    updateCompletedSetValues: (sessionExerciseId, setNumber, values) => set(state => {
+      const key = `${sessionExerciseId}-${setNumber}`
+      const existing = state.completedSets[key]
+      if (!existing) return state
+      // Ignorar claves undefined (campos que el tipo de medición no usa) para no
+      // sobrescribir valores presentes con undefined.
+      const clean = {}
+      for (const [k, v] of Object.entries(values)) {
+        if (v !== undefined) clean[k] = v
+      }
+      const updated = { ...existing, ...clean }
+      return {
+        completedSets: { ...state.completedSets, [key]: updated },
+        cachedSetData: { ...state.cachedSetData, [key]: updated },
+      }
+    }),
+
     // Get completed sets for an exercise
     getSetsForExercise: (sessionExerciseId) => {
       const state = get()

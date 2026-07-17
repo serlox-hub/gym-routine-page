@@ -1,18 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle2, FileText, Video, AlertCircle, Trophy } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import useWorkoutStore from '../../stores/workoutStore.js'
 import { useIsPRSet } from './PRContext.jsx'
 import SetDetailsModal from './SetDetailsModal.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs.jsx'
 import {
   MeasurementType,
   buildCompletedSetData,
-  isSetDataValid,
-  metersToDistanceUnit,
   getNotifier,
   formatEffortBadge,
+  useSetInputs,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -31,15 +29,20 @@ function SetRow({
   distanceUnit = 'm',
   descansoSeg,
   previousSet,
+  repsTarget,
   isActive = false,
   onComplete,
   onUncomplete,
 }) {
   const { t } = useTranslation()
-  const isCompleted = useWorkoutStore(state => state.isSetCompleted(sessionExerciseId, setNumber))
-  const setData = useWorkoutStore(state => state.getSetData(sessionExerciseId, setNumber))
-  const cachedData = useWorkoutStore(state => state.getCachedSetData(sessionExerciseId, setNumber))
   const isPR = useIsPRSet(sessionExerciseId, setNumber)
+
+  // Estado + persistencia de inputs (compartido web/native; ver useSetInputs)
+  const {
+    weight, setWeight, reps, setReps, time, setTime, distance, setDistance,
+    calories, setCalories, level, setLevel, pace, setPace,
+    isCompleted, setData, cachedData, isValid, repsPlaceholder,
+  } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, measurementType, weightUnit, distanceUnit, previousSet, repsTarget })
 
   const { data: preferences } = usePreferences()
   const canUploadVideo = useCanUploadVideo()
@@ -49,37 +52,14 @@ function SetRow({
   const [uploadProgress, setUploadProgress] = useState(0)
   const [videoUploadError, setVideoUploadError] = useState(false)
   const [pendingVideoFile, setPendingVideoFile] = useState(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalMode, setModalMode] = useState('complete')
 
   const showRirInput = preferences?.show_rir_input ?? true
   const showSetNotes = preferences?.show_set_notes ?? true
   const showVideoUpload = preferences?.show_video_upload ?? true
   const showVideo = canUploadVideo && showVideoUpload
   const shouldShowModal = showRirInput || showSetNotes || showVideo
-
-  const [weight, setWeight] = useState(setData?.weight ?? '')
-  const [reps, setReps] = useState(setData?.repsCompleted ?? '')
-  const [time, setTime] = useState(setData?.timeSeconds ?? '')
-  const [distance, setDistance] = useState(setData?.distanceMeters ?? '')
-  const [calories, setCalories] = useState(setData?.caloriesBurned ?? '')
-  const [level, setLevel] = useState(setData?.level ?? '')
-  const [pace, setPace] = useState(setData?.paceSeconds ?? '')
-  const [showModal, setShowModal] = useState(false)
-  const [modalMode, setModalMode] = useState('complete')
-
-  // Cargar valores de sesión anterior (solo si no hay datos en caché)
-  useEffect(() => {
-    if (previousSet && !setData && !cachedData) {
-      if (previousSet.weight != null) setWeight(previousSet.weight)
-      if (previousSet.reps != null) setReps(previousSet.reps)
-      if (previousSet.timeSeconds != null) setTime(previousSet.timeSeconds)
-      if (previousSet.distanceMeters != null) setDistance(metersToDistanceUnit(previousSet.distanceMeters, distanceUnit))
-      if (previousSet.caloriesBurned != null) setCalories(previousSet.caloriesBurned)
-      if (previousSet.level != null) setLevel(previousSet.level)
-      if (previousSet.paceSeconds != null) setPace(previousSet.paceSeconds)
-    }
-  }, [previousSet, setData, cachedData, distanceUnit])
-
-  const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace })
 
   const handleCheckClick = () => {
     if (isCompleted) {
@@ -164,29 +144,21 @@ function SetRow({
   }
 
   const renderInputs = () => {
-    const props = { disabled: isCompleted, hideUnits: true }
-
-    // Weight/reps: show as text when completed or pending (not active), as inputs only when active
-    if (measurementType === MeasurementType.WEIGHT_REPS && !isActive) {
-      return (
-        <>
-          <span className="flex-1 text-center" style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>{weight || '—'}</span>
-          <span className="flex-1 text-center" style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>{reps || '—'}</span>
-        </>
-      )
-    }
+    // Todas las filas son editables; la fila activa muestra sus inputs con caja (active),
+    // el resto son ghost (caja al enfocar). El timer se oculta en series completadas.
+    const props = { disabled: false, hideUnits: true, showTimer: !isCompleted, active: isActive }
 
     switch (measurementType) {
       case MeasurementType.WEIGHT_REPS:
-        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} weightActive={isActive} {...props} />
+        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} repsPlaceholder={repsPlaceholder} {...props} />
       case MeasurementType.REPS_ONLY:
-        return <RepsOnlyInputs reps={reps} setReps={setReps} {...props} />
+        return <RepsOnlyInputs reps={reps} setReps={setReps} repsPlaceholder={repsPlaceholder} {...props} />
       case MeasurementType.TIME:
         return <TimeInputs time={time} setTime={setTime} timeUnit={timeUnit} {...props} />
       case MeasurementType.WEIGHT_TIME:
         return <WeightTimeInputs weight={weight} setWeight={setWeight} time={time} setTime={setTime} weightUnit={weightUnit} timeUnit={timeUnit} {...props} />
       case MeasurementType.DISTANCE:
-        return <DistanceInputs weight={null} setWeight={null} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} showWeight={false} {...props} />
+        return <DistanceInputs weight={null} setWeight={null} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} {...props} />
       case MeasurementType.WEIGHT_DISTANCE:
         return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} {...props} />
       case MeasurementType.CALORIES:
@@ -211,14 +183,19 @@ function SetRow({
   const initialData = modalMode === 'edit' ? setData : cachedData
   const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
 
+  // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
+  // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten
+  // relleno neutro sutil; la barra lima distingue lo hecho; la activa muestra sus inputs
+  // en caja lima (ver renderInputs); pendiente = transparente.
+  // (Todas llevan 3px de borde izq. transparente para no descuadrar el layout.)
   const baseRowStyle = {
-    backgroundColor: isActive ? colors.successBg : 'transparent',
-    opacity: !isCompleted && !isActive ? 0.55 : 1,
+    backgroundColor: (isCompleted || isActive) ? colors.bgHover : 'transparent',
+    borderLeft: `3px solid ${isCompleted ? colors.success : 'transparent'}`,
   }
 
   const setNumberStyle = {
     textAlign: 'center',
-    color: isActive ? colors.success : colors.textSecondary,
+    color: (isActive || isCompleted) ? colors.success : colors.textSecondary,
     fontSize: 14,
     fontWeight: 700,
   }
@@ -254,23 +231,18 @@ function SetRow({
         </button>
       )
     }
-    if (isActive) {
-      return (
-        <button
-          onClick={handleCheckClick}
-          disabled={!isValid()}
-          className="w-7 h-7 flex items-center justify-center hover:opacity-80"
-          style={{ background: 'transparent', border: 'none', cursor: isValid() ? 'pointer' : 'default', opacity: isValid() ? 1 : 0.6 }}
-          title={t('workout:set.complete')}
-        >
-          <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${colors.success}`, display: 'inline-block' }} />
-        </button>
-      )
-    }
+    // Cualquier fila con datos válidos se puede completar; isActive solo colorea el borde
+    const valid = isValid()
     return (
-      <span className="w-7 h-7 flex items-center justify-center">
-        <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${colors.textMuted}`, display: 'inline-block' }} />
-      </span>
+      <button
+        onClick={handleCheckClick}
+        disabled={!valid}
+        className="w-7 h-7 flex items-center justify-center hover:opacity-80"
+        style={{ background: 'transparent', border: 'none', cursor: valid ? 'pointer' : 'default', opacity: valid ? 1 : 0.6 }}
+        title={t('workout:set.complete')}
+      >
+        <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${isActive ? colors.success : colors.textMuted}`, display: 'inline-block' }} />
+      </button>
     )
   }
 

@@ -5,6 +5,11 @@ import {
   generateExtraExerciseId,
   isSetDataValid,
   buildCompletedSetData,
+  getSetMeasurementValues,
+  buildCachedMeasurementValues,
+  getSetInitialInputValues,
+  setMeasurementValuesChanged,
+  formatRepsPlaceholder,
   formatSetValue,
   formatSetValueByType,
   formatPreviousSetValue,
@@ -347,6 +352,138 @@ describe('setUtils', () => {
         { ...baseInfo, videoUrl: 'https://example.com/video.mp4' }
       )
       expect(result.videoUrl).toBe('https://example.com/video.mp4')
+    })
+  })
+
+  describe('getSetMeasurementValues', () => {
+    it('extrae solo los campos de medición de weight_reps', () => {
+      expect(getSetMeasurementValues('weight_reps', { weight: '80', reps: '12' }))
+        .toEqual({ weight: 80, repsCompleted: 12 })
+    })
+
+    it('convierte distancia a metros según la unidad', () => {
+      expect(getSetMeasurementValues('distance', { distance: '5' }, { distanceUnit: 'km' }))
+        .toEqual({ distanceMeters: 5000 })
+    })
+
+    it('devuelve NaN en campos vacíos (numéricos)', () => {
+      const result = getSetMeasurementValues('weight_reps', { weight: '', reps: '' })
+      expect(Number.isNaN(result.weight)).toBe(true)
+      expect(Number.isNaN(result.repsCompleted)).toBe(true)
+    })
+
+    it('preserva el 0 como valor legítimo', () => {
+      expect(getSetMeasurementValues('weight_reps', { weight: '0', reps: '10' }))
+        .toEqual({ weight: 0, repsCompleted: 10 })
+    })
+
+    it('tipo desconocido devuelve objeto vacío', () => {
+      expect(getSetMeasurementValues('unknown', { reps: '10' })).toEqual({})
+    })
+  })
+
+  describe('buildCachedMeasurementValues', () => {
+    it('normaliza campos vacíos/NaN a null (no los descarta, para que borrar persista)', () => {
+      expect(buildCachedMeasurementValues('weight_reps', { weight: '80', reps: '' }))
+        .toEqual({ weight: 80, repsCompleted: null })
+    })
+
+    it('todos los campos a null si no hay ningún valor', () => {
+      expect(buildCachedMeasurementValues('weight_reps', { weight: '', reps: '' }))
+        .toEqual({ weight: null, repsCompleted: null })
+    })
+
+    it('conserva el 0', () => {
+      expect(buildCachedMeasurementValues('weight_reps', { weight: '0', reps: '8' }))
+        .toEqual({ weight: 0, repsCompleted: 8 })
+    })
+
+    it('nunca devuelve NaN (campos numéricos vacíos → null)', () => {
+      const result = buildCachedMeasurementValues('weight_reps', { weight: '', reps: '' })
+      expect(Object.values(result).some(v => typeof v === 'number' && Number.isNaN(v))).toBe(false)
+      expect(result).toEqual({ weight: null, repsCompleted: null })
+    })
+
+    it('distancia vacía → null (no 0), para que borrar persista', () => {
+      // distanceToMeters('') colapsaría a 0; el cache debe distinguir vacío de "0" tecleado
+      expect(buildCachedMeasurementValues('distance', { distance: '' }))
+        .toEqual({ distanceMeters: null })
+    })
+
+    it('distancia 0 tecleada se conserva', () => {
+      expect(buildCachedMeasurementValues('distance', { distance: '0' }))
+        .toEqual({ distanceMeters: 0 })
+    })
+  })
+
+  describe('getSetInitialInputValues', () => {
+    it('devuelve vacíos cuando no hay datos', () => {
+      expect(getSetInitialInputValues({})).toEqual({
+        weight: '', reps: '', time: '', distance: '', calories: '', level: '', pace: '',
+      })
+    })
+
+    it('prioriza cachedData sobre setData', () => {
+      const result = getSetInitialInputValues({
+        setData: { weight: 80, repsCompleted: 8 },
+        cachedData: { weight: 100, repsCompleted: 10 },
+      })
+      expect(result.weight).toBe(100)
+      expect(result.reps).toBe(10)
+    })
+
+    it('mapea repsCompleted a reps y convierte distancia a la unidad', () => {
+      const result = getSetInitialInputValues({
+        setData: { distanceMeters: 5000, repsCompleted: 12 },
+        distanceUnit: 'km',
+      })
+      expect(result.distance).toBe(5)
+      expect(result.reps).toBe(12)
+    })
+
+    it('preserva el 0 y trata NaN como vacío', () => {
+      const result = getSetInitialInputValues({ setData: { weight: 0, repsCompleted: NaN } })
+      expect(result.weight).toBe(0)
+      expect(result.reps).toBe('')
+    })
+  })
+
+  describe('setMeasurementValuesChanged', () => {
+    it('detecta cambio de valor', () => {
+      expect(setMeasurementValuesChanged({ weight: 80, repsCompleted: 8 }, { weight: 100, repsCompleted: 8 }))
+        .toBe(true)
+    })
+
+    it('sin cambios devuelve false', () => {
+      expect(setMeasurementValuesChanged({ weight: 80, repsCompleted: 8 }, { weight: 80, repsCompleted: 8 }))
+        .toBe(false)
+    })
+
+    it('trata NaN y ausente como equivalentes', () => {
+      expect(setMeasurementValuesChanged({ weight: 80 }, { weight: 80, repsCompleted: NaN }))
+        .toBe(false)
+    })
+
+    it('stored undefined con valores reales es cambio', () => {
+      expect(setMeasurementValuesChanged(undefined, { weight: 80 })).toBe(true)
+    })
+
+    it('el 0 es distinto de vacío', () => {
+      expect(setMeasurementValuesChanged({ weight: 0 }, { weight: NaN })).toBe(true)
+    })
+  })
+
+  describe('formatRepsPlaceholder', () => {
+    it('devuelve el objetivo cuando existe', () => {
+      expect(formatRepsPlaceholder('8-12')).toBe('8-12')
+      expect(formatRepsPlaceholder(10)).toBe('10')
+    })
+
+    it('devuelve — sin objetivo', () => {
+      expect(formatRepsPlaceholder(null)).toBe('—')
+      expect(formatRepsPlaceholder(undefined)).toBe('—')
+      expect(formatRepsPlaceholder('')).toBe('—')
+      expect(formatRepsPlaceholder('  ')).toBe('—')
     })
   })
 

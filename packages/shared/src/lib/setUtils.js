@@ -122,29 +122,18 @@ export function isSetDataValid(measurementType, { weight, reps, time, distance, 
 }
 
 /**
- * Construye el objeto de datos para completar una serie
+ * Extrae y tipa solo los valores de medición de una serie según su tipo.
+ * Devuelve las claves internas ({weight, repsCompleted, timeSeconds, ...}) sin
+ * metadatos (ids, rir, notas). Es la fuente única del mapeo formulario→datos que
+ * comparten buildCompletedSetData (guardar), la caché de edición y las comparaciones.
  * @param {string} measurementType - Tipo de medición
- * @param {{weight?: string, reps?: string, time?: string, distance?: string, calories?: string}} formData - Datos del formulario
- * @param {{routineExerciseId?: string|number, sessionExerciseId?: string|number, exerciseId: number, setNumber: number, weightUnit?: string, rirActual?: number, notes?: string, videoUrl?: string}} info - Información adicional
- * @returns {Object} Datos para guardar la serie
+ * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number, calories?: string|number, level?: string|number, pace?: string|number}} formData
+ * @param {{distanceUnit?: string}} [options]
+ * @returns {Object} Solo los campos de medición del tipo (pueden ser NaN si el input está vacío)
  */
-export function buildCompletedSetData(measurementType, formData, info) {
-  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, distanceUnit = 'm', rirActual, notes, videoUrl, setType } = info
+export function getSetMeasurementValues(measurementType, formData, { distanceUnit = 'm' } = {}) {
   const { weight, reps, time, distance, calories, level, pace } = formData
-
-  const data = {
-    exerciseId,
-    setNumber,
-    rirActual,
-    notes,
-  }
-
-  // Soportar ambos IDs para flexibilidad
-  if (sessionExerciseId !== undefined) data.sessionExerciseId = sessionExerciseId
-  if (routineExerciseId !== undefined) data.routineExerciseId = routineExerciseId
-  if (videoUrl !== undefined) data.videoUrl = videoUrl
-  if (setType && setType !== 'normal') data.setType = setType
-
+  const data = {}
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
       data.weight = parseDecimal(weight)
@@ -191,8 +180,101 @@ export function buildCompletedSetData(measurementType, formData, info) {
       data.paceSeconds = parseInt(pace)
       break
   }
+  return data
+}
+
+/**
+ * Construye el objeto de datos para completar una serie
+ * @param {string} measurementType - Tipo de medición
+ * @param {{weight?: string, reps?: string, time?: string, distance?: string, calories?: string}} formData - Datos del formulario
+ * @param {{routineExerciseId?: string|number, sessionExerciseId?: string|number, exerciseId: number, setNumber: number, weightUnit?: string, rirActual?: number, notes?: string, videoUrl?: string}} info - Información adicional
+ * @returns {Object} Datos para guardar la serie
+ */
+export function buildCompletedSetData(measurementType, formData, info) {
+  const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, distanceUnit = 'm', rirActual, notes, videoUrl, setType } = info
+
+  const data = {
+    exerciseId,
+    setNumber,
+    rirActual,
+    notes,
+    ...getSetMeasurementValues(measurementType, formData, { distanceUnit }),
+  }
+
+  // Soportar ambos IDs para flexibilidad
+  if (sessionExerciseId !== undefined) data.sessionExerciseId = sessionExerciseId
+  if (routineExerciseId !== undefined) data.routineExerciseId = routineExerciseId
+  if (videoUrl !== undefined) data.videoUrl = videoUrl
+  if (setType && setType !== 'normal') data.setType = setType
 
   return data
+}
+
+/**
+ * Valores de medición para CACHEAR una serie NO completada. Devuelve los campos del tipo
+ * con los vacíos normalizados a `null` (NO los descarta): así, al vaciar un campo, el
+ * borrado sobrescribe la caché (el store hace merge) y no reaparece el valor viejo al
+ * reabrir el ejercicio. `null` lo muestra `getSetInitialInputValues` como ''. Nunca NaN.
+ * @returns {Object} Los campos de medición del tipo; vacíos como null
+ */
+export function buildCachedMeasurementValues(measurementType, formData, { distanceUnit = 'm' } = {}) {
+  const values = getSetMeasurementValues(measurementType, formData, { distanceUnit })
+  const cached = {}
+  for (const [key, value] of Object.entries(values)) {
+    cached[key] = (typeof value === 'number' && Number.isNaN(value)) ? null : value
+  }
+  // distanceToMeters colapsa '' → 0; para la caché, un campo de distancia vacío es "borrado"
+  // (null), no 0 (que reaparecería como "0" al reabrir). Un 0 tecleado sí se conserva.
+  if ('distanceMeters' in cached && (formData.distance === '' || formData.distance == null)) {
+    cached.distanceMeters = null
+  }
+  return cached
+}
+
+/**
+ * Resuelve los valores iniciales de los inputs de una serie a partir de los datos
+ * conocidos en el store: primero la caché de edición (más reciente), si no los datos
+ * completados. La distancia se convierte de metros a la unidad de display del ejercicio.
+ * No incluye el prefill de la sesión anterior (llega de forma asíncrona y se aplica aparte).
+ * @param {{setData?: Object, cachedData?: Object, distanceUnit?: string}} params
+ * @returns {{weight: string|number, reps: string|number, time: string|number, distance: string|number, calories: string|number, level: string|number, pace: string|number}}
+ */
+export function getSetInitialInputValues({ setData, cachedData, distanceUnit = 'm' } = {}) {
+  const src = cachedData || setData || {}
+  const val = (v) => (v == null || (typeof v === 'number' && Number.isNaN(v)) ? '' : v)
+  const meters = src.distanceMeters
+  return {
+    weight: val(src.weight),
+    reps: val(src.repsCompleted),
+    time: val(src.timeSeconds),
+    distance: val(meters) === '' ? '' : metersToDistanceUnit(meters, distanceUnit),
+    calories: val(src.caloriesBurned),
+    level: val(src.level),
+    pace: val(src.paceSeconds),
+  }
+}
+
+/**
+ * Compara los valores de medición actuales contra los ya almacenados.
+ * Solo mira las claves presentes en `values`. NaN y ausente se tratan como equivalentes.
+ * @param {Object} stored - Datos almacenados (setData o cachedData); puede ser undefined
+ * @param {Object} values - Valores de medición actuales
+ * @returns {boolean} true si algún valor cambió
+ */
+export function setMeasurementValuesChanged(stored, values) {
+  const norm = (v) => (v == null || (typeof v === 'number' && Number.isNaN(v)) ? null : v)
+  const source = stored || {}
+  return Object.keys(values).some(key => norm(values[key]) !== norm(source[key]))
+}
+
+/**
+ * Placeholder para el input de reps: el objetivo del ejercicio (ej. "8-12") cuando existe,
+ * o "—" si no hay objetivo. Da orientación en filas sin historial.
+ * @param {string|number|null|undefined} repsTarget
+ * @returns {string}
+ */
+export function formatRepsPlaceholder(repsTarget) {
+  return repsTarget != null && String(repsTarget).trim() !== '' ? String(repsTarget) : '—'
 }
 
 /**
