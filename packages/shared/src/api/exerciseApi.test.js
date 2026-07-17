@@ -8,6 +8,7 @@ import {
   createExercise,
   updateExercise,
   deleteExercise,
+  getExerciseGifUrl,
 } from './exerciseApi.js'
 import { makeQueryMock, makeClientMock } from './_testUtils.js'
 
@@ -19,6 +20,41 @@ import { getClient } from './_client.js'
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+// ============================================
+// getExerciseGifUrl
+// ============================================
+
+describe('getExerciseGifUrl', () => {
+  function mockStorageClient() {
+    const getPublicUrl = vi.fn((path) => ({
+      data: { publicUrl: `https://proj.supabase.co/storage/v1/object/public/exercise-gifs/${path}` },
+    }))
+    const from = vi.fn(() => ({ getPublicUrl }))
+    getClient.mockReturnValue({ storage: { from } })
+    return { from, getPublicUrl }
+  }
+
+  it('resuelve la URL pública para el tamaño pedido', () => {
+    const { from, getPublicUrl } = mockStorageClient()
+    const url = getExerciseGifUrl('1519', 'lg')
+    expect(from).toHaveBeenCalledWith('exercise-gifs')
+    expect(getPublicUrl).toHaveBeenCalledWith('gif/1519_720.gif')
+    expect(url).toBe('https://proj.supabase.co/storage/v1/object/public/exercise-gifs/gif/1519_720.gif')
+  })
+
+  it('usa sm (360) por defecto', () => {
+    const { getPublicUrl } = mockStorageClient()
+    getExerciseGifUrl('1519')
+    expect(getPublicUrl).toHaveBeenCalledWith('gif/1519_360.gif')
+  })
+
+  it('devuelve null sin gif_key y no toca el cliente', () => {
+    const { from } = mockStorageClient()
+    expect(getExerciseGifUrl(null)).toBeNull()
+    expect(from).not.toHaveBeenCalled()
+  })
 })
 
 // ============================================

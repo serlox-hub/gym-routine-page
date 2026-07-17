@@ -1,13 +1,28 @@
 import { getClient } from './_client.js'
 import { MeasurementType } from '../lib/measurementTypes.js'
+import { GIF_BUCKET, getExerciseGifPath } from '../lib/exerciseMedia.js'
 import { t } from '../i18n/index.js'
+
+/**
+ * URL pública del GIF de un ejercicio, o null si no tiene animación.
+ * Resuelve la base del Storage a través del cliente Supabase inyectado.
+ * @param {string|number|null} gifKey - `exercises.gif_key`
+ * @param {'xs'|'sm'|'lg'} [size='sm'] - xs=180 (listas), sm=360 (sesión), lg=720 (pantalla completa)
+ * @returns {string|null}
+ */
+export function getExerciseGifUrl(gifKey, size = 'sm') {
+  const path = getExerciseGifPath(gifKey, size)
+  if (!path) return null
+  const { data } = getClient().storage.from(GIF_BUCKET).getPublicUrl(path)
+  return data?.publicUrl ?? null
+}
 
 export async function fetchExercisesWithMuscleGroup() {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
       id, name:name_es, name_en, measurement_type,
-      is_system,
+      is_system, gif_key,
       muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
       equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
     `)
@@ -124,7 +139,7 @@ export async function fetchExercise(exerciseId) {
     .from('exercises')
     .select(`
       id, name:name_es, name_en, measurement_type,
-      is_system, instructions, deleted_at,
+      is_system, instructions, deleted_at, gif_key,
       muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
       equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
     `)

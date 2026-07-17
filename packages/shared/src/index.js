@@ -1,5 +1,6 @@
 export * from './lib/arrayUtils.js'
 export * from './lib/exerciseUtils.js'
+export * from './lib/exerciseMedia.js'
 export * from './lib/gymUtils.js'
 export * from './lib/feedbackUtils.js'
 export * from './lib/reminderUtils.js'

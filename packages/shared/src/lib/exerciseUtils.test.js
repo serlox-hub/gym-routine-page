@@ -146,6 +146,14 @@ describe('hasExerciseNotes', () => {
   it('detecta structured instructions', () => {
     expect(hasExerciseNotes({ instructions: { es: { setup: 'pies a la anchura de los hombros' } } }, null, null)).toBe(true)
   })
+
+  it('detecta el GIF del ejercicio (gif_key) aunque no haya texto', () => {
+    expect(hasExerciseNotes({ gif_key: '1519' }, null, null)).toBe(true)
+  })
+
+  it('sigue en false sin texto ni gif_key', () => {
+    expect(hasExerciseNotes({ gif_key: null }, null, null)).toBe(false)
+  })
 })
 
 describe('localizeExercise', () => {
