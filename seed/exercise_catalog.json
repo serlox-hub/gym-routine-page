@@ -2,7 +2,7 @@
   "_meta": {
     "description": "Catálogo de ejercicios del sistema para seed en Supabase",
     "version": 5,
-    "total_exercises": 255,
+    "total_exercises": 269,
     "muscle_groups": [
       "Pecho",
       "Espalda",
@@ -14,7 +14,9 @@
       "Isquiotibiales",
       "Glúteos",
       "Pantorrillas",
-      "Abdominales"
+      "Abdominales",
+      "Cardio",
+      "Movilidad"
     ]
   },
   "exercises": [
@@ -10183,6 +10185,555 @@
         }
       },
       "equipment": "dumbbell"
+    },
+    {
+      "name_es": "Press declinado en máquina",
+      "name_en": "Machine Decline Chest Press",
+      "muscle_group": "Pecho",
+      "secondary_muscles": [
+        "Tríceps",
+        "Hombros"
+      ],
+      "measurement_type": "weight_reps",
+      "instructions": {
+        "es": {
+          "setup": "Ajusta el asiento para que las manijas queden a la altura del pecho bajo. Espalda y cabeza apoyadas, pies firmes.",
+          "execution": "Empuja las manijas hacia adelante y ligeramente abajo hasta extender los brazos sin bloquear de golpe. Vuelve controlando el estiramiento.",
+          "cues": [
+            "Manijas a la altura del pecho bajo",
+            "Codos a ~45°, no del todo abiertos",
+            "Aprieta el pecho al final"
+          ],
+          "mistakes": [
+            "Asiento demasiado alto",
+            "Despegar la espalda del respaldo",
+            "Bloquear los codos de golpe"
+          ]
+        },
+        "en": {
+          "setup": "Set the seat so the handles sit at lower-chest height. Back and head against the pad, feet planted.",
+          "execution": "Press the handles forward and slightly down to full extension without slamming lockout. Return under control, feeling the stretch.",
+          "cues": [
+            "Handles at lower-chest level",
+            "Elbows ~45°, not fully flared",
+            "Squeeze the chest at the end"
+          ],
+          "mistakes": [
+            "Seat set too high",
+            "Back lifting off the pad",
+            "Snapping elbows into lockout"
+          ]
+        }
+      },
+      "equipment": "machine"
+    },
+    {
+      "name_es": "Press inclinado en máquina",
+      "name_en": "Machine Incline Chest Press",
+      "muscle_group": "Pecho",
+      "secondary_muscles": [
+        "Hombros",
+        "Tríceps"
+      ],
+      "measurement_type": "weight_reps",
+      "instructions": {
+        "es": {
+          "setup": "Ajusta el asiento para que las manijas queden a la altura del pecho alto/clavícula. Espalda apoyada, pies firmes.",
+          "execution": "Empuja las manijas hacia arriba y adelante hasta casi extender los brazos. Baja controlando hasta sentir el pecho alto estirado.",
+          "cues": [
+            "Manijas a la altura del pecho alto",
+            "Enfatiza la porción clavicular del pecho",
+            "No bloquees los codos de golpe"
+          ],
+          "mistakes": [
+            "Asiento demasiado bajo (trabaja como plano)",
+            "Arquear la lumbar despegando la espalda",
+            "Recorrido corto"
+          ]
+        },
+        "en": {
+          "setup": "Set the seat so the handles sit at upper-chest/collarbone height. Back against the pad, feet planted.",
+          "execution": "Press the handles up and forward to near-lockout. Lower under control until you feel the upper chest stretch.",
+          "cues": [
+            "Handles at upper-chest level",
+            "Emphasize the upper (clavicular) chest",
+            "Don't slam the elbows to lockout"
+          ],
+          "mistakes": [
+            "Seat too low (becomes a flat press)",
+            "Arching and lifting the back off the pad",
+            "Short range of motion"
+          ]
+        }
+      },
+      "equipment": "machine"
+    },
+    {
+      "name_es": "Dislocaciones de hombro con banda",
+      "name_en": "Band Shoulder Dislocates",
+      "muscle_group": "Hombros",
+      "secondary_muscles": [],
+      "measurement_type": "reps_only",
+      "instructions": {
+        "es": {
+          "setup": "Toma una banda elástica con las manos más anchas que los hombros, brazos extendidos por delante del cuerpo.",
+          "execution": "Con los codos rectos, lleva la banda por encima de la cabeza hasta la espalda baja y vuelve al frente. La banda se estira lo justo para pasar sin dolor.",
+          "cues": [
+            "Brazos siempre extendidos",
+            "Agarre más ancho = más fácil",
+            "Movimiento lento y controlado"
+          ],
+          "mistakes": [
+            "Agarre demasiado estrecho (fuerza el hombro)",
+            "Flexionar los codos para hacer trampa",
+            "Ir rápido o con tirones"
+          ]
+        },
+        "en": {
+          "setup": "Hold a resistance band with hands wider than shoulder-width, arms straight out in front.",
+          "execution": "Keeping the elbows straight, take the band up and over your head to your lower back, then return to the front. It stretches just enough to pass through pain-free.",
+          "cues": [
+            "Keep the arms fully straight",
+            "Wider grip = easier",
+            "Slow and controlled"
+          ],
+          "mistakes": [
+            "Grip too narrow (strains the shoulder)",
+            "Bending the elbows to cheat",
+            "Rushing or jerking"
+          ]
+        }
+      },
+      "equipment": "band"
+    },
+    {
+      "name_es": "Sentadilla al cajón",
+      "name_en": "Box Squat",
+      "muscle_group": "Cuádriceps",
+      "secondary_muscles": [
+        "Glúteos",
+        "Isquiotibiales"
+      ],
+      "measurement_type": "weight_reps",
+      "instructions": {
+        "es": {
+          "setup": "Coloca un cajón o banco detrás a una altura que te lleve a paralelo o algo más. Barra sobre los trapecios, pies al ancho de hombros.",
+          "execution": "Baja con control llevando la cadera atrás hasta sentarte suavemente en el cajón sin desplomarte. Pausa breve y sube empujando con los talones.",
+          "cues": [
+            "Cadera atrás, no solo rodillas",
+            "Siéntate suave, sin rebotar",
+            "Pausa y explota hacia arriba"
+          ],
+          "mistakes": [
+            "Dejarse caer de golpe sobre el cajón",
+            "Perder la tensión al sentarse",
+            "Cajón demasiado alto (recorrido corto)"
+          ]
+        },
+        "en": {
+          "setup": "Place a box or bench behind you at a height that brings you to parallel or slightly below. Bar on your traps, feet shoulder-width.",
+          "execution": "Descend under control, sitting your hips back until you touch the box softly without collapsing. Pause briefly, then drive up through your heels.",
+          "cues": [
+            "Hips back, not just knees",
+            "Sit softly, no bouncing",
+            "Pause then explode up"
+          ],
+          "mistakes": [
+            "Crashing down onto the box",
+            "Losing tension when seated",
+            "Box too high (short range)"
+          ]
+        }
+      },
+      "equipment": "barbell"
+    },
+    {
+      "name_es": "Sentadilla isométrica en pared",
+      "name_en": "Wall Sit",
+      "muscle_group": "Cuádriceps",
+      "secondary_muscles": [
+        "Glúteos"
+      ],
+      "measurement_type": "time",
+      "instructions": {
+        "es": {
+          "setup": "Apoya la espalda plana contra una pared y desliza hacia abajo hasta que las rodillas queden a 90°, como sentado en una silla invisible.",
+          "execution": "Mantén la posición el tiempo objetivo, con los muslos paralelos al suelo y la espalda pegada a la pared. Respira de forma constante.",
+          "cues": [
+            "Rodillas a 90°, sobre los tobillos",
+            "Espalda plana contra la pared",
+            "Peso en los talones"
+          ],
+          "mistakes": [
+            "Rodillas por delante de los pies",
+            "Subir la cadera para descansar",
+            "Aguantar la respiración"
+          ]
+        },
+        "en": {
+          "setup": "Press your back flat against a wall and slide down until your knees are at 90°, as if sitting on an invisible chair.",
+          "execution": "Hold for the target time, thighs parallel to the floor and back against the wall. Breathe steadily.",
+          "cues": [
+            "Knees at 90°, over the ankles",
+            "Back flat against the wall",
+            "Weight in the heels"
+          ],
+          "mistakes": [
+            "Knees drifting past the toes",
+            "Raising the hips to rest",
+            "Holding your breath"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Prensa inclinada a una pierna",
+      "name_en": "Single-Leg Incline Leg Press",
+      "muscle_group": "Cuádriceps",
+      "secondary_muscles": [
+        "Glúteos"
+      ],
+      "measurement_type": "weight_reps",
+      "instructions": {
+        "es": {
+          "setup": "En la prensa inclinada, coloca un pie centrado en la plataforma. La otra pierna descansa a un lado. Espalda y cadera apoyadas.",
+          "execution": "Desbloquea y baja controlando hasta ~90° de rodilla. Empuja con el pie hasta casi extender, sin bloquear la rodilla.",
+          "cues": [
+            "Pie centrado para que la rodilla no se vaya adentro",
+            "Baja controlado, sin rebote",
+            "No bloquees la rodilla arriba"
+          ],
+          "mistakes": [
+            "Despegar la cadera del asiento",
+            "Recorrido corto",
+            "Bloquear la rodilla de golpe"
+          ]
+        },
+        "en": {
+          "setup": "On the incline leg press, place one foot centered on the platform, the other leg resting to the side. Back and hips against the pad.",
+          "execution": "Unlock and lower under control to ~90° knee bend. Press through the foot to near-extension without locking the knee.",
+          "cues": [
+            "Foot centered so the knee doesn't cave",
+            "Lower controlled, no bounce",
+            "Don't lock the knee at the top"
+          ],
+          "mistakes": [
+            "Hips lifting off the seat",
+            "Short range of motion",
+            "Snapping the knee to lockout"
+          ]
+        }
+      },
+      "equipment": "machine"
+    },
+    {
+      "name_es": "Carrera continua",
+      "name_en": "Running",
+      "muscle_group": "Cardio",
+      "secondary_muscles": [],
+      "measurement_type": "distance_pace",
+      "instructions": {
+        "es": {
+          "setup": "Calienta unos minutos con trote suave. Postura erguida, mirada al frente, hombros relajados.",
+          "execution": "Corre a un ritmo constante y sostenible durante la distancia objetivo. Zancada natural, aterrizando bajo tu centro de gravedad.",
+          "cues": [
+            "Ritmo que te permita hablar entrecortado",
+            "Cadencia alta, sin zancada exagerada",
+            "Brazos relajados a ~90°"
+          ],
+          "mistakes": [
+            "Salir demasiado rápido y reventar",
+            "Zancada excesiva (talonar por delante)",
+            "Tensar hombros y cuello"
+          ]
+        },
+        "en": {
+          "setup": "Warm up for a few minutes with an easy jog. Tall posture, eyes forward, shoulders relaxed.",
+          "execution": "Run at a steady, sustainable pace for the target distance. Natural stride, landing under your center of gravity.",
+          "cues": [
+            "Pace where you can talk in short phrases",
+            "High cadence, avoid over-striding",
+            "Arms relaxed at ~90°"
+          ],
+          "mistakes": [
+            "Going out too fast and blowing up",
+            "Over-striding (heel landing out front)",
+            "Tensing shoulders and neck"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Círculos de tobillo",
+      "name_en": "Ankle Circles",
+      "muscle_group": "Movilidad",
+      "secondary_muscles": [],
+      "measurement_type": "reps_only",
+      "instructions": {
+        "es": {
+          "setup": "De pie o sentado, eleva un pie del suelo o apóyalo sobre la punta.",
+          "execution": "Dibuja círculos amplios con el tobillo, en un sentido y luego en el otro, buscando el máximo rango sin dolor.",
+          "cues": [
+            "Círculos lentos y amplios",
+            "Mueve solo el tobillo, no la pierna",
+            "Igual número en ambos sentidos"
+          ],
+          "mistakes": [
+            "Círculos minúsculos",
+            "Mover toda la pierna",
+            "Ir demasiado rápido"
+          ]
+        },
+        "en": {
+          "setup": "Standing or seated, lift one foot off the floor or rest it on the toes.",
+          "execution": "Draw wide circles with the ankle, one direction then the other, seeking the maximum pain-free range.",
+          "cues": [
+            "Slow, wide circles",
+            "Move only the ankle, not the leg",
+            "Equal reps each direction"
+          ],
+          "mistakes": [
+            "Tiny circles",
+            "Moving the whole leg",
+            "Going too fast"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Círculos de brazos",
+      "name_en": "Arm Circles",
+      "muscle_group": "Movilidad",
+      "secondary_muscles": [],
+      "measurement_type": "reps_only",
+      "instructions": {
+        "es": {
+          "setup": "De pie, brazos extendidos en cruz a la altura de los hombros.",
+          "execution": "Dibuja círculos con los brazos, empezando pequeños y agrandándolos. Realiza hacia adelante y luego hacia atrás.",
+          "cues": [
+            "Brazos rectos y activos",
+            "De círculos pequeños a grandes",
+            "Igual en ambos sentidos"
+          ],
+          "mistakes": [
+            "Encoger los hombros",
+            "Brazos flojos o flexionados",
+            "Ir a tirones"
+          ]
+        },
+        "en": {
+          "setup": "Standing, arms extended out to the sides at shoulder height.",
+          "execution": "Draw circles with the arms, starting small and growing larger. Do them forward, then backward.",
+          "cues": [
+            "Arms straight and active",
+            "Small to large circles",
+            "Equal both directions"
+          ],
+          "mistakes": [
+            "Shrugging the shoulders",
+            "Loose or bent arms",
+            "Jerky motion"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Sentadilla con peso corporal",
+      "name_en": "Bodyweight Squat",
+      "muscle_group": "Movilidad",
+      "secondary_muscles": [
+        "Glúteos"
+      ],
+      "measurement_type": "reps_only",
+      "instructions": {
+        "es": {
+          "setup": "De pie, pies al ancho de hombros, puntas ligeramente hacia afuera. Brazos al frente para equilibrar.",
+          "execution": "Baja llevando la cadera atrás y abajo hasta que los muslos queden al menos paralelos. Sube empujando con los talones.",
+          "cues": [
+            "Pecho erguido, mirada al frente",
+            "Rodillas siguen la línea de los pies",
+            "Peso repartido en todo el pie"
+          ],
+          "mistakes": [
+            "Rodillas hacia adentro",
+            "Levantar los talones",
+            "No bajar hasta paralelo"
+          ]
+        },
+        "en": {
+          "setup": "Stand with feet shoulder-width, toes slightly out. Arms in front for balance.",
+          "execution": "Lower by sitting your hips back and down until thighs are at least parallel. Stand up driving through your heels.",
+          "cues": [
+            "Chest tall, eyes forward",
+            "Knees track over the feet",
+            "Weight spread across the whole foot"
+          ],
+          "mistakes": [
+            "Knees caving in",
+            "Heels lifting",
+            "Not reaching parallel"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Zancada con peso corporal",
+      "name_en": "Bodyweight Lunge",
+      "muscle_group": "Movilidad",
+      "secondary_muscles": [
+        "Glúteos"
+      ],
+      "measurement_type": "reps_only",
+      "instructions": {
+        "es": {
+          "setup": "De pie, pies al ancho de cadera, tronco erguido.",
+          "execution": "Da un paso al frente y baja hasta que ambas rodillas formen ~90°, sin que la rodilla trasera golpee el suelo. Empuja con la pierna delantera para volver.",
+          "cues": [
+            "Tronco vertical, no te vayas adelante",
+            "Rodilla delantera sobre el tobillo",
+            "Paso lo bastante largo"
+          ],
+          "mistakes": [
+            "Paso demasiado corto (la rodilla se adelanta)",
+            "Inclinar mucho el torso",
+            "Perder el equilibrio por ir rápido"
+          ]
+        },
+        "en": {
+          "setup": "Stand with feet hip-width, torso upright.",
+          "execution": "Step forward and lower until both knees reach ~90°, without slamming the back knee. Push through the front leg to return.",
+          "cues": [
+            "Torso vertical, don't lean forward",
+            "Front knee over the ankle",
+            "Take a long enough step"
+          ],
+          "mistakes": [
+            "Step too short (front knee shoots forward)",
+            "Leaning the torso too much",
+            "Losing balance by rushing"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Círculos de cadera",
+      "name_en": "Hip Circles",
+      "muscle_group": "Movilidad",
+      "secondary_muscles": [],
+      "measurement_type": "reps_only",
+      "instructions": {
+        "es": {
+          "setup": "De pie, pies al ancho de hombros, manos en la cintura.",
+          "execution": "Dibuja círculos amplios con la cadera, moviendo la pelvis en círculo. Realiza en un sentido y luego en el otro.",
+          "cues": [
+            "Círculos amplios y lentos",
+            "Mueve la pelvis, no solo el torso",
+            "Igual en ambos sentidos"
+          ],
+          "mistakes": [
+            "Círculos pequeños",
+            "Mover solo hombros/torso",
+            "Ir demasiado rápido"
+          ]
+        },
+        "en": {
+          "setup": "Standing, feet shoulder-width, hands on your hips.",
+          "execution": "Draw wide circles with the hips, moving the pelvis in a circle. Do one direction then the other.",
+          "cues": [
+            "Wide, slow circles",
+            "Move the pelvis, not just the torso",
+            "Equal both directions"
+          ],
+          "mistakes": [
+            "Small circles",
+            "Moving only shoulders/torso",
+            "Going too fast"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Círculos de rodilla",
+      "name_en": "Knee Circles",
+      "muscle_group": "Movilidad",
+      "secondary_muscles": [],
+      "measurement_type": "reps_only",
+      "instructions": {
+        "es": {
+          "setup": "De pie, pies y rodillas juntos, semiflexionadas, manos sobre las rodillas.",
+          "execution": "Dibuja círculos con las rodillas juntas, en un sentido y luego en el otro, movilizando rodilla y tobillo.",
+          "cues": [
+            "Rodillas juntas y semiflexionadas",
+            "Círculos suaves y controlados",
+            "Igual en ambos sentidos"
+          ],
+          "mistakes": [
+            "Forzar el rango con dolor",
+            "Ir muy rápido",
+            "Bloquear las rodillas"
+          ]
+        },
+        "en": {
+          "setup": "Standing, feet and knees together, slightly bent, hands on your knees.",
+          "execution": "Draw circles with the knees together, one direction then the other, mobilizing knees and ankles.",
+          "cues": [
+            "Knees together and softly bent",
+            "Smooth, controlled circles",
+            "Equal both directions"
+          ],
+          "mistakes": [
+            "Forcing range into pain",
+            "Going too fast",
+            "Locking the knees"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Balanceos de pierna",
+      "name_en": "Leg Swings",
+      "muscle_group": "Movilidad",
+      "secondary_muscles": [],
+      "measurement_type": "reps_only",
+      "instructions": {
+        "es": {
+          "setup": "De pie junto a una pared o soporte para apoyarte. Peso sobre una pierna.",
+          "execution": "Balancea la pierna libre al frente y atrás (o de lado a lado) de forma relajada, aumentando el rango poco a poco. Cambia de pierna.",
+          "cues": [
+            "Movimiento relajado, no forzado",
+            "Tronco estable, no lo balancees",
+            "Aumenta el rango gradualmente"
+          ],
+          "mistakes": [
+            "Tirones bruscos buscando rango",
+            "Arquear la espalda",
+            "Balancear el torso en vez de la pierna"
+          ]
+        },
+        "en": {
+          "setup": "Stand next to a wall or support to hold on to. Weight on one leg.",
+          "execution": "Swing the free leg front-to-back (or side-to-side) in a relaxed way, gradually increasing range. Switch legs.",
+          "cues": [
+            "Relaxed motion, not forced",
+            "Stable torso, don't swing it",
+            "Increase range gradually"
+          ],
+          "mistakes": [
+            "Jerky swings chasing range",
+            "Arching the back",
+            "Swinging the torso instead of the leg"
+          ]
+        }
+      },
+      "equipment": "bodyweight"
     }
   ]
 }
