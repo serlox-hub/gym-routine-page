@@ -411,6 +411,58 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, measure
   return { newRecords, updatedRunningBests }
 }
 
+/**
+ * Recalcula DESDE CERO qué series de un ejercicio son PR dentro de la sesión activa,
+ * devolviendo cada serie-PR con sus records (para la notificación).
+ *
+ * A diferencia de evaluateSetForPR (pliegue incremental append-only, usado en vivo al
+ * completar cada serie), esta función reprocesa TODAS las series completadas en orden.
+ * Es la única forma correcta tras editar o descompletar una serie: el acumulador
+ * incremental no puede "quitar" la contribución de una serie ya plegada (bajar el peso
+ * de una serie que era PR, o descompletarla, dejaría el running best inflado).
+ *
+ * Recibe las series en formato store (camelCase) y las mapea al formato db que espera
+ * evaluateSetForPR. weightUnit solo afecta a las etiquetas de los records (no a qué
+ * series son PR), así que para el trofeo (ver computeExercisePRSetNumbers) es irrelevante.
+ *
+ * @param {Array<{setNumber:number, weight?:number, repsCompleted?:number, timeSeconds?:number, distanceMeters?:number, paceSeconds?:number}>} completedSets
+ * @param {Object|null} preSessionBests - Mejores marcas previas del ejercicio (null/'none' → sin historial → sin PR)
+ * @param {string} measurementType
+ * @param {string} [weightUnit='kg'] - Unidad para las etiquetas de los records
+ * @returns {Array<{setNumber:number, records:Array}>} series que son PR, con sus records, ordenadas por setNumber
+ */
+export function computeExercisePRSets(completedSets, preSessionBests, measurementType, weightUnit = 'kg') {
+  if (!completedSets?.length || !preSessionBests || preSessionBests === 'none') return []
+
+  const ordered = [...completedSets].sort((a, b) => a.setNumber - b.setNumber)
+  let running = {}
+  const prSets = []
+
+  for (const set of ordered) {
+    const dbFormatSet = {
+      weight: set.weight ?? null,
+      reps_completed: set.repsCompleted ?? null,
+      time_seconds: set.timeSeconds ?? null,
+      distance_meters: set.distanceMeters ?? null,
+      pace_seconds: set.paceSeconds ?? null,
+    }
+    const { newRecords, updatedRunningBests } = evaluateSetForPR(dbFormatSet, running, preSessionBests, measurementType, weightUnit)
+    running = updatedRunningBests
+    if (newRecords.length > 0) prSets.push({ setNumber: set.setNumber, records: newRecords })
+  }
+
+  return prSets
+}
+
+/**
+ * Igual que computeExercisePRSets pero solo los setNumbers (para el trofeo, que no
+ * necesita records ni unidad de peso).
+ * @returns {number[]} setNumbers que son PR en la sesión
+ */
+export function computeExercisePRSetNumbers(completedSets, preSessionBests, measurementType) {
+  return computeExercisePRSets(completedSets, preSessionBests, measurementType).map(r => r.setNumber)
+}
+
 // ============================================
 // PR FLAGS RECALCULATION (AFTER DELETE)
 // ============================================

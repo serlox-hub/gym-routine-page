@@ -164,6 +164,7 @@
     "time": "Tiempo",
     "distance": "Distancia",
     "pace": "Ritmo",
-    "repPR": "PR a {{repCount}} reps"
+    "repPR": "PR a {{repCount}} reps",
+    "exerciseFallback": "Ejercicio"
   }
 }

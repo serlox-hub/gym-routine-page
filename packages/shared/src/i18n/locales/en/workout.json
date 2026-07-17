@@ -164,6 +164,7 @@
     "time": "Time",
     "distance": "Distance",
     "pace": "Pace",
-    "repPR": "{{repCount}}-rep PR"
+    "repPR": "{{repCount}}-rep PR",
+    "exerciseFallback": "Exercise"
   }
 }

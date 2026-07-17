@@ -50,7 +50,7 @@ export default function WorkoutSessionLayout({ title }) {
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
-  const { checkSetForPR, clearSetPR, prSets, prNotification, dismissPR } = useSessionPRDetection()
+  const { prSets, prNotification, dismissPR } = useSessionPRDetection()
   const { value: weightUnit } = usePreference('weight_unit')
   const endSessionMutation = useEndSession({
     onSuccess: ({ session, detectedPRs }) => {
@@ -105,15 +105,12 @@ export default function WorkoutSessionLayout({ title }) {
       if (descansoSeg && descansoSeg > 0) {
         startRestTimer(descansoSeg, context)
       }
-      completeSetMutation.mutate(setData, {
-        onSuccess: () => {
-          try { checkSetForPR(setData) } catch { /* PR check no critico */ }
-        },
-      })
+      // El PR (trofeo + toast) se detecta de forma derivada al cambiar completedSets.
+      completeSetMutation.mutate(setData)
     },
     onUncompleteSet: (setData) => {
       uncompleteSetMutation.mutate(setData)
-      clearSetPR(setData.sessionExerciseId, setData.setNumber)
+      // El trofeo se recalcula solo al desaparecer la serie de completedSets (prSets derivado).
     },
     onRemove: (sessionExerciseId) => {
       removeSessionExerciseMutation.mutate(sessionExerciseId)

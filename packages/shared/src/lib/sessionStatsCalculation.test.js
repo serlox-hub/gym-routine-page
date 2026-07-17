@@ -6,6 +6,8 @@ import {
   calculateSessionExerciseStats,
   detectNewPersonalRecords,
   evaluateSetForPR,
+  computeExercisePRSets,
+  computeExercisePRSetNumbers,
   recalculatePRFlags,
   mergeExerciseStats,
 } from './sessionStatsCalculation.js'
@@ -990,6 +992,105 @@ describe('sessionStatsCalculation', () => {
       const previous = { best1rm: 120, bestPerReps: { '5': 100, '8': 80, '3': 115 } }
       const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
       expect(flags.prRepCounts).toEqual([3, 5, 8])
+    })
+  })
+
+  // ============================================
+  // computeExercisePRSetNumbers (recálculo del trofeo desde cero)
+  // ============================================
+
+  describe('computeExercisePRSetNumbers', () => {
+    it('retorna vacío sin series', () => {
+      expect(computeExercisePRSetNumbers([], { bestWeight: 100 }, 'weight_reps')).toEqual([])
+    })
+
+    it('retorna vacío sin historial previo (null o "none")', () => {
+      const sets = [{ setNumber: 1, weight: 200, repsCompleted: 10 }]
+      expect(computeExercisePRSetNumbers(sets, null, 'weight_reps')).toEqual([])
+      expect(computeExercisePRSetNumbers(sets, 'none', 'weight_reps')).toEqual([])
+    })
+
+    it('marca como PR la serie que bate el peso/1RM previo', () => {
+      const sets = [{ setNumber: 1, weight: 110, repsCompleted: 5 }]
+      const preBests = { bestWeight: 100, best1rm: 120 }
+      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1])
+    })
+
+    it('edición HACIA ARRIBA: un peso que antes no batía ahora es PR', () => {
+      // Simula haber completado floja y luego subido el peso: el recálculo la marca.
+      const preBests = { bestWeight: 100, best1rm: 120 }
+      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 90, repsCompleted: 5 }], preBests, 'weight_reps')).toEqual([])
+      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 115, repsCompleted: 5 }], preBests, 'weight_reps')).toEqual([1])
+    })
+
+    it('edición HACIA ABAJO: deja de ser PR (el bug que arregla el recálculo desde cero)', () => {
+      // Con el acumulador incremental el trofeo quedaba congelado; aquí desaparece.
+      const preBests = { bestWeight: 100, best1rm: 120 }
+      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 90, repsCompleted: 5 }], preBests, 'weight_reps')).toEqual([])
+    })
+
+    it('reprocesa en orden: una serie posterior menor no es PR (dominancia del running best)', () => {
+      const sets = [
+        { setNumber: 1, weight: 110, repsCompleted: 5 },
+        { setNumber: 2, weight: 105, repsCompleted: 5 },
+      ]
+      const preBests = { bestWeight: 100, best1rm: 120 }
+      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1])
+    })
+
+    it('ordena por setNumber aunque el array llegue desordenado', () => {
+      const sets = [
+        { setNumber: 2, weight: 105, repsCompleted: 5 },
+        { setNumber: 1, weight: 110, repsCompleted: 5 },
+      ]
+      const preBests = { bestWeight: 100, best1rm: 120 }
+      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1])
+    })
+
+    it('marca varias series si cada una supera a la anterior', () => {
+      const sets = [
+        { setNumber: 1, weight: 105, repsCompleted: 3 },
+        { setNumber: 2, weight: 110, repsCompleted: 3 },
+      ]
+      const preBests = { bestWeight: 100, best1rm: 200 }
+      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1, 2])
+    })
+
+    it('detecta repPR por rep-count aunque peso/1RM no batan récord', () => {
+      const sets = [{ setNumber: 1, weight: 105, repsCompleted: 5 }]
+      const preBests = { bestWeight: 200, best1rm: 200, bestPerReps: { '5': 100 } }
+      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1])
+    })
+
+    it('métrica de pace (menor = mejor): serie más rápida es PR', () => {
+      const sets = [{ setNumber: 1, distanceMeters: 5000, paceSeconds: 280 }]
+      const preBests = { bestDistanceMeters: 5000, bestPaceSeconds: 300 }
+      expect(computeExercisePRSetNumbers(sets, preBests, 'distance_pace')).toEqual([1])
+    })
+  })
+
+  describe('computeExercisePRSets', () => {
+    it('devuelve setNumber + records por cada serie-PR', () => {
+      const sets = [{ setNumber: 1, weight: 110, repsCompleted: 5 }]
+      const preBests = { bestWeight: 100, best1rm: 120 }
+      const result = computeExercisePRSets(sets, preBests, 'weight_reps')
+      expect(result).toHaveLength(1)
+      expect(result[0].setNumber).toBe(1)
+      expect(result[0].records.length).toBeGreaterThan(0)
+      expect(result[0].records.some(r => r.type === 'bestWeight')).toBe(true)
+    })
+
+    it('propaga weightUnit a las etiquetas de los records', () => {
+      const sets = [{ setNumber: 1, weight: 250, repsCompleted: 5 }]
+      const preBests = { bestWeight: 200, best1rm: 240 }
+      const result = computeExercisePRSets(sets, preBests, 'weight_reps', 'lb')
+      expect(result[0].records.find(r => r.type === 'bestWeight').unit).toBe('lb')
+    })
+
+    it('retorna vacío sin historial previo', () => {
+      const sets = [{ setNumber: 1, weight: 200, repsCompleted: 10 }]
+      expect(computeExercisePRSets(sets, null, 'weight_reps')).toEqual([])
+      expect(computeExercisePRSets(sets, 'none', 'weight_reps')).toEqual([])
     })
   })
 })

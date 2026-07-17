@@ -11,6 +11,9 @@ export const SUMMARY_MAX_EXERCISES = 8
 // se teclea, evitando spam de escrituras a store/DB/AsyncStorage. Compartido web+native.
 export const SET_EDIT_DEBOUNCE_MS = 600
 
+// Sesión activa: cuánto se muestra el toast de PR antes de auto-ocultarse.
+export const PR_NOTIFICATION_DURATION_MS = 4000
+
 // Block names (DB identifiers — always Spanish in the database)
 export const BLOCK_NAMES = {
   WARMUP: 'Calentamiento',
