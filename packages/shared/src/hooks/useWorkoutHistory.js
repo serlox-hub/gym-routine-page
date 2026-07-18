@@ -142,6 +142,8 @@ export function usePreviousWorkout(exerciseId) {
             timeSeconds: set.time_seconds,
             distanceMeters: set.distance_meters,
             paceSeconds: set.pace_seconds,
+            level: set.level,
+            caloriesBurned: set.calories_burned,
             rir: set.rir_actual,
             notes: set.notes,
             videoUrl: set.video_url,

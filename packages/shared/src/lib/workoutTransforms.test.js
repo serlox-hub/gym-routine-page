@@ -9,6 +9,7 @@ import {
   groupExercisesBySupersetId,
   buildDefaultExerciseOrder,
   transformSessionDetailData,
+  buildCompletedSetsMap,
 } from './workoutTransforms.js'
 
 describe('workoutTransforms', () => {
@@ -620,6 +621,55 @@ describe('workoutTransforms', () => {
         is_warmup: true,
         is_extra: false,
       })
+    })
+  })
+
+  describe('buildCompletedSetsMap', () => {
+    it('mapea filas snake_case de la BD a formato store camelCase con clave compuesta', () => {
+      const result = buildCompletedSetsMap([
+        {
+          session_exercise_id: 'se-1',
+          set_number: 2,
+          weight: 80,
+          reps_completed: 8,
+          time_seconds: null,
+          distance_meters: null,
+          pace_seconds: null,
+          level: null,
+          calories_burned: null,
+          rir_actual: 1,
+          notes: 'ok',
+          video_url: null,
+          set_type: 'dropset',
+        },
+      ])
+      expect(result['se-1-2']).toMatchObject({
+        sessionExerciseId: 'se-1',
+        setNumber: 2,
+        weight: 80,
+        repsCompleted: 8,
+        rirActual: 1,
+        notes: 'ok',
+        setType: 'dropset',
+      })
+    })
+
+    // issue #11: la restauración debe recuperar level y calorías (cardio LEVEL_*/CALORIES)
+    it('recupera level y caloriesBurned (tipo LEVEL_CALORIES)', () => {
+      const result = buildCompletedSetsMap([
+        { session_exercise_id: 'se-3', set_number: 1, level: 8, calories_burned: 120 },
+      ])
+      expect(result['se-3-1'].level).toBe(8)
+      expect(result['se-3-1'].caloriesBurned).toBe(120)
+    })
+
+    it('set_type ausente cae a "normal" y una lista vacía/undefined da {}', () => {
+      const result = buildCompletedSetsMap([
+        { session_exercise_id: 'se-4', set_number: 1 },
+      ])
+      expect(result['se-4-1'].setType).toBe('normal')
+      expect(buildCompletedSetsMap([])).toEqual({})
+      expect(buildCompletedSetsMap(undefined)).toEqual({})
     })
   })
 })

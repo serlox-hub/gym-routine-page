@@ -22,7 +22,7 @@ export function useCompleteSet() {
   const addPendingSet = useWorkoutStore(state => state.addPendingSet)
 
   return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl, setType }) => {
+    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) => {
       return upsertCompletedSet({
         sessionId,
         sessionExerciseId,
@@ -33,6 +33,8 @@ export function useCompleteSet() {
         timeSeconds,
         distanceMeters,
         paceSeconds,
+        level,
+        caloriesBurned,
         rirActual,
         notes,
         videoUrl,
@@ -50,6 +52,8 @@ export function useCompleteSet() {
         timeSeconds: variables.timeSeconds,
         distanceMeters: variables.distanceMeters,
         paceSeconds: variables.paceSeconds,
+        level: variables.level,
+        caloriesBurned: variables.caloriesBurned,
         rirActual: variables.rirActual,
         notes: variables.notes,
         videoUrl: variables.videoUrl,
@@ -86,6 +90,8 @@ export function useCompleteSet() {
           timeSeconds: variables.timeSeconds,
           distanceMeters: variables.distanceMeters,
           paceSeconds: variables.paceSeconds,
+          level: variables.level,
+          caloriesBurned: variables.caloriesBurned,
           rirActual: variables.rirActual,
           notes: variables.notes,
           videoUrl: variables.videoUrl,
@@ -122,6 +128,8 @@ export function useSyncPendingSets({ onVisibilityChange, onConnectivityChange } 
           timeSeconds: payload.timeSeconds,
           distanceMeters: payload.distanceMeters,
           paceSeconds: payload.paceSeconds,
+          level: payload.level,
+          caloriesBurned: payload.caloriesBurned,
           rirActual: payload.rirActual,
           notes: payload.notes,
           videoUrl: payload.videoUrl,
@@ -175,7 +183,7 @@ export function useUpdateCompletedSet() {
   const addPendingSet = useWorkoutStore(state => state.addPendingSet)
 
   return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl, setType }) => {
+    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) => {
       return upsertCompletedSet({
         sessionId,
         sessionExerciseId,
@@ -186,6 +194,8 @@ export function useUpdateCompletedSet() {
         timeSeconds,
         distanceMeters,
         paceSeconds,
+        level,
+        caloriesBurned,
         rirActual,
         notes,
         videoUrl,
@@ -227,6 +237,8 @@ export function useUpdateCompletedSet() {
           timeSeconds: variables.timeSeconds,
           distanceMeters: variables.distanceMeters,
           paceSeconds: variables.paceSeconds,
+          level: variables.level,
+          caloriesBurned: variables.caloriesBurned,
           rirActual: variables.rirActual,
           notes: variables.notes,
           videoUrl: variables.videoUrl,

@@ -170,4 +170,44 @@ describe('useSyncPendingSets', () => {
 
     expect(upsertCompletedSet).toHaveBeenCalled()
   })
+
+  // issue #11: la cola offline debe reenviar level y caloriesBurned al upsert
+  it('reenvía level y caloriesBurned al sincronizar sets pendientes', async () => {
+    const { upsertCompletedSet } = await import('../api/workoutApi.js')
+    const { getWorkoutStore } = await import('./_stores.js')
+
+    const pendingPayload = {
+      sessionId: 'session-123',
+      sessionExerciseId: 'ex-2',
+      setNumber: 1,
+      level: 8,
+      caloriesBurned: 120,
+    }
+    getWorkoutStore.mockReturnValue({
+      getState: vi.fn(() => ({
+        pendingSets: { 'ex-2-1': pendingPayload },
+        updateSetDbId: vi.fn(),
+        removePendingSet: vi.fn(),
+      })),
+    })
+
+    let capturedCallback = null
+    const onVisibilityChange = vi.fn().mockImplementation((cb) => {
+      capturedCallback = cb
+      return () => {}
+    })
+
+    renderHook(
+      () => useSyncPendingSets({ onVisibilityChange }),
+      { wrapper: createWrapper() }
+    )
+
+    await act(async () => {
+      await capturedCallback()
+    })
+
+    expect(upsertCompletedSet).toHaveBeenCalledWith(
+      expect.objectContaining({ level: 8, caloriesBurned: 120 })
+    )
+  })
 })

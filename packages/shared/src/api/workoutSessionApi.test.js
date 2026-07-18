@@ -78,6 +78,16 @@ describe('fetchCompletedSetsForSession', () => {
     expect(result).toEqual([])
   })
 
+  // issue #11: el SELECT de restauración debe traer level y calories_burned
+  it('incluye level y calories_burned en el select', async () => {
+    const mock = makeQueryMock({ data: [], error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchCompletedSetsForSession('session-1')
+    const selectArg = mock.select.mock.calls[0][0]
+    expect(selectArg).toContain('level')
+    expect(selectArg).toContain('calories_burned')
+  })
+
   it('throws when Supabase returns error', async () => {
     const mock = makeQueryMock({ data: null, error: new Error('connection failed') })
     getClient.mockReturnValue({ from: () => mock })
@@ -346,6 +356,16 @@ describe('fetchSessionDetail', () => {
     await expect(fetchSessionDetail('nonexistent-id')).rejects.toThrow('Row not found')
   })
 
+  // issue #11: el detalle de sesión debe traer level y calories_burned de completed_sets
+  it('incluye level y calories_burned en el select de completed_sets', async () => {
+    const mock = makeQueryMock({ data: { id: 'session-1', session_exercises: [] }, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchSessionDetail('session-1')
+    const selectArg = mock.select.mock.calls[0][0]
+    expect(selectArg).toContain('level')
+    expect(selectArg).toContain('calories_burned')
+  })
+
   it('throws when Supabase returns error', async () => {
     const mock = makeQueryMock({ data: null, error: new Error('permission denied') })
     getClient.mockReturnValue({ from: () => mock })
@@ -413,6 +433,16 @@ describe('fetchExerciseHistory', () => {
     expect(result).toHaveLength(1)
   })
 
+  // issue #11: el historial de ejercicio debe traer level y calories_burned
+  it('incluye level y calories_burned en el select', async () => {
+    const mock = makeQueryMock({ data: [], error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchExerciseHistory({ exerciseId: 'ex-1', routineDayId: null, from: 0, to: 29 })
+    const selectArg = mock.select.mock.calls[0][0]
+    expect(selectArg).toContain('level')
+    expect(selectArg).toContain('calories_burned')
+  })
+
   it('throws when Supabase returns error', async () => {
     const mock = makeQueryMock({ data: null, error: new Error('range error') })
     getClient.mockReturnValue({ from: () => mock })
@@ -447,6 +477,16 @@ describe('fetchPreviousWorkout', () => {
     getClient.mockReturnValue({ from: () => mock })
     const result = await fetchPreviousWorkout('ex-new')
     expect(result).toEqual([])
+  })
+
+  // issue #11: el prefill de "sesión anterior" necesita level y calories_burned
+  it('incluye level y calories_burned en el select', async () => {
+    const mock = makeQueryMock({ data: [], error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchPreviousWorkout('ex-1')
+    const selectArg = mock.select.mock.calls[0][0]
+    expect(selectArg).toContain('level')
+    expect(selectArg).toContain('calories_burned')
   })
 
   it('throws when Supabase returns error', async () => {

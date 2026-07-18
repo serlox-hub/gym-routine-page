@@ -1,6 +1,15 @@
 -- ============================================
 -- SCRIPT DE RESET COMPLETO
--- Ejecutar en Supabase SQL Editor para resetear la BD
+-- ============================================
+-- ⚠️ OBSOLETO — NO USAR PARA RECREAR LA BD ACTUAL.
+-- Este archivo refleja el esquema de ~migración 009 y está ~48 migraciones
+-- por detrás del esquema real (p. ej. crea `routine_blocks` —eliminada en 031—,
+-- columnas `weight_unit` —eliminadas en 033/034—, nombres en español ya
+-- anglicizados; y NO crea session_exercises, gyms, exercise_session_stats,
+-- user_preferences, level/calories_burned en completed_sets, etc.).
+-- Ejecutarlo produce un esquema que NO coincide con la app.
+-- Forma canónica de regenerar/resetear: `supabase db dump --schema-only`
+-- contra la BD linkeada (o `supabase start` local). Ver docs/DECISIONS.md.
 -- ============================================
 
 -- Eliminar todas las tablas en orden (por dependencias)

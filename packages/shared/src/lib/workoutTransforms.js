@@ -1,4 +1,5 @@
 import { BLOCK_NAMES } from './constants.js'
+import { createSetKey } from './setUtils.js'
 
 // ============================================
 // SESSION EXERCISES (nueva tabla)
@@ -240,6 +241,37 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
       routine_exercise: null,
     }
   })
+}
+
+/**
+ * Transforma las filas crudas de `completed_sets` (snake_case de la BD) al mapa keyed
+ * (`${sessionExerciseId}-${setNumber}` → datos camelCase) que consume el store de sesión.
+ * Se usa al restaurar una sesión activa desde el servidor (uno de los eslabones donde
+ * antes se perdían level/calorías: issue #11). El naming camelCase debe coincidir con el
+ * que produce buildCompletedSetData, para que getSetInitialInputValues lea igual restore y store.
+ * @param {Array} rawSets - Filas de completed_sets desde la BD
+ * @returns {Object} Mapa keyed de series completadas en formato store
+ */
+export function buildCompletedSetsMap(rawSets) {
+  const setsMap = {}
+  for (const set of (rawSets || [])) {
+    setsMap[createSetKey(set.session_exercise_id, set.set_number)] = {
+      sessionExerciseId: set.session_exercise_id,
+      setNumber: set.set_number,
+      weight: set.weight,
+      repsCompleted: set.reps_completed,
+      timeSeconds: set.time_seconds,
+      distanceMeters: set.distance_meters,
+      paceSeconds: set.pace_seconds,
+      level: set.level,
+      caloriesBurned: set.calories_burned,
+      rirActual: set.rir_actual,
+      notes: set.notes,
+      videoUrl: set.video_url,
+      setType: set.set_type ?? 'normal',
+    }
+  }
+  return setsMap
 }
 
 /**

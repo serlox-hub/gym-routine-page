@@ -144,6 +144,20 @@ describe('workoutSummary', () => {
       expect(summary.totalExercises).toBe(0)
       expect(summary.totalSetsCompleted).toBe(0)
     })
+
+    // issue #11: la mejor serie de cardio LEVEL_CALORIES debe mostrar nivel y calorías
+    it('formatea la mejor serie con level y calorías (tipo level_calories)', () => {
+      const cardioExercises = [
+        { id: 'se-3', exercises: { id: 3, name: 'Elíptica', measurement_type: 'level_calories' } },
+      ]
+      const cardioSets = {
+        'se-3-1': { sessionExerciseId: 'se-3', level: 8, caloriesBurned: 120, setNumber: 1 },
+      }
+      const summary = buildWorkoutSummaryFromEndSession(session, [], cardioSets, cardioExercises)
+      expect(summary.exercises).toHaveLength(1)
+      expect(summary.exercises[0].bestSet).toContain('120kcal')
+      expect(summary.exercises[0].bestSet).toContain('Nv8')
+    })
   })
 
   describe('buildWorkoutSummaryFromSession', () => {

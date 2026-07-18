@@ -60,7 +60,7 @@ function getBestSetFormatted(sets, exercise, weightUnit = 'kg') {
     const r = set.reps_completed || 0
     const score = (w > 0 && r > 0)
       ? w * r
-      : (r || set.time_seconds || set.distance_meters || 0)
+      : (r || set.time_seconds || set.distance_meters || set.calories_burned || 0)
     if (score > bestScore) {
       bestScore = score
       best = set
@@ -117,6 +117,8 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
       time_seconds: storeSet.timeSeconds ?? null,
       distance_meters: storeSet.distanceMeters ?? null,
       pace_seconds: storeSet.paceSeconds ?? null,
+      level: storeSet.level ?? null,
+      calories_burned: storeSet.caloriesBurned ?? null,
       set_number: storeSet.setNumber,
     })
   }

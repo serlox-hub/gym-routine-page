@@ -4,6 +4,7 @@ import { QUERY_KEYS } from '../lib/constants.js'
 import {
   buildSessionExercisesCache,
   buildSessionExercisesFromBlocks,
+  buildCompletedSetsMap,
 } from '../lib/workoutTransforms.js'
 import {
   calculateSessionExerciseStats,
@@ -30,27 +31,6 @@ import { useUserId } from './useAuth.js'
 // ============================================
 // SESSION RESTORATION
 // ============================================
-
-function buildCompletedSetsMap(rawSets) {
-  const setsMap = {}
-  for (const set of rawSets) {
-    const key = `${set.session_exercise_id}-${set.set_number}`
-    setsMap[key] = {
-      sessionExerciseId: set.session_exercise_id,
-      setNumber: set.set_number,
-      weight: set.weight,
-      repsCompleted: set.reps_completed,
-      timeSeconds: set.time_seconds,
-      distanceMeters: set.distance_meters,
-      paceSeconds: set.pace_seconds,
-      rirActual: set.rir_actual,
-      notes: set.notes,
-      videoUrl: set.video_url,
-      setType: set.set_type ?? 'normal',
-    }
-  }
-  return setsMap
-}
 
 export function useRestoreActiveSession({ onVisibilityChange } = {}) {
   const restoreSession = useWorkoutStore(state => state.restoreSession)

@@ -117,6 +117,40 @@ describe('upsertCompletedSet', () => {
     })
     expect(result.distance_meters).toBe(5000)
   })
+
+  // issue #11: level y calories_burned deben persistirse (cardio LEVEL_*/CALORIES)
+  it('persiste level y calories_burned en el payload del upsert (tipo LEVEL_CALORIES)', async () => {
+    const upsertedSet = {
+      id: 'set-4',
+      session_exercise_id: 'se-4',
+      set_number: 1,
+      level: 8,
+      calories_burned: 120,
+    }
+    const mock = makeQueryMock({ data: upsertedSet, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    const result = await upsertCompletedSet({
+      sessionId: 'session-1',
+      sessionExerciseId: 'se-4',
+      setNumber: 1,
+      weight: null,
+      repsCompleted: null,
+      timeSeconds: null,
+      distanceMeters: null,
+      paceSeconds: null,
+      level: 8,
+      caloriesBurned: 120,
+      rirActual: null,
+      notes: null,
+      videoUrl: null,
+    })
+    expect(result.level).toBe(8)
+    expect(result.calories_burned).toBe(120)
+    // El payload enviado a Supabase mapea camelCase → snake_case
+    const payload = mock.upsert.mock.calls[0][0]
+    expect(payload.level).toBe(8)
+    expect(payload.calories_burned).toBe(120)
+  })
 })
 
 // ============================================

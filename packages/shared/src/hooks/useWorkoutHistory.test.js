@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
-import { useExerciseHistory } from './useWorkoutHistory.js'
+import { useExerciseHistory, usePreviousWorkout } from './useWorkoutHistory.js'
 
 // Mock the workoutApi module
 vi.mock('../api/workoutApi.js', () => ({
@@ -14,7 +14,7 @@ vi.mock('../api/workoutApi.js', () => ({
   deleteWorkoutSession: vi.fn(),
 }))
 
-import { fetchExerciseHistory } from '../api/workoutApi.js'
+import { fetchExerciseHistory, fetchPreviousWorkout } from '../api/workoutApi.js'
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -181,5 +181,45 @@ describe('useExerciseHistory', () => {
 
     expect(result.current.fetchStatus).toBe('idle')
     expect(fetchExerciseHistory).not.toHaveBeenCalled()
+  })
+})
+
+describe('usePreviousWorkout', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // issue #11: el prefill de "sesión anterior" debe mapear level y caloriesBurned
+  it('mapea level y caloriesBurned de los sets (cardio LEVEL_CALORIES)', async () => {
+    fetchPreviousWorkout.mockResolvedValueOnce([
+      {
+        session: { id: 'session-1', started_at: '2024-01-15T10:00:00Z', status: 'completed' },
+        completed_sets: [
+          { set_number: 1, weight: null, reps_completed: null, level: 8, calories_burned: 120 },
+        ],
+      },
+    ])
+
+    const { result } = renderHook(
+      () => usePreviousWorkout('exercise-123'),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data.sets[0].level).toBe(8)
+    expect(result.current.data.sets[0].caloriesBurned).toBe(120)
+  })
+
+  it('retorna null cuando no hay sesión previa', async () => {
+    fetchPreviousWorkout.mockResolvedValueOnce([])
+
+    const { result } = renderHook(
+      () => usePreviousWorkout('exercise-123'),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data).toBeNull()
   })
 })

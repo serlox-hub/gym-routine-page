@@ -4,7 +4,7 @@ import { getClient } from './_client.js'
 // COMPLETED SETS
 // ============================================
 
-export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumber, weight, repsCompleted, timeSeconds, distanceMeters, paceSeconds, rirActual, notes, videoUrl, setType }) {
+export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumber, weight, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) {
   const { data, error } = await getClient()
     .from('completed_sets')
     .upsert({
@@ -16,6 +16,8 @@ export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumb
       time_seconds: timeSeconds,
       distance_meters: distanceMeters,
       pace_seconds: paceSeconds,
+      level,
+      calories_burned: caloriesBurned,
       rir_actual: rirActual,
       notes,
       video_url: videoUrl,
