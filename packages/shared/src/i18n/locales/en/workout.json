@@ -68,6 +68,10 @@
     "videoLoadError": "Failed to load video",
     "weightConverter": "Weight converter",
     "setNumber": "Set {{number}}",
+    "moreOptions": "More options",
+    "detailsTitle": "SET {{number}} · DETAILS",
+    "videoAfterComplete": "You can add a video once the set is completed",
+    "video": "Video",
     "type": {
       "label": "Set type",
       "normal": "Normal",

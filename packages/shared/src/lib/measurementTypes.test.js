@@ -9,6 +9,7 @@ import {
   measurementTypeUsesReps,
   measurementTypeUsesLevel,
   getEffortLabel,
+  getEffortOptions,
   getEffortInfo,
   formatEffortBadge,
   getDefaultReps,
@@ -173,6 +174,27 @@ describe('measurementTypes', () => {
       expect(getEffortLabel('weight_distance')).toBe('Esfuerzo')
       expect(getEffortLabel('level_time')).toBe('Esfuerzo')
       expect(getEffortLabel('distance_time')).toBe('Esfuerzo')
+    })
+  })
+
+  describe('getEffortOptions', () => {
+    it('devuelve las opciones RIR (F/0/1/2/3+) para tipos con reps', () => {
+      const opts = getEffortOptions('weight_reps')
+      expect(opts).toHaveLength(5)
+      expect(opts.map(o => o.value)).toEqual([-1, 0, 1, 2, 3])
+      expect(opts.map(o => o.label)).toEqual(['F', '0', '1', '2', '3+'])
+      expect(getEffortOptions('reps_only')).toBe(opts)
+    })
+
+    it('devuelve las opciones RPE (1-5) para tipos sin reps', () => {
+      const opts = getEffortOptions('time')
+      expect(opts).toHaveLength(5)
+      expect(opts.map(o => o.value)).toEqual([1, 2, 3, 4, 5])
+      opts.forEach(o => expect(o.label).toBeTruthy())
+    })
+
+    it('trata un tipo desconocido como no-reps (RPE)', () => {
+      expect(getEffortOptions('unknown').map(o => o.value)).toEqual([1, 2, 3, 4, 5])
     })
   })
 

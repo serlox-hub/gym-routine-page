@@ -1,5 +1,5 @@
 import { t } from '../i18n/index.js'
-import { RIR_LABELS, RPE_LABELS } from './constants.js'
+import { RIR_LABELS, RPE_LABELS, RIR_OPTIONS, RPE_OPTIONS } from './constants.js'
 
 export const MeasurementType = {
   WEIGHT_REPS: 'weight_reps',
@@ -103,6 +103,17 @@ export function getEffortLabel(measurementType) {
   return measurementTypeUsesReps(measurementType)
     ? t('exercise:effort.rir')
     : t('exercise:effort.effort')
+}
+
+/**
+ * Opciones de esfuerzo para el selector inline según el tipo de medición:
+ * RIR (F/0/1/2/3+) para tipos con reps, RPE (1-5) para el resto. Fuente única
+ * compartida por el chip inline y la hoja de detalles.
+ * @param {string} measurementType
+ * @returns {Array<{value: number, label: string}>}
+ */
+export function getEffortOptions(measurementType) {
+  return measurementTypeUsesReps(measurementType) ? RIR_OPTIONS : RPE_OPTIONS
 }
 
 /**

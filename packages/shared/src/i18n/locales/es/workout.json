@@ -68,6 +68,10 @@
     "videoLoadError": "Error al cargar el vídeo",
     "weightConverter": "Conversor de peso",
     "setNumber": "Serie {{number}}",
+    "moreOptions": "Más opciones",
+    "detailsTitle": "SERIE {{number}} · DETALLES",
+    "videoAfterComplete": "Podrás añadir un vídeo al completar la serie",
+    "video": "Vídeo",
     "type": {
       "label": "Tipo de serie",
       "normal": "Normal",

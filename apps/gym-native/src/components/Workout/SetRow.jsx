@@ -1,22 +1,28 @@
 import { useState, memo } from 'react'
 import { View, Text, Pressable } from 'react-native'
-import { CheckCircle2, FileText, Video, AlertCircle, Trophy } from 'lucide-react-native'
+import { CheckCircle2, AlertCircle, Trophy } from 'lucide-react-native'
 import { useIsPRSet } from './PRContext'
 import SetDetailsModal from './SetDetailsModal'
+import EffortPicker from './EffortPicker'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs'
 import {
   MeasurementType,
   buildCompletedSetData,
   getNotifier,
   t,
-  formatEffortBadge,
   useSetInputs,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
-import { useCanUploadVideo } from '../../hooks/useAuth'
-import { useUpdateSetVideo, useUpdateSetDetails } from '../../hooks/useWorkout'
+import { useUpdateSetVideo } from '../../hooks/useWorkout'
 import { uploadVideo } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
+
+// Anchos de columna del layout columnar (deben coincidir con la cabecera de SetsList):
+// SET · [inputs flex] · RIR · ✓.
+// Fuente única de anchos (SetsList importa estas constantes para su cabecera → sin desincronizar).
+export const COL_SET = 40
+export const COL_RIR = 46
+export const COL_CHECK = 38
 
 function SetRow({
   setNumber,
@@ -41,29 +47,20 @@ function SetRow({
   const {
     weight, setWeight, reps, setReps, time, setTime, distance, setDistance,
     calories, setCalories, level, setLevel, pace, setPace,
-    isCompleted, setData, cachedData, isValid, repsPlaceholder,
+    rir, setRir,
+    notes, setType, saveDetails,
+    isCompleted, setData, isValid, repsPlaceholder,
   } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, measurementType, weightUnit, distanceUnit, previousSet, repsTarget })
 
   const { data: preferences } = usePreferences()
-  const canUploadVideo = useCanUploadVideo()
   const { mutate: updateSetVideo } = useUpdateSetVideo()
-  const { mutate: updateSetDetails } = useUpdateSetDetails()
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [videoUploadError, setVideoUploadError] = useState(false)
   const [pendingVideoFile, setPendingVideoFile] = useState(null)
   const [showModal, setShowModal] = useState(false)
-  const [modalMode, setModalMode] = useState('complete')
 
   const showRirInput = preferences?.show_rir_input ?? true
-  const showSetNotes = preferences?.show_set_notes ?? true
-  const showVideoUpload = preferences?.show_video_upload ?? true
-  const showVideo = canUploadVideo && showVideoUpload
-  const shouldShowModal = showRirInput || showSetNotes || showVideo
-
-  const buildInfo = (rir, notes, videoUrl = null, videoFile = null, setType = 'normal') => ({
-    sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, videoUrl, videoFile, setType,
-  })
 
   const uploadVideoInBackground = async (file) => {
     setIsUploadingVideo(true)
@@ -94,45 +91,32 @@ function SetRow({
     if (isCompleted) {
       onUncomplete({ sessionExerciseId, setNumber })
     } else if (isValid()) {
-      if (shouldShowModal) {
-        setModalMode('complete')
-        setShowModal(true)
-      } else {
-        handleCompleteSet(null, null)
-      }
+      // Un toque: registra la serie (con el RIR inline actual) e inicia el descanso.
+      handleCompleteSet()
     }
   }
 
-  const handleEditPress = () => {
-    setModalMode('edit')
-    setShowModal(true)
-  }
-
-  const handleModalSubmit = ({ rir, notes, videoUrl, videoFile, setType }) => {
-    if (modalMode === 'complete') {
-      const data = buildCompletedSetData(
-        measurementType,
-        { weight, reps, time, distance, calories, level, pace },
-        buildInfo(rir, notes, videoUrl, videoFile, setType),
-      )
-      onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
-    } else {
-      updateSetDetails({ sessionExerciseId, setNumber, rirActual: rir, notes, videoUrl, videoFile, setType })
-    }
-    setShowModal(false)
-
-    if (videoFile) {
-      uploadVideoInBackground(videoFile.uri)
-    }
-  }
-
-  const handleCompleteSet = (rir, notes) => {
+  const handleCompleteSet = () => {
+    // Incluye los detalles ya fijados inline / en la hoja antes de completar (rir, notas, tipo).
     const data = buildCompletedSetData(
       measurementType,
       { weight, reps, time, distance, calories, level, pace },
-      buildInfo(rir, notes),
+      { sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, setType },
     )
     onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
+  }
+
+  // Guardar la hoja de detalles: tipo de serie y notas se persisten vía saveDetails (caché si
+  // la serie no está completada aún, mutación si lo está), preservando el RIR. El vídeo va
+  // aparte (solo en series completadas): añadir = subida en background; quitar = updateSetVideo.
+  const handleModalSubmit = ({ notes: nextNotes, videoUrl: nextVideoUrl, videoFile, setType: nextSetType }) => {
+    saveDetails({ notes: nextNotes, setType: nextSetType })
+    setShowModal(false)
+    if (videoFile) {
+      uploadVideoInBackground(videoFile)
+    } else if (isCompleted && !!setData?.videoUrl && !nextVideoUrl) {
+      updateSetVideo({ sessionExerciseId, setNumber, videoUrl: null })
+    }
   }
 
   const renderInputs = () => {
@@ -170,10 +154,13 @@ function SetRow({
     }
   }
 
-  const hasTextNote = !!setData?.notes
+  // Detalles desde el estado local (reflejan lo fijado antes o después de completar)
+  const hasTextNote = !!notes
   const hasVideo = !!setData?.videoUrl
-  const initialData = modalMode === 'edit' ? setData : cachedData
-  const valid = isValid()
+  const isDropset = setType === 'dropset'
+  const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
+  const showEffort = showRirInput && (isActive || isCompleted)
+  const canOpenDetails = isActive || isCompleted
 
   // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
   // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten
@@ -186,25 +173,66 @@ function SetRow({
     borderLeftColor: isCompleted ? colors.success : 'transparent',
   }
 
-  const setNumberText = (
-    <Text style={{ width: 48, textAlign: 'center', color: (isActive || isCompleted) ? colors.success : colors.textSecondary, fontSize: 14, fontWeight: '700' }}>
-      {setNumber}
-    </Text>
-  )
+  const setNumberTextStyle = {
+    textAlign: 'center',
+    color: (isActive || isCompleted) ? colors.success : colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+  }
 
-  const smallBadgeStyle = {
-    backgroundColor: colors.bgTertiary,
+  const dropChipStyle = {
+    backgroundColor: colors.orangeBg,
     borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    width: 26,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  }
+
+  // Celda SET: identidad de la serie + puerta a los detalles. Absorbe el estado transitorio
+  // de subida de vídeo, el indicador de dropset y el punto de "hay nota/vídeo". Solo es
+  // interactiva cuando la serie está completada.
+  const renderSetCell = () => {
+    if (isUploadingVideo) {
+      return <Text style={{ color: colors.purple, fontSize: 11, fontWeight: '600' }}>{uploadProgress}%</Text>
+    }
+    if (videoUploadError) {
+      return (
+        <Pressable onPress={handleRetryVideoUpload} className="active:opacity-70">
+          <AlertCircle size={16} color={colors.danger} />
+        </Pressable>
+      )
+    }
+    const content = isDropset
+      ? <View style={dropChipStyle}><Text style={{ color: colors.orange, fontSize: 12, fontWeight: '800' }}>D</Text></View>
+      : <Text style={setNumberTextStyle}>{setNumber}</Text>
+    // Filas futuras pendientes: número plano, no interactivo.
+    if (!canOpenDetails) return content
+    // Fila activa o completada: número/«D» en texto plano (sin caja, patrón Strong/Hevy — un
+    // recuadro competiría con KG/REPS y parecería un input). Tocar = hoja de detalles; el área
+    // de toque se amplía con padding + hitSlop. El dropset («D») ya es su propia pastilla.
+    return (
+      <Pressable
+        onPress={() => setShowModal(true)}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        className="active:opacity-70"
+        style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 }}
+      >
+        {/* punto de detalle anclado al glifo (nº o «D»), no al padding del botón */}
+        <View style={{ position: 'relative' }}>
+          {content}
+          {(hasTextNote || hasVideo) && (
+            <View style={{ position: 'absolute', top: -2, right: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight }} />
+          )}
+        </View>
+      </Pressable>
+    )
   }
 
   const renderCheckIndicator = () => {
     if (isCompleted) {
       return (
-        <Pressable onPress={handleCheckPress} className="w-7 h-7 items-center justify-center active:opacity-70">
+        <Pressable onPress={handleCheckPress} hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} className="w-7 h-7 items-center justify-center active:opacity-70">
           {isPR ? (
             // 22px iguala el diámetro relleno real del CheckCircle2 (size=26 → r=10 en viewbox 24)
             <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center' }}>
@@ -220,62 +248,35 @@ function SetRow({
     return (
       <Pressable
         onPress={handleCheckPress}
-        disabled={!valid}
+        disabled={!isValid()}
+        hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
         className="w-7 h-7 items-center justify-center active:opacity-70"
-        style={{ opacity: valid ? 1 : 0.6 }}
+        style={{ opacity: isValid() ? 1 : 0.6 }}
       >
         <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: isActive ? colors.success : colors.textMuted }} />
       </Pressable>
     )
   }
 
-  const trailingActions = (
-    <>
-      {isCompleted && setData?.setType === 'dropset' && (
-        <View className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.orangeBg }}>
-          <Text className="text-xs font-bold" style={{ color: colors.orange }}>D</Text>
-        </View>
-      )}
-      {isCompleted && hasTextNote && (
-        <Pressable onPress={handleEditPress} style={smallBadgeStyle}>
-          <FileText size={13} color={colors.textSecondary} />
-        </Pressable>
-      )}
-      {videoUploadError && (
-        <Pressable onPress={handleRetryVideoUpload} style={{ ...smallBadgeStyle, backgroundColor: colors.dangerBg }}>
-          <AlertCircle size={13} color={colors.danger} />
-        </Pressable>
-      )}
-      {isUploadingVideo && (
-        <View style={{ ...smallBadgeStyle, paddingHorizontal: 7, paddingVertical: 3 }}>
-          <Text style={{ color: colors.purple, fontSize: 11, fontWeight: '600' }}>{uploadProgress}%</Text>
-        </View>
-      )}
-      {isCompleted && hasVideo && !isUploadingVideo && !videoUploadError && (
-        <Pressable onPress={handleEditPress} style={smallBadgeStyle}>
-          <Video size={13} color={colors.textSecondary} />
-        </Pressable>
-      )}
-      {isCompleted && setData?.rirActual != null && (
-        <Pressable onPress={handleEditPress} style={{ ...smallBadgeStyle, paddingHorizontal: 7, paddingVertical: 3 }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>
-            {formatEffortBadge(setData.rirActual, measurementType)}
-          </Text>
-        </Pressable>
-      )}
-      {renderCheckIndicator()}
-    </>
-  )
-
   return (
     <>
       <View className="flex-row items-center py-2.5 px-2 rounded-lg" style={{ gap: 12, ...baseRowStyle }}>
-        {setNumberText}
+        <View style={{ width: COL_SET, alignItems: 'center', justifyContent: 'center' }}>
+          {renderSetCell()}
+        </View>
         <View className="flex-row items-center flex-1" style={{ gap: 8 }}>
           {renderInputs()}
         </View>
-        <View className="flex-row items-center justify-end" style={{ gap: 6, width: 132 }}>
-          {trailingActions}
+        {/* Columna RIR: se colapsa si show_rir_input está off (misma condición que la cabecera).
+            weight_reps: ancho fijo (alineada). Otros tipos: ancho natural (la etiqueta «Esfuerzo»
+            no cabe en 46px y no hay cabecera que la alinee). */}
+        {showRirInput && (
+          <View style={{ width: isWeightReps ? COL_RIR : undefined, alignItems: 'center', justifyContent: 'center' }}>
+            {showEffort && <EffortPicker value={rir} onChange={setRir} measurementType={measurementType} active={isActive} emptyDash={isWeightReps} />}
+          </View>
+        )}
+        <View style={{ width: COL_CHECK, alignItems: 'center', justifyContent: 'center' }}>
+          {renderCheckIndicator()}
         </View>
       </View>
 
@@ -283,17 +284,11 @@ function SetRow({
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleModalSubmit}
-        mode={modalMode}
         setNumber={setNumber}
-        descansoSeg={descansoSeg}
-        initialRir={initialData?.rirActual}
-        initialNote={initialData?.notes}
-        initialVideoUrl={initialData?.videoUrl}
-        initialSetType={initialData?.setType}
-        measurementType={measurementType}
-        weight={weight} setWeight={setWeight}
-        reps={reps} setReps={setReps}
-        weightUnit={weightUnit}
+        allowVideo={isCompleted}
+        initialNote={notes}
+        initialVideoUrl={setData?.videoUrl}
+        initialSetType={setType}
       />
     </>
   )

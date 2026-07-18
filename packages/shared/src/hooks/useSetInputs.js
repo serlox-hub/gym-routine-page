@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useWorkoutStore } from './_stores.js'
-import { useUpdateCompletedSet } from './useCompletedSets.js'
+import { useUpdateCompletedSet, useUpdateSetDetails } from './useCompletedSets.js'
 import {
   createSetKey,
   isSetDataValid,
@@ -38,6 +38,7 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measure
   const cachedData = useWorkoutStore(state => state.cachedSetData[setKey])
   const setCachedSetData = useWorkoutStore(state => state.setCachedSetData)
   const { mutate: updateCompletedSet } = useUpdateCompletedSet()
+  const { mutate: updateSetDetails } = useUpdateSetDetails()
 
   // Valores iniciales de los inputs: caché de edición > datos completados (una vez, al montar)
   const [initValues] = useState(() => getSetInitialInputValues({ setData, cachedData, distanceUnit }))
@@ -48,6 +49,39 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measure
   const [calories, setCalories] = useState(initValues.calories)
   const [level, setLevel] = useState(initValues.level)
   const [pace, setPace] = useState(initValues.pace)
+
+  // Detalles de la serie (esfuerzo, notas, tipo): grupo que se persiste junto (la API
+  // updateSetDetails reescribe rir_actual + notes + set_type). Estado local para feedback
+  // inmediato. Se pueden editar ANTES de completar: se cachean en el store y se aplican en
+  // buildCompletedSetData al completar (mismo patrón que las mediciones). El vídeo NO va en
+  // este grupo (se adjunta a una serie ya completada; ver SetRow).
+  // Ojo: `??` (no `||`) porque 0 y -1 (F) son valores de RIR válidos; setType por defecto 'normal'.
+  const [rir, setRirState] = useState(() => cachedData?.rirActual ?? setData?.rirActual ?? null)
+  const [notes, setNotesState] = useState(() => cachedData?.notes ?? setData?.notes ?? null)
+  const [setType, setSetTypeState] = useState(() => cachedData?.setType ?? setData?.setType ?? 'normal')
+
+  // Persiste el grupo de detalles: completada → updateSetDetails (in situ, sin desmarcar y
+  // sin videoUrl → la API preserva el vídeo); no completada → caché en el store (merge, no
+  // pisa mediciones porque setMeasurementValuesChanged solo compara claves de medición).
+  const persistDetails = useCallback((group) => {
+    if (isCompleted) {
+      updateSetDetails({ sessionExerciseId, setNumber, rirActual: group.rir, notes: group.notes, setType: group.setType })
+    } else {
+      setCachedSetData(sessionExerciseId, setNumber, { rirActual: group.rir, notes: group.notes, setType: group.setType })
+    }
+  }, [isCompleted, sessionExerciseId, setNumber, updateSetDetails, setCachedSetData])
+
+  const setRir = useCallback((value) => {
+    setRirState(value)
+    persistDetails({ rir: value, notes, setType })
+  }, [persistDetails, notes, setType])
+
+  // Guardar notas + tipo de serie juntos (desde la hoja de detalles), preservando el RIR.
+  const saveDetails = useCallback(({ notes: nextNotes, setType: nextSetType }) => {
+    setNotesState(nextNotes)
+    setSetTypeState(nextSetType)
+    persistDetails({ rir, notes: nextNotes, setType: nextSetType })
+  }, [persistDetails, rir])
 
   // Prefill de la sesión anterior: llega asíncrono; solo rellena campos aún vacíos
   // y solo si no hay datos completados ni cacheados (para no pisar lo que el usuario escriba).
@@ -103,6 +137,8 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measure
     calories, setCalories,
     level, setLevel,
     pace, setPace,
+    rir, setRir,
+    notes, setType, saveDetails,
     isCompleted,
     setData,
     cachedData,

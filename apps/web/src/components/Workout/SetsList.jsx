@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { CircleMinus, CirclePlus } from 'lucide-react'
-import SetRow from './SetRow.jsx'
+import SetRow, { GRID_WITH_RIR, GRID_NO_RIR } from './SetRow.jsx'
 import PreviousWorkout from './PreviousWorkout.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
+import { usePreferences } from '../../hooks/usePreferences.js'
 import { colors } from '../../lib/styles.js'
 import { MeasurementType } from '@gym/shared'
 
@@ -23,6 +24,8 @@ function SetsList({
   onAddSet,
 }) {
   const { t } = useTranslation()
+  const { data: preferences } = usePreferences()
+  const showRirInput = preferences?.show_rir_input ?? true
   const completedSets = useWorkoutStore(state => state.completedSets)
   const showWeightReps = measurementType === MeasurementType.WEIGHT_REPS
   const activeSetNumber = (() => {
@@ -38,9 +41,10 @@ function SetsList({
         <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
       </div>
 
-      {/* Column headers (only for weight_reps) */}
+      {/* Column headers (only for weight_reps) — grid desde las constantes de SetRow (fuente
+          única) con la misma condición show_rir_input para colapsar la columna RIR */}
       {showWeightReps && setsCount > 0 && (
-        <div className="grid items-center gap-3 mb-3 px-1" style={{ gridTemplateColumns: '48px 1fr 1fr 132px' }}>
+        <div className="grid items-center gap-3 mb-3 px-1" style={{ gridTemplateColumns: showRirInput ? GRID_WITH_RIR : GRID_NO_RIR }}>
           <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
             {t('workout:set.set').toUpperCase()}
           </span>
@@ -50,6 +54,11 @@ function SetsList({
           <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
             {t('workout:set.reps').toUpperCase()}
           </span>
+          {showRirInput && (
+            <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
+              {t('workout:set.rir').toUpperCase()}
+            </span>
+          )}
           <span />
         </div>
       )}

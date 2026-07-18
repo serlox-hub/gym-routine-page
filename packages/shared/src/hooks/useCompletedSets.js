@@ -268,6 +268,7 @@ export function useUpdateSetDetails() {
       updateSetDetails(variables.sessionExerciseId, variables.setNumber, {
         rirActual: variables.rirActual,
         notes: variables.notes,
+        videoUrl: variables.videoUrl,
         setType: variables.setType,
       })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })

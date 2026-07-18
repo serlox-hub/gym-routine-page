@@ -205,12 +205,18 @@ export function workoutStoreState(set, get) {
       }
     }),
 
-    // Update RIR and notes for a completed set (without uncompleting)
-    updateSetDetails: (sessionExerciseId, setNumber, { rirActual, notes }) => set(state => {
+    // Update RIR/notes (and optionally setType/videoUrl) of a completed set without
+    // uncompleting. setType/videoUrl solo se aplican si llegan definidos (no pisar con
+    // undefined cuando la mutación solo actualiza el esfuerzo). Nota: hoy ningún caller pasa
+    // videoUrl por aquí (el vídeo va por updateSetVideo); la guarda se mantiene para que el
+    // store quede consistente con la API si en el futuro se reusa esta mutación con vídeo.
+    updateSetDetails: (sessionExerciseId, setNumber, { rirActual, notes, videoUrl, setType }) => set(state => {
       const key = `${sessionExerciseId}-${setNumber}`
       const existing = state.completedSets[key]
       if (!existing) return state
       const updated = { ...existing, rirActual, notes }
+      if (videoUrl !== undefined) updated.videoUrl = videoUrl
+      if (setType !== undefined) updated.setType = setType
       return {
         completedSets: {
           ...state.completedSets,
