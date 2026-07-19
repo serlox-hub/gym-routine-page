@@ -6,6 +6,7 @@ import { useIsPRSet } from './PRContext.jsx'
 import SetDetailsModal from './SetDetailsModal.jsx'
 import EffortPicker from './EffortPicker.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs.jsx'
+import PreviousSetCell from './PreviousSetCell.jsx'
 import {
   MeasurementType,
   buildCompletedSetData,
@@ -16,13 +17,20 @@ import { usePreferences } from '../../hooks/usePreferences.js'
 import { useUpdateSetVideo } from '../../hooks/useWorkout.js'
 import { uploadVideo } from '../../lib/videoStorage.js'
 
-// Layout columnar (tipo hoja de cálculo, patrón Strong/Hevy): SET · KG · REPS · [RIR] · ✓.
+// Layout columnar (tipo hoja de cálculo, patrón Strong/Hevy): SET · ANTERIOR · KG · REPS · [RIR] · ✓.
 // La celda SET es la identidad de la serie (nº / «D» dropset / punto si hay nota o vídeo) y
-// abre la hoja de detalles. La columna RIR se colapsa si el usuario desactiva show_rir_input.
+// abre la hoja de detalles. La columna ANTERIOR muestra la misma serie de la última sesión
+// (ver PreviousSetCell). La columna RIR se colapsa si el usuario desactiva show_rir_input.
 // Fuente única del grid (SetsList importa estas constantes para su cabecera → sin desincronizar).
-const COL_SET = 40 // ancho de la columna SET; compone el grid y la rama no-grid (sin magic numbers)
-export const GRID_WITH_RIR = `${COL_SET}px 1fr 1fr 46px 38px`
-export const GRID_NO_RIR = `${COL_SET}px 1fr 1fr 38px`
+// Anchos afinados para móvil (360-390px): las columnas fijas se comen el hueco de KG/REPS, así que
+// se recortaron al mínimo legible (SET cabe «D» de 26px; PREV cabe "70kg × 6", sobra → elipsis;
+// RIR cabe el chip de 34px; ✓ cabe el check de 26px). Ver docs/DECISIONS.md (#9 · optimización móvil).
+const COL_SET = 36 // ancho de la columna SET; compone el grid y la rama no-grid (sin magic numbers)
+const COL_PREV = 54 // ancho de la columna ANTERIOR
+const COL_RIR = 42
+const COL_CHECK = 34
+export const GRID_WITH_RIR = `${COL_SET}px ${COL_PREV}px 1fr 1fr ${COL_RIR}px ${COL_CHECK}px`
+export const GRID_NO_RIR = `${COL_SET}px ${COL_PREV}px 1fr 1fr ${COL_CHECK}px`
 
 function SetRow({
   setNumber,
@@ -222,11 +230,13 @@ function SetRow({
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'transparent', border: 'none', padding: '4px 8px',
         }}>
-        {/* punto de detalle anclado al glifo (nº o «D»), no al padding del botón */}
-        <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+        {/* punto de detalle anclado al glifo (nº o «D»), no al padding del botón. Posición vertical
+            anclada al CENTRO de fila (top:50% + translateY) — no al alto del glifo — para que quede
+            a la MISMA altura que el punto de la columna ANTERIOR (texto más pequeño). Ver PreviousSetCell. */}
+        <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
           {content}
           {(hasTextNote || hasVideo) && (
-            <span style={{ position: 'absolute', top: -2, right: -3, width: 6, height: 6, borderRadius: '50%', backgroundColor: colors.textLight }} />
+            <span style={{ position: 'absolute', top: '50%', right: -3, width: 6, height: 6, borderRadius: '50%', backgroundColor: colors.textLight, transform: 'translateY(calc(-50% - 6px))' }} />
           )}
         </span>
       </button>
@@ -272,10 +282,13 @@ function SetRow({
     <>
       {isWeightReps ? (
         <div
-          className="grid items-center gap-3 py-2.5 px-2 rounded-lg"
+          className="grid items-center gap-2 py-2.5 px-1 rounded-lg"
           style={{ gridTemplateColumns: showRirInput ? GRID_WITH_RIR : GRID_NO_RIR, ...baseRowStyle }}
         >
           <div className="flex items-center justify-center">{renderSetCell()}</div>
+          <div className="flex items-center justify-center" style={{ minWidth: 0 }}>
+            <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+          </div>
           {renderInputs()}
           {showRirInput && (
             <div className="flex items-center justify-center">
@@ -286,10 +299,13 @@ function SetRow({
         </div>
       ) : (
         <div
-          className="flex items-center gap-3 py-2.5 px-2 rounded-lg"
+          className="flex items-center gap-2 py-2.5 px-1 rounded-lg"
           style={baseRowStyle}
         >
           <div className="flex items-center justify-center" style={{ width: COL_SET, flexShrink: 0 }}>{renderSetCell()}</div>
+          <div className="flex items-center justify-center" style={{ minWidth: COL_PREV, flexShrink: 0 }}>
+            <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+          </div>
           <div className="flex items-center gap-2 flex-1">{renderInputs()}</div>
           {showEffort && <EffortPicker value={rir} onChange={setRir} measurementType={measurementType} active={isActive} />}
           <div className="flex items-center justify-center">{renderCheckIndicator()}</div>

@@ -600,6 +600,16 @@ describe('setUtils', () => {
       expect(formatSetValueByType({ distanceMeters: 500, timeSeconds: 120 }, 'distance_time'))
         .toBe('500m × 120s')
     })
+
+    it('omite la unidad de peso con hideWeightUnit (columna ANTERIOR)', () => {
+      expect(formatSetValueByType({ weight: 82.5, weightUnit: 'kg', reps: 12 }, 'weight_reps', { hideWeightUnit: true }))
+        .toBe('82,5 × 12')
+    })
+
+    it('hideWeightUnit no afecta a la sección de reps ni a tipos sin peso', () => {
+      expect(formatSetValueByType({ reps: 15 }, 'reps_only', { hideWeightUnit: true }))
+        .toBe('15 reps')
+    })
   })
 
   describe('formatPreviousSetValue', () => {
@@ -628,6 +638,11 @@ describe('setUtils', () => {
     it('respeta weightUnit', () => {
       expect(formatPreviousSetValue({ weight: 80, distanceMeters: 100 }, 'weight_distance', { weightUnit: 'lb' }))
         .toBe('80lb × 100m')
+    })
+
+    it('propaga hideWeightUnit', () => {
+      expect(formatPreviousSetValue({ weight: 75, reps: 6 }, 'weight_reps', { hideWeightUnit: true }))
+        .toBe('75 × 6')
     })
   })
 

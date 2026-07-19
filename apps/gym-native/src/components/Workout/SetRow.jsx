@@ -5,6 +5,7 @@ import { useIsPRSet } from './PRContext'
 import SetDetailsModal from './SetDetailsModal'
 import EffortPicker from './EffortPicker'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs'
+import PreviousSetCell from './PreviousSetCell'
 import {
   MeasurementType,
   buildCompletedSetData,
@@ -18,11 +19,15 @@ import { uploadVideo } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
 
 // Anchos de columna del layout columnar (deben coincidir con la cabecera de SetsList):
-// SET · [inputs flex] · RIR · ✓.
+// SET · ANTERIOR · [inputs flex] · RIR · ✓.
+// La columna ANTERIOR muestra la misma serie de la última sesión (ver PreviousSetCell); ancho
+// fijo solo en weight_reps (para alinear con la cabecera); otros tipos usan ancho de contenido.
 // Fuente única de anchos (SetsList importa estas constantes para su cabecera → sin desincronizar).
-export const COL_SET = 40
-export const COL_RIR = 46
-export const COL_CHECK = 38
+// Afinados para móvil estrecho (360-390px): las fijas comen el hueco de KG/REPS. Ver docs/DECISIONS.md.
+export const COL_SET = 36
+export const COL_PREV = 54
+export const COL_RIR = 42
+export const COL_CHECK = 34
 
 function SetRow({
   setNumber,
@@ -218,11 +223,13 @@ function SetRow({
         className="active:opacity-70"
         style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 }}
       >
-        {/* punto de detalle anclado al glifo (nº o «D»), no al padding del botón */}
+        {/* punto de detalle anclado al glifo (nº o «D»). Posición vertical anclada al CENTRO de fila
+            (top:50% + translateY) — no al alto del glifo — para quedar a la MISMA altura que el punto
+            de la columna ANTERIOR (texto más pequeño). Ver PreviousSetCell. */}
         <View style={{ position: 'relative' }}>
           {content}
           {(hasTextNote || hasVideo) && (
-            <View style={{ position: 'absolute', top: -2, right: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight }} />
+            <View style={{ position: 'absolute', top: '50%', right: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight, transform: [{ translateY: -9 }] }} />
           )}
         </View>
       </Pressable>
@@ -260,9 +267,14 @@ function SetRow({
 
   return (
     <>
-      <View className="flex-row items-center py-2.5 px-2 rounded-lg" style={{ gap: 12, ...baseRowStyle }}>
+      <View className="flex-row items-center py-2.5 px-1 rounded-lg" style={{ gap: 8, ...baseRowStyle }}>
         <View style={{ width: COL_SET, alignItems: 'center', justifyContent: 'center' }}>
           {renderSetCell()}
+        </View>
+        {/* Columna ANTERIOR: ancho fijo en weight_reps (alinea con la cabecera); en otros tipos
+            ancho de contenido para no truncar valores largos (p. ej. ritmo "5km @ 5:00/km"). */}
+        <View style={{ width: isWeightReps ? COL_PREV : undefined, flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
         </View>
         <View className="flex-row items-center flex-1" style={{ gap: 8 }}>
           {renderInputs()}

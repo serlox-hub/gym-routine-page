@@ -313,10 +313,13 @@ export function formatSetValue(set, { timeUnit = 's', distanceUnit = 'm' } = {})
  * Formatea el valor de una serie según el tipo de medición (para historial)
  * @param {{weight?: number, weightUnit?: string, reps?: number, timeSeconds?: number, distanceMeters?: number}} set - Datos de la serie
  * @param {string} measurementType - Tipo de medición
+ * @param {{timeUnit?: string, distanceUnit?: string, hideWeightUnit?: boolean}} [options]
+ *   hideWeightUnit: omite la unidad de peso (ej. "75 × 6" en vez de "75kg × 6"). Se usa en la
+ *   columna ANTERIOR de weight_reps, donde la cabecera KG ya indica la unidad (redundante).
  * @returns {string}
  */
-export function formatSetValueByType(set, measurementType, { timeUnit = 's', distanceUnit = 'm' } = {}) {
-  const wUnit = set.weightUnit || 'kg'
+export function formatSetValueByType(set, measurementType, { timeUnit = 's', distanceUnit = 'm', hideWeightUnit = false } = {}) {
+  const wUnit = hideWeightUnit ? '' : (set.weightUnit || 'kg')
   const fmtTime = (s) => timeUnit === 'min' ? formatSecondsAsMMSS(s) : `${s}s`
   const dVal = set.distanceMeters != null ? metersToDistanceUnit(set.distanceMeters, distanceUnit) : 0
   const fmtWeight = () => `${formatNumber(set.weight)}${wUnit}`
@@ -357,11 +360,11 @@ export function formatSetValueByType(set, measurementType, { timeUnit = 's', dis
 }
 
 /**
- * Formatea el valor de una serie para las tarjetas de "última sesión".
- * Mantiene la unidad de peso para que el usuario sepa qué número es peso y cuál reps.
+ * Formatea el valor de una serie para la columna ANTERIOR (referencia inline por fila).
+ * Con `hideWeightUnit` omite la unidad de peso (la cabecera KG ya la indica); ver formatSetValueByType.
  */
-export function formatPreviousSetValue(set, measurementType, { weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm' } = {}) {
-  return formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit })
+export function formatPreviousSetValue(set, measurementType, { weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm', hideWeightUnit = false } = {}) {
+  return formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit, hideWeightUnit })
 }
 
 /**

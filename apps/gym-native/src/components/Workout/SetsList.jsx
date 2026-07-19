@@ -1,12 +1,11 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { CircleMinus, CirclePlus } from 'lucide-react-native'
-import SetRow, { COL_SET, COL_RIR, COL_CHECK } from './SetRow'
-import PreviousWorkout from './PreviousWorkout'
+import { CircleMinus, CirclePlus, Clock } from 'lucide-react-native'
+import SetRow, { COL_SET, COL_PREV, COL_RIR, COL_CHECK } from './SetRow'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreferences } from '../../hooks/usePreferences'
 import { colors } from '../../lib/styles'
-import { MeasurementType } from '@gym/shared'
+import { MeasurementType, formatRelativeDate } from '@gym/shared'
 
 function SetsList({
   exerciseKey,
@@ -38,16 +37,32 @@ function SetsList({
 
   return (
     <>
-      <View style={{ marginTop: 12, marginBottom: 20 }}>
-        <PreviousWorkout exerciseId={exercise.id} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+      {/* Recencia de la referencia (la sesión anterior ahora se muestra inline por fila; ver
+          PreviousSetCell). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
+      <View style={{ marginTop: 12, marginBottom: 12 }}>
+        {previousWorkout === undefined ? (
+          <View style={{ height: 16, width: 160, borderRadius: 4, backgroundColor: colors.bgTertiary }} />
+        ) : previousWorkout ? (
+          <View className="flex-row items-center" style={{ gap: 6 }}>
+            <Clock size={12} color={colors.textSecondary} />
+            <Text className="text-xs" style={{ color: colors.textSecondary }}>
+              {t('workout:set.lastSession', { when: formatRelativeDate(previousWorkout.date) })}
+            </Text>
+          </View>
+        ) : (
+          <Text className="text-xs" style={{ color: colors.textSecondary }}>{t('workout:set.firstTime')}</Text>
+        )}
       </View>
 
       {/* Cabecera de columnas (solo weight_reps) — anchos desde las constantes de SetRow (fuente
           única). Columna RIR condicional a show_rir_input (igual que SetRow). */}
       {showWeightReps && setsCount > 0 && (
-        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12, paddingHorizontal: 4 }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, paddingHorizontal: 4 }}>
           <Text style={{ width: COL_SET, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
             {t('workout:set.set').toUpperCase()}
+          </Text>
+          <Text style={{ width: COL_PREV, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
+            {t('workout:set.previous').toUpperCase()}
           </Text>
           <Text style={{ flex: 1, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
             {weightUnit?.toUpperCase() || 'KG'}

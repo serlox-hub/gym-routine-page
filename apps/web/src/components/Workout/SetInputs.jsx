@@ -110,14 +110,16 @@ function TimeInput({ time, setTime, disabled, timeUnit = 's', active = false }) 
 }
 
 export function WeightRepsInputs({ weight, setWeight, reps, setReps, weightUnit, disabled, repsLabel = 'reps', hideUnits = false, active = false, repsPlaceholder }) {
+  // min-w-0: en el grid columnar (SetRow weight_reps) el ancho intrínseco del <input> impide que
+  // la columna 1fr encoja en móvil estrecho → sin esto la fila desborda. Deja que el input se ajuste.
   return (
     <>
-      <div className="flex items-center gap-1 flex-1">
+      <div className="flex items-center gap-1 flex-1 min-w-0">
         <NumberInput value={weight} onChange={setWeight} disabled={disabled} inputMode="decimal" width="w-full" active={active} />
         {!hideUnits && <span className="text-xs text-muted">{weightUnit}</span>}
       </div>
       {!hideUnits && <span className="text-secondary text-sm">×</span>}
-      <div className="flex items-center gap-1 flex-1">
+      <div className="flex items-center gap-1 flex-1 min-w-0">
         <NumberInput value={reps} onChange={setReps} disabled={disabled} width="w-full" active={active} placeholder={repsPlaceholder} />
         {!hideUnits && <span className="text-xs text-muted">{repsLabel}</span>}
       </div>
