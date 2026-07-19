@@ -43,6 +43,7 @@ export function useSessionPRDetection() {
 
   // Cache de bests pre-sesión por ejercicio: { [exerciseId]: Promise | bests | 'none' }.
   // Guarda la promesa en vuelo para deduplicar peticiones concurrentes del mismo ejercicio.
+  // Se rellena en lote (prewarmPreSessionBests) y se lee sin lanzar peticiones (readPreSessionBests).
   const preSessionBestsRef = useRef({})
   // Keys "sessionExerciseId-setNumber" ya celebrados esta sesión (grow-only, evita re-toast).
   const notifiedKeysRef = useRef(new Set())
@@ -65,33 +66,49 @@ export function useSessionPRDetection() {
     if (timerRef.current) clearTimeout(timerRef.current)
   }, [])
 
-  // Bests pre-sesión con cache de promesa compartida (una sola petición por ejercicio).
-  // Devuelve el objeto de bests o 'none' (primera vez del ejercicio / sin historial).
-  const getPreSessionBests = useCallback(async (exerciseId) => {
-    // Devuelve el valor cacheado o la promesa en vuelo; el llamador hace await de ambos.
-    // Un fallo transitorio de red se normaliza a 'none' PERO no se cachea (sentinel
-    // 'error'): así un blip no desactiva la detección de PR del ejercicio el resto de la
-    // sesión; se reintenta en el próximo recálculo (complete/edit, ya debounced).
-    const cached = preSessionBestsRef.current[exerciseId]
-    if (cached !== undefined) {
-      const value = await cached
-      return value === 'error' ? 'none' : value
+  // Prewarm en lote: resuelve los bests de TODOS los ejercicios en UNA sola petición
+  // (fetchExerciseBests acepta un array) y siembra el cache por-ejercicio. Al restaurar una
+  // sesión con N ejercicios ya completados esto sustituye N round-trips en serie por uno solo
+  // (crítico en wifi de gimnasio). Idempotente: solo pide los ids aún no cacheados, así en
+  // vivo (ejercicio ya cacheado de un pase anterior) no genera peticiones extra.
+  //
+  // Sembramos cada slot con una promesa derivada del lote ANTES de esperar → dos pases
+  // concurrentes del efecto (edición encadenada, StrictMode) comparten el mismo fetch. Un
+  // fallo transitorio se trata como 'none' este pase PERO no se cachea (sentinel 'error'):
+  // se reintenta en el próximo recálculo (ya debounced), igual que antes. La reconciliación
+  // final solo toca los slots que siguen siendo NUESTRA promesa (identidad), para no pisar un
+  // reset de gym que limpió el cache a mitad de vuelo.
+  const prewarmPreSessionBests = useCallback(async (exerciseIds) => {
+    const missing = [...new Set(exerciseIds)].filter(
+      id => preSessionBestsRef.current[id] === undefined
+    )
+    if (missing.length === 0) return
+
+    const batch = fetchExerciseBests(missing, { gymId }).catch(() => 'error')
+    const seeded = new Map()
+    for (const id of missing) {
+      const perId = batch.then(all => (all === 'error' ? 'error' : (all[id] || 'none')))
+      seeded.set(id, perId)
+      preSessionBestsRef.current[id] = perId
     }
 
-    const promise = fetchExerciseBests([exerciseId], { gymId })
-      .then(allBests => allBests[exerciseId] || 'none')
-      .catch(() => 'error')
-    preSessionBestsRef.current[exerciseId] = promise
-    const resolved = await promise
-    if (resolved === 'error') {
-      if (preSessionBestsRef.current[exerciseId] === promise) {
-        delete preSessionBestsRef.current[exerciseId]
-      }
-      return 'none'
+    const all = await batch
+    for (const id of missing) {
+      if (preSessionBestsRef.current[id] !== seeded.get(id)) continue // reset de gym / recolocado
+      if (all === 'error') delete preSessionBestsRef.current[id] // no cachear el fallo → reintento
+      else preSessionBestsRef.current[id] = all[id] || 'none' // promesa en vuelo → valor resuelto
     }
-    preSessionBestsRef.current[exerciseId] = resolved
-    return resolved
   }, [gymId])
+
+  // Lectura del cache SIN lanzar petición (el fetch lo hace prewarmPreSessionBests en lote).
+  // Devuelve el objeto de bests o 'none' (primera vez / sin historial / id no prewarmeado /
+  // fallo transitorio). Espera la promesa en vuelo si el prewarm aún no ha resuelto ese id.
+  const readPreSessionBests = useCallback(async (exerciseId) => {
+    const cached = preSessionBestsRef.current[exerciseId]
+    if (cached === undefined) return 'none'
+    const value = await cached
+    return value === 'error' ? 'none' : value
+  }, [])
 
   // Unidad de peso efectiva del ejercicio (override > preferencia global). El override
   // puede no estar en caché si nunca se montó su card → fetch como fallback.
@@ -120,7 +137,7 @@ export function useSessionPRDetection() {
   // mitad de sesión, invalidar todo el estado de PR para recalcular contra el historial
   // del nuevo gym. Debe ir declarado ANTES del efecto de derivación: así resetPRState
   // limpia el cache de bests (síncrono) antes de que la derivación lo relea al re-correr
-  // (getPreSessionBests depende de gymId). El siguiente pase re-siembra el baseline en
+  // (prewarmPreSessionBests depende de gymId). El siguiente pase re-siembra el baseline en
   // silencio → sin toasts de las series ya hechas.
   useEffect(() => {
     resetPRState()
@@ -140,6 +157,16 @@ export function useSessionPRDetection() {
         else byExercise.set(set.sessionExerciseId, [set])
       }
 
+      // Prewarm en lote de los bests de todos los ejercicios con series completadas: una sola
+      // petición antes del bucle (evita N round-trips en serie al restaurar la sesión).
+      const exerciseIds = []
+      for (const sessionExerciseId of byExercise.keys()) {
+        const se = sessionExercises.find(s => s.id === sessionExerciseId)
+        if (se) exerciseIds.push(se.exercise_id)
+      }
+      await prewarmPreSessionBests(exerciseIds)
+      if (cancelled) return
+
       const nextKeys = new Set()
       // Contexto por serie-PR para resolver la notificación de las que transicionen.
       const prContextByKey = new Map()
@@ -147,7 +174,7 @@ export function useSessionPRDetection() {
         const sessionExercise = sessionExercises.find(se => se.id === sessionExerciseId)
         if (!sessionExercise) continue
         const measurementType = sessionExercise.exercise?.measurement_type || 'weight_reps'
-        const preBests = await getPreSessionBests(sessionExercise.exercise_id)
+        const preBests = await readPreSessionBests(sessionExercise.exercise_id)
         if (cancelled) return
         if (preBests === 'none') continue
 
@@ -194,7 +221,7 @@ export function useSessionPRDetection() {
     })()
 
     return () => { cancelled = true }
-  }, [completedSets, sessionExercises, sessionId, getPreSessionBests, resolveExerciseWeightUnit, showPRNotification])
+  }, [completedSets, sessionExercises, sessionId, prewarmPreSessionBests, readPreSessionBests, resolveExerciseWeightUnit, showPRNotification])
 
   // Limpiar timer al desmontar
   useEffect(() => {

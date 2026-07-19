@@ -53,6 +53,9 @@ describe('useSessionPRDetection', () => {
     mockStore.sessionId = 'session-1'
     mockStore.gymId = 'gym-1'
     mockStore.completedSets = {}
+    mockSessionExercises.data = [
+      { id: 'se1', exercise_id: 101, exercise: { measurement_type: 'weight_reps', name: 'Press Banca' } },
+    ]
   })
 
   it('sesión restaurada con un PR: muestra trofeo pero NO celebra (baseline silencioso)', async () => {
@@ -104,6 +107,60 @@ describe('useSessionPRDetection', () => {
 
     await waitFor(() => expect(result.current.prSets.size).toBeGreaterThan(0))
     expect(fetchExerciseBests.mock.calls.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('restaurar sesión con varios ejercicios: un único fetch en lote (no N en serie)', async () => {
+    mockSessionExercises.data = [
+      { id: 'se1', exercise_id: 101, exercise: { measurement_type: 'weight_reps', name: 'Press Banca' } },
+      { id: 'se2', exercise_id: 102, exercise: { measurement_type: 'weight_reps', name: 'Sentadilla' } },
+    ]
+    mockStore.completedSets = {
+      'se1-1': completed(1, 110, 5),
+      'se2-1': { sessionExerciseId: 'se2', setNumber: 1, weight: 130, repsCompleted: 5 },
+    }
+    fetchExerciseBests.mockResolvedValue({
+      101: { bestWeight: 100, best1rm: 120 },
+      102: { bestWeight: 120, best1rm: 140 },
+    })
+
+    const { result } = renderHook(() => useSessionPRDetection(), { wrapper: createWrapper() })
+
+    await waitFor(() => expect(result.current.prSets.has('se1-1')).toBe(true))
+    expect(result.current.prSets.has('se2-1')).toBe(true)
+    // Una sola petición para ambos ejercicios (no una por ejercicio en serie).
+    expect(fetchExerciseBests).toHaveBeenCalledTimes(1)
+    expect(fetchExerciseBests.mock.calls[0][0].sort()).toEqual([101, 102])
+    expect(fetchExerciseBests.mock.calls[0][1]).toEqual({ gymId: 'gym-1' })
+  })
+
+  it('cache parcial: al añadir un ejercicio en vivo solo pide el faltante (no re-pide el cacheado)', async () => {
+    mockSessionExercises.data = [
+      { id: 'se1', exercise_id: 101, exercise: { measurement_type: 'weight_reps', name: 'Press Banca' } },
+      { id: 'se2', exercise_id: 102, exercise: { measurement_type: 'weight_reps', name: 'Sentadilla' } },
+    ]
+    mockStore.completedSets = { 'se1-1': completed(1, 110, 5) }
+    fetchExerciseBests.mockResolvedValue({
+      101: { bestWeight: 100, best1rm: 120 },
+      102: { bestWeight: 120, best1rm: 140 },
+    })
+
+    const { result, rerender } = renderHook(() => useSessionPRDetection(), { wrapper: createWrapper() })
+
+    // Primer pase: solo se1 tiene serie → lote con [101]
+    await waitFor(() => expect(result.current.prSets.has('se1-1')).toBe(true))
+    expect(fetchExerciseBests).toHaveBeenCalledTimes(1)
+    expect(fetchExerciseBests.mock.calls[0][0]).toEqual([101])
+
+    // En vivo se completa una serie de se2: prewarm debe pedir SOLO [102] (101 ya cacheado)
+    mockStore.completedSets = {
+      'se1-1': completed(1, 110, 5),
+      'se2-1': { sessionExerciseId: 'se2', setNumber: 1, weight: 130, repsCompleted: 5 },
+    }
+    rerender()
+
+    await waitFor(() => expect(result.current.prSets.has('se2-1')).toBe(true))
+    expect(fetchExerciseBests).toHaveBeenCalledTimes(2)
+    expect(fetchExerciseBests.mock.calls[1][0]).toEqual([102])
   })
 
   it('cambiar de gimnasio invalida el cache (refetch) y no dispara toast', async () => {
