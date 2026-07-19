@@ -44,7 +44,6 @@ flowchart LR
     ROUTINE_DETAIL -->|"edit"| ROUTINE_EDIT["Routine Edit Mode"]:::page
     ROUTINE_DETAIL --> CONFIRM_MODAL
 
-    ROUTINE_EDIT --> ADD_DAY["AddDayModal"]:::modal
     ROUTINE_EDIT --> ADD_EXERCISE_MODAL["AddExerciseModal"]:::modal
     ROUTINE_EDIT --> EDIT_RE["EditRoutineExerciseModal"]:::modal
     ROUTINE_EDIT --> MOVE_DAY["MoveToDayModal"]:::modal

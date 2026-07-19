@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCreateExercise, useUpdateExercise, useExercise, useUserExerciseOverride, useUpsertUserExerciseOverride } from '../../hooks/useExercises.js'
 import { getExerciseInstructions } from '@gym/shared'
-import { Modal } from '../ui/index.js'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm.jsx'
 import ExerciseForm from './ExerciseForm.jsx'
 import SystemExerciseDetailsPanel from './SystemExerciseDetailsPanel.jsx'
@@ -96,21 +95,5 @@ export function ExerciseFormPanel({ exerciseId = null, isSystem, initialName = '
         submitLabel={isEdit ? t('common:buttons.save') : t('common:buttons.add')}
       />
     </div>
-  )
-}
-
-export default function ExerciseFormModal({ isOpen, onClose, exerciseId = null, initialName = '' }) {
-  const { t } = useTranslation()
-  const isEdit = !!exerciseId
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} position="center" maxWidth="max-w-md">
-      <div className="p-4" style={{ borderBottom: `1px solid ${colors.border}` }}>
-        <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-          {isEdit ? t('exercise:edit') : t('exercise:new')}
-        </p>
-      </div>
-      <ExerciseFormPanel exerciseId={exerciseId} initialName={initialName} onClose={onClose} />
-    </Modal>
   )
 }
