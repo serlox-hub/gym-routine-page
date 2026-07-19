@@ -97,6 +97,7 @@
     "noExercises": "No exercises available"
   },
   "exercise": {
+    "expand": "Expand exercise",
     "removeFromSession": "Remove from session",
     "removeFromSessionConfirm": "Remove \"{{name}}\" from this session? It will still be available in the routine.",
     "updateFailed": "Could not save the exercise. Try again.",

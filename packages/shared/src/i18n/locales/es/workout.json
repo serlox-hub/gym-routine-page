@@ -97,6 +97,7 @@
     "noExercises": "No hay ejercicios disponibles"
   },
   "exercise": {
+    "expand": "Expandir ejercicio",
     "removeFromSession": "Quitar de la sesión",
     "removeFromSessionConfirm": "¿Quitar \"{{name}}\" de esta sesión? Seguirá disponible en la rutina.",
     "updateFailed": "No se pudo guardar el ejercicio. Inténtalo de nuevo.",

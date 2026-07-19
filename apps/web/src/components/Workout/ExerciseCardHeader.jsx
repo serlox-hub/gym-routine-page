@@ -69,8 +69,8 @@ function ExerciseCardHeader({
         {collapsed ? (
           <button
             onClick={onToggleCollapse}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
-            aria-label={t('common:buttons.next')}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            aria-label={t('workout:exercise.expand')}
           >
             <ChevronDown size={18} color={colors.textMuted} />
           </button>

@@ -26,6 +26,9 @@ import { colors } from '../../lib/styles'
 // Afinados para móvil estrecho (360-390px): las fijas comen el hueco de KG/REPS. Ver docs/DECISIONS.md.
 export const COL_SET = 36
 export const COL_PREV = 54
+// COL_RIR/COL_CHECK se quedan en 42/34 (NO 44 como web): el área táctil de 44px se logra con
+// hitSlop en los botones, no ensanchando la columna → se conserva el hueco de KG/REPS sin perder
+// a11y. No subir a 44 "por paridad" ni bajar web a 34. Ver docs/DECISIONS.md (#10).
 export const COL_RIR = 42
 export const COL_CHECK = 34
 
@@ -203,7 +206,13 @@ function SetRow({
     }
     if (videoUploadError) {
       return (
-        <Pressable onPress={handleRetryVideoUpload} className="active:opacity-70">
+        <Pressable
+          onPress={handleRetryVideoUpload}
+          hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('common:buttons.retry')}
+          className="active:opacity-70"
+        >
           <AlertCircle size={16} color={colors.danger} />
         </Pressable>
       )
@@ -220,6 +229,8 @@ function SetRow({
       <Pressable
         onPress={() => setShowModal(true)}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel={t('workout:set.moreOptions')}
         className="active:opacity-70"
         style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 }}
       >
@@ -239,7 +250,7 @@ function SetRow({
   const renderCheckIndicator = () => {
     if (isCompleted) {
       return (
-        <Pressable onPress={handleCheckPress} hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} className="w-7 h-7 items-center justify-center active:opacity-70">
+        <Pressable onPress={handleCheckPress} hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={t('workout:set.unmark')} className="w-7 h-7 items-center justify-center active:opacity-70">
           {isPR ? (
             // 22px iguala el diámetro relleno real del CheckCircle2 (size=26 → r=10 en viewbox 24)
             <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center' }}>
@@ -257,6 +268,9 @@ function SetRow({
         onPress={handleCheckPress}
         disabled={!isValid()}
         hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel={t('workout:set.complete')}
+        accessibilityState={{ disabled: !isValid() }}
         className="w-7 h-7 items-center justify-center active:opacity-70"
         style={{ opacity: isValid() ? 1 : 0.6 }}
       >

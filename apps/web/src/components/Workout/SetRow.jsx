@@ -23,12 +23,14 @@ import { uploadVideo } from '../../lib/videoStorage.js'
 // (ver PreviousSetCell). La columna RIR se colapsa si el usuario desactiva show_rir_input.
 // Fuente única del grid (SetsList importa estas constantes para su cabecera → sin desincronizar).
 // Anchos afinados para móvil (360-390px): las columnas fijas se comen el hueco de KG/REPS, así que
-// se recortaron al mínimo legible (SET cabe «D» de 26px; PREV cabe "70kg × 6", sobra → elipsis;
-// RIR cabe el chip de 34px; ✓ cabe el check de 26px). Ver docs/DECISIONS.md (#9 · optimización móvil).
+// se recortaron al mínimo legible (SET cabe «D» de 26px; PREV cabe "70kg × 6", sobra → elipsis).
+// RIR y ✓ = 44px = área táctil mínima recomendada (issue #10): NO bajar de ahí (choca con a11y);
+// si falta ancho en móvil, recortar antes PREV/gap. KG/REPS (1fr) absorben el resto: estrechas en
+// 360px pero sin desbordar (inputs w-full + min-w-0). Aritmética de anchos en docs/DECISIONS.md (#10).
 const COL_SET = 36 // ancho de la columna SET; compone el grid y la rama no-grid (sin magic numbers)
 const COL_PREV = 54 // ancho de la columna ANTERIOR
-const COL_RIR = 42
-const COL_CHECK = 34
+const COL_RIR = 44
+const COL_CHECK = 44
 export const GRID_WITH_RIR = `${COL_SET}px ${COL_PREV}px 1fr 1fr ${COL_RIR}px ${COL_CHECK}px`
 export const GRID_NO_RIR = `${COL_SET}px ${COL_PREV}px 1fr 1fr ${COL_CHECK}px`
 
@@ -210,8 +212,8 @@ function SetRow({
     }
     if (videoUploadError) {
       return (
-        <button onClick={handleRetryVideoUpload} title={t('common:buttons.retry')}
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}>
+        <button onClick={handleRetryVideoUpload} title={t('common:buttons.retry')} aria-label={t('common:buttons.retry')}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 44 }}>
           <AlertCircle size={16} color={colors.danger} />
         </button>
       )
@@ -225,10 +227,10 @@ function SetRow({
     // recuadro competiría con KG/REPS y parecería un input). Tocar = hoja de detalles; el área
     // de toque se amplía con padding transparente. El dropset («D») ya es su propia pastilla.
     return (
-      <button onClick={() => setShowModal(true)} title={t('workout:set.moreOptions')}
+      <button onClick={() => setShowModal(true)} title={t('workout:set.moreOptions')} aria-label={t('workout:set.moreOptions')}
         style={{
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'transparent', border: 'none', padding: '4px 8px',
+          background: 'transparent', border: 'none', padding: '4px 8px', minHeight: 44,
         }}>
         {/* punto de detalle anclado al glifo (nº o «D»), no al padding del botón. Posición vertical
             anclada al CENTRO de fila (top:50% + translateY) — no al alto del glifo — para que quede
@@ -244,13 +246,16 @@ function SetRow({
   }
 
   const renderCheckIndicator = () => {
+    // Botón a 44×44 (área táctil mínima recomendada, issue #10); el icono conserva su tamaño
+    // visual (26/22px) centrado. Cabe en la fila sin crecer: py-1 + 44px ≈ la altura previa.
     if (isCompleted) {
       return (
         <button
           onClick={handleCheckClick}
-          className="w-8 h-8 flex items-center justify-center hover:opacity-80"
+          className="w-11 h-11 flex items-center justify-center hover:opacity-80"
           style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
           title={t('workout:set.unmark')}
+          aria-label={t('workout:set.unmark')}
         >
           {isPR ? (
             // 22px iguala el diámetro relleno real del CheckCircle2 (size=26 → r=10 en viewbox 24)
@@ -269,9 +274,10 @@ function SetRow({
       <button
         onClick={handleCheckClick}
         disabled={!valid}
-        className="w-7 h-7 flex items-center justify-center hover:opacity-80"
+        className="w-11 h-11 flex items-center justify-center hover:opacity-80"
         style={{ background: 'transparent', border: 'none', cursor: valid ? 'pointer' : 'default', opacity: valid ? 1 : 0.6 }}
         title={t('workout:set.complete')}
+        aria-label={t('workout:set.complete')}
       >
         <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${isActive ? colors.success : colors.textMuted}`, display: 'inline-block' }} />
       </button>
@@ -282,7 +288,7 @@ function SetRow({
     <>
       {isWeightReps ? (
         <div
-          className="grid items-center gap-2 py-2.5 px-1 rounded-lg"
+          className="grid items-center gap-2 py-1 px-1 rounded-lg"
           style={{ gridTemplateColumns: showRirInput ? GRID_WITH_RIR : GRID_NO_RIR, ...baseRowStyle }}
         >
           <div className="flex items-center justify-center">{renderSetCell()}</div>
@@ -299,7 +305,7 @@ function SetRow({
         </div>
       ) : (
         <div
-          className="flex items-center gap-2 py-2.5 px-1 rounded-lg"
+          className="flex items-center gap-2 py-1 px-1 rounded-lg"
           style={baseRowStyle}
         >
           <div className="flex items-center justify-center" style={{ width: COL_SET, flexShrink: 0 }}>{renderSetCell()}</div>

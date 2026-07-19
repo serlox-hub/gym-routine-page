@@ -50,23 +50,41 @@ export default function EffortPicker({ value, onChange, measurementType, emptyDa
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
+      {/* Botón transparente a 44×44 = área táctil (issue #10); el pill visual (fondo, borde) va en
+          el span interior para no agrandarse. Así se toca fácil sin convertir el chip en un cajón.
+          No crece la fila: el check ya la fija a ~52px. */}
       <button
         ref={chipRef}
         onClick={toggleOpen}
         title={getEffortLabel(measurementType)}
+        aria-label={getEffortLabel(measurementType)}
         style={{
-          backgroundColor: colors.bgTertiary,
-          borderRadius: 6,
-          padding: '3px 7px',
-          border: `1px solid ${inviteBorder ? colors.border : 'transparent'}`,
+          background: 'transparent',
+          border: 'none',
           cursor: 'pointer',
-          color: textColor,
-          fontSize: 11,
-          fontWeight: 600,
-          minWidth: 34,
+          padding: 0,
+          minWidth: 44,
+          minHeight: 44,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {label}
+        <span
+          style={{
+            backgroundColor: colors.bgTertiary,
+            borderRadius: 6,
+            padding: '3px 7px',
+            border: `1px solid ${inviteBorder ? colors.border : 'transparent'}`,
+            color: textColor,
+            fontSize: 11,
+            fontWeight: 600,
+            minWidth: 34,
+            textAlign: 'center',
+          }}
+        >
+          {label}
+        </span>
       </button>
 
       {open && (
@@ -93,6 +111,7 @@ export default function EffortPicker({ value, onChange, measurementType, emptyDa
               <button
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
+                aria-pressed={selected}
                 style={{
                   backgroundColor: selected ? colors.success : colors.bgTertiary,
                   color: selected ? colors.bgPrimary : colors.textPrimary,

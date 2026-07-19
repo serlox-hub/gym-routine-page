@@ -2,7 +2,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native'
 import { ChevronDown, CheckCircle2 } from 'lucide-react-native'
 import { DropdownMenu } from '../ui'
 import { colors } from '../../lib/styles'
-import { getMuscleGroupName } from '@gym/shared'
+import { getMuscleGroupName, t } from '@gym/shared'
 
 function MetaPill({ children }) {
   return (
@@ -51,7 +51,12 @@ function ExerciseCardHeader({
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         {isCompleted ? <CheckCircle2 size={18} color={colors.success} /> : null}
         {collapsed ? (
-          <Pressable onPress={onToggleCollapse} hitSlop={8}>
+          <Pressable
+            onPress={onToggleCollapse}
+            hitSlop={14}
+            accessibilityRole="button"
+            accessibilityLabel={t('workout:exercise.expand')}
+          >
             <ChevronDown size={18} color={colors.textMuted} />
           </Pressable>
         ) : (

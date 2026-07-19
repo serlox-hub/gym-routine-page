@@ -67,7 +67,9 @@ export default function EffortPicker({ value, onChange, measurementType, emptyDa
       <Pressable
         ref={chipRef}
         onPress={openPicker}
-        hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+        hitSlop={{ top: 13, bottom: 13, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel={getEffortLabel(measurementType)}
         style={{
           backgroundColor: colors.bgTertiary,
           borderRadius: 6,
@@ -94,6 +96,9 @@ export default function EffortPicker({ value, onChange, measurementType, emptyDa
                   <Pressable
                     key={option.value}
                     onPress={() => select(option.value)}
+                    accessibilityRole="button"
+                    accessibilityLabel={option.label}
+                    accessibilityState={{ selected }}
                     style={{
                       backgroundColor: selected ? colors.success : colors.bgTertiary,
                       borderRadius: 8,
