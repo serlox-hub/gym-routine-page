@@ -1,15 +1,19 @@
 import { useState, useRef } from 'react'
 import { View, Text, Pressable, Modal, Dimensions } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles'
-import { getEffortOptions, getEffortLabel, formatEffortBadge, measurementTypeUsesReps } from '@gym/shared'
+import { getEffortOptions, getEffortLabel, getEffortInfo, formatEffortBadge, measurementTypeUsesReps } from '@gym/shared'
 
 /**
  * Chip de esfuerzo (RIR/RPE) inline en la fila de serie + popover de selección.
  * El popover se ancla sobre el chip midiendo su posición en pantalla (measureInWindow)
  * y se pinta en un Modal transparente para escapar del recorte del ScrollView.
  * Reutilizar el mismo valor lo deselecciona (null). Paridad con la versión web (issue #8).
+ * El popover es una COLUMNA: RIR muestra «código · palabra» (F · Fallo…) con cabecera
+ * explicativa; RPE muestra la palabra directa (issue #10, punto 6 — RIR autoexplicable).
  */
 export default function EffortPicker({ value, onChange, measurementType, emptyDash = false, active = false }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [anchor, setAnchor] = useState(null)
   const chipRef = useRef(null)
@@ -53,8 +57,9 @@ export default function EffortPicker({ value, onChange, measurementType, emptyDa
     borderColor: colors.border,
     borderRadius: 12,
     padding: 6,
-    flexDirection: usesReps ? 'row' : 'column',
+    flexDirection: 'column',
     gap: 4,
+    width: usesReps ? 208 : 160,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
@@ -90,27 +95,43 @@ export default function EffortPicker({ value, onChange, measurementType, emptyDa
         <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)}>
           {anchor && (
             <View style={panelStyle}>
+              {usesReps && (
+                <View style={{ paddingHorizontal: 8, paddingTop: 2, paddingBottom: 6 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '700' }}>{t('workout:set.rirTitle')}</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 2, lineHeight: 15 }}>{t('workout:set.rirHelp')}</Text>
+                </View>
+              )}
               {options.map(option => {
                 const selected = value === option.value
+                // RIR: info.label es el código (F/0/1/2/3+), info.description la palabra (Fallo…).
+                // RPE: no aplica → se pinta option.label (la palabra ya descriptiva).
+                const info = usesReps ? getEffortInfo(option.value, measurementType) : null
+                const rowColor = selected ? colors.bgPrimary : colors.textPrimary
                 return (
                   <Pressable
                     key={option.value}
                     onPress={() => select(option.value)}
                     accessibilityRole="button"
-                    accessibilityLabel={option.label}
+                    accessibilityLabel={usesReps ? `${info.label} ${info.description}` : option.label}
                     accessibilityState={{ selected }}
                     style={{
                       backgroundColor: selected ? colors.success : colors.bgTertiary,
                       borderRadius: 8,
-                      paddingVertical: usesReps ? 8 : 9,
-                      paddingHorizontal: usesReps ? 0 : 12,
-                      width: usesReps ? 38 : 150,
-                      alignItems: usesReps ? 'center' : 'flex-start',
+                      paddingVertical: 9,
+                      paddingHorizontal: 10,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 10,
                     }}
                   >
-                    <Text numberOfLines={1} style={{ color: selected ? colors.bgPrimary : colors.textPrimary, fontWeight: '600', fontSize: usesReps ? 15 : 12 }}>
-                      {option.label}
-                    </Text>
+                    {usesReps ? (
+                      <>
+                        <Text style={{ minWidth: 26, textAlign: 'center', color: rowColor, fontWeight: '700', fontSize: 15 }}>{info.label}</Text>
+                        <Text numberOfLines={1} style={{ color: rowColor, fontWeight: '500', fontSize: 13 }}>{info.description}</Text>
+                      </>
+                    ) : (
+                      <Text numberOfLines={1} style={{ color: rowColor, fontWeight: '600', fontSize: 13 }}>{option.label}</Text>
+                    )}
                   </Pressable>
                 )
               })}

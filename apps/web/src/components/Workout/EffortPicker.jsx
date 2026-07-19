@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
-import { getEffortOptions, getEffortLabel, formatEffortBadge, measurementTypeUsesReps } from '@gym/shared'
+import { getEffortOptions, getEffortLabel, getEffortInfo, formatEffortBadge, measurementTypeUsesReps } from '@gym/shared'
 
 /**
  * Chip de esfuerzo (RIR/RPE) inline en la fila de serie + popover de selección.
  * Un toque abre el popover sobre el chip; elegir un valor lo guarda y cierra.
  * Reutilizar el mismo valor lo deselecciona (null). Sustituye a la sección de
  * esfuerzo del antiguo modal-al-completar (ver issue #8).
+ * El popover es una COLUMNA: RIR muestra «código · palabra» (F · Fallo…) con cabecera
+ * explicativa; RPE muestra la palabra directa (issue #10, punto 6 — RIR autoexplicable).
  */
 export default function EffortPicker({ value, onChange, measurementType, emptyDash = false, active = false }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [dropUp, setDropUp] = useState(true)
   const containerRef = useRef(null)
@@ -100,33 +104,51 @@ export default function EffortPicker({ value, onChange, measurementType, emptyDa
             padding: 6,
             boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
             display: 'flex',
-            flexDirection: usesReps ? 'row' : 'column',
+            flexDirection: 'column',
             gap: 4,
-            width: usesReps ? 'auto' : 160,
+            width: usesReps ? 208 : 160,
           }}
         >
+          {usesReps && (
+            <div style={{ padding: '2px 8px 6px' }}>
+              <div style={{ color: colors.textPrimary, fontSize: 13, fontWeight: 700 }}>{t('workout:set.rirTitle')}</div>
+              <div style={{ color: colors.textMuted, fontSize: 11, marginTop: 2, lineHeight: 1.3 }}>{t('workout:set.rirHelp')}</div>
+            </div>
+          )}
           {options.map(option => {
             const selected = value === option.value
+            // RIR: info.label es el código (F/0/1/2/3+), info.description la palabra (Fallo…).
+            // RPE: no aplica → se pinta option.label (la palabra ya descriptiva).
+            const info = usesReps ? getEffortInfo(option.value, measurementType) : null
             return (
               <button
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
                 aria-pressed={selected}
+                aria-label={usesReps ? `${info.label} ${info.description}` : undefined}
                 style={{
                   backgroundColor: selected ? colors.success : colors.bgTertiary,
                   color: selected ? colors.bgPrimary : colors.textPrimary,
                   border: 'none',
                   borderRadius: 8,
                   cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: usesReps ? 15 : 12,
-                  padding: usesReps ? '8px 0' : '9px 10px',
-                  width: usesReps ? 38 : '100%',
-                  textAlign: usesReps ? 'center' : 'left',
+                  padding: '9px 10px',
+                  width: '100%',
+                  textAlign: 'left',
                   whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
                 }}
               >
-                {option.label}
+                {usesReps ? (
+                  <>
+                    <span style={{ minWidth: 26, textAlign: 'center', fontWeight: 700, fontSize: 15 }}>{info.label}</span>
+                    <span style={{ fontWeight: 500, fontSize: 13 }}>{info.description}</span>
+                  </>
+                ) : (
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>{option.label}</span>
+                )}
               </button>
             )
           })}
