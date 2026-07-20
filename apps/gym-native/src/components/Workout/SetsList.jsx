@@ -12,6 +12,7 @@ function SetsList({
   exercise,
   setsCount,
   previousWorkout,
+  progressionEnabled = false,
   measurementType,
   weightUnit,
   timeUnit,
@@ -82,25 +83,29 @@ function SetsList({
       <View style={{ gap: 8 }}>
         {Array.from({ length: setsCount }, (_, i) => {
           const previousSet = previousWorkout?.sets?.find(s => s.setNumber === i + 1)
+          // Envoltorio para aislar la subfila de progresión (que SetRow pinta bajo la fila,
+          // reaccionando al peso en vivo) del gap del contenedor. Ver ProgressionHint.
           return (
-            <SetRow
-              key={`${exerciseKey}-${i + 1}`}
-              setNumber={i + 1}
-              totalSets={setsCount}
-              exerciseName={exercise.name}
-              sessionExerciseId={exerciseKey}
-              exerciseId={exercise.id}
-              measurementType={measurementType}
-              weightUnit={weightUnit}
-              timeUnit={timeUnit}
-              distanceUnit={distanceUnit}
-              descansoSeg={rest_seconds}
-              previousSet={previousSet}
-              repsTarget={reps}
-              isActive={activeSetNumber === i + 1}
-              onComplete={onCompleteSet}
-              onUncomplete={onUncompleteSet}
-            />
+            <View key={`${exerciseKey}-${i + 1}`}>
+              <SetRow
+                setNumber={i + 1}
+                totalSets={setsCount}
+                exerciseName={exercise.name}
+                sessionExerciseId={exerciseKey}
+                exerciseId={exercise.id}
+                measurementType={measurementType}
+                weightUnit={weightUnit}
+                timeUnit={timeUnit}
+                distanceUnit={distanceUnit}
+                descansoSeg={rest_seconds}
+                previousSet={previousSet}
+                repsTarget={reps}
+                progressionEnabled={progressionEnabled}
+                isActive={activeSetNumber === i + 1}
+                onComplete={onCompleteSet}
+                onUncomplete={onUncompleteSet}
+              />
+            </View>
           )
         })}
       </View>

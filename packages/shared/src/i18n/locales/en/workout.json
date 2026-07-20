@@ -25,6 +25,12 @@
     "musclesWorked": "Muscles worked",
     "volume": "Volume"
   },
+  "progression": {
+    "increase": "Add weight",
+    "title": "Ready to progress!",
+    "why": "You reached the top of your range ({{range}}) with {{reps}} reps. If you want to keep progressing, add weight.",
+    "whyLabel": "Why increase"
+  },
   "set": {
     "complete": "Complete set",
     "unmark": "Unmark set",

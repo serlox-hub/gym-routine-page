@@ -321,6 +321,8 @@ export default function PreferencesScreen({ navigation, route }) {
             checked={restNotificationsEnabled && (systemNotifPermission?.granted ?? false)}
             onChange={handleRestNotificationsChange}
           />
+          <ToggleRow label={t('common:preferences.progressionSuggestions')} description={t('common:preferences.progressionSuggestionsDesc')}
+            checked={preferences?.progression_suggestions ?? true} onChange={(v) => handleChange('progression_suggestions', v)} disabled={updatePreference.isPending} />
           <ToggleRow label={t('common:preferences.showRir')} description={t('common:preferences.showRirDescription')}
             checked={preferences?.show_rir_input ?? true} onChange={(v) => handleChange('show_rir_input', v)} disabled={updatePreference.isPending} />
           <ToggleRow label={t('common:preferences.showSetNotes')} description={t('common:preferences.showSetNotesDescription')}

@@ -7,11 +7,13 @@ import SetDetailsModal from './SetDetailsModal.jsx'
 import EffortPicker from './EffortPicker.jsx'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs.jsx'
 import PreviousSetCell from './PreviousSetCell.jsx'
+import ProgressionHint from './ProgressionHint.jsx'
 import {
   MeasurementType,
   buildCompletedSetData,
   getNotifier,
   useSetInputs,
+  shouldSuggestProgression,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useUpdateSetVideo } from '../../hooks/useWorkout.js'
@@ -47,6 +49,7 @@ function SetRow({
   descansoSeg,
   previousSet,
   repsTarget,
+  progressionEnabled = false,
   isActive = false,
   onComplete,
   onUncomplete,
@@ -170,6 +173,11 @@ function SetRow({
   const hasVideo = !!setData?.videoUrl
   const isDropset = setType === 'dropset'
   const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
+
+  // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
+  // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
+  const showProgressionHint = progressionEnabled && !isCompleted &&
+    shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight })
   const showEffort = showRirInput && (isActive || isCompleted)
   const canOpenDetails = isActive || isCompleted
 
@@ -317,6 +325,8 @@ function SetRow({
           <div className="flex items-center justify-center">{renderCheckIndicator()}</div>
         </div>
       )}
+
+      {showProgressionHint && <ProgressionHint prevReps={previousSet.reps} repsTarget={repsTarget} />}
 
       <SetDetailsModal
         isOpen={showModal}

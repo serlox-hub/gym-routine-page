@@ -110,6 +110,8 @@
     "restNotificationsBlockedTitle": "Notification permission disabled",
     "restNotificationsBlockedBody": "To alert you when rest ends we need system permission. Enable it in Settings.",
     "openSettings": "Open settings",
+    "progressionSuggestions": "Progression suggestions",
+    "progressionSuggestionsDesc": "Suggests increasing weight when you hit the top of the rep range",
     "showRir": "Show RIR selector",
     "showRirDesc": "Show the RIR/effort chip on each set",
     "showRirDescription": "Show the RIR/effort chip on each set",

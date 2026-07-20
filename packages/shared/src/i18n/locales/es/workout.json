@@ -25,6 +25,12 @@
     "musclesWorked": "Músculos trabajados",
     "volume": "Volumen"
   },
+  "progression": {
+    "increase": "Sube el peso",
+    "title": "¡Listo para progresar!",
+    "why": "Alcanzaste el tope de tu rango ({{range}}) con {{reps}} reps. Si quieres seguir progresando, sube el peso.",
+    "whyLabel": "Por qué subir"
+  },
   "set": {
     "logSet": "REGISTRAR SERIE {{number}}",
     "removeLast": "Quitar última",

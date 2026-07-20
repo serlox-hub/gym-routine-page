@@ -28,6 +28,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const updateFieldsMutation = useUpdateSessionExerciseFields()
   const { data: override } = useUserExerciseOverride(exercise?.id)
   const { value: globalWeightUnit } = usePreference('weight_unit')
+  const { value: progressionEnabled } = usePreference('progression_suggestions')
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
   const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
   const exerciseKey = sessionExerciseId || id
@@ -101,7 +102,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
               <ExerciseCardNotes exercise={exercise} notes={notes} />
             </View>
           )}
-          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} measurementType={measurementType} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
+          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} progressionEnabled={progressionEnabled} measurementType={measurementType} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
         </>
       )}
       <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} measurementType={measurementType} weightUnit={weightUnit} routineDayId={routineDayId} />

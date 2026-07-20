@@ -6,12 +6,14 @@ import SetDetailsModal from './SetDetailsModal'
 import EffortPicker from './EffortPicker'
 import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs'
 import PreviousSetCell from './PreviousSetCell'
+import ProgressionHint from './ProgressionHint'
 import {
   MeasurementType,
   buildCompletedSetData,
   getNotifier,
   t,
   useSetInputs,
+  shouldSuggestProgression,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
 import { useUpdateSetVideo } from '../../hooks/useWorkout'
@@ -45,6 +47,7 @@ function SetRow({
   descansoSeg,
   previousSet,
   repsTarget,
+  progressionEnabled = false,
   isActive = false,
   onComplete,
   onUncomplete,
@@ -168,6 +171,11 @@ function SetRow({
   const isDropset = setType === 'dropset'
   const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
   const showEffort = showRirInput && (isActive || isCompleted)
+
+  // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
+  // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
+  const showProgressionHint = progressionEnabled && !isCompleted &&
+    shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight })
   const canOpenDetails = isActive || isCompleted
 
   // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
@@ -305,6 +313,8 @@ function SetRow({
           {renderCheckIndicator()}
         </View>
       </View>
+
+      {showProgressionHint && <ProgressionHint prevReps={previousSet.reps} repsTarget={repsTarget} />}
 
       <SetDetailsModal
         isOpen={showModal}

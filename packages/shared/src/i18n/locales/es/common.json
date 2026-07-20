@@ -110,6 +110,8 @@
     "restNotificationsBlockedTitle": "Permiso de notificaciones desactivado",
     "restNotificationsBlockedBody": "Para avisarte al terminar el descanso necesitamos permiso del sistema. Actívalo en Ajustes.",
     "openSettings": "Abrir ajustes",
+    "progressionSuggestions": "Sugerencias de progresión",
+    "progressionSuggestionsDesc": "Sugiere subir de peso cuando llegas al tope del rango de reps",
     "showRir": "Mostrar selector de RIR",
     "showRirDesc": "Muestra el chip de RIR/esfuerzo en cada serie",
     "showRirDescription": "Muestra el chip de RIR/esfuerzo en cada serie",
