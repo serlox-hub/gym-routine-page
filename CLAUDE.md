@@ -197,9 +197,10 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 **Token categories:**
 - Fondos: `bgPrimary`, `bgSecondary`, `bgAlt`, `bgTertiary`, `bgHover`
 - Texto: `textPrimary`, `textSecondary`, `textMuted`, `textLight`, `textDisabled`, `textDark`, `white`, `black`
-- Acentos: `accent`, `accentHover`, `success`, `warning`, `danger`, `purple`, `purpleAccent`, `teal`, `pink`, `orange`, `actionPrimary`
-- Fondos semánticos (alpha): `accentBg`, `accentBgSubtle`, `purpleBg`, `purpleAccentBg`, `successBg`, `warningBg`, `orangeBg`, `dangerBg`, `actionPrimaryBg`, `overlay`
-- Bordes: `border`
+- Acentos: `success`, `warning`, `danger`, `purple`, `purpleAccent`, `teal`, `pink`, `orange` (acento naranja + dropset), `gold`, `actionPrimary` (lima = acción primaria), `gifBg` (panel claro para GIFs)
+- Fondos semánticos (alpha): `purpleBg`, `purpleAccentBg`, `successBg`, `successBgSubtle`, `warningBg`, `orangeBg`, `goldBg`, `dangerBg`, `actionPrimaryBg`, `overlay`, `overlaySoft`
+- Bordes: `border`, `borderSubtle`
+- ⚠️ NO existen tokens `accent`/`accentHover`/`accentBg`/`accentBgSubtle` — el acento naranja es `orange`/`orangeBg`; la acción primaria (lima) es `actionPrimary`/`actionPrimaryBg`
 
 ## Internationalization (i18n)
 

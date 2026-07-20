@@ -209,7 +209,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           title={title}
           onBack={() => navigate(-1)}
           menuItems={[
-            { icon: Plus, label: t('workout:addExercise.toSession'), onClick: () => setShowAddExercise(true) },
             { icon: ArrowRightLeft, label: t('workout:set.weightConverter'), onClick: () => setShowConverter(true) },
             { icon: X, label: t('workout:session.abandon'), onClick: () => setShowCancelModal(true), danger: true },
           ]}
@@ -265,6 +264,22 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
       </main>
       </ExpandedExerciseProvider>
       </PRProvider>
+
+      {hasExercises && (
+        <button
+          onClick={() => setShowAddExercise(true)}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold mt-6"
+          style={{
+            backgroundColor: 'transparent',
+            border: `1px solid ${colors.border}`,
+            color: colors.textLight,
+            fontSize: 15,
+          }}
+        >
+          <Plus size={18} />
+          {t('workout:addExercise.toSession')}
+        </button>
+      )}
 
       <button
         onClick={handleEndWorkout}

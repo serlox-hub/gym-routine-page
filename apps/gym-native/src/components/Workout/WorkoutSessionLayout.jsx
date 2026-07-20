@@ -191,7 +191,6 @@ export default function WorkoutSessionLayout({ title }) {
         title={title}
         onBack={() => useWorkoutStore.getState().hideWorkout()}
         menuItems={[
-          { icon: Plus, label: t('workout:addExercise.toSession'), onClick: () => setShowAddExercise(true) },
           { icon: ArrowRightLeft, label: t('workout:set.weightConverter'), onClick: () => setShowConverter(true) },
           { icon: X, label: t('workout:session.abandon'), onClick: () => setShowCancelModal(true), danger: true },
         ]}
@@ -250,21 +249,32 @@ export default function WorkoutSessionLayout({ title }) {
                 isReordering={reorderSessionExercisesMutation.isPending}
                 existingSupersets={existingSupersets}
               />
-              <Pressable onPress={() => setShowEndModal(true)}
-                disabled={endSessionMutation.isPending || !hasCompletedSets}
+              <Pressable onPress={() => setShowAddExercise(true)}
                 style={{
                   flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                   paddingVertical: 14, borderRadius: 12, marginTop: 24,
-                  borderWidth: 1, borderColor: colors.success, backgroundColor: 'transparent',
-                  opacity: (endSessionMutation.isPending || !hasCompletedSets) ? 0.4 : 1,
+                  borderWidth: 1, borderColor: colors.border, backgroundColor: 'transparent',
                 }}>
-                <Flag size={18} color={colors.success} />
-                <Text style={{ color: colors.success, fontSize: 15, fontWeight: '600' }}>
-                  {endSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.finishWorkout')}
+                <Plus size={18} color={colors.textLight} />
+                <Text style={{ color: colors.textLight, fontSize: 15, fontWeight: '600' }}>
+                  {t('workout:addExercise.toSession')}
                 </Text>
               </Pressable>
             </>
           )}
+          <Pressable onPress={() => setShowEndModal(true)}
+            disabled={endSessionMutation.isPending || !hasCompletedSets}
+            style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              paddingVertical: 14, borderRadius: 12, marginTop: 24,
+              borderWidth: 1, borderColor: colors.success, backgroundColor: 'transparent',
+              opacity: (endSessionMutation.isPending || !hasCompletedSets) ? 0.4 : 1,
+            }}>
+            <Flag size={18} color={colors.success} />
+            <Text style={{ color: colors.success, fontSize: 15, fontWeight: '600' }}>
+              {endSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.finishWorkout')}
+            </Text>
+          </Pressable>
         </ScrollView>
         </ExpandedExerciseProvider>
         </PRProvider>
