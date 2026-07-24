@@ -1,19 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Video, X, Save, ChevronRight } from 'lucide-react'
+import { Video, X, ChevronRight } from 'lucide-react'
 import { Modal } from '../ui/index.js'
 import VideoPlayer from './VideoPlayer.jsx'
 import { colors } from '../../lib/styles.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { usePreference } from '../../hooks/usePreferences.js'
+import { getEffortOptions, getEffortInfo, measurementTypeUsesReps } from '@gym/shared'
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 
 /**
- * Hoja de detalles opcionales de una serie ya completada: tipo de serie (dropset),
- * notas y vídeo. El peso/reps se editan inline en la fila y el RIR con el chip inline
- * (ver EffortPicker) — por eso esta hoja ya NO los incluye. Se abre bajo demanda desde
- * el botón «⋯» de la fila, nunca al completar (issue #8).
+ * Hoja ÚNICA de anotación de una serie: esfuerzo (RIR/RPE), tipo (dropset), nota y vídeo, todo
+ * en una sola superficie. Se abre tocando el chip de la columna «Notas» (ver EffortPicker); el
+ * peso/reps se editan inline en la fila (no aquí). Sin botón Guardar.
+ *
+ * Modelo de interacción unificado (a petición del usuario): TODO se edita dentro de la hoja,
+ * nada abre otra superficie, y cerrar = guardado. RIR y tipo son CONTROLADOS (viven en el
+ * padre vía onRirChange/onSetTypeChange → persisten al instante, patrón de #8); nota y vídeo
+ * son locales y se confirman al cerrar (autosave). El usuario no percibe esa diferencia: para
+ * él todo ocurre en la hoja y el cierre confirma. Ver DECISIONS.
  */
 function SetDetailsModal({
   isOpen,
@@ -23,7 +29,13 @@ function SetDetailsModal({
   allowVideo = true,
   initialNote,
   initialVideoUrl,
-  initialSetType = 'normal',
+  rir,
+  onRirChange,
+  measurementType,
+  showEffortScale = true,
+  setType = 'normal',
+  onSetTypeChange,
+  showSetType = true,
 }) {
   const { t } = useTranslation()
   const canUploadVideo = useCanUploadVideo()
@@ -33,11 +45,13 @@ function SetDetailsModal({
   const videoEnabled = canUploadVideo && showVideoUpload
   const showVideo = videoEnabled && allowVideo
 
+  const usesReps = measurementTypeUsesReps(measurementType)
+  const effortOptions = getEffortOptions(measurementType)
+
   const [note, setNote] = useState('')
   const [videoUrl, setVideoUrl] = useState(null)
   const [videoFile, setVideoFile] = useState(null)
   const [videoError, setVideoError] = useState(null)
-  const [setType, setSetType] = useState('normal')
   const [hasChanges, setHasChanges] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -47,14 +61,18 @@ function SetDetailsModal({
       setVideoUrl(initialVideoUrl ?? null)
       setVideoFile(null)
       setVideoError(null)
-      setSetType(initialSetType ?? 'normal')
       setHasChanges(false)
     }
-  }, [isOpen, initialNote, initialVideoUrl, initialSetType])
+  }, [isOpen, initialNote, initialVideoUrl])
 
   const handleNoteChange = (e) => {
     setNote(e.target.value)
     setHasChanges(true)
+  }
+
+  const handleRirSelect = (optionValue) => {
+    // Reelegir el mismo valor lo deselecciona (null). Persiste en vivo vía el padre.
+    onRirChange?.(rir === optionValue ? null : optionValue)
   }
 
   const handleVideoSelect = (e) => {
@@ -80,24 +98,25 @@ function SetDetailsModal({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const handleSubmit = () => {
-    const existingVideoUrl = (!videoFile && videoUrl) ? initialVideoUrl : null
-    onSubmit({
-      notes: note.trim() || null,
-      videoUrl: existingVideoUrl,
-      videoFile,
-      setType,
-    })
+  // Autosave al cerrar: solo la nota y el vídeo (RIR/tipo ya persisten en vivo). Si no hubo
+  // cambios en nota/vídeo, solo cierra.
+  const handleClose = () => {
+    if (hasChanges) {
+      const existingVideoUrl = (!videoFile && videoUrl) ? initialVideoUrl : null
+      onSubmit({ notes: note.trim() || null, videoUrl: existingVideoUrl, videoFile })
+    } else {
+      onClose()
+    }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} position="bottom" maxWidth="max-w-lg" noBorder>
+    <Modal isOpen={isOpen} onClose={handleClose} position="bottom" maxWidth="max-w-lg" noBorder>
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-2 shrink-0">
         <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, letterSpacing: 1.5 }}>
           {t('workout:set.detailsTitle', { number: setNumber || '' })}
         </span>
-        <button onClick={onClose}
+        <button onClick={handleClose}
           className="flex items-center justify-center rounded-full hover:opacity-80"
           style={{ width: 32, height: 32, backgroundColor: colors.bgTertiary }}>
           <X size={16} style={{ color: colors.textSecondary }} />
@@ -107,23 +126,70 @@ function SetDetailsModal({
       <div className="px-5 mt-3 overflow-y-auto" style={{ flex: 1, minHeight: 0 }}>
         <div className="flex flex-col" style={{ minHeight: '100%' }}>
           <div className="space-y-5">
-            {/* Set type — Normal / Dropset */}
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ backgroundColor: colors.bgTertiary }}>
-              {['normal', 'dropset'].map((key) => (
-                <button key={key}
-                  onClick={() => { setSetType(key); setHasChanges(true) }}
-                  className="py-2.5 rounded-lg text-sm font-semibold"
-                  style={{
-                    backgroundColor: setType === key ? colors.success : 'transparent',
-                    color: setType === key ? colors.bgPrimary : colors.textSecondary,
-                    border: setType === key ? `1px solid ${colors.success}` : 'none',
-                  }}>
-                  {t(`data:setTypes.${key}`)}
-                </button>
-              ))}
-            </div>
+            {/* Esfuerzo (RIR/RPE) */}
+            {showEffortScale && (
+              <div>
+                <h4 className="font-semibold" style={{ color: colors.textPrimary, fontSize: 14 }}>
+                  {t('workout:set.rirTitle')}
+                </h4>
+                {usesReps && (
+                  <p style={{ color: colors.textMuted, fontSize: 12, marginTop: 2, marginBottom: 8 }}>{t('workout:set.rirHelp')}</p>
+                )}
+                <div className={usesReps ? 'mt-2 space-y-2' : 'mt-2 grid grid-cols-2 gap-2'}>
+                  {effortOptions.map(option => {
+                    const selected = rir === option.value
+                    // RIR: código · palabra (autoexplicable, #10). RPE: la palabra directa.
+                    const info = usesReps ? getEffortInfo(option.value, measurementType) : null
+                    return (
+                      <button key={option.value}
+                        onClick={() => handleRirSelect(option.value)}
+                        aria-pressed={selected}
+                        aria-label={usesReps ? `${info.label} ${info.description}` : undefined}
+                        className="flex items-center gap-2.5 rounded-lg text-left"
+                        style={{
+                          backgroundColor: selected ? colors.success : colors.bgTertiary,
+                          color: selected ? colors.bgPrimary : colors.textPrimary,
+                          padding: '10px 12px',
+                        }}>
+                        {usesReps ? (
+                          <>
+                            <span style={{ minWidth: 26, textAlign: 'center', fontWeight: 700, fontSize: 15 }}>{info.label}</span>
+                            <span style={{ fontWeight: 500, fontSize: 13 }}>{info.description}</span>
+                          </>
+                        ) : (
+                          <span style={{ fontWeight: 600, fontSize: 13 }}>{option.label}</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
-            {/* Notes */}
+            {/* Tipo de serie — Normal / Dropset */}
+            {showSetType && (
+              <div>
+                <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
+                  {t('workout:set.type.label')}
+                </h4>
+                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ backgroundColor: colors.bgTertiary }}>
+                  {['normal', 'dropset'].map((key) => (
+                    <button key={key}
+                      onClick={() => onSetTypeChange?.(key)}
+                      className="py-2.5 rounded-lg text-sm font-semibold"
+                      style={{
+                        backgroundColor: setType === key ? colors.success : 'transparent',
+                        color: setType === key ? colors.bgPrimary : colors.textSecondary,
+                        border: setType === key ? `1px solid ${colors.success}` : 'none',
+                      }}>
+                      {t(`data:setTypes.${key}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Nota */}
             {showSetNotes && (
               <div>
                 <h4 className="font-semibold mb-2" style={{ color: colors.textPrimary, fontSize: 14 }}>
@@ -140,7 +206,7 @@ function SetDetailsModal({
               </div>
             )}
 
-            {/* Video */}
+            {/* Vídeo */}
             {showVideo && (
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -204,16 +270,7 @@ function SetDetailsModal({
               </div>
             )}
           </div>
-
-          {/* Save footer: empujado al fondo si cabe, scrollea con el contenido si no */}
-          <div className="pt-3 pb-5 space-y-3 mt-auto" style={{ borderTop: `1px solid ${colors.borderSubtle}` }}>
-            <button onClick={handleSubmit} disabled={!hasChanges}
-              className="w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
-              <Save size={18} />
-              {t('common:buttons.save')}
-            </button>
-          </div>
+          <div className="pb-5" />
         </div>
       </div>
     </Modal>

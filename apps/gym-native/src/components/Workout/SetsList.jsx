@@ -5,7 +5,7 @@ import SetRow, { COL_SET, COL_PREV, COL_RIR, COL_CHECK } from './SetRow'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreferences } from '../../hooks/usePreferences'
 import { colors } from '../../lib/styles'
-import { MeasurementType, formatRelativeDate } from '@gym/shared'
+import { MeasurementType, formatRelativeDate, shouldShowAnnotationColumn } from '@gym/shared'
 
 function SetsList({
   exerciseKey,
@@ -26,7 +26,8 @@ function SetsList({
 }) {
   const { t } = useTranslation()
   const { data: preferences } = usePreferences()
-  const showRirInput = preferences?.show_rir_input ?? true
+  // Columna «Notas» presente si hay algo que anotar (RIR/notas/vídeo). Helper compartido con SetRow.
+  const annotationColumn = shouldShowAnnotationColumn(preferences)
   const completedSets = useWorkoutStore(state => state.completedSets)
   const showWeightReps = measurementType === MeasurementType.WEIGHT_REPS
   const activeSetNumber = (() => {
@@ -56,7 +57,7 @@ function SetsList({
       </View>
 
       {/* Cabecera de columnas (solo weight_reps) — anchos desde las constantes de SetRow (fuente
-          única). Columna RIR condicional a show_rir_input (igual que SetRow). */}
+          única). Columna «Notas» condicional a annotationColumn (igual que SetRow). */}
       {showWeightReps && setsCount > 0 && (
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, paddingHorizontal: 4 }}>
           <Text style={{ width: COL_SET, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
@@ -71,9 +72,9 @@ function SetsList({
           <Text style={{ flex: 1, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
             {t('workout:set.reps').toUpperCase()}
           </Text>
-          {showRirInput && (
+          {annotationColumn && (
             <Text style={{ width: COL_RIR, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
-              {t('workout:set.rir').toUpperCase()}
+              {t('workout:set.notes').toUpperCase()}
             </Text>
           )}
           <View style={{ width: COL_CHECK }} />

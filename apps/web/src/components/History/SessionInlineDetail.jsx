@@ -38,7 +38,7 @@ import {
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 import { colors } from '../../lib/styles.js'
 
-function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
+function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete }) {
   const { t } = useTranslation()
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
   const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(measurementType)
@@ -104,20 +104,12 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     }
   }
 
-  const handleDetailsSubmit = ({ rir, notes, videoUrl, videoFile, setType: newSetType, weight: newWeight, reps: newReps }) => {
+  // En historial la hoja edita SOLO nota/vídeo (RIR y Tipo van ocultos ahí; se editan con el
+  // badge de RIR/toggle del número de la fila). Preservamos rir/tipo/peso/reps vía buildPayload
+  // en vez de pisarlos con undefined (antes se borraban al guardar — bug de #8).
+  const handleDetailsSubmit = ({ notes, videoUrl, videoFile }) => {
     setShowDetails(false)
-    setSetType(newSetType)
-    setWeight(String(newWeight ?? ''))
-    setReps(String(newReps ?? ''))
-    const overrides = {
-      rirActual: rir,
-      notes,
-      videoUrl,
-      setType: newSetType,
-      weight: toNullableFloat(newWeight),
-      repsCompleted: toNullableInt(newReps),
-    }
-    onUpsert(buildPayload(overrides))
+    onUpsert(buildPayload({ notes, videoUrl }))
     if (videoFile) {
       uploadVideoInBackground(videoFile)
     }
@@ -266,20 +258,18 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         )}
         {trailingActions}
       </div>
+      {/* En historial la hoja edita solo nota/vídeo: el RIR se ve/edita con su badge y el tipo
+          con el número de la fila. Ocultamos ahí la escala RIR y el toggle Tipo. */}
       <SetDetailsModal
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}
         onSubmit={handleDetailsSubmit}
-        mode="edit"
         setNumber={set.set_number}
-        initialRir={set.rir_actual}
         initialNote={set.notes}
         initialVideoUrl={set.video_url}
-        initialSetType={setType}
         measurementType={measurementType}
-        weightUnit={weightUnit}
-        weight={weight}
-        reps={reps}
+        showEffortScale={false}
+        showSetType={false}
       />
     </>
   )
@@ -343,7 +333,6 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 isSetPR={prSetNums?.has(set.set_number)}
                 onUpsert={onUpsertSet}
                 onDelete={onDeleteSet}
-                weightUnit={weightUnit}
               />
             ))}
             <button

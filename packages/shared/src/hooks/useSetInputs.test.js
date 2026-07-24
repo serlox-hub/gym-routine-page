@@ -108,4 +108,30 @@ describe('useSetInputs — grupo de detalles (rir/notes/setType)', () => {
       ['ex-1', 1, expect.objectContaining({ rirActual: 2, notes: 'hola', setType: 'dropset' })]
     )
   })
+
+  it('serie NO completada: setSetType cachea el grupo preservando rir/notes, no llama a la API', () => {
+    store.cachedSetData = { [KEY]: { rirActual: 2, notes: 'nota' } }
+    const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
+
+    act(() => { result.current.setSetType('dropset') })
+
+    expect(result.current.setType).toBe('dropset')
+    const calls = detailCacheCalls()
+    // El grupo entero se cachea junto (preservación cruzada: rir/notes acompañan al setType)
+    expect(calls[calls.length - 1]).toEqual(['ex-1', 1, expect.objectContaining({ setType: 'dropset', rirActual: 2, notes: 'nota' })])
+    expect(workoutApi.updateSetDetails).not.toHaveBeenCalled()
+  })
+
+  it('serie COMPLETADA: setSetType persiste vía API preservando rir/notes, sin cachear', async () => {
+    store.completedSets = { [KEY]: { rirActual: 2, notes: 'nota', setType: 'normal' } }
+    const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
+
+    act(() => { result.current.setSetType('dropset') })
+
+    await waitFor(() => expect(workoutApi.updateSetDetails).toHaveBeenCalled())
+    expect(workoutApi.updateSetDetails).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionExerciseId: 'ex-1', setNumber: 1, rirActual: 2, notes: 'nota', setType: 'dropset' })
+    )
+    expect(detailCacheCalls()).toHaveLength(0)
+  })
 })

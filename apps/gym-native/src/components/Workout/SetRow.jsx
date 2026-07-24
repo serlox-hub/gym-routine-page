@@ -14,6 +14,7 @@ import {
   t,
   useSetInputs,
   shouldSuggestProgression,
+  shouldShowAnnotationColumn,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
 import { useUpdateSetVideo } from '../../hooks/useWorkout'
@@ -21,9 +22,11 @@ import { uploadVideo } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
 
 // Anchos de columna del layout columnar (deben coincidir con la cabecera de SetsList):
-// SET · ANTERIOR · [inputs flex] · RIR · ✓.
-// La columna ANTERIOR muestra la misma serie de la última sesión (ver PreviousSetCell); ancho
-// fijo solo en weight_reps (para alinear con la cabecera); otros tipos usan ancho de contenido.
+// SET · ANTERIOR · [inputs flex] · NOTAS · ✓.
+// La celda SET (número / «D») es SIEMPRE inerte: la entrada a la anotación (RIR + nota + vídeo)
+// es el chip de la columna «Notas» (ver EffortPicker). La columna existe si hay algo que anotar
+// (RIR, notas o vídeo; ver shouldShowAnnotationColumn). La columna ANTERIOR muestra la misma serie de la última
+// sesión (ver PreviousSetCell); ancho fijo solo en weight_reps; otros tipos usan ancho de contenido.
 // Fuente única de anchos (SetsList importa estas constantes para su cabecera → sin desincronizar).
 // Afinados para móvil estrecho (360-390px): las fijas comen el hueco de KG/REPS. Ver docs/DECISIONS.md.
 export const COL_SET = 36
@@ -59,7 +62,7 @@ function SetRow({
     weight, setWeight, reps, setReps, time, setTime, distance, setDistance,
     calories, setCalories, level, setLevel, pace, setPace,
     rir, setRir,
-    notes, setType, saveDetails,
+    notes, setType, saveDetails, setSetType,
     isCompleted, setData, isValid, repsPlaceholder,
   } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, measurementType, weightUnit, distanceUnit, previousSet, repsTarget })
 
@@ -72,6 +75,9 @@ function SetRow({
   const [showModal, setShowModal] = useState(false)
 
   const showRirInput = preferences?.show_rir_input ?? true
+  // Columna «Notas» (entrada estable de anotación; el número nunca abre nada). Helper compartido
+  // con SetsList → cabecera y filas nunca se desincronizan. Se colapsa solo con las 3 prefs off.
+  const annotationColumn = shouldShowAnnotationColumn(preferences)
 
   const uploadVideoInBackground = async (file) => {
     setIsUploadingVideo(true)
@@ -117,11 +123,11 @@ function SetRow({
     onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
   }
 
-  // Guardar la hoja de detalles: tipo de serie y notas se persisten vía saveDetails (caché si
-  // la serie no está completada aún, mutación si lo está), preservando el RIR. El vídeo va
-  // aparte (solo en series completadas): añadir = subida en background; quitar = updateSetVideo.
-  const handleModalSubmit = ({ notes: nextNotes, videoUrl: nextVideoUrl, videoFile, setType: nextSetType }) => {
-    saveDetails({ notes: nextNotes, setType: nextSetType })
+  // Al cerrar la hoja: la nota se persiste vía saveDetails (preservando RIR y el tipo actual, que
+  // ya se fijó en vivo desde la hoja). El vídeo va aparte (solo en series completadas): añadir =
+  // subida en background; quitar = updateSetVideo. RIR y tipo se persistieron en vivo (setRir/setSetType).
+  const handleModalSubmit = ({ notes: nextNotes, videoUrl: nextVideoUrl, videoFile }) => {
+    saveDetails({ notes: nextNotes, setType })
     setShowModal(false)
     if (videoFile) {
       uploadVideoInBackground(videoFile)
@@ -166,17 +172,16 @@ function SetRow({
   }
 
   // Detalles desde el estado local (reflejan lo fijado antes o después de completar)
-  const hasTextNote = !!notes
   const hasVideo = !!setData?.videoUrl
   const isDropset = setType === 'dropset'
   const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
-  const showEffort = showRirInput && (isActive || isCompleted)
+  // El chip (entrada de anotación) se muestra en la fila activa o completada si la columna existe.
+  const showEffort = annotationColumn && (isActive || isCompleted)
 
   // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
   // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
   const showProgressionHint = progressionEnabled && !isCompleted &&
     shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight })
-  const canOpenDetails = isActive || isCompleted
 
   // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
   // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten
@@ -205,9 +210,9 @@ function SetRow({
     justifyContent: 'center',
   }
 
-  // Celda SET: identidad de la serie + puerta a los detalles. Absorbe el estado transitorio
-  // de subida de vídeo, el indicador de dropset y el punto de "hay nota/vídeo". Solo es
-  // interactiva cuando la serie está completada.
+  // Celda SET: identidad de la serie (número / «D» dropset). SIEMPRE inerte — la entrada a la
+  // anotación es el chip de la columna «Notas» (ver EffortPicker), que lleva el glifo/punto de
+  // detalle. La celda solo absorbe el estado transitorio de subida de vídeo (%/reintento).
   const renderSetCell = () => {
     if (isUploadingVideo) {
       return <Text style={{ color: colors.purple, fontSize: 11, fontWeight: '600' }}>{uploadProgress}%</Text>
@@ -225,34 +230,9 @@ function SetRow({
         </Pressable>
       )
     }
-    const content = isDropset
+    return isDropset
       ? <View style={dropChipStyle}><Text style={{ color: colors.orange, fontSize: 12, fontWeight: '800' }}>D</Text></View>
       : <Text style={setNumberTextStyle}>{setNumber}</Text>
-    // Filas futuras pendientes: número plano, no interactivo.
-    if (!canOpenDetails) return content
-    // Fila activa o completada: número/«D» en texto plano (sin caja, patrón Strong/Hevy — un
-    // recuadro competiría con KG/REPS y parecería un input). Tocar = hoja de detalles; el área
-    // de toque se amplía con padding + hitSlop. El dropset («D») ya es su propia pastilla.
-    return (
-      <Pressable
-        onPress={() => setShowModal(true)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityRole="button"
-        accessibilityLabel={t('workout:set.moreOptions')}
-        className="active:opacity-70"
-        style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 }}
-      >
-        {/* punto de detalle anclado al glifo (nº o «D»). Posición vertical anclada al CENTRO de fila
-            (top:50% + translateY) — no al alto del glifo — para quedar a la MISMA altura que el punto
-            de la columna ANTERIOR (texto más pequeño). Ver PreviousSetCell. */}
-        <View style={{ position: 'relative' }}>
-          {content}
-          {(hasTextNote || hasVideo) && (
-            <View style={{ position: 'absolute', top: '50%', right: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight, transform: [{ translateY: -9 }] }} />
-          )}
-        </View>
-      </Pressable>
-    )
   }
 
   const renderCheckIndicator = () => {
@@ -301,12 +281,13 @@ function SetRow({
         <View className="flex-row items-center flex-1" style={{ gap: 8 }}>
           {renderInputs()}
         </View>
-        {/* Columna RIR: se colapsa si show_rir_input está off (misma condición que la cabecera).
-            weight_reps: ancho fijo (alineada). Otros tipos: ancho natural (la etiqueta «Esfuerzo»
-            no cabe en 46px y no hay cabecera que la alinee). */}
-        {showRirInput && (
+        {/* Columna «Notas»: se colapsa si RIR, notas y vídeo están off (misma condición
+            annotationColumn que la cabecera). weight_reps: ancho fijo (alineada). Otros tipos:
+            ancho natural (la etiqueta no cabe en 42px y no hay cabecera que la alinee). */}
+        {annotationColumn && (
           <View style={{ width: isWeightReps ? COL_RIR : undefined, alignItems: 'center', justifyContent: 'center' }}>
-            {showEffort && <EffortPicker value={rir} onChange={setRir} measurementType={measurementType} active={isActive} emptyDash={isWeightReps} />}
+            {showEffort && <EffortPicker value={rir} measurementType={measurementType} note={notes} hasVideo={hasVideo}
+              active={isActive} emptyDash={isWeightReps} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
           </View>
         )}
         <View style={{ width: COL_CHECK, alignItems: 'center', justifyContent: 'center' }}>
@@ -324,7 +305,12 @@ function SetRow({
         allowVideo={isCompleted}
         initialNote={notes}
         initialVideoUrl={setData?.videoUrl}
-        initialSetType={setType}
+        rir={rir}
+        onRirChange={setRir}
+        measurementType={measurementType}
+        showEffortScale={showRirInput}
+        setType={setType}
+        onSetTypeChange={setSetType}
       />
     </>
   )

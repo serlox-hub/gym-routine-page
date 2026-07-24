@@ -4,7 +4,7 @@ import SetRow, { GRID_WITH_RIR, GRID_NO_RIR } from './SetRow.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType, formatRelativeDate } from '@gym/shared'
+import { MeasurementType, formatRelativeDate, shouldShowAnnotationColumn } from '@gym/shared'
 
 function SetsList({
   exerciseKey,
@@ -25,7 +25,8 @@ function SetsList({
 }) {
   const { t } = useTranslation()
   const { data: preferences } = usePreferences()
-  const showRirInput = preferences?.show_rir_input ?? true
+  // Columna «Notas» presente si hay algo que anotar (RIR/notas/vídeo). Helper compartido con SetRow.
+  const annotationColumn = shouldShowAnnotationColumn(preferences)
   const completedSets = useWorkoutStore(state => state.completedSets)
   const showWeightReps = measurementType === MeasurementType.WEIGHT_REPS
   const activeSetNumber = (() => {
@@ -53,9 +54,9 @@ function SetsList({
       </div>
 
       {/* Column headers (only for weight_reps) — grid desde las constantes de SetRow (fuente
-          única) con la misma condición show_rir_input para colapsar la columna RIR */}
+          única) con la misma condición annotationColumn para colapsar la columna «Notas» */}
       {showWeightReps && setsCount > 0 && (
-        <div className="grid items-center gap-2 mb-3 px-1" style={{ gridTemplateColumns: showRirInput ? GRID_WITH_RIR : GRID_NO_RIR }}>
+        <div className="grid items-center gap-2 mb-3 px-1" style={{ gridTemplateColumns: annotationColumn ? GRID_WITH_RIR : GRID_NO_RIR }}>
           <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
             {t('workout:set.set').toUpperCase()}
           </span>
@@ -68,9 +69,9 @@ function SetsList({
           <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
             {t('workout:set.reps').toUpperCase()}
           </span>
-          {showRirInput && (
+          {annotationColumn && (
             <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-              {t('workout:set.rir').toUpperCase()}
+              {t('workout:set.notes').toUpperCase()}
             </span>
           )}
           <span />

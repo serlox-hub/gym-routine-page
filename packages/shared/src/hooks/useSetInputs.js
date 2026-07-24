@@ -83,6 +83,13 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measure
     persistDetails({ rir, notes: nextNotes, setType: nextSetType })
   }, [persistDetails, rir])
 
+  // Fijar el tipo de serie (normal/dropset) solo, preservando RIR y notas. Lo usa el toggle
+  // Normal/Dropset de SetDetailsModal (prop onSetTypeChange); mismo patrón que setRir.
+  const setSetType = useCallback((value) => {
+    setSetTypeState(value)
+    persistDetails({ rir, notes, setType: value })
+  }, [persistDetails, rir, notes])
+
   // Prefill de la sesión anterior: llega asíncrono; solo rellena campos aún vacíos
   // y solo si no hay datos completados ni cacheados (para no pisar lo que el usuario escriba).
   useEffect(() => {
@@ -138,7 +145,7 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measure
     level, setLevel,
     pace, setPace,
     rir, setRir,
-    notes, setType, saveDetails,
+    notes, setType, saveDetails, setSetType,
     isCompleted,
     setData,
     cachedData,

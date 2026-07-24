@@ -397,3 +397,18 @@ export function buildExtraExerciseConfig(extraId, exercise, config) {
     measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
   }
 }
+
+/**
+ * ¿Mostrar la columna «Notas» (esfuerzo/anotación) en la lista de series durante la sesión?
+ * Presente si hay algo que anotar: RIR, notas o vídeo activados en preferencias. Fuente ÚNICA
+ * para SetRow y SetsList (web+native) → cabecera y filas nunca se desincronizan. El gating fino
+ * del vídeo (plan/canUploadVideo) vive en la hoja; aquí solo cuenta la preferencia. Los defaults
+ * son `true` (columna visible salvo que el usuario apague las tres). Ver DECISIONS (SUPERSEDE #85).
+ * @param {{show_rir_input?: boolean, show_set_notes?: boolean, show_video_upload?: boolean}} [preferences]
+ * @returns {boolean}
+ */
+export function shouldShowAnnotationColumn(preferences) {
+  return (preferences?.show_rir_input ?? true) ||
+    (preferences?.show_set_notes ?? true) ||
+    (preferences?.show_video_upload ?? true)
+}

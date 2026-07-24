@@ -15,6 +15,7 @@ import {
   formatPreviousSetValue,
   getSetsForExercise,
   buildExtraExerciseConfig,
+  shouldShowAnnotationColumn,
 } from './setUtils.js'
 
 describe('setUtils', () => {
@@ -707,6 +708,23 @@ describe('setUtils', () => {
     it('permite rir 0', () => {
       const result = buildExtraExerciseConfig('extra-123', exercise, { rir: 0 })
       expect(result.rir).toBe(0)
+    })
+  })
+
+  describe('shouldShowAnnotationColumn', () => {
+    it('true por defecto (sin preferencias → los 3 defaults son true)', () => {
+      expect(shouldShowAnnotationColumn(undefined)).toBe(true)
+      expect(shouldShowAnnotationColumn({})).toBe(true)
+    })
+
+    it('false solo si RIR, notas y vídeo están las tres apagadas', () => {
+      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: false, show_video_upload: false })).toBe(false)
+    })
+
+    it('true si alguna de las tres prefs está activada', () => {
+      expect(shouldShowAnnotationColumn({ show_rir_input: true, show_set_notes: false, show_video_upload: false })).toBe(true)
+      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: true, show_video_upload: false })).toBe(true)
+      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: false, show_video_upload: true })).toBe(true)
     })
   })
 })
