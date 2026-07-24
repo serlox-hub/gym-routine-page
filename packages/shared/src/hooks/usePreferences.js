@@ -22,6 +22,7 @@ const DEFAULT_VALUES = {
   language: 'es',
   body_weight_reminder_days: 0,
   body_measurements_reminder_days: 0,
+  onboarding_completed: false,
 }
 
 // ============================================

@@ -8,7 +8,7 @@ import { File } from 'expo-file-system'
 import { useUserId, useIsPremium } from '../../hooks/useAuth'
 import { useCreateRoutine } from '../../hooks/useRoutines'
 import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui'
-import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, buildChatbotPrompt, buildAdaptRoutinePrompt } from '@gym/shared'
+import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { colors } from '../../lib/styles'
 
@@ -78,7 +78,7 @@ function TemplatesView({ onSelect, t }) {
       <ScrollView style={{ flex: 1, maxHeight: 350 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
         {ROUTINE_TEMPLATES.map(template => {
           const isSelected = selected?.id === template.id
-          const daysCount = template.data.routine.days.length
+          const { name, description, tags } = getTemplateDisplay(template, t)
           return (
             <Pressable key={template.id} onPress={() => setSelected(template)}
               style={{ padding: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: isSelected ? colors.success : colors.border }}>
@@ -87,17 +87,14 @@ function TemplatesView({ onSelect, t }) {
                   {isSelected && <Check size={12} color={colors.bgPrimary} />}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{template.name}</Text>
-                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>{template.description}</Text>
+                  <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{name}</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>{description}</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                    {template.tags.map(tag => (
+                    {tags.map(tag => (
                       <View key={tag} style={{ backgroundColor: colors.bgTertiary, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
                         <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{tag}</Text>
                       </View>
                     ))}
-                    <View style={{ backgroundColor: colors.bgTertiary, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{t('common:home.nDays', { count: daysCount })}</Text>
-                    </View>
                   </View>
                 </View>
               </View>
@@ -106,7 +103,7 @@ function TemplatesView({ onSelect, t }) {
         })}
       </ScrollView>
       <View style={{ padding: 20 }}>
-        <Pressable onPress={() => selected && onSelect(selected.data)} disabled={!selected}
+        <Pressable onPress={() => selected && onSelect(getTemplateImportData(selected, t))} disabled={!selected}
           style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: selected ? 1 : 0.4 }}>
           <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('routine:templates.use')}</Text>
         </Pressable>
@@ -132,19 +129,8 @@ function ChatbotView({ onImport, step, setStep, t }) {
     await Clipboard.setStringAsync(prompt)
   }
 
-  const GOALS = [
-    { value: 'Hipertrofia', label: t('routine:chatbot.goals.hypertrophy') },
-    { value: 'Fuerza', label: t('routine:chatbot.goals.strength') },
-    { value: 'Pérdida de grasa', label: t('routine:chatbot.goals.fatLoss') },
-    { value: 'Resistencia', label: t('routine:chatbot.goals.endurance') },
-    { value: 'Mantenimiento', label: t('routine:chatbot.goals.maintenance') },
-    { value: 'Salud general', label: t('routine:chatbot.goals.general') },
-  ]
-  const LEVELS = [
-    { value: 'Principiante (menos de 1 año)', label: t('routine:chatbot.levels.beginner'), desc: t('routine:chatbot.levelsDesc.beginner') },
-    { value: 'Intermedio (1-3 años)', label: t('routine:chatbot.levels.intermediate'), desc: t('routine:chatbot.levelsDesc.intermediate') },
-    { value: 'Avanzado (más de 3 años)', label: t('routine:chatbot.levels.advanced'), desc: t('routine:chatbot.levelsDesc.advanced') },
-  ]
+  const GOALS = GOAL_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey) }))
+  const LEVELS = LEVEL_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey), desc: t(o.descKey) }))
 
   const canNext = (step === 1 && goal) || (step === 2 && form.diasPorSemana) || step === 3 || step === 4
 

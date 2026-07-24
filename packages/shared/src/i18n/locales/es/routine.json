@@ -96,7 +96,85 @@
     "title": "Rutinas predefinidas",
     "description": "Plantillas de rutinas probadas para diferentes objetivos",
     "use": "Usar esta plantilla",
-    "selectHint": "Selecciona una rutina. Podrás personalizarla después."
+    "selectHint": "Selecciona una rutina. Podrás personalizarla después.",
+    "tagBodyweight": "Sin equipo",
+    "tagDumbbell": "Mancuernas",
+    "goalTags": {
+      "hypertrophy": "Hipertrofia",
+      "strength": "Fuerza",
+      "endurance": "Resistencia",
+      "general": "General"
+    },
+    "items": {
+      "full-body-2": {
+        "name": "Full Body 2 días",
+        "description": "Cuerpo completo 2 días/semana. Mínimo tiempo, máximo básico."
+      },
+      "full-body": {
+        "name": "Full Body",
+        "description": "Cuerpo completo 3 días/semana. Ideal para empezar."
+      },
+      "ppl-3": {
+        "name": "Push Pull Legs (3 días)",
+        "description": "Empuje / tirón / pierna a frecuencia 1×. Buen salto desde full body."
+      },
+      "upper-lower": {
+        "name": "Upper / Lower",
+        "description": "4 días dividido en tren superior e inferior. Volumen y recuperación equilibrados."
+      },
+      "531": {
+        "name": "5/3/1 Wendler",
+        "description": "Fuerza progresiva 4 días (método 5/3/1 + BBB). Progreso lento y constante."
+      },
+      "weider-5": {
+        "name": "Split Weider (5 días)",
+        "description": "Un grupo muscular por día. Máxima frecuencia de asistencia y volumen por grupo."
+      },
+      "ppl": {
+        "name": "Push Pull Legs (PPL)",
+        "description": "6 días empuje/tirón/pierna a frecuencia 2×. Máximo volumen para hipertrofia."
+      },
+      "home-bodyweight": {
+        "name": "En casa (peso corporal)",
+        "description": "Sin equipo de gimnasio. Cuerpo completo con tu propio peso, 3 días/semana."
+      },
+      "strength-5x5": {
+        "name": "Fuerza 5x5",
+        "description": "Fuerza para principiantes con 5x5 en los básicos, 3 días y progresión lineal."
+      },
+      "strength-hf": {
+        "name": "Fuerza alta frecuencia",
+        "description": "Fuerza para avanzados en 5 días, con foco rotatorio en los básicos pesados y accesorios."
+      },
+      "endurance-circuit": {
+        "name": "Resistencia (circuito)",
+        "description": "Circuito de cuerpo completo con reps altas y descansos cortos, 3 días. Resistencia muscular."
+      },
+      "home-dumbbell": {
+        "name": "En casa con mancuernas",
+        "description": "Cuerpo completo solo con mancuernas, 3 días. Para gimnasio en casa."
+      }
+    }
+  },
+  "onboarding": {
+    "welcomeTitle": "¡Empecemos!",
+    "welcomeSubtitle": "Responde unas preguntas rápidas y te dejamos una rutina lista para entrenar.",
+    "recommendedTitle": "Tu rutina recomendada",
+    "recommendedSubtitle": "Elegida según tus respuestas. Puedes cambiarla o personalizarla después.",
+    "recommendedBadge": "Recomendada",
+    "start": "Empezar con esta",
+    "skip": "Saltar por ahora",
+    "creating": "Preparando tu rutina...",
+    "daysNote": "Esta rutina tiene {{actual}} días y pediste {{requested}}. Podrás cambiar los días cuando quieras.",
+    "equipmentQuestion": "¿Dónde vas a entrenar?",
+    "equipment": {
+      "full": "Gimnasio completo",
+      "fullDesc": "Barras, mancuernas y máquinas",
+      "dumbbell": "En casa con mancuernas",
+      "dumbbellDesc": "Solo un par de mancuernas",
+      "bodyweight": "En casa, sin equipo",
+      "bodyweightDesc": "Solo tu peso corporal"
+    }
   },
   "chatbot": {
     "title": "Crear con IA",

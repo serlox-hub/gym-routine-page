@@ -1,6 +1,9 @@
-import { GreetingHeader, StreakCard, StatsRow, TodaysWorkout, RemindersBanner } from '../components/Home/index.js'
+import { useOnboardingGate } from '@gym/shared'
+import { GreetingHeader, StreakCard, StatsRow, TodaysWorkout, RemindersBanner, OnboardingWizard } from '../components/Home/index.js'
 
 function Home() {
+  const onboarding = useOnboardingGate()
+
   return (
     <div className="p-4 max-w-2xl mx-auto pb-20">
       <GreetingHeader />
@@ -8,6 +11,7 @@ function Home() {
       <StatsRow />
       <RemindersBanner />
       <TodaysWorkout />
+      {onboarding.shouldShow && <OnboardingWizard onComplete={onboarding.complete} />}
     </div>
   )
 }

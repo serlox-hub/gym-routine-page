@@ -181,16 +181,17 @@ describe('importRoutine', () => {
           return mgChain
         }
 
-        // Mock para ejercicios (batch query con .in() + insert individual)
+        // Mock para ejercicios (lecturas sistema/custom con .eq().is() + insert individual)
         if (table === 'exercises') {
           const exChain = {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
             in: vi.fn().mockReturnThis(),
             maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
             then: (resolve) => resolve({ data: [], error: null }),
             insert: vi.fn((record) => {
-              insertCalls[table].push(record)
+              insertCalls[table].push(...(Array.isArray(record) ? record : [record]))
               return {
                 select: vi.fn().mockReturnThis(),
                 single: vi.fn().mockResolvedValue({ data: { id: 'ex-new-1' }, error: null }),
@@ -203,7 +204,7 @@ describe('importRoutine', () => {
         if (table === 'routines') {
           return {
             insert: vi.fn((record) => {
-              insertCalls[table].push(record)
+              insertCalls[table].push(...(Array.isArray(record) ? record : [record]))
               routineIdCounter++
               return {
                 select: vi.fn().mockReturnThis(),
@@ -216,7 +217,7 @@ describe('importRoutine', () => {
         if (table === 'routine_days') {
           return {
             insert: vi.fn((record) => {
-              insertCalls[table].push(record)
+              insertCalls[table].push(...(Array.isArray(record) ? record : [record]))
               dayIdCounter++
               return {
                 select: vi.fn().mockReturnThis(),
@@ -229,7 +230,7 @@ describe('importRoutine', () => {
         if (table === 'routine_exercises') {
           return {
             insert: vi.fn((record) => {
-              insertCalls[table].push(record)
+              insertCalls[table].push(...(Array.isArray(record) ? record : [record]))
               return Promise.resolve({ data: { id: 're-1' }, error: null })
             }),
           }
@@ -277,6 +278,71 @@ describe('importRoutine', () => {
     // Retorna la rutina creada
     expect(result).toBeDefined()
     expect(result.name).toBe('Rutina Importada')
+  })
+
+  it('enlaza con un ejercicio de sistema por name_en (no crea custom) y resuelve la ref del día', async () => {
+    const insertCalls = {}
+    const systemRow = { id: 'sys-bench', name_es: 'Press de banca con barra', name_en: 'Barbell Bench Press' }
+
+    // El export referencia el ejercicio con un name_es distinto al del catálogo, pero con el
+    // name_en correcto → debe casar por name_en y NO crear un ejercicio custom.
+    const json = {
+      version: 6,
+      exercises: [
+        { name_es: 'Press banca', name_en: 'Barbell Bench Press', measurement_type: 'weight_reps', muscle_group_name: 'Pecho' },
+      ],
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [
+              { exercise_name: 'Press banca', series: 3, reps: '5', rest_seconds: 120 },
+            ] },
+          ] },
+        ],
+      },
+    }
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (!insertCalls[table]) insertCalls[table] = []
+        if (table === 'exercises') {
+          const p = Promise.resolve({ data: [systemRow], error: null })
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            then: p.then.bind(p),
+            insert: vi.fn((record) => {
+              insertCalls[table].push(...(Array.isArray(record) ? record : [record]))
+              return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'should-not-create' }, error: null }) }
+            }),
+          }
+        }
+        if (table === 'muscle_groups') {
+          const p = Promise.resolve({ data: [{ id: 'mg-1', name_es: 'Pecho', name_en: 'Chest' }], error: null })
+          return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        if (table === 'routines') {
+          return { insert: vi.fn((record) => { insertCalls[table].push(...(Array.isArray(record) ? record : [record])); return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 1, ...record }, error: null }) } }) }
+        }
+        if (table === 'routine_days') {
+          return { insert: vi.fn((record) => { insertCalls[table].push(...(Array.isArray(record) ? record : [record])); return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 10, ...record }, error: null }) } }) }
+        }
+        if (table === 'routine_exercises') {
+          return { insert: vi.fn((record) => { insertCalls[table].push(...(Array.isArray(record) ? record : [record])); return Promise.resolve({ data: { id: 're' }, error: null }) }) }
+        }
+        return makeQueryMock({ data: null, error: null })
+      },
+    }))
+
+    await importRoutine(json, 'user-1', {})
+
+    // No se creó ningún ejercicio custom (casó con el de sistema por name_en)
+    expect(insertCalls['exercises'] || []).toHaveLength(0)
+    // La ref del día resolvió al id del ejercicio de sistema
+    expect(insertCalls['routine_exercises']).toHaveLength(1)
+    expect(insertCalls['routine_exercises'][0].exercise_id).toBe('sys-bench')
   })
 })
 
@@ -360,9 +426,10 @@ describe('duplicateRoutine', () => {
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
             in: vi.fn().mockReturnThis(),
             maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'ex-1' }, error: null }),
-            // Export usa .in() sin .eq(); import usa .eq().in() — ambos terminan en await
+            // Export usa .in(); import lee sistema/custom con .eq().is() — ambos terminan en await
             then: resolved.then.bind(resolved),
             insert: vi.fn().mockReturnValue({
               select: vi.fn().mockReturnThis(),
@@ -437,6 +504,7 @@ describe('duplicateRoutine', () => {
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockResolvedValue({ data: [], error: null }),
             in: vi.fn().mockResolvedValue({ data: [], error: null }),
           }
         }

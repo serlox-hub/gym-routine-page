@@ -5,7 +5,7 @@ import { Sparkles, Pencil, LayoutGrid, Upload, ChevronRight, ChevronLeft, Lock, 
 import { useUserId, useIsPremium } from '../../hooks/useAuth.js'
 import { useCreateRoutine } from '../../hooks/useRoutines.js'
 import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui/index.js'
-import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, getNotifier, buildChatbotPrompt, buildAdaptRoutinePrompt } from '@gym/shared'
+import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, getNotifier, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { readJsonFile } from '../../lib/routineIO.js'
 import { colors } from '../../lib/styles.js'
@@ -108,7 +108,7 @@ function TemplatesView({ onSelect, t }) {
       <div className="overflow-y-auto flex-1 px-5" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {ROUTINE_TEMPLATES.map(template => {
           const isSelected = selected?.id === template.id
-          const daysCount = template.data.routine.days.length
+          const { name, description, tags } = getTemplateDisplay(template, t)
           return (
             <button
               key={template.id}
@@ -122,15 +122,12 @@ function TemplatesView({ onSelect, t }) {
                   {isSelected && <Check size={12} color={colors.bgPrimary} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600, display: 'block' }}>{template.name}</span>
-                  <span style={{ color: colors.textMuted, fontSize: 12, display: 'block', marginTop: 2 }}>{template.description}</span>
+                  <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600, display: 'block' }}>{name}</span>
+                  <span style={{ color: colors.textMuted, fontSize: 12, display: 'block', marginTop: 2 }}>{description}</span>
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {template.tags.map(tag => (
+                    {tags.map(tag => (
                       <span key={tag} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}>{tag}</span>
                     ))}
-                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}>
-                      {t('common:home.nDays', { count: daysCount })}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -140,7 +137,7 @@ function TemplatesView({ onSelect, t }) {
       </div>
       <div style={{ padding: 20 }}>
         <button
-          onClick={() => selected && onSelect(selected.data)}
+          onClick={() => selected && onSelect(getTemplateImportData(selected, t))}
           disabled={!selected}
           className="w-full py-3 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-40"
           style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
@@ -169,20 +166,8 @@ function ChatbotView({ onImport, step, setStep, t }) {
     catch { getNotifier()?.show(t('common:errors.copyError'), 'error') }
   }
 
-  const GOALS = [
-    { value: 'Hipertrofia', label: t('routine:chatbot.goals.hypertrophy') },
-    { value: 'Fuerza', label: t('routine:chatbot.goals.strength') },
-    { value: 'Pérdida de grasa', label: t('routine:chatbot.goals.fatLoss') },
-    { value: 'Resistencia', label: t('routine:chatbot.goals.endurance') },
-    { value: 'Mantenimiento', label: t('routine:chatbot.goals.maintenance') },
-    { value: 'Salud general', label: t('routine:chatbot.goals.general') },
-  ]
-
-  const LEVELS = [
-    { value: 'Principiante (menos de 1 año)', label: t('routine:chatbot.levels.beginner'), desc: t('routine:chatbot.levelsDesc.beginner') },
-    { value: 'Intermedio (1-3 años)', label: t('routine:chatbot.levels.intermediate'), desc: t('routine:chatbot.levelsDesc.intermediate') },
-    { value: 'Avanzado (más de 3 años)', label: t('routine:chatbot.levels.advanced'), desc: t('routine:chatbot.levelsDesc.advanced') },
-  ]
+  const GOALS = GOAL_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey) }))
+  const LEVELS = LEVEL_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey), desc: t(o.descKey) }))
 
   const canNext = (step === 1 && goal) || (step === 2 && form.diasPorSemana) || step === 3 || step === 4
 

@@ -2,13 +2,38 @@ import { getClient } from './_client.js'
 import { BLOCK_NAMES } from '../lib/constants.js'
 import { MeasurementType } from '../lib/measurementTypes.js'
 import { t } from '../i18n/index.js'
+import { normalizeExerciseName, buildExerciseIndex, resolveExerciseId } from '../lib/exerciseMatch.js'
+
+/** Versión actual del esquema de export/import JSON. v6 añade `name_en` por ejercicio. */
+export const ROUTINE_EXPORT_VERSION = 6
+
+// Índice grupo-muscular por nombre normalizado (name_en + name_es) → id.
+// Solo se usa al CREAR ejercicios custom (cuando el ejercicio no está en el catálogo).
+async function buildMuscleGroupIndex() {
+  const { data } = await getClient()
+    .from('muscle_groups')
+    .select('id, name_es, name_en')
+  const index = new Map()
+  const put = (name, id) => {
+    const key = normalizeExerciseName(name)
+    if (key && !index.has(key)) index.set(key, id)
+  }
+  for (const mg of data || []) { put(mg.name_en, mg.id); put(mg.name_es, mg.id) }
+  return index
+}
+
+function resolveMuscleGroupId(name, index) {
+  const key = normalizeExerciseName(name)
+  return (key && index.get(key)) || null
+}
 
 // ============================================
 // IMPORT / EXPORT / DUPLICATE
 // ============================================
 
 /**
- * Exporta una rutina completa a JSON (version 4)
+ * Exporta una rutina completa a JSON (esquema ROUTINE_EXPORT_VERSION).
+ * Incluye `name_en` por ejercicio como clave estable para el re-import (independiente del idioma).
  * N+1 fix: la query de días incluye id, evitando una query extra por día
  * @param {string|number} routineId
  * @returns {Promise<object>} exportData con shape {version, exportedAt, exercises, routine}
@@ -121,6 +146,7 @@ export async function exportRoutine(routineId) {
     .from('exercises')
     .select(`
       name:name_es,
+      name_en,
       measurement_type,
       instructions,
       muscle_group:muscle_groups!muscle_group_id(name:name_es)
@@ -130,10 +156,11 @@ export async function exportRoutine(routineId) {
   if (exercisesError) throw exercisesError
 
   return {
-    version: 5,
+    version: ROUTINE_EXPORT_VERSION,
     exportedAt: new Date().toISOString(),
     exercises: exercises.map(ex => ({
       name_es: ex.name,
+      name_en: ex.name_en,
       measurement_type: ex.measurement_type,
       instructions: ex.instructions,
       muscle_group_name: ex.muscle_group?.name,
@@ -146,11 +173,17 @@ export async function exportRoutine(routineId) {
 }
 
 /**
- * Importa una rutina desde JSON (version 4)
+ * Importa una rutina desde JSON a la cuenta del usuario.
+ *
+ * Empareja cada ejercicio con el catálogo/custom por CLAVE ESTABLE (name_en → name_es,
+ * normalizado y tolerante a acentos/mayúsculas/espacios) vía `exerciseMatch`. Solo crea un
+ * ejercicio custom si no hay match. Retrocompatible con exports v4/v5 (sin name_en → casan
+ * por name_es).
  * @param {object|string} jsonData
  * @param {string} userId
  * @param {object} options
- * @param {boolean} options.updateExercises - Si true, actualiza ejercicios existentes
+ * @param {boolean} options.updateExercises - Si true, actualiza la definición de los ejercicios
+ *   PROPIOS del usuario que casen (nunca los de sistema, que son compartidos)
  * @returns {Promise<object>} La nueva rutina creada
  */
 export async function importRoutine(jsonData, userId, options = {}) {
@@ -163,72 +196,45 @@ export async function importRoutine(jsonData, userId, options = {}) {
 
   const { routine, exercises: exportedExercises } = data
 
-  // Mapa nombre ejercicio -> id
+  // Índice del catálogo (sistema) + customs del usuario para resolver por clave estable.
+  // Se cargan completos (una query cada uno) en vez de filtrar por nombre: evita el frágil
+  // filtrado .in() con nombres que llevan acentos/paréntesis y habilita el match tolerante.
+  const [{ data: systemRows }, { data: customRows }] = await Promise.all([
+    getClient().from('exercises').select('id, name_es, name_en').eq('is_system', true).is('deleted_at', null),
+    getClient().from('exercises').select('id, name_es, name_en').eq('user_id', userId).is('deleted_at', null),
+  ])
+  const exerciseIndex = buildExerciseIndex({ systemRows: systemRows || [], customRows: customRows || [] })
+  const customIds = new Set((customRows || []).map(r => r.id))
+
+  // nombre-normalizado del export -> exercise_id (para resolver las refs de los días)
   const exerciseMap = new Map()
 
   // Crear o actualizar ejercicios (solo si el export incluye definiciones)
   if (exportedExercises && exportedExercises.length > 0) {
-    // Batch: obtener todos los muscle groups de una vez
-    const muscleGroupNames = [...new Set(
-      exportedExercises.map(ex => ex.muscle_group_name).filter(Boolean)
-    )]
-    const muscleGroupMap = new Map()
-    if (muscleGroupNames.length > 0) {
-      const { data: mgRows } = await getClient()
-        .from('muscle_groups')
-        .select('id, name:name_es')
-        .in('name_es', muscleGroupNames)
-      for (const mg of mgRows || []) {
-        muscleGroupMap.set(mg.name, mg.id)
-      }
-    }
-
-    // Batch: obtener ejercicios existentes (custom del usuario + sistema)
-    const exerciseNames = exportedExercises.map(ex => ex.name_es || ex.name)
-    const existingExercisesMap = new Map()
-    if (exerciseNames.length > 0) {
-      // Buscar en custom del usuario
-      const { data: userRows } = await getClient()
-        .from('exercises')
-        .select('id, name:name_es')
-        .eq('user_id', userId)
-        .in('name_es', exerciseNames)
-      for (const row of userRows || []) {
-        existingExercisesMap.set(row.name, row.id)
-      }
-      // Buscar en ejercicios del sistema
-      const { data: systemRows } = await getClient()
-        .from('exercises')
-        .select('id, name:name_es')
-        .eq('is_system', true)
-        .in('name_es', exerciseNames)
-      for (const row of systemRows || []) {
-        if (!existingExercisesMap.has(row.name)) {
-          existingExercisesMap.set(row.name, row.id)
-        }
-      }
+    // El índice de grupos musculares solo se necesita al CREAR/actualizar un custom; se carga
+    // perezosamente para no gastar una query cuando todo casa con el catálogo (plantillas/onboarding).
+    let muscleGroupIndex = null
+    const getMuscleGroupIndex = async () => {
+      if (!muscleGroupIndex) muscleGroupIndex = await buildMuscleGroupIndex()
+      return muscleGroupIndex
     }
 
     for (const ex of exportedExercises) {
       const exName = ex.name_es || ex.name
-      const muscleGroupId = ex.muscle_group_name
-        ? muscleGroupMap.get(ex.muscle_group_name) || null
-        : null
+      const matchedId = resolveExerciseId(ex, exerciseIndex)
 
-      const existingId = existingExercisesMap.get(exName)
-
-      if (existingId) {
-        exerciseMap.set(exName, existingId)
-
-        if (updateExercises) {
+      if (matchedId) {
+        exerciseMap.set(normalizeExerciseName(exName), matchedId)
+        // Actualizar SOLO ejercicios propios del usuario (nunca los de sistema, compartidos)
+        if (updateExercises && customIds.has(matchedId)) {
           await getClient()
             .from('exercises')
             .update({
               measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
               instructions: ex.instructions,
-              muscle_group_id: muscleGroupId,
+              muscle_group_id: resolveMuscleGroupId(ex.muscle_group_name, await getMuscleGroupIndex()),
             })
-            .eq('id', existingId)
+            .eq('id', matchedId)
         }
       } else {
         const { data: newExercise, error: exError } = await getClient()
@@ -237,14 +243,14 @@ export async function importRoutine(jsonData, userId, options = {}) {
             name_es: exName,
             measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
             instructions: ex.instructions,
-            muscle_group_id: muscleGroupId,
+            muscle_group_id: resolveMuscleGroupId(ex.muscle_group_name, await getMuscleGroupIndex()),
             user_id: userId,
           })
           .select()
           .single()
 
         if (exError) throw exError
-        exerciseMap.set(exName, newExercise.id)
+        exerciseMap.set(normalizeExerciseName(exName), newExercise.id)
       }
     }
   }
@@ -262,7 +268,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
 
   if (routineError) throw routineError
 
-  // Crear días, bloques y ejercicios
+  // Crear días y sus ejercicios (sin routine_blocks)
   for (const day of routine.days) {
     const { data: newDay, error: dayError } = await getClient()
       .from('routine_days')
@@ -277,51 +283,40 @@ export async function importRoutine(jsonData, userId, options = {}) {
 
     if (dayError) throw dayError
 
-    // Crear ejercicios directamente (sin routine_blocks)
+    // Agrupar los ejercicios del día en un solo insert (evita N round-trips en la ruta de
+    // activación del onboarding; en redes lentas el coste dominante es la red, no la BD).
+    const routineExerciseRows = []
     let sortOrder = 1
     for (const block of day.blocks || []) {
       const isWarmup = block.name === BLOCK_NAMES.WARMUP
 
       for (const ex of block.exercises || []) {
-        // Buscar ejercicio: primero en el mapa, luego en BD (custom + sistema)
-        let exerciseId = exerciseMap.get(ex.exercise_name)
-
-        if (!exerciseId) {
-          const { data: exercise } = await getClient()
-            .from('exercises')
-            .select('id')
-            .eq('name_es', ex.exercise_name)
-            .eq('user_id', userId)
-            .maybeSingle()
-          exerciseId = exercise?.id
-        }
-
-        if (!exerciseId) {
-          const { data: sysExercise } = await getClient()
-            .from('exercises')
-            .select('id')
-            .eq('name_es', ex.exercise_name)
-            .eq('is_system', true)
-            .maybeSingle()
-          exerciseId = sysExercise?.id
-        }
+        // Primero el mapa del export; si el día referencia un ejercicio sin definición
+        // en `exercises`, resolver directamente contra el índice (catálogo + custom).
+        const exerciseId = exerciseMap.get(normalizeExerciseName(ex.exercise_name))
+          ?? resolveExerciseId({ name: ex.exercise_name }, exerciseIndex)
 
         if (exerciseId) {
-          await getClient()
-            .from('routine_exercises')
-            .insert({
-              routine_day_id: newDay.id,
-              exercise_id: exerciseId,
-              series: ex.series,
-              reps: ex.reps,
-              rir: ex.rir,
-              rest_seconds: ex.rest_seconds,
-              notes: ex.notes,
-              sort_order: sortOrder++,
-              is_warmup: isWarmup,
-            })
+          routineExerciseRows.push({
+            routine_day_id: newDay.id,
+            exercise_id: exerciseId,
+            series: ex.series,
+            reps: ex.reps,
+            rir: ex.rir,
+            rest_seconds: ex.rest_seconds,
+            notes: ex.notes,
+            sort_order: sortOrder++,
+            is_warmup: isWarmup,
+          })
         }
       }
+    }
+
+    if (routineExerciseRows.length > 0) {
+      const { error: reError } = await getClient()
+        .from('routine_exercises')
+        .insert(routineExerciseRows)
+      if (reError) throw reError
     }
   }
 

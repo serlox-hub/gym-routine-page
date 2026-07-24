@@ -96,7 +96,85 @@
     "title": "Predefined routines",
     "description": "Proven routine templates for different goals",
     "use": "Use this template",
-    "selectHint": "Select a routine. You can customize it later."
+    "selectHint": "Select a routine. You can customize it later.",
+    "tagBodyweight": "No equipment",
+    "tagDumbbell": "Dumbbells",
+    "goalTags": {
+      "hypertrophy": "Hypertrophy",
+      "strength": "Strength",
+      "endurance": "Endurance",
+      "general": "General"
+    },
+    "items": {
+      "full-body-2": {
+        "name": "Full Body 2 days",
+        "description": "Full body twice a week. Minimum time, essential basics."
+      },
+      "full-body": {
+        "name": "Full Body",
+        "description": "Full body three days a week. Great to get started."
+      },
+      "ppl-3": {
+        "name": "Push Pull Legs (3 days)",
+        "description": "Push / pull / legs once a week. A solid step up from full body."
+      },
+      "upper-lower": {
+        "name": "Upper / Lower",
+        "description": "4 days split into upper and lower body. Balanced volume and recovery."
+      },
+      "531": {
+        "name": "5/3/1 Wendler",
+        "description": "Progressive strength, 4 days (5/3/1 method + BBB). Slow, steady progress."
+      },
+      "weider-5": {
+        "name": "Weider Split (5 days)",
+        "description": "One muscle group per day. Highest training frequency and per-group volume."
+      },
+      "ppl": {
+        "name": "Push Pull Legs (PPL)",
+        "description": "6 days push/pull/legs twice a week. Maximum volume for hypertrophy."
+      },
+      "home-bodyweight": {
+        "name": "At home (bodyweight)",
+        "description": "No gym equipment. Full body with your own bodyweight, 3 days a week."
+      },
+      "strength-5x5": {
+        "name": "Strength 5x5",
+        "description": "Beginner strength with 5x5 on the basics, 3 days and linear progression."
+      },
+      "strength-hf": {
+        "name": "High-frequency strength",
+        "description": "Advanced strength across 5 days, with rotating focus on the heavy basics plus accessories."
+      },
+      "endurance-circuit": {
+        "name": "Endurance (circuit)",
+        "description": "Full-body circuit with high reps and short rest, 3 days. Muscular endurance."
+      },
+      "home-dumbbell": {
+        "name": "At home with dumbbells",
+        "description": "Full body with dumbbells only, 3 days. For a home gym."
+      }
+    }
+  },
+  "onboarding": {
+    "welcomeTitle": "Let's get started!",
+    "welcomeSubtitle": "Answer a few quick questions and we'll set up a routine ready to train.",
+    "recommendedTitle": "Your recommended routine",
+    "recommendedSubtitle": "Picked from your answers. You can swap it or customize it later.",
+    "recommendedBadge": "Recommended",
+    "start": "Start with this",
+    "skip": "Skip for now",
+    "creating": "Setting up your routine...",
+    "daysNote": "This routine has {{actual}} days and you picked {{requested}}. You can change the days whenever you want.",
+    "equipmentQuestion": "Where will you train?",
+    "equipment": {
+      "full": "Full gym",
+      "fullDesc": "Barbells, dumbbells and machines",
+      "dumbbell": "At home with dumbbells",
+      "dumbbellDesc": "Just a pair of dumbbells",
+      "bodyweight": "At home, no equipment",
+      "bodyweightDesc": "Just your bodyweight"
+    }
   },
   "chatbot": {
     "title": "Create with AI",

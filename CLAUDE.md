@@ -192,7 +192,9 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 3. **Tailwind configs** importan desde `styles.js` — nunca hardcodear valores en los configs
 4. **Opacidades decorativas** (gradientes, sombras en Landing) → usar constantes `RGB_ACCENT` / `RGB_PURPLE` exportadas desde `styles.js` con template literals: `` `rgba(${RGB_ACCENT}, 0.08)` ``
 5. **No duplicar tokens semánticos** — si dos tokens tienen el mismo valor hex, usar uno solo (ej: `orange` cubre tanto el acento naranja como el color de dropset)
-6. **`success` (lima `#BEFF00`) NO se usa en alpha sobre fondos oscuros** — al ser amarillo-verde sin azul, en translúcido vira a oliva/caqui (ningún nivel de opacidad lo corrige). Usar el lima solo en **sólido** (borde, barra, icono, texto, check). Para marcar "hecho"/superficies, sólido o un neutro elevado — no un wash lima.
+6. **`success` (lima `#BEFF00`) — cuidado con el alpha sobre fondos oscuros.** Al ser amarillo-verde sin azul, en translúcido vira a oliva/caqui. Regla:
+   - **Estado "seleccionado/activo"**: SÍ se usa el wash lima suave `successBg` (~0.12) como fondo, combinado con borde + texto lima sólidos. Es el patrón establecido en toda la app (chips/opciones de `NewRoutineFlow`, `OnboardingWizard`, badges como `PlanBadge`, `StreakCard`, etc.) y es el que se debe seguir por consistencia.
+   - **Marcar "hecho" o teñir superficies grandes**: NO usar wash lima (viraría a oliva); usar el lima en **sólido** (borde, barra, icono, texto, check) o un neutro elevado (`bgTertiary`).
 
 **Token categories:**
 - Fondos: `bgPrimary`, `bgSecondary`, `bgAlt`, `bgTertiary`, `bgHover`
@@ -252,6 +254,15 @@ t('routine:deleteConfirm', { name: routine.name })
 3. **Use existing keys** before creating new ones — check the JSON files first
 4. **Namespace by domain** — use the namespace that matches the feature area
 5. **Keep keys descriptive** — `routine:day.deleteConfirm` not `routine:msg1`
+
+### Estilo de copy de UI (sin "AI smell")
+Los **textos de usuario** (valores en `es/*.json` y `en/*.json`) deben sonar humanos, como los escribiría una persona. Evita los tells típicos de texto generado por IA:
+- ❌ **Em dash (`—`)** en copy. Usa punto, coma o paréntesis.
+- ❌ **Punto y coma (`;`)** en copy. Parte en frases cortas con punto.
+- ❌ Construcciones **`Etiqueta: detalle`** redundantes, relleno grandilocuente ("máxima potencia", "lleva tu X al siguiente nivel"), listas separadas por `—`.
+- ✅ Directo y concreto, frases cortas. Como una persona, no como un folleto.
+
+⚠️ Aplica SOLO a copy de UI (valores de i18n), **no** a documentación ni comentarios de código (`CLAUDE.md`, `docs/`, JSDoc pueden usar `—`, `;`, etc. con normalidad).
 
 ### DB reference data translation
 - **Muscle groups** (from `muscle_groups` table): display with `translateMuscleGroup(dbName)` from `@gym/shared`
@@ -387,25 +398,26 @@ Extract when logic:
 | Array operations | `arrayUtils.js` | `reorderArrayItem()`, `filterExercises()` |
 | Form validation | `validation.js` | `validateSignupForm()`, `validateRoutineForm()` |
 | Measurement types | `measurementTypes.js` | `measurementTypeUsesWeight()` |
-| Import/Export rutinas | `routineIO.js` | `importRoutine()`, `exportRoutine()` |
+| Prompts IA / formato JSON rutinas | `routineIO.js` | `buildChatbotPrompt()`, `ROUTINE_JSON_FORMAT` |
+| Matching ejercicio→catálogo (import) | `exerciseMatch.js` | `normalizeExerciseName()`, `buildExerciseIndex()`, `resolveExerciseId()` |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
 
 All these files live in `packages/shared/src/lib/` and are exported via `@gym/shared`.
 
-### Archivo crítico: routineIO.js
+### Archivos críticos: import/export de rutinas (JSON)
 
-⚠️ **IMPORTANTE**: `packages/shared/src/lib/routineIO.js` contiene la lógica de importación y exportación de rutinas en formato JSON. Este archivo:
+La lógica está repartida en dos archivos (no confundir):
+- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 6**) y mapea BD ↔ JSON.
+- **`packages/shared/src/lib/routineIO.js`** — prompts de IA (`buildChatbotPrompt`, `buildAdaptRoutinePrompt`) y el doc del formato (`ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`). Puro, sin BD.
 
-- Define el **esquema de exportación** (versión actual: 4)
-- Mapea la estructura de la base de datos al formato JSON y viceversa
-- Genera el prompt para crear rutinas con IA
+⚠️ **Emparejamiento por CLAVE ESTABLE (no por `name_es`)**: `importRoutine` resuelve cada ejercicio contra el catálogo/custom por `name_en` → `name_es` (normalizado tolerante: minúsculas + sin acentos + espacios) vía `lib/exerciseMatch.js` (`buildExerciseIndex`/`resolveExerciseId`, puro y testeado). `name_en` es único y 100% poblado en ejercicios de sistema; los custom (sin `name_en`) casan por `name_es`. Solo crea un ejercicio custom si no hay match. El export incluye `name_en` por ejercicio (v6) para que el re-import sea independiente del idioma. Ver `docs/DECISIONS.md`.
 
 **Cuando se modifique el modelo de datos** (tablas `routines`, `routine_days`, `routine_blocks`, `routine_exercises`, `exercises`):
 1. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON
 2. Actualizar `importRoutine()` para leer los nuevos campos del JSON
-3. Actualizar `buildChatbotPrompt()` si afecta al prompt de IA
-4. Considerar incrementar la versión del esquema si hay cambios breaking
-5. Actualizar los tests en `routineIO.test.js`
+3. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA
+4. Incrementar `ROUTINE_EXPORT_VERSION` si hay cambios breaking (importRoutine debe seguir aceptando versiones antiguas)
+5. Actualizar los tests (`routineIO.test.js`, `routineApi.test.js`, `exerciseMatch.test.js`)
 
 ### Example: Before and After
 

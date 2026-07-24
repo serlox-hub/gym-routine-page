@@ -2,10 +2,11 @@ import { t, getCurrentLocale } from '../i18n/index.js'
 
 export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
-  "version": 5,
+  "version": 6,
   "exercises": [
     {
       "name_es": "Exercise name in Spanish",
+      "name_en": "Exercise name in English (optional, improves catalog matching)",
       "measurement_type": "weight_reps",
       "muscle_group_name": "Pecho",
       "instructions": "Exercise instructions (optional)"
@@ -56,6 +57,7 @@ export const ROUTINE_JSON_RULES = `IMPORTANT RULES:
 
 EXERCISE FIELDS (in "exercises"):
 - name_es: exercise name in Spanish (REQUIRED)
+- name_en: common English name (optional; improves matching with the app catalog)
 - measurement_type (REQUIRED, one of):
   - "weight_reps": weight × repetitions (e.g.: bench press)
   - "reps_only": reps only without weight (e.g.: pull-ups)

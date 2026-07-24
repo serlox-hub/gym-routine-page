@@ -23,11 +23,13 @@ import {
   addExerciseToDay as apiAddExerciseToDay,
   duplicateRoutineExercise as apiDuplicateRoutineExercise,
   moveRoutineExerciseToDay as apiMoveRoutineExerciseToDay,
+  importRoutine,
 } from '../api/routineApi.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
+import { getTemplateImportData } from '../lib/routineTemplates.js'
 
 export function useRoutines() {
   return useQuery({
@@ -183,6 +185,31 @@ export function useSetFavoriteRoutine() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE] })
+    },
+  })
+}
+
+/**
+ * Instancia una plantilla en la cuenta del usuario y la fija como favorita (para que aparezca
+ * como "entrenamiento de hoy"). Orquestación compartida web+native usada por el onboarding.
+ * @returns mutation; `mutateAsync({ template, t })` → rutina creada.
+ */
+export function useCreateRoutineFromTemplate() {
+  const queryClient = useQueryClient()
+  const userId = useUserId()
+
+  return useMutation({
+    mutationFn: async ({ template, t: translate }) => {
+      const routine = await importRoutine(getTemplateImportData(template, translate), userId, { updateExercises: false })
+      // Fijar como favorita es best-effort: si `importRoutine` tuvo éxito, la rutina YA existe;
+      // no relanzar por un fallo del favorito evita que un reintento cree una rutina duplicada.
+      try {
+        await apiSetFavoriteRoutine({ routineId: routine.id, isFavorite: true })
+      } catch { /* la rutina queda creada aunque no fijada */ }
+      return routine
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
     },
   })
 }

@@ -174,6 +174,15 @@ done
 ```
 Todo texto visible → `t('ns:key')` (excepciones: rutas de navegación, valores de DB, constantes técnicas, mockups de landing). Keys en `es` y `en`. Datos de referencia con helpers (`translateMuscleGroup`, `translateBlockName`, `getSensationLabel`). En código compartido: `import { t }`, no `useTranslation`.
 
+### Copy de UI sin "AI smell" (valores de i18n modificados)
+```bash
+for f in $(git diff --name-only HEAD | grep -E 'i18n/locales/.*\.json$'); do
+  grep -nE '—' "$f" || true                                   # em dash en copy → hallazgo
+  grep -nE ';' "$f" | grep -vE '&#[0-9]+;|&[a-z]+;' || true    # punto y coma en copy → hallazgo
+done
+```
+Em dash (`—`) o punto y coma (`;`) en un **valor de copy** → hallazgo (ver `CLAUDE.md` · "Estilo de copy de UI"). Señala también construcciones `Etiqueta: detalle` redundantes, relleno grandilocuente ("máxima potencia", "lleva tu X al siguiente nivel") y tono no-humano; el copy debe leerse como lo escribiría una persona. NO aplica a documentación/comentarios/JSDoc.
+
 ## Paso D. DRY (CRÍTICO)
 Cualquier lógica repetida (aunque sean 2-3 líneas) entre archivos o entre web/native → extraer a `packages/shared/src/lib/` (o hook compartido). Strings formateados duplicados → formateador en util. Constantes repetidas → `constants.js`/`styles.js`. Lógica de negocio JAMÁS duplicada entre apps; solo debe diferir la capa de render (JSX vs View/Text).
 
