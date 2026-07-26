@@ -12,7 +12,7 @@ import SetsList from './SetsList.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
-import { MeasurementType, getExerciseName, usePreference, resolveWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle } from '@gym/shared'
+import { MeasurementType, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [], existingSupersets = [] }) {
@@ -23,11 +23,11 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const [showReplace, setShowReplace] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
 
+  const gymId = useWorkoutStore(state => state.gymId)
   const { data: override } = useUserExerciseOverride(exercise?.id)
-  const { value: globalWeightUnit } = usePreference('weight_unit')
   const { value: progressionEnabled } = usePreference('progression_suggestions')
   const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
-  const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
+  const weightUnit = useResolvedWeightUnit(exercise?.id, gymId)
   const exerciseKey = sessionExerciseId || id
 
   const { expanded, toggle: toggleExpanded } = useExpandedExercise(exerciseKey)
@@ -110,7 +110,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
           <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} progressionEnabled={progressionEnabled} measurementType={measurementType} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
         </>
       )}
-      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} measurementType={measurementType} weightUnit={weightUnit} routineDayId={routineDayId} />
+      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} measurementType={measurementType} routineDayId={routineDayId} />
       <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
       <ConfirmModal isOpen={showRemoveConfirm} title={t('workout:exercise.removeFromSession')} message={t('workout:exercise.removeFromSessionConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
       <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />

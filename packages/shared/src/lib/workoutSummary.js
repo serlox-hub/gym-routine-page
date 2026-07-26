@@ -290,7 +290,7 @@ export async function fetchWorkoutSummary(sessionId, { weightUnit = 'kg' } = {})
   // Bests históricos hasta justo antes de esta sesión, dentro del mismo gym, para
   // poblar oldValue en cada detail (línea "anterior · X" en las tarjetas de PR).
   const [weightUnitByExerciseId, previousBests] = await Promise.all([
-    fetchUserExerciseWeightUnits(exerciseIds),
+    fetchUserExerciseWeightUnits(exerciseIds, gymId),
     fetchExerciseBests(exerciseIds, { beforeDate: session.started_at, gymId }),
   ])
 

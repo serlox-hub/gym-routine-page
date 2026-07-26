@@ -49,7 +49,7 @@ function getStatCards(stats, measurementType, weightUnit, distanceUnit, t) {
   return []
 }
 
-function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm', chartRows, overlayGyms }) {
+function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm', chartRows, overlayGyms, unitByGym }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return (
@@ -73,6 +73,7 @@ function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUn
           sessions={sessions}
           chartRows={usesChartRows ? chartRows : undefined}
           overlayGyms={overlayGyms}
+          unitByGym={unitByGym}
           measurementType={measurementType}
           weightUnit={weightUnit}
         />

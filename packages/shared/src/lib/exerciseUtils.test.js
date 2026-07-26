@@ -31,17 +31,17 @@ describe('getExerciseName', () => {
 })
 
 describe('resolveWeightUnit', () => {
-  it('usa override del usuario si está definido', () => {
-    expect(resolveWeightUnit({ weight_unit: 'lb' }, { weight_unit: 'kg' })).toBe('lb')
+  it('usa la unidad de (ejercicio, gym) si está definida', () => {
+    expect(resolveWeightUnit('lb', { weight_unit: 'kg' })).toBe('lb')
   })
 
-  it('cae a preferencia global si override no tiene weight_unit', () => {
-    expect(resolveWeightUnit({ weight_unit: null }, { weight_unit: 'lb' })).toBe('lb')
-    expect(resolveWeightUnit({}, { weight_unit: 'lb' })).toBe('lb')
+  it('cae a preferencia global si no hay unidad de (ejercicio, gym)', () => {
+    expect(resolveWeightUnit(null, { weight_unit: 'lb' })).toBe('lb')
+    expect(resolveWeightUnit(undefined, { weight_unit: 'lb' })).toBe('lb')
   })
 
-  it('cae a kg por defecto si no hay override ni preferencia', () => {
-    expect(resolveWeightUnit({}, {})).toBe('kg')
+  it('cae a kg por defecto si no hay unidad ni preferencia', () => {
+    expect(resolveWeightUnit(null, {})).toBe('kg')
     expect(resolveWeightUnit(null, null)).toBe('kg')
     expect(resolveWeightUnit(undefined, undefined)).toBe('kg')
   })

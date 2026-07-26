@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Info } from 'lucide-react'
-import { useChangeWeightUnit } from '@gym/shared'
+import { useChangeWeightUnit, useSelectedGym, useUserExerciseGymUnit, getGymDisplayName } from '@gym/shared'
 import { useUserExerciseOverride, useUpsertUserExerciseOverride } from '../../hooks/useExercises.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 
@@ -11,7 +11,9 @@ import { colors, inputStyle } from '../../lib/styles.js'
 
 export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
   const { t } = useTranslation()
+  const { gymId, gyms, hasMultiple } = useSelectedGym()
   const { data: override } = useUserExerciseOverride(exerciseId)
+  const { data: gymUnit } = useUserExerciseGymUnit(exerciseId, gymId)
   const upsertOverride = useUpsertUserExerciseOverride()
   const changeWeightUnit = useChangeWeightUnit()
   const { value: globalWeightUnit } = usePreference('weight_unit')
@@ -21,36 +23,43 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
   const [showConvertModal, setShowConvertModal] = useState(false)
 
   useEffect(() => {
-    if (override) {
-      setNotes(override.notes || '')
-      setWeightUnit(override.weight_unit || '')
-    }
+    if (override) setNotes(override.notes || '')
   }, [override])
 
-  const previousEffectiveUnit = (override?.weight_unit) || globalWeightUnit || 'kg'
+  // La unidad es por (ejercicio, gym): reinicia al cambiar de gym activo.
+  useEffect(() => {
+    setWeightUnit(gymUnit || '')
+  }, [gymUnit, gymId])
+
+  const previousEffectiveUnit = gymUnit || globalWeightUnit || 'kg'
   const newEffectiveUnit = weightUnit || globalWeightUnit || 'kg'
   const unitChanged = previousEffectiveUnit !== newEffectiveUnit
+  const activeGymName = hasMultiple
+    ? getGymDisplayName(gyms.find(g => String(g.id) === String(gymId)), t('common:gym.defaultName'))
+    : null
 
   const handleSave = () => {
     if (unitChanged) {
       setShowConvertModal(true)
       return
     }
-    upsertOverride.mutate({ exerciseId, notes, weightUnit: weightUnit || null }, {
+    upsertOverride.mutate({ exerciseId, notes }, {
       onSuccess: () => onClose?.(),
     })
   }
 
   const applyUnitChange = (convertHistorical) => {
+    // Notas y unidad son escrituras independientes (tablas distintas).
+    upsertOverride.mutate({ exerciseId, notes })
     changeWeightUnit.mutate(
       {
         scope: 'exercise',
         exerciseId,
+        gymId,
         fromUnit: previousEffectiveUnit,
         toUnit: newEffectiveUnit,
         convertHistorical,
         overrideValue: weightUnit || null,
-        overrideNotes: notes,
       },
       {
         onSuccess: () => {
@@ -89,6 +98,11 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
           <h4 className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
             {t('exercise:weightUnitOverride')}
           </h4>
+          {activeGymName && (
+            <p className="text-xs mb-2" style={{ color: colors.textMuted }}>
+              {t('exercise:weightUnitGymScope', { gym: activeGymName })}
+            </p>
+          )}
           <div className="flex gap-2">
             {['kg', 'lb'].map((unit) => {
               const effectiveUnit = weightUnit || globalWeightUnit || 'kg'

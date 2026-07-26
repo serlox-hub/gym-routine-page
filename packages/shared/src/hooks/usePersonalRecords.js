@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS, PR_NOTIFICATION_DURATION_MS } from '../lib/constants.js'
 import { computeExercisePRSets, computeExercisePRSetNumbers } from '../lib/sessionStatsCalculation.js'
 import { fetchExerciseBests } from '../api/exerciseStatsApi.js'
-import { fetchUserExerciseOverride } from '../api/exerciseApi.js'
+import { fetchUserExerciseGymUnit } from '../api/exerciseApi.js'
 import { resolveWeightUnit } from '../lib/exerciseUtils.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
@@ -110,21 +110,21 @@ export function useSessionPRDetection() {
     return value === 'error' ? 'none' : value
   }, [])
 
-  // Unidad de peso efectiva del ejercicio (override > preferencia global). El override
-  // puede no estar en caché si nunca se montó su card → fetch como fallback.
+  // Unidad de peso efectiva del ejercicio en este gym (unidad(ejercicio,gym) > preferencia
+  // global). Puede no estar en caché si nunca se montó su card → fetch como fallback.
   const resolveExerciseWeightUnit = useCallback(async (exerciseId) => {
-    let override = queryClient.getQueryData([QUERY_KEYS.EXERCISES, 'override', exerciseId])
-    if (override === undefined) {
+    let unit = queryClient.getQueryData([QUERY_KEYS.EXERCISES, 'gym-unit', exerciseId, gymId ?? null])
+    if (unit === undefined) {
       try {
-        override = await fetchUserExerciseOverride(exerciseId)
-        queryClient.setQueryData([QUERY_KEYS.EXERCISES, 'override', exerciseId], override)
+        unit = await fetchUserExerciseGymUnit(exerciseId, gymId)
+        queryClient.setQueryData([QUERY_KEYS.EXERCISES, 'gym-unit', exerciseId, gymId ?? null], unit)
       } catch {
-        override = null
+        unit = null
       }
     }
     const userPrefs = queryClient.getQueryData([QUERY_KEYS.USER_PREFERENCES, userId])
-    return resolveWeightUnit(override, userPrefs)
-  }, [queryClient, userId])
+    return resolveWeightUnit(unit, userPrefs)
+  }, [queryClient, userId, gymId])
 
   const showPRNotification = useCallback((exerciseName, records) => {
     getHaptics()?.onPRDetected?.()

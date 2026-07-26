@@ -249,7 +249,7 @@ export async function fetchSessionDetail(sessionId) {
   return data
 }
 
-export async function fetchExerciseHistorySummary({ exerciseId, routineDayId }) {
+export async function fetchExerciseHistorySummary({ exerciseId, routineDayId, gymId }) {
   let query = getClient()
     .from('session_exercises')
     .select(`
@@ -280,13 +280,17 @@ export async function fetchExerciseHistorySummary({ exerciseId, routineDayId }) 
     query = query.eq('session.routine_day_id', routineDayId)
   }
 
+  if (gymId != null) {
+    query = query.eq('session.gym_id', gymId)
+  }
+
   const { data, error } = await query
 
   if (error) throw error
   return data
 }
 
-export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to }) {
+export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to, gymId }) {
   let query = getClient()
     .from('session_exercises')
     .select(`
@@ -321,6 +325,10 @@ export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to 
 
   if (routineDayId) {
     query = query.eq('session.routine_day_id', routineDayId)
+  }
+
+  if (gymId != null) {
+    query = query.eq('session.gym_id', gymId)
   }
 
   const { data, error } = await query

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { convertWeight, getWeightUnits, toggleWeightMode } from './weightConversion.js'
+import { convertWeight, getWeightUnits, toggleWeightMode, convertWeightValue } from './weightConversion.js'
 
 describe('convertWeight', () => {
   it('convierte libras a kilogramos', () => {
@@ -44,5 +44,25 @@ describe('toggleWeightMode', () => {
 
   it('cambia de kg-to-lb a lb-to-kg', () => {
     expect(toggleWeightMode('kg-to-lb')).toBe('lb-to-kg')
+  })
+})
+
+describe('convertWeightValue', () => {
+  it('devuelve el valor sin tocar si las unidades coinciden', () => {
+    expect(convertWeightValue(100, 'kg', 'kg')).toBe(100)
+  })
+
+  it('convierte kg a lb', () => {
+    expect(convertWeightValue(100, 'kg', 'lb')).toBeCloseTo(220.46, 1)
+  })
+
+  it('convierte lb a kg', () => {
+    expect(convertWeightValue(100, 'lb', 'kg')).toBeCloseTo(45.36, 1)
+  })
+
+  it('propaga null/undefined y valores no numéricos', () => {
+    expect(convertWeightValue(null, 'kg', 'lb')).toBe(null)
+    expect(convertWeightValue(undefined, 'kg', 'lb')).toBe(undefined)
+    expect(convertWeightValue('x', 'kg', 'lb')).toBe('x')
   })
 })

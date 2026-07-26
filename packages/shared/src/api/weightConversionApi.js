@@ -10,7 +10,7 @@ export function getConversionFactor(fromUnit, toUnit) {
   throw new Error(`Unsupported conversion: ${fromUnit} -> ${toUnit}`)
 }
 
-export async function convertUserWeights({ scope, fromUnit, toUnit, exerciseId = null }) {
+export async function convertUserWeights({ scope, fromUnit, toUnit, exerciseId = null, gymId = null }) {
   if (fromUnit === toUnit) return
 
   const factor = getConversionFactor(fromUnit, toUnit)
@@ -19,6 +19,7 @@ export async function convertUserWeights({ scope, fromUnit, toUnit, exerciseId =
     p_factor: factor,
     p_exercise_id: scope === 'exercise' ? exerciseId : null,
     p_old_unit: scope === 'global' ? fromUnit : null,
+    p_gym_id: scope === 'exercise' ? gymId : null,
   }
 
   const { error } = await getClient().rpc('convert_user_weights', params)

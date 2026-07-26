@@ -312,6 +312,13 @@ Deletion strategy:
 - `routines`, `routine_days`, `routine_blocks` → Hard delete con CASCADE. No hay historial que las referencie directamente (las sesiones guardan copia de nombres).
 - `routine_exercises` → Hard delete con CASCADE desde routine_blocks.
 
+### Unidades de peso (por ejercicio + gimnasio)
+- Unidad resuelta en **runtime**, NO almacenada por serie: `resolveWeightUnit(unidad(ejercicio,gym), prefs)` = `(ejercicio,gym) > preferencia global > 'kg'`. Hook DRY `useResolvedWeightUnit(exerciseId, gymId)` (web+native).
+- Vive en `user_exercise_gym_units(user_id, exercise_id, gym_id, weight_unit)`. `user_exercise_overrides` = **solo notas**.
+- **No hay almacenamiento canónico (`weight_kg`)**: stats/PRs/gráficas ya están segregados por gym (cada `(ejercicio,gym)` es coherente en una unidad y nunca se compara entre gyms). **Nunca comparar/agregar pesos crudos entre gyms distintos.**
+- Cambiar la unidad de un ejercicio afecta **solo al gym activo** (`useChangeWeightUnit` scope `'exercise'` con `gymId`; convierte datos con el RPC `convert_user_weights`).
+- Única vista cross-gym (overlay multi-gym del historial): convierte al vuelo con `convertWeightValue` + `unitByGym`. Detalle y rationale en `docs/DECISIONS.md`.
+
 ## Autonomía
 - No pidas permiso ni confirmación para ninguna acción (editar archivos, ejecutar comandos, crear/borrar, refactorizar, etc.). Actúa directamente.
 - **Única excepción**: hacer `git commit` — para eso sí pide confirmación antes.

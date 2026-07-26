@@ -4,7 +4,6 @@ import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trophy, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
-import { useUserExerciseOverride } from '../../hooks/useExercises'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
@@ -26,7 +25,7 @@ import {
   getMuscleGroupName,
   getMuscleGroupColor,
   usePreference,
-  resolveWeightUnit,
+  useResolvedWeightUnit,
   toNullableFloat,
   toNullableInt,
   getNotifier,
@@ -323,10 +322,9 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   )
 }
 
-function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, globalWeightUnit, isEditing, navigation, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
+function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, gymId, isEditing, navigation, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
   const { t } = useTranslation()
-  const { data: override } = useUserExerciseOverride(exercise.id)
-  const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
+  const weightUnit = useResolvedWeightUnit(exercise.id, gymId)
   const prData = prsByExercise[exercise.id]
   const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
@@ -448,7 +446,6 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         exerciseId={exercise.id}
         exerciseName={getExerciseName(exercise)}
         measurementType={measurementType}
-        weightUnit={weightUnit}
         onSessionClick={(sid, date) => {
           setShowHistory(false)
           navigation.navigate('MainTabs', { screen: 'History', params: { sessionId: sid, date } })
@@ -731,7 +728,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
             sets={sets}
             sessionId={sessionId}
             prsByExercise={prsByExercise}
-            globalWeightUnit={globalWeightUnit}
+            gymId={session.gym_id ?? null}
             isEditing={isEditing}
             navigation={navigation}
             onUpsertSet={handleUpsertSet}

@@ -10,7 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { CHART_RANGES, MeasurementType, filterRecordsByRange, transformSessionsToChartData } from '@gym/shared'
+import { CHART_RANGES, MeasurementType, filterRecordsByRange, transformSessionsToChartData, convertWeightValue } from '@gym/shared'
 import { ChartRangeToggle } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
@@ -23,19 +23,23 @@ const TABS = {
 // Paleta para las líneas por gimnasio en el modo overlay
 const GYM_LINE_COLORS = [colors.success, colors.purple, colors.teal, colors.pink, colors.orange, colors.gold]
 
-// Mapea filas de exercise_session_stats (useExerciseChartData) al formato del gráfico
-function statRowToPoint(row, weightUnit) {
+// Mapea filas de exercise_session_stats (useExerciseChartData) al formato del gráfico.
+// En overlay, cada fila viene en la unidad de su gym (unitByGym) y se convierte a la
+// unidad de display común; en modo single, unitByGym es undefined => sin conversión.
+function statRowToPoint(row, displayUnit, unitByGym) {
+  const srcUnit = unitByGym?.[row.gym_id] || displayUnit
+  const conv = (v) => convertWeightValue(Number(v) || 0, srcUnit, displayUnit)
   return {
     date: new Date(row.session_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
     rawDate: row.session_date,
-    best: Number(row.best_weight) || 0,
-    volume: Math.round(Number(row.total_volume) || 0),
-    e1rm: Number(row.best_1rm) || 0,
-    unit: weightUnit,
+    best: conv(row.best_weight),
+    volume: Math.round(conv(row.total_volume)),
+    e1rm: conv(row.best_1rm),
+    unit: displayUnit,
   }
 }
 
-function ExerciseProgressChart({ sessions, chartRows, overlayGyms, measurementType, weightUnit = 'kg' }) {
+function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, measurementType, weightUnit = 'kg' }) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
   const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
@@ -61,7 +65,7 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, measurementTy
     )
     const byDate = new Map()
     filtered.forEach(row => {
-      const point = statRowToPoint(row, weightUnit)
+      const point = statRowToPoint(row, weightUnit, unitByGym)
       const entry = byDate.get(point.date) || { date: point.date, rawDate: point.rawDate }
       entry[`gym_${row.gym_id}`] = point[dataKey]
       byDate.set(point.date, entry)
@@ -76,7 +80,7 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, measurementTy
         color: GYM_LINE_COLORS[i % GYM_LINE_COLORS.length],
       }))
     return { data, series }
-  }, [isOverlay, isStatRows, chartRows, overlayGyms, range, weightUnit, dataKey])
+  }, [isOverlay, isStatRows, chartRows, overlayGyms, unitByGym, range, weightUnit, dataKey])
 
   // Datos para modo single (una línea): filas de stats o sesiones crudas
   const singleData = useMemo(() => {

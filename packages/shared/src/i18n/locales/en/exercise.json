@@ -50,6 +50,7 @@
   "personalNotesPlaceholder": "E.g.: Backrest at position 3, wide grip...",
   "routineComment": "Exercise comment for this routine",
   "weightUnitOverride": "Weight unit for this exercise",
+  "weightUnitGymScope": "Only changes the unit at {{gym}}.",
   "systemInstructions": "Instructions",
   "setup": "Setup",
   "execution": "Execution",

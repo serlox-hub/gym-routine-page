@@ -5,7 +5,6 @@ import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Vid
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
@@ -28,7 +27,7 @@ import {
   getMuscleGroupName,
   getMuscleGroupColor,
   usePreference,
-  resolveWeightUnit,
+  useResolvedWeightUnit,
   toNullableFloat,
   toNullableInt,
   getNotifier,
@@ -275,10 +274,9 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   )
 }
 
-function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, globalWeightUnit, isEditing, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
+function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, gymId, isEditing, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
   const { t } = useTranslation()
-  const { data: override } = useUserExerciseOverride(exercise.id)
-  const weightUnit = resolveWeightUnit(override, { weight_unit: globalWeightUnit })
+  const weightUnit = useResolvedWeightUnit(exercise.id, gymId)
   const prData = prsByExercise[exercise.id]
   const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
@@ -391,7 +389,6 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         exerciseId={exercise.id}
         exerciseName={getExerciseName(exercise)}
         measurementType={measurementType}
-        weightUnit={weightUnit}
       />
     </Card>
   )
@@ -667,7 +664,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
             sets={sets}
             sessionId={sessionId}
             prsByExercise={prsByExercise}
-            globalWeightUnit={globalWeightUnit}
+            gymId={session.gym_id ?? null}
             isEditing={isEditing}
             onUpsertSet={handleUpsertSet}
             onDeleteSet={handleDeleteSet}

@@ -50,6 +50,7 @@
   "personalNotesPlaceholder": "Ej: Respaldo en posición 3, agarre ancho...",
   "routineComment": "Comentario del ejercicio para esta rutina",
   "weightUnitOverride": "Unidad de peso para este ejercicio",
+  "weightUnitGymScope": "Solo cambia la unidad en {{gym}}.",
   "systemInstructions": "Instrucciones",
   "setup": "Preparación",
   "execution": "Ejecución",

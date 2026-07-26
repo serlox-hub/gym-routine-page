@@ -20,3 +20,21 @@ export function getWeightUnits(mode) {
 export function toggleWeightMode(mode) {
   return mode === 'lb-to-kg' ? 'kg-to-lb' : 'lb-to-kg'
 }
+
+/**
+ * Convierte un valor numérico de peso entre unidades. Usado para normalizar al
+ * vuelo cuando se comparan datos de varios gyms con distinta unidad (overlay).
+ * Devuelve el valor tal cual si no hay conversión aplicable.
+ * @param {number|null|undefined} value
+ * @param {'kg'|'lb'} fromUnit
+ * @param {'kg'|'lb'} toUnit
+ * @returns {number|null|undefined}
+ */
+export function convertWeightValue(value, fromUnit, toUnit) {
+  if (value == null || fromUnit === toUnit) return value
+  const num = Number(value)
+  if (isNaN(num)) return value
+  if (fromUnit === 'kg' && toUnit === 'lb') return num * KG_TO_LB
+  if (fromUnit === 'lb' && toUnit === 'kg') return num * LB_TO_KG
+  return value
+}

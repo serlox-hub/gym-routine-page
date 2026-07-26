@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
-import { getExerciseName, getMuscleGroupName, getEquipmentName, localizeExercise } from '../lib/exerciseUtils.js'
+import { getExerciseName, getMuscleGroupName, getEquipmentName, localizeExercise, resolveWeightUnit } from '../lib/exerciseUtils.js'
+import { usePreference } from './usePreferences.js'
 import {
   fetchExercisesWithMuscleGroup,
   fetchMuscleGroups,
@@ -12,7 +13,8 @@ import {
   updateExercise,
   deleteExercise,
   fetchUserExerciseOverride,
-  fetchUserExerciseWeightUnits,
+  fetchUserExerciseGymUnit,
+  fetchExerciseUnitsByGym,
   upsertUserExerciseOverride,
 } from '../api/exerciseApi.js'
 import { getNotifier } from '../notifications.js'
@@ -115,13 +117,30 @@ export function useDeleteExercise() {
 // USER EXERCISE OVERRIDES
 // ============================================
 
-export function useExerciseWeightUnits(exerciseIds) {
-  const key = exerciseIds?.length ? exerciseIds.slice().sort().join(',') : null
+// Unidad explícita de un (ejercicio, gym), o null si hereda la global.
+export function useUserExerciseGymUnit(exerciseId, gymId) {
   return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISES, 'weight-units', key],
-    queryFn: () => fetchUserExerciseWeightUnits(exerciseIds),
-    enabled: !!key,
+    queryKey: [QUERY_KEYS.EXERCISES, 'gym-unit', exerciseId, gymId ?? null],
+    queryFn: () => fetchUserExerciseGymUnit(exerciseId, gymId),
+    enabled: !!exerciseId && gymId != null,
   })
+}
+
+// Mapa gym_id -> unidad explícita de un ejercicio (para convertir el overlay multi-gym).
+export function useExerciseUnitsByGym(exerciseId, enabled = true) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISES, 'units-by-gym', exerciseId],
+    queryFn: () => fetchExerciseUnitsByGym(exerciseId),
+    enabled: !!exerciseId && enabled,
+  })
+}
+
+// Unidad de peso efectiva para mostrar/introducir un ejercicio en un gym:
+// unidad(ejercicio,gym) > preferencia global > 'kg'. DRY para web y native.
+export function useResolvedWeightUnit(exerciseId, gymId) {
+  const { data: gymUnit } = useUserExerciseGymUnit(exerciseId, gymId)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
+  return resolveWeightUnit(gymUnit, { weight_unit: globalWeightUnit })
 }
 
 export function useUserExerciseOverride(exerciseId) {

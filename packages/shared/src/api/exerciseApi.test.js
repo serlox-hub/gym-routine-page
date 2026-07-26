@@ -9,6 +9,10 @@ import {
   updateExercise,
   deleteExercise,
   getExerciseGifUrl,
+  fetchUserExerciseGymUnit,
+  fetchExerciseUnitsByGym,
+  fetchUserExerciseWeightUnits,
+  upsertUserExerciseGymUnit,
 } from './exerciseApi.js'
 import { makeQueryMock, makeClientMock } from './_testUtils.js'
 
@@ -365,5 +369,96 @@ describe('deleteExercise', () => {
     }))
 
     await expect(deleteExercise('ex-1')).rejects.toThrow('check error')
+  })
+})
+
+// ============================================
+// UNIDAD DE PESO POR (EJERCICIO, GYM)
+// ============================================
+
+describe('fetchUserExerciseGymUnit', () => {
+  it('devuelve null y no toca el cliente si falta exerciseId o gymId', async () => {
+    expect(await fetchUserExerciseGymUnit(null, 5)).toBeNull()
+    expect(await fetchUserExerciseGymUnit(1, null)).toBeNull()
+    expect(getClient).not.toHaveBeenCalled()
+  })
+
+  it('devuelve la unidad de (ejercicio, gym)', async () => {
+    getClient.mockReturnValue(makeClientMock({
+      user_exercise_gym_units: { data: { weight_unit: 'lb' }, error: null },
+    }))
+    expect(await fetchUserExerciseGymUnit(1, 5)).toBe('lb')
+  })
+
+  it('devuelve null si no hay fila (hereda la global)', async () => {
+    getClient.mockReturnValue(makeClientMock({
+      user_exercise_gym_units: { data: null, error: null },
+    }))
+    expect(await fetchUserExerciseGymUnit(1, 5)).toBeNull()
+  })
+})
+
+describe('fetchExerciseUnitsByGym', () => {
+  it('devuelve {} sin exerciseId, sin tocar el cliente', async () => {
+    expect(await fetchExerciseUnitsByGym(null)).toEqual({})
+    expect(getClient).not.toHaveBeenCalled()
+  })
+
+  it('mapea gym_id -> unidad', async () => {
+    getClient.mockReturnValue(makeClientMock({
+      user_exercise_gym_units: { data: [
+        { gym_id: 5, weight_unit: 'lb' },
+        { gym_id: 8, weight_unit: 'kg' },
+      ], error: null },
+    }))
+    expect(await fetchExerciseUnitsByGym(1)).toEqual({ 5: 'lb', 8: 'kg' })
+  })
+})
+
+describe('fetchUserExerciseWeightUnits', () => {
+  it('devuelve {} sin exerciseIds o sin gymId, sin tocar el cliente', async () => {
+    expect(await fetchUserExerciseWeightUnits([], 5)).toEqual({})
+    expect(await fetchUserExerciseWeightUnits([1, 2], null)).toEqual({})
+    expect(getClient).not.toHaveBeenCalled()
+  })
+
+  it('mapea exercise_id -> unidad para el gym dado', async () => {
+    getClient.mockReturnValue(makeClientMock({
+      user_exercise_gym_units: { data: [
+        { exercise_id: 1, weight_unit: 'lb' },
+        { exercise_id: 2, weight_unit: 'kg' },
+      ], error: null },
+    }))
+    expect(await fetchUserExerciseWeightUnits([1, 2], 5)).toEqual({ 1: 'lb', 2: 'kg' })
+  })
+})
+
+describe('upsertUserExerciseGymUnit', () => {
+  it('borra la fila (hereda la global) cuando weightUnit es null y devuelve null', async () => {
+    const q = makeQueryMock({ data: null, error: null })
+    getClient.mockReturnValue({ from: vi.fn(() => q) })
+
+    const res = await upsertUserExerciseGymUnit({ userId: 'u', exerciseId: 1, gymId: 5, weightUnit: null })
+
+    expect(res).toBeNull()
+    expect(q.delete).toHaveBeenCalled()
+    expect(q.upsert).not.toHaveBeenCalled()
+    expect(q.eq).toHaveBeenCalledWith('user_id', 'u')
+    expect(q.eq).toHaveBeenCalledWith('exercise_id', 1)
+    expect(q.eq).toHaveBeenCalledWith('gym_id', 5)
+  })
+
+  it('upsertea la unidad cuando está presente y la devuelve', async () => {
+    const q = makeQueryMock({ data: { weight_unit: 'lb' }, error: null })
+    getClient.mockReturnValue({ from: vi.fn(() => q) })
+
+    const res = await upsertUserExerciseGymUnit({ userId: 'u', exerciseId: 1, gymId: 5, weightUnit: 'lb' })
+
+    expect(res).toBe('lb')
+    expect(q.delete).not.toHaveBeenCalled()
+    expect(q.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: 'u', exercise_id: 1, gym_id: 5, weight_unit: 'lb' }),
+      { onConflict: 'user_id,exercise_id,gym_id' },
+    )
   })
 })

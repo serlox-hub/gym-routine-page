@@ -81,11 +81,11 @@ export function useSessionDetail(sessionId) {
 // EXERCISE HISTORY QUERIES
 // ============================================
 
-export function useExerciseHistorySummary(exerciseId, routineDayId = null) {
+export function useExerciseHistorySummary(exerciseId, routineDayId = null, gymId = null) {
   return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'summary', exerciseId, routineDayId],
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, 'summary', exerciseId, routineDayId, gymId],
     queryFn: async () => {
-      const data = await fetchExerciseHistorySummary({ exerciseId, routineDayId })
+      const data = await fetchExerciseHistorySummary({ exerciseId, routineDayId, gymId })
 
       return data.map(se => ({
         sessionId: se.session.id,
@@ -99,14 +99,14 @@ export function useExerciseHistorySummary(exerciseId, routineDayId = null) {
 
 const EXERCISE_HISTORY_PAGE_SIZE = 30
 
-export function useExerciseHistory(exerciseId, routineDayId = null) {
+export function useExerciseHistory(exerciseId, routineDayId = null, gymId = null) {
   return useInfiniteQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId, routineDayId],
+    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId, routineDayId, gymId],
     queryFn: async ({ pageParam = 0 }) => {
       const from = pageParam * EXERCISE_HISTORY_PAGE_SIZE
       const to = from + EXERCISE_HISTORY_PAGE_SIZE - 1
 
-      const data = await fetchExerciseHistory({ exerciseId, routineDayId, from, to })
+      const data = await fetchExerciseHistory({ exerciseId, routineDayId, from, to, gymId })
 
       return data.map(se => ({
         sessionId: se.session.id,

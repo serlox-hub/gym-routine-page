@@ -16,6 +16,9 @@ import {
   formatShortDate,
   formatSecondsToMMSS,
   useSelectedGym,
+  useResolvedWeightUnit,
+  useExerciseUnitsByGym,
+  usePreference,
 } from '@gym/shared'
 import { ExerciseProgressChart } from '../Charts'
 
@@ -61,7 +64,7 @@ function getStatCards(stats, measurementType, weightUnit, distanceUnit, t) {
   return []
 }
 
-function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm', chartRows, overlayGyms }) {
+function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm', chartRows, overlayGyms, unitByGym }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
@@ -78,6 +81,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUni
           weightUnit={weightUnit}
           chartRows={chartRows}
           overlayGyms={overlayGyms}
+          unitByGym={unitByGym}
         />
       ) : (
         <Text className="text-secondary text-center py-4 text-sm">
@@ -183,7 +187,6 @@ export default function ExerciseHistoryModal({
   exerciseId,
   exerciseName,
   measurementType = MeasurementType.WEIGHT_REPS,
-  weightUnit = 'kg',
   timeUnit = 's',
   distanceUnit = 'm',
   routineDayId = null,
@@ -200,17 +203,25 @@ export default function ExerciseHistoryModal({
   const [gymFilter, setGymFilter] = useState(defaultGymId)
   const [showGymSelector, setShowGymSelector] = useState(false)
 
+  const isOverlay = gymFilter === ALL_GYMS
+  // Tabla, stats y unidad de display siguen el gym filtrado (el overlay usa el gym por
+  // defecto como destino). Solo se filtra la historia si hay varios gyms.
+  const unitGymId = isOverlay ? defaultGymId : gymFilter
+  const historyGymId = hasMultiple ? unitGymId : null
+
   // Fetch both scopes in parallel — switch is instant
-  const { data: dayData, isLoading: loadingDay, fetchNextPage: fetchDayNext, hasNextPage: hasDayNext, isFetchingNextPage: fetchingDayNext } = useExerciseHistory(exerciseId, routineDayId)
-  const { data: globalData, isLoading: loadingGlobal, fetchNextPage: fetchGlobalNext, hasNextPage: hasGlobalNext, isFetchingNextPage: fetchingGlobalNext } = useExerciseHistory(exerciseId, null)
+  const { data: dayData, isLoading: loadingDay, fetchNextPage: fetchDayNext, hasNextPage: hasDayNext, isFetchingNextPage: fetchingDayNext } = useExerciseHistory(exerciseId, routineDayId, historyGymId)
+  const { data: globalData, isLoading: loadingGlobal, fetchNextPage: fetchGlobalNext, hasNextPage: hasGlobalNext, isFetchingNextPage: fetchingGlobalNext } = useExerciseHistory(exerciseId, null, historyGymId)
 
   const isDay = scope === 'day'
   const chartDayId = isDay ? routineDayId : null
 
   // Chart data por gym: cuando hay overlay usamos todas las filas (gymId=null)
-  const isOverlay = gymFilter === ALL_GYMS
   const chartGymId = hasMultiple ? (isOverlay ? null : gymFilter) : null
   const { data: chartRows, isLoading: loadingChart } = useExerciseChartData(exerciseId, chartDayId, chartGymId)
+  const weightUnit = useResolvedWeightUnit(exerciseId, unitGymId)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
+  const { data: explicitUnitsByGym = {} } = useExerciseUnitsByGym(exerciseId, isOverlay)
 
   useEffect(() => {
     Animated.timing(slideAnim, { toValue: isDay ? 0 : 1, duration: 200, useNativeDriver: false }).start()
@@ -238,6 +249,13 @@ export default function ExerciseHistoryModal({
     () => gyms.map(g => ({ id: g.id, name: g.is_default && !g.name ? t('common:gym.defaultName') : g.name })),
     [gyms, t]
   )
+
+  // Unidad de cada gym para convertir sus series a la unidad de display en el overlay.
+  const unitByGym = useMemo(() => {
+    const m = {}
+    for (const g of overlayGyms) m[g.id] = explicitUnitsByGym[g.id] || globalWeightUnit || 'kg'
+    return m
+  }, [overlayGyms, explicitUnitsByGym, globalWeightUnit])
 
   const handleSessionClick = (sessionId, date) => {
     onClose()
@@ -334,6 +352,7 @@ export default function ExerciseHistoryModal({
               weightUnit={weightUnit}
               chartRows={hasMultiple ? chartRows : undefined}
               overlayGyms={isOverlay ? overlayGyms : undefined}
+              unitByGym={isOverlay ? unitByGym : undefined}
             />
             <HistoryTab
               sessions={sessions}

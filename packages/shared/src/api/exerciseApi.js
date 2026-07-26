@@ -197,13 +197,15 @@ export async function fetchEquipmentTypes() {
 // USER EXERCISE OVERRIDES
 // ============================================
 
-export async function fetchUserExerciseWeightUnits(exerciseIds) {
-  if (!exerciseIds?.length) return {}
+// Unidad de peso por (ejercicio, gym). Devuelve { [exercise_id]: 'kg'|'lb' } para el gym dado.
+// Sin gymId no hay unidad resoluble (la unidad vive por gimnasio) → mapa vacío.
+export async function fetchUserExerciseWeightUnits(exerciseIds, gymId) {
+  if (!exerciseIds?.length || gymId == null) return {}
   const { data, error } = await getClient()
-    .from('user_exercise_overrides')
+    .from('user_exercise_gym_units')
     .select('exercise_id, weight_unit')
+    .eq('gym_id', gymId)
     .in('exercise_id', exerciseIds)
-    .not('weight_unit', 'is', null)
 
   if (error) throw error
   const map = {}
@@ -213,10 +215,70 @@ export async function fetchUserExerciseWeightUnits(exerciseIds) {
   return map
 }
 
+// Mapa gym_id -> unidad explícita de un ejercicio en todos los gyms (para el overlay).
+export async function fetchExerciseUnitsByGym(exerciseId) {
+  if (exerciseId == null) return {}
+  const { data, error } = await getClient()
+    .from('user_exercise_gym_units')
+    .select('gym_id, weight_unit')
+    .eq('exercise_id', exerciseId)
+
+  if (error) throw error
+  const map = {}
+  for (const row of data || []) {
+    map[row.gym_id] = row.weight_unit
+  }
+  return map
+}
+
+// Unidad explícita de un (ejercicio, gym), o null si hereda la global.
+export async function fetchUserExerciseGymUnit(exerciseId, gymId) {
+  if (exerciseId == null || gymId == null) return null
+  const { data, error } = await getClient()
+    .from('user_exercise_gym_units')
+    .select('weight_unit')
+    .eq('exercise_id', exerciseId)
+    .eq('gym_id', gymId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data?.weight_unit ?? null
+}
+
+// Fija (o borra, si weightUnit es null = "heredar global") la unidad de un (ejercicio, gym).
+export async function upsertUserExerciseGymUnit({ userId, exerciseId, gymId, weightUnit }) {
+  const client = getClient()
+  if (!weightUnit) {
+    const { error } = await client
+      .from('user_exercise_gym_units')
+      .delete()
+      .eq('user_id', userId)
+      .eq('exercise_id', exerciseId)
+      .eq('gym_id', gymId)
+    if (error) throw error
+    return null
+  }
+  const { data, error } = await client
+    .from('user_exercise_gym_units')
+    .upsert({
+      user_id: userId,
+      exercise_id: exerciseId,
+      gym_id: gymId,
+      weight_unit: weightUnit,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,exercise_id,gym_id' })
+    .select('weight_unit')
+    .single()
+
+  if (error) throw error
+  return data?.weight_unit ?? null
+}
+
+// user_exercise_overrides guarda solo notas (la unidad vive en user_exercise_gym_units).
 export async function fetchUserExerciseOverride(exerciseId) {
   const { data, error } = await getClient()
     .from('user_exercise_overrides')
-    .select('notes, weight_unit')
+    .select('notes')
     .eq('exercise_id', exerciseId)
     .maybeSingle()
 
@@ -224,17 +286,16 @@ export async function fetchUserExerciseOverride(exerciseId) {
   return data
 }
 
-export async function upsertUserExerciseOverride({ userId, exerciseId, notes, weightUnit }) {
+export async function upsertUserExerciseOverride({ userId, exerciseId, notes }) {
   const { data, error } = await getClient()
     .from('user_exercise_overrides')
     .upsert({
       user_id: userId,
       exercise_id: exerciseId,
       notes: notes || null,
-      weight_unit: weightUnit || null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,exercise_id' })
-    .select('notes, weight_unit')
+    .select('notes')
     .single()
 
   if (error) throw error
