@@ -14,7 +14,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "check": "npm run lint && npm run test:run && npm run test:e2e"
+    "check": "npm run lint && npm run test:run && npm run test:e2e",
+    "db:schema": "supabase db reset && supabase db dump --local --schema public -f supabase/schema.sql"
   },
   "dependencies": {
     "@gym/shared": "*",

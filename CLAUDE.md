@@ -288,29 +288,26 @@ export function getSensationLabels() {
 
 ## Database Schema
 
-```
-exercises (muscle_group_id → muscle_groups)
-    ↓
-routine_exercises
-    ↓
-routine_blocks
-    ↓
-routine_days
-    ↓
-routines
+**Fuente de verdad del estado ACTUAL**: `apps/web/supabase/schema.sql` (dump schema-only generado, commiteado). Consulta ESE archivo para saber qué tablas/columnas/constraints/RPCs existen HOY. Las migraciones (`apps/web/supabase/migrations/`) son el ledger append-only para *aplicar* cambios, malas para *consultar* el estado actual (p. ej. `routine_blocks` se creó y luego se eliminó en la 031). Regenerar con `npm run db:schema` (requiere Docker; ver checklist más abajo). Rationale y gotchas en `docs/DECISIONS.md` (issue #19). El diagrama de abajo es solo orientación de alto nivel.
 
-workout_sessions → completed_sets
+```
+muscle_groups ← exercises (muscle_group_id)
+    ↓
+routines → routine_days → routine_exercises (→ exercises)
+
+workout_sessions → session_exercises → completed_sets
 ```
 
 Key relations:
 - `exercises.muscle_group_id` → Single muscle group per exercise
-- `routine_exercises` → Exercise config in a routine (series, reps, tempo, notas)
-- `completed_sets` → Actual performed sets with weight/reps
+- `routine_exercises` → Config del ejercicio en un día de rutina (series, reps, rir, notas); cuelga de `routine_days` vía `routine_day_id` (ya NO existe `routine_blocks`; el calentamiento es `is_warmup`, la superserie es `superset_group`)
+- `session_exercises` → Ejercicio realizado en una sesión (referencia opcional a `routine_exercise_id`)
+- `completed_sets` → Series realizadas con peso/reps, cuelgan de `session_exercises`
 
 Deletion strategy:
 - `exercises` → Soft delete (`deleted_at`). Necesario porque sesiones pasadas referencian ejercicios.
-- `routines`, `routine_days`, `routine_blocks` → Hard delete con CASCADE. No hay historial que las referencie directamente (las sesiones guardan copia de nombres).
-- `routine_exercises` → Hard delete con CASCADE desde routine_blocks.
+- `routines`, `routine_days` → Hard delete con CASCADE. No hay historial que las referencie directamente (las sesiones guardan copia de nombres).
+- `routine_exercises` → Hard delete con CASCADE desde `routine_days`.
 
 ### Unidades de peso (por ejercicio + gimnasio)
 - Unidad resuelta en **runtime**, NO almacenada por serie: `resolveWeightUnit(unidad(ejercicio,gym), prefs)` = `(ejercicio,gym) > preferencia global > 'kg'`. Hook DRY `useResolvedWeightUnit(exerciseId, gymId)` (web+native).
@@ -419,12 +416,13 @@ La lógica está repartida en dos archivos (no confundir):
 
 ⚠️ **Emparejamiento por CLAVE ESTABLE (no por `name_es`)**: `importRoutine` resuelve cada ejercicio contra el catálogo/custom por `name_en` → `name_es` (normalizado tolerante: minúsculas + sin acentos + espacios) vía `lib/exerciseMatch.js` (`buildExerciseIndex`/`resolveExerciseId`, puro y testeado). `name_en` es único y 100% poblado en ejercicios de sistema; los custom (sin `name_en`) casan por `name_es`. Solo crea un ejercicio custom si no hay match. El export incluye `name_en` por ejercicio (v6) para que el re-import sea independiente del idioma. Ver `docs/DECISIONS.md`.
 
-**Cuando se modifique el modelo de datos** (tablas `routines`, `routine_days`, `routine_blocks`, `routine_exercises`, `exercises`):
-1. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON
-2. Actualizar `importRoutine()` para leer los nuevos campos del JSON
-3. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA
-4. Incrementar `ROUTINE_EXPORT_VERSION` si hay cambios breaking (importRoutine debe seguir aceptando versiones antiguas)
-5. Actualizar los tests (`routineIO.test.js`, `routineApi.test.js`, `exerciseMatch.test.js`)
+**Cuando se modifique el modelo de datos** (tablas `routines`, `routine_days`, `routine_exercises`, `exercises`):
+1. Tras crear/aplicar la migración, regenerar el snapshot: `npm run db:schema` (en `apps/web`, requiere Docker) y commitear `apps/web/supabase/schema.sql` junto con la migración. Mantiene el snapshot == migraciones.
+2. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON
+3. Actualizar `importRoutine()` para leer los nuevos campos del JSON
+4. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA
+5. Incrementar `ROUTINE_EXPORT_VERSION` si hay cambios breaking (importRoutine debe seguir aceptando versiones antiguas)
+6. Actualizar los tests (`routineIO.test.js`, `routineApi.test.js`, `exerciseMatch.test.js`)
 
 ### Example: Before and After
 

@@ -83,6 +83,7 @@ done
 - **Secretos**: ningún token/clave/credencial hardcodeada. `grep -nE "(service_role|secret|api[_-]?key|password|BEGIN (RSA|PRIVATE))" <archivos>`. La service key NUNCA en cliente.
 - **XSS/inyección**: `dangerouslySetInnerHTML`, `eval`, construcción de queries por concatenación de strings del usuario.
 - **Migraciones** (`supabase/migrations/*.sql` en el diff): idempotencia/seguridad (`if not exists`, `if exists`), RLS si aplica, índices en columnas nuevas que se filtran/ordenan, naming consistente. Si el modelo de datos cambió, cruza con el Paso R (routineIO).
+  - **Snapshot de esquema sincronizado**: si el diff añade/edita una migración pero NO incluye también `apps/web/supabase/schema.sql` → hallazgo (el snapshot canónico quedaría desincronizado con las migraciones; regenerar con `npm run db:schema` y commitear ambos). Ver `CLAUDE.md` · Database Schema.
 - **Env vars**: si el diff introduce una env var nueva (`import.meta.env.` / `process.env.` / `EXPO_PUBLIC_`), verificar que está en **ambos** `.env.example` (web y native) y documentada.
 - **Código muerto**: imports/exports/archivos huérfanos, código comentado, `TODO`/`FIXME` sin ticket, ramas inalcanzables. En particular, **verifica que cada export nuevo tiene al menos un consumidor** (grep del símbolo); un export de barrel que ningún módulo importa vía barrel es dead code → reportar.
 - **Dependencias nuevas** en `package.json`: ¿justificada? ¿tamaño/impacto? ¿es módulo nativo (implica rebuild del dev client)? Menciónalo.
@@ -203,7 +204,7 @@ done
 Leer ambos: mismos estados/handlers/lógica condicional, mismas keys i18n, mismo layout conceptual, mismos valores (validaciones/tamaños/colores), mismos datos consumidos. Diferencias aceptables: JSX vs View/Text, onClick vs onPress, className vs style, lucide-react vs lucide-react-native, APIs de plataforma.
 
 ## Paso R. routineIO.js
-Solo si cambió el modelo de datos (routines/routine_days/routine_blocks/routine_exercises/exercises): `exportRoutine()` incluye campos nuevos; `importRoutine()` los lee; `buildChatbotPrompt()` actualizado; ¿subir versión de esquema?; tests de `routineIO.test.js` cubren los cambios.
+Solo si cambió el modelo de datos (routines/routine_days/routine_exercises/exercises): `exportRoutine()` incluye campos nuevos; `importRoutine()` los lee; `buildChatbotPrompt()` actualizado; ¿subir versión de esquema?; tests de `routineIO.test.js` cubren los cambios.
 
 ---
 
