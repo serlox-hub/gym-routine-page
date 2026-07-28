@@ -304,6 +304,7 @@ export default function WorkoutSessionLayout({ title }) {
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
+        setsPending={progress.setsPending}
       />
 
       <WeightConverterModal

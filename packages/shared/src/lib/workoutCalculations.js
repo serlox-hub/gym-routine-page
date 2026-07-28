@@ -163,10 +163,12 @@ export function countCompletedSets(completedSetsMap, routineExerciseId) {
  * @param {Object} completedSets - Mapa de series completadas (key: `sessionExerciseId-setNumber`)
  * @param {Object} exerciseSetCounts - Conteo dinámico de series por ejercicio (key: sessionExerciseId)
  * @returns {{completed: number, total: number, setsCompleted: number, setsTotal: number,
+ *   setsPending: number,
  *   segments: Array<{sessionExerciseId: (string|number), setsTotal: number, setsDone: number, fillPct: number}>}}
  *   `segments` = un tramo por ejercicio no-warmup (para la barra segmentada); `fillPct` es el
  *   % de relleno de ese tramo (geometría lista para pintar, sin cálculo en el componente).
- *   Los agregados se derivan de `segments`.
+ *   Los agregados se derivan de `segments`. `setsPending` = series planificadas aún sin completar
+ *   (excluye calentamiento, igual que el resto de agregados).
  */
 export function calculateExerciseLevelProgress(flatExercises, completedSets, exerciseSetCounts = {}) {
   const segments = []
@@ -187,7 +189,8 @@ export function calculateExerciseLevelProgress(flatExercises, completedSets, exe
   const completed = segments.filter(s => s.setsTotal > 0 && s.setsDone >= s.setsTotal).length
   const setsCompleted = segments.reduce((sum, s) => sum + s.setsDone, 0)
   const setsTotal = segments.reduce((sum, s) => sum + s.setsTotal, 0)
-  return { completed, total, setsCompleted, setsTotal, segments }
+  const setsPending = Math.max(0, setsTotal - setsCompleted)
+  return { completed, total, setsCompleted, setsTotal, setsPending, segments }
 }
 
 export function calculateExerciseProgress(flatExercises, completedSets, exerciseSetCounts = {}) {

@@ -6,6 +6,8 @@
     "finishWorkout": "Finish workout",
     "setProgress": "Set {{current}} of {{total}}",
     "endConfirm": "Are you sure you want to end the workout?",
+    "pendingSetsWarning_one": "You have {{count}} set left. If you finish now it won't count.",
+    "pendingSetsWarning_other": "You have {{count}} sets left. If you finish now they won't count.",
     "resume": "Resume workout",
     "abandon": "Abandon",
     "abandonConfirm": "Are you sure you want to abandon the workout? All progress will be lost.",

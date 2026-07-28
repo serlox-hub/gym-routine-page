@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { X, AlertTriangle } from 'lucide-react'
 import { Button } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 
-function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
+function EndSessionModal({ isOpen, onClose, onConfirm, isPending, setsPending = 0 }) {
   const { t } = useTranslation()
   const { value: showSessionNotes } = usePreference('show_session_notes')
   const [notes, setNotes] = useState('')
@@ -53,6 +53,18 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending }) {
             <X size={18} style={{ color: colors.textSecondary }} />
           </button>
         </div>
+
+        {setsPending > 0 && (
+          <div
+            className="flex items-start gap-2.5 mb-5 p-3 rounded-lg"
+            style={{ backgroundColor: colors.warningBg, border: `1px solid ${colors.warning}` }}
+          >
+            <AlertTriangle size={18} style={{ color: colors.warning, flexShrink: 0, marginTop: 1 }} />
+            <p className="text-sm" style={{ color: colors.textSecondary }}>
+              {t('workout:session.pendingSetsWarning', { count: setsPending })}
+            </p>
+          </div>
+        )}
 
         {showSessionNotes && (
           <div className="mb-5">

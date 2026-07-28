@@ -320,6 +320,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
+        setsPending={progress.setsPending}
       />
 
       <WeightConverterModal

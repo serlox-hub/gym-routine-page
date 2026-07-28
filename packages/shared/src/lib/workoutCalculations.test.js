@@ -241,12 +241,12 @@ describe('workoutCalculations', () => {
 
   describe('calculateExerciseLevelProgress', () => {
     it('retorna ceros para array vacío', () => {
-      expect(calculateExerciseLevelProgress([], {})).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, segments: [] })
+      expect(calculateExerciseLevelProgress([], {})).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, setsPending: 0, segments: [] })
     })
 
     it('retorna ceros para flatExercises null/undefined', () => {
-      expect(calculateExerciseLevelProgress(null, {})).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, segments: [] })
-      expect(calculateExerciseLevelProgress(undefined, undefined)).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, segments: [] })
+      expect(calculateExerciseLevelProgress(null, {})).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, setsPending: 0, segments: [] })
+      expect(calculateExerciseLevelProgress(undefined, undefined)).toEqual({ completed: 0, total: 0, setsCompleted: 0, setsTotal: 0, setsPending: 0, segments: [] })
     })
 
     it('cuenta ejercicios completos solo si todas sus series están hechas', () => {
@@ -272,6 +272,7 @@ describe('workoutCalculations', () => {
       const result = calculateExerciseLevelProgress(exercises, completedSets)
       expect(result.setsCompleted).toBe(3)
       expect(result.setsTotal).toBe(5)
+      expect(result.setsPending).toBe(2)
     })
 
     it('excluye ejercicios de calentamiento', () => {

@@ -6,6 +6,8 @@
     "start": "Iniciar",
     "end": "Finalizar entrenamiento",
     "endConfirm": "¿Seguro que quieres finalizar el entrenamiento?",
+    "pendingSetsWarning_one": "Te queda {{count}} serie sin completar. Si terminas ahora no contará.",
+    "pendingSetsWarning_other": "Te quedan {{count}} series sin completar. Si terminas ahora no contarán.",
     "resume": "Reanudar entrenamiento",
     "abandon": "Abandonar",
     "abandonConfirm": "¿Seguro que quieres abandonar el entrenamiento? Se perderá todo el progreso.",
