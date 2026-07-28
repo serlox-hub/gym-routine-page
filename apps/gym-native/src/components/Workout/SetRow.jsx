@@ -276,7 +276,7 @@ function SetRow({
         {/* Columna ANTERIOR: ancho fijo en weight_reps (alinea con la cabecera); en otros tipos
             ancho de contenido para no truncar valores largos (p. ej. ritmo "5km @ 5:00/km"). */}
         <View style={{ width: isWeightReps ? COL_PREV : undefined, flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
-          <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+          <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
         </View>
         <View className="flex-row items-center flex-1" style={{ gap: 8 }}>
           {renderInputs()}

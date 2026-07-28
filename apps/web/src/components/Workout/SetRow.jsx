@@ -284,7 +284,7 @@ function SetRow({
         >
           <div className="flex items-center justify-center">{renderSetCell()}</div>
           <div className="flex items-center justify-center" style={{ minWidth: 0 }}>
-            <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+            <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
           </div>
           {renderInputs()}
           {annotationColumn && (
@@ -302,7 +302,7 @@ function SetRow({
         >
           <div className="flex items-center justify-center" style={{ width: COL_SET, flexShrink: 0 }}>{renderSetCell()}</div>
           <div className="flex items-center justify-center" style={{ minWidth: COL_PREV, flexShrink: 0 }}>
-            <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} />
+            <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
           </div>
           <div className="flex items-center gap-2 flex-1">{renderInputs()}</div>
           {showEffort && <EffortPicker value={rir} measurementType={measurementType} note={notes} hasVideo={hasVideo}

@@ -2,7 +2,7 @@
  * Utilidades para manejo de series (sets)
  */
 
-import { MeasurementType } from './measurementTypes.js'
+import { MeasurementType, formatEffortBadge } from './measurementTypes.js'
 import { parseDecimal } from './numberUtils.js'
 
 /**
@@ -365,6 +365,22 @@ export function formatSetValueByType(set, measurementType, { timeUnit = 's', dis
  */
 export function formatPreviousSetValue(set, measurementType, { weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm', hideWeightUnit = false } = {}) {
   return formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit, hideWeightUnit })
+}
+
+/**
+ * Esfuerzo (RIR/RPE) de la serie anterior para la segunda línea de la columna ANTERIOR.
+ * Devuelve el badge ("@2" en tipos con reps, etiqueta RPE en el resto vía formatEffortBadge, mismo
+ * formato que la columna de esfuerzo actual) o null si no procede: `showRir` false (el usuario ha
+ * ocultado la escala de RIR/esfuerzo, así que tampoco mostramos el histórico) o la serie previa no
+ * registró esfuerzo. Gating idéntico web+native.
+ * @param {{rir?: number}} previousSet
+ * @param {string} measurementType
+ * @param {boolean} showRir
+ * @returns {string|null}
+ */
+export function formatPreviousSetEffort(previousSet, measurementType, showRir) {
+  if (!showRir || previousSet?.rir == null) return null
+  return formatEffortBadge(previousSet.rir, measurementType) || null
 }
 
 /**

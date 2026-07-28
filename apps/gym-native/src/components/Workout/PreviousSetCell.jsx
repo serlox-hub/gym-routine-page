@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { MeasurementType, formatPreviousSetValue } from '@gym/shared'
+import { MeasurementType, formatPreviousSetValue, formatPreviousSetEffort } from '@gym/shared'
 import SetNotesView from './SetNotesView'
 import { colors } from '../../lib/styles'
 
-// Referencia inline de la MISMA serie en la última sesión (patrón Strong/Hevy): UNA línea gris
-// con el valor formateado (sirve para todos los MeasurementType vía formatPreviousSetValue).
-// Deliberadamente NO muestra el RIR de la última vez inline: duplicaba visualmente la columna RIR
-// (esfuerzo actual) y engordaba la fila a dos líneas. Un punto sutil marca que hubo nota/vídeo;
-// tocar abre el detalle. El valor ya alimenta el prefill automático de los inputs (useSetInputs).
+// Referencia inline de la MISMA serie en la última sesión (patrón Strong/Hevy): valor formateado
+// (todos los MeasurementType vía formatPreviousSetValue) y, si el usuario usa RIR (`showRir`) y la
+// serie previa lo registró, una segunda línea discreta con el esfuerzo ("@2"), mismo formato que la
+// columna de esfuerzo actual. Es contexto de progresión (cómo de duro fue la última vez), no solo
+// qué peso. Un punto sutil marca que hubo nota/vídeo; tocar abre el detalle. El valor ya alimenta el
+// prefill automático de los inputs (useSetInputs).
 export default function PreviousSetCell({
   previousSet,
   measurementType = MeasurementType.WEIGHT_REPS,
   weightUnit = 'kg',
   timeUnit = 's',
   distanceUnit = 'm',
+  showRir = false,
 }) {
   const { t } = useTranslation()
   const [showDetail, setShowDetail] = useState(false)
@@ -30,17 +32,25 @@ export default function PreviousSetCell({
   // conservan (no tienen cabecera que desambigüe: "5km × 30:00", "Nv5 × 12:00").
   const hideWeightUnit = measurementType === MeasurementType.WEIGHT_REPS
   const valueText = formatPreviousSetValue(previousSet, measurementType, { weightUnit, timeUnit, distanceUnit, hideWeightUnit })
+  const effortText = formatPreviousSetEffort(previousSet, measurementType, showRir)
 
   // Punto de "hay nota/vídeo" IDÉNTICO al de la celda SERIE (6px, textLight, superíndice): mismo
   // significado (esta serie tiene detalle) → mismo indicador. Ver renderSetCell en SetRow.
   const valueEl = (
     // maxWidth acota el Text al ancho de columna (weight_reps: 54px) para que numberOfLines={1}
     // trunque en vez de desbordar (paridad con el overflow/ellipsis del gemelo web).
-    <View style={{ position: 'relative', maxWidth: '100%' }}>
-      <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500', textAlign: 'center' }}>
-        {valueText}
-      </Text>
-      {interactive && <View style={{ position: 'absolute', top: '50%', right: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight, transform: [{ translateY: -9 }] }} />}
+    <View style={{ maxWidth: '100%', alignItems: 'center' }}>
+      <View style={{ position: 'relative', maxWidth: '100%' }}>
+        <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500', textAlign: 'center' }}>
+          {valueText}
+        </Text>
+        {interactive && <View style={{ position: 'absolute', top: '50%', right: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight, transform: [{ translateY: -9 }] }} />}
+      </View>
+      {effortText && (
+        <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 10, fontWeight: '500', textAlign: 'center' }}>
+          {effortText}
+        </Text>
+      )}
     </View>
   )
 

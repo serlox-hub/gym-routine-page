@@ -13,6 +13,7 @@ import {
   formatSetValue,
   formatSetValueByType,
   formatPreviousSetValue,
+  formatPreviousSetEffort,
   getSetsForExercise,
   buildExtraExerciseConfig,
   shouldShowAnnotationColumn,
@@ -644,6 +645,34 @@ describe('setUtils', () => {
     it('propaga hideWeightUnit', () => {
       expect(formatPreviousSetValue({ weight: 75, reps: 6 }, 'weight_reps', { hideWeightUnit: true }))
         .toBe('75 × 6')
+    })
+  })
+
+  describe('formatPreviousSetEffort', () => {
+    it('devuelve el badge RIR para tipos con reps', () => {
+      expect(formatPreviousSetEffort({ rir: 2 }, 'weight_reps', true)).toBe('@2')
+      expect(formatPreviousSetEffort({ rir: -1 }, 'weight_reps', true)).toBe('@F')
+      expect(formatPreviousSetEffort({ rir: 3 }, 'weight_reps', true)).toBe('@3+')
+    })
+
+    it('preserva el RIR 0', () => {
+      expect(formatPreviousSetEffort({ rir: 0 }, 'weight_reps', true)).toBe('@0')
+    })
+
+    it('devuelve la etiqueta RPE (sin "@") para tipos sin reps', () => {
+      const badge = formatPreviousSetEffort({ rir: 3 }, 'time', true)
+      expect(badge).toBeTruthy()
+      expect(badge.startsWith('@')).toBe(false)
+    })
+
+    it('devuelve null si showRir es false aunque haya RIR', () => {
+      expect(formatPreviousSetEffort({ rir: 2 }, 'weight_reps', false)).toBeNull()
+    })
+
+    it('devuelve null si la serie previa no registró esfuerzo', () => {
+      expect(formatPreviousSetEffort({ rir: null }, 'weight_reps', true)).toBeNull()
+      expect(formatPreviousSetEffort({}, 'weight_reps', true)).toBeNull()
+      expect(formatPreviousSetEffort(null, 'weight_reps', true)).toBeNull()
     })
   })
 
