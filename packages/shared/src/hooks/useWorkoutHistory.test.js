@@ -191,14 +191,15 @@ describe('usePreviousWorkout', () => {
 
   // issue #11: el prefill de "sesión anterior" debe mapear level y caloriesBurned
   it('mapea level y caloriesBurned de los sets (cardio LEVEL_CALORIES)', async () => {
-    fetchPreviousWorkout.mockResolvedValueOnce([
-      {
-        session: { id: 'session-1', started_at: '2024-01-15T10:00:00Z', status: 'completed' },
+    fetchPreviousWorkout.mockResolvedValueOnce({
+      sameSlot: null,
+      fallback: {
+        session: { id: 'session-1', started_at: '2024-01-15T10:00:00Z', status: 'completed', routine_day_id: 1, day_name: 'Día 1' },
         completed_sets: [
           { set_number: 1, weight: null, reps_completed: null, level: 8, calories_burned: 120 },
         ],
       },
-    ])
+    })
 
     const { result } = renderHook(
       () => usePreviousWorkout('exercise-123'),
@@ -212,7 +213,7 @@ describe('usePreviousWorkout', () => {
   })
 
   it('retorna null cuando no hay sesión previa', async () => {
-    fetchPreviousWorkout.mockResolvedValueOnce([])
+    fetchPreviousWorkout.mockResolvedValueOnce({ sameSlot: null, fallback: null })
 
     const { result } = renderHook(
       () => usePreviousWorkout('exercise-123'),

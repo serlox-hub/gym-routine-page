@@ -50,6 +50,11 @@ function SetsList({
             <Text className="text-xs" style={{ color: colors.textSecondary }}>
               {t('workout:set.lastSession', { when: formatRelativeDate(previousWorkout.date) })}
             </Text>
+            {previousWorkout.fromDifferentDay && previousWorkout.sourceDayName && (
+              <Text className="text-xs" numberOfLines={1} style={{ color: colors.textMuted, flexShrink: 1 }}>
+                {t('workout:set.previousDay', { day: previousWorkout.sourceDayName })}
+              </Text>
+            )}
           </View>
         ) : (
           <Text className="text-xs" style={{ color: colors.textSecondary }}>{t('workout:set.firstTime')}</Text>

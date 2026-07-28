@@ -10,6 +10,7 @@ import {
   buildDefaultExerciseOrder,
   transformSessionDetailData,
   buildCompletedSetsMap,
+  buildPreviousWorkoutRef,
 } from './workoutTransforms.js'
 
 describe('workoutTransforms', () => {
@@ -670,6 +671,71 @@ describe('workoutTransforms', () => {
       expect(result['se-4-1'].setType).toBe('normal')
       expect(buildCompletedSetsMap([])).toEqual({})
       expect(buildCompletedSetsMap(undefined)).toEqual({})
+    })
+  })
+})
+
+describe('buildPreviousWorkoutRef', () => {
+  const rowWith = (session, sets = [{ set_number: 1, weight: 100, reps_completed: 5 }]) => ({
+    session,
+    completed_sets: sets,
+  })
+
+  it('devuelve null sin filas', () => {
+    expect(buildPreviousWorkoutRef({ sameSlot: null, fallback: null })).toBeNull()
+    expect(buildPreviousWorkoutRef()).toBeNull()
+  })
+
+  it('usa sameSlot cuando existe, sin marcar fromDifferentDay', () => {
+    const sameSlot = rowWith({ started_at: '2026-03-01T10:00:00Z', routine_day_id: 3, day_name: 'Pull', routine_day: { name: 'Pull' } })
+    const fallback = rowWith({ started_at: '2026-05-01T10:00:00Z', routine_day_id: 9, day_name: 'Push', routine_day: { name: 'Push' } })
+    const result = buildPreviousWorkoutRef({ sameSlot, fallback, currentRoutineDayId: 3 })
+    expect(result.date).toBe('2026-03-01T10:00:00Z')
+    expect(result.fromDifferentDay).toBe(false)
+    expect(result.sourceDayName).toBeNull()
+  })
+
+  it('marca fromDifferentDay y usa el nombre ACTUAL del día en el fallback', () => {
+    const fallback = rowWith({ started_at: '2026-05-01T10:00:00Z', routine_day_id: 9, day_name: 'Nombre viejo', routine_day: { name: 'Push B' } })
+    const result = buildPreviousWorkoutRef({ sameSlot: null, fallback, currentRoutineDayId: 3 })
+    expect(result.fromDifferentDay).toBe(true)
+    expect(result.sourceDayName).toBe('Push B')
+  })
+
+  it('cae al snapshot day_name cuando el día ya no existe (routine_day null)', () => {
+    const fallback = rowWith({ started_at: '2026-05-01T10:00:00Z', routine_day_id: null, day_name: 'Día borrado', routine_day: null })
+    const result = buildPreviousWorkoutRef({ sameSlot: null, fallback, currentRoutineDayId: 3 })
+    expect(result.fromDifferentDay).toBe(true)
+    expect(result.sourceDayName).toBe('Día borrado')
+  })
+
+  it('sesión actual sin día (ad-hoc): etiqueta si el fallback viene de un día', () => {
+    const fallback = rowWith({ started_at: '2026-05-01T10:00:00Z', routine_day_id: 9, day_name: 'Push', routine_day: { name: 'Push' } })
+    const result = buildPreviousWorkoutRef({ sameSlot: null, fallback, currentRoutineDayId: null })
+    expect(result.fromDifferentDay).toBe(true)
+    expect(result.sourceDayName).toBe('Push')
+  })
+
+  it('sesión actual sin día y fallback ad-hoc: sin etiqueta', () => {
+    const fallback = rowWith({ started_at: '2026-05-01T10:00:00Z', routine_day_id: null, day_name: null, routine_day: null })
+    const result = buildPreviousWorkoutRef({ sameSlot: null, fallback, currentRoutineDayId: null })
+    expect(result.fromDifferentDay).toBe(false)
+    expect(result.sourceDayName).toBeNull()
+  })
+
+  it('mapea todos los campos del set y ordena por setNumber', () => {
+    const fallback = rowWith(
+      { started_at: '2026-05-01T10:00:00Z', routine_day_id: 3, day_name: 'Pull', routine_day: { name: 'Pull' } },
+      [
+        { set_number: 2, weight: 90, reps_completed: 8, level: 5, calories_burned: 30, rir_actual: 1, notes: 'n', video_url: 'v', set_type: 'dropset', time_seconds: 10, distance_meters: 20, pace_seconds: 4 },
+        { set_number: 1, weight: 100, reps_completed: 5 },
+      ]
+    )
+    const result = buildPreviousWorkoutRef({ sameSlot: null, fallback, currentRoutineDayId: 3 })
+    expect(result.sets.map(s => s.setNumber)).toEqual([1, 2])
+    expect(result.sets[1]).toMatchObject({
+      setNumber: 2, weight: 90, reps: 8, level: 5, caloriesBurned: 30, rir: 1,
+      notes: 'n', videoUrl: 'v', setType: 'dropset', timeSeconds: 10, distanceMeters: 20, paceSeconds: 4,
     })
   })
 })

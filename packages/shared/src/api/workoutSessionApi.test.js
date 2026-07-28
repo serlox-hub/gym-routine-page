@@ -457,33 +457,51 @@ describe('fetchExerciseHistory', () => {
 // ============================================
 
 describe('fetchPreviousWorkout', () => {
-  it('returns previous workout data when found', async () => {
+  it('devuelve fallback (cualquier día) y sameSlot null sin routineDayId', async () => {
     const data = [
       {
         id: 'se-1',
-        session: { id: 's-1', started_at: '2026-01-01T10:00:00Z', status: 'completed' },
+        session: { id: 's-1', started_at: '2026-01-01T10:00:00Z', status: 'completed', routine_day_id: 7, day_name: 'Push' },
         completed_sets: [{ set_number: 1, weight: 100, reps_completed: 5 }],
       },
     ]
     const mock = makeQueryMock({ data, error: null })
     getClient.mockReturnValue({ from: () => mock })
-    const result = await fetchPreviousWorkout('ex-1')
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('se-1')
+    const result = await fetchPreviousWorkout({ exerciseId: 'ex-1' })
+    expect(result.fallback.id).toBe('se-1')
+    expect(result.sameSlot).toBeNull()
   })
 
-  it('returns empty array when exercise has no previous workout', async () => {
+  it('con routineDayId lanza también la query de mismo slot (filtra por routine_day_id y gym_id)', async () => {
+    const data = [
+      {
+        id: 'se-9',
+        session: { id: 's-9', started_at: '2026-02-01T10:00:00Z', status: 'completed', routine_day_id: 3, day_name: 'Pull' },
+        completed_sets: [{ set_number: 1, weight: 80, reps_completed: 8 }],
+      },
+    ]
+    const mock = makeQueryMock({ data, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    const result = await fetchPreviousWorkout({ exerciseId: 'ex-1', gymId: 5, routineDayId: 3 })
+    expect(result.sameSlot.id).toBe('se-9')
+    expect(result.fallback.id).toBe('se-9')
+    const eqKeys = mock.eq.mock.calls.map(c => c[0])
+    expect(eqKeys).toContain('session.routine_day_id')
+    expect(eqKeys).toContain('session.gym_id')
+  })
+
+  it('devuelve nulls cuando el ejercicio no tiene sesión previa', async () => {
     const mock = makeQueryMock({ data: [], error: null })
     getClient.mockReturnValue({ from: () => mock })
-    const result = await fetchPreviousWorkout('ex-new')
-    expect(result).toEqual([])
+    const result = await fetchPreviousWorkout({ exerciseId: 'ex-new' })
+    expect(result).toEqual({ sameSlot: null, fallback: null })
   })
 
   // issue #11: el prefill de "sesión anterior" necesita level y calories_burned
   it('incluye level y calories_burned en el select', async () => {
     const mock = makeQueryMock({ data: [], error: null })
     getClient.mockReturnValue({ from: () => mock })
-    await fetchPreviousWorkout('ex-1')
+    await fetchPreviousWorkout({ exerciseId: 'ex-1' })
     const selectArg = mock.select.mock.calls[0][0]
     expect(selectArg).toContain('level')
     expect(selectArg).toContain('calories_burned')
@@ -492,6 +510,6 @@ describe('fetchPreviousWorkout', () => {
   it('throws when Supabase returns error', async () => {
     const mock = makeQueryMock({ data: null, error: new Error('query failed') })
     getClient.mockReturnValue({ from: () => mock })
-    await expect(fetchPreviousWorkout('ex-1')).rejects.toThrow('query failed')
+    await expect(fetchPreviousWorkout({ exerciseId: 'ex-1' })).rejects.toThrow('query failed')
   })
 })

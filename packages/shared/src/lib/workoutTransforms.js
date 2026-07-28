@@ -414,3 +414,47 @@ export function buildDefaultExerciseOrder(groupedBlocks) {
   return order
 }
 
+/**
+ * Resuelve la referencia "Anterior" a partir de las filas crudas de fetchPreviousWorkout.
+ * Prioriza el mismo slot (sameSlot); si no hay, usa el fallback (última vez del ejercicio en el gym).
+ * El emparejamiento de slot es por routine_day_id (estable ante renombrados de día; el nombre es
+ * editable y no sirve como clave). Marca fromDifferentDay y expone sourceDayName —el nombre ACTUAL
+ * del día (routine_day.name), cayendo al snapshot day_name solo si el día ya no existe— para que la
+ * UI señale cuándo la referencia viene de otro día que el que se está entrenando.
+ * @returns {{ date: string, sets: Array, fromDifferentDay: boolean, sourceDayName: string|null } | null}
+ */
+export function buildPreviousWorkoutRef({ sameSlot = null, fallback = null, currentRoutineDayId = null } = {}) {
+  const chosen = sameSlot || fallback
+  if (!chosen) return null
+
+  const session = chosen.session || {}
+  const chosenDayId = session.routine_day_id ?? null
+  // Comparación normalizada con String(): routineDayId es number en ambas apps hoy, pero web
+  // podría pasar un string (params de ruta) y un !== estricto etiquetaría mal el mismo slot.
+  const fromDifferentDay = currentRoutineDayId != null
+    ? String(chosenDayId) !== String(currentRoutineDayId)
+    : chosenDayId != null
+  const sourceDayName = fromDifferentDay
+    ? (session.routine_day?.name ?? session.day_name ?? null)
+    : null
+
+  const sets = (chosen.completed_sets || [])
+    .map(set => ({
+      setNumber: set.set_number,
+      weight: set.weight,
+      reps: set.reps_completed,
+      timeSeconds: set.time_seconds,
+      distanceMeters: set.distance_meters,
+      paceSeconds: set.pace_seconds,
+      level: set.level,
+      caloriesBurned: set.calories_burned,
+      rir: set.rir_actual,
+      notes: set.notes,
+      videoUrl: set.video_url,
+      setType: set.set_type,
+    }))
+    .sort((a, b) => a.setNumber - b.setNumber)
+
+  return { date: session.started_at, sets, fromDifferentDay, sourceDayName }
+}
+

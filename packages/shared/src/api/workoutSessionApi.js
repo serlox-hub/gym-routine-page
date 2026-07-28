@@ -381,37 +381,69 @@ export async function fetchWeeklySessionStats(from, to) {
 // EXERCISE HISTORY
 // ============================================
 
-export async function fetchPreviousWorkout(exerciseId) {
-  const { data, error } = await getClient()
+// Select compartido para la referencia "Anterior". Incluye routine_day_id + day_name (snapshot)
+// para segregar por slot, y routine_day.name (nombre ACTUAL del día) para etiquetar el fallback.
+const PREVIOUS_WORKOUT_SELECT = `
+  id,
+  session:workout_sessions!inner (
+    id,
+    started_at,
+    status,
+    routine_day_id,
+    day_name,
+    routine_day:routine_days ( name )
+  ),
+  completed_sets!inner (
+    set_number,
+    weight,
+    reps_completed,
+    time_seconds,
+    distance_meters,
+    pace_seconds,
+    level,
+    calories_burned,
+    rir_actual,
+    notes,
+    video_url,
+    set_type,
+    performed_at
+  )
+`
+
+function buildPreviousWorkoutQuery({ exerciseId, gymId, routineDayId }) {
+  let query = getClient()
     .from('session_exercises')
-    .select(`
-      id,
-      session:workout_sessions!inner (
-        id,
-        started_at,
-        status
-      ),
-      completed_sets!inner (
-        set_number,
-        weight,
-        reps_completed,
-        time_seconds,
-        distance_meters,
-        pace_seconds,
-        level,
-        calories_burned,
-        rir_actual,
-        notes,
-        video_url,
-        set_type,
-        performed_at
-      )
-    `)
+    .select(PREVIOUS_WORKOUT_SELECT)
     .eq('exercise_id', exerciseId)
     .eq('session.status', 'completed')
     .order('session(started_at)', { ascending: false })
     .limit(1)
 
-  if (error) throw error
-  return data
+  if (gymId != null) query = query.eq('session.gym_id', gymId)
+  if (routineDayId != null) query = query.eq('session.routine_day_id', routineDayId)
+
+  return query
+}
+
+/**
+ * Referencia "Anterior" de la sesión, segregada por gym (unidades/máquina varían por gimnasio,
+ * nunca se comparan pesos crudos entre gyms) y priorizando el MISMO día de rutina (mismo slot).
+ * Devuelve las dos filas crudas: `sameSlot` (última vez en ese día, o null si no se pasa
+ * routineDayId / no hay) y `fallback` (última vez del ejercicio en el gym, cualquier día).
+ * La elección + etiqueta las resuelve buildPreviousWorkoutRef (puro).
+ */
+export async function fetchPreviousWorkout({ exerciseId, gymId = null, routineDayId = null }) {
+  const queries = [buildPreviousWorkoutQuery({ exerciseId, gymId })] // [0] fallback (cualquier día)
+  if (routineDayId != null) {
+    queries.push(buildPreviousWorkoutQuery({ exerciseId, gymId, routineDayId })) // [1] mismo slot
+  }
+
+  const results = await Promise.all(queries)
+  for (const { error } of results) {
+    if (error) throw error
+  }
+
+  const fallback = results[0].data?.[0] ?? null
+  const sameSlot = routineDayId != null ? (results[1].data?.[0] ?? null) : null
+  return { sameSlot, fallback }
 }

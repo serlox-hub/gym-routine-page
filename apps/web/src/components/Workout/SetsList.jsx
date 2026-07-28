@@ -47,6 +47,11 @@ function SetsList({
           <div className="flex items-center gap-1.5 text-xs" style={{ color: colors.textSecondary }}>
             <Clock size={12} />
             <span>{t('workout:set.lastSession', { when: formatRelativeDate(previousWorkout.date) })}</span>
+            {previousWorkout.fromDifferentDay && previousWorkout.sourceDayName && (
+              <span className="truncate" style={{ color: colors.textMuted, minWidth: 0 }}>
+                {t('workout:set.previousDay', { day: previousWorkout.sourceDayName })}
+              </span>
+            )}
           </div>
         ) : (
           <div className="text-xs" style={{ color: colors.textSecondary }}>{t('workout:set.firstTime')}</div>

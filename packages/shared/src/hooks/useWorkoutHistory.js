@@ -19,7 +19,7 @@ import {
   recalculateExercisePRs,
   recalculateSessionStats,
 } from '../api/exerciseStatsApi.js'
-import { transformSessionDetailData } from '../lib/workoutTransforms.js'
+import { transformSessionDetailData, buildPreviousWorkoutRef } from '../lib/workoutTransforms.js'
 import { localizeExercisesInList, localizeExercise } from '../lib/exerciseUtils.js'
 
 // ============================================
@@ -123,34 +123,14 @@ export function useExerciseHistory(exerciseId, routineDayId = null, gymId = null
   })
 }
 
-export function usePreviousWorkout(exerciseId) {
+// La referencia "Anterior" se segrega por gym (unidades/máquina) y prioriza el mismo día de rutina
+// (mismo slot); si no hay registro en ese slot, cae a la última vez del ejercicio en ese gym.
+export function usePreviousWorkout(exerciseId, { gymId = null, routineDayId = null } = {}) {
   return useQuery({
-    queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT, exerciseId],
+    queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT, exerciseId, gymId, routineDayId],
     queryFn: async () => {
-      const data = await fetchPreviousWorkout(exerciseId)
-      if (!data || data.length === 0) return null
-
-      const lastSession = data[0]
-
-      return {
-        date: lastSession.session.started_at,
-        sets: lastSession.completed_sets
-          .map(set => ({
-            setNumber: set.set_number,
-            weight: set.weight,
-            reps: set.reps_completed,
-            timeSeconds: set.time_seconds,
-            distanceMeters: set.distance_meters,
-            paceSeconds: set.pace_seconds,
-            level: set.level,
-            caloriesBurned: set.calories_burned,
-            rir: set.rir_actual,
-            notes: set.notes,
-            videoUrl: set.video_url,
-            setType: set.set_type,
-          }))
-          .sort((a, b) => a.setNumber - b.setNumber)
-      }
+      const { sameSlot, fallback } = await fetchPreviousWorkout({ exerciseId, gymId, routineDayId })
+      return buildPreviousWorkoutRef({ sameSlot, fallback, currentRoutineDayId: routineDayId })
     },
     enabled: !!exerciseId,
     staleTime: 1000 * 60 * 10

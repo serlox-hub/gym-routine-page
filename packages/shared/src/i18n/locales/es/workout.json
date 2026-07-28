@@ -38,6 +38,7 @@
     "removeLast": "Quitar última",
     "addSet": "Añadir serie",
     "lastSession": "Última sesión · {{when}}",
+    "previousDay": "· {{day}}",
     "set": "Serie",
     "saveStartRest": "Guardar e iniciar descanso",
     "weightAndReps": "Peso y reps",

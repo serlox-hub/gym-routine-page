@@ -40,6 +40,7 @@
     "removeLast": "Remove last",
     "addSet": "Add set",
     "lastSession": "Last session · {{when}}",
+    "previousDay": "· {{day}}",
     "set": "Set",
     "saveStartRest": "Save & start rest",
     "weightAndReps": "Weight & reps",
