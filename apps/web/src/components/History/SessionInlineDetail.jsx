@@ -17,6 +17,8 @@ import {
   formatFullDate,
   formatSetValue,
   formatTime,
+  resolveSessionEnd,
+  formatDateTimeLocal,
   getSensationColor,
   findPRSetNumbers,
   fetchWorkoutSummary,
@@ -439,14 +441,11 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
 
   const handleSaveTime = () => {
     if (!editCompletedAt) return
-    const startedAt = new Date(session.started_at)
-    const completedAt = new Date(editCompletedAt)
-    const durationMinutes = Math.round((completedAt - startedAt) / 60000)
-
+    const { completedAtISO, durationMinutes } = resolveSessionEnd(editCompletedAt, session.started_at)
     updateMetadata.mutate({
       sessionId,
-      completedAt: completedAt.toISOString(),
-      durationMinutes: Math.max(0, durationMinutes),
+      completedAt: completedAtISO,
+      durationMinutes,
       overallFeeling: session.overall_feeling,
       notes: session.notes,
     })
@@ -506,19 +505,10 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
     }))
   }
 
-  const formatEditTime = (isoString) => {
-    if (!isoString) return ''
-    const d = new Date(isoString)
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
-
-  const handleTimeChange = (text) => {
-    const match = text.match(/^(\d{1,2}):(\d{2})$/)
-    if (match) {
-      const d = new Date(session.completed_at || session.started_at)
-      d.setHours(parseInt(match[1], 10), parseInt(match[2], 10))
-      setEditCompletedAt(d.toISOString())
-    }
+  const handleDateTimeChange = (localValue) => {
+    if (!localValue) return
+    const { completedAtISO } = resolveSessionEnd(localValue, session.started_at)
+    setEditCompletedAt(completedAtISO)
   }
 
   return (
@@ -556,14 +546,16 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
       {isEditing ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
           <div>
-            <div style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endTime')}</div>
+            <div style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endDateTime')}</div>
             <input
-              type="time"
-              value={formatEditTime(editCompletedAt || session.completed_at)}
-              onChange={e => handleTimeChange(e.target.value)}
+              type="datetime-local"
+              value={formatDateTimeLocal(editCompletedAt || session.completed_at)}
+              min={formatDateTimeLocal(session.started_at)}
+              max={formatDateTimeLocal(new Date())}
+              onChange={e => handleDateTimeChange(e.target.value)}
               onBlur={handleSaveTime}
               className="w-full px-2 py-1 rounded text-xs"
-              style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}` }}
+              style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}`, colorScheme: 'dark' }}
             />
           </div>
           <div>

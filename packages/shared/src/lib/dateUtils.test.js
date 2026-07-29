@@ -7,6 +7,8 @@ import {
   getDaysDifference,
   getDateKey,
   parseDateInput,
+  resolveSessionEnd,
+  formatDateTimeLocal,
 } from './dateUtils.js'
 
 describe('dateUtils', () => {
@@ -113,6 +115,62 @@ describe('dateUtils', () => {
       expect(d.getFullYear()).toBe(2024)
       expect(d.getMonth()).toBe(5)
       expect(d.getDate()).toBe(15)
+    })
+  })
+
+  describe('resolveSessionEnd', () => {
+    const started = '2024-06-15T10:00:00Z'
+    const now = '2024-06-16T20:00:00Z'
+
+    it('acepta un fin válido en otro día y recalcula la duración', () => {
+      const { completedAtISO, durationMinutes } = resolveSessionEnd('2024-06-16T11:30:00Z', started, now)
+      expect(completedAtISO).toBe('2024-06-16T11:30:00.000Z')
+      // 1 día y 1.5 h = 1530 min
+      expect(durationMinutes).toBe(1530)
+    })
+
+    it('acota al inicio si el fin propuesto es anterior', () => {
+      const { completedAtISO, durationMinutes } = resolveSessionEnd('2024-06-15T09:00:00Z', started, now)
+      expect(completedAtISO).toBe('2024-06-15T10:00:00.000Z')
+      expect(durationMinutes).toBe(0)
+    })
+
+    it('acota a "ahora" si el fin propuesto es futuro', () => {
+      const { completedAtISO } = resolveSessionEnd('2024-06-18T10:00:00Z', started, now)
+      expect(completedAtISO).toBe(now.replace('Z', '.000Z'))
+    })
+
+    it('devuelve el inicio si el fin propuesto no es una fecha válida', () => {
+      const { completedAtISO, durationMinutes } = resolveSessionEnd('no-date', started, now)
+      expect(completedAtISO).toBe('2024-06-15T10:00:00.000Z')
+      expect(durationMinutes).toBe(0)
+    })
+
+    it('nunca deja el fin antes del inicio aunque "ahora" preceda al inicio (clock skew)', () => {
+      const { completedAtISO } = resolveSessionEnd('2024-06-14T10:00:00Z', started, '2024-06-14T00:00:00Z')
+      expect(completedAtISO).toBe('2024-06-15T10:00:00.000Z')
+    })
+
+    it('acepta instancias Date', () => {
+      const { durationMinutes } = resolveSessionEnd(new Date('2024-06-15T11:00:00Z'), new Date(started), new Date(now))
+      expect(durationMinutes).toBe(60)
+    })
+  })
+
+  describe('formatDateTimeLocal', () => {
+    it('formatea a YYYY-MM-DDTHH:mm en hora local', () => {
+      const d = new Date(2024, 5, 15, 14, 5)
+      expect(formatDateTimeLocal(d)).toBe('2024-06-15T14:05')
+    })
+
+    it('rellena con ceros mes, día, hora y minuto', () => {
+      const d = new Date(2024, 0, 3, 9, 7)
+      expect(formatDateTimeLocal(d)).toBe('2024-01-03T09:07')
+    })
+
+    it('devuelve cadena vacía para entrada inválida', () => {
+      expect(formatDateTimeLocal('no-date')).toBe('')
+      expect(formatDateTimeLocal('')).toBe('')
     })
   })
 })

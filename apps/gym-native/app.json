@@ -68,7 +68,8 @@
           "color": "#0A0A0F"
         }
       ],
-      "expo-image"
+      "expo-image",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

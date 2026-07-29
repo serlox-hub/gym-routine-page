@@ -72,3 +72,41 @@ export function parseDateInput(date) {
   }
   return new Date(date)
 }
+
+/**
+ * Resolves a proposed session end timestamp, clamping it to [startedAt, now]
+ * and recomputing the duration. Used when editing a finished session's end
+ * (caso típico: la sesión quedó abierta y se cierra al día siguiente): el
+ * inicio es fijo y el fin nunca puede ser anterior a él ni futuro.
+ * @param {Date|string} proposed - end timestamp elegido por el usuario
+ * @param {Date|string} startedAt - inicio de la sesión (cota inferior fija)
+ * @param {Date|string} [now] - cota superior; por defecto el momento actual
+ * @returns {{ completedAtISO: string, durationMinutes: number }}
+ */
+export function resolveSessionEnd(proposed, startedAt, now = new Date()) {
+  const startedMs = new Date(startedAt).getTime()
+  const nowMs = new Date(now).getTime()
+  // Guard clock skew (now < startedAt): el fin nunca puede quedar antes del inicio
+  const upperMs = Math.max(nowMs, startedMs)
+  let endMs = new Date(proposed).getTime()
+  if (Number.isNaN(endMs)) endMs = startedMs
+  endMs = Math.min(Math.max(endMs, startedMs), upperMs)
+  return {
+    completedAtISO: new Date(endMs).toISOString(),
+    durationMinutes: Math.round((endMs - startedMs) / 60000),
+  }
+}
+
+/**
+ * Formatea un timestamp como string local `YYYY-MM-DDTHH:mm` para usarlo como
+ * value/min/max de un <input type="datetime-local"> (que es naive de zona
+ * horaria y no admite segundos).
+ * @param {Date|string} input
+ * @returns {string} cadena vacía si la entrada no es válida
+ */
+export function formatDateTimeLocal(input) {
+  const d = input instanceof Date ? input : new Date(input)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}

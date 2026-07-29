@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
-import { View, Text, TextInput, Pressable } from 'react-native'
+import { View, Text, TextInput, Pressable, Modal, Platform } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trophy, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react-native'
@@ -15,6 +17,7 @@ import {
   formatFullDate,
   formatSetValue,
   formatTime,
+  resolveSessionEnd,
   getSensationColor,
   findPRSetNumbers,
   fetchWorkoutSummary,
@@ -455,6 +458,46 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   )
 }
 
+// Aislado a propósito: la rueda iOS (display="spinner") dispara onChange en cada
+// detente. Mantener ese estado de alta frecuencia (draft) aquí evita re-renderizar
+// la lista de ejercicios del padre; solo se notifica al confirmar.
+function SessionEndDateTimePicker({ initialValue, minimumDate, maximumDate, onConfirm }) {
+  const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
+  const [draft, setDraft] = useState(() => new Date(initialValue))
+
+  const handleDone = () => onConfirm(draft)
+
+  return (
+    <Modal transparent visible animationType="slide" onRequestClose={handleDone}>
+      {/* Tocar fuera confirma el valor girado (igual que "Listo"), no cancela: decisión de UX;
+          sin riesgo porque el fin está acotado a [inicio, ahora] y siempre se puede reajustar. */}
+      <Pressable
+        onPress={handleDone}
+        style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay }}
+      >
+        <Pressable onPress={() => {}} style={{ backgroundColor: colors.bgSecondary, paddingBottom: insets.bottom + 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 12 }}>
+            <Pressable onPress={handleDone}>
+              <Text style={{ color: colors.success, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.done')}</Text>
+            </Pressable>
+          </View>
+          <DateTimePicker
+            value={draft}
+            mode="datetime"
+            display="spinner"
+            themeVariant="dark"
+            textColor={colors.textPrimary}
+            minimumDate={minimumDate}
+            maximumDate={maximumDate}
+            onChange={(_event, pickedDate) => { if (pickedDate) setDraft(pickedDate) }}
+          />
+        </Pressable>
+      </Pressable>
+    </Modal>
+  )
+}
+
 function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionDeleted }) {
   const navigationHook = useNavigation()
   const navigation = navigationProp || navigationHook
@@ -477,7 +520,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
-  const [editTimeText, setEditTimeText] = useState('')
+  const [showDatePicker, setShowDatePicker] = useState(false)
   const { value: globalWeightUnit } = usePreference('weight_unit')
 
   const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRsData), [sessionPRsData])
@@ -494,17 +537,64 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   if (error) return <ErrorMessage message={error.message} />
   if (!session) return null
 
-  const formatTimeFromISO = (isoString) => {
-    if (!isoString) return ''
-    const d = new Date(isoString)
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
-
   const handleStartEdit = () => {
     setIsEditing(true)
     setEditNotes(session.notes || '')
-    setEditCompletedAt(session.completed_at || '')
-    setEditTimeText(formatTimeFromISO(session.completed_at))
+    setEditCompletedAt(session.completed_at || session.started_at || '')
+  }
+
+  const currentEndDate = () => new Date(editCompletedAt || session.completed_at || session.started_at)
+
+  const commitEnd = (nextDate) => {
+    const { completedAtISO, durationMinutes } = resolveSessionEnd(nextDate, session.started_at)
+    setEditCompletedAt(completedAtISO)
+    updateMetadata.mutate({
+      sessionId,
+      completedAt: completedAtISO,
+      durationMinutes,
+      overallFeeling: session.overall_feeling,
+      notes: session.notes,
+    })
+  }
+
+  // Android no tiene modo 'datetime' combinado: se encadena fecha y luego hora.
+  // resolveSessionEnd acota el resultado a [started_at, ahora] en cualquier caso.
+  const openAndroidPicker = () => {
+    const base = currentEndDate()
+    DateTimePickerAndroid.open({
+      value: base,
+      mode: 'date',
+      minimumDate: new Date(session.started_at),
+      maximumDate: new Date(),
+      onChange: (dateEvent, pickedDate) => {
+        if (dateEvent.type !== 'set' || !pickedDate) return
+        const withDate = new Date(base)
+        withDate.setFullYear(pickedDate.getFullYear(), pickedDate.getMonth(), pickedDate.getDate())
+        DateTimePickerAndroid.open({
+          value: withDate,
+          mode: 'time',
+          onChange: (timeEvent, pickedTime) => {
+            if (timeEvent.type !== 'set' || !pickedTime) return
+            const withTime = new Date(withDate)
+            withTime.setHours(pickedTime.getHours(), pickedTime.getMinutes())
+            commitEnd(withTime)
+          },
+        })
+      },
+    })
+  }
+
+  const openEndPicker = () => {
+    if (Platform.OS === 'android') {
+      openAndroidPicker()
+      return
+    }
+    setShowDatePicker(true)
+  }
+
+  const handleIosPickerConfirm = (pickedDate) => {
+    setShowDatePicker(false)
+    commitEnd(pickedDate)
   }
 
   const handleSaveNotes = () => {
@@ -558,27 +648,6 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
     }))
   }
 
-  const handleTimeBlur = () => {
-    const match = editTimeText.match(/^(\d{1,2}):(\d{2})$/)
-    if (match) {
-      const d = new Date(session.completed_at || session.started_at)
-      d.setHours(parseInt(match[1], 10), parseInt(match[2], 10))
-      const iso = d.toISOString()
-      setEditCompletedAt(iso)
-      const startedAt = new Date(session.started_at)
-      const durationMinutes = Math.round((d - startedAt) / 60000)
-      updateMetadata.mutate({
-        sessionId,
-        completedAt: iso,
-        durationMinutes: Math.max(0, durationMinutes),
-        overallFeeling: session.overall_feeling,
-        notes: session.notes,
-      })
-    } else {
-      setEditTimeText(formatTimeFromISO(editCompletedAt || session.completed_at))
-    }
-  }
-
   return (
     <View>
       {/* Header — always visible */}
@@ -614,16 +683,15 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
       {isEditing ? (
         <View style={{ gap: 8, marginTop: 8 }}>
           <View>
-            <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endTime')}</Text>
-            <TextInput
-              value={editTimeText}
-              onChangeText={setEditTimeText}
-              onBlur={handleTimeBlur}
-              placeholder="HH:MM"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="numbers-and-punctuation"
-              style={{ color: colors.textPrimary, fontSize: 13, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: colors.border }}
-            />
+            <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endDateTime')}</Text>
+            <Pressable
+              onPress={openEndPicker}
+              style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}
+            >
+              <Text style={{ color: colors.textPrimary, fontSize: 13, textTransform: 'capitalize' }}>
+                {`${formatFullDate(editCompletedAt || session.completed_at)} · ${formatTime(editCompletedAt || session.completed_at)}`}
+              </Text>
+            </Pressable>
           </View>
           <View>
             <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('common:labels.notes')}</Text>
@@ -787,6 +855,15 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
         selectedGymId={session.gym_id}
         onSelect={handleReassignGym}
       />
+
+      {Platform.OS === 'ios' && showDatePicker && (
+        <SessionEndDateTimePicker
+          initialValue={editCompletedAt || session.completed_at || session.started_at}
+          minimumDate={new Date(session.started_at)}
+          maximumDate={new Date()}
+          onConfirm={handleIosPickerConfirm}
+        />
+      )}
     </View>
   )
 }

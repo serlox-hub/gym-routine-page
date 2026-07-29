@@ -153,7 +153,7 @@
     "session": "Sesión",
     "date": "Fecha",
     "time": "Hora",
-    "endTime": "Hora de fin",
+    "endDateTime": "Fecha y hora de fin",
     "sessionsThisDay": "sesiones este día",
     "deleteSession": "Eliminar sesión",
     "viewDetail": "Ver detalle",
