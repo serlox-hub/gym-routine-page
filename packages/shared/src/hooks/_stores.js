@@ -23,3 +23,10 @@ export function getWorkoutStore() {
   if (!_workoutStore) throw new Error('[gym/shared] initStores() must be called before using getWorkoutStore')
   return _workoutStore
 }
+
+// Variante no-lanzante: devuelve el store o null si aún no se inyectó. Para código que
+// puede correr sin store (p. ej. tests que montan un Provider sin initStores): degrada
+// a no-op en vez de romper.
+export function peekWorkoutStore() {
+  return _workoutStore
+}

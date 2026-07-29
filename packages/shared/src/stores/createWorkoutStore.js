@@ -37,6 +37,12 @@ export function workoutStoreState(set, get) {
     // Persistido → sobrevive a cierres de app offline. { gymId, weights: [{sessionExerciseId, setNumber, weight}] }
     pendingGymChange: null,
 
+    // Ejercicio abierto en el acordeón de la sesión (accordion: solo uno a la vez).
+    // Persistido → al salir y volver (o cold start) reabre la misma card en vez de la primera.
+    // Sentinela: undefined = "auto" (abrir el primer ejercicio), null = "todo colapsado"
+    // (elección explícita del usuario, se respeta), string = key de la card abierta.
+    expandedExerciseKey: undefined,
+
     // Rest timer state
     restTimerActive: false,
     restTimerEndTime: null,  // Timestamp cuando termina el timer
@@ -58,6 +64,7 @@ export function workoutStoreState(set, get) {
       pendingSets: {},
       weightConversionNonce: 0,
       pendingGymChange: null,
+      expandedExerciseKey: undefined,
       restTimerActive: false,
       restTimerEndTime: null,
       restTimeInitial: 0,
@@ -65,6 +72,8 @@ export function workoutStoreState(set, get) {
     }),
 
     // Restore session from backend
+    // OJO: expandedExerciseKey NO se resetea aquí a propósito — restore corre al volver
+    // a la sesión activa (foreground/revisita/cold start) y debe PRESERVAR la card abierta.
     restoreSession: ({ sessionId, routineDayId, routineId, gymId = null, startedAt, completedSets, cachedSetData }) => set({
       sessionId,
       routineDayId,
@@ -84,6 +93,9 @@ export function workoutStoreState(set, get) {
     // Change the gym of the active session (quick change from the session header)
     setSessionGym: (gymId) => set({ gymId }),
 
+    // Set which exercise card is expanded (accordion). null = colapsar todo.
+    setExpandedExerciseKey: (key) => set({ expandedExerciseKey: key }),
+
     // End current session
     endSession: () => set({
       sessionId: null,
@@ -97,6 +109,7 @@ export function workoutStoreState(set, get) {
       pendingSets: {},
       weightConversionNonce: 0,
       pendingGymChange: null,
+      expandedExerciseKey: undefined,
       restTimerActive: false,
       restTimerEndTime: null,
       restTimeInitial: 0,

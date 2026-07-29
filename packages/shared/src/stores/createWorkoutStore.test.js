@@ -1,6 +1,19 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { act } from '@testing-library/react'
+import { createJSONStorage } from 'zustand/middleware'
 import { createWorkoutStore } from './createWorkoutStore.js'
+
+// Storage en memoria aislado por test (evita compartir el localStorage de jsdom bajo el
+// mismo `name` entre instancias). `raw` expone el JSON serializado para asertar el round-trip.
+function makeMemStorage() {
+  const raw = new Map()
+  const stringStore = {
+    getItem: (k) => (raw.has(k) ? raw.get(k) : null),
+    setItem: (k, v) => { raw.set(k, v) },
+    removeItem: (k) => { raw.delete(k) },
+  }
+  return { storage: createJSONStorage(() => stringStore), raw }
+}
 
 let useWorkoutStore
 
@@ -463,6 +476,74 @@ describe('createWorkoutStore', () => {
       })
       expect(useWorkoutStore.getState().pendingGymChange).toBeNull()
       expect(useWorkoutStore.getState().weightConversionNonce).toBe(0)
+    })
+  })
+
+  describe('expandedExerciseKey (card abierta del acordeón)', () => {
+    // Store aislado con storage en memoria propio, para no depender del orden ni del
+    // localStorage compartido de jsdom (rehidrataría un valor de un test previo).
+    beforeEach(() => {
+      useWorkoutStore = createWorkoutStore(makeMemStorage().storage)
+    })
+
+    it('arranca en undefined (sentinela "auto")', () => {
+      expect(useWorkoutStore.getState().expandedExerciseKey).toBeUndefined()
+    })
+
+    it('setExpandedExerciseKey fija la key', () => {
+      act(() => { useWorkoutStore.getState().setExpandedExerciseKey('se-42') })
+      expect(useWorkoutStore.getState().expandedExerciseKey).toBe('se-42')
+    })
+
+    it('setExpandedExerciseKey(null) representa "todo colapsado"', () => {
+      act(() => { useWorkoutStore.getState().setExpandedExerciseKey(null) })
+      expect(useWorkoutStore.getState().expandedExerciseKey).toBeNull()
+    })
+
+    it('startSession resetea a undefined (nueva sesión abre el primero)', () => {
+      act(() => {
+        useWorkoutStore.getState().setExpandedExerciseKey('se-42')
+        useWorkoutStore.getState().startSession(1, 2)
+      })
+      expect(useWorkoutStore.getState().expandedExerciseKey).toBeUndefined()
+    })
+
+    it('endSession resetea a undefined', () => {
+      act(() => {
+        useWorkoutStore.getState().setExpandedExerciseKey('se-42')
+        useWorkoutStore.getState().endSession()
+      })
+      expect(useWorkoutStore.getState().expandedExerciseKey).toBeUndefined()
+    })
+
+    it('restoreSession PRESERVA la card abierta (no la resetea)', () => {
+      act(() => {
+        useWorkoutStore.getState().setExpandedExerciseKey('se-42')
+        useWorkoutStore.getState().restoreSession({
+          sessionId: 1, routineDayId: 2, routineId: 3,
+          startedAt: '2024-01-01T00:00:00Z', completedSets: {}, cachedSetData: {},
+        })
+      })
+      expect(useWorkoutStore.getState().expandedExerciseKey).toBe('se-42')
+    })
+
+    it('round-trip: string y null se persisten; undefined se omite del JSON', () => {
+      const mem = makeMemStorage()
+      const s1 = createWorkoutStore(mem.storage)
+
+      // string → se serializa y rehidrata
+      act(() => { s1.getState().setExpandedExerciseKey('se-9') })
+      expect(mem.raw.get('workout-session')).toContain('"expandedExerciseKey":"se-9"')
+      expect(createWorkoutStore(mem.storage).getState().expandedExerciseKey).toBe('se-9')
+
+      // null (todo colapsado) → se preserva
+      act(() => { s1.getState().setExpandedExerciseKey(null) })
+      expect(createWorkoutStore(mem.storage).getState().expandedExerciseKey).toBeNull()
+
+      // undefined (auto) → JSON.stringify lo omite y rehidrata como undefined (distinguible de null)
+      act(() => { s1.getState().setExpandedExerciseKey(undefined) })
+      expect(mem.raw.get('workout-session')).not.toContain('expandedExerciseKey')
+      expect(createWorkoutStore(mem.storage).getState().expandedExerciseKey).toBeUndefined()
     })
   })
 
