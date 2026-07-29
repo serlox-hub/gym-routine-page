@@ -135,3 +135,72 @@ describe('useSetInputs — grupo de detalles (rir/notes/setType)', () => {
     expect(detailCacheCalls()).toHaveLength(0)
   })
 })
+
+describe('useSetInputs — re-siembra por conversión de unidad (cambio de gym)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+    store.weightConversionNonce = 0
+  })
+
+  it('re-siembra el peso local cuando el store convierte y bumpea el nonce', async () => {
+    store.completedSets = { [KEY]: { sessionExerciseId: 'ex-1', setNumber: 1, weight: 190 } }
+    const { result, rerender } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
+    expect(result.current.weight).toBe(190)
+
+    // Simula applyWeightConversions: el store cambia el peso y sube el nonce
+    store.completedSets = { [KEY]: { sessionExerciseId: 'ex-1', setNumber: 1, weight: 86.18 } }
+    store.weightConversionNonce = 1
+    rerender()
+
+    await waitFor(() => expect(result.current.weight).toBe(86.18))
+  })
+
+  it('no re-siembra en el montaje inicial (el nonce no ha cambiado)', () => {
+    store.completedSets = { [KEY]: { sessionExerciseId: 'ex-1', setNumber: 1, weight: 190 } }
+    store.weightConversionNonce = 5 // ya venía >0 (p. ej. conversión previa en la sesión)
+    const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
+    expect(result.current.weight).toBe(190)
+  })
+})
+
+describe('useSetInputs — prefill de la sesión anterior (sugerencia)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+  })
+
+  it('rellena el input vacío al montar desde previousSet', async () => {
+    const { result } = renderHook(() => useSetInputs({ ...PARAMS, previousSet: { weight: 100 } }), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+  })
+
+  it('re-prellena la serie no tocada cuando previousSet cambia, PASANDO por la fase de carga (undefined)', async () => {
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: { weight: 100 } },
+    })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+
+    // Cambio de gym real: el "Anterior" recarga (undefined) antes de llegar el del gym nuevo.
+    // Sin conservar el último previousSet real a través del undefined, la detección fallaría.
+    rerender({ ...PARAMS, previousSet: undefined })
+    rerender({ ...PARAMS, previousSet: { weight: 45.36 } })
+    await waitFor(() => expect(result.current.weight).toBe(45.36))
+  })
+
+  it('NO pisa lo que el usuario ya guardó (cachedData) aunque cambie previousSet', async () => {
+    store.cachedSetData = { [KEY]: { weight: 80 } }
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: { weight: 100 } },
+    })
+    expect(result.current.weight).toBe(80)
+
+    rerender({ ...PARAMS, previousSet: { weight: 45.36 } })
+    // sigue siendo lo tecleado por el usuario, no la sugerencia del gym nuevo
+    expect(result.current.weight).toBe(80)
+  })
+})

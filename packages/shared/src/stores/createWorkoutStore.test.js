@@ -383,6 +383,89 @@ describe('createWorkoutStore', () => {
     })
   })
 
+  describe('applyWeightConversions', () => {
+    it('convierte los pesos de las series indicadas y bumpea el nonce', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 190 })
+        useWorkoutStore.getState().completeSet(1, 2, { weight: 100 })
+      })
+      const nonceBefore = useWorkoutStore.getState().weightConversionNonce
+
+      act(() => {
+        useWorkoutStore.getState().applyWeightConversions([
+          { sessionExerciseId: 1, setNumber: 1, newWeight: 86.18 },
+        ])
+      })
+
+      const state = useWorkoutStore.getState()
+      expect(state.completedSets['1-1'].weight).toBe(86.18)
+      expect(state.cachedSetData['1-1'].weight).toBe(86.18)
+      expect(state.completedSets['1-2'].weight).toBe(100) // sin cambios
+      expect(state.weightConversionNonce).toBe(nonceBefore + 1)
+    })
+
+    it('también convierte el peso de una serie encolada en pendingSets', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 190 })
+        useWorkoutStore.getState().addPendingSet(1, 1, { sessionExerciseId: 1, setNumber: 1, weight: 190 })
+      })
+
+      act(() => {
+        useWorkoutStore.getState().applyWeightConversions([
+          { sessionExerciseId: 1, setNumber: 1, newWeight: 86.18 },
+        ])
+      })
+
+      // Sin esto, al sincronizar la cola insertaría el peso viejo (190) en BD
+      expect(useWorkoutStore.getState().pendingSets['1-1'].weight).toBe(86.18)
+    })
+
+    it('no toca el estado ni el nonce con una lista vacía', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 190 })
+      })
+      const nonceBefore = useWorkoutStore.getState().weightConversionNonce
+
+      act(() => {
+        useWorkoutStore.getState().applyWeightConversions([])
+      })
+
+      const state = useWorkoutStore.getState()
+      expect(state.completedSets['1-1'].weight).toBe(190)
+      expect(state.weightConversionNonce).toBe(nonceBefore)
+    })
+  })
+
+  describe('pendingGymChange', () => {
+    it('fija y limpia el cambio de gym pendiente', () => {
+      act(() => {
+        useWorkoutStore.getState().setPendingGymChange({ gymId: 7, weights: [{ sessionExerciseId: 1, setNumber: 1, weight: 86.18 }] })
+      })
+      expect(useWorkoutStore.getState().pendingGymChange).toEqual({ gymId: 7, weights: [{ sessionExerciseId: 1, setNumber: 1, weight: 86.18 }] })
+
+      act(() => { useWorkoutStore.getState().setPendingGymChange(null) })
+      expect(useWorkoutStore.getState().pendingGymChange).toBeNull()
+    })
+
+    it('startSession y endSession reinician pendingGymChange y weightConversionNonce', () => {
+      act(() => {
+        useWorkoutStore.getState().setPendingGymChange({ gymId: 7, weights: [] })
+        useWorkoutStore.getState().applyWeightConversions([{ sessionExerciseId: 1, setNumber: 1, newWeight: 1 }])
+      })
+
+      act(() => { useWorkoutStore.getState().startSession(1, 2) })
+      expect(useWorkoutStore.getState().pendingGymChange).toBeNull()
+      expect(useWorkoutStore.getState().weightConversionNonce).toBe(0)
+
+      act(() => {
+        useWorkoutStore.getState().setPendingGymChange({ gymId: 8, weights: [] })
+        useWorkoutStore.getState().endSession()
+      })
+      expect(useWorkoutStore.getState().pendingGymChange).toBeNull()
+      expect(useWorkoutStore.getState().weightConversionNonce).toBe(0)
+    })
+  })
+
   describe('Factory', () => {
     it('creates independent store instances', () => {
       const store1 = createWorkoutStore()

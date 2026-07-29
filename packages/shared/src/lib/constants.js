@@ -11,6 +11,11 @@ export const SUMMARY_MAX_EXERCISES = 8
 // se teclea, evitando spam de escrituras a store/DB/AsyncStorage. Compartido web+native.
 export const SET_EDIT_DEBOUNCE_MS = 600
 
+// Reintento periódico de las colas de sync offline (series pendientes y cambio de gym
+// pendiente) mientras quede algo por persistir. Compartido por useSyncPendingSets y
+// useSyncPendingGymChange.
+export const SYNC_RETRY_INTERVAL_MS = 10000
+
 // Sesión activa: cuánto se muestra el toast de PR antes de auto-ocultarse.
 export const PR_NOTIFICATION_DURATION_MS = 4000
 

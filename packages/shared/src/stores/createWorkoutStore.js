@@ -26,6 +26,17 @@ export function workoutStoreState(set, get) {
     // Key: `${sessionExerciseId}-${setNumber}` -> mutation payload
     pendingSets: {},
 
+    // Contador que se incrementa cuando se convierten pesos por un cambio de unidad
+    // (cambio de gym a mitad de sesión). Es la señal para que useSetInputs re-siembre su
+    // input local (que se inicializa una sola vez); sin esto la fila seguiría mostrando el
+    // número en la unidad vieja y el commit con debounce lo reescribiría encima.
+    weightConversionNonce: 0,
+
+    // Cambio de gym pendiente de persistir en BD (UI optimista). Se aplica ya en local y se
+    // encola aquí; useSyncPendingGymChange lo reintenta hasta persistirlo con el RPC atómico.
+    // Persistido → sobrevive a cierres de app offline. { gymId, weights: [{sessionExerciseId, setNumber, weight}] }
+    pendingGymChange: null,
+
     // Rest timer state
     restTimerActive: false,
     restTimerEndTime: null,  // Timestamp cuando termina el timer
@@ -45,6 +56,8 @@ export function workoutStoreState(set, get) {
       cachedSetData: {},
       exerciseSetCounts: {},
       pendingSets: {},
+      weightConversionNonce: 0,
+      pendingGymChange: null,
       restTimerActive: false,
       restTimerEndTime: null,
       restTimeInitial: 0,
@@ -60,6 +73,8 @@ export function workoutStoreState(set, get) {
       startedAt,
       completedSets,
       cachedSetData,
+      weightConversionNonce: 0,
+      pendingGymChange: null,
       restTimerActive: false,
       restTimerEndTime: null,
       restTimeInitial: 0,
@@ -80,6 +95,8 @@ export function workoutStoreState(set, get) {
       cachedSetData: {},
       exerciseSetCounts: {},
       pendingSets: {},
+      weightConversionNonce: 0,
+      pendingGymChange: null,
       restTimerActive: false,
       restTimerEndTime: null,
       restTimeInitial: 0,
@@ -150,6 +167,28 @@ export function workoutStoreState(set, get) {
         cachedSetData: { ...state.cachedSetData, [key]: updated },
       }
     }),
+
+    // Aplica en bloque la conversión de peso de varias series completadas (al mover la sesión
+    // a un gym con distinta unidad). Actualiza completedSets, cachedSetData y también
+    // pendingSets (una serie completada offline que aún no sincronizó lleva el peso viejo en su
+    // payload; sin convertirlo, al sincronizar insertaría el peso sin convertir en BD). BUMPEA
+    // weightConversionNonce para que los SetRow montados re-siembren su input local.
+    applyWeightConversions: (conversions) => set(state => {
+      if (!conversions?.length) return state
+      const completedSets = { ...state.completedSets }
+      const cachedSetData = { ...state.cachedSetData }
+      const pendingSets = { ...state.pendingSets }
+      for (const c of conversions) {
+        const key = `${c.sessionExerciseId}-${c.setNumber}`
+        if (completedSets[key]) completedSets[key] = { ...completedSets[key], weight: c.newWeight }
+        if (cachedSetData[key]) cachedSetData[key] = { ...cachedSetData[key], weight: c.newWeight }
+        if (pendingSets[key]) pendingSets[key] = { ...pendingSets[key], weight: c.newWeight }
+      }
+      return { completedSets, cachedSetData, pendingSets, weightConversionNonce: state.weightConversionNonce + 1 }
+    }),
+
+    // Fija (o limpia con null) el cambio de gym pendiente de persistir en BD.
+    setPendingGymChange: (job) => set({ pendingGymChange: job }),
 
     // Get completed sets for an exercise
     getSetsForExercise: (sessionExerciseId) => {

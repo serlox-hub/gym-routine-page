@@ -1,6 +1,7 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '../lib/constants.js'
+import { QUERY_KEYS, SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
+import { planSessionWeightConversion, resolveUnitsForExercises, buildGymChangeJob, pickGymUnitOverrides } from '../lib/sessionGymChange.js'
 import {
   buildSessionExercisesCache,
   buildSessionExercisesFromBlocks,
@@ -25,8 +26,14 @@ import {
   upsertExerciseSessionStats,
 } from '../api/exerciseStatsApi.js'
 import { fetchSessionExercises } from '../api/sessionExercisesApi.js'
+import { changeSessionGym } from '../api/gymsApi.js'
 import { useWorkoutStore, getWorkoutStore } from './_stores.js'
 import { useUserId } from './useAuth.js'
+import { usePreference } from './usePreferences.js'
+import { useSetSelectedGym } from './useGyms.js'
+import { useAllUserExerciseGymUnits } from './useExercises.js'
+import { getNotifier } from '../notifications.js'
+import { t } from '../i18n/index.js'
 
 // ============================================
 // SESSION RESTORATION
@@ -160,6 +167,134 @@ export function useEndSession({ onSuccess: onSuccessCb } = {}) {
       }, 0)
     },
   })
+}
+
+// ============================================
+// CHANGE SESSION GYM (mid-session)
+// ============================================
+
+/**
+ * Cambio de gym de una sesión EN CURSO, optimista y con detección LOCAL de unidades.
+ *
+ * La unidad de peso se resuelve por (ejercicio, gym). Si al mover la sesión a otro gym cambia
+ * la unidad de algún ejercicio con series de peso ya registradas, se CONVIERTEN esos pesos
+ * para preservar el peso real levantado. Todo en local e instantáneo (las unidades vienen
+ * prefetcheadas por `useAllUserExerciseGymUnits`, así que funciona offline). La persistencia
+ * se encola (`setPendingGymChange`) y la aplica `useSyncPendingGymChange` con el RPC atómico
+ * `change_session_gym` y reintentos. Esta función NO hace red.
+ *
+ * `changeGym(newGymId, gymName)` → nº de series convertidas (0 = cambio sin conversión).
+ */
+export function useChangeSessionGym() {
+  const queryClient = useQueryClient()
+  const sessionId = useWorkoutStore(state => state.sessionId)
+  const currentGymId = useWorkoutStore(state => state.gymId)
+  const setSessionGym = useWorkoutStore(state => state.setSessionGym)
+  const applyWeightConversions = useWorkoutStore(state => state.applyWeightConversions)
+  const setPendingGymChange = useWorkoutStore(state => state.setPendingGymChange)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
+  const { setSelectedGym } = useSetSelectedGym()
+  const { data: gymUnitRows } = useAllUserExerciseGymUnits()
+
+  const changeGym = useCallback((newGymId, gymName) => {
+    if (newGymId == null || String(newGymId) === String(currentGymId)) return 0
+
+    const store = getWorkoutStore().getState()
+    const completedSets = store.completedSets
+    const sessionExercises = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, sessionId]) || []
+    const exerciseIdBySe = {}
+    for (const se of sessionExercises) exerciseIdBySe[se.id] = se.exercise_id
+
+    // Ejercicios con series de peso ya registradas
+    const exerciseIds = [...new Set(
+      Object.values(completedSets)
+        .filter(s => s?.weight != null)
+        .map(s => exerciseIdBySe[s.sessionExerciseId])
+        .filter(id => id != null)
+    )]
+
+    // Unidad efectiva por ejercicio en el gym actual y en el destino, resuelta EN LOCAL desde
+    // las unidades prefetcheadas (sin red) vía pickGymUnitOverrides(rows, gym) → { exercise_id: unidad }.
+    let conversions = []
+    if (exerciseIds.length) {
+      const rows = gymUnitRows || []
+      conversions = planSessionWeightConversion({
+        completedSets,
+        exerciseIdBySe,
+        oldUnitByExercise: resolveUnitsForExercises(exerciseIds, pickGymUnitOverrides(rows, currentGymId), globalWeightUnit),
+        newUnitByExercise: resolveUnitsForExercises(exerciseIds, pickGymUnitOverrides(rows, newGymId), globalWeightUnit),
+      })
+    }
+
+    // Aplicar en local (optimista). applyWeightConversions bumpea el nonce → los SetRow
+    // re-siembran su input con el peso ya convertido.
+    if (conversions.length) applyWeightConversions(conversions)
+    setSessionGym(newGymId)
+    setSelectedGym(newGymId)
+
+    // Encolar la persistencia (RPC atómico con reintentos). buildGymChangeJob decide si mandar
+    // el snapshot completo de pesos (convergente ante cambios encadenados) o solo el gym.
+    setPendingGymChange(buildGymChangeJob({
+      gymId: newGymId,
+      completedSets: getWorkoutStore().getState().completedSets,
+      hasConversions: conversions.length > 0,
+      hadPendingWeights: store.pendingGymChange?.weights?.length > 0,
+    }))
+
+    if (conversions.length && gymName) {
+      getNotifier()?.show(t('workout:session.gymChangeConverted', { gym: gymName }), 'success')
+    }
+    return conversions.length
+  }, [sessionId, currentGymId, globalWeightUnit, gymUnitRows, queryClient, applyWeightConversions, setSessionGym, setSelectedGym, setPendingGymChange])
+
+  return { changeGym }
+}
+
+/**
+ * Motor de reintentos del cambio de gym pendiente (la UI optimista ya está aplicada en el
+ * store). Persiste con el RPC atómico `change_session_gym`; reintenta en intervalo, al
+ * reconectar y al volver al primer plano (callbacks inyectados por plataforma). Se monta a
+ * nivel de app, como `useSyncPendingSets`.
+ */
+export function useSyncPendingGymChange({ onConnectivityChange, onVisibilityChange } = {}) {
+  const sessionId = useWorkoutStore(state => state.sessionId)
+  const pendingGymChange = useWorkoutStore(state => state.pendingGymChange)
+  const setPendingGymChange = useWorkoutStore(state => state.setPendingGymChange)
+  const syncingRef = useRef(false)
+
+  const sync = useCallback(async () => {
+    const state = getWorkoutStore().getState()
+    const job = state.pendingGymChange
+    if (!job || !state.sessionId || syncingRef.current) return
+    syncingRef.current = true
+    try {
+      await changeSessionGym({ sessionId: state.sessionId, gymId: job.gymId, weights: job.weights || [] })
+      // Limpiar solo si no llegó otro cambio mientras sincronizaba (si llegó, se sincroniza luego)
+      if (getWorkoutStore().getState().pendingGymChange === job) setPendingGymChange(null)
+    } catch {
+      // Sigue en cola para el próximo intento
+    } finally {
+      syncingRef.current = false
+    }
+  }, [setPendingGymChange])
+
+  // Dispara al aparecer/cambiar el pendiente + reintento periódico mientras siga pendiente
+  useEffect(() => {
+    if (!sessionId || !pendingGymChange) return
+    sync()
+    const interval = setInterval(sync, SYNC_RETRY_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [sessionId, pendingGymChange, sync])
+
+  useEffect(() => {
+    if (!onVisibilityChange) return
+    return onVisibilityChange(sync)
+  }, [onVisibilityChange, sync])
+
+  useEffect(() => {
+    if (!onConnectivityChange) return
+    return onConnectivityChange(sync)
+  }, [onConnectivityChange, sync])
 }
 
 // ============================================

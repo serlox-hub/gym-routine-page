@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useWorkoutStore } from './_stores.js'
+import { useWorkoutStore, getWorkoutStore } from './_stores.js'
 import { useUpdateCompletedSet, useUpdateSetDetails } from './useCompletedSets.js'
 import {
   createSetKey,
@@ -35,6 +35,7 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measure
   const setKey = createSetKey(sessionExerciseId, setNumber)
   const isCompleted = useWorkoutStore(state => !!state.completedSets[setKey])
   const setData = useWorkoutStore(state => state.completedSets[setKey])
+  const weightConversionNonce = useWorkoutStore(state => state.weightConversionNonce)
   const cachedData = useWorkoutStore(state => state.cachedSetData[setKey])
   const setCachedSetData = useWorkoutStore(state => state.setCachedSetData)
   const { mutate: updateCompletedSet } = useUpdateCompletedSet()
@@ -90,18 +91,43 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measure
     persistDetails({ rir, notes, setType: value })
   }, [persistDetails, rir, notes])
 
-  // Prefill de la sesión anterior: llega asíncrono; solo rellena campos aún vacíos
-  // y solo si no hay datos completados ni cacheados (para no pisar lo que el usuario escriba).
+  // Prefill de la sesión anterior. Llega asíncrono. Al montar rellena solo los campos vacíos;
+  // y cuando `previousSet` CAMBIA (p. ej. cambio de gym a mitad de sesión → se re-consulta el
+  // "Anterior" del gym nuevo) re-prellena las series aún no tocadas con ese último entreno del
+  // gym nuevo, sobrescribiendo la sugerencia vieja. Nunca pisa lo ya completado (setData) ni lo
+  // que el usuario haya guardado (cachedData).
+  const previousSetRef = useRef(null)
   useEffect(() => {
-    if (!previousSet || setData || cachedData) return
-    if (previousSet.weight != null) setWeight(w => w === '' ? previousSet.weight : w)
-    if (previousSet.reps != null) setReps(r => r === '' ? previousSet.reps : r)
-    if (previousSet.timeSeconds != null) setTime(tm => tm === '' ? previousSet.timeSeconds : tm)
-    if (previousSet.distanceMeters != null) setDistance(d => d === '' ? metersToDistanceUnit(previousSet.distanceMeters, distanceUnit) : d)
-    if (previousSet.caloriesBurned != null) setCalories(c => c === '' ? previousSet.caloriesBurned : c)
-    if (previousSet.level != null) setLevel(l => l === '' ? previousSet.level : l)
-    if (previousSet.paceSeconds != null) setPace(p => p === '' ? previousSet.paceSeconds : p)
+    // NO tocar el ref mientras previousSet está transitoriamente vacío: al cambiar de gym, la
+    // query del "Anterior" (key con gymId, sin keepPreviousData) pasa por undefined mientras
+    // recarga. Conservar el último real permite detectar el cambio cuando llega el del gym nuevo.
+    if (!previousSet) return
+    if (setData || cachedData) { previousSetRef.current = previousSet; return }
+    const changed = previousSetRef.current != null && previousSetRef.current !== previousSet
+    previousSetRef.current = previousSet
+    const pick = (current, next) => (changed || current === '') ? next : current
+    if (previousSet.weight != null) setWeight(w => pick(w, previousSet.weight))
+    if (previousSet.reps != null) setReps(r => pick(r, previousSet.reps))
+    if (previousSet.timeSeconds != null) setTime(tm => pick(tm, previousSet.timeSeconds))
+    if (previousSet.distanceMeters != null) setDistance(d => pick(d, metersToDistanceUnit(previousSet.distanceMeters, distanceUnit)))
+    if (previousSet.caloriesBurned != null) setCalories(c => pick(c, previousSet.caloriesBurned))
+    if (previousSet.level != null) setLevel(l => pick(l, previousSet.level))
+    if (previousSet.paceSeconds != null) setPace(p => pick(p, previousSet.paceSeconds))
   }, [previousSet, setData, cachedData, distanceUnit])
+
+  // Re-siembra el peso cuando una conversión de unidad (cambio de gym a mitad de sesión)
+  // reescribe los pesos en el store. El input se inicializa una sola vez (arriba), así que
+  // sin esto la fila seguiría mostrando el número en la unidad vieja. Se lee del store ya
+  // convertido; tras esto local == store, así que el commit con debounce no lo reescribe.
+  // Solo actúa cuando el nonce REALMENTE se incrementa (no en el montaje ni si cambia setKey).
+  const lastNonceRef = useRef(weightConversionNonce)
+  useEffect(() => {
+    if (weightConversionNonce === lastNonceRef.current) return
+    lastNonceRef.current = weightConversionNonce
+    const state = getWorkoutStore().getState()
+    const converted = state.completedSets[setKey] ?? state.cachedSetData[setKey]
+    if (converted?.weight != null) setWeight(converted.weight)
+  }, [weightConversionNonce, setKey])
 
   const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace })
   const repsPlaceholder = formatRepsPlaceholder(repsTarget)

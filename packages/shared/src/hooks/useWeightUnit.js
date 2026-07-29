@@ -62,6 +62,9 @@ export function useChangeWeightUnit() {
       } else if (scope === 'exercise') {
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES, 'gym-unit', exerciseId, gymId ?? null] })
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES, 'units-by-gym', exerciseId] })
+        // El prefetch bulk (useAllUserExerciseGymUnits) alimenta la detección del cambio de
+        // gym en sesión: invalidarlo para no planear conversiones con unidades obsoletas.
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES, 'all-gym-units'] })
       }
 
       if (convertHistorical) {

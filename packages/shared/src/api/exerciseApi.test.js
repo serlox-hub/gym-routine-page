@@ -12,6 +12,7 @@ import {
   fetchUserExerciseGymUnit,
   fetchExerciseUnitsByGym,
   fetchUserExerciseWeightUnits,
+  fetchAllUserExerciseGymUnits,
   upsertUserExerciseGymUnit,
 } from './exerciseApi.js'
 import { makeQueryMock, makeClientMock } from './_testUtils.js'
@@ -430,6 +431,27 @@ describe('fetchUserExerciseWeightUnits', () => {
       ], error: null },
     }))
     expect(await fetchUserExerciseWeightUnits([1, 2], 5)).toEqual({ 1: 'lb', 2: 'kg' })
+  })
+})
+
+describe('fetchAllUserExerciseGymUnits', () => {
+  it('devuelve todas las filas (exercise_id, gym_id, weight_unit)', async () => {
+    const rows = [
+      { exercise_id: 1, gym_id: 5, weight_unit: 'lb' },
+      { exercise_id: 2, gym_id: 8, weight_unit: 'kg' },
+    ]
+    getClient.mockReturnValue(makeClientMock({ user_exercise_gym_units: { data: rows, error: null } }))
+    expect(await fetchAllUserExerciseGymUnits()).toEqual(rows)
+  })
+
+  it('devuelve [] cuando data es null', async () => {
+    getClient.mockReturnValue(makeClientMock({ user_exercise_gym_units: { data: null, error: null } }))
+    expect(await fetchAllUserExerciseGymUnits()).toEqual([])
+  })
+
+  it('lanza si Supabase devuelve error', async () => {
+    getClient.mockReturnValue(makeClientMock({ user_exercise_gym_units: { data: null, error: new Error('boom') } }))
+    await expect(fetchAllUserExerciseGymUnits()).rejects.toThrow('boom')
   })
 })
 

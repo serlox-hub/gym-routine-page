@@ -26,7 +26,7 @@ import GymSelector from './GymSelector.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference, useSelectedGym, useSetSelectedGym, updateSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -37,10 +37,9 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const completedSets = useWorkoutStore(state => state.completedSets)
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
   const sessionGymId = useWorkoutStore(state => state.gymId)
-  const setSessionGym = useWorkoutStore(state => state.setSessionGym)
 
   const { gyms, hasMultiple } = useSelectedGym()
-  const { setSelectedGym } = useSetSelectedGym()
+  const { changeGym } = useChangeSessionGym()
 
   useWakeLock()
 
@@ -176,12 +175,11 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExerciseId })
   }
 
-  const handleSelectGym = async (gymId) => {
-    setSessionGym(gymId)
-    setSelectedGym(gymId)
-    try {
-      await updateSessionGym({ sessionId, gymId })
-    } catch { /* la sesión local ya refleja el cambio */ }
+  // Cambio de gym optimista (ver useChangeSessionGym): si la unidad cambia en el gym destino,
+  // convierte los pesos ya registrados en local al instante y avisa por toast; persiste en 2º plano.
+  const handleSelectGym = (newGymId) => {
+    const gym = gyms.find(g => String(g.id) === String(newGymId))
+    changeGym(newGymId, gym ? getGymDisplayName(gym, t('common:gym.defaultName')) : undefined)
   }
 
   const currentGym = gyms.find(g => String(g.id) === String(sessionGymId))

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { getExerciseName, getMuscleGroupName, getEquipmentName, localizeExercise, resolveWeightUnit } from '../lib/exerciseUtils.js'
@@ -15,6 +16,7 @@ import {
   fetchUserExerciseOverride,
   fetchUserExerciseGymUnit,
   fetchExerciseUnitsByGym,
+  fetchAllUserExerciseGymUnits,
   upsertUserExerciseOverride,
 } from '../api/exerciseApi.js'
 import { getNotifier } from '../notifications.js'
@@ -124,6 +126,32 @@ export function useUserExerciseGymUnit(exerciseId, gymId) {
     queryFn: () => fetchUserExerciseGymUnit(exerciseId, gymId),
     enabled: !!exerciseId && gymId != null,
   })
+}
+
+// Todas las unidades explícitas por (ejercicio, gym) del usuario. Se prefetchea en la
+// sesión activa para resolver en local (sin red) si un cambio de gym requiere convertir.
+// staleTime Infinity: solo cambia vía useChangeWeightUnit, que la invalida explícitamente
+// → caché viva toda la sesión (clave para que el cambio de gym funcione offline).
+export function useAllUserExerciseGymUnits() {
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    queryKey: [QUERY_KEYS.EXERCISES, 'all-gym-units'],
+    queryFn: fetchAllUserExerciseGymUnits,
+    staleTime: Infinity,
+  })
+
+  // Sembrar la caché puntual por (ejercicio, gym) desde el bulk para que la ETIQUETA kg/lb
+  // (useResolvedWeightUnit → useUserExerciseGymUnit) resuelva también offline, coherente con
+  // el número ya convertido. Solo filas con override; sin override, el fallback a la global es
+  // correcto de por sí. Misma clave y valor que fetchUserExerciseGymUnit.
+  useEffect(() => {
+    if (!query.data) return
+    for (const row of query.data) {
+      queryClient.setQueryData([QUERY_KEYS.EXERCISES, 'gym-unit', row.exercise_id, row.gym_id], row.weight_unit)
+    }
+  }, [query.data, queryClient])
+
+  return query
 }
 
 // Mapa gym_id -> unidad explícita de un ejercicio (para convertir el overlay multi-gym).

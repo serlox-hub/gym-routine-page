@@ -215,6 +215,18 @@ export async function fetchUserExerciseWeightUnits(exerciseIds, gymId) {
   return map
 }
 
+// Todas las unidades explícitas por (ejercicio, gym) del usuario. Tabla pequeña (una fila
+// por override); se prefetchea para resolver unidades en local al cambiar de gym a mitad de
+// sesión, sin depender de la red (RLS acota al usuario).
+export async function fetchAllUserExerciseGymUnits() {
+  const { data, error } = await getClient()
+    .from('user_exercise_gym_units')
+    .select('exercise_id, gym_id, weight_unit')
+
+  if (error) throw error
+  return data || []
+}
+
 // Mapa gym_id -> unidad explícita de un ejercicio en todos los gyms (para el overlay).
 export async function fetchExerciseUnitsByGym(exerciseId) {
   if (exerciseId == null) return {}

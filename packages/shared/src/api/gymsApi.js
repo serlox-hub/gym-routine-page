@@ -79,14 +79,22 @@ export async function fetchGymSessionCount(gymId) {
 // ============================================
 
 /**
- * Cambia el gym de una sesión EN CURSO (sin stats todavía). Solo actualiza
- * workout_sessions; los PRs se calcularán al finalizar la sesión con este gym.
+ * Cambia el gym de una sesión EN CURSO y aplica, en la MISMA transacción, los pesos ya
+ * convertidos de sus series (RPC atómico `change_session_gym`). El cliente calcula los
+ * pesos nuevos (tiene las unidades cacheadas) y los pasa aquí. `weights` vacío = cambio de
+ * gym sin conversión. Los PRs se calcularán al finalizar la sesión con este gym.
+ * @param {{sessionId: string, gymId: number|null, weights?: Array<{sessionExerciseId:number,setNumber:number,weight:number}>}} params
  */
-export async function updateSessionGym({ sessionId, gymId }) {
-  const { error } = await getClient()
-    .from('workout_sessions')
-    .update({ gym_id: gymId })
-    .eq('id', sessionId)
+export async function changeSessionGym({ sessionId, gymId, weights = [] }) {
+  const { error } = await getClient().rpc('change_session_gym', {
+    p_session_id: sessionId,
+    p_gym_id: gymId,
+    p_weights: weights.map(w => ({
+      session_exercise_id: w.sessionExerciseId,
+      set_number: w.setNumber,
+      weight: w.weight,
+    })),
+  })
 
   if (error) throw error
 }

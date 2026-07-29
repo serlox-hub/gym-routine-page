@@ -12,6 +12,7 @@
     "abandon": "Abandon",
     "abandonConfirm": "Are you sure you want to abandon the workout? All progress will be lost.",
     "abandonMessage": "All progress from the current workout will be lost.",
+    "gymChangeConverted": "Weights converted to {{gym}}'s unit.",
     "date": "Date",
     "time": "Time",
     "endTime": "End time",

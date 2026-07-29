@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS } from '../lib/constants.js'
+import { QUERY_KEYS, SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
 import {
   upsertCompletedSet,
   updateSetVideo,
@@ -151,7 +151,7 @@ export function useSyncPendingSets({ onVisibilityChange, onConnectivityChange } 
     if (!sessionId || pendingCount === 0) return
 
     syncPending()
-    const interval = setInterval(syncPending, 10000)
+    const interval = setInterval(syncPending, SYNC_RETRY_INTERVAL_MS)
     return () => clearInterval(interval)
   }, [sessionId, pendingCount, syncPending])
 

@@ -12,11 +12,16 @@ const useWorkoutStore = create(
       showWorkout: () => set({ workoutVisible: true }),
       hideWorkout: () => set({ workoutVisible: false }),
       // Override session actions to manage workoutVisible
+      // Los overrides RN deben resetear los MISMOS campos que la factory compartida
+      // (createWorkoutStore), incluidos weightConversionNonce y pendingGymChange: si no,
+      // un cambio de gym pendiente de sincronizar fugaría a la siguiente sesión y le
+      // reasignaría el gym anterior. Mantener en sync con createWorkoutStore.js.
       startSession: (sessionId, routineDayId, routineId = null, gymId = null) => set({
         sessionId, routineDayId, routineId, gymId,
         startedAt: new Date().toISOString(),
         completedSets: {}, cachedSetData: {},
         exerciseSetCounts: {}, pendingSets: {},
+        weightConversionNonce: 0, pendingGymChange: null,
         restTimerActive: false, restTimerEndTime: null,
         restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: true,
@@ -25,12 +30,14 @@ const useWorkoutStore = create(
         sessionId: null, routineDayId: null, routineId: null, gymId: null,
         startedAt: null, completedSets: {}, cachedSetData: {},
         exerciseSetCounts: {}, pendingSets: {},
+        weightConversionNonce: 0, pendingGymChange: null,
         restTimerActive: false, restTimerEndTime: null,
         restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: false,
       }),
       restoreSession: ({ sessionId, routineDayId, routineId, gymId = null, startedAt, completedSets, cachedSetData }) => set({
         sessionId, routineDayId, routineId, gymId, startedAt, completedSets, cachedSetData,
+        weightConversionNonce: 0, pendingGymChange: null,
         restTimerActive: false, restTimerEndTime: null,
         restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: false,

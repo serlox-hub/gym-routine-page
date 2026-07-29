@@ -9,6 +9,7 @@ import {
   createGym,
   ensureDefaultGym,
   reassignSessionGym,
+  changeSessionGym,
 } from './gymsApi.js'
 
 beforeEach(() => {
@@ -79,6 +80,46 @@ describe('ensureDefaultGym', () => {
     expect(result).toEqual(created)
     const insertChain = client.from.mock.results[1].value
     expect(insertChain.insert).toHaveBeenCalledWith({ user_id: USER_ID, name: null, is_default: true })
+  })
+})
+
+describe('changeSessionGym', () => {
+  it('llama al RPC change_session_gym mapeando los pesos a snake_case', async () => {
+    const client = makeClientMock()
+    getClient.mockReturnValue(client)
+
+    await changeSessionGym({
+      sessionId: 'sess-1',
+      gymId: 7,
+      weights: [{ sessionExerciseId: 10, setNumber: 1, weight: 86.18 }],
+    })
+
+    expect(client.rpc).toHaveBeenCalledWith('change_session_gym', {
+      p_session_id: 'sess-1',
+      p_gym_id: 7,
+      p_weights: [{ session_exercise_id: 10, set_number: 1, weight: 86.18 }],
+    })
+  })
+
+  it('pasa p_weights vacío cuando no hay conversión', async () => {
+    const client = makeClientMock()
+    getClient.mockReturnValue(client)
+
+    await changeSessionGym({ sessionId: 'sess-1', gymId: 7 })
+
+    expect(client.rpc).toHaveBeenCalledWith('change_session_gym', {
+      p_session_id: 'sess-1',
+      p_gym_id: 7,
+      p_weights: [],
+    })
+  })
+
+  it('lanza si el RPC devuelve error', async () => {
+    const client = makeClientMock()
+    client.rpc = vi.fn().mockResolvedValue({ error: new Error('rpc boom') })
+    getClient.mockReturnValue(client)
+
+    await expect(changeSessionGym({ sessionId: 'sess-1', gymId: 7 })).rejects.toThrow('rpc boom')
   })
 })
 

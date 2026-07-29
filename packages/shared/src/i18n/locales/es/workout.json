@@ -12,6 +12,7 @@
     "abandon": "Abandonar",
     "abandonConfirm": "¿Seguro que quieres abandonar el entrenamiento? Se perderá todo el progreso.",
     "abandonMessage": "Se perderá todo el progreso del entrenamiento actual.",
+    "gymChangeConverted": "Pesos convertidos a la unidad de «{{gym}}».",
     "date": "Fecha",
     "time": "Hora",
     "endTime": "Hora de fin",

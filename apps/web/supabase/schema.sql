@@ -61,6 +61,51 @@ CREATE TYPE "public"."weight_unit" AS ENUM (
 ALTER TYPE "public"."weight_unit" OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb" DEFAULT '[]'::"jsonb") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_owner UUID;
+    w JSONB;
+BEGIN
+    IF v_user_id IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
+    -- Verificar que la sesión pertenece al usuario (la función es SECURITY DEFINER)
+    SELECT user_id INTO v_owner FROM workout_sessions WHERE id = p_session_id;
+    IF v_owner IS NULL OR v_owner <> v_user_id THEN
+        RAISE EXCEPTION 'Session not found or not owned by user';
+    END IF;
+
+    -- Verificar que el gym destino (si no es NULL) es del usuario: la función bypassa RLS,
+    -- así que valida TODAS sus entradas de identidad, no solo la sesión.
+    IF p_gym_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM gyms WHERE id = p_gym_id AND user_id = v_user_id
+    ) THEN
+        RAISE EXCEPTION 'Gym not found or not owned by user';
+    END IF;
+
+    -- 1. Cambiar el gym de la sesión
+    UPDATE workout_sessions SET gym_id = p_gym_id WHERE id = p_session_id;
+
+    -- 2. Aplicar los pesos ya convertidos (acotado a la sesión ya validada)
+    FOR w IN SELECT * FROM jsonb_array_elements(p_weights)
+    LOOP
+        UPDATE completed_sets
+        SET weight = (w->>'weight')::numeric
+        WHERE session_id = p_session_id
+          AND session_exercise_id = (w->>'session_exercise_id')::int
+          AND set_number = (w->>'set_number')::smallint;
+    END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."convert_user_measurements"("p_factor" numeric) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -2007,6 +2052,13 @@ GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
 GRANT USAGE ON SCHEMA "public" TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") TO "service_role";
 
 
 

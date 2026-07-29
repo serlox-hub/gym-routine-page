@@ -1,5 +1,6 @@
 import {
   useRestoreActiveSession as _useRestoreActiveSession,
+  useSyncPendingGymChange as _useSyncPendingGymChange,
   useStartSession,
   useEndSession,
   useAbandonSession,
@@ -13,6 +14,20 @@ export function useRestoreActiveSession() {
       const handler = () => { if (document.visibilityState === 'visible') cb() }
       document.addEventListener('visibilitychange', handler)
       return () => document.removeEventListener('visibilitychange', handler)
+    },
+  })
+}
+
+export function useSyncPendingGymChange() {
+  return _useSyncPendingGymChange({
+    onVisibilityChange: (cb) => {
+      const handler = () => { if (document.visibilityState === 'visible') cb() }
+      document.addEventListener('visibilitychange', handler)
+      return () => document.removeEventListener('visibilitychange', handler)
+    },
+    onConnectivityChange: (cb) => {
+      window.addEventListener('online', cb)
+      return () => window.removeEventListener('online', cb)
     },
   })
 }
