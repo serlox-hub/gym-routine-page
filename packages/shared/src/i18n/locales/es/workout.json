@@ -15,7 +15,6 @@
     "gymChangeConverted": "Pesos convertidos a la unidad de «{{gym}}».",
     "date": "Fecha",
     "time": "Hora",
-    "endTime": "Hora de fin",
     "inSession": "En sesión",
     "routineInProgress": "Rutina en curso",
     "routineSessionActive": "Sesión de rutina activa",

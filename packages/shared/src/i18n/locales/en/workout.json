@@ -15,7 +15,6 @@
     "gymChangeConverted": "Weights converted to {{gym}}'s unit.",
     "date": "Date",
     "time": "Time",
-    "endTime": "End time",
     "inSession": "In session",
     "routineInProgress": "Routine in progress",
     "routineSessionActive": "Routine session active",
