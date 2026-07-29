@@ -10,7 +10,7 @@ import HistoryChart from './HistoryChart.jsx'
 import HistoryTable from './HistoryTable.jsx'
 import GymSelector from './GymSelector.jsx'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType, calculateExerciseStats, useResolvedWeightUnit, useExerciseUnitsByGym, usePreference } from '@gym/shared'
+import { MeasurementType, calculateExerciseStats, useResolvedWeightUnit, useExerciseUnitsByGym, usePreference, convertSessionsToDisplayUnit } from '@gym/shared'
 
 const SCOPE = { GLOBAL: 'global', DAY: 'day' }
 // gymFilter: null → un gym (el seleccionado), 'all' → overlay de todos los gyms
@@ -31,10 +31,11 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
   const chartDayId = isDay ? routineDayId : null
 
   const isOverlay = gymFilter === ALL_GYMS
-  // Tabla, stats y unidad de display siguen el gym filtrado (el overlay usa el gym por
-  // defecto como destino). Solo se filtra la historia si hay varios gyms.
+  // En overlay ("Todos"), lista+stats+gráfica van cross-gym (gymId=null) y se convierten al
+  // vuelo a la unidad de display (la del gym por defecto para el ejercicio). Con un gym
+  // concreto, todo se filtra a ese gym. `unitGymId` = destino de la unidad de display.
   const unitGymId = isOverlay ? defaultGymId : gymFilter
-  const historyGymId = hasMultiple ? unitGymId : null
+  const historyGymId = hasMultiple ? (isOverlay ? null : gymFilter) : null
 
   // Fetch both scopes in parallel — switch is instant
   const { data: daySummary, isLoading: loadingDaySummary } = useExerciseHistorySummary(exerciseId, routineDayId, historyGymId)
@@ -46,20 +47,21 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
   const chartGymId = hasMultiple ? (isOverlay ? null : gymFilter) : null
   const { data: chartRows, isLoading: loadingChart } = useExerciseChartData(exerciseId, chartDayId, chartGymId)
 
-  const weightUnit = useResolvedWeightUnit(exerciseId, unitGymId)
+  const resolvedWeightUnit = useResolvedWeightUnit(exerciseId, unitGymId)
   const { value: globalWeightUnit } = usePreference('weight_unit')
-  const { data: explicitUnitsByGym = {} } = useExerciseUnitsByGym(exerciseId, isOverlay)
+  const { data: explicitUnitsByGym = {}, isLoading: loadingUnits } = useExerciseUnitsByGym(exerciseId, isOverlay)
 
   const summarySessions = isDay ? daySummary : globalSummary
   const historyPages = isDay ? dayHistoryPages : globalHistoryPages
-  const historySessions = historyPages?.pages.flat() ?? []
-  const isLoading = (isDay ? (loadingDaySummary || loadingDayHistory) : (loadingGlobalSummary || loadingGlobalHistory)) || (hasMultiple && loadingChart)
+  const historySessions = useMemo(() => historyPages?.pages.flat() ?? [], [historyPages])
+  // En overlay se espera a las unidades por gym: sin ellas la conversión caería al fallback
+  // global y mostraría pesos mal convertidos un instante para gyms con unidad explícita.
+  const isLoading = (isDay ? (loadingDaySummary || loadingDayHistory) : (loadingGlobalSummary || loadingGlobalHistory)) || (hasMultiple && loadingChart) || (isOverlay && loadingUnits)
   const fetchNextPage = isDay ? fetchDayNext : fetchGlobalNext
   const hasNextPage = isDay ? hasDayNext : hasGlobalNext
   const isFetchingNextPage = isDay ? fetchingDayNext : fetchingGlobalNext
 
   const handleSessionClick = (sessionId, date) => { onClose(); navigate('/history', { state: { sessionId, date } }) }
-  const stats = useMemo(() => calculateExerciseStats(summarySessions, measurementType), [summarySessions, measurementType])
 
   const gymFilterLabel = useMemo(() => {
     if (isOverlay) return t('common:gym.allGyms')
@@ -80,6 +82,24 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
     for (const g of overlayGyms) m[g.id] = explicitUnitsByGym[g.id] || globalWeightUnit || 'kg'
     return m
   }, [overlayGyms, explicitUnitsByGym, globalWeightUnit])
+
+  // Unidad de display. En overlay se toma del mapa por gym (gateado por loadingUnits) en vez de
+  // useResolvedWeightUnit (query aparte, sin gatear), para no convertir/etiquetar con la unidad
+  // equivocada un instante. Coincide con la resuelta una vez cargado (mismo origen; ver gotcha
+  // de coherencia en DECISIONS).
+  const weightUnit = isOverlay ? (unitByGym[defaultGymId] || resolvedWeightUnit) : resolvedWeightUnit
+
+  // En overlay, las series vienen de varios gyms (unidades mezcladas): se convierten a la
+  // unidad de display antes de stats/tabla. Con un gym concreto no hay nada que convertir.
+  const displaySummary = useMemo(
+    () => (isOverlay ? convertSessionsToDisplayUnit(summarySessions, unitByGym, weightUnit) : summarySessions),
+    [isOverlay, summarySessions, unitByGym, weightUnit]
+  )
+  const displayHistory = useMemo(
+    () => (isOverlay ? convertSessionsToDisplayUnit(historySessions, unitByGym, weightUnit) : historySessions),
+    [isOverlay, historySessions, unitByGym, weightUnit]
+  )
+  const stats = useMemo(() => calculateExerciseStats(displaySummary, measurementType), [displaySummary, measurementType])
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} position="bottom" maxWidth="max-w-lg" className="max-h-[85vh] flex flex-col" noBorder>
@@ -140,7 +160,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
         ) : (
           <>
             <HistoryChart
-              sessions={summarySessions}
+              sessions={displaySummary}
               stats={stats}
               measurementType={measurementType}
               weightUnit={weightUnit}
@@ -149,7 +169,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
               overlayGyms={isOverlay ? overlayGyms : undefined}
               unitByGym={isOverlay ? unitByGym : undefined}
             />
-            <HistoryTable sessions={historySessions} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
+            <HistoryTable sessions={displayHistory} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
               onSessionClick={handleSessionClick} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onLoadMore={fetchNextPage} />
           </>
         )}

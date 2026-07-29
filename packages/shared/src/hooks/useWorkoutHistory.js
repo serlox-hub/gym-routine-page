@@ -90,6 +90,7 @@ export function useExerciseHistorySummary(exerciseId, routineDayId = null, gymId
       return data.map(se => ({
         sessionId: se.session.id,
         date: se.session.started_at,
+        gymId: se.session.gym_id ?? null,
         sets: se.completed_sets.sort((a, b) => a.set_number - b.set_number)
       }))
     },
@@ -111,6 +112,7 @@ export function useExerciseHistory(exerciseId, routineDayId = null, gymId = null
       return data.map(se => ({
         sessionId: se.session.id,
         date: se.session.started_at,
+        gymId: se.session.gym_id ?? null,
         sets: se.completed_sets.sort((a, b) => a.set_number - b.set_number)
       }))
     },

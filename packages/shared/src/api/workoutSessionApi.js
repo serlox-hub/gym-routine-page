@@ -258,7 +258,8 @@ export async function fetchExerciseHistorySummary({ exerciseId, routineDayId, gy
         id,
         started_at,
         status,
-        routine_day_id
+        routine_day_id,
+        gym_id
       ),
       completed_sets!inner (
         weight,
@@ -299,7 +300,8 @@ export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to,
         id,
         started_at,
         status,
-        routine_day_id
+        routine_day_id,
+        gym_id
       ),
       completed_sets!inner (
         id,

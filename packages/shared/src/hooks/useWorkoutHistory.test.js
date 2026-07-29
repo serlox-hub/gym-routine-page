@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
-import { useExerciseHistory, usePreviousWorkout } from './useWorkoutHistory.js'
+import { useExerciseHistory, useExerciseHistorySummary, usePreviousWorkout } from './useWorkoutHistory.js'
 
 // Mock the workoutApi module
 vi.mock('../api/workoutApi.js', () => ({
@@ -14,7 +14,7 @@ vi.mock('../api/workoutApi.js', () => ({
   deleteWorkoutSession: vi.fn(),
 }))
 
-import { fetchExerciseHistory, fetchPreviousWorkout } from '../api/workoutApi.js'
+import { fetchExerciseHistory, fetchExerciseHistorySummary, fetchPreviousWorkout } from '../api/workoutApi.js'
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -31,12 +31,13 @@ function createWrapper() {
 
 const FAKE_SESSIONS = [
   {
-    session: { id: 'session-1', started_at: '2024-01-15T10:00:00Z' },
+    session: { id: 'session-1', started_at: '2024-01-15T10:00:00Z', gym_id: 'gym-1' },
     completed_sets: [
       { id: 'set-1', set_number: 1, weight: 100, reps_completed: 5 },
     ],
   },
   {
+    // sin gym_id → gymId debe caer a null (sesión legacy / sin gym)
     session: { id: 'session-2', started_at: '2024-01-10T10:00:00Z' },
     completed_sets: [
       { id: 'set-2', set_number: 1, weight: 95, reps_completed: 5 },
@@ -80,6 +81,21 @@ describe('useExerciseHistory', () => {
     expect(firstPage[0].sessionId).toBe('session-1')
     expect(firstPage[0].date).toBe('2024-01-15T10:00:00Z')
     expect(Array.isArray(firstPage[0].sets)).toBe(true)
+  })
+
+  it('propaga gymId por sesión (null si la sesión no tiene gym_id)', async () => {
+    fetchExerciseHistory.mockResolvedValueOnce(FAKE_SESSIONS)
+
+    const { result } = renderHook(
+      () => useExerciseHistory('exercise-123'),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    const firstPage = result.current.data.pages[0]
+    expect(firstPage[0].gymId).toBe('gym-1')
+    expect(firstPage[1].gymId).toBeNull()
   })
 
   it('data.pages.flat() produce array plano de sesiones', async () => {
@@ -181,6 +197,26 @@ describe('useExerciseHistory', () => {
 
     expect(result.current.fetchStatus).toBe('idle')
     expect(fetchExerciseHistory).not.toHaveBeenCalled()
+  })
+})
+
+describe('useExerciseHistorySummary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('propaga gymId por sesión (null si la sesión no tiene gym_id)', async () => {
+    fetchExerciseHistorySummary.mockResolvedValueOnce(FAKE_SESSIONS)
+
+    const { result } = renderHook(
+      () => useExerciseHistorySummary('exercise-123'),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data[0].gymId).toBe('gym-1')
+    expect(result.current.data[1].gymId).toBeNull()
   })
 })
 

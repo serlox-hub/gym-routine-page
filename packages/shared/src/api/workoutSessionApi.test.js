@@ -406,6 +406,14 @@ describe('fetchExerciseHistorySummary', () => {
       fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: null })
     ).rejects.toThrow('query failed')
   })
+
+  // El overlay multi-gym convierte por gym → el SELECT debe traer session.gym_id
+  it('incluye gym_id de la sesión en el select', async () => {
+    const mock = makeQueryMock({ data: [], error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: null })
+    expect(mock.select.mock.calls[0][0]).toContain('gym_id')
+  })
 })
 
 // ============================================
@@ -441,6 +449,14 @@ describe('fetchExerciseHistory', () => {
     const selectArg = mock.select.mock.calls[0][0]
     expect(selectArg).toContain('level')
     expect(selectArg).toContain('calories_burned')
+  })
+
+  // El overlay multi-gym convierte por gym → el SELECT debe traer session.gym_id
+  it('incluye gym_id de la sesión en el select', async () => {
+    const mock = makeQueryMock({ data: [], error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchExerciseHistory({ exerciseId: 'ex-1', routineDayId: null, from: 0, to: 29 })
+    expect(mock.select.mock.calls[0][0]).toContain('gym_id')
   })
 
   it('throws when Supabase returns error', async () => {
