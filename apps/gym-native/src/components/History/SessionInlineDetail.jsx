@@ -417,7 +417,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 {isSetPR && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                     <Trophy size={10} color={colors.warning} />
-                    <Text style={{ color: colors.warning, fontSize: 10, fontWeight: '600' }}>PR</Text>
+                    <Text style={{ color: colors.warning, fontSize: 10, fontWeight: '600' }}>{t('workout:summary.pr')}</Text>
                   </View>
                 )}
               </View>

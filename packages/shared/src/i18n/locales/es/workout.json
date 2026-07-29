@@ -118,15 +118,15 @@
     "totalSets": "Series completadas",
     "totalVolume": "Volumen total",
     "personalRecords": "Récords personales",
-    "pr": "PR",
-    "newPR": "Nuevo PR",
+    "pr": "Récord",
+    "newPR": "Nuevo récord",
     "newRecord": "Nuevo récord personal",
     "newRecords": "Nuevos récords personales",
     "heaviestEver": "Peso máximo",
     "oneRMEstimate": "1RM estimado",
     "firstTimeAtReps": "primera vez a {{repCount}} reps",
     "previousLabel": "anterior",
-    "repPRGroup": "PR a {{counts}} reps · {{values}} kg",
+    "repPRGroup": "Récord a {{counts}} reps · {{values}} kg",
     "singleSet": "serie",
     "multipleSets": "series",
     "singlePR": "récord personal",
@@ -177,7 +177,7 @@
     "time": "Tiempo",
     "distance": "Distancia",
     "pace": "Ritmo",
-    "repPR": "PR a {{repCount}} reps",
+    "repPR": "Récord a {{repCount}} reps",
     "exerciseFallback": "Ejercicio"
   }
 }

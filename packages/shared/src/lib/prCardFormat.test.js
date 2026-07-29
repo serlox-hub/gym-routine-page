@@ -80,8 +80,8 @@ describe('prCardFormat', () => {
       expect(formatPRDetailLabel({ type: 'best1rm' })).toBe('1RM estimado')
     })
 
-    it('repPR → "PR a N reps" interpolado', () => {
-      expect(formatPRDetailLabel({ type: 'repPR', repCount: 5 })).toBe('PR a 5 reps')
+    it('repPR → "Récord a N reps" interpolado', () => {
+      expect(formatPRDetailLabel({ type: 'repPR', repCount: 5 })).toBe('Récord a 5 reps')
     })
 
     it('repPRGroup → string con counts y values', () => {
@@ -90,7 +90,7 @@ describe('prCardFormat', () => {
         counts: [3, 5, 8],
         values: [120, 110, 90],
       })
-      expect(label).toBe('PR a 3, 5, 8 reps · 120, 110, 90 kg')
+      expect(label).toBe('Récord a 3, 5, 8 reps · 120, 110, 90 kg')
     })
   })
 

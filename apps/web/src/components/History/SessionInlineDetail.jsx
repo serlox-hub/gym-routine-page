@@ -359,7 +359,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 {formatSetValue({ ...set, weight_unit: weightUnit })}
                 {isSetPR && (
                   <span className="inline-flex items-center gap-0.5" style={{ color: colors.warning, fontSize: 10, fontWeight: 600 }}>
-                    <Trophy size={10} /> PR
+                    <Trophy size={10} /> {t('workout:summary.pr')}
                   </span>
                 )}
               </span>
