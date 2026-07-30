@@ -31,6 +31,8 @@ export default function Button({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading }}
       className={`rounded-lg items-center justify-center flex-row ${s.container} ${disabled || loading ? 'opacity-50' : 'active:opacity-70'} ${className}`}
       style={{
         backgroundColor: v.bg,
