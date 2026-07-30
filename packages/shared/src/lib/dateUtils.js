@@ -34,8 +34,11 @@ export function formatTime(dateStr, locale) {
 export function formatRelativeDate(dateStr) {
   const date = new Date(dateStr)
   const now = new Date()
-  const diffMs = now - date
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  // Diferencia en DÍAS DE CALENDARIO local, no en ventanas de 24h: una sesión de
+  // ayer a las 22:00 vista hoy a las 10:00 es "ayer", no "hoy" (bug de las 24h).
+  // Math.round absorbe los días de 23/25h por cambio de horario (DST).
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / (1000 * 60 * 60 * 24))
 
   if (diffDays === 0) return t('common:time.today')
   if (diffDays === 1) return t('common:time.yesterday')

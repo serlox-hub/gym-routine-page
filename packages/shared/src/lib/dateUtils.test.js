@@ -52,6 +52,11 @@ describe('dateUtils', () => {
       expect(formatRelativeDate('2024-01-14T08:00:00Z')).toBe('Ayer')
     })
 
+    it('retorna "Ayer" para sesión de anoche vista esta mañana (< 24h, distinto día de calendario)', () => {
+      // now = 2024-01-15T12:00:00Z; sesión ayer noche → 16h atrás pero día anterior
+      expect(formatRelativeDate('2024-01-14T20:00:00Z')).toBe('Ayer')
+    })
+
     it('retorna "Hace X días" para menos de una semana', () => {
       expect(formatRelativeDate('2024-01-12T08:00:00Z')).toBe('Hace 3 días')
     })
