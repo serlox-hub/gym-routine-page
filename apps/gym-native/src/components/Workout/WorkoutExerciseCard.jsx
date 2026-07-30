@@ -41,16 +41,12 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const routineDayId = useWorkoutStore(state => state.routineDayId)
   const sessionId = useWorkoutStore(state => state.sessionId)
+  // Número de filas = series configuradas en la rutina (session_exercises.series).
+  // El usuario puede añadir/quitar filas manualmente (queda en exerciseSetCounts).
   const setsCount = useWorkoutStore(state => state.exerciseSetCounts[exerciseKey] ?? series)
   const setExerciseSetCount = useWorkoutStore(state => state.setExerciseSetCount)
   const completedCount = useWorkoutStore(state => { let c = 0; for (const k in state.completedSets) { if (k.startsWith(`${exerciseKey}-`)) c++ } return c })
   const { data: previousWorkout } = usePreviousWorkout(exercise.id, { gymId, routineDayId, sessionId })
-
-  useEffect(() => {
-    if (previousWorkout?.sets?.length && !useWorkoutStore.getState().exerciseSetCounts[exerciseKey]) {
-      setExerciseSetCount(exerciseKey, previousWorkout.sets.length)
-    }
-  }, [previousWorkout, exerciseKey, setExerciseSetCount])
 
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
   const removeSet = () => { if (setsCount > 0) setExerciseSetCount(exerciseKey, setsCount - 1) }

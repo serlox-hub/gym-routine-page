@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Info, Trash2, ArrowUpDown, Repeat2, Pencil } from 'lucide-react'
 import { Card, ConfirmModal } from '../ui/index.js'
@@ -42,13 +42,9 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
   const setExerciseSetCount = useWorkoutStore(state => state.setExerciseSetCount)
   const { data: previousWorkout } = usePreviousWorkout(exercise.id, { gymId, routineDayId, sessionId })
+  // Número de filas = series configuradas en la rutina (session_exercises.series).
+  // El usuario puede añadir/quitar filas manualmente (queda en exerciseSetCounts).
   const setsCount = exerciseSetCounts[exerciseKey] ?? series
-
-  useEffect(() => {
-    if (previousWorkout?.sets?.length && exerciseSetCounts[exerciseKey] === undefined) {
-      setExerciseSetCount(exerciseKey, previousWorkout.sets.length)
-    }
-  }, [previousWorkout, exerciseKey, exerciseSetCounts, setExerciseSetCount])
 
   const completedCount = useMemo(() => Object.values(completedSets).filter(set => set.sessionExerciseId === exerciseKey).length, [completedSets, exerciseKey])
   const isCompleted = completedCount === setsCount && setsCount > 0
