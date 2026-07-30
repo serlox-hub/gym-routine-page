@@ -50,6 +50,7 @@ function SetRow({
   descansoSeg,
   previousSet,
   repsTarget,
+  rirTarget = null,
   progressionEnabled = false,
   isActive = false,
   onComplete,
@@ -181,7 +182,7 @@ function SetRow({
   // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
   // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
   const showProgressionHint = progressionEnabled && !isCompleted &&
-    shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight })
+    shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight, rirTarget })
 
   // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
   // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten

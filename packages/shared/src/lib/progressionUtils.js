@@ -9,6 +9,14 @@
  * o por debajo del rango → sin sugerencia.
  *
  * Solo aplica a `weight_reps` (único tipo con peso + reps y rango libre de reps).
+ *
+ * Autorregulación por RIR (issue #13, follow-up): el rango de reps es una prescripción
+ * INCOMPLETA cuando la rutina fija un RIR objetivo. "10 reps @ RIR 2" exige capacidad ~12;
+ * hacer 10 @ RIR 0 llega al tope de reps pero 2 de esfuerzo más profundo → capacidad real ~2
+ * reps por debajo de lo prescrito, aún NO has ganado la subida. Por eso, cuando hay RIR objetivo
+ * (rutina) Y RIR real (serie previa), se exige además `rirActual >= rirTarget`. Si falta cualquiera
+ * de los dos, degrada a solo-reps (no bloquea): el RIR es opcional y no debe romper la señal.
+ *
  * Toda la lógica es pura para ser DRY web+native y testeable sin React.
  */
 
@@ -64,19 +72,36 @@ export function didSetHitTop(previousSet, repsTarget, measurementType) {
 }
 
 /**
- * ¿Mostrar la sugerencia de subir peso para esta serie? Combina el disparador
- * (`didSetHitTop`) con el "nudge cumplido": se apaga cuando el peso tecleado hoy ya
- * supera al de la serie anterior. Los flags de UI (preferencia on/off, serie completada)
- * se quedan en el componente; esto es la parte pura compartida web/native.
+ * ¿El esfuerzo de la serie previa fue igual o MENOR (más fácil) que el prescrito?
+ * Es decir, RIR real ≥ RIR objetivo → llegaste al tope guardando al menos la reserva pedida,
+ * así que el peso está listo para subir. Gate de autorregulación (ver cabecera del módulo).
+ * Degrada a `true` (no bloquea) si falta el objetivo (rutina sin RIR) o el real (no se registró):
+ * el RIR es opcional y en ese caso la decisión cae a solo-reps.
+ * @param {number|null|undefined} rirActual - RIR real de la serie previa (`previousSet.rir`)
+ * @param {number|null|undefined} rirTarget - RIR objetivo de la rutina (`routine_exercises.rir`)
+ * @returns {boolean}
+ */
+export function metEffortTarget(rirActual, rirTarget) {
+  if (rirActual == null || rirTarget == null) return true
+  return Number(rirActual) >= Number(rirTarget)
+}
+
+/**
+ * ¿Mostrar la sugerencia de subir peso para esta serie? Combina el disparador de reps
+ * (`didSetHitTop`) con el gate de esfuerzo (`metEffortTarget`) y el "nudge cumplido": se apaga
+ * cuando el peso tecleado hoy ya supera al de la serie anterior. Los flags de UI (preferencia
+ * on/off, serie completada) se quedan en el componente; esto es la parte pura web/native.
  * @param {object} params
- * @param {{weight?: number|null, reps?: number|null, setType?: string}|null|undefined} params.previousSet
+ * @param {{weight?: number|null, reps?: number|null, rir?: number|null, setType?: string}|null|undefined} params.previousSet
  * @param {string} params.repsTarget - rango objetivo (ej. "8-12")
  * @param {string} params.measurementType
  * @param {number|string|null} params.currentWeight - peso tecleado hoy (string del input o número).
  *   Vacío/NaN cuenta como "aún no ha subido" → sigue sugiriendo.
+ * @param {number|null} [params.rirTarget] - RIR objetivo de la rutina; null/ausente → gate de esfuerzo inactivo.
  * @returns {boolean}
  */
-export function shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight }) {
+export function shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight, rirTarget }) {
   if (!didSetHitTop(previousSet, repsTarget, measurementType)) return false
+  if (!metEffortTarget(previousSet.rir, rirTarget)) return false
   return !(parseDecimal(currentWeight) > Number(previousSet.weight))
 }

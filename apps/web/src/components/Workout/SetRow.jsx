@@ -52,6 +52,7 @@ function SetRow({
   descansoSeg,
   previousSet,
   repsTarget,
+  rirTarget = null,
   progressionEnabled = false,
   isActive = false,
   onComplete,
@@ -182,7 +183,7 @@ function SetRow({
   // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
   // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
   const showProgressionHint = progressionEnabled && !isCompleted &&
-    shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight })
+    shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight, rirTarget })
   // El chip (entrada de anotación) se muestra en la fila activa o completada si la columna existe.
   const showEffort = annotationColumn && (isActive || isCompleted)
 
