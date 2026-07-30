@@ -1,6 +1,11 @@
 import { inputStyle } from '../../lib/styles.js'
+import CaretEndInput from './CaretEndInput.jsx'
 
 function Input({ label, error, className = '', ...props }) {
+  // En inputs numéricos, colocar el cursor al final al enfocar (edición cómoda de valores
+  // prellenados). En texto/email se mantiene el comportamiento nativo (caret donde se toca).
+  const numeric = props.type === 'number' || props.inputMode === 'numeric' || props.inputMode === 'decimal'
+  const Field = numeric ? CaretEndInput : 'input'
   return (
     <div className={className}>
       {label && (
@@ -8,7 +13,7 @@ function Input({ label, error, className = '', ...props }) {
           {label}
         </label>
       )}
-      <input
+      <Field
         className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-success transition-colors"
         style={inputStyle}
         {...props}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, Pressable } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ArrowRightLeft, X } from 'lucide-react-native'
-import { Modal } from '../ui'
+import { Modal, NumberTextInput } from '../ui'
 import { colors } from '../../lib/styles'
 import { convertWeight, getWeightUnits, toggleWeightMode } from '@gym/shared'
 
@@ -56,7 +56,7 @@ export default function WeightConverterModal({ isOpen, onClose }) {
               {fromUnit}
             </Text>
             <View style={{ width: '100%', backgroundColor: colors.bgTertiary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, borderWidth: 2, borderColor: colors.success }}>
-              <TextInput
+              <NumberTextInput
                 autoFocus
                 value={value}
                 onChangeText={handleChange}

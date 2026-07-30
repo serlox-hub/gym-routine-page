@@ -355,6 +355,7 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ console.log in committed code
 - ❌ Business logic in apps/ (belongs in packages/shared/src/lib/)
 - ❌ Hardcoded user-facing strings (use `t()` from i18n)
+- ❌ Inputs numéricos crudos (`<input type=number>` / `<TextInput keyboardType>` numérico) → usar `CaretEndInput` (web) / `NumberTextInput` (native) para el cursor-al-final al enfocar; `<Input type=number>` (web) ya lo hereda. Ver `docs/DECISIONS.md`
 - ❌ Adding translation keys to only one language (must add to both es/ and en/)
 - ❌ Differences between web and native — all screens must have the same appearance, section order, and functionality on both platforms unless technically impossible
 

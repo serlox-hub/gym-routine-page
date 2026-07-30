@@ -2,7 +2,7 @@ import { View, Text, TextInput, Pressable, ScrollView, Modal as RNModal } from '
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react-native'
-import { Button } from '../ui'
+import { Button, NumberTextInput } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder, getExerciseName } from '@gym/shared'
 
@@ -95,7 +95,7 @@ export default function ExerciseConfigForm({
       <View className="flex-row gap-3 mb-4">
         <View className="flex-1">
           <FormField label={t('routine:exercise.series')} required={!isSessionMode}>
-            <TextInput
+            <NumberTextInput
               value={form.series}
               onChangeText={update('series')}
               keyboardType="numeric"
@@ -122,7 +122,7 @@ export default function ExerciseConfigForm({
         <View className="flex-row gap-3">
           <View className="flex-1">
             <FormField label="RIR" secondary>
-              <TextInput
+              <NumberTextInput
                 value={form.rir}
                 onChangeText={update('rir')}
                 placeholder="Ej: 2"
@@ -134,7 +134,7 @@ export default function ExerciseConfigForm({
           </View>
           <View className="flex-1">
             <FormField label={t('routine:exercise.rest')} secondary>
-              <TextInput
+              <NumberTextInput
                 value={form.rest_seconds}
                 onChangeText={update('rest_seconds')}
                 placeholder="Ej: 90"

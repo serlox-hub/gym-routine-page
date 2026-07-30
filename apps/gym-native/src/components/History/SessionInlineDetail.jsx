@@ -8,7 +8,7 @@ import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trop
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, NumberTextInput } from '../ui'
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
 import { uploadVideo } from '../../lib/videoStorage'
 import {
@@ -205,7 +205,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
               {setType === 'dropset' ? 'D' : set.set_number}
             </Text>
           </Pressable>
-          <TextInput
+          <NumberTextInput
             value={weight}
             onChangeText={setWeight}
             onBlur={handleSave}
@@ -213,7 +213,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             style={inputStyle}
             placeholderTextColor={colors.textMuted}
           />
-          <TextInput
+          <NumberTextInput
             value={reps}
             onChangeText={setReps}
             onBlur={handleSave}
@@ -257,7 +257,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
 
         {showWeight && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-            <TextInput
+            <NumberTextInput
               value={weight}
               onChangeText={setWeight}
               onBlur={handleSave}
@@ -270,7 +270,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         )}
         {showTime && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-            <TextInput
+            <NumberTextInput
               value={timeSeconds}
               onChangeText={setTimeSeconds}
               onBlur={handleSave}
@@ -283,7 +283,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         )}
         {showDistance && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-            <TextInput
+            <NumberTextInput
               value={distanceMeters}
               onChangeText={setDistanceMeters}
               onBlur={handleSave}
@@ -296,7 +296,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         )}
         {showReps && !isWeightReps && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-            <TextInput
+            <NumberTextInput
               value={reps}
               onChangeText={setReps}
               onBlur={handleSave}

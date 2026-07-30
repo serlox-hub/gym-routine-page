@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Modal, Button } from '../ui'
+import { Modal, Button, NumberTextInput } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 import { getMeasurementLabel, parseDecimal } from '@gym/shared'
 
@@ -51,7 +51,7 @@ export default function MeasurementModal({ isOpen, onClose, onSubmit, measuremen
       <View className="gap-4">
         <View>
           <Text className="text-sm font-medium text-secondary mb-1">{label} ({unit}) *</Text>
-          <TextInput
+          <NumberTextInput
             value={form.value}
             onChangeText={(text) => setForm(prev => ({ ...prev, value: text }))}
             placeholder={t(unit === 'cm' ? 'body:measurements.valuePlaceholderCm' : 'body:measurements.valuePlaceholderIn')}

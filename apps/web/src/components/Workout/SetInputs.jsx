@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ExecutionTimer from './ExecutionTimer.jsx'
+import { CaretEndInput } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
 const inputStyle = {
@@ -39,7 +40,7 @@ function NumberInput({ value, onChange, disabled, width = 'w-16', inputMode = 'n
   }
 
   return (
-    <input
+    <CaretEndInput
       type="number"
       inputMode={inputMode}
       min="0"
@@ -70,7 +71,7 @@ function MMSSInput({ totalSeconds, onChange, disabled, active = false }) {
 
   return (
     <div className="flex items-center gap-0.5">
-      <input
+      <CaretEndInput
         type="number"
         inputMode="numeric"
         min="0"
@@ -84,7 +85,7 @@ function MMSSInput({ totalSeconds, onChange, disabled, active = false }) {
         style={minFocus.style}
       />
       <span className="text-xs text-muted font-bold">:</span>
-      <input
+      <CaretEndInput
         type="number"
         inputMode="numeric"
         min="0"

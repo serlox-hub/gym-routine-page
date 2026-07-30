@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { View, Text, TextInput } from 'react-native'
+import { View, Text } from 'react-native'
 import ExecutionTimer from './ExecutionTimer'
+import { NumberTextInput } from '../ui'
 import { colors } from '../../lib/styles'
 
 const numericInputStyle = {
@@ -37,7 +38,7 @@ function NumberInput({ value, onChange, disabled, width = 56, inputMode = 'numer
   }
 
   return (
-    <TextInput
+    <NumberTextInput
       value={String(value ?? '')}
       onChangeText={handleChange}
       onFocus={onFocus}
@@ -66,7 +67,7 @@ function MMSSInput({ totalSeconds, onChange, disabled, active = false }) {
 
   return (
     <View className="flex-row items-center gap-0.5">
-      <TextInput
+      <NumberTextInput
         value={mins === '' ? '' : String(mins)}
         onChangeText={(v) => update(v, secs)}
         onFocus={minFocus.onFocus}
@@ -78,7 +79,7 @@ function MMSSInput({ totalSeconds, onChange, disabled, active = false }) {
         style={[minFocus.style, { width: 36 }]}
       />
       <Text className="text-xs font-bold" style={{ color: colors.textSecondary }}>:</Text>
-      <TextInput
+      <NumberTextInput
         value={secs === '' ? '' : String(secs).padStart(2, '0')}
         onChangeText={(v) => update(mins, v)}
         onFocus={secFocus.onFocus}

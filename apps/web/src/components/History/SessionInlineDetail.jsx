@@ -5,7 +5,7 @@ import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Vid
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, CaretEndInput } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
@@ -210,7 +210,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         </button>
 
         {showWeight && (
-          <input
+          <CaretEndInput
             value={weight}
             onChange={e => setWeight(e.target.value)}
             onBlur={handleSave}
@@ -221,7 +221,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
           />
         )}
         {showReps && (
-          <input
+          <CaretEndInput
             value={reps}
             onChange={e => setReps(e.target.value)}
             onBlur={handleSave}
@@ -232,7 +232,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         )}
         {showTime && (
           <div className="flex items-center gap-0.5 flex-1 min-w-0">
-            <input
+            <CaretEndInput
               value={timeSeconds}
               onChange={e => setTimeSeconds(e.target.value)}
               onBlur={handleSave}
@@ -245,7 +245,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         )}
         {showDistance && (
           <div className="flex items-center gap-0.5 flex-1 min-w-0">
-            <input
+            <CaretEndInput
               value={distanceMeters}
               onChange={e => setDistanceMeters(e.target.value)}
               onBlur={handleSave}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Modal, Button } from '../ui'
+import { Modal, Button, NumberTextInput } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 import { parseDecimal } from '@gym/shared'
 
@@ -48,7 +48,7 @@ export default function BodyWeightModal({ isOpen, onClose, onSubmit, record = nu
       <View className="gap-4">
         <View>
           <Text className="text-sm font-medium text-secondary mb-1">{t('body:weight.label')} ({unit}) *</Text>
-          <TextInput
+          <NumberTextInput
             value={form.weight}
             onChangeText={(text) => setForm(prev => ({ ...prev, weight: text }))}
             placeholder={t('body:weight.weightPlaceholder')}
