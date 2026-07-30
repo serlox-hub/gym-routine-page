@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Video, X, ChevronRight, Maximize2 } from 'lucide-react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useVideoPlayer, VideoView } from 'expo-video'
-import { Modal } from '../ui'
+import { Modal, Button } from '../ui'
 import { useCanUploadVideo } from '../../hooks/useAuth'
 import { usePreference } from '../../hooks/usePreferences'
 import { getVideoUrl } from '../../lib/videoStorage'
@@ -61,11 +61,17 @@ function SetVideoPreview({ uri }) {
  * Modelo unificado (a petición del usuario): TODO se edita dentro de la hoja, nada abre otra
  * superficie, cerrar = guardado. RIR y tipo son CONTROLADOS (persisten al instante vía el padre);
  * nota y vídeo son locales y se confirman al cerrar. Paridad con web. Ver DECISIONS.
+ *
+ * Botón «Completar» (opt-in aditivo): si el padre pasa `onComplete` (solo en sesión y solo si la
+ * serie NO está completada), anota + completa de una. Cerrar sin pulsarlo NO completa (solo
+ * autoguarda). El historial no pasa onComplete → sin botón. Paridad con web. Ver DECISIONS.
  */
 export default function SetDetailsModal({
   isOpen,
   onClose,
   onSubmit,
+  onComplete,
+  canComplete = true,
   setNumber,
   allowVideo = true,
   initialNote,
@@ -274,6 +280,18 @@ export default function SetDetailsModal({
           )}
         </View>
       </ScrollView>
+
+      {/* Footer: «Completar» solo en sesión y solo si la serie aún no está hecha (onComplete
+          presente). Anota + completa de una; deshabilitado si los datos no son válidos (mismo
+          gate que el check). Cerrar sin pulsarlo NO completa (solo autoguarda). */}
+      {onComplete && (
+        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
+          <Button variant="primary" size="lg" className="w-full" disabled={!canComplete}
+            onPress={() => onComplete({ notes: note.trim() || null })}>
+            {t('workout:set.complete')}
+          </Button>
+        </View>
+      )}
     </Modal>
   )
 }

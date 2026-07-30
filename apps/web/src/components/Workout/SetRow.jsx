@@ -117,14 +117,28 @@ function SetRow({
     }
   }
 
-  const handleCompleteSet = () => {
+  const handleCompleteSet = (notesOverride) => {
     // Incluye los detalles ya fijados inline / en la hoja antes de completar (rir, notas, tipo).
+    // notesOverride: la nota recién tecleada en la hoja aún no está en `notes` (es estado local
+    // de la hoja, solo se vuelca al cerrar); al completar desde la hoja se pasa explícita. `null`
+    // (nota vaciada) es un override válido → distinguir de undefined (completar desde el check).
+    const finalNotes = notesOverride !== undefined ? notesOverride : notes
     const data = buildCompletedSetData(
       measurementType,
       { weight, reps, time, distance, calories, level, pace },
-      { sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes, setType }
+      { sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes: finalNotes, setType }
     )
     onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
+  }
+
+  // Completar desde el botón «Completar» de la hoja: vuelca la nota tecleada al estado local
+  // (el chip de la fila queda en sync) y completa con el RIR/tipo vivos + esa nota. saveDetails
+  // solo cachea (la serie aún no está completada); la escritura al servidor la hace la mutación
+  // de completar con la nota ya en el payload → una sola escritura.
+  const handleCompleteFromModal = ({ notes: nextNotes }) => {
+    setShowModal(false)
+    saveDetails({ notes: nextNotes, setType })
+    handleCompleteSet(nextNotes)
   }
 
   // Al cerrar la hoja: la nota se persiste vía saveDetails (preservando RIR y el tipo actual, que
@@ -318,6 +332,8 @@ function SetRow({
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleModalSubmit}
+        onComplete={isCompleted ? undefined : handleCompleteFromModal}
+        canComplete={isValid()}
         setNumber={setNumber}
         allowVideo={isCompleted}
         initialNote={notes}

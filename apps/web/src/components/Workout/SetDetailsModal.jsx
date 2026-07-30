@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Video, X, ChevronRight } from 'lucide-react'
-import { Modal } from '../ui/index.js'
+import { Modal, Button } from '../ui/index.js'
 import VideoPlayer from './VideoPlayer.jsx'
 import { colors } from '../../lib/styles.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -13,18 +13,28 @@ const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 /**
  * Hoja ÚNICA de anotación de una serie: esfuerzo (RIR/RPE), tipo (dropset), nota y vídeo, todo
  * en una sola superficie. Se abre tocando el chip de la columna «Notas» (ver EffortPicker); el
- * peso/reps se editan inline en la fila (no aquí). Sin botón Guardar.
+ * peso/reps se editan inline en la fila (no aquí). No hay botón Guardar: la anotación se
+ * autoguarda al cerrar.
  *
  * Modelo de interacción unificado (a petición del usuario): TODO se edita dentro de la hoja,
  * nada abre otra superficie, y cerrar = guardado. RIR y tipo son CONTROLADOS (viven en el
  * padre vía onRirChange/onSetTypeChange → persisten al instante, patrón de #8); nota y vídeo
  * son locales y se confirman al cerrar (autosave). El usuario no percibe esa diferencia: para
  * él todo ocurre en la hoja y el cierre confirma. Ver DECISIONS.
+ *
+ * Botón «Completar» (opt-in aditivo): si el padre pasa `onComplete` (solo en sesión y solo si la
+ * serie NO está completada), la hoja muestra un botón que anota + completa la serie de una, para
+ * quien rellena RIR/nota en cada serie y le sobra tener que cerrar y luego buscar el check. Cerrar
+ * SIN pulsarlo NO completa (solo autoguarda la nota) → «cancelar» gratis, sin completar por
+ * accidente. El check de la fila sigue intacto como toggle. El historial no pasa onComplete → sin
+ * botón. Ver DECISIONS.
  */
 function SetDetailsModal({
   isOpen,
   onClose,
   onSubmit,
+  onComplete,
+  canComplete = true,
   setNumber,
   allowVideo = true,
   initialNote,
@@ -273,6 +283,23 @@ function SetDetailsModal({
           <div className="pb-5" />
         </div>
       </div>
+
+      {/* Footer: «Completar» solo en sesión y solo si la serie aún no está hecha (onComplete
+          presente). Anota + completa de una; deshabilitado si los datos no son válidos (mismo
+          gate que el check). Cerrar sin pulsarlo NO completa (solo autoguarda). */}
+      {onComplete && (
+        <div className="px-5 pt-3 pb-5 shrink-0" style={{ borderTop: `1px solid ${colors.borderSubtle}` }}>
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full"
+            disabled={!canComplete}
+            onClick={() => onComplete({ notes: note.trim() || null })}
+          >
+            {t('workout:set.complete')}
+          </Button>
+        </div>
+      )}
     </Modal>
   )
 }
