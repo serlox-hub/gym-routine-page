@@ -127,14 +127,23 @@ export function useExerciseHistory(exerciseId, routineDayId = null, gymId = null
 
 // La referencia "Anterior" se segrega por gym (unidades/máquina) y prioriza el mismo día de rutina
 // (mismo slot); si no hay registro en ese slot, cae a la última vez del ejercicio en ese gym.
-export function usePreviousWorkout(exerciseId, { gymId = null, routineDayId = null } = {}) {
+export function usePreviousWorkout(exerciseId, { gymId = null, routineDayId = null, sessionId = null } = {}) {
   return useQuery({
     queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT, exerciseId, gymId, routineDayId],
     queryFn: async () => {
       const { sameSlot, fallback } = await fetchPreviousWorkout({ exerciseId, gymId, routineDayId })
       return buildPreviousWorkoutRef({ sameSlot, fallback, currentRoutineDayId: routineDayId })
     },
-    enabled: !!exerciseId,
+    // Gateamos por sessionId (sesión cargada en el store), NO por gymId. Motivo: sin gymId,
+    // fetchPreviousWorkout omite el filtro y devuelve la última sesión de CUALQUIER gym (fuga
+    // cross-gym). Pero `gymId==null` es ambiguo: (a) sesión aún no cargada (rehidratación async
+    // del store en native) → null ESPURIO, hay que esperar; (b) sesión sin gym (libre sin gym
+    // seleccionado, o legacy previa a la feature) → null LEGÍTIMO, mostramos "Anterior" con lo que
+    // haya (best-effort: para un usuario que entrena siempre sin gym es su único bucket). El store
+    // fija sessionId y gymId atómicamente (startSession/restoreSession), así que sessionId presente
+    // ⇒ gymId es el valor REAL de la sesión (número, o null legítimo). Gatear por gymId ocultaría
+    // "Anterior" en las sesiones sin gym; gatear por sessionId cubre ambos casos.
+    enabled: !!exerciseId && sessionId != null,
     staleTime: 1000 * 60 * 10
   })
 }

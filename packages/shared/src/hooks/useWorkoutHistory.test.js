@@ -238,7 +238,7 @@ describe('usePreviousWorkout', () => {
     })
 
     const { result } = renderHook(
-      () => usePreviousWorkout('exercise-123'),
+      () => usePreviousWorkout('exercise-123', { gymId: 'gym-1', sessionId: 'session-1' }),
       { wrapper: createWrapper() }
     )
 
@@ -252,11 +252,38 @@ describe('usePreviousWorkout', () => {
     fetchPreviousWorkout.mockResolvedValueOnce({ sameSlot: null, fallback: null })
 
     const { result } = renderHook(
-      () => usePreviousWorkout('exercise-123'),
+      () => usePreviousWorkout('exercise-123', { gymId: 'gym-1', sessionId: 'session-1' }),
       { wrapper: createWrapper() }
     )
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toBeNull()
+  })
+
+  // Sin sessionId la sesión aún no está cargada en el store → gymId sería null espurio y
+  // fetchPreviousWorkout, sin filtro, devolvería la última sesión de cualquier gym (fuga cross-gym).
+  it('no consulta mientras la sesión no esté cargada (sessionId null)', async () => {
+    const { result } = renderHook(
+      () => usePreviousWorkout('exercise-123', { gymId: 'gym-1', sessionId: null }),
+      { wrapper: createWrapper() }
+    )
+
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(result.current.isSuccess).toBe(false)
+    expect(fetchPreviousWorkout).not.toHaveBeenCalled()
+  })
+
+  // Usuario SIN gym: gymId null es legítimo (un único bucket). Con la sesión cargada (sessionId
+  // presente) SÍ debe consultar y mostrar "Anterior"; gatear por gymId lo ocultaría.
+  it('consulta con sesión cargada aunque no haya gym (gymId null legítimo)', async () => {
+    fetchPreviousWorkout.mockResolvedValueOnce({ sameSlot: null, fallback: null })
+
+    const { result } = renderHook(
+      () => usePreviousWorkout('exercise-123', { gymId: null, sessionId: 'session-1' }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(fetchPreviousWorkout).toHaveBeenCalledWith({ exerciseId: 'exercise-123', gymId: null, routineDayId: null })
   })
 })

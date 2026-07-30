@@ -38,9 +38,10 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const completedSets = useWorkoutStore(state => state.completedSets)
   const routineDayId = useWorkoutStore(state => state.routineDayId)
+  const sessionId = useWorkoutStore(state => state.sessionId)
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
   const setExerciseSetCount = useWorkoutStore(state => state.setExerciseSetCount)
-  const { data: previousWorkout } = usePreviousWorkout(exercise.id, { gymId, routineDayId })
+  const { data: previousWorkout } = usePreviousWorkout(exercise.id, { gymId, routineDayId, sessionId })
   const setsCount = exerciseSetCounts[exerciseKey] ?? series
 
   useEffect(() => {
