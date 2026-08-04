@@ -196,13 +196,8 @@ import { useRestoreActiveSession } from '../hooks/useSession'
    - **Estado "seleccionado/activo"**: SÍ se usa el wash lima suave `successBg` (~0.12) como fondo, combinado con borde + texto lima sólidos. Es el patrón establecido en toda la app (chips/opciones de `NewRoutineFlow`, `OnboardingWizard`, badges como `PlanBadge`, `StreakCard`, etc.) y es el que se debe seguir por consistencia.
    - **Marcar "hecho" o teñir superficies grandes**: NO usar wash lima (viraría a oliva); usar el lima en **sólido** (borde, barra, icono, texto, check) o un neutro elevado (`bgTertiary`).
 
-**Token categories:**
-- Fondos: `bgPrimary`, `bgSecondary`, `bgAlt`, `bgTertiary`, `bgHover`
-- Texto: `textPrimary`, `textSecondary`, `textMuted`, `textLight`, `textDisabled`, `textDark`, `white`, `black`
-- Acentos: `success`, `warning`, `danger`, `purple`, `purpleAccent`, `teal`, `pink`, `orange` (acento naranja + dropset), `gold`, `actionPrimary` (lima = acción primaria), `gifBg` (panel claro para GIFs)
-- Fondos semánticos (alpha): `purpleBg`, `purpleAccentBg`, `successBg`, `successBgSubtle`, `warningBg`, `orangeBg`, `goldBg`, `dangerBg`, `actionPrimaryBg`, `overlay`, `overlaySoft`
-- Bordes: `border`, `borderSubtle`
-- ⚠️ NO existen tokens `accent`/`accentHover`/`accentBg`/`accentBgSubtle` — el acento naranja es `orange`/`orangeBg`; la acción primaria (lima) es `actionPrimary`/`actionPrimaryBg`
+**Tokens:** el catálogo completo (nombres exactos por categoría: fondos, texto, acentos, alpha, bordes) vive en `docs/color-tokens.md` — consúltalo al elegir un token.
+⚠️ NO existen tokens `accent`/`accentHover`/`accentBg`/`accentBgSubtle` — el acento naranja es `orange`/`orangeBg`; la acción primaria (lima) es `actionPrimary`/`actionPrimaryBg`.
 
 ## Internationalization (i18n)
 
@@ -411,19 +406,11 @@ All these files live in `packages/shared/src/lib/` and are exported via `@gym/sh
 
 ### Archivos críticos: import/export de rutinas (JSON)
 
-La lógica está repartida en dos archivos (no confundir):
-- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 6**) y mapea BD ↔ JSON.
-- **`packages/shared/src/lib/routineIO.js`** — prompts de IA (`buildChatbotPrompt`, `buildAdaptRoutinePrompt`) y el doc del formato (`ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`). Puro, sin BD.
+Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 6**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
 
-⚠️ **Emparejamiento por CLAVE ESTABLE (no por `name_es`)**: `importRoutine` resuelve cada ejercicio contra el catálogo/custom por `name_en` → `name_es` (normalizado tolerante: minúsculas + sin acentos + espacios) vía `lib/exerciseMatch.js` (`buildExerciseIndex`/`resolveExerciseId`, puro y testeado). `name_en` es único y 100% poblado en ejercicios de sistema; los custom (sin `name_en`) casan por `name_es`. Solo crea un ejercicio custom si no hay match. El export incluye `name_en` por ejercicio (v6) para que el re-import sea independiente del idioma. Ver `docs/DECISIONS.md`.
+⚠️ **Emparejar por CLAVE ESTABLE** (`name_en` → `name_es` normalizado, vía `lib/exerciseMatch.js`), NUNCA por `name_es` solo. `importRoutine` debe seguir aceptando versiones antiguas del JSON.
 
-**Cuando se modifique el modelo de datos** (tablas `routines`, `routine_days`, `routine_exercises`, `exercises`):
-1. Tras crear/aplicar la migración, regenerar el snapshot: `npm run db:schema` (en `apps/web`, requiere Docker) y commitear `apps/web/supabase/schema.sql` junto con la migración. Mantiene el snapshot == migraciones.
-2. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON
-3. Actualizar `importRoutine()` para leer los nuevos campos del JSON
-4. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA
-5. Incrementar `ROUTINE_EXPORT_VERSION` si hay cambios breaking (importRoutine debe seguir aceptando versiones antiguas)
-6. Actualizar los tests (`routineIO.test.js`, `routineApi.test.js`, `exerciseMatch.test.js`)
+**Detalle, rationale del emparejamiento y checklist de "cuando cambie el modelo de datos": ver `docs/routine-io.md`.**
 
 ### Example: Before and After
 

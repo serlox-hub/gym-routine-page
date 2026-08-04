@@ -1,0 +1,31 @@
+# Import/export de rutinas (JSON) — detalle
+
+Referencia de consulta (no invariante). La invariante corta (dos archivos, versión 6, emparejar
+por clave estable, retrocompatibilidad) + puntero viven en `CLAUDE.md` → "Archivos críticos:
+import/export de rutinas (JSON)". Aquí el detalle completo, el rationale del emparejamiento y el
+checklist de "cuando cambie el modelo de datos".
+
+## Los dos archivos (no confundir)
+
+- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 6**) y mapea BD ↔ JSON.
+- **`packages/shared/src/lib/routineIO.js`** — prompts de IA (`buildChatbotPrompt`, `buildAdaptRoutinePrompt`) y el doc del formato (`ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`). Puro, sin BD.
+
+## Emparejamiento por CLAVE ESTABLE (no por `name_es`)
+
+`importRoutine` resuelve cada ejercicio contra el catálogo/custom por `name_en` → `name_es`
+(normalizado tolerante: minúsculas + sin acentos + espacios) vía `lib/exerciseMatch.js`
+(`buildExerciseIndex`/`resolveExerciseId`, puro y testeado). `name_en` es único y 100% poblado en
+ejercicios de sistema; los custom (sin `name_en`) casan por `name_es`. Solo crea un ejercicio
+custom si no hay match. El export incluye `name_en` por ejercicio (v6) para que el re-import sea
+independiente del idioma. Ver `docs/DECISIONS.md`.
+
+## Cuando se modifique el modelo de datos
+
+(tablas `routines`, `routine_days`, `routine_exercises`, `exercises`)
+
+1. Tras crear/aplicar la migración, regenerar el snapshot: `npm run db:schema` (en `apps/web`, requiere Docker) y commitear `apps/web/supabase/schema.sql` junto con la migración. Mantiene el snapshot == migraciones.
+2. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON.
+3. Actualizar `importRoutine()` para leer los nuevos campos del JSON.
+4. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA.
+5. Incrementar `ROUTINE_EXPORT_VERSION` si hay cambios breaking (importRoutine debe seguir aceptando versiones antiguas).
+6. Actualizar los tests (`routineIO.test.js`, `routineApi.test.js`, `exerciseMatch.test.js`).
