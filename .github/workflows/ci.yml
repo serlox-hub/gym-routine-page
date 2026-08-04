@@ -20,6 +20,15 @@ jobs:
 
       - run: npm ci
 
+      - name: Lint (web + native, 0 warnings)
+        run: npm run lint
+
+      - name: Build (web)
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
       - name: Run unit tests
         run: npm run test
         env:
