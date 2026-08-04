@@ -196,8 +196,8 @@ import { useRestoreActiveSession } from '../hooks/useSession'
    - **Estado "seleccionado/activo"**: SÍ se usa el wash lima suave `successBg` (~0.12) como fondo, combinado con borde + texto lima sólidos. Es el patrón establecido en toda la app (chips/opciones de `NewRoutineFlow`, `OnboardingWizard`, badges como `PlanBadge`, `StreakCard`, etc.) y es el que se debe seguir por consistencia.
    - **Marcar "hecho" o teñir superficies grandes**: NO usar wash lima (viraría a oliva); usar el lima en **sólido** (borde, barra, icono, texto, check) o un neutro elevado (`bgTertiary`).
 
-**Tokens:** el catálogo completo (nombres exactos por categoría: fondos, texto, acentos, alpha, bordes) vive en `docs/color-tokens.md` — consúltalo al elegir un token.
-⚠️ NO existen tokens `accent`/`accentHover`/`accentBg`/`accentBgSubtle` — el acento naranja es `orange`/`orangeBg`; la acción primaria (lima) es `actionPrimary`/`actionPrimaryBg`.
+**Tokens válidos = las claves del objeto `colors` en `apps/web/src/lib/styles.js`** (idéntico en native). Es la fuente de verdad: léela al elegir token, no la dupliques en docs ni inventes nombres.
+⚠️ NO existen `accent`/`accentHover`/`accentBg`/`accentBgSubtle` — el acento naranja es `orange`/`orangeBg`; la acción primaria (lima) es `actionPrimary`/`actionPrimaryBg`.
 
 ## Internationalization (i18n)
 
