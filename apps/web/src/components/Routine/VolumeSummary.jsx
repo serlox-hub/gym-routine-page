@@ -120,7 +120,7 @@ function VolumeRow({ name, muscleGroup, sets, zone, landmarks }) {
           <div
             key={i}
             className="absolute top-0 h-4 border-l"
-            style={{ left: toPercent(val), borderColor: 'rgba(255,255,255,0.15)' }}
+            style={{ left: toPercent(val), borderColor: colors.divider }}
           />
         ))}
         {/* Indicador de series actuales */}

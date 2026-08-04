@@ -92,6 +92,8 @@ export const colors = {
   actionPrimaryBg: 'rgba(190, 255, 0, 0.15)',
   overlay: 'rgba(0, 0, 0, 0.85)',
   overlaySoft: 'rgba(0, 0, 0, 0.5)',
+  shadow: 'rgba(0, 0, 0, 0.4)', // color de sombras (boxShadow/shadowColor); alpha fijo → token semántico, no RGB_
+  divider: 'rgba(255, 255, 255, 0.15)', // divisor translúcido sobre contenido (distinto de border/borderSubtle sólidos)
 }
 
 // Estilos reutilizables para React Native

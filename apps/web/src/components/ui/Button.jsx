@@ -13,7 +13,7 @@ const VARIANTS = {
   danger: {
     backgroundColor: colors.dangerBg,
     color: colors.danger,
-    border: '1px solid rgba(248, 81, 73, 0.4)',
+    border: `1px solid ${colors.danger}66`,
   },
 }
 

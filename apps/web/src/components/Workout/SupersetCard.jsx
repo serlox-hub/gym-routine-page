@@ -21,7 +21,7 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
       <div
         className="flex items-center gap-2 px-3 py-2 rounded-t-lg"
         style={{
-          backgroundColor: 'rgba(163, 113, 247, 0.1)',
+          backgroundColor: colors.purpleBg,
           borderBottom: `1px solid ${colors.purple}`,
         }}
       >

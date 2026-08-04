@@ -88,7 +88,7 @@ export default function ActiveSessionBanner() {
           paddingRight: 6,
           paddingVertical: 6,
           gap: 12,
-          shadowColor: '#000',
+          shadowColor: colors.black,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.4,
           shadowRadius: 12,

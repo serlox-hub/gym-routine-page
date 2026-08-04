@@ -58,7 +58,7 @@ function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onS
               onClick={() => toggleMeasurement(type)}
               className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors"
               style={{
-                backgroundColor: selected.has(type) ? 'rgba(63, 185, 80, 0.15)' : colors.bgTertiary,
+                backgroundColor: selected.has(type) ? colors.successBg : colors.bgTertiary,
                 border: `1px solid ${selected.has(type) ? colors.success : 'transparent'}`,
               }}
             >

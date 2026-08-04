@@ -29,7 +29,7 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
         <Pressable
           onPress={handleClose}
           className="flex-1 justify-end"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          style={{ backgroundColor: colors.overlaySoft }}
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}

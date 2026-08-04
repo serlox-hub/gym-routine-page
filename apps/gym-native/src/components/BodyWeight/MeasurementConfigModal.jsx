@@ -56,7 +56,7 @@ export default function MeasurementConfigModal({ isOpen, onClose, enabledMeasure
                 onPress={() => toggleMeasurement(type)}
                 className="flex-row items-center gap-3 p-3 rounded-lg active:opacity-80"
                 style={{
-                  backgroundColor: isSelected ? 'rgba(63, 185, 80, 0.15)' : colors.bgTertiary,
+                  backgroundColor: isSelected ? colors.successBg : colors.bgTertiary,
                   borderWidth: 1,
                   borderColor: isSelected ? colors.success : 'transparent',
                 }}

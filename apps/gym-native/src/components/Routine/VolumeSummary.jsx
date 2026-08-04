@@ -119,7 +119,7 @@ function VolumeRow({ name, muscleGroup, sets, zone, landmarks }) {
           <View
             key={i}
             className="absolute h-4"
-            style={{ left: `${toPercent(val)}%`, width: 1, backgroundColor: 'rgba(255,255,255,0.15)' }}
+            style={{ left: `${toPercent(val)}%`, width: 1, backgroundColor: colors.divider }}
           />
         ))}
         {/* Indicador de series actuales */}

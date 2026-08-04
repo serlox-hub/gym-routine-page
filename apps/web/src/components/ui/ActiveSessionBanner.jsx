@@ -49,7 +49,7 @@ function ActiveSessionBanner() {
         style={{
           backgroundColor: colors.bgSecondary,
           border: `1px solid ${colors.borderSubtle}`,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          boxShadow: `0 4px 12px ${colors.shadow}`,
         }}
       >
         <div className="flex flex-col items-start leading-tight">

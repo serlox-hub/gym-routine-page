@@ -1,5 +1,6 @@
 import { View, Modal as RNModal, Pressable, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { colors } from '../../lib/styles'
 
 export default function Modal({
   isOpen,
@@ -27,7 +28,7 @@ export default function Modal({
       >
         <View
           className={`flex-1 ${isBottom ? 'justify-end' : 'justify-center items-center p-4'}`}
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', paddingTop: insets.top }}
+          style={{ backgroundColor: colors.overlay, paddingTop: insets.top }}
         >
           <Pressable onPress={onClose} style={StyleSheet.absoluteFillObject} />
           <View
