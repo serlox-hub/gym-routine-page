@@ -69,7 +69,7 @@ function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onS
                   border: selected.has(type) ? 'none' : `1px solid ${colors.border}`,
                 }}
               >
-                {selected.has(type) && <Check size={14} style={{ color: colors.white }} />}
+                {selected.has(type) && <Check size={14} style={{ color: colors.bgPrimary }} />}
               </div>
               <span className="text-sm font-medium" style={{ color: colors.textPrimary }}>
                 {getMeasurementLabel(type)}

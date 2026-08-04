@@ -195,6 +195,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 6. **`success` (lima `#BEFF00`) — cuidado con el alpha sobre fondos oscuros.** Al ser amarillo-verde sin azul, en translúcido vira a oliva/caqui. Regla:
    - **Estado "seleccionado/activo"**: SÍ se usa el wash lima suave `successBg` (~0.12) como fondo, combinado con borde + texto lima sólidos. Es el patrón establecido en toda la app (chips/opciones de `NewRoutineFlow`, `OnboardingWizard`, badges como `PlanBadge`, `StreakCard`, etc.) y es el que se debe seguir por consistencia.
    - **Marcar "hecho" o teñir superficies grandes**: NO usar wash lima (viraría a oliva); usar el lima en **sólido** (borde, barra, icono, texto, check) o un neutro elevado (`bgTertiary`).
+   - **Primer plano SOBRE lima sólido** (check, icono o texto dentro de un relleno lima `success`/`actionPrimary`): SIEMPRE `bgPrimary` (oscuro), NUNCA `white` — el lima es muy claro y el blanco encima no contrasta. Patrón establecido: `SetRow` (check), `OnboardingWizard`/`NewRoutineFlow` (radios).
 
 **Tokens válidos = las claves del objeto `colors` en `apps/web/src/lib/styles.js`** (idéntico en native). Es la fuente de verdad: léela al elegir token, no la dupliques en docs ni inventes nombres.
 ⚠️ NO existen `accent`/`accentHover`/`accentBg`/`accentBgSubtle` — el acento naranja es `orange`/`orangeBg`; la acción primaria (lima) es `actionPrimary`/`actionPrimaryBg`.

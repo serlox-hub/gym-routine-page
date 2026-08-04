@@ -69,7 +69,7 @@ export default function MeasurementConfigModal({ isOpen, onClose, enabledMeasure
                     borderColor: colors.border,
                   }}
                 >
-                  {isSelected && <Check size={14} color={colors.white} />}
+                  {isSelected && <Check size={14} color={colors.bgPrimary} />}
                 </View>
                 <Text className="text-sm font-medium text-primary">
                   {getMeasurementLabel(type)}
