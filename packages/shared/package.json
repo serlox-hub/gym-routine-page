@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "main": "./src/index.js",
+  "scripts": {
+    "test:coverage": "vitest run --config vitest.config.mjs --coverage"
+  },
   "peerDependencies": {
     "@tanstack/react-query": "*",
     "react": "*",
@@ -11,5 +14,9 @@
   },
   "dependencies": {
     "i18next": "^26.0.1"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.0",
+    "vitest": "^4.1.0"
   }
 }

@@ -35,6 +35,9 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Coverage (lógica compartida, con umbral)
+        run: npm run test:coverage -w @gym/shared
+
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
         working-directory: apps/web
