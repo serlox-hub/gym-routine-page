@@ -33,6 +33,8 @@ Después (requiere build): `npm run test:e2e -w apps/web`.
 
 Reporta el resultado de cada uno. Si algo falla, es un hallazgo bloqueante (con el error concreto) — NO lo arregles tú.
 
+> El lint (`--max-warnings=0`) y los tests ya enforzan lo **mecánico** (hex/rgba en componentes, frontera de imports apps↔`@gym/shared`, `console`, paridad de claves es/en): no lo re-grepees aquí. Tu presupuesto va al **juicio** que ningún linter da (arquitectura y ubicación de la lógica, DRY, paridad de comportamiento web/native, datos en red lenta, contexto durable).
+
 ---
 
 # EJE A — Buenas prácticas y arquitectura
@@ -48,13 +50,11 @@ Reporta el resultado de cada uno. Si algo falla, es un hallazgo bloqueante (con 
 3. Componente tonto: solo JSX, handlers que llaman a hooks/utils, estado local de UI. NADA de cálculos >5 líneas, transformaciones ni lógica de negocio.
 4. Props destructuring en la firma. 5. Loading/error si usa datos async. 6. Sin magic numbers. 7. Sin `console.*` (salvo ErrorBoundary con eslint-disable).
 
-## A3. Design tokens (CRÍTICO — tolerancia cero)
-```bash
-for f in $(git diff --name-only HEAD | grep -E '\.(jsx|js)$' | grep -v test | grep -v 'styles\.js' | grep -v tailwind | grep -v constants); do
-  grep -nE "#[0-9a-fA-F]{3,8}|rgba?\(" "$f" | grep -vE "import|from|//|\.svg|url\(" || true
-done
-```
-Único sitio válido para hex/rgba: `lib/styles.js`, `tailwind.config.*`, y gradientes de Landing (con `RGB_*`). Todo lo demás → `colors.X`. Color nuevo → añadir token a **ambos** `styles.js` (web+native). Verifica también tamaños de icono/fuente fuera del sistema (13, 19, etc.).
+## A3. Design tokens (lo mecánico ya lo caza el lint; aquí el juicio)
+El hex/rgba hardcodeado en componentes lo caza el lint → NO lo re-grepees. Enfócate en lo que el lint NO juzga:
+- **Token semánticamente MAL elegido**: usa un `colors.X` válido pero incorrecto para el rol (p. ej. `white` sobre relleno lima en vez de `bgPrimary`; wash lima `successBg` para "hecho"/superficie grande, que vira a oliva). Ver reglas de color en `CLAUDE.md`.
+- **Color nuevo**: ¿está en **ambos** `styles.js` (web+native), idénticos? ¿es duplicado de un token existente (regla #5)?
+- **Tamaños de icono/fuente fuera del sistema** (13, 19…) y magic numbers visuales.
 
 ## A4. Safe Area (native)
 ```bash
@@ -163,14 +163,11 @@ done
 
 ## Paso I. i18n (CRÍTICO — tolerancia cero)
 ```bash
+# Strings UI hardcodeados NUEVOS en los .jsx del diff (heurística; triar falsos positivos:
+# unidades, mockups de Landing, símbolos). La paridad de claves es/en ya la cubre i18nParity.test.js.
 for f in $(git diff --name-only HEAD | grep '\.jsx$' | grep -v test); do
   grep -nE "'[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+[^']*'|\"[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+[^\"]*\"" "$f" | \
     grep -vE "import|from|//|className|style|navigate|console|key=|testID|data-|Calentamiento|Principal|Añadido" || true
-done
-for ns in common auth routine exercise workout body validation data; do
-  diff <(jq -r '[paths(scalars)]|map(join("."))|sort[]' packages/shared/src/i18n/locales/es/${ns}.json) \
-       <(jq -r '[paths(scalars)]|map(join("."))|sort[]' packages/shared/src/i18n/locales/en/${ns}.json) >/dev/null \
-    && echo "i18n ${ns}: OK" || echo "DESINCRONIZADO: ${ns}.json (faltan keys es/en)"
 done
 ```
 Todo texto visible → `t('ns:key')` (excepciones: rutas de navegación, valores de DB, constantes técnicas, mockups de landing). Keys en `es` y `en`. Datos de referencia con helpers (`translateMuscleGroup`, `translateBlockName`, `getSensationLabel`). En código compartido: `import { t }`, no `useTranslation`.
