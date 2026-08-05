@@ -137,7 +137,9 @@ export function getSensationLabels() {
 
 // Backwards-compatible proxy — keys resolve at access time
 export const SENSATION_LABELS = new Proxy({}, {
-  get(_, key) { return t(`data:sensation.${key}`) },
+  // Guard de symbol: el trap `get` recibe también claves symbol (spread, inspección, Symbol.*);
+  // interpolar un symbol en el template literal lanzaría TypeError en runtime (lo detectó checkJs).
+  get(_, key) { return typeof key === 'symbol' ? undefined : t(`data:sensation.${key}`) },
   ownKeys() { return ['1', '2', '3', '4', '5'] },
   getOwnPropertyDescriptor() { return { configurable: true, enumerable: true } },
 })
@@ -173,7 +175,8 @@ export function getSetTypeLabels() {
 
 // Backwards-compatible proxy
 export const SET_TYPE_LABELS = new Proxy({}, {
-  get(_, key) { return t(`data:setTypes.${key}`) },
+  // Guard de symbol (ver SENSATION_LABELS): evita el TypeError al interpolar un symbol.
+  get(_, key) { return typeof key === 'symbol' ? undefined : t(`data:setTypes.${key}`) },
   ownKeys() { return ['normal', 'dropset'] },
   getOwnPropertyDescriptor() { return { configurable: true, enumerable: true } },
 })

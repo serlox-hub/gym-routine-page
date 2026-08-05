@@ -87,7 +87,7 @@ export function generateExtraExerciseId() {
 /**
  * Valida si los datos de una serie son válidos según el tipo de medición
  * @param {string} measurementType - Tipo de medición
- * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number}} data - Datos de la serie
+ * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number, calories?: string|number, level?: string|number, pace?: string|number}} data - Datos de la serie
  * @returns {boolean}
  */
 export function isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace }) {
