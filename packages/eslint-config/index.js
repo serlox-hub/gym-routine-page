@@ -42,6 +42,23 @@ export const baseConfig = [
           message: 'No hardcodees un hex de color en componentes: usa un token de `colors` (styles.js).',
         },
       ],
+
+      // Frontera arquitectónica apps ↔ @gym/shared (issue #20, G1): la lógica de negocio vive en
+      // `packages/shared` y se consume SOLO por el barrel `@gym/shared`. No es posible lintear
+      // "lógica de negocio" directamente, pero sí su proxy: (1) prohibir imports profundos a
+      // packages/shared (fuerza el barrel), (2) prohibir acceso directo a Supabase desde apps
+      // (fuerza la capa de API compartida). Excepción de (2): lib/supabase.js, que CREA el cliente
+      // inyectado por initApi (ver override abajo).
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['**/packages/shared/**', '@gym/shared/src/**', '@gym/shared/dist/**'],
+          message: 'Importa la lógica compartida por el barrel `@gym/shared`, no por rutas internas.',
+        }],
+        paths: [{
+          name: '@supabase/supabase-js',
+          message: 'Las apps no acceden a Supabase directamente: usa la capa de API de `@gym/shared`. Única excepción: lib/supabase.js (crea el cliente inyectado por initApi).',
+        }],
+      }],
     },
     settings: { react: { version: 'detect' } },
   },
@@ -49,5 +66,11 @@ export const baseConfig = [
     // styles.js define los tokens (hex/rgba legítimos) y tailwind.config los reexporta.
     files: ['**/lib/styles.js', '**/tailwind.config.{js,cjs}'],
     rules: { 'no-restricted-syntax': 'off' },
+  },
+  {
+    // lib/supabase.js es el ÚNICO sitio que puede importar @supabase/supabase-js: crea el cliente
+    // que initApi inyecta en @gym/shared. El resto de la app pasa por la capa de API compartida.
+    files: ['**/lib/supabase.js'],
+    rules: { 'no-restricted-imports': 'off' },
   },
 ]
