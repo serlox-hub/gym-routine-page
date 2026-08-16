@@ -13,6 +13,7 @@ import {
   isValidEffortValue,
   getEffortInfo,
   formatEffortBadge,
+  resolveMeasurementType,
   getDefaultReps,
   getRepsLabel,
   getRepsPlaceholder,
@@ -272,8 +273,38 @@ describe('measurementTypes', () => {
       expect(badge.startsWith('@')).toBe(false)
     })
 
+    it('en la escala RPE devuelve la palabra, no el índice', () => {
+      expect(formatEffortBadge(1, 'level_time')).toBe('Fácil')
+      expect(formatEffortBadge(4, 'level_time')).toBe('Muy duro')
+      expect(formatEffortBadge(5, 'level_time')).toBe('Máximo')
+    })
+
+    it('sin measurementType cae en la escala RIR, no en RPE', () => {
+      expect(formatEffortBadge(2)).toBe('@2')
+      // null llega de verdad: exercises.measurement_type es nullable
+      expect(formatEffortBadge(2, null)).toBe('@2')
+    })
+
+    it('cae al número crudo si el valor está fuera de la escala RPE (datos legados)', () => {
+      expect(formatEffortBadge(0, 'level_time')).toBe('0')
+      expect(formatEffortBadge(-1, 'level_time')).toBe('-1')
+    })
+
     it('produce badges distintos para mismo valor según measurementType', () => {
       expect(formatEffortBadge(1, 'weight_reps')).not.toBe(formatEffortBadge(1, 'time'))
+    })
+  })
+
+  describe('resolveMeasurementType', () => {
+    it('devuelve el tipo del ejercicio', () => {
+      expect(resolveMeasurementType({ measurement_type: 'level_time' })).toBe('level_time')
+    })
+
+    it('cae a weight_reps con tipo nulo, ejercicio vacío o sin ejercicio', () => {
+      expect(resolveMeasurementType({ measurement_type: null })).toBe('weight_reps')
+      expect(resolveMeasurementType({})).toBe('weight_reps')
+      expect(resolveMeasurementType(null)).toBe('weight_reps')
+      expect(resolveMeasurementType(undefined)).toBe('weight_reps')
     })
   })
 

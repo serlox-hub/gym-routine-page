@@ -109,10 +109,6 @@ export const REST_TIME_MIN = 30
 export const REST_TIME_MAX = 300
 export const REST_TIME_INCREMENT = 15
 
-// Workout
-export const RIR_MIN = 0
-export const RIR_MAX = 5
-
 // Session Status
 export const SESSION_STATUS = {
   IN_PROGRESS: 'in_progress',

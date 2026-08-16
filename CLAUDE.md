@@ -355,6 +355,7 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ Adding translation keys to only one language (must add to both es/ and en/)
 - ❌ Defaults silenciosos en el parseo de formularios (`parseInt(x) || 3`). Un campo obligatorio se **valida** y se muestra el error inline; el parser no inventa valores. Ver `routineExerciseForm.js` y `docs/DECISIONS.md`
 - ❌ Rangos numéricos fijos para campos que dependen del `measurement_type`. El esfuerzo usa dos escalas (RIR `-1..3` con reps, RPE `1..5` sin ellas): usar `getEffortOptions()` / `isValidEffortValue()`, nunca `min=0 max=5`
+- ❌ Pintar un valor de esfuerzo crudo (`RIR {rir}`, `` `@${rir}` ``, `String(rir)`). Siempre `formatEffortBadge(value, measurementType)` — en RPE el número guardado es un índice interno, la palabra es el dato. Si el componente tiene el `exercise`, resuelve el tipo con `resolveMeasurementType(exercise)` (fallback único de lectura); si no lo tiene, recíbelo como prop. Ver `docs/DECISIONS.md`
 - ❌ Differences between web and native — all screens must have the same appearance, section order, and functionality on both platforms unless technically impossible
 
 ## What TO Do

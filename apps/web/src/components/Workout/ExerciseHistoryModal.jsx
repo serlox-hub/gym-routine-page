@@ -169,7 +169,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
               overlayGyms={isOverlay ? overlayGyms : undefined}
               unitByGym={isOverlay ? unitByGym : undefined}
             />
-            <HistoryTable sessions={displayHistory} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
+            <HistoryTable sessions={displayHistory} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
               onSessionClick={handleSessionClick} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onLoadMore={fetchNextPage} />
           </>
         )}

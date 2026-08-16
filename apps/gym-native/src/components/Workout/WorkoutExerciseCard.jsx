@@ -13,7 +13,7 @@ import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
-import { MeasurementType, getHaptics, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle } from '@gym/shared'
+import { getHaptics, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, resolveMeasurementType } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorder, currentIndex = 0, totalExercises = 1, positionLabels = [], isReordering = false, existingSupersets = [] }) {
@@ -29,7 +29,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const gymId = useWorkoutStore(state => state.gymId)
   const { data: override } = useUserExerciseOverride(exercise?.id)
   const { value: progressionEnabled } = usePreference('progression_suggestions')
-  const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
+  const measurementType = resolveMeasurementType(exercise)
   const weightUnit = useResolvedWeightUnit(exercise?.id, gymId)
   const exerciseKey = sessionExerciseId || id
 
@@ -81,7 +81,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       <ExerciseCardHeader
         exerciseName={getExerciseName(exercise)}
         muscleGroup={exercise.muscle_group}
-        series={series} reps={reps} rir={rir} rest_seconds={rest_seconds}
+        series={series} reps={reps} rir={rir} measurementType={measurementType} rest_seconds={rest_seconds}
         collapsed={collapsed}
         isCompleted={isCompleted}
         onToggleCollapse={toggleExpanded}

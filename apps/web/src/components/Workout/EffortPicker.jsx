@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { StickyNote, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import { getEffortLabel, formatEffortBadge, measurementTypeUsesReps } from '@gym/shared'
+import { getEffortLabel, formatEffortBadge } from '@gym/shared'
 
 /**
  * Chip de la columna «Notas»: SOLO display + disparador. Muestra un glifo con prioridad
@@ -15,7 +15,6 @@ export default function EffortPicker({
   value, measurementType, note, hasVideo = false, emptyDash = false, active = false, showEffortScale = true, onOpenDetails,
 }) {
   const { t } = useTranslation()
-  const usesReps = measurementTypeUsesReps(measurementType)
 
   // Glifo por prioridad RIR (si activado y fijado) > nota > vídeo > vacío. `hasMore` = bolita.
   const rirSet = showEffortScale && value != null
@@ -24,17 +23,20 @@ export default function EffortPicker({
   const hasMore = primary === 'rir' ? (hasNote || hasVideo) : primary === 'note' ? hasVideo : false
   const inviteBorder = primary === 'empty' && active
   const textColor = (rirSet || active) ? colors.textSecondary : colors.textMuted
-  const compactValue = usesReps ? formatEffortBadge(value, measurementType) : String(value)
+  // Siempre la etiqueta ("@2" en RIR, "Duro" en RPE): el número de RPE no dice nada al usuario.
+  const compactValue = formatEffortBadge(value, measurementType)
   const emptyLabel = emptyDash ? '–' : getEffortLabel(measurementType)
   const chipLabel = showEffortScale ? getEffortLabel(measurementType) : t('workout:set.notes')
 
   return (
     // Botón transparente a 44×44 = área táctil (#10); el pill visual va en el span interior.
+    // `flexShrink: 0` porque en la rama flex de SetRow este botón es el item que puede encoger
+    // (su hermano va con `flex-1`, basis 0, y no cede): sin esto una etiqueta RPE larga desborda.
     <button
       onClick={onOpenDetails}
       title={chipLabel}
       aria-label={chipLabel}
-      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, minWidth: 44, minHeight: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
       <span
         style={{
@@ -48,6 +50,7 @@ export default function EffortPicker({
           fontWeight: 600,
           minWidth: 34,
           minHeight: 20,
+          whiteSpace: 'nowrap',
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',

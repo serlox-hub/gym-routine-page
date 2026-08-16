@@ -15,6 +15,7 @@ import {
   formatSetValue,
   formatShortDate,
   formatSecondsToMMSS,
+  formatEffortBadge,
   useSelectedGym,
   useResolvedWeightUnit,
   useExerciseUnitsByGym,
@@ -105,7 +106,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUni
   )
 }
 
-function HistoryTab({ sessions, weightUnit, timeUnit, distanceUnit, onSelectSet, onSessionClick }) {
+function HistoryTab({ sessions, measurementType = MeasurementType.WEIGHT_REPS, weightUnit, timeUnit, distanceUnit, onSelectSet, onSessionClick }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
@@ -171,8 +172,8 @@ function HistoryTab({ sessions, weightUnit, timeUnit, distanceUnit, onSelectSet,
                       </Pressable>
                     )}
                     {set.rir_actual !== null && set.rir_actual !== undefined && (
-                      <Text style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
-                        {set.rir_actual}
+                      <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
+                        {formatEffortBadge(set.rir_actual, measurementType)}
                       </Text>
                     )}
                   </View>
@@ -386,6 +387,7 @@ export default function ExerciseHistoryModal({
             />
             <HistoryTab
               sessions={displaySessions}
+              measurementType={measurementType}
               weightUnit={weightUnit}
               timeUnit={timeUnit}
               distanceUnit={distanceUnit}

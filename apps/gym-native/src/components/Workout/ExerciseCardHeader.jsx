@@ -2,7 +2,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native'
 import { ChevronDown, CheckCircle2 } from 'lucide-react-native'
 import { DropdownMenu } from '../ui'
 import { colors } from '../../lib/styles'
-import { getMuscleGroupName, t } from '@gym/shared'
+import { getMuscleGroupName, formatEffortBadge, MeasurementType, t } from '@gym/shared'
 
 function MetaPill({ children }) {
   return (
@@ -18,6 +18,7 @@ function ExerciseCardHeader({
   series,
   reps,
   rir,
+  measurementType = MeasurementType.WEIGHT_REPS,
   rest_seconds,
   collapsed,
   isCompleted = false,
@@ -28,7 +29,8 @@ function ExerciseCardHeader({
 
   const setsRepsParts = []
   if (series > 0 && reps) setsRepsParts.push(`${series} × ${reps}`)
-  if (rir != null) setsRepsParts.push(`@${rir}`)
+  // La escala depende del tipo de medición (RIR con reps, RPE textual en el resto): nunca crudo.
+  if (rir != null) setsRepsParts.push(formatEffortBadge(rir, measurementType))
   const setsRepsText = setsRepsParts.join(' · ')
 
   return (

@@ -142,13 +142,46 @@ export function getEffortInfo(value, measurementType) {
 }
 
 /**
- * Returns the badge string for a stored effort value: "@1" for RIR, "Fácil" for RPE.
- * Empty string when value is null/undefined.
+ * Único formato de esfuerzo para mostrar: "@1" en la escala RIR, la etiqueta ("Fácil") en RPE,
+ * donde el número guardado es un índice interno que no significa nada para el usuario.
+ * @param {number|null} value
+ * @param {string} [measurementType] - Sin tipo cae en RIR ("@2"), no en RPE: el fallback del resto
+ *   del código es `weight_reps` y un índice RPE mal interpretado pinta una palabra falsa.
+ * @returns {string} Cadena vacía cuando value es null/undefined.
  */
 export function formatEffortBadge(value, measurementType) {
   if (value == null) return ''
-  const label = getEffortInfo(value, measurementType)?.label ?? String(value)
-  return measurementTypeUsesReps(measurementType) ? `@${label}` : label
+  // Normalizado dentro, no en la firma: `exercises.measurement_type` es nullable, así que el tipo
+  // llega como `null` (que NO dispara el default de parámetro) tan a menudo como `undefined`.
+  const type = withDefaultMeasurementType(measurementType)
+  const label = getEffortInfo(value, type)?.label ?? String(value)
+  return measurementTypeUsesReps(type) ? `@${label}` : label
+}
+
+/**
+ * Fallback único de LECTURA para el tipo de medición. Lo comparten el resolutor, el formateador de
+ * esfuerzo y `getSetFieldsForMeasurementType` para que no puedan divergir. Los defaults de los
+ * `insert` (`exerciseApi`, `routineIOApi`) NO pasan por aquí a propósito: ahí se decide el valor
+ * que se almacena, no cómo se lee.
+ * Uso interno de shared: desde `apps/` usa `resolveMeasurementType(exercise)`.
+ * @param {string|null} measurementType
+ * @returns {string}
+ */
+export function withDefaultMeasurementType(measurementType) {
+  return measurementType || MeasurementType.WEIGHT_REPS
+}
+
+/**
+ * Tipo de medición de un ejercicio, con el fallback único de la app.
+ * `exercises.measurement_type` es nullable y el tipo decide la escala de esfuerzo, así que
+ * resolverlo distinto en cada pantalla hace que el mismo dato se lea en dos escalas: la tarjeta
+ * pintando `@2` (RIR) y el formulario ofreciendo "Fácil…Máximo" (RPE) para ese mismo valor.
+ * No mires `routine_exercises.measurement_type` (columna muerta, ver DECISIONS).
+ * @param {object|null} exercise
+ * @returns {string}
+ */
+export function resolveMeasurementType(exercise) {
+  return withDefaultMeasurementType(exercise?.measurement_type)
 }
 
 export function isValidMeasurementType(type) {

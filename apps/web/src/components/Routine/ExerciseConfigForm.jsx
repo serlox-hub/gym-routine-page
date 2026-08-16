@@ -8,6 +8,7 @@ import {
   getRepsLabel,
   getRepsPlaceholder,
   getExerciseName,
+  resolveMeasurementType,
 } from '@gym/shared'
 
 /**
@@ -31,7 +32,7 @@ function ExerciseConfigForm({
   errors = {},
 }) {
   const { t } = useTranslation()
-  const measurementType = exercise?.measurement_type
+  const measurementType = resolveMeasurementType(exercise)
   const effortLabel = getEffortLabel(measurementType)
 
   return (

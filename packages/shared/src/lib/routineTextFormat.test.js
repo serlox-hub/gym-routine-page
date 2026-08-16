@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { formatRoutineAsText } from './routineTextFormat.js'
 
 const baseExportData = {
+  exercises: [
+    { name_es: 'Press banca', measurement_type: 'weight_reps' },
+    { name_es: 'Press inclinado mancuernas', measurement_type: 'weight_reps' },
+  ],
   routine: {
     name: 'Push Pull Legs',
     description: 'PPL clásico de 3 días',
@@ -44,13 +48,46 @@ describe('formatRoutineAsText', () => {
     expect(out.split('\n')[0]).toBe('*Push Pull Legs*')
   })
 
-  it('formatea cada ejercicio con series×reps, RIR y descanso', () => {
+  it('formatea cada ejercicio con series×reps, esfuerzo y descanso', () => {
     const out = formatRoutineAsText(baseExportData)
-    expect(out).toContain('- Press banca · 4×8-10 · RIR 2 · 90s desc')
-    expect(out).toContain('- Press inclinado mancuernas · 3×10-12 · RIR 1 · 1 min desc')
+    expect(out).toContain('- Press banca · 4×8-10 · @2 · 90s de descanso')
+    expect(out).toContain('- Press inclinado mancuernas · 3×10-12 · @1 · 1 min de descanso')
   })
 
-  it('omite RIR y descanso si son null/undefined', () => {
+  it('usa la escala del tipo de medición del ejercicio, no siempre RIR', () => {
+    const data = {
+      exercises: [{ name_es: 'Cinta', measurement_type: 'level_time' }],
+      routine: {
+        name: 'R',
+        days: [{
+          name: 'D1', sort_order: 0,
+          blocks: [{ name: 'Principal', sort_order: 1, exercises: [
+            { exercise_name: 'Cinta', series: 1, reps: '20min', rir: 4, rest_seconds: null },
+          ] }],
+        }],
+      },
+    }
+    const out = formatRoutineAsText(data)
+    expect(out).toContain('- Cinta · 1×20min · Muy duro')
+    expect(out).not.toContain('@4')
+  })
+
+  it('cae a la escala RIR si el ejercicio no está en el catálogo del export', () => {
+    const data = {
+      routine: {
+        name: 'R',
+        days: [{
+          name: 'D1', sort_order: 0,
+          blocks: [{ name: 'Principal', sort_order: 1, exercises: [
+            { exercise_name: 'Press banca', series: 3, reps: '10', rir: 2, rest_seconds: null },
+          ] }],
+        }],
+      },
+    }
+    expect(formatRoutineAsText(data)).toContain('- Press banca · 3×10 · @2')
+  })
+
+  it('omite esfuerzo y descanso si son null/undefined', () => {
     const data = {
       routine: {
         name: 'Test',
@@ -65,7 +102,7 @@ describe('formatRoutineAsText', () => {
     const out = formatRoutineAsText(data)
     expect(out).toContain('- X · 3×10')
     expect(out).not.toContain('RIR')
-    expect(out).not.toContain('desc')
+    expect(out).not.toContain('descanso')
   })
 
   it('omite las notas del ejercicio', () => {
@@ -140,10 +177,10 @@ describe('formatRoutineAsText', () => {
       },
     }
     const out = formatRoutineAsText(data)
-    expect(out).toContain('45s desc')
+    expect(out).toContain('45s de descanso')
   })
 
-  it('acepta RIR de 0 (no lo trata como falsy)', () => {
+  it('acepta esfuerzo de 0 (no lo trata como falsy)', () => {
     const data = {
       routine: {
         name: 'R', days: [{
@@ -155,6 +192,6 @@ describe('formatRoutineAsText', () => {
       },
     }
     const out = formatRoutineAsText(data)
-    expect(out).toContain('RIR 0')
+    expect(out).toContain('@0')
   })
 })

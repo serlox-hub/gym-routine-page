@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS, SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
+import { resolveMeasurementType } from '../lib/measurementTypes.js'
 import { planSessionWeightConversion, resolveUnitsForExercises, buildGymChangeJob, pickGymUnitOverrides } from '../lib/sessionGymChange.js'
 import {
   buildSessionExercisesCache,
@@ -334,7 +335,7 @@ async function computeSessionStats({ sessionId, sessionDate, userId, gymId = nul
     const measurementTypes = {}
     for (const se of sessionExercises) {
       if (!setsByExercise[se.id]) continue
-      const mt = se.exercise?.measurement_type || 'weight_reps'
+      const mt = resolveMeasurementType(se.exercise)
       exerciseMap[se.id] = {
         exerciseId: se.exercise_id,
         measurementType: mt,

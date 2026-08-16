@@ -1,5 +1,6 @@
 import { getClient } from './_client.js'
 import { calculateSessionExerciseStats, mergeExerciseStats } from '../lib/sessionStatsCalculation.js'
+import { resolveMeasurementType } from '../lib/measurementTypes.js'
 
 // ============================================
 // UPSERT SESSION STATS (al finalizar sesión)
@@ -227,7 +228,7 @@ export async function recalculateSessionStats(sessionId) {
   const exerciseMap = {}
   const exerciseIds = new Set()
   for (const se of sessionExercises || []) {
-    const mt = se.exercise?.measurement_type || 'weight_reps'
+    const mt = resolveMeasurementType(se.exercise)
     exerciseMap[se.id] = { exerciseId: se.exercise_id, measurementType: mt }
     exerciseIds.add(se.exercise_id)
   }

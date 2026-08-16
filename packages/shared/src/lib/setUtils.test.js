@@ -15,7 +15,6 @@ import {
   formatPreviousSetValue,
   formatPreviousSetEffort,
   getSetsForExercise,
-  buildExtraExerciseConfig,
   shouldShowAnnotationColumn,
 } from './setUtils.js'
 
@@ -700,43 +699,6 @@ describe('setUtils', () => {
     it('retorna array vacío si no hay series', () => {
       const result = getSetsForExercise(completedSets, 999)
       expect(result).toHaveLength(0)
-    })
-  })
-
-  describe('buildExtraExerciseConfig', () => {
-    const exercise = { id: 1, name: 'Test', measurement_type: 'weight_reps' }
-
-    it('construye config con valores por defecto', () => {
-      const result = buildExtraExerciseConfig('extra-123', exercise, {})
-      expect(result).toMatchObject({
-        id: 'extra-123',
-        exercise,
-        series: 3,
-        reps: '10',
-        rir: 2,
-        rest_seconds: 90,
-        measurement_type: 'weight_reps',
-      })
-    })
-
-    it('usa valores personalizados', () => {
-      const result = buildExtraExerciseConfig('extra-123', exercise, {
-        series: 4,
-        reps: '8-10',
-        rir: 1,
-        rest_seconds: 120,
-      })
-      expect(result).toMatchObject({
-        series: 4,
-        reps: '8-10',
-        rir: 1,
-        rest_seconds: 120,
-      })
-    })
-
-    it('permite rir 0', () => {
-      const result = buildExtraExerciseConfig('extra-123', exercise, { rir: 0 })
-      expect(result.rir).toBe(0)
     })
   })
 

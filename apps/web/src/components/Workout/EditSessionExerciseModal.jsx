@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS, buildExerciseConfigForm, buildExerciseConfigFormFromRow, diffSessionExerciseFields, validateExerciseConfigForm } from '@gym/shared'
+import { QUERY_KEYS, buildExerciseConfigForm, buildExerciseConfigFormFromRow, diffSessionExerciseFields, validateExerciseConfigForm, resolveMeasurementType } from '@gym/shared'
 import { Modal } from '../ui/index.js'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm.jsx'
 import { ExerciseFormPanel } from '../Exercise/index.js'
@@ -45,12 +45,12 @@ export default function EditSessionExerciseModal({
     if (isOpen && sessionExercise) {
       setView('session')
       setErrors({})
-      setForm(buildExerciseConfigFormFromRow(sessionExercise, sessionExercise.exercise?.measurement_type))
+      setForm(buildExerciseConfigFormFromRow(sessionExercise, resolveMeasurementType(sessionExercise.exercise)))
     }
   }, [isOpen, sessionExercise])
 
   const handleSave = () => {
-    const { valid, errors: formErrors } = validateExerciseConfigForm(form, sessionExercise?.exercise?.measurement_type)
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveMeasurementType(sessionExercise?.exercise))
     setErrors(formErrors)
     if (!valid) return
     const { fields, newSeries } = diffSessionExerciseFields(

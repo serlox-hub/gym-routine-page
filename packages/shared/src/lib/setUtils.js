@@ -396,25 +396,6 @@ export function getSetsForExercise(completedSets, routineExerciseId) {
 }
 
 /**
- * Construye la configuración para un ejercicio extra
- * @param {string} extraId - ID generado para el ejercicio extra
- * @param {Object} exercise - Datos del ejercicio
- * @param {{series?: number, reps?: string, rir?: number, rest_seconds?: number}} config - Configuración
- * @returns {Object}
- */
-export function buildExtraExerciseConfig(extraId, exercise, config) {
-  return {
-    id: extraId,
-    exercise,
-    series: config.series || 3,
-    reps: config.reps || '10',
-    rir: config.rir ?? 2,
-    rest_seconds: config.rest_seconds || 90,
-    measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
-  }
-}
-
-/**
  * ¿Mostrar la columna «Notas» (esfuerzo/anotación) en la lista de series durante la sesión?
  * Presente si hay algo que anotar: RIR, notas o vídeo activados en preferencias. Fuente ÚNICA
  * para SetRow y SetsList (web+native) → cabecera y filas nunca se desincronizan. El gating fino

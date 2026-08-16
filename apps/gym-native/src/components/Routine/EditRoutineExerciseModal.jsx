@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui'
-import { buildExerciseConfigForm, buildExerciseConfigFormFromRow, buildReplaceExerciseForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm } from '@gym/shared'
+import { buildExerciseConfigForm, buildExerciseConfigFormFromRow, buildReplaceExerciseForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm, resolveMeasurementType } from '@gym/shared'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm'
 import ExercisePickerModal from './ExercisePickerModal'
 import { ExerciseFormPanel } from '../Exercise'
@@ -47,14 +47,14 @@ export default function EditRoutineExerciseModal({
     if (routineExercise) {
       setView('config')
       setErrors({})
-      setForm(buildExerciseConfigFormFromRow(routineExercise, routineExercise.exercise?.measurement_type))
+      setForm(buildExerciseConfigFormFromRow(routineExercise, resolveMeasurementType(routineExercise.exercise)))
     }
   }, [routineExercise])
 
   if (!routineExercise) return null
 
   const handleSubmit = () => {
-    const { valid, errors: formErrors } = validateExerciseConfigForm(form, exercise?.measurement_type)
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveMeasurementType(exercise))
     setErrors(formErrors)
     if (!valid) return
     onSubmit({ exerciseId: routineExercise.id, ...parseExerciseConfigForm(form) })
@@ -65,7 +65,7 @@ export default function EditRoutineExerciseModal({
   // reemplazo tampoco edita esos campos: los hereda, y si cambia el tipo de
   // medición el objetivo se resetea a un default garantizado válido.
   const handleReplace = (newExercise) => {
-    const replaceForm = buildReplaceExerciseForm(form, newExercise.measurement_type, exercise?.measurement_type)
+    const replaceForm = buildReplaceExerciseForm(form, resolveMeasurementType(newExercise), resolveMeasurementType(exercise))
     onSubmit({ exerciseId: routineExercise.id, exercise_id: newExercise.id, ...parseExerciseConfigForm(replaceForm) })
   }
 

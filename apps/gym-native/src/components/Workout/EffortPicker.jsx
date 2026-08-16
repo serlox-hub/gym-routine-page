@@ -2,7 +2,7 @@ import { Text, Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { StickyNote, Video } from 'lucide-react-native'
 import { colors } from '../../lib/styles'
-import { getEffortLabel, formatEffortBadge, measurementTypeUsesReps } from '@gym/shared'
+import { getEffortLabel, formatEffortBadge } from '@gym/shared'
 
 /**
  * Chip de la columna «Notas»: SOLO display + disparador. Muestra un glifo con prioridad
@@ -15,7 +15,6 @@ export default function EffortPicker({
   value, measurementType, note, hasVideo = false, emptyDash = false, active = false, showEffortScale = true, onOpenDetails,
 }) {
   const { t } = useTranslation()
-  const usesReps = measurementTypeUsesReps(measurementType)
 
   // Glifo por prioridad RIR (si activado y fijado) > nota > vídeo > vacío. `hasMore` = bolita.
   const rirSet = showEffortScale && value != null
@@ -24,7 +23,8 @@ export default function EffortPicker({
   const hasMore = primary === 'rir' ? (hasNote || hasVideo) : primary === 'note' ? hasVideo : false
   const inviteBorder = primary === 'empty' && active
   const textColor = (rirSet || active) ? colors.textSecondary : colors.textMuted
-  const compactValue = usesReps ? formatEffortBadge(value, measurementType) : String(value)
+  // Siempre la etiqueta ("@2" en RIR, "Duro" en RPE): el número de RPE no dice nada al usuario.
+  const compactValue = formatEffortBadge(value, measurementType)
   const emptyLabel = emptyDash ? '–' : getEffortLabel(measurementType)
   const chipLabel = showEffortScale ? getEffortLabel(measurementType) : t('workout:set.notes')
 
@@ -47,7 +47,7 @@ export default function EffortPicker({
         borderColor: inviteBorder ? colors.border : 'transparent',
       }}
     >
-      {primary === 'rir' && <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>{compactValue}</Text>}
+      {primary === 'rir' && <Text numberOfLines={1} style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>{compactValue}</Text>}
       {primary === 'note' && <StickyNote size={13} color={colors.textSecondary} />}
       {primary === 'video' && <Video size={13} color={colors.textSecondary} />}
       {primary === 'empty' && (showEffortScale

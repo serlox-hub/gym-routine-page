@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trophy, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
-import { useSelectedGym, useReassignSessionGym, getGymDisplayName } from '@gym/shared'
+import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveMeasurementType } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, NumberTextInput } from '../ui'
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
@@ -40,7 +40,7 @@ import { colors } from '../../lib/styles'
 
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
   const { t } = useTranslation()
-  const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
+  const measurementType = resolveMeasurementType(exercise)
   const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(measurementType)
   const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
 
@@ -154,7 +154,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       )}
       {hasRir && (
         <Pressable onPress={() => setShowDetails(true)} style={[badgeStyle, { paddingHorizontal: 7, paddingVertical: 3 }]} accessibilityLabel={t('workout:set.rir')}>
-          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>
+          <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>
             {formatEffortBadge(set.rir_actual, measurementType)}
           </Text>
         </Pressable>
@@ -332,7 +332,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
   const [showHistory, setShowHistory] = useState(false)
-  const measurementType = exercise.measurement_type || 'weight_reps'
+  const measurementType = resolveMeasurementType(exercise)
   const isHistoryClickable = !exercise.deleted_at && !isEditing
 
   return (
@@ -433,7 +433,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                   </Pressable>
                 )}
                 {set.rir_actual !== null && set.rir_actual !== undefined && (
-                  <Text style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
+                  <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
                     {formatEffortBadge(set.rir_actual, measurementType)}
                   </Text>
                 )}

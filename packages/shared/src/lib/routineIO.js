@@ -84,7 +84,7 @@ ROUTINE EXERCISE FIELDS (in "blocks[].exercises"):
 - exercise_name: must match "name_es" from exercises (REQUIRED)
 - series: number of sets (REQUIRED)
 - reps: string with reps, time or distance (REQUIRED, e.g.: "8-12", "30s", "40m")
-- rir: 0-5, reps in reserve (optional)
+- rir: effort. Scale depends on the exercise measurement_type: -1..3 for types with reps (weight_reps, reps_only; -1 = to failure, 3 = 3 or more in reserve), 1..5 for any other type (RPE, 1 = easy, 5 = max). Optional
 - rest_seconds: rest between sets in seconds (optional)
 - notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest", "Tempo 3-1-1-0")`
 

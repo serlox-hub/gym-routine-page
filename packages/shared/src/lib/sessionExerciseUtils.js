@@ -1,9 +1,9 @@
 import {
-  MeasurementType,
   measurementTypeUsesDistance,
   measurementTypeUsesReps,
   measurementTypeUsesTime,
   measurementTypeUsesWeight,
+  withDefaultMeasurementType,
 } from './measurementTypes.js'
 
 /**
@@ -49,7 +49,7 @@ export function diffSessionExerciseFields(edited, original) {
  * lista por familia de tipo (antes estaban duplicadas aquí en literales).
  */
 export function getSetFieldsForMeasurementType(measurementType) {
-  const mt = measurementType || MeasurementType.WEIGHT_REPS
+  const mt = withDefaultMeasurementType(measurementType)
   return {
     showWeight: measurementTypeUsesWeight(mt),
     showReps: measurementTypeUsesReps(mt),

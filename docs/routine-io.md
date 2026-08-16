@@ -10,6 +10,8 @@ checklist de "cuando cambie el modelo de datos".
 - **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 6**) y mapea BD ↔ JSON.
 - **`packages/shared/src/lib/routineIO.js`** — prompts de IA (`buildChatbotPrompt`, `buildAdaptRoutinePrompt`) y el doc del formato (`ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`). Puro, sin BD.
 
+⚠️ **Tercer consumidor del shape del export:** `packages/shared/src/lib/routineTextFormat.js` (compartir rutina como texto) empareja `blocks[].exercises[].exercise_name` con `exercises[].name_es` para leer su `measurement_type`, que decide la escala de esfuerzo. Si se recortan columnas del catálogo del export, **degrada en silencio** a la escala RIR (un RPE se pintaría `@4` en vez de "Muy duro"). Hay test de shape en `routineApi.test.js`.
+
 ## Emparejamiento por CLAVE ESTABLE (no por `name_es`)
 
 `importRoutine` resuelve cada ejercicio contra el catálogo/custom por `name_en` → `name_es`

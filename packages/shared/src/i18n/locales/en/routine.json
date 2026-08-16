@@ -264,5 +264,9 @@
   "reorder": "Reorder",
   "moveToPosition": "Move to position",
   "position": "Position {{number}}",
-  "currentPosition": "(current)"
+  "currentPosition": "(current)",
+  "share": {
+    "restMin": "{{minutes}} min rest",
+    "restSec": "{{seconds}}s rest"
+  }
 }

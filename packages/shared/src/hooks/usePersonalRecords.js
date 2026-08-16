@@ -5,6 +5,7 @@ import { computeExercisePRSets, computeExercisePRSetNumbers } from '../lib/sessi
 import { fetchExerciseBests } from '../api/exerciseStatsApi.js'
 import { fetchUserExerciseGymUnit } from '../api/exerciseApi.js'
 import { resolveWeightUnit } from '../lib/exerciseUtils.js'
+import { resolveMeasurementType } from '../lib/measurementTypes.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 import { useWorkoutStore } from './_stores.js'
@@ -173,7 +174,7 @@ export function useSessionPRDetection() {
       for (const [sessionExerciseId, sets] of byExercise) {
         const sessionExercise = sessionExercises.find(se => se.id === sessionExerciseId)
         if (!sessionExercise) continue
-        const measurementType = sessionExercise.exercise?.measurement_type || 'weight_reps'
+        const measurementType = resolveMeasurementType(sessionExercise.exercise)
         const preBests = await readPreSessionBests(sessionExercise.exercise_id)
         if (cancelled) return
         if (preBests === 'none') continue

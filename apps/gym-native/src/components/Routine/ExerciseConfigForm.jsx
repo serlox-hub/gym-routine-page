@@ -12,6 +12,7 @@ import {
   getRepsLabel,
   getRepsPlaceholder,
   getExerciseName,
+  resolveMeasurementType,
 } from '@gym/shared'
 
 function FormField({ label, required, secondary, error, children }) {
@@ -100,7 +101,7 @@ export default function ExerciseConfigForm({
 }) {
   const { t } = useTranslation()
   const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }))
-  const measurementType = exercise?.measurement_type
+  const measurementType = resolveMeasurementType(exercise)
   const effortOptions = [
     { value: '', label: t('common:labels.none') },
     ...getEffortOptions(measurementType).map(opt => ({ value: String(opt.value), label: opt.label })),

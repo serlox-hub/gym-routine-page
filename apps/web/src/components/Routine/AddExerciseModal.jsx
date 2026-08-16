@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { buildExerciseConfigForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm } from '@gym/shared'
+import { buildExerciseConfigForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm, resolveMeasurementType } from '@gym/shared'
 import ExercisePickerModal from './ExercisePickerModal.jsx'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
 
@@ -24,13 +24,13 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
 
   const handleSelectExercise = (exercise) => {
     setSelectedExercise(exercise)
-    setForm(buildExerciseConfigForm(exercise.measurement_type))
+    setForm(buildExerciseConfigForm(resolveMeasurementType(exercise)))
     setErrors({})
   }
 
   const handleSubmit = () => {
     if (!selectedExercise) return
-    const { valid, errors: formErrors } = validateExerciseConfigForm(form, selectedExercise.measurement_type)
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveMeasurementType(selectedExercise))
     setErrors(formErrors)
     if (!valid) return
     onSubmit({

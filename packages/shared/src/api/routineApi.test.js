@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { exportRoutine, importRoutine, duplicateRoutine } from './routineApi.js'
 import { makeQueryMock } from './_testUtils.js'
+import { formatRoutineAsText } from '../lib/routineTextFormat.js'
 
 // Mock del módulo _client para controlar getClient()
 vi.mock('./_client.js', () => ({
@@ -105,6 +106,40 @@ describe('exportRoutine', () => {
 
     // Total: 1 + 1 + N + 1 = N+3 (routine + days + N routine_exercises + exercises)
     expect(fromCalls.length).toBe(fakeDays.length + 3)
+  })
+
+  it('el catálogo lleva name_es y measurement_type (los empareja formatRoutineAsText)', async () => {
+    const fakeRoutine = { name: 'Rutina Test', description: null, goal: null }
+    const fakeDays = [{ id: 'day-1', name: 'Día 1', estimated_duration_min: 60, sort_order: 1 }]
+    const fakeRoutineExercises = [{
+      series: 3, reps: '20min', rir: 4, rest_seconds: null, notes: null, sort_order: 1, is_warmup: false,
+      exercise: { id: 'ex-1', name: 'Cinta', measurement_type: 'level_time', instructions: null, muscle_group: { name: 'Cardio' } },
+    }]
+    const fakeExercises = [{ name: 'Cinta', name_en: 'Treadmill', measurement_type: 'level_time', instructions: null, muscle_group: { name: 'Cardio' } }]
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'routines') {
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: fakeRoutine, error: null }) }
+        }
+        if (table === 'routine_days') {
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), order: vi.fn().mockResolvedValue({ data: fakeDays, error: null }) }
+        }
+        if (table === 'routine_exercises') {
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), order: vi.fn().mockResolvedValue({ data: fakeRoutineExercises, error: null }) }
+        }
+        return { select: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: fakeExercises, error: null }) }
+      },
+    }))
+
+    const exported = await exportRoutine('routine-123')
+
+    // Sin measurement_type en el catálogo el texto degrada a la escala RIR: "@4" en vez de "Muy duro"
+    expect(exported.exercises[0]).toMatchObject({ name_es: 'Cinta', measurement_type: 'level_time' })
+    // El nombre del bloque es la clave del emparejamiento: debe salir de la misma columna
+    expect(exported.routine.days[0].blocks[0].exercises[0].exercise_name).toBe('Cinta')
+    // Contrato completo (no solo el shape): el consumidor real resuelve la escala con ese catálogo
+    expect(formatRoutineAsText(exported)).toContain('Muy duro')
   })
 })
 

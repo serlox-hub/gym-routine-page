@@ -159,6 +159,14 @@ describe('routineIO - funciones puras (shared)', () => {
       expect(ROUTINE_JSON_RULES).not.toContain('time_per_side')
     })
 
+    it('ROUTINE_JSON_RULES documenta las dos escalas de esfuerzo, no un rango fijo', () => {
+      // El prompt es el generador principal de rutinas: un rango que no existe en ninguna escala
+      // fabrica valores que la UI no sabe pintar (el viejo "rir: 0-5")
+      expect(ROUTINE_JSON_RULES).not.toContain('rir: 0-5')
+      expect(ROUTINE_JSON_RULES).toContain('-1..3')
+      expect(ROUTINE_JSON_RULES).toContain('1..5')
+    })
+
     it('ambos prompts usan las mismas constantes', () => {
       const chatbotPrompt = buildChatbotPrompt({ objetivo: 'Test', diasPorSemana: '3' })
       const adaptPrompt = buildAdaptRoutinePrompt()

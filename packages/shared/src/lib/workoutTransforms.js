@@ -1,4 +1,5 @@
 import { BLOCK_NAMES } from './constants.js'
+import { resolveMeasurementType } from './measurementTypes.js'
 import { createSetKey } from './setUtils.js'
 
 // ============================================
@@ -234,7 +235,7 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
         name_en: exercise.name_en || null,
         instructions: exercise.instructions || null,
         gif_key: exercise.gif_key ?? null,
-        measurement_type: exercise.measurement_type || 'weight_reps',
+        measurement_type: resolveMeasurementType(exercise),
         is_system: exercise.is_system ?? null,
         muscle_group: exercise.muscle_group || null,
       },

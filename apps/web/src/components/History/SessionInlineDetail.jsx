@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
-import { useSelectedGym, useReassignSessionGym, getGymDisplayName } from '@gym/shared'
+import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveMeasurementType } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, CaretEndInput } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
@@ -41,7 +41,7 @@ import { colors } from '../../lib/styles.js'
 
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete }) {
   const { t } = useTranslation()
-  const measurementType = exercise.measurement_type || MeasurementType.WEIGHT_REPS
+  const measurementType = resolveMeasurementType(exercise)
   const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(measurementType)
   const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
 
@@ -162,7 +162,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       )}
       {hasRir && (
         <button onClick={() => setShowDetails(true)} style={{ ...badgeStyle, padding: '3px 7px' }} title={t('workout:set.rir')}>
-          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>
+          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
             {formatEffortBadge(set.rir_actual, measurementType)}
           </span>
         </button>
@@ -283,7 +283,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
   const [showHistory, setShowHistory] = useState(false)
-  const measurementType = exercise.measurement_type || 'weight_reps'
+  const measurementType = resolveMeasurementType(exercise)
   const isHistoryClickable = !exercise.deleted_at && !isEditing
 
   return (
@@ -375,7 +375,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                   </button>
                 )}
                 {set.rir_actual !== null && set.rir_actual !== undefined && (
-                  <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
+                  <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center', whiteSpace: 'nowrap' }}>
                     {formatEffortBadge(set.rir_actual, measurementType)}
                   </span>
                 )}
