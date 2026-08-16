@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { diffSessionExerciseFields, buildEmptySetData } from './sessionExerciseUtils.js'
+import { diffSessionExerciseFields, buildEmptySetData, getSetFieldsForMeasurementType } from './sessionExerciseUtils.js'
+import { MEASUREMENT_TYPES } from './measurementTypes.js'
 
 describe('diffSessionExerciseFields', () => {
   const original = {
@@ -27,6 +28,20 @@ describe('diffSessionExerciseFields', () => {
     const edited = { series: '3', reps: '12', rir: '2', restSeconds: '90', notes: 'Nota original' }
     const { fields } = diffSessionExerciseFields(edited, original)
     expect(fields.reps).toBe('12')
+  })
+
+  it('ignora el objetivo vacío en vez de mandar null (columna NOT NULL)', () => {
+    const edited = { series: '3', reps: '', rir: '2', restSeconds: '90', notes: 'Nota original' }
+    const { fields } = diffSessionExerciseFields(edited, original)
+    expect(fields).not.toHaveProperty('reps')
+  })
+
+  it('propaga el objetivo cuando el original venía sin valor', () => {
+    const { fields } = diffSessionExerciseFields(
+      { series: '3', reps: '30s', rir: '2', restSeconds: '90', notes: 'Nota original' },
+      { ...original, reps: null },
+    )
+    expect(fields.reps).toBe('30s')
   })
 
   it('detecta cambio de rir', () => {
@@ -147,5 +162,37 @@ describe('buildEmptySetData', () => {
     const result = buildEmptySetData({ ...base, exercise: {} })
     expect(result.weight).toBe(0)
     expect(result.repsCompleted).toBe(0)
+  })
+})
+
+describe('getSetFieldsForMeasurementType', () => {
+  // Tabla exhaustiva sobre los 12 tipos: congela la equivalencia con los
+  // predicados de measurementTypes.js tras sustituir las listas literales.
+  const EXPECTED = {
+    weight_reps: { showWeight: true, showReps: true, showTime: false, showDistance: false },
+    reps_only: { showWeight: false, showReps: true, showTime: false, showDistance: false },
+    time: { showWeight: false, showReps: false, showTime: true, showDistance: false },
+    weight_time: { showWeight: true, showReps: false, showTime: true, showDistance: false },
+    distance: { showWeight: false, showReps: false, showTime: false, showDistance: true },
+    weight_distance: { showWeight: true, showReps: false, showTime: false, showDistance: true },
+    calories: { showWeight: false, showReps: false, showTime: false, showDistance: false },
+    level_time: { showWeight: false, showReps: false, showTime: true, showDistance: false },
+    level_distance: { showWeight: false, showReps: false, showTime: false, showDistance: true },
+    level_calories: { showWeight: false, showReps: false, showTime: false, showDistance: false },
+    distance_time: { showWeight: false, showReps: false, showTime: true, showDistance: true },
+    distance_pace: { showWeight: false, showReps: false, showTime: false, showDistance: true },
+  }
+
+  it('cubre los 12 tipos de medición declarados', () => {
+    expect(Object.keys(EXPECTED).sort()).toEqual([...MEASUREMENT_TYPES].sort())
+  })
+
+  it.each(Object.entries(EXPECTED))('resuelve los campos de %s', (type, expected) => {
+    expect(getSetFieldsForMeasurementType(type)).toEqual(expected)
+  })
+
+  it('cae a weight_reps sin tipo', () => {
+    expect(getSetFieldsForMeasurementType(undefined)).toEqual(EXPECTED.weight_reps)
+    expect(getSetFieldsForMeasurementType(null)).toEqual(EXPECTED.weight_reps)
   })
 })

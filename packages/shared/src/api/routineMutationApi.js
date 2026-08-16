@@ -162,10 +162,13 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
       routine_day_id: dayId,
       is_warmup: esCalentamiento,
       exercise_id: exerciseId,
-      series: series || 3,
-      reps: reps || '8-12',
+      // Sin defaults: series/reps son NOT NULL y los valida el formulario
+      // (validateExerciseConfigForm). Un valor ausente debe reventar aquí, no
+      // convertirse en "3 series de 8-12" en un ejercicio de cardio.
+      series,
+      reps,
       rir: rir ?? null,
-      rest_seconds: rest_seconds || null,
+      rest_seconds: rest_seconds ?? null,
       sort_order: nextExerciseOrder,
       notes: notes || null,
       superset_group: superset_group ?? null,

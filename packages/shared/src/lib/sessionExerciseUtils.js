@@ -1,3 +1,11 @@
+import {
+  MeasurementType,
+  measurementTypeUsesDistance,
+  measurementTypeUsesReps,
+  measurementTypeUsesTime,
+  measurementTypeUsesWeight,
+} from './measurementTypes.js'
+
 /**
  * Compara los valores editados con los originales del session exercise
  * y devuelve solo los campos que cambiaron.
@@ -12,7 +20,9 @@ export function diffSessionExerciseFields(edited, original) {
   const newSeries = parseInt(edited.series, 10)
   if (!isNaN(newSeries) && newSeries !== original.series) fields.series = newSeries
 
-  if (edited.reps !== (original.reps ?? '')) fields.reps = edited.reps || null
+  // `session_exercises.reps` es NOT NULL: nunca se envía vacío (el formulario lo
+  // valida antes), así que un valor vacío se ignora en lugar de mandar null.
+  if (edited.reps && edited.reps !== (original.reps ?? '')) fields.reps = edited.reps
 
   const newRir = parseInt(edited.rir, 10)
   if (edited.rir === '' && original.rir != null) fields.rir = null
@@ -35,14 +45,16 @@ export function diffSessionExerciseFields(edited, original) {
 
 /**
  * Devuelve qué campos de serie aplican según el tipo de medición.
+ * Delega en los predicados de `measurementTypes.js` para que exista una sola
+ * lista por familia de tipo (antes estaban duplicadas aquí en literales).
  */
 export function getSetFieldsForMeasurementType(measurementType) {
-  const mt = measurementType || 'weight_reps'
+  const mt = measurementType || MeasurementType.WEIGHT_REPS
   return {
-    showWeight: ['weight_reps', 'weight_time', 'weight_distance'].includes(mt),
-    showReps: ['weight_reps', 'reps_only'].includes(mt),
-    showTime: ['time', 'weight_time', 'level_time', 'distance_time'].includes(mt),
-    showDistance: ['distance', 'weight_distance', 'level_distance', 'distance_time', 'distance_pace'].includes(mt),
+    showWeight: measurementTypeUsesWeight(mt),
+    showReps: measurementTypeUsesReps(mt),
+    showTime: measurementTypeUsesTime(mt),
+    showDistance: measurementTypeUsesDistance(mt),
   }
 }
 

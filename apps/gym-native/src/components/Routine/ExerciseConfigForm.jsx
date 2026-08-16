@@ -2,11 +2,19 @@ import { View, Text, TextInput, Pressable, ScrollView, Modal as RNModal } from '
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, NumberTextInput } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
-import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder, getExerciseName } from '@gym/shared'
+import {
+  formatSupersetLabel,
+  getEffortLabel,
+  getEffortOptions,
+  getRepsLabel,
+  getRepsPlaceholder,
+  getExerciseName,
+} from '@gym/shared'
 
-function FormField({ label, required, secondary, children }) {
+function FormField({ label, required, secondary, error, children }) {
   return (
     <View>
       <Text
@@ -16,21 +24,19 @@ function FormField({ label, required, secondary, children }) {
         {label}{required && <Text style={{ color: colors.danger }}> *</Text>}
       </Text>
       {children}
+      {error && <Text className="text-xs mt-1" style={{ color: colors.danger }}>{error}</Text>}
     </View>
   )
 }
 
-function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) {
-  const { t } = useTranslation()
+const PICKER_BOTTOM_PADDING = 32
+
+/** Equivalente nativo del <select> web: fila pulsable + hoja de opciones. */
+function OptionPicker({ value, onChange, options, title, emptyLabel }) {
   const [showPicker, setShowPicker] = useState(false)
-
-  const options = [
-    { value: '', label: t('routine:superset.noSuperset') },
-    ...existingSupersets.map(id => ({ value: String(id), label: formatSupersetLabel(id) })),
-    { value: String(nextSupersetId), label: `+ ${t('common:labels.new')} ${formatSupersetLabel(nextSupersetId)}` },
-  ]
-
-  const selected = options.find(o => o.value === (value || ''))
+  const insets = useSafeAreaInsets()
+  const current = value ?? ''
+  const selected = options.find(o => o.value === current)
 
   return (
     <>
@@ -39,8 +45,8 @@ function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) 
         className="flex-row items-center justify-between p-3 rounded-lg"
         style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
       >
-        <Text style={{ color: value ? colors.textPrimary : colors.textSecondary }}>
-          {selected?.label || t('routine:superset.noSuperset')}
+        <Text style={{ color: current ? colors.textPrimary : colors.textSecondary }}>
+          {selected?.label || emptyLabel}
         </Text>
         <ChevronDown size={16} color={colors.textSecondary} />
       </Pressable>
@@ -50,16 +56,20 @@ function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) 
           className="flex-1 justify-end"
           style={{ backgroundColor: colors.overlaySoft }}
         >
-          <Pressable onPress={(e) => e.stopPropagation()} className="bg-surface-block rounded-t-2xl pb-8">
-            <Text className="text-primary font-semibold p-4">{t('routine:superset.title')}</Text>
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            className="bg-surface-block rounded-t-2xl"
+            style={{ paddingBottom: insets.bottom + PICKER_BOTTOM_PADDING }}
+          >
+            <Text className="text-primary font-semibold p-4">{title}</Text>
             {options.map(opt => (
               <Pressable
                 key={opt.value}
                 onPress={() => { onChange(opt.value); setShowPicker(false) }}
                 className="px-4 py-3"
-                style={(value || '') === opt.value ? { backgroundColor: colors.successBgSubtle } : {}}
+                style={current === opt.value ? { backgroundColor: colors.successBgSubtle } : {}}
               >
-                <Text style={{ color: (value || '') === opt.value ? colors.success : colors.textPrimary }}>
+                <Text style={{ color: current === opt.value ? colors.success : colors.textPrimary }}>
                   {opt.label}
                 </Text>
               </Pressable>
@@ -71,6 +81,12 @@ function SupersetPicker({ value, onChange, existingSupersets, nextSupersetId }) 
   )
 }
 
+/**
+ * Formulario para configurar series, objetivo, esfuerzo y notas de un ejercicio.
+ * Espejo del equivalente web: los campos se adaptan al `measurement_type`
+ * (objetivo en reps/tiempo/distancia/kcal, esfuerzo en RIR o RPE). `series`
+ * aplica a todos los tipos: define cuántas filas se registran en la sesión.
+ */
 export default function ExerciseConfigForm({
   exercise,
   form,
@@ -80,9 +96,20 @@ export default function ExerciseConfigForm({
   nextSupersetId = 1,
   showSupersetField = false,
   hideExerciseName = false,
+  errors = {},
 }) {
   const { t } = useTranslation()
   const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }))
+  const measurementType = exercise?.measurement_type
+  const effortOptions = [
+    { value: '', label: t('common:labels.none') },
+    ...getEffortOptions(measurementType).map(opt => ({ value: String(opt.value), label: opt.label })),
+  ]
+  const supersetOptions = [
+    { value: '', label: t('routine:superset.noSuperset') },
+    ...existingSupersets.map(id => ({ value: String(id), label: formatSupersetLabel(id) })),
+    { value: String(nextSupersetId), label: `+ ${t('common:labels.new')} ${formatSupersetLabel(nextSupersetId)}` },
+  ]
 
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
@@ -94,7 +121,7 @@ export default function ExerciseConfigForm({
 
       <View className="flex-row gap-3 mb-4">
         <View className="flex-1">
-          <FormField label={t('routine:exercise.series')} required={!isSessionMode}>
+          <FormField label={t('routine:exercise.series')} required error={errors.series}>
             <NumberTextInput
               value={form.series}
               onChangeText={update('series')}
@@ -104,11 +131,11 @@ export default function ExerciseConfigForm({
           </FormField>
         </View>
         <View className="flex-1">
-          <FormField label={getRepsLabel(exercise.measurement_type)} required={!isSessionMode}>
+          <FormField label={getRepsLabel(measurementType)} required error={errors.reps}>
             <TextInput
               value={form.reps}
               onChangeText={update('reps')}
-              placeholder={getRepsPlaceholder(exercise.measurement_type)}
+              placeholder={getRepsPlaceholder(measurementType)}
               placeholderTextColor={colors.textMuted}
               style={inputStyle}
             />
@@ -121,23 +148,22 @@ export default function ExerciseConfigForm({
 
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <FormField label="RIR" secondary>
-              <NumberTextInput
+            <FormField label={getEffortLabel(measurementType)} secondary error={errors.rir}>
+              <OptionPicker
                 value={form.rir}
-                onChangeText={update('rir')}
-                placeholder="Ej: 2"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="numeric"
-                style={inputStyle}
+                onChange={update('rir')}
+                options={effortOptions}
+                title={getEffortLabel(measurementType)}
+                emptyLabel={t('common:labels.none')}
               />
             </FormField>
           </View>
           <View className="flex-1">
-            <FormField label={t('routine:exercise.rest')} secondary>
+            <FormField label={t('routine:exercise.rest')} secondary error={errors.rest_seconds}>
               <NumberTextInput
                 value={form.rest_seconds}
                 onChangeText={update('rest_seconds')}
-                placeholder="Ej: 90"
+                placeholder={t('routine:exercise.restPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 keyboardType="numeric"
                 style={inputStyle}
@@ -160,11 +186,12 @@ export default function ExerciseConfigForm({
         {showSupersetField && (
           <View>
             <FormField label={t('routine:superset.title')} secondary>
-              <SupersetPicker
+              <OptionPicker
                 value={form.superset_group}
                 onChange={update('superset_group')}
-                existingSupersets={existingSupersets}
-                nextSupersetId={nextSupersetId}
+                options={supersetOptions}
+                title={t('routine:superset.title')}
+                emptyLabel={t('routine:superset.noSuperset')}
               />
             </FormField>
             <Text className="text-secondary text-xs mt-1">

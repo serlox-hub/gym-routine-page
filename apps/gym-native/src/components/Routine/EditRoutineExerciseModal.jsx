@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui'
-import { getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
+import { buildExerciseConfigForm, buildExerciseConfigFormFromRow, buildReplaceExerciseForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm } from '@gym/shared'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm'
 import ExercisePickerModal from './ExercisePickerModal'
 import { ExerciseFormPanel } from '../Exercise'
@@ -27,10 +27,6 @@ function ViewToggle({ view, onChangeView, labels }) {
   )
 }
 
-const DEFAULT_FORM = {
-  series: '3', reps: '', rir: '', rest_seconds: '', notes: '', superset_group: '',
-}
-
 export default function EditRoutineExerciseModal({
   isOpen,
   onClose,
@@ -42,34 +38,34 @@ export default function EditRoutineExerciseModal({
 }) {
   const { t } = useTranslation()
   const [view, setView] = useState('config')
-  const [form, setForm] = useState(DEFAULT_FORM)
+  const [form, setForm] = useState(() => buildExerciseConfigForm())
+  const [errors, setErrors] = useState({})
 
   const exercise = routineExercise?.exercise
 
   useEffect(() => {
     if (routineExercise) {
       setView('config')
-      setForm({
-        series: String(routineExercise.series || 3),
-        reps: routineExercise.reps || '',
-        rir: routineExercise.rir != null ? String(routineExercise.rir) : '',
-        rest_seconds: routineExercise.rest_seconds ? String(routineExercise.rest_seconds) : '',
-        notes: routineExercise.notes || '',
-        superset_group: routineExercise.superset_group != null
-          ? String(routineExercise.superset_group)
-          : '',
-      })
+      setErrors({})
+      setForm(buildExerciseConfigFormFromRow(routineExercise, routineExercise.exercise?.measurement_type))
     }
   }, [routineExercise])
 
   if (!routineExercise) return null
 
   const handleSubmit = () => {
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, exercise?.measurement_type)
+    setErrors(formErrors)
+    if (!valid) return
     onSubmit({ exerciseId: routineExercise.id, ...parseExerciseConfigForm(form) })
   }
 
+  // Sin validar: esta vista solo renderiza el picker, así que un error no se
+  // podría ni mostrar ni corregir (sería un callejón sin salida mudo). El
+  // reemplazo tampoco edita esos campos: los hereda, y si cambia el tipo de
+  // medición el objetivo se resetea a un default garantizado válido.
   const handleReplace = (newExercise) => {
-    const replaceForm = { ...form, rir: '', notes: '' }
+    const replaceForm = buildReplaceExerciseForm(form, newExercise.measurement_type, exercise?.measurement_type)
     onSubmit({ exerciseId: routineExercise.id, exercise_id: newExercise.id, ...parseExerciseConfigForm(replaceForm) })
   }
 
@@ -112,6 +108,7 @@ export default function EditRoutineExerciseModal({
               hideExerciseName
               existingSupersets={existingSupersets}
               nextSupersetId={nextSuperset}
+              errors={errors}
             />
           </View>
           <ExerciseConfigFormButtons

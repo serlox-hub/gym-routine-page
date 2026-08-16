@@ -5,5 +5,9 @@
   "passwordsDontMatch": "Passwords don't match",
   "nameRequired": "Name is required",
   "enterPassword": "Please enter a password",
-  "invalidFileFormat": "Invalid file format"
+  "invalidFileFormat": "Invalid file format",
+  "seriesMin": "Add at least 1 set",
+  "targetRequired": "Enter a value for {{field}}",
+  "effortInvalid": "That effort value is not valid",
+  "restInvalid": "Rest can't be negative"
 }

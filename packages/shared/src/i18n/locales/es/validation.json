@@ -5,5 +5,9 @@
   "passwordsDontMatch": "Las contraseñas no coinciden",
   "nameRequired": "El nombre es obligatorio",
   "enterPassword": "Por favor ingresa una contraseña",
-  "invalidFileFormat": "Formato de archivo inválido"
+  "invalidFileFormat": "Formato de archivo inválido",
+  "seriesMin": "Pon al menos 1 serie",
+  "targetRequired": "Indica un valor para {{field}}",
+  "effortInvalid": "Ese valor de esfuerzo no es válido",
+  "restInvalid": "El descanso no puede ser negativo"
 }

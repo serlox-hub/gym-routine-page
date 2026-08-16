@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS, diffSessionExerciseFields } from '@gym/shared'
+import { QUERY_KEYS, buildExerciseConfigForm, buildExerciseConfigFormFromRow, diffSessionExerciseFields, validateExerciseConfigForm } from '@gym/shared'
 import { Modal } from '../ui/index.js'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm.jsx'
 import { ExerciseFormPanel } from '../Exercise/index.js'
@@ -25,10 +25,6 @@ function ViewToggle({ view, onChangeView, labels }) {
   )
 }
 
-const DEFAULT_FORM = {
-  series: '3', reps: '', rir: '', rest_seconds: '', notes: '', superset_group: '',
-}
-
 export default function EditSessionExerciseModal({
   isOpen,
   onClose,
@@ -40,25 +36,23 @@ export default function EditSessionExerciseModal({
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const [view, setView] = useState('session')
-  const [form, setForm] = useState(DEFAULT_FORM)
+  const [form, setForm] = useState(() => buildExerciseConfigForm())
+  const [errors, setErrors] = useState({})
 
   const exerciseId = sessionExercise?.exercise?.id || sessionExercise?.exercise_id
 
   useEffect(() => {
     if (isOpen && sessionExercise) {
       setView('session')
-      setForm({
-        series: String(sessionExercise.series ?? 3),
-        reps: sessionExercise.reps ?? '',
-        rir: sessionExercise.rir != null ? String(sessionExercise.rir) : '',
-        rest_seconds: sessionExercise.rest_seconds ? String(sessionExercise.rest_seconds) : '',
-        notes: sessionExercise.notes ?? '',
-        superset_group: sessionExercise.superset_group != null ? String(sessionExercise.superset_group) : '',
-      })
+      setErrors({})
+      setForm(buildExerciseConfigFormFromRow(sessionExercise, sessionExercise.exercise?.measurement_type))
     }
   }, [isOpen, sessionExercise])
 
   const handleSave = () => {
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, sessionExercise?.exercise?.measurement_type)
+    setErrors(formErrors)
+    if (!valid) return
     const { fields, newSeries } = diffSessionExerciseFields(
       { series: form.series, reps: form.reps, rir: form.rir, restSeconds: form.rest_seconds, notes: form.notes, supersetGroup: form.superset_group },
       sessionExercise,
@@ -97,6 +91,7 @@ export default function EditSessionExerciseModal({
             hideExerciseName
             showSupersetField={existingSupersets.length > 0}
             existingSupersets={existingSupersets}
+            errors={errors}
           />
           <ExerciseConfigFormButtons
             onBack={onClose}

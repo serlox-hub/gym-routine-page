@@ -117,6 +117,18 @@ export function getEffortOptions(measurementType) {
 }
 
 /**
+ * ¿`value` es un valor de esfuerzo válido para este tipo de medición?
+ * La escala cambia con el tipo (RIR incluye -1 = "F"; RPE va de 1 a 5), así que
+ * un rango numérico fijo no sirve: se valida contra las opciones reales.
+ * @param {number} value
+ * @param {string} measurementType
+ * @returns {boolean}
+ */
+export function isValidEffortValue(value, measurementType) {
+  return getEffortOptions(measurementType).some(opt => opt.value === value)
+}
+
+/**
  * Returns the display info for a stored effort value (rir/rpe)
  * based on the exercise's measurement type. Returns { label, description } or null.
  */

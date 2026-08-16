@@ -372,20 +372,15 @@ export default function RoutineDetailScreen({ route, navigation }) {
         }}
         onSubmit={async (data) => {
           try {
-            if (isReplacingExercise) {
-              await updateExercise.mutateAsync({
-                exerciseId: data.exerciseId,
-                dayId: editExerciseDayId,
-                data: { exercise_id: data.exercise_id },
-              })
-            } else {
-              const { exerciseId, ...updateData } = data
-              await updateExercise.mutateAsync({
-                exerciseId,
-                dayId: editExerciseDayId,
-                data: updateData,
-              })
-            }
+            // Mismo camino al reemplazar: `data` ya trae `exercise_id` y el
+            // modal (buildReplaceExerciseForm) ha limpiado esfuerzo y notas del
+            // ejercicio saliente y reajustado el objetivo si cambia el tipo.
+            const { exerciseId, ...updateData } = data
+            await updateExercise.mutateAsync({
+              exerciseId,
+              dayId: editExerciseDayId,
+              data: updateData,
+            })
             setShowEditExercise(false)
             setEditingExercise(null)
           } catch { /* handled by TanStack Query */ }

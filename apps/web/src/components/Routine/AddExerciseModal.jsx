@@ -2,45 +2,41 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { getDefaultReps, getNextSupersetId, parseExerciseConfigForm } from '@gym/shared'
+import { buildExerciseConfigForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm } from '@gym/shared'
 import ExercisePickerModal from './ExercisePickerModal.jsx'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
-
-const DEFAULT_FORM = {
-  series: '3',
-  reps: '',
-  notes: '',
-  rir: '',
-  rest_seconds: '',
-  superset_group: '',
-}
 
 function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine', existingSupersets = [], existingExercises = [] }) {
   const { t } = useTranslation()
   const [selectedExercise, setSelectedExercise] = useState(null)
-  const [form, setForm] = useState(DEFAULT_FORM)
+  const [form, setForm] = useState(() => buildExerciseConfigForm())
+  const [errors, setErrors] = useState({})
 
   const isSessionMode = mode === 'session'
 
   useEffect(() => {
     if (isOpen) {
       setSelectedExercise(null)
-      setForm(DEFAULT_FORM)
+      setForm(buildExerciseConfigForm())
+      setErrors({})
     }
   }, [isOpen])
 
   const handleSelectExercise = (exercise) => {
     setSelectedExercise(exercise)
-    setForm({ ...DEFAULT_FORM, reps: getDefaultReps(exercise.measurement_type) })
+    setForm(buildExerciseConfigForm(exercise.measurement_type))
+    setErrors({})
   }
 
   const handleSubmit = () => {
     if (!selectedExercise) return
-    const defaultReps = getDefaultReps(selectedExercise.measurement_type)
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, selectedExercise.measurement_type)
+    setErrors(formErrors)
+    if (!valid) return
     onSubmit({
       exerciseId: selectedExercise.id,
       exercise: selectedExercise,
-      ...parseExerciseConfigForm(form, { defaultReps }),
+      ...parseExerciseConfigForm(form),
     })
   }
 
@@ -80,6 +76,7 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
           showSupersetField={showSupersetField}
           existingSupersets={existingSupersets}
           nextSupersetId={nextSuperset}
+          errors={errors}
         />
       </div>
       <ExerciseConfigFormButtons

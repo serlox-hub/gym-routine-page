@@ -1,11 +1,23 @@
 import { useTranslation } from 'react-i18next'
 import { Button, Input, Select } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { formatSupersetLabel, getRepsLabel, getRepsPlaceholder, getExerciseName } from '@gym/shared'
+import {
+  formatSupersetLabel,
+  getEffortLabel,
+  getEffortOptions,
+  getRepsLabel,
+  getRepsPlaceholder,
+  getExerciseName,
+} from '@gym/shared'
 
 /**
- * Formulario para configurar series, reps, notas de un ejercicio
- * Reutilizable para añadir y editar ejercicios en rutinas/sesiones
+ * Formulario para configurar series, objetivo, esfuerzo y notas de un ejercicio.
+ * Reutilizable para añadir y editar ejercicios en rutinas/sesiones.
+ *
+ * Los campos se adaptan al `measurement_type`: el objetivo cambia de etiqueta
+ * (reps/tiempo/distancia/kcal) y el esfuerzo cambia de escala (RIR con reps,
+ * RPE sin ellas). `series` aplica a todos los tipos: define cuántas filas se
+ * registran en la sesión.
  */
 function ExerciseConfigForm({
   exercise,
@@ -16,8 +28,11 @@ function ExerciseConfigForm({
   nextSupersetId = 1,
   showSupersetField = false,
   hideExerciseName = false,
+  errors = {},
 }) {
   const { t } = useTranslation()
+  const measurementType = exercise?.measurement_type
+  const effortLabel = getEffortLabel(measurementType)
 
   return (
     <div className="space-y-4">
@@ -34,18 +49,20 @@ function ExerciseConfigForm({
 
       <div className="grid grid-cols-2 gap-3">
         <Input
-          label={isSessionMode ? t('routine:exercise.series') : <>{t('routine:exercise.series')} <span style={{ color: colors.danger }}>*</span></>}
+          label={<>{t('routine:exercise.series')} <span style={{ color: colors.danger }}>*</span></>}
           type="number"
           min="1"
           value={form.series}
           onChange={(e) => setForm(prev => ({ ...prev, series: e.target.value }))}
+          error={errors.series}
         />
         <Input
-          label={isSessionMode ? getRepsLabel(exercise.measurement_type) : <>{getRepsLabel(exercise.measurement_type)} <span style={{ color: colors.danger }}>*</span></>}
+          label={<>{getRepsLabel(measurementType)} <span style={{ color: colors.danger }}>*</span></>}
           type="text"
           value={form.reps}
           onChange={(e) => setForm(prev => ({ ...prev, reps: e.target.value }))}
-          placeholder={getRepsPlaceholder(exercise.measurement_type)}
+          placeholder={getRepsPlaceholder(measurementType)}
+          error={errors.reps}
         />
       </div>
 
@@ -60,22 +77,25 @@ function ExerciseConfigForm({
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <Input
-            label="RIR"
-            type="number"
-            min="0"
-            max="5"
+          <Select
+            label={effortLabel}
             value={form.rir}
             onChange={(e) => setForm(prev => ({ ...prev, rir: e.target.value }))}
-            placeholder="Ej: 2"
-          />
+            error={errors.rir}
+          >
+            <option value="">{t('common:labels.none')}</option>
+            {getEffortOptions(measurementType).map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </Select>
           <Input
             label={t('routine:exercise.rest')}
             type="number"
             min="0"
             value={form.rest_seconds}
             onChange={(e) => setForm(prev => ({ ...prev, rest_seconds: e.target.value }))}
-            placeholder="Ej: 90"
+            placeholder={t('routine:exercise.restPlaceholder')}
+            error={errors.rest_seconds}
           />
         </div>
 

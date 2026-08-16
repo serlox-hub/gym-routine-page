@@ -10,6 +10,7 @@ import {
   measurementTypeUsesLevel,
   getEffortLabel,
   getEffortOptions,
+  isValidEffortValue,
   getEffortInfo,
   formatEffortBadge,
   getDefaultReps,
@@ -195,6 +196,35 @@ describe('measurementTypes', () => {
 
     it('trata un tipo desconocido como no-reps (RPE)', () => {
       expect(getEffortOptions('unknown').map(o => o.value)).toEqual([1, 2, 3, 4, 5])
+    })
+  })
+
+  describe('isValidEffortValue', () => {
+    it('acepta toda la escala RIR (incluido F = -1) en tipos con reps', () => {
+      for (const value of [-1, 0, 1, 2, 3]) {
+        expect(isValidEffortValue(value, 'weight_reps'), `RIR ${value}`).toBe(true)
+      }
+    })
+
+    it('rechaza en RIR los valores que solo existen en RPE', () => {
+      expect(isValidEffortValue(4, 'weight_reps')).toBe(false)
+      expect(isValidEffortValue(5, 'weight_reps')).toBe(false)
+    })
+
+    it('acepta la escala RPE (1-5) en tipos sin reps como level_time', () => {
+      for (const value of [1, 2, 3, 4, 5]) {
+        expect(isValidEffortValue(value, 'level_time'), `RPE ${value}`).toBe(true)
+      }
+    })
+
+    it('rechaza en RPE los valores que solo existen en RIR', () => {
+      expect(isValidEffortValue(-1, 'level_time')).toBe(false)
+      expect(isValidEffortValue(0, 'level_time')).toBe(false)
+    })
+
+    it('rechaza NaN y valores fuera de cualquier escala', () => {
+      expect(isValidEffortValue(NaN, 'weight_reps')).toBe(false)
+      expect(isValidEffortValue(99, 'level_time')).toBe(false)
     })
   })
 
