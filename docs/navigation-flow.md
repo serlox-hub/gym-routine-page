@@ -2,9 +2,9 @@
 
 ```mermaid
 flowchart LR
-    classDef page fill:#1a1a2e,stroke:#BEFF00,color:#fff,stroke-width:2px
+    classDef page fill:#1a1a2e,stroke:#A8E600,color:#fff,stroke-width:2px
     classDef tab fill:#1a1a2e,stroke:#00D4FF,color:#fff,stroke-width:2px
-    classDef modal fill:#2a2a42,stroke:#7C5CFC,color:#fff,stroke-width:1px,stroke-dasharray:5
+    classDef modal fill:#2a2a42,stroke:#6B4AE8,color:#fff,stroke-width:1px,stroke-dasharray:5
     classDef overlay fill:#1a1a2e,stroke:#FF6B35,color:#fff,stroke-width:2px
 
     %% ============ TABS (entry points) ============

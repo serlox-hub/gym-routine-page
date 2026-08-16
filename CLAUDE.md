@@ -190,9 +190,9 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 1. **NUNCA** usar hex/rgba hardcodeados en componentes. Siempre `colors.X` importado desde `lib/styles.js`
 2. **Nuevo color** → añadirlo a `colors` en AMBOS `styles.js` (web + native). Añadirlo además a AMBOS `tailwind.config` **solo si se va a usar como clase utilitaria** (`bg-x`, `text-x`); los tokens que solo se usan inline vía `colors.X` (como `teal`, `pink`, `gifBg`) no hace falta duplicarlos en los configs
 3. **Tailwind configs** importan desde `styles.js` — nunca hardcodear valores en los configs
-4. **Opacidades decorativas** (gradientes, sombras en Landing) → usar constantes `RGB_ACCENT` / `RGB_PURPLE` exportadas desde `styles.js` con template literals: `` `rgba(${RGB_ACCENT}, 0.08)` ``
+4. **Opacidades decorativas** (gradientes, sombras en Landing) → usar constantes `RGB_SUCCESS` / `RGB_PURPLE` exportadas desde `styles.js` con template literals: `` `rgba(${RGB_SUCCESS}, 0.08)` ``
 5. **No duplicar tokens semánticos** — si dos tokens tienen el mismo valor hex, usar uno solo (ej: `orange` cubre tanto el acento naranja como el color de dropset)
-6. **`success` (lima `#BEFF00`) — cuidado con el alpha sobre fondos oscuros.** Al ser amarillo-verde sin azul, en translúcido vira a oliva/caqui. Regla:
+6. **`success` (lima `#A8E600`) — cuidado con el alpha sobre fondos oscuros.** Al ser amarillo-verde sin azul, en translúcido vira a oliva/caqui. Regla:
    - **Estado "seleccionado/activo"**: SÍ se usa el wash lima suave `successBg` (~0.12) como fondo, combinado con borde + texto lima sólidos. Es el patrón establecido en toda la app (chips/opciones de `NewRoutineFlow`, `OnboardingWizard`, badges como `PlanBadge`, `StreakCard`, etc.) y es el que se debe seguir por consistencia.
    - **Marcar "hecho" o teñir superficies grandes**: NO usar wash lima (viraría a oliva); usar el lima en **sólido** (borde, barra, icono, texto, check) o un neutro elevado (`bgTertiary`).
    - **Primer plano SOBRE lima sólido** (check, icono o texto dentro de un relleno lima `success`/`actionPrimary`): SIEMPRE `bgPrimary` (oscuro), NUNCA `white` — el lima es muy claro y el blanco encima no contrasta. Patrón establecido: `SetRow` (check), `OnboardingWizard`/`NewRoutineFlow` (radios).

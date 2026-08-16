@@ -1,5 +1,5 @@
 export const gradients = {
-  lime: ['#BEFF00', '#4ADE80'],
+  lime: ['#A8E600', '#4ADE80'],
   orange: ['#FF6B35', '#FFAA6B'],
 }
 
@@ -67,29 +67,29 @@ export const colors = {
   black: '#000000',
 
   // Acentos
-  success: '#BEFF00',
+  success: '#A8E600',
   warning: '#d29922',
   danger: '#f85149',
-  purple: '#7C5CFC',
-  purpleAccent: '#7C5CFC',
+  purple: '#6B4AE8',
+  purpleAccent: '#6B4AE8',
   teal: '#88c6be',
   pink: '#db61a2',
   orange: '#FF6B35',
   gold: '#F5B800',
   gifBg: '#F4F4F6', // panel claro para enmarcar GIFs de ejercicio, que vienen sobre fondo blanco (issue #6)
-  actionPrimary: '#BEFF00',
+  actionPrimary: '#A8E600',
   textDark: '#0A0A0F',
 
   // Fondos semánticos (alpha)
-  purpleBg: 'rgba(124, 92, 252, 0.15)',
-  purpleAccentBg: 'rgba(124, 92, 252, 0.2)',
-  successBg: 'rgba(190, 255, 0, 0.12)',
-  successBgSubtle: 'rgba(190, 255, 0, 0.08)',
+  purpleBg: 'rgba(107, 74, 232, 0.15)',
+  purpleAccentBg: 'rgba(107, 74, 232, 0.2)',
+  successBg: 'rgba(168, 230, 0, 0.12)',
+  successBgSubtle: 'rgba(168, 230, 0, 0.08)',
   warningBg: 'rgba(210, 153, 34, 0.15)',
   orangeBg: 'rgba(255, 107, 53, 0.15)',
   goldBg: 'rgba(245, 184, 0, 0.15)',
   dangerBg: 'rgba(248, 81, 73, 0.1)',
-  actionPrimaryBg: 'rgba(190, 255, 0, 0.15)',
+  actionPrimaryBg: 'rgba(168, 230, 0, 0.15)',
   overlay: 'rgba(0, 0, 0, 0.85)',
   overlaySoft: 'rgba(0, 0, 0, 0.5)',
   shadow: 'rgba(0, 0, 0, 0.4)', // color de sombras (boxShadow/shadowColor); alpha fijo → token semántico, no RGB_
