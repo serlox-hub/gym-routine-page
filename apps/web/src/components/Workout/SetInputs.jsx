@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CaretEndInput } from '../ui/index.js'
+import { CaretEndInput, DecimalInput } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { SetField, useDurationDigits } from '@gym/shared'
 
@@ -45,12 +45,15 @@ function NumberInput({ value, onChange, onCommit, disabled, inputMode = 'numeric
     }
   }
 
+  // Peso y distancia van por DecimalInput (type=text): con type="number" el navegador en un
+  // locale de punto se come la coma y "82,5" se guardaría como 825. El resto son enteros.
+  const decimal = inputMode === 'decimal'
+  const Field = decimal ? DecimalInput : CaretEndInput
+  const numberProps = decimal ? {} : { type: 'number', inputMode, min: '0', step: 1 }
+
   return (
-    <CaretEndInput
-      type="number"
-      inputMode={inputMode}
-      min="0"
-      step={inputMode === 'decimal' ? 'any' : 1}
+    <Field
+      {...numberProps}
       value={value}
       onChange={handleChange}
       onFocus={onFocus}

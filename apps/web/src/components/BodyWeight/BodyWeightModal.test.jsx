@@ -1,4 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { initReactI18next } from 'react-i18next'
+import { i18n, initI18n } from '@gym/shared'
+
+// Sin esto los componentes pintan la CLAVE ("body:weight.label") en vez del texto y cualquier
+// búsqueda por texto visible falla. Va por archivo, no en setup.js: importar el barrel de
+// @gym/shared globalmente rompe los tests de hooks que mockean _stores.js.
+i18n.use(initReactI18next)
+initI18n()
 import { render, screen, fireEvent } from '@testing-library/react'
 import BodyWeightModal from './BodyWeightModal.jsx'
 
@@ -91,6 +99,30 @@ describe('BodyWeightModal', () => {
     })
   })
 
+  // El campo NO puede ser type="number": ahí el navegador decide el separador decimal según SU
+  // locale, y en uno de punto "80,5" se convierte en 805 sin avisar. Ver ui/DecimalInput.jsx.
+  it('acepta la coma como separador decimal (80,5 son 80.5 kg, no 805)', () => {
+    render(
+      <BodyWeightModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onSubmit={mockOnSubmit}
+      />
+    )
+
+    const weightInput = screen.getByPlaceholderText(/75\.5/i)
+    expect(weightInput).not.toHaveAttribute('type', 'number')
+
+    fireEvent.change(weightInput, { target: { value: '80,5' } })
+    fireEvent.click(screen.getByRole('button', { name: /registrar/i }))
+
+    expect(mockOnSubmit).toHaveBeenCalledWith({
+      id: undefined,
+      weight: 80.5,
+      notes: null,
+    })
+  })
+
   it('muestra título "Editar peso" cuando hay record', () => {
     render(
       <BodyWeightModal
@@ -114,11 +146,11 @@ describe('BodyWeightModal', () => {
       />
     )
 
-    expect(screen.getByPlaceholderText(/75\.5/i)).toHaveValue(75.5)
+    expect(screen.getByPlaceholderText(/75\.5/i)).toHaveValue('75.5')
     expect(screen.getByPlaceholderText(/después de desayunar/i)).toHaveValue('nota existente')
   })
 
-  it('muestra "Guardando..." cuando isPending', () => {
+  it('muestra el estado de carga cuando isPending', () => {
     render(
       <BodyWeightModal
         isOpen={true}
@@ -128,7 +160,7 @@ describe('BodyWeightModal', () => {
       />
     )
 
-    expect(screen.getByRole('button', { name: /guardando/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cargando/i })).toBeInTheDocument()
   })
 
   it('llama onClose al hacer clic en Cancelar', () => {

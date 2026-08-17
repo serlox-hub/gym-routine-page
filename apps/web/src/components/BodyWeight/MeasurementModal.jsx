@@ -55,10 +55,7 @@ function MeasurementModal({ isOpen, onClose, onSubmit, measurementType, unit = '
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label={`${label} (${unit}) *`}
-          type="number"
-          step="0.1"
-          min="0.1"
-          max="500"
+          decimal
           value={form.value}
           onChange={(e) => setForm(prev => ({ ...prev, value: e.target.value }))}
           placeholder={t(unit === 'cm' ? 'body:measurements.valuePlaceholderCm' : 'body:measurements.valuePlaceholderIn')}

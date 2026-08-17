@@ -55,9 +55,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
+    // .jsx incluido: sin él los tests de componentes (Modal, BodyWeightModal, DecimalInput)
+    // NUNCA se ejecutaban — el glob solo cogía .test.js
     include: [
-      'src/**/*.test.js',
-      '../../packages/shared/src/**/*.test.js',
+      'src/**/*.test.{js,jsx}',
+      '../../packages/shared/src/**/*.test.{js,jsx}',
     ],
     exclude: ['**/node_modules/**', 'e2e'],
   },

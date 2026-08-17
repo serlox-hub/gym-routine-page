@@ -1,11 +1,13 @@
 import { inputStyle } from '../../lib/styles.js'
 import CaretEndInput from './CaretEndInput.jsx'
+import DecimalInput from './DecimalInput.jsx'
 
-function Input({ label, error, className = '', ...props }) {
+function Input({ label, error, className = '', decimal = false, ...props }) {
   // En inputs numéricos, colocar el cursor al final al enfocar (edición cómoda de valores
   // prellenados). En texto/email se mantiene el comportamiento nativo (caret donde se toca).
+  // `decimal`: número con decimales → DecimalInput (nunca type="number", ver ese archivo).
   const numeric = props.type === 'number' || props.inputMode === 'numeric' || props.inputMode === 'decimal'
-  const Field = numeric ? CaretEndInput : 'input'
+  const Field = decimal ? DecimalInput : numeric ? CaretEndInput : 'input'
   return (
     <div className={className}>
       {label && (

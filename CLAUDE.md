@@ -352,6 +352,7 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ Business logic in apps/ (belongs in packages/shared/src/lib/)
 - ❌ Hardcoded user-facing strings (use `t()` from i18n)
 - ❌ Inputs numéricos crudos (`<input type=number>` / `<TextInput keyboardType>` numérico) → usar `CaretEndInput` (web) / `NumberTextInput` (native) para el cursor-al-final al enfocar; `<Input type=number>` (web) ya lo hereda. Ver `docs/DECISIONS.md`
+- ❌ `<input type="number">` para valores CON decimales (peso, distancia, medidas). El navegador decide el separador según SU locale: en uno de punto, teclear "82,5" guarda **825** sin avisar. Usar `DecimalInput` (o `<Input decimal>`) — web; native ya sanea la coma. Los enteros sí van en `type=number`. Ver `docs/DECISIONS.md`
 - ❌ Devolver las flechitas a los `input[type=number]` de web: `index.css` las quita **globalmente** a propósito (en móvil no se usan y Chrome les reserva ~14px DENTRO del input, que en columnas estrechas recortan el valor). Decisión de app, no parche de una pantalla
 - ❌ Adding translation keys to only one language (must add to both es/ and en/)
 - ❌ Defaults silenciosos en el parseo de formularios (`parseInt(x) || 3`). Un campo obligatorio se **valida** y se muestra el error inline; el parser no inventa valores. Ver `routineExerciseForm.js` y `docs/DECISIONS.md`

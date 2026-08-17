@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowRightLeft, X } from 'lucide-react'
-import { Modal, CaretEndInput } from '../ui/index.js'
+import { Modal, DecimalInput } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { convertWeight, getWeightUnits, toggleWeightMode } from '@gym/shared'
 
@@ -52,10 +52,8 @@ function WeightConverterModal({ isOpen, onClose }) {
           <div className="flex-1 flex flex-col items-center">
             <span className="uppercase mb-1" style={labelStyle}>{fromUnit}</span>
             <div className="w-full" style={{ ...boxBaseStyle, border: `2px solid ${colors.success}` }}>
-              <CaretEndInput
+              <DecimalInput
                 autoFocus
-                type="number"
-                inputMode="decimal"
                 value={value}
                 onChange={e => setValue(e.target.value)}
                 placeholder="0"

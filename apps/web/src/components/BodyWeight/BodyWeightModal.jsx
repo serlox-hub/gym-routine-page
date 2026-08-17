@@ -52,10 +52,7 @@ function BodyWeightModal({ isOpen, onClose, onSubmit, record = null, unit = 'kg'
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label={`${t('body:weight.label')} (${unit}) *`}
-          type="number"
-          step="0.1"
-          min="0.1"
-          max="500"
+          decimal
           value={form.weight}
           onChange={(e) => setForm(prev => ({ ...prev, weight: e.target.value }))}
           placeholder={t('body:weight.weightPlaceholder')}

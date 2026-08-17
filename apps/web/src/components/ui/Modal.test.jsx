@@ -1,4 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
+import { initReactI18next } from 'react-i18next'
+import { i18n, initI18n } from '@gym/shared'
+
+// Sin esto los componentes pintan la CLAVE ("body:weight.label") en vez del texto y cualquier
+// búsqueda por texto visible falla. Va por archivo, no en setup.js: importar el barrel de
+// @gym/shared globalmente rompe los tests de hooks que mockean _stores.js.
+i18n.use(initReactI18next)
+initI18n()
 import { render, screen, fireEvent } from '@testing-library/react'
 import Modal from './Modal.jsx'
 
