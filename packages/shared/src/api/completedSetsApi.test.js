@@ -20,6 +20,27 @@ beforeEach(() => {
 // ============================================
 
 describe('upsertCompletedSet', () => {
+  // Contrato del que depende buildSetFieldsPayload (setColumns.js): mandar solo los campos del
+  // measurement type NO debe pisar las columnas de los otros tipos. Se cumple porque las claves
+  // `undefined` desaparecen al serializar y PostgREST no las mete en el ON CONFLICT DO UPDATE.
+  it('las claves ausentes no viajan en el body (el upsert no pisa columnas de otros tipos)', async () => {
+    const mock = makeQueryMock({ data: {}, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+
+    await upsertCompletedSet({
+      sessionId: 'session-1', sessionExerciseId: 'se-1', setNumber: 1,
+      level: 5, caloriesBurned: 200,
+    })
+
+    // ⚠️ Serializar de verdad: Object.keys SÍ ve las claves con valor undefined, el body enviado NO
+    const body = JSON.parse(JSON.stringify(mock.upsert.mock.calls[0][0]))
+    expect(body).not.toHaveProperty('weight')
+    expect(body).not.toHaveProperty('reps_completed')
+    expect(body).not.toHaveProperty('time_seconds')
+    expect(body).toMatchObject({ level: 5, calories_burned: 200 })
+  })
+
+
   it('returns upserted set on success', async () => {
     const upsertedSet = {
       id: 'set-1',

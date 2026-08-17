@@ -106,6 +106,19 @@ export function getEffortLabel(measurementType) {
 }
 
 /**
+ * ¿El esfuerzo se pinta como PALABRA ("Moderado", escala RPE) en vez del compacto "@2" (RIR)?
+ * Decide a la vez el ancho de la columna «Notas» de la fila de serie y el tamaño de fuente del
+ * chip: si fila y chip lo resolvieran por separado, el pill se saldría de su celda. Normaliza el
+ * tipo (la columna es nullable) para que los dos lados no puedan discrepar.
+ * @param {string|null} measurementType
+ * @param {boolean} [showEffortScale] - preferencia show_rir_input; apagada no hay palabra que medir
+ * @returns {boolean}
+ */
+export function effortRendersAsWord(measurementType, showEffortScale = true) {
+  return !!showEffortScale && !measurementTypeUsesReps(withDefaultMeasurementType(measurementType))
+}
+
+/**
  * Opciones de esfuerzo para el selector inline según el tipo de medición:
  * RIR (F/0/1/2/3+) para tipos con reps, RPE (1-5) para el resto. Fuente única
  * compartida por el chip inline y la hoja de detalles.
@@ -160,7 +173,7 @@ export function formatEffortBadge(value, measurementType) {
 
 /**
  * Fallback único de LECTURA para el tipo de medición. Lo comparten el resolutor, el formateador de
- * esfuerzo y `getSetFieldsForMeasurementType` para que no puedan divergir. Los defaults de los
+ * esfuerzo y `getSetColumns` para que no puedan divergir. Los defaults de los
  * `insert` (`exerciseApi`, `routineIOApi`) NO pasan por aquí a propósito: ahí se decide el valor
  * que se almacena, no cómo se lee.
  * Uso interno de shared: desde `apps/` usa `resolveMeasurementType(exercise)`.

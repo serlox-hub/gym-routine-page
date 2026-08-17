@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  MeasurementType,
   MEASUREMENT_TYPES,
   WEIGHT_MEASUREMENT_TYPES,
   REPS_MEASUREMENT_TYPES,
@@ -13,6 +14,7 @@ import {
   isValidEffortValue,
   getEffortInfo,
   formatEffortBadge,
+  effortRendersAsWord,
   resolveMeasurementType,
   getDefaultReps,
   getRepsLabel,
@@ -452,5 +454,33 @@ describe('measurementTypes', () => {
     it('retorna valor por defecto para tipo desconocido', () => {
       expect(getRepsPlaceholder('unknown')).toBe('Ej: 8-12')
     })
+  })
+})
+
+describe('effortRendersAsWord', () => {
+  it('los tipos con reps usan el compacto "@2", no palabra', () => {
+    expect(effortRendersAsWord(MeasurementType.WEIGHT_REPS)).toBe(false)
+    expect(effortRendersAsWord(MeasurementType.REPS_ONLY)).toBe(false)
+  })
+
+  it('los tipos sin reps usan la escala RPE, que sí es palabra', () => {
+    expect(effortRendersAsWord(MeasurementType.TIME)).toBe(true)
+    expect(effortRendersAsWord(MeasurementType.LEVEL_CALORIES)).toBe(true)
+  })
+
+  it('sin la preferencia de esfuerzo no hay palabra que medir', () => {
+    expect(effortRendersAsWord(MeasurementType.TIME, false)).toBe(false)
+  })
+
+  it('tipo nulo/vacío cae en weight_reps (fallback único de lectura)', () => {
+    expect(effortRendersAsWord(null)).toBe(false)
+    expect(effortRendersAsWord(undefined)).toBe(false)
+    expect(effortRendersAsWord('')).toBe(false)
+  })
+
+  // Fila, cabecera y chip lo consultan por separado: si divergiera del predicado de reps, el
+  // pill de la palabra se saldría de una celda dimensionada para "@2".
+  it.each(MEASUREMENT_TYPES)('casa con measurementTypeUsesReps en %s', (type) => {
+    expect(effortRendersAsWord(type)).toBe(!measurementTypeUsesReps(type))
   })
 })

@@ -69,7 +69,6 @@
     "previous": "Previous",
     "lastTime": "Last time",
     "firstTime": "First time with this exercise",
-    "addSet": "Add set",
     "addVideo": "Add video",
     "videoTooLarge": "Video too large",
     "videoTooLargeDetail": "{{size}} MB. Max allowed: 100 MB",
@@ -84,7 +83,11 @@
       "label": "Set type",
       "normal": "Normal",
       "dropset": "Dropset"
-    }
+    },
+    "startTimer": "Start {{time}}",
+    "stopTimer": "Stop",
+    "previousShort": "Last",
+    "levelShort": "Lv"
   },
   "rest": {
     "title": "Rest",

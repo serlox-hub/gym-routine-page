@@ -1,11 +1,19 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { CircleMinus, CirclePlus, Clock } from 'lucide-react-native'
-import SetRow, { COL_SET, COL_PREV, COL_RIR, COL_CHECK } from './SetRow'
+import SetRow, { COL_SET, COL_PREV, COL_CHECK, SET_ROW_GAP, SET_ROW_ACCENT, getEffortColumnWidth } from './SetRow'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreferences } from '../../hooks/usePreferences'
 import { colors } from '../../lib/styles'
-import { MeasurementType, formatRelativeDate, shouldShowAnnotationColumn } from '@gym/shared'
+import { formatRelativeDate, shouldShowAnnotationColumn, getSetColumns } from '@gym/shared'
+
+const HEADER_STYLE = {
+  textAlign: 'center',
+  color: colors.textSecondary,
+  fontSize: 10,
+  fontWeight: '600',
+  letterSpacing: 0.3,
+}
 
 function SetsList({
   exerciseKey,
@@ -15,7 +23,6 @@ function SetsList({
   progressionEnabled = false,
   measurementType,
   weightUnit,
-  timeUnit,
   distanceUnit,
   rest_seconds,
   reps,
@@ -30,7 +37,9 @@ function SetsList({
   // Columna «Notas» presente si hay algo que anotar (RIR/notas/vídeo). Helper compartido con SetRow.
   const annotationColumn = shouldShowAnnotationColumn(preferences)
   const completedSets = useWorkoutStore(state => state.completedSets)
-  const showWeightReps = measurementType === MeasurementType.WEIGHT_REPS
+  // Columnas de valor del tipo (1 o 2) — mismas que pinta SetRow, con su cabecera y unidad
+  const columns = getSetColumns(measurementType, { weightUnit, distanceUnit })
+  const effortWidth = getEffortColumnWidth(measurementType, preferences?.show_rir_input ?? true)
   const activeSetNumber = (() => {
     for (let i = 1; i <= setsCount; i++) {
       if (!completedSets[`${exerciseKey}-${i}`]) return i
@@ -62,24 +71,23 @@ function SetsList({
         )}
       </View>
 
-      {/* Cabecera de columnas (solo weight_reps) — anchos desde las constantes de SetRow (fuente
-          única). Columna «Notas» condicional a annotationColumn (igual que SetRow). */}
-      {showWeightReps && setsCount > 0 && (
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, paddingHorizontal: 4 }}>
-          <Text style={{ width: COL_SET, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
+      {/* Cabecera de columnas para TODOS los tipos de medición: es donde vive la unidad de cada
+          columna (KG, MM:SS, NIVEL…), lo que permite que la fila lleve solo inputs y no desborde.
+          Anchos desde las constantes de SetRow (fuente única) y misma condición annotationColumn.
+          paddingLeft = 4 + la barra de "hecho" de las filas, o la cabecera queda 3px desplazada. */}
+      {setsCount > 0 && (
+        <View style={{ flexDirection: 'row', gap: SET_ROW_GAP, marginBottom: 12, paddingHorizontal: 4, paddingLeft: 4 + SET_ROW_ACCENT }}>
+          <Text numberOfLines={1} style={[HEADER_STYLE, { width: COL_SET }]}>
             {t('workout:set.set').toUpperCase()}
           </Text>
-          <Text style={{ width: COL_PREV, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
-            {t('workout:set.previous').toUpperCase()}
+          <Text numberOfLines={1} style={[HEADER_STYLE, { width: COL_PREV }]}>
+            {t('workout:set.previousShort').toUpperCase()}
           </Text>
-          <Text style={{ flex: 1, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
-            {weightUnit?.toUpperCase() || 'KG'}
-          </Text>
-          <Text style={{ flex: 1, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
-            {t('workout:set.reps').toUpperCase()}
-          </Text>
+          {columns.map(col => (
+            <Text key={col.field} numberOfLines={1} style={[HEADER_STYLE, { flex: 1 }]}>{col.label}</Text>
+          ))}
           {annotationColumn && (
-            <Text style={{ width: COL_RIR, textAlign: 'center', color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
+            <Text numberOfLines={1} style={[HEADER_STYLE, { width: effortWidth }]}>
               {t('workout:set.notes').toUpperCase()}
             </Text>
           )}
@@ -102,7 +110,6 @@ function SetsList({
                 exerciseId={exercise.id}
                 measurementType={measurementType}
                 weightUnit={weightUnit}
-                timeUnit={timeUnit}
                 distanceUnit={distanceUnit}
                 descansoSeg={rest_seconds}
                 previousSet={previousSet}

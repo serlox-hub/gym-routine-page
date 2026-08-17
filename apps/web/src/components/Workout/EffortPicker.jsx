@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { StickyNote, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import { getEffortLabel, formatEffortBadge } from '@gym/shared'
+import { getEffortLabel, formatEffortBadge, effortRendersAsWord } from '@gym/shared'
 
 /**
  * Chip de la columna «Notas»: SOLO display + disparador. Muestra un glifo con prioridad
@@ -12,7 +12,7 @@ import { getEffortLabel, formatEffortBadge } from '@gym/shared'
  * inerte; el RIR se ve de un vistazo aquí (patrón Strong/Hevy).
  */
 export default function EffortPicker({
-  value, measurementType, note, hasVideo = false, emptyDash = false, active = false, showEffortScale = true, onOpenDetails,
+  value, measurementType, note, hasVideo = false, active = false, showEffortScale = true, onOpenDetails,
 }) {
   const { t } = useTranslation()
 
@@ -25,32 +25,38 @@ export default function EffortPicker({
   const textColor = (rirSet || active) ? colors.textSecondary : colors.textMuted
   // Siempre la etiqueta ("@2" en RIR, "Duro" en RPE): el número de RPE no dice nada al usuario.
   const compactValue = formatEffortBadge(value, measurementType)
-  const emptyLabel = emptyDash ? '–' : getEffortLabel(measurementType)
+  // Vacío = guion, nunca la palabra "Esfuerzo": la columna mide 44-62px y la etiqueta ya está en
+  // la cabecera «NOTAS». El nombre completo va en el aria-label/title.
   const chipLabel = showEffortScale ? getEffortLabel(measurementType) : t('workout:set.notes')
+  // La escala RPE pinta palabras ("Moderado"); a 10px caben en su columna (ver COL_EFFORT_WORD).
+  const isWordValue = primary === 'rir' && effortRendersAsWord(measurementType, showEffortScale)
 
   return (
     // Botón transparente a 44×44 = área táctil (#10); el pill visual va en el span interior.
-    // `flexShrink: 0` porque en la rama flex de SetRow este botón es el item que puede encoger
-    // (su hermano va con `flex-1`, basis 0, y no cede): sin esto una etiqueta RPE larga desborda.
+    // El botón ocupa su celda del grid (w-full + minWidth 0): el pill nunca se sale de la columna.
     <button
       onClick={onOpenDetails}
       title={chipLabel}
       aria-label={chipLabel}
-      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, minWidth: 44, minHeight: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      className="w-full"
+      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, minWidth: 0, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
       <span
         style={{
           position: 'relative',
+          maxWidth: '100%',
           backgroundColor: colors.bgTertiary,
           borderRadius: 6,
-          padding: '3px 7px',
+          padding: isWordValue ? '3px 4px' : '3px 7px',
           border: `1px solid ${inviteBorder ? colors.border : 'transparent'}`,
           color: textColor,
-          fontSize: 11,
+          fontSize: isWordValue ? 10 : 11,
           fontWeight: 600,
           minWidth: 34,
           minHeight: 20,
           whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -59,7 +65,7 @@ export default function EffortPicker({
         {primary === 'rir' && compactValue}
         {primary === 'note' && <StickyNote size={13} color={colors.textSecondary} />}
         {primary === 'video' && <Video size={13} color={colors.textSecondary} />}
-        {primary === 'empty' && (showEffortScale ? emptyLabel : <StickyNote size={13} color={colors.textMuted} />)}
+        {primary === 'empty' && (showEffortScale ? '–' : <StickyNote size={13} color={colors.textMuted} />)}
         {/* Bolita «hay algo más» (nota/vídeo además del glifo principal). */}
         {hasMore && (
           <span style={{ position: 'absolute', top: -2, right: -2, width: 6, height: 6, borderRadius: '50%', backgroundColor: colors.textLight }} />

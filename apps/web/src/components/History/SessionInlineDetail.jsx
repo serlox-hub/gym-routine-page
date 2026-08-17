@@ -5,15 +5,15 @@ import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Vid
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveMeasurementType } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, CaretEndInput } from '../ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
+import SetValueInput from '../Workout/SetInputs.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
 import GymSelector from '../Workout/GymSelector.jsx'
 import { uploadVideo } from '../../lib/videoStorage.js'
 import {
   SENSATION_LABELS,
-  MeasurementType,
   formatFullDate,
   formatSetValue,
   formatTime,
@@ -24,14 +24,14 @@ import {
   fetchWorkoutSummary,
   buildPRsByExerciseMap,
   buildEmptySetData,
-  getSetFieldsForMeasurementType,
+  getSetColumns,
+  getSetFieldValues,
+  buildSetFieldsPayload,
   getExerciseName,
   getMuscleGroupName,
   getMuscleGroupColor,
   usePreference,
   useResolvedWeightUnit,
-  toNullableFloat,
-  toNullableInt,
   getNotifier,
   formatEffortBadge,
   buildSessionExercisesFromSession,
@@ -39,16 +39,17 @@ import {
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 import { colors } from '../../lib/styles.js'
 
-function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete }) {
+// Fila editable del historial. Usa las MISMAS columnas por tipo de medición que la sesión
+// (getSetColumns + SetValueInput): antes tenía su propia lista peso/reps/tiempo/distancia, así que
+// nivel, kcal y ritmo NO se podían editar y el tiempo se pedía en segundos crudos. Guarda al salir
+// de cada campo (onCommit), no con un check como la sesión.
+function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUnit, isSetPR, onUpsert, onDelete }) {
   const { t } = useTranslation()
   const measurementType = resolveMeasurementType(exercise)
-  const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(measurementType)
-  const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
+  // distanceUnit aún sin cablear en ninguna pantalla (issue #24): al activarlo, también aquí.
+  const columns = getSetColumns(measurementType, { weightUnit })
 
-  const [weight, setWeight] = useState(String(set.weight ?? ''))
-  const [reps, setReps] = useState(String(set.reps_completed ?? ''))
-  const [timeSeconds, setTimeSeconds] = useState(String(set.time_seconds ?? ''))
-  const [distanceMeters, setDistanceMeters] = useState(String(set.distance_meters ?? ''))
+  const [values, setValues] = useState(() => getSetFieldValues(set, columns))
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
   const [showDetails, setShowDetails] = useState(false)
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
@@ -56,15 +57,12 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   const [videoUploadError, setVideoUploadError] = useState(false)
   const [pendingVideoFile, setPendingVideoFile] = useState(null)
 
+  // Solo los campos del tipo: las columnas que no viajan en el payload no se tocan en el upsert.
   const buildPayload = (overrides = {}) => ({
     sessionId,
     sessionExerciseId,
     setNumber: set.set_number,
-    weight: toNullableFloat(weight),
-    repsCompleted: toNullableInt(reps),
-    timeSeconds: toNullableInt(timeSeconds),
-    distanceMeters: toNullableFloat(distanceMeters),
-    paceSeconds: set.pace_seconds,
+    ...buildSetFieldsPayload(values, columns),
     rirActual: set.rir_actual,
     notes: set.notes,
     videoUrl: set.video_url,
@@ -72,7 +70,16 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     ...overrides,
   })
 
-  const handleSave = () => onUpsert(buildPayload())
+  // Solo escribe si el valor cambió: `onCommit` salta en CADA blur (incluido enfocar y salir sin
+  // tocar nada), y tabular por una sesión son decenas de upserts inútiles en red lenta. `set` llega
+  // fresco tras la invalidación, así que sirve de referencia de lo ya guardado.
+  // ⚠️ Comparar el payload YA parseado, no lo tecleado: "82.50" y 82.5 son el mismo dato guardado,
+  // pero como strings nunca coincidirían y cada blur repetiría la escritura para siempre.
+  const handleSave = () => {
+    const next = buildSetFieldsPayload(values, columns)
+    const stored = buildSetFieldsPayload(getSetFieldValues(set, columns), columns)
+    if (Object.keys(next).some(key => next[key] !== stored[key])) onUpsert(buildPayload())
+  }
 
   const handleToggleDropset = () => {
     const newType = setType === 'dropset' ? 'normal' : 'dropset'
@@ -116,12 +123,13 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     }
   }
 
-  const inputCls = "w-full text-center text-xs rounded px-1.5 py-0.5"
-  const inputSt = { backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}` }
-
-  const containerStyle = isWeightReps
-    ? { display: 'grid', gridTemplateColumns: '24px 1fr 1fr 132px', alignItems: 'center', gap: 12, fontSize: 12 }
-    : { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }
+  const containerStyle = {
+    display: 'grid',
+    gridTemplateColumns: `24px ${columns.map(() => 'minmax(0, 1fr)').join(' ')} 132px`,
+    alignItems: 'center',
+    gap: 12,
+    fontSize: 12,
+  }
 
   const badgeStyle = {
     backgroundColor: colors.bgTertiary,
@@ -209,54 +217,21 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
           {setType === 'dropset' ? 'D' : set.set_number}
         </button>
 
-        {showWeight && (
-          <CaretEndInput
-            value={weight}
-            onChange={e => setWeight(e.target.value)}
-            onBlur={handleSave}
-            type="number"
-            step="0.1"
-            className={inputCls}
-            style={inputSt}
-          />
-        )}
-        {showReps && (
-          <CaretEndInput
-            value={reps}
-            onChange={e => setReps(e.target.value)}
-            onBlur={handleSave}
-            type="number"
-            className={inputCls}
-            style={inputSt}
-          />
-        )}
-        {showTime && (
-          <div className="flex items-center gap-0.5 flex-1 min-w-0">
-            <CaretEndInput
-              value={timeSeconds}
-              onChange={e => setTimeSeconds(e.target.value)}
-              onBlur={handleSave}
-              type="number"
-              className={inputCls}
-              style={inputSt}
+        {columns.map(({ field, decimal, unit }) => (
+          <div key={field} className="flex items-center gap-1 min-w-0">
+            <SetValueInput
+              field={field}
+              decimal={decimal}
+              value={values[field]}
+              onChange={value => setValues(prev => ({ ...prev, [field]: value }))}
+              onCommit={handleSave}
+              boxed
             />
-            <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>s</span>
+            {/* Aquí la unidad va pegada al input: esta pantalla no tiene cabecera de columna
+                donde vivir (a diferencia de la sesión). */}
+            <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>{unit}</span>
           </div>
-        )}
-        {showDistance && (
-          <div className="flex items-center gap-0.5 flex-1 min-w-0">
-            <CaretEndInput
-              value={distanceMeters}
-              onChange={e => setDistanceMeters(e.target.value)}
-              onBlur={handleSave}
-              type="number"
-              step="0.1"
-              className={inputCls}
-              style={inputSt}
-            />
-            <span className="text-[10px] shrink-0" style={{ color: colors.textMuted }}>m</span>
-          </div>
-        )}
+        ))}
         {trailingActions}
       </div>
       {/* En historial la hoja edita solo nota/vídeo: el RIR se ve/edita con su badge y el tipo
@@ -306,20 +281,6 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
           <ChevronRight size={16} color={colors.textMuted} />
         )}
       </div>
-      {isEditing && measurementType === MeasurementType.WEIGHT_REPS && sets.length > 0 && (
-        <div className="mb-1.5 px-1" style={{ display: 'grid', gridTemplateColumns: '24px 1fr 1fr 132px', gap: 12 }}>
-          <span style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-            {t('workout:set.set').toUpperCase()}
-          </span>
-          <span style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-            {weightUnit?.toUpperCase() || 'KG'}
-          </span>
-          <span style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-            {t('workout:set.reps').toUpperCase()}
-          </span>
-          <span />
-        </div>
-      )}
       <div className="space-y-2">
         {isEditing ? (
           <>
@@ -330,6 +291,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 exercise={exercise}
                 sessionId={sessionId}
                 sessionExerciseId={sessionExerciseId}
+                weightUnit={weightUnit}
                 isSetPR={prSetNums?.has(set.set_number)}
                 onUpsert={onUpsertSet}
                 onDelete={onDeleteSet}

@@ -4,6 +4,11 @@ import { getClient } from './_client.js'
 // COMPLETED SETS
 // ============================================
 
+// ⚠️ CONTRATO: las claves que llegan `undefined` se caen del body al serializar (JSON.stringify),
+// así que PostgREST NO las mete en el ON CONFLICT DO UPDATE y esa columna queda INTACTA. De ahí
+// depende `buildSetFieldsPayload` (setColumns.js), que solo manda los campos del measurement type.
+// NO pongas defaults (`weight = null`) en este destructuring: convertiría cada edición parcial en
+// un borrado de las columnas de los otros tipos. Pineado en completedSetsApi.test.js.
 export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumber, weight, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) {
   const { data, error } = await getClient()
     .from('completed_sets')

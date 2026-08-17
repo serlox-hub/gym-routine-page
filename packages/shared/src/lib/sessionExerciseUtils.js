@@ -1,10 +1,4 @@
-import {
-  measurementTypeUsesDistance,
-  measurementTypeUsesReps,
-  measurementTypeUsesTime,
-  measurementTypeUsesWeight,
-  withDefaultMeasurementType,
-} from './measurementTypes.js'
+import { getSetColumns, buildSetFieldsPayload } from './setColumns.js'
 
 /**
  * Compara los valores editados con los originales del session exercise
@@ -44,35 +38,21 @@ export function diffSessionExerciseFields(edited, original) {
 }
 
 /**
- * Devuelve qué campos de serie aplican según el tipo de medición.
- * Delega en los predicados de `measurementTypes.js` para que exista una sola
- * lista por familia de tipo (antes estaban duplicadas aquí en literales).
- */
-export function getSetFieldsForMeasurementType(measurementType) {
-  const mt = withDefaultMeasurementType(measurementType)
-  return {
-    showWeight: measurementTypeUsesWeight(mt),
-    showReps: measurementTypeUsesReps(mt),
-    showTime: measurementTypeUsesTime(mt),
-    showDistance: measurementTypeUsesDistance(mt),
-  }
-}
-
-/**
- * Genera los campos de una serie vacía según el tipo de medición del ejercicio.
+ * Genera los campos de una serie vacía según el tipo de medición del ejercicio: los campos del
+ * tipo arrancan a 0 y el resto ni se envían (el upsert no toca las columnas ausentes).
+ * Usa las MISMAS columnas que pinta la fila (`getSetColumns`) — con la lista vieja
+ * (peso/reps/tiempo/distancia) una serie añadida a un ejercicio de nivel o calorías nacía sin
+ * inicializar sus propios campos.
  */
 export function buildEmptySetData({ sessionId, sessionExerciseId, setNumber, exercise }) {
-  const { showWeight: usesWeight, showReps: usesReps, showTime: usesTime, showDistance: usesDistance } = getSetFieldsForMeasurementType(exercise.measurement_type)
+  const columns = getSetColumns(exercise?.measurement_type)
+  const zeros = Object.fromEntries(columns.map(({ field }) => [field, 0]))
 
   return {
     sessionId,
     sessionExerciseId,
     setNumber,
-    weight: usesWeight ? 0 : null,
-    repsCompleted: usesReps ? 0 : null,
-    timeSeconds: usesTime ? 0 : null,
-    distanceMeters: usesDistance ? 0 : null,
-    paceSeconds: null,
+    ...buildSetFieldsPayload(zeros, columns),
     rirActual: null,
     notes: null,
     videoUrl: null,

@@ -16,7 +16,7 @@ const SCOPE = { GLOBAL: 'global', DAY: 'day' }
 // gymFilter: null → un gym (el seleccionado), 'all' → overlay de todos los gyms
 const ALL_GYMS = 'all'
 
-function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = MeasurementType.WEIGHT_REPS, timeUnit = 's', distanceUnit = 'm', routineDayId = null }) {
+function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = MeasurementType.WEIGHT_REPS, distanceUnit = 'm', routineDayId = null }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [selectedSet, setSelectedSet] = useState(null)
@@ -169,7 +169,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
               overlayGyms={isOverlay ? overlayGyms : undefined}
               unitByGym={isOverlay ? unitByGym : undefined}
             />
-            <HistoryTable sessions={displayHistory} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
+            <HistoryTable sessions={displayHistory} measurementType={measurementType} weightUnit={weightUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
               onSessionClick={handleSessionClick} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onLoadMore={fetchNextPage} />
           </>
         )}

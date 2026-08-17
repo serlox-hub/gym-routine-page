@@ -3,7 +3,7 @@ import { ChevronRight, FileText, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { formatSetValue, formatShortDate, calculateTotalVolume, formatEffortBadge, MeasurementType } from '@gym/shared'
 
-function HistoryTable({ sessions, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
+function HistoryTable({ sessions, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
   const { t } = useTranslation()
 
   if (!sessions || sessions.length === 0) {
@@ -60,7 +60,7 @@ function HistoryTable({ sessions, measurementType = MeasurementType.WEIGHT_REPS,
                     {set.set_number}
                   </span>
                   <span className="flex-1" style={{ color: colors.textPrimary }}>
-                    {formatSetValue({ ...set, weight_unit: weightUnit }, { timeUnit, distanceUnit })}
+                    {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                   </span>
                   <div className="flex items-center gap-0.5 -my-2">
                     {set.notes && (

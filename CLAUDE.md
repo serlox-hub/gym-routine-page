@@ -352,8 +352,11 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ Business logic in apps/ (belongs in packages/shared/src/lib/)
 - ❌ Hardcoded user-facing strings (use `t()` from i18n)
 - ❌ Inputs numéricos crudos (`<input type=number>` / `<TextInput keyboardType>` numérico) → usar `CaretEndInput` (web) / `NumberTextInput` (native) para el cursor-al-final al enfocar; `<Input type=number>` (web) ya lo hereda. Ver `docs/DECISIONS.md`
+- ❌ Devolver las flechitas a los `input[type=number]` de web: `index.css` las quita **globalmente** a propósito (en móvil no se usan y Chrome les reserva ~14px DENTRO del input, que en columnas estrechas recortan el valor). Decisión de app, no parche de una pantalla
 - ❌ Adding translation keys to only one language (must add to both es/ and en/)
 - ❌ Defaults silenciosos en el parseo de formularios (`parseInt(x) || 3`). Un campo obligatorio se **valida** y se muestra el error inline; el parser no inventa valores. Ver `routineExerciseForm.js` y `docs/DECISIONS.md`
+- ❌ Etiquetas de unidad dentro de la fila de serie de la sesión (`nv ×`, `s`, `kcal`) ni anchos fijos en sus inputs. La unidad va en la **cabecera** de columna (`getSetColumns`) y la fila solo lleva inputs `w-full` en tracks `minmax(0,1fr)` — si no, la fila desborda la card. Todos los measurement types comparten el mismo grid. Ver `docs/DECISIONS.md`
+- ❌ Pintar una duración en segundos crudos (`{timeSeconds}s`, `1200 s`) o pedirla en dos cajas mm+ss. Display: `formatDuration()`. Entrada: `SetValueInput` con campo `time`/`pace` (relleno por dígitos, `durationInput.js`). No hay unidad de tiempo configurable
 - ❌ Rangos numéricos fijos para campos que dependen del `measurement_type`. El esfuerzo usa dos escalas (RIR `-1..3` con reps, RPE `1..5` sin ellas): usar `getEffortOptions()` / `isValidEffortValue()`, nunca `min=0 max=5`
 - ❌ Pintar un valor de esfuerzo crudo (`RIR {rir}`, `` `@${rir}` ``, `String(rir)`). Siempre `formatEffortBadge(value, measurementType)` — en RPE el número guardado es un índice interno, la palabra es el dato. Si el componente tiene el `exercise`, resuelve el tipo con `resolveMeasurementType(exercise)` (fallback único de lectura); si no lo tiene, recíbelo como prop. Ver `docs/DECISIONS.md`
 - ❌ Differences between web and native — all screens must have the same appearance, section order, and functionality on both platforms unless technically impossible
@@ -394,7 +397,7 @@ Extract when logic:
 | Logic Type | File | Example Functions |
 |------------|------|-------------------|
 | Date/time formatting | `dateUtils.js` | `formatFullDate()`, `formatRelativeDate()` |
-| Time/duration | `timeUtils.js` | `formatSecondsToMMSS()`, `calculateDurationMinutes()` |
+| Time/duration | `timeUtils.js` | `formatDuration()`, `formatSecondsToMMSS()`, `calculateDurationMinutes()` |
 | Workout calculations | `workoutCalculations.js` | `calculateEpley1RM()`, `calculateTotalVolume()` |
 | Session transforms | `workoutTransforms.js` | `transformWorkoutSessionData()` |
 | Set operations | `setUtils.js` | `isSetDataValid()`, `formatSetValue()` |
@@ -402,6 +405,8 @@ Extract when logic:
 | Array operations | `arrayUtils.js` | `reorderArrayItem()`, `filterExercises()` |
 | Form validation | `validation.js` | `validateSignupForm()`, `validateRoutineForm()` |
 | Measurement types | `measurementTypes.js` | `measurementTypeUsesWeight()`, `getEffortOptions()`, `isValidEffortValue()` |
+| Columnas de la fila de serie (sesión) | `setColumns.js` | `getSetColumns()` |
+| Input de duración por dígitos (mm:ss) | `durationInput.js` | `durationDigitsToSeconds()`, `secondsToDurationDigits()`, `formatDurationDigits()` |
 | Form de config de ejercicio en rutina/sesión | `routineExerciseForm.js` | `buildExerciseConfigForm()`, `validateExerciseConfigForm()`, `parseExerciseConfigForm()` |
 | Prompts IA / formato JSON rutinas | `routineIO.js` | `buildChatbotPrompt()`, `ROUTINE_JSON_FORMAT` |
 | Matching ejercicio→catálogo (import) | `exerciseMatch.js` | `normalizeExerciseName()`, `buildExerciseIndex()`, `resolveExerciseId()` |

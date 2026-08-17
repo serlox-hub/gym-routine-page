@@ -29,6 +29,25 @@ export function formatElapsedSeconds(seconds) {
 }
 
 /**
+ * Formato ÚNICO de una duración registrada (serie de tiempo): "45s" por debajo del minuto,
+ * "20:00 min" hasta la hora y "1:12:30" a partir de ahí. Por qué: la duración se guarda en
+ * segundos y pintarla en crudo es ilegible en cuanto pasa del minuto ("1200s"); por debajo del
+ * minuto el mm:ss ("0:45") es más ruidoso que "45s".
+ * ⚠️ El " min" NO es decorativo: "24:00" a secas se lee como horas tan fácil como como minutos.
+ * Con 3 segmentos ("3:24:00") no hace falta, ahí las horas ya se ven.
+ * @param {number} seconds
+ * @param {{unitHint?: boolean}} [options] - unitHint false omite el " min": para la columna
+ *   ANTERIOR de la sesión, donde no cabe (46px) y la cabecera MM:SS ya está a la vista.
+ * @returns {string}
+ */
+export function formatDuration(seconds, { unitHint = true } = {}) {
+  const safe = Math.max(0, Math.round(Number(seconds) || 0))
+  if (safe < 60) return `${safe}s`
+  const formatted = formatElapsedSeconds(safe)
+  return unitHint && safe < 3600 ? `${formatted} min` : formatted
+}
+
+/**
  * Formatea segundos para mostrar en descanso (ej: "45s", "2min", "1:30")
  * @param {number} seconds - Segundos totales
  * @returns {string}

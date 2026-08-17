@@ -2,7 +2,7 @@ import { Text, Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { StickyNote, Video } from 'lucide-react-native'
 import { colors } from '../../lib/styles'
-import { getEffortLabel, formatEffortBadge } from '@gym/shared'
+import { getEffortLabel, formatEffortBadge, effortRendersAsWord } from '@gym/shared'
 
 /**
  * Chip de la columna «Notas»: SOLO display + disparador. Muestra un glifo con prioridad
@@ -12,7 +12,7 @@ import { getEffortLabel, formatEffortBadge } from '@gym/shared'
  * todo en la hoja — ver DECISIONS). Paridad con web. La celda del número sigue inerte.
  */
 export default function EffortPicker({
-  value, measurementType, note, hasVideo = false, emptyDash = false, active = false, showEffortScale = true, onOpenDetails,
+  value, measurementType, note, hasVideo = false, active = false, showEffortScale = true, onOpenDetails,
 }) {
   const { t } = useTranslation()
 
@@ -25,8 +25,11 @@ export default function EffortPicker({
   const textColor = (rirSet || active) ? colors.textSecondary : colors.textMuted
   // Siempre la etiqueta ("@2" en RIR, "Duro" en RPE): el número de RPE no dice nada al usuario.
   const compactValue = formatEffortBadge(value, measurementType)
-  const emptyLabel = emptyDash ? '–' : getEffortLabel(measurementType)
+  // Vacío = guion, nunca la palabra "Esfuerzo": la columna mide 42-62px y la etiqueta ya está en
+  // la cabecera «NOTAS». El nombre completo va en el accessibilityLabel.
   const chipLabel = showEffortScale ? getEffortLabel(measurementType) : t('workout:set.notes')
+  // La escala RPE pinta palabras ("Moderado"); a 10px caben en su columna (ver COL_RIR_WORD).
+  const isWordValue = primary === 'rir' && effortRendersAsWord(measurementType, showEffortScale)
 
   return (
     <Pressable
@@ -37,7 +40,8 @@ export default function EffortPicker({
       style={{
         backgroundColor: colors.bgTertiary,
         borderRadius: 6,
-        paddingHorizontal: 7,
+        maxWidth: '100%',
+        paddingHorizontal: isWordValue ? 4 : 7,
         paddingVertical: 3,
         minWidth: 34,
         minHeight: 22,
@@ -47,11 +51,11 @@ export default function EffortPicker({
         borderColor: inviteBorder ? colors.border : 'transparent',
       }}
     >
-      {primary === 'rir' && <Text numberOfLines={1} style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>{compactValue}</Text>}
+      {primary === 'rir' && <Text numberOfLines={1} style={{ color: textColor, fontSize: isWordValue ? 10 : 11, fontWeight: '600' }}>{compactValue}</Text>}
       {primary === 'note' && <StickyNote size={13} color={colors.textSecondary} />}
       {primary === 'video' && <Video size={13} color={colors.textSecondary} />}
       {primary === 'empty' && (showEffortScale
-        ? <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>{emptyLabel}</Text>
+        ? <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>–</Text>
         : <StickyNote size={13} color={colors.textMuted} />)}
       {/* Bolita «hay algo más» (nota/vídeo además del glifo principal). */}
       {hasMore && (

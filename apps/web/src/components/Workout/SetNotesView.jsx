@@ -64,7 +64,12 @@ function VideoPlayer({ videoKey }) {
   )
 }
 
-function SetNotesView({ isOpen, onClose, notes, videoUrl }) {
+/**
+ * Detalle de una serie ya registrada. `summary`/`effort` (opcionales) muestran su valor completo
+ * CON unidades: es la única forma de leer entero lo que la columna ANTERIOR elide en 46px
+ * (ver PreviousSetCell). Sin ellos, la hoja es solo nota + vídeo (resto de llamantes).
+ */
+function SetNotesView({ isOpen, onClose, notes, videoUrl, summary, effort, title }) {
   const { t } = useTranslation()
 
   return (
@@ -76,7 +81,7 @@ function SetNotesView({ isOpen, onClose, notes, videoUrl }) {
     >
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-          {t('workout:set.notes')}
+          {title || t('workout:set.notes')}
         </h3>
         <button
           onClick={onClose}
@@ -88,6 +93,22 @@ function SetNotesView({ isOpen, onClose, notes, videoUrl }) {
       </div>
 
       <div className="space-y-3">
+        {!!summary && (
+          <div
+            className="p-3 rounded-lg"
+            style={{ backgroundColor: colors.bgTertiary }}
+          >
+            <div className="font-semibold" style={{ color: colors.textPrimary }}>
+              {summary}
+            </div>
+            {!!effort && (
+              <div className="text-xs mt-0.5" style={{ color: colors.textSecondary }}>
+                {effort}
+              </div>
+            )}
+          </div>
+        )}
+
         {notes && (
           <div
             className="p-3 rounded-lg"

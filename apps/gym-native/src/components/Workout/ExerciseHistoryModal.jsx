@@ -106,7 +106,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUni
   )
 }
 
-function HistoryTab({ sessions, measurementType = MeasurementType.WEIGHT_REPS, weightUnit, timeUnit, distanceUnit, onSelectSet, onSessionClick }) {
+function HistoryTab({ sessions, measurementType = MeasurementType.WEIGHT_REPS, weightUnit, distanceUnit, onSelectSet, onSessionClick }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
@@ -158,7 +158,7 @@ function HistoryTab({ sessions, measurementType = MeasurementType.WEIGHT_REPS, w
                     {set.set_number}
                   </Text>
                   <Text style={{ color: colors.textPrimary, fontSize: 13, flex: 1 }}>
-                    {formatSetValue({ ...set, weight_unit: weightUnit }, { timeUnit, distanceUnit })}
+                    {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: -8 }}>
                     {set.notes && (
@@ -193,7 +193,6 @@ export default function ExerciseHistoryModal({
   exerciseId,
   exerciseName,
   measurementType = MeasurementType.WEIGHT_REPS,
-  timeUnit = 's',
   distanceUnit = 'm',
   routineDayId = null,
   onSessionClick,
@@ -389,7 +388,6 @@ export default function ExerciseHistoryModal({
               sessions={displaySessions}
               measurementType={measurementType}
               weightUnit={weightUnit}
-              timeUnit={timeUnit}
               distanceUnit={distanceUnit}
               onSelectSet={setSelectedSet}
               onSessionClick={handleSessionClick}

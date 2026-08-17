@@ -69,7 +69,6 @@
     "previous": "Anterior",
     "lastTime": "Última vez",
     "firstTime": "Primera vez con este ejercicio",
-    "addSet": "Añadir serie",
     "addVideo": "Añadir video",
     "videoTooLarge": "Video demasiado grande",
     "videoTooLargeDetail": "{{size}} MB. Máximo permitido: 100 MB",
@@ -84,7 +83,11 @@
       "label": "Tipo de serie",
       "normal": "Normal",
       "dropset": "Dropset"
-    }
+    },
+    "startTimer": "Iniciar {{time}}",
+    "stopTimer": "Parar",
+    "previousShort": "Última",
+    "levelShort": "Nv"
   },
   "rest": {
     "title": "Descanso",

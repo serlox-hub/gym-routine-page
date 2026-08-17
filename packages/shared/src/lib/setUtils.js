@@ -2,8 +2,14 @@
  * Utilidades para manejo de series (sets)
  */
 
+import { t } from '../i18n/index.js'
 import { MeasurementType, formatEffortBadge } from './measurementTypes.js'
 import { parseDecimal } from './numberUtils.js'
+import { formatDuration } from './timeUtils.js'
+
+// "Nv"/"reps" son COPY, no símbolos de unidad (kg, m, kcal sí lo son): en inglés se leían
+// "Nv12 × 30:00 min". Ver docs/DECISIONS.md.
+const repsUnit = () => t('workout:set.reps').toLowerCase()
 
 /**
  * Formatea un número con coma decimal (formato español)
@@ -22,22 +28,6 @@ export function formatSecondsAsMMSS(totalSeconds) {
   const min = Math.floor(s / 60)
   const sec = s % 60
   return `${min}:${String(sec).padStart(2, '0')}`
-}
-
-/**
- * Formatea segundos según la unidad de tiempo del ejercicio
- */
-export function formatTimeInUnit(seconds, timeUnit) {
-  if (!seconds) return '0'
-  if (timeUnit === 'min') return formatSecondsAsMMSS(seconds)
-  return `${seconds}`
-}
-
-/**
- * Etiqueta de unidad de tiempo para display
- */
-export function getTimeUnitLabel(timeUnit) {
-  return timeUnit === 'min' ? 'min' : 's'
 }
 
 /**
@@ -282,19 +272,19 @@ export function formatRepsPlaceholder(repsTarget) {
  * @param {{weight?: number, weight_unit?: string, reps_completed?: number, time_seconds?: number, distance_meters?: number}} set - Datos de la serie
  * @returns {string}
  */
-export function formatSetValue(set, { timeUnit = 's', distanceUnit = 'm' } = {}) {
+export function formatSetValue(set, { distanceUnit = 'm' } = {}) {
   const parts = []
   if (set.level != null) {
-    parts.push(`Nv${set.level}`)
+    parts.push(`${t('workout:set.levelShort')}${set.level}`)
   }
   if (set.weight != null) {
     parts.push(`${formatNumber(set.weight)}${set.weight_unit || 'kg'}`)
   }
   if (set.reps_completed != null) {
-    parts.push(`${set.reps_completed} reps`)
+    parts.push(`${set.reps_completed} ${repsUnit()}`)
   }
   if (set.time_seconds != null) {
-    parts.push(timeUnit === 'min' ? formatSecondsAsMMSS(set.time_seconds) : `${set.time_seconds}s`)
+    parts.push(formatDuration(set.time_seconds))
   }
   if (set.distance_meters != null) {
     const val = metersToDistanceUnit(set.distance_meters, distanceUnit)
@@ -313,23 +303,30 @@ export function formatSetValue(set, { timeUnit = 's', distanceUnit = 'm' } = {})
  * Formatea el valor de una serie según el tipo de medición (para historial)
  * @param {{weight?: number, weightUnit?: string, reps?: number, timeSeconds?: number, distanceMeters?: number}} set - Datos de la serie
  * @param {string} measurementType - Tipo de medición
- * @param {{timeUnit?: string, distanceUnit?: string, hideWeightUnit?: boolean}} [options]
- *   hideWeightUnit: omite la unidad de peso (ej. "75 × 6" en vez de "75kg × 6"). Se usa en la
- *   columna ANTERIOR de weight_reps, donde la cabecera KG ya indica la unidad (redundante).
+ * @param {{distanceUnit?: string, hideUnits?: boolean}} [options]
+ *   hideUnits: omite TODAS las unidades y prefijos (ej. "75 × 6" en vez de "75kg × 6", "12 × 20:00"
+ *   en vez de "Nv12 × 20:00"). Se usa en la columna ANTERIOR de la sesión, donde la cabecera de
+ *   cada columna ya dice la unidad (redundante y no cabe en ~54px).
  * @returns {string}
  */
-export function formatSetValueByType(set, measurementType, { timeUnit = 's', distanceUnit = 'm', hideWeightUnit = false } = {}) {
-  const wUnit = hideWeightUnit ? '' : (set.weightUnit || 'kg')
-  const fmtTime = (s) => timeUnit === 'min' ? formatSecondsAsMMSS(s) : `${s}s`
+export function formatSetValueByType(set, measurementType, { distanceUnit = 'm', hideUnits = false } = {}) {
+  const unit = (suffix) => hideUnits ? '' : suffix
+  const wUnit = unit(set.weightUnit || 'kg')
+  const dUnit = unit(distanceUnit)
   const dVal = set.distanceMeters != null ? metersToDistanceUnit(set.distanceMeters, distanceUnit) : 0
   const fmtWeight = () => `${formatNumber(set.weight)}${wUnit}`
+  const fmtDistance = () => `${formatNumber(dVal)}${dUnit}`
+  const fmtTime = (s) => formatDuration(s, { unitHint: !hideUnits })
+  const fmtReps = () => `${set.reps}${unit(` ${repsUnit()}`)}`
+  const fmtCalories = () => `${set.caloriesBurned}${unit('kcal')}`
+  const fmtLevel = () => `${unit(t('workout:set.levelShort'))}${set.level}`
   switch (measurementType) {
     case MeasurementType.WEIGHT_REPS:
       return set.weight != null
         ? `${fmtWeight()} × ${set.reps}`
-        : `${set.reps} reps`
+        : fmtReps()
     case MeasurementType.REPS_ONLY:
-      return `${set.reps} reps`
+      return fmtReps()
     case MeasurementType.TIME:
       return fmtTime(set.timeSeconds)
     case MeasurementType.WEIGHT_TIME:
@@ -337,23 +334,23 @@ export function formatSetValueByType(set, measurementType, { timeUnit = 's', dis
         ? `${fmtWeight()} × ${fmtTime(set.timeSeconds)}`
         : fmtTime(set.timeSeconds)
     case MeasurementType.DISTANCE:
-      return `${formatNumber(dVal)}${distanceUnit}`
+      return fmtDistance()
     case MeasurementType.WEIGHT_DISTANCE:
       return set.weight != null
-        ? `${fmtWeight()} × ${formatNumber(dVal)}${distanceUnit}`
-        : `${formatNumber(dVal)}${distanceUnit}`
+        ? `${fmtWeight()} × ${fmtDistance()}`
+        : fmtDistance()
     case MeasurementType.CALORIES:
-      return `${set.caloriesBurned}kcal`
+      return fmtCalories()
     case MeasurementType.LEVEL_TIME:
-      return `Nv${set.level} × ${fmtTime(set.timeSeconds)}`
+      return `${fmtLevel()} × ${fmtTime(set.timeSeconds)}`
     case MeasurementType.LEVEL_DISTANCE:
-      return `Nv${set.level} × ${formatNumber(dVal)}${distanceUnit}`
+      return `${fmtLevel()} × ${fmtDistance()}`
     case MeasurementType.LEVEL_CALORIES:
-      return `Nv${set.level} × ${set.caloriesBurned}kcal`
+      return `${fmtLevel()} × ${fmtCalories()}`
     case MeasurementType.DISTANCE_TIME:
-      return `${formatNumber(dVal)}${distanceUnit} × ${fmtTime(set.timeSeconds)}`
+      return `${fmtDistance()} × ${fmtTime(set.timeSeconds)}`
     case MeasurementType.DISTANCE_PACE:
-      return `${formatNumber(dVal)}${distanceUnit} @ ${formatSecondsAsMMSS(set.paceSeconds)}/${distanceUnit}`
+      return `${fmtDistance()} @ ${formatSecondsAsMMSS(set.paceSeconds)}${unit(`/${distanceUnit}`)}`
     default:
       return set.weight != null ? `${fmtWeight()} × ${set.reps}` : `${set.reps}`
   }
@@ -361,10 +358,10 @@ export function formatSetValueByType(set, measurementType, { timeUnit = 's', dis
 
 /**
  * Formatea el valor de una serie para la columna ANTERIOR (referencia inline por fila).
- * Con `hideWeightUnit` omite la unidad de peso (la cabecera KG ya la indica); ver formatSetValueByType.
+ * Con `hideUnits` omite las unidades (las cabeceras ya las indican); ver formatSetValueByType.
  */
-export function formatPreviousSetValue(set, measurementType, { weightUnit = 'kg', timeUnit = 's', distanceUnit = 'm', hideWeightUnit = false } = {}) {
-  return formatSetValueByType({ ...set, weightUnit }, measurementType, { timeUnit, distanceUnit, hideWeightUnit })
+export function formatPreviousSetValue(set, measurementType, { weightUnit = 'kg', distanceUnit = 'm', hideUnits = false } = {}) {
+  return formatSetValueByType({ ...set, weightUnit }, measurementType, { distanceUnit, hideUnits })
 }
 
 /**

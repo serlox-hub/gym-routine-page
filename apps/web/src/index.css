@@ -10,3 +10,15 @@
     @apply bg-surface;
   }
 }
+
+/* Sin flechitas en los inputs numéricos: en móvil no se usan (se teclea) y en Chrome reservan
+   ~14px de ancho dentro del input aunque no se vean, que en la fila de serie (columnas de ~35px
+   en móvil) recortaban el propio valor. Ver docs/DECISIONS.md. */
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

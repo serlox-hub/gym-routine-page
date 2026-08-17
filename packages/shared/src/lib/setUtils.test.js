@@ -498,8 +498,10 @@ describe('setUtils', () => {
       expect(formatSetValue({ reps_completed: 15 })).toBe('15 reps')
     })
 
-    it('formatea tiempo', () => {
-      expect(formatSetValue({ time_seconds: 60 })).toBe('60s')
+    it('formatea tiempo ("45s" por debajo del minuto, mm:ss + pista de unidad por encima)', () => {
+      expect(formatSetValue({ time_seconds: 60 })).toBe('1:00 min')
+      expect(formatSetValue({ time_seconds: 45 })).toBe('45s')
+      expect(formatSetValue({ time_seconds: 12240 })).toBe('3:24:00')
     })
 
     it('formatea distancia', () => {
@@ -542,7 +544,7 @@ describe('setUtils', () => {
 
     it('formatea distancia y tiempo', () => {
       expect(formatSetValue({ distance_meters: 500, time_seconds: 120 }))
-        .toBe('120s × 500m')
+        .toBe('2:00 min × 500m')
     })
   })
 
@@ -557,9 +559,16 @@ describe('setUtils', () => {
         .toBe('15 reps')
     })
 
-    it('formatea time', () => {
+    it('formatea time ("45s" por debajo del minuto, mm:ss + pista de unidad por encima)', () => {
       expect(formatSetValueByType({ timeSeconds: 60 }, 'time'))
-        .toBe('60s')
+        .toBe('1:00 min')
+      expect(formatSetValueByType({ timeSeconds: 45 }, 'time'))
+        .toBe('45s')
+    })
+
+    it('con horas (3 segmentos) no hace falta la pista: ya se leen', () => {
+      expect(formatSetValueByType({ timeSeconds: 12240 }, 'time'))
+        .toBe('3:24:00')
     })
 
     it('formatea distance', () => {
@@ -575,6 +584,8 @@ describe('setUtils', () => {
     it('formatea weight_time', () => {
       expect(formatSetValueByType({ weight: 10, weightUnit: 'kg', timeSeconds: 30 }, 'weight_time'))
         .toBe('10kg × 30s')
+      expect(formatSetValueByType({ weight: 10, weightUnit: 'kg', timeSeconds: 90 }, 'weight_time'))
+        .toBe('10kg × 1:30 min')
     })
 
     it('formatea calories', () => {
@@ -584,7 +595,7 @@ describe('setUtils', () => {
 
     it('formatea level_time', () => {
       expect(formatSetValueByType({ level: 12, timeSeconds: 1800 }, 'level_time'))
-        .toBe('Nv12 × 1800s')
+        .toBe('Nv12 × 30:00 min')
     })
 
     it('formatea level_distance', () => {
@@ -599,17 +610,27 @@ describe('setUtils', () => {
 
     it('formatea distance_time', () => {
       expect(formatSetValueByType({ distanceMeters: 500, timeSeconds: 120 }, 'distance_time'))
-        .toBe('500m × 120s')
+        .toBe('500m × 2:00 min')
     })
 
-    it('omite la unidad de peso con hideWeightUnit (columna ANTERIOR)', () => {
-      expect(formatSetValueByType({ weight: 82.5, weightUnit: 'kg', reps: 12 }, 'weight_reps', { hideWeightUnit: true }))
+    it('omite TODAS las unidades con hideUnits (columna ANTERIOR de la sesión)', () => {
+      expect(formatSetValueByType({ weight: 82.5, weightUnit: 'kg', reps: 12 }, 'weight_reps', { hideUnits: true }))
         .toBe('82,5 × 12')
+      expect(formatSetValueByType({ reps: 15 }, 'reps_only', { hideUnits: true }))
+        .toBe('15')
+      expect(formatSetValueByType({ level: 12, timeSeconds: 1800 }, 'level_time', { hideUnits: true }))
+        .toBe('12 × 30:00')
+      expect(formatSetValueByType({ level: 10, caloriesBurned: 200 }, 'level_calories', { hideUnits: true }))
+        .toBe('10 × 200')
+      expect(formatSetValueByType({ distanceMeters: 500, paceSeconds: 300 }, 'distance_pace', { hideUnits: true }))
+        .toBe('500 @ 5:00')
     })
 
-    it('hideWeightUnit no afecta a la sección de reps ni a tipos sin peso', () => {
-      expect(formatSetValueByType({ reps: 15 }, 'reps_only', { hideWeightUnit: true }))
-        .toBe('15 reps')
+    it('hideUnits quita también la pista "min" del tiempo (columna ANTERIOR, 46px)', () => {
+      expect(formatSetValueByType({ timeSeconds: 1800 }, 'time', { hideUnits: true }))
+        .toBe('30:00')
+      expect(formatSetValueByType({ timeSeconds: 1800 }, 'time'))
+        .toBe('30:00 min')
     })
   })
 
@@ -633,7 +654,7 @@ describe('setUtils', () => {
       expect(formatPreviousSetValue({ reps: 12 }, 'reps_only'))
         .toBe('12 reps')
       expect(formatPreviousSetValue({ timeSeconds: 90 }, 'time'))
-        .toBe('90s')
+        .toBe('1:30 min')
     })
 
     it('respeta weightUnit', () => {
@@ -641,8 +662,8 @@ describe('setUtils', () => {
         .toBe('80lb × 100m')
     })
 
-    it('propaga hideWeightUnit', () => {
-      expect(formatPreviousSetValue({ weight: 75, reps: 6 }, 'weight_reps', { hideWeightUnit: true }))
+    it('propaga hideUnits', () => {
+      expect(formatPreviousSetValue({ weight: 75, reps: 6 }, 'weight_reps', { hideUnits: true }))
         .toBe('75 × 6')
     })
   })

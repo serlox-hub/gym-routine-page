@@ -8,12 +8,12 @@ import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trop
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveMeasurementType } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, NumberTextInput } from '../ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
+import SetValueInput from '../Workout/SetInputs'
 import { uploadVideo } from '../../lib/videoStorage'
 import {
   SENSATION_LABELS,
-  MeasurementType,
   formatFullDate,
   formatSetValue,
   formatTime,
@@ -23,14 +23,14 @@ import {
   fetchWorkoutSummary,
   buildPRsByExerciseMap,
   buildEmptySetData,
-  getSetFieldsForMeasurementType,
+  getSetColumns,
+  getSetFieldValues,
+  buildSetFieldsPayload,
   getExerciseName,
   getMuscleGroupName,
   getMuscleGroupColor,
   usePreference,
   useResolvedWeightUnit,
-  toNullableFloat,
-  toNullableInt,
   getNotifier,
   formatEffortBadge,
   buildSessionExercisesFromSession,
@@ -38,16 +38,17 @@ import {
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 import { colors } from '../../lib/styles'
 
+// Fila editable del historial. Usa las MISMAS columnas por tipo de medición que la sesión
+// (getSetColumns + SetValueInput): antes tenía su propia lista peso/reps/tiempo/distancia, así que
+// nivel, kcal y ritmo NO se podían editar y el tiempo se pedía en segundos crudos. Guarda al salir
+// de cada campo (onCommit), no con un check como la sesión.
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
   const { t } = useTranslation()
   const measurementType = resolveMeasurementType(exercise)
-  const { showWeight, showReps, showTime, showDistance } = getSetFieldsForMeasurementType(measurementType)
-  const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
+  // distanceUnit aún sin cablear en ninguna pantalla (issue #24): al activarlo, también aquí.
+  const columns = getSetColumns(measurementType, { weightUnit })
 
-  const [weight, setWeight] = useState(String(set.weight ?? ''))
-  const [reps, setReps] = useState(String(set.reps_completed ?? ''))
-  const [timeSeconds, setTimeSeconds] = useState(String(set.time_seconds ?? ''))
-  const [distanceMeters, setDistanceMeters] = useState(String(set.distance_meters ?? ''))
+  const [values, setValues] = useState(() => getSetFieldValues(set, columns))
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
   const [showDetails, setShowDetails] = useState(false)
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
@@ -55,15 +56,12 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   const [videoUploadError, setVideoUploadError] = useState(false)
   const [pendingVideoFile, setPendingVideoFile] = useState(null)
 
+  // Solo los campos del tipo: las columnas que no viajan en el payload no se tocan en el upsert.
   const buildPayload = (overrides = {}) => ({
     sessionId,
     sessionExerciseId,
     setNumber: set.set_number,
-    weight: toNullableFloat(weight),
-    repsCompleted: toNullableInt(reps),
-    timeSeconds: toNullableInt(timeSeconds),
-    distanceMeters: toNullableFloat(distanceMeters),
-    paceSeconds: set.pace_seconds,
+    ...buildSetFieldsPayload(values, columns),
     rirActual: set.rir_actual,
     notes: set.notes,
     videoUrl: set.video_url,
@@ -71,7 +69,16 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     ...overrides,
   })
 
-  const handleSave = () => onUpsert(buildPayload())
+  // Solo escribe si el valor cambió: `onCommit` salta en CADA blur (incluido enfocar y salir sin
+  // tocar nada), y tabular por una sesión son decenas de upserts inútiles en red lenta. `set` llega
+  // fresco tras la invalidación, así que sirve de referencia de lo ya guardado.
+  // ⚠️ Comparar el payload YA parseado, no lo tecleado: "82.50" y 82.5 son el mismo dato guardado,
+  // pero como strings nunca coincidirían y cada blur repetiría la escritura para siempre.
+  const handleSave = () => {
+    const next = buildSetFieldsPayload(values, columns)
+    const stored = buildSetFieldsPayload(getSetFieldValues(set, columns), columns)
+    if (Object.keys(next).some(key => next[key] !== stored[key])) onUpsert(buildPayload())
+  }
 
   const handleToggleDropset = () => {
     const newType = setType === 'dropset' ? 'normal' : 'dropset'
@@ -114,8 +121,6 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       uploadVideoInBackground(videoFile)
     }
   }
-
-  const inputStyle = { flex: 1, paddingVertical: 2, textAlign: 'center', fontSize: 13, color: colors.textPrimary, borderBottomWidth: 1, borderBottomColor: colors.border }
 
   const badgeStyle = {
     backgroundColor: colors.bgTertiary,
@@ -188,125 +193,40 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     </View>
   )
 
-  if (isWeightReps) {
-    return (
-      <>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Pressable
-            onPress={handleToggleDropset}
-            accessibilityLabel={t(setType === 'dropset' ? 'workout:set.removeDropset' : 'workout:set.markDropset')}
-            style={{ width: 24, alignItems: 'center' }}
-          >
-            <Text style={{
-              color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted,
-              fontSize: 12,
-              fontWeight: isSetPR || setType === 'dropset' ? '700' : '400',
-            }}>
-              {setType === 'dropset' ? 'D' : set.set_number}
-            </Text>
-          </Pressable>
-          <NumberTextInput
-            value={weight}
-            onChangeText={setWeight}
-            onBlur={handleSave}
-            keyboardType="decimal-pad"
-            style={inputStyle}
-            placeholderTextColor={colors.textMuted}
-          />
-          <NumberTextInput
-            value={reps}
-            onChangeText={setReps}
-            onBlur={handleSave}
-            keyboardType="number-pad"
-            style={inputStyle}
-            placeholderTextColor={colors.textMuted}
-          />
-          {trailingActions}
-        </View>
-        {/* En historial la hoja edita solo nota/vídeo: RIR con su badge, tipo con el número. */}
-        <SetDetailsModal
-          isOpen={showDetails}
-          onClose={() => setShowDetails(false)}
-          onSubmit={handleDetailsSubmit}
-          setNumber={set.set_number}
-          initialNote={set.notes}
-          initialVideoUrl={set.video_url}
-          measurementType={measurementType}
-          showEffortScale={false}
-          showSetType={false}
-        />
-      </>
-    )
-  }
-
   return (
     <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Pressable
           onPress={handleToggleDropset}
           accessibilityLabel={t(setType === 'dropset' ? 'workout:set.removeDropset' : 'workout:set.markDropset')}
+          style={{ width: 24, alignItems: 'center' }}
         >
           <Text style={{
             color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted,
-            fontSize: 12, width: 14, textAlign: 'right',
+            fontSize: 12, textAlign: 'center',
             fontWeight: isSetPR || setType === 'dropset' ? '700' : '400',
           }}>
             {setType === 'dropset' ? 'D' : set.set_number}
           </Text>
         </Pressable>
 
-        {showWeight && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-            <NumberTextInput
-              value={weight}
-              onChangeText={setWeight}
-              onBlur={handleSave}
-              keyboardType="decimal-pad"
-              style={inputStyle}
-              placeholderTextColor={colors.textMuted}
-            />
-            <Text style={{ color: colors.textMuted, fontSize: 10 }}>{weightUnit}</Text>
+        {columns.map(({ field, decimal, unit }) => (
+          <View key={field} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
+            <View style={{ flex: 1 }}>
+              <SetValueInput
+                field={field}
+                decimal={decimal}
+                value={values[field]}
+                onChange={value => setValues(prev => ({ ...prev, [field]: value }))}
+                onCommit={handleSave}
+                boxed
+              />
+            </View>
+            {/* Aquí la unidad va pegada al input: esta pantalla no tiene cabecera de columna
+                donde vivir (a diferencia de la sesión). */}
+            <Text style={{ color: colors.textMuted, fontSize: 10 }}>{unit}</Text>
           </View>
-        )}
-        {showTime && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-            <NumberTextInput
-              value={timeSeconds}
-              onChangeText={setTimeSeconds}
-              onBlur={handleSave}
-              keyboardType="number-pad"
-              style={inputStyle}
-              placeholderTextColor={colors.textMuted}
-            />
-            <Text style={{ color: colors.textMuted, fontSize: 10 }}>s</Text>
-          </View>
-        )}
-        {showDistance && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-            <NumberTextInput
-              value={distanceMeters}
-              onChangeText={setDistanceMeters}
-              onBlur={handleSave}
-              keyboardType="decimal-pad"
-              style={inputStyle}
-              placeholderTextColor={colors.textMuted}
-            />
-            <Text style={{ color: colors.textMuted, fontSize: 10 }}>m</Text>
-          </View>
-        )}
-        {showReps && !isWeightReps && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, flex: 1 }}>
-            <NumberTextInput
-              value={reps}
-              onChangeText={setReps}
-              onBlur={handleSave}
-              keyboardType="number-pad"
-              style={inputStyle}
-              placeholderTextColor={colors.textMuted}
-            />
-            <Text style={{ color: colors.textMuted, fontSize: 10 }}>reps</Text>
-          </View>
-        )}
+        ))}
         {trailingActions}
       </View>
       {/* En historial la hoja edita solo nota/vídeo: RIR con su badge, tipo con el número. */}
@@ -360,20 +280,6 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         )}
       </Pressable>
 
-      {isEditing && measurementType === MeasurementType.WEIGHT_REPS && sets.length > 0 && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, width: 24, textAlign: 'center' }}>
-            {t('workout:set.set').toUpperCase()}
-          </Text>
-          <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, flex: 1, textAlign: 'center' }}>
-            {weightUnit?.toUpperCase() || 'KG'}
-          </Text>
-          <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, flex: 1, textAlign: 'center' }}>
-            {t('workout:set.reps').toUpperCase()}
-          </Text>
-          <View style={{ width: 132 }} />
-        </View>
-      )}
       <View className="gap-2">
         {isEditing ? (
           <>

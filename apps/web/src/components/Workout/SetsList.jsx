@@ -1,10 +1,21 @@
 import { useTranslation } from 'react-i18next'
 import { CircleMinus, CirclePlus, Clock } from 'lucide-react'
-import SetRow, { GRID_WITH_RIR, GRID_NO_RIR } from './SetRow.jsx'
+import SetRow, { getSetGridTemplate, SET_ROW_GAP, SET_ROW_ACCENT } from './SetRow.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType, formatRelativeDate, shouldShowAnnotationColumn } from '@gym/shared'
+import { formatRelativeDate, shouldShowAnnotationColumn, getSetColumns, effortRendersAsWord } from '@gym/shared'
+
+const HEADER_STYLE = {
+  color: colors.textSecondary,
+  fontSize: 10,
+  fontWeight: 600,
+  letterSpacing: 0.3,
+  textAlign: 'center',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}
 
 function SetsList({
   exerciseKey,
@@ -14,7 +25,6 @@ function SetsList({
   progressionEnabled = false,
   measurementType,
   weightUnit,
-  timeUnit,
   distanceUnit,
   rest_seconds,
   reps,
@@ -29,7 +39,8 @@ function SetsList({
   // Columna «Notas» presente si hay algo que anotar (RIR/notas/vídeo). Helper compartido con SetRow.
   const annotationColumn = shouldShowAnnotationColumn(preferences)
   const completedSets = useWorkoutStore(state => state.completedSets)
-  const showWeightReps = measurementType === MeasurementType.WEIGHT_REPS
+  // Columnas de valor del tipo (1 o 2) — mismas que pinta SetRow, con su cabecera y unidad
+  const columns = getSetColumns(measurementType, { weightUnit, distanceUnit })
   const activeSetNumber = (() => {
     for (let i = 1; i <= setsCount; i++) {
       if (!completedSets[`${exerciseKey}-${i}`]) return i
@@ -59,26 +70,23 @@ function SetsList({
         )}
       </div>
 
-      {/* Column headers (only for weight_reps) — grid desde las constantes de SetRow (fuente
-          única) con la misma condición annotationColumn para colapsar la columna «Notas» */}
-      {showWeightReps && setsCount > 0 && (
-        <div className="grid items-center gap-2 mb-3 px-1" style={{ gridTemplateColumns: annotationColumn ? GRID_WITH_RIR : GRID_NO_RIR }}>
-          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-            {t('workout:set.set').toUpperCase()}
-          </span>
-          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-            {t('workout:set.previous').toUpperCase()}
-          </span>
-          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-            {weightUnit?.toUpperCase() || 'KG'}
-          </span>
-          <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-            {t('workout:set.reps').toUpperCase()}
-          </span>
+      {/* Cabecera de columnas para TODOS los tipos de medición: es donde vive la unidad de cada
+          columna (KG, MM:SS, NIVEL…), lo que permite que la fila lleve solo inputs y no desborde.
+          Grid desde el helper de SetRow (fuente única) con la misma condición annotationColumn. */}
+      {setsCount > 0 && (
+        <div className="grid items-center mb-3 px-1" style={{
+          gridTemplateColumns: getSetGridTemplate(columns.length, annotationColumn, effortRendersAsWord(measurementType, preferences?.show_rir_input ?? true)),
+          gap: SET_ROW_GAP,
+          // Alinea con las filas, que llevan la barra de "hecho" a la izquierda
+          paddingLeft: `calc(0.25rem + ${SET_ROW_ACCENT}px)`,
+        }}>
+          <span style={HEADER_STYLE}>{t('workout:set.set').toUpperCase()}</span>
+          <span style={HEADER_STYLE}>{t('workout:set.previousShort').toUpperCase()}</span>
+          {columns.map(col => (
+            <span key={col.field} style={HEADER_STYLE}>{col.label}</span>
+          ))}
           {annotationColumn && (
-            <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textAlign: 'center' }}>
-              {t('workout:set.notes').toUpperCase()}
-            </span>
+            <span style={HEADER_STYLE}>{t('workout:set.notes').toUpperCase()}</span>
           )}
           <span />
         </div>
@@ -99,7 +107,6 @@ function SetsList({
                 exerciseId={exercise.id}
                 measurementType={measurementType}
                 weightUnit={weightUnit}
-                timeUnit={timeUnit}
                 distanceUnit={distanceUnit}
                 descansoSeg={rest_seconds}
                 previousSet={previousSet}

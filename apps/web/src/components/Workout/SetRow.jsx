@@ -5,7 +5,8 @@ import { colors } from '../../lib/styles.js'
 import { useIsPRSet } from './PRContext.jsx'
 import SetDetailsModal from './SetDetailsModal.jsx'
 import EffortPicker from './EffortPicker.jsx'
-import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs.jsx'
+import SetValueInput from './SetInputs.jsx'
+import ExecutionTimer from './ExecutionTimer.jsx'
 import PreviousSetCell from './PreviousSetCell.jsx'
 import ProgressionHint from './ProgressionHint.jsx'
 import {
@@ -15,29 +16,52 @@ import {
   useSetInputs,
   shouldSuggestProgression,
   shouldShowAnnotationColumn,
+  getSetColumns,
+  measurementTypeUsesTime,
+  effortRendersAsWord,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useUpdateSetVideo } from '../../hooks/useWorkout.js'
 import { uploadVideo } from '../../lib/videoStorage.js'
 
-// Layout columnar (tipo hoja de cálculo, patrón Strong/Hevy): SET · ANTERIOR · KG · REPS · [NOTAS] · ✓.
+// Layout columnar (tipo hoja de cálculo, patrón Strong/Hevy): SET · ANTERIOR · [valores] · [NOTAS] · ✓.
+// MISMO grid para TODOS los measurement types: las columnas de valor (1 o 2) las decide
+// `getSetColumns(measurementType)` y su unidad va en la CABECERA (ver SetsList), no dentro de la
+// fila. Antes los tipos que no eran weight_reps usaban una rama flex con anchos fijos y unidades
+// inline ("nv × 1200 s") que NO encogía → la fila desbordaba la card. Ver docs/DECISIONS.md.
 // La celda SET es la identidad de la serie (nº / «D» dropset) y es SIEMPRE inerte: la entrada a
 // la anotación (RIR + nota + vídeo) es el chip de la columna «Notas» (ver EffortPicker), que
 // lleva el glifo/punto de detalle. La columna ANTERIOR muestra la misma serie de la última
 // sesión (ver PreviousSetCell). La columna «Notas» existe si hay algo que anotar (RIR, notas o
 // vídeo activados; ver shouldShowAnnotationColumn); se colapsa solo si se apagan las tres prefs.
-// Fuente única del grid (SetsList importa estas constantes para su cabecera → sin desincronizar).
-// Anchos afinados para móvil (360-390px): las columnas fijas se comen el hueco de KG/REPS, así que
-// se recortaron al mínimo legible (SET cabe «D» de 26px; PREV cabe "70kg × 6", sobra → elipsis).
-// RIR y ✓ = 44px = área táctil mínima recomendada (issue #10): NO bajar de ahí (choca con a11y);
-// si falta ancho en móvil, recortar antes PREV/gap. KG/REPS (1fr) absorben el resto: estrechas en
-// 360px pero sin desbordar (inputs w-full + min-w-0). Aritmética de anchos en docs/DECISIONS.md (#10).
-const COL_SET = 36 // ancho de la columna SET; compone el grid y la rama no-grid (sin magic numbers)
-const COL_PREV = 54 // ancho de la columna ANTERIOR
-const COL_RIR = 44
+// Fuente única del grid (SetsList importa este helper para su cabecera → sin desincronizar).
+// Anchos afinados para móvil (360-390px): las columnas fijas se comen el hueco de los valores.
+// ✓ y «Notas» = 44px = área táctil mínima recomendada (issue #10): NO bajar de ahí (choca con
+// a11y); si falta ancho, recortar antes SET/PREV/gap. Las columnas de valor (1fr) absorben el
+// resto y NUNCA desbordan (inputs w-full + minmax(0,1fr)). Aritmética en docs/DECISIONS.md.
+const COL_SET = 32 // cabe el chip «D» de dropset (26px)
+const COL_PREV = 46 // "72,5 × 12" a 11px mide 46; lo más largo (cardio) elide
+const COL_EFFORT = 44
+// La escala RPE pinta PALABRAS ("Moderado" = 51px a 10px + padding), no "@2": su columna necesita
+// más ancho o el chip se sale de la celda. Ver EffortPicker.
+const COL_EFFORT_WORD = 62
 const COL_CHECK = 44
-export const GRID_WITH_RIR = `${COL_SET}px ${COL_PREV}px 1fr 1fr ${COL_RIR}px ${COL_CHECK}px`
-export const GRID_NO_RIR = `${COL_SET}px ${COL_PREV}px 1fr 1fr ${COL_CHECK}px`
+export const SET_ROW_GAP = 6
+// Barra izquierda de "hecho" (lima) que llevan TODAS las filas, transparente en las no completadas
+// para no descuadrar. La cabecera la compensa con el mismo padding o quedaría 3px desplazada.
+export const SET_ROW_ACCENT = 3
+
+/**
+ * Plantilla de columnas del grid de la fila (y de la cabecera de SetsList).
+ * @param {number} valueColumns - columnas de valor del tipo de medición (1 o 2)
+ * @param {boolean} annotationColumn - ¿hay columna «Notas»?
+ * @param {boolean} wordEffort - la columna «Notas» muestra palabras (escala RPE), no "@2"
+ */
+export function getSetGridTemplate(valueColumns, annotationColumn, wordEffort = false) {
+  const values = Array.from({ length: valueColumns }, () => 'minmax(0, 1fr)').join(' ')
+  const effort = annotationColumn ? ` ${wordEffort ? COL_EFFORT_WORD : COL_EFFORT}px` : ''
+  return `${COL_SET}px ${COL_PREV}px ${values}${effort} ${COL_CHECK}px`
+}
 
 function SetRow({
   setNumber,
@@ -47,7 +71,6 @@ function SetRow({
   exerciseId,
   measurementType = MeasurementType.WEIGHT_REPS,
   weightUnit = 'kg',
-  timeUnit = 's',
   distanceUnit = 'm',
   descansoSeg,
   previousSet,
@@ -154,45 +177,26 @@ function SetRow({
     }
   }
 
-  const renderInputs = () => {
-    // Todas las filas son editables; la fila activa muestra sus inputs con caja (active),
-    // el resto son ghost (caja al enfocar). El timer se oculta en series completadas.
-    const props = { disabled: false, hideUnits: true, showTimer: !isCompleted, active: isActive }
-
-    switch (measurementType) {
-      case MeasurementType.WEIGHT_REPS:
-        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} repsPlaceholder={repsPlaceholder} {...props} />
-      case MeasurementType.REPS_ONLY:
-        return <RepsOnlyInputs reps={reps} setReps={setReps} repsPlaceholder={repsPlaceholder} {...props} />
-      case MeasurementType.TIME:
-        return <TimeInputs time={time} setTime={setTime} timeUnit={timeUnit} {...props} />
-      case MeasurementType.WEIGHT_TIME:
-        return <WeightTimeInputs weight={weight} setWeight={setWeight} time={time} setTime={setTime} weightUnit={weightUnit} timeUnit={timeUnit} {...props} />
-      case MeasurementType.DISTANCE:
-        return <DistanceInputs weight={null} setWeight={null} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} {...props} />
-      case MeasurementType.WEIGHT_DISTANCE:
-        return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} {...props} />
-      case MeasurementType.CALORIES:
-        return <RepsOnlyInputs reps={calories} setReps={setCalories} label="kcal" {...props} />
-      case MeasurementType.LEVEL_TIME:
-        return <LevelTimeInputs level={level} setLevel={setLevel} time={time} setTime={setTime} timeUnit={timeUnit} {...props} />
-      case MeasurementType.LEVEL_DISTANCE:
-        return <LevelDistanceInputs level={level} setLevel={setLevel} distance={distance} setDistance={setDistance} distanceUnit={distanceUnit} {...props} />
-      case MeasurementType.LEVEL_CALORIES:
-        return <LevelCaloriesInputs level={level} setLevel={setLevel} calories={calories} setCalories={setCalories} {...props} />
-      case MeasurementType.DISTANCE_TIME:
-        return <DistanceTimeInputs distance={distance} setDistance={setDistance} time={time} setTime={setTime} distanceUnit={distanceUnit} timeUnit={timeUnit} {...props} />
-      case MeasurementType.DISTANCE_PACE:
-        return <DistancePaceInputs distance={distance} setDistance={setDistance} pace={pace} setPace={setPace} distanceUnit={distanceUnit} {...props} />
-      default:
-        return null
-    }
+  // Columnas de valor del tipo de medición (1 o 2) + su estado. La cabecera (SetsList) lleva la
+  // unidad, así que en la fila solo van inputs desnudos: es lo que deja que encojan sin desbordar.
+  const columns = getSetColumns(measurementType, { weightUnit, distanceUnit })
+  const fieldState = {
+    weight: [weight, setWeight],
+    reps: [reps, setReps, repsPlaceholder],
+    time: [time, setTime],
+    distance: [distance, setDistance],
+    calories: [calories, setCalories],
+    level: [level, setLevel],
+    pace: [pace, setPace],
   }
 
   // Detalles desde el estado local (reflejan lo fijado antes o después de completar)
   const hasVideo = !!setData?.videoUrl
   const isDropset = setType === 'dropset'
-  const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
+
+  // Cuenta atrás de la serie: solo en la fila activa y con una duración ya puesta (sin dato no hay
+  // nada que contar). Va como subfila, fuera del grid: en la fila robaba el ancho de los inputs.
+  const showTimer = measurementTypeUsesTime(measurementType) && isActive && !isCompleted && Number(time) > 0
 
   // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
   // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
@@ -204,11 +208,11 @@ function SetRow({
   // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
   // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten
   // relleno neutro sutil; la barra lima distingue lo hecho; la activa muestra sus inputs
-  // en caja lima (ver renderInputs); pendiente = transparente.
+  // en caja lima (SetValueInput con active); pendiente = transparente.
   // (Todas llevan 3px de borde izq. transparente para no descuadrar el layout.)
   const baseRowStyle = {
     backgroundColor: (isCompleted || isActive) ? colors.bgHover : 'transparent',
-    borderLeft: `3px solid ${isCompleted ? colors.success : 'transparent'}`,
+    borderLeft: `${SET_ROW_ACCENT}px solid ${isCompleted ? colors.success : 'transparent'}`,
   }
 
   const setNumberStyle = {
@@ -292,39 +296,37 @@ function SetRow({
 
   return (
     <>
-      {isWeightReps ? (
-        <div
-          className="grid items-center gap-2 py-1 px-1 rounded-lg"
-          style={{ gridTemplateColumns: annotationColumn ? GRID_WITH_RIR : GRID_NO_RIR, ...baseRowStyle }}
-        >
-          <div className="flex items-center justify-center">{renderSetCell()}</div>
-          <div className="flex items-center justify-center" style={{ minWidth: 0 }}>
-            <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
-          </div>
-          {renderInputs()}
-          {annotationColumn && (
-            <div className="flex items-center justify-center">
-              {showEffort && <EffortPicker value={rir} measurementType={measurementType} note={notes} hasVideo={hasVideo}
-                active={isActive} emptyDash showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
+      <div
+        className="grid items-center py-1 px-1 rounded-lg"
+        style={{
+          gridTemplateColumns: getSetGridTemplate(columns.length, annotationColumn, effortRendersAsWord(measurementType, showRirInput)),
+          gap: SET_ROW_GAP,
+          ...baseRowStyle,
+        }}
+      >
+        <div className="flex items-center justify-center">{renderSetCell()}</div>
+        <div className="flex items-center justify-center" style={{ minWidth: 0 }}>
+          <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
+        </div>
+        {columns.map(({ field, decimal }) => {
+          const [value, onChange, placeholder] = fieldState[field]
+          return (
+            <div key={field} className="flex items-center min-w-0">
+              <SetValueInput field={field} decimal={decimal} value={value} onChange={onChange}
+                placeholder={placeholder} active={isActive} />
             </div>
-          )}
-          <div className="flex items-center justify-center">{renderCheckIndicator()}</div>
-        </div>
-      ) : (
-        <div
-          className="flex items-center gap-2 py-1 px-1 rounded-lg"
-          style={baseRowStyle}
-        >
-          <div className="flex items-center justify-center" style={{ width: COL_SET, flexShrink: 0 }}>{renderSetCell()}</div>
-          <div className="flex items-center justify-center" style={{ minWidth: COL_PREV, flexShrink: 0 }}>
-            <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
+          )
+        })}
+        {annotationColumn && (
+          <div className="flex items-center justify-center min-w-0">
+            {showEffort && <EffortPicker value={rir} measurementType={measurementType} note={notes} hasVideo={hasVideo}
+              active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
           </div>
-          <div className="flex items-center gap-2 flex-1">{renderInputs()}</div>
-          {showEffort && <EffortPicker value={rir} measurementType={measurementType} note={notes} hasVideo={hasVideo}
-            active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
-          <div className="flex items-center justify-center">{renderCheckIndicator()}</div>
-        </div>
-      )}
+        )}
+        <div className="flex items-center justify-center">{renderCheckIndicator()}</div>
+      </div>
+
+      {showTimer && <ExecutionTimer seconds={Number(time)} />}
 
       {showProgressionHint && <ProgressionHint prevReps={previousSet.reps} repsTarget={repsTarget} />}
 

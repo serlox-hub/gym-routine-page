@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   formatSecondsToMMSS,
   formatElapsedSeconds,
+  formatDuration,
   formatRestTimeDisplay,
   calculateDurationMinutes,
   secondsToMinutes,
@@ -34,6 +35,35 @@ describe('timeUtils', () => {
 
     it('añade padding a segundos de un dígito', () => {
       expect(formatSecondsToMMSS(65)).toBe('1:05')
+    })
+  })
+
+  describe('formatDuration', () => {
+    it('por debajo del minuto usa segundos', () => {
+      expect(formatDuration(45)).toBe('45s')
+      expect(formatDuration(0)).toBe('0s')
+    })
+
+    it('a partir del minuto usa mm:ss + la pista de unidad (si no, "24:00" se lee como horas)', () => {
+      expect(formatDuration(60)).toBe('1:00 min')
+      expect(formatDuration(1440)).toBe('24:00 min')
+    })
+
+    it('con horas no lleva pista: los 3 segmentos ya se leen', () => {
+      expect(formatDuration(3600)).toBe('1:00:00')
+      expect(formatDuration(12240)).toBe('3:24:00')
+    })
+
+    it('unitHint false quita la pista (columna ANTERIOR de la sesión)', () => {
+      expect(formatDuration(1440, { unitHint: false })).toBe('24:00')
+      expect(formatDuration(45, { unitHint: false })).toBe('45s')
+    })
+
+    it('valores raros: negativo, null, no numérico', () => {
+      expect(formatDuration(-30)).toBe('0s')
+      expect(formatDuration(null)).toBe('0s')
+      expect(formatDuration('abc')).toBe('0s')
+      expect(formatDuration(89.6)).toBe('1:30 min')
     })
   })
 

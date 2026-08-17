@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { formatSecondsToMMSS } from '@gym/shared'
+import { useTranslation } from 'react-i18next'
+import { Play, X } from 'lucide-react'
+import { formatDuration, formatElapsedSeconds } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
+// Cuenta atrás de la duración de la serie. Vive como SUBFILA de la serie activa (igual que
+// ProgressionHint), no dentro de la fila: en la fila no cabía (robaba ancho a los inputs en
+// móvil) y al arrancar cambiaba de tamaño, descuadrando el grid. Ver docs/DECISIONS.md.
 function ExecutionTimer({ seconds }) {
+  const { t } = useTranslation()
   const [isRunning, setIsRunning] = useState(false)
   const [remaining, setRemaining] = useState(seconds)
   const intervalRef = useRef(null)
@@ -85,38 +91,39 @@ function ExecutionTimer({ seconds }) {
 
   const isCritical = remaining <= 3 && remaining > 0
   const isDone = remaining === 0 && !isRunning
+  const target = formatDuration(seconds)
 
   if (!isRunning && remaining === seconds) {
     return (
-      <button
-        onClick={handleStart}
-        disabled={seconds === 0}
-        className="px-3 py-1 rounded text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
-        style={{ backgroundColor: colors.actionPrimary, color: colors.textDark }}
-      >
-        ▶
-      </button>
+      <div className="mt-1 pl-1">
+        <button
+          onClick={handleStart}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:opacity-80"
+          style={{ backgroundColor: colors.bgTertiary, border: 'none', cursor: 'pointer', color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}
+          aria-label={t('workout:set.startTimer', { time: target })}
+        >
+          <Play size={12} color={colors.success} fill={colors.success} />
+          {t('workout:set.startTimer', { time: target })}
+        </button>
+      </div>
     )
   }
 
   return (
-    <div
-      className="flex items-center gap-2 px-2 py-1 rounded"
-      style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
-    >
+    <div className="mt-1 pl-1 flex items-center gap-2">
       <span
         className={`font-mono font-bold ${isCritical || isDone ? 'animate-pulse' : ''}`}
-        style={{ color: isDone ? colors.success : isCritical ? colors.danger : colors.textPrimary }}
+        style={{ color: isDone ? colors.success : isCritical ? colors.danger : colors.textPrimary, fontSize: 15 }}
       >
-        {formatSecondsToMMSS(remaining)}
+        {formatElapsedSeconds(remaining)}
       </span>
-
       <button
         onClick={handleStop}
-        className="text-xs transition-opacity hover:opacity-80"
-        style={{ color: colors.textSecondary }}
+        className="flex items-center hover:opacity-80"
+        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: colors.textSecondary, padding: 4 }}
+        aria-label={t('workout:set.stopTimer')}
       >
-        ✕
+        <X size={14} />
       </button>
     </div>
   )

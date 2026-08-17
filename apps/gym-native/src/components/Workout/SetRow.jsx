@@ -4,7 +4,8 @@ import { CheckCircle2, AlertCircle, Trophy } from 'lucide-react-native'
 import { useIsPRSet } from './PRContext'
 import SetDetailsModal from './SetDetailsModal'
 import EffortPicker from './EffortPicker'
-import { WeightRepsInputs, RepsOnlyInputs, TimeInputs, WeightTimeInputs, DistanceInputs, LevelTimeInputs, LevelDistanceInputs, LevelCaloriesInputs, DistanceTimeInputs, DistancePaceInputs } from './SetInputs'
+import SetValueInput from './SetInputs'
+import ExecutionTimer from './ExecutionTimer'
 import PreviousSetCell from './PreviousSetCell'
 import ProgressionHint from './ProgressionHint'
 import {
@@ -15,27 +16,45 @@ import {
   useSetInputs,
   shouldSuggestProgression,
   shouldShowAnnotationColumn,
+  getSetColumns,
+  measurementTypeUsesTime,
+  effortRendersAsWord,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
 import { useUpdateSetVideo } from '../../hooks/useWorkout'
 import { uploadVideo } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
 
-// Anchos de columna del layout columnar (deben coincidir con la cabecera de SetsList):
-// SET · ANTERIOR · [inputs flex] · NOTAS · ✓.
+// Layout columnar (deben coincidir fila y cabecera de SetsList): SET · ÚLTIMA · [valores] · NOTAS · ✓.
+// MISMO layout para TODOS los measurement types: las columnas de valor (1 o 2) las decide
+// `getSetColumns(measurementType)` y su unidad va en la CABECERA (ver SetsList), no dentro de la
+// fila. Antes los tipos que no eran weight_reps metían unidades inline ("nv × 1200 s") con anchos
+// fijos que no encogían → la fila se salía de la card. Ver docs/DECISIONS.md.
 // La celda SET (número / «D») es SIEMPRE inerte: la entrada a la anotación (RIR + nota + vídeo)
 // es el chip de la columna «Notas» (ver EffortPicker). La columna existe si hay algo que anotar
-// (RIR, notas o vídeo; ver shouldShowAnnotationColumn). La columna ANTERIOR muestra la misma serie de la última
-// sesión (ver PreviousSetCell); ancho fijo solo en weight_reps; otros tipos usan ancho de contenido.
+// (RIR, notas o vídeo; ver shouldShowAnnotationColumn). La columna ANTERIOR muestra la misma serie
+// de la última sesión (ver PreviousSetCell), sin unidades (las dice la cabecera) y elidiendo.
 // Fuente única de anchos (SetsList importa estas constantes para su cabecera → sin desincronizar).
-// Afinados para móvil estrecho (360-390px): las fijas comen el hueco de KG/REPS. Ver docs/DECISIONS.md.
-export const COL_SET = 36
-export const COL_PREV = 54
+// Afinados para móvil estrecho (360-390px): las fijas comen el hueco de los valores.
+export const COL_SET = 32
+export const COL_PREV = 46
 // COL_RIR/COL_CHECK se quedan en 42/34 (NO 44 como web): el área táctil de 44px se logra con
-// hitSlop en los botones, no ensanchando la columna → se conserva el hueco de KG/REPS sin perder
-// a11y. No subir a 44 "por paridad" ni bajar web a 34. Ver docs/DECISIONS.md (#10).
-export const COL_RIR = 42
+// hitSlop en los botones, no ensanchando la columna → se conserva el hueco de los valores sin
+// perder a11y. No subir a 44 "por paridad" ni bajar web a 34. Ver docs/DECISIONS.md (#10).
+const COL_RIR = 42
+// La escala RPE pinta PALABRAS ("Moderado"), no "@2": su columna necesita más ancho o el chip
+// se sale de la celda. Ver EffortPicker.
+const COL_RIR_WORD = 62
 export const COL_CHECK = 34
+export const SET_ROW_GAP = 6
+// Barra izquierda de "hecho" (lima) que llevan TODAS las filas, transparente en las no completadas
+// para no descuadrar. La cabecera la compensa con el mismo padding o quedaría 3px desplazada.
+export const SET_ROW_ACCENT = 3
+
+/** Ancho de la columna «Notas»: la escala RPE pinta palabras, la RIR el compacto "@2". */
+export function getEffortColumnWidth(measurementType, showEffortScale) {
+  return effortRendersAsWord(measurementType, showEffortScale) ? COL_RIR_WORD : COL_RIR
+}
 
 function SetRow({
   setNumber,
@@ -45,7 +64,6 @@ function SetRow({
   exerciseId,
   measurementType = MeasurementType.WEIGHT_REPS,
   weightUnit = 'kg',
-  timeUnit = 's',
   distanceUnit = 'm',
   descansoSeg,
   previousSet,
@@ -151,47 +169,27 @@ function SetRow({
     }
   }
 
-  const renderInputs = () => {
-    // Todas las filas son editables; la fila activa muestra sus inputs con caja (active),
-    // el resto son ghost (caja al enfocar). El timer se oculta en series completadas.
-    const props = { disabled: false, hideUnits: true, showTimer: !isCompleted, active: isActive }
-
-    switch (measurementType) {
-      case MeasurementType.WEIGHT_REPS:
-        return <WeightRepsInputs weight={weight} setWeight={setWeight} reps={reps} setReps={setReps} weightUnit={weightUnit} repsPlaceholder={repsPlaceholder} {...props} />
-      case MeasurementType.REPS_ONLY:
-        return <RepsOnlyInputs reps={reps} setReps={setReps} repsPlaceholder={repsPlaceholder} {...props} />
-      case MeasurementType.TIME:
-        return <TimeInputs time={time} setTime={setTime} timeUnit={timeUnit} {...props} />
-      case MeasurementType.WEIGHT_TIME:
-        return <WeightTimeInputs weight={weight} setWeight={setWeight} time={time} setTime={setTime} weightUnit={weightUnit} timeUnit={timeUnit} {...props} />
-      case MeasurementType.DISTANCE:
-        return <DistanceInputs weight={null} setWeight={null} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} {...props} />
-      case MeasurementType.WEIGHT_DISTANCE:
-        return <DistanceInputs weight={weight} setWeight={setWeight} distance={distance} setDistance={setDistance} weightUnit={weightUnit} distanceUnit={distanceUnit} {...props} />
-      case MeasurementType.CALORIES:
-        return <RepsOnlyInputs reps={calories} setReps={setCalories} label="kcal" {...props} />
-      case MeasurementType.LEVEL_TIME:
-        return <LevelTimeInputs level={level} setLevel={setLevel} time={time} setTime={setTime} timeUnit={timeUnit} {...props} />
-      case MeasurementType.LEVEL_DISTANCE:
-        return <LevelDistanceInputs level={level} setLevel={setLevel} distance={distance} setDistance={setDistance} distanceUnit={distanceUnit} {...props} />
-      case MeasurementType.LEVEL_CALORIES:
-        return <LevelCaloriesInputs level={level} setLevel={setLevel} calories={calories} setCalories={setCalories} {...props} />
-      case MeasurementType.DISTANCE_TIME:
-        return <DistanceTimeInputs distance={distance} setDistance={setDistance} time={time} setTime={setTime} distanceUnit={distanceUnit} timeUnit={timeUnit} {...props} />
-      case MeasurementType.DISTANCE_PACE:
-        return <DistancePaceInputs distance={distance} setDistance={setDistance} pace={pace} setPace={setPace} distanceUnit={distanceUnit} {...props} />
-      default:
-        return null
-    }
+  // Columnas de valor del tipo de medición (1 o 2) + su estado. La cabecera (SetsList) lleva la
+  // unidad, así que en la fila solo van inputs desnudos: es lo que deja que encojan sin desbordar.
+  const columns = getSetColumns(measurementType, { weightUnit, distanceUnit })
+  const fieldState = {
+    weight: [weight, setWeight],
+    reps: [reps, setReps, repsPlaceholder],
+    time: [time, setTime],
+    distance: [distance, setDistance],
+    calories: [calories, setCalories],
+    level: [level, setLevel],
+    pace: [pace, setPace],
   }
 
   // Detalles desde el estado local (reflejan lo fijado antes o después de completar)
   const hasVideo = !!setData?.videoUrl
   const isDropset = setType === 'dropset'
-  const isWeightReps = measurementType === MeasurementType.WEIGHT_REPS
   // El chip (entrada de anotación) se muestra en la fila activa o completada si la columna existe.
   const showEffort = annotationColumn && (isActive || isCompleted)
+  // Cuenta atrás de la serie: solo en la fila activa y con una duración ya puesta. Va como
+  // subfila, fuera de la fila: dentro robaba el ancho de los inputs y descuadraba al arrancar.
+  const showTimer = measurementTypeUsesTime(measurementType) && isActive && !isCompleted && Number(time) > 0
 
   // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
   // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
@@ -205,7 +203,7 @@ function SetRow({
   // (Todas llevan 3px de borde izq. transparente para no descuadrar el layout.)
   const baseRowStyle = {
     backgroundColor: (isCompleted || isActive) ? colors.bgHover : 'transparent',
-    borderLeftWidth: 3,
+    borderLeftWidth: SET_ROW_ACCENT,
     borderLeftColor: isCompleted ? colors.success : 'transparent',
   }
 
@@ -284,31 +282,36 @@ function SetRow({
 
   return (
     <>
-      <View className="flex-row items-center py-2.5 px-1 rounded-lg" style={{ gap: 8, ...baseRowStyle }}>
+      <View className="flex-row items-center py-2.5 px-1 rounded-lg" style={{ gap: SET_ROW_GAP, ...baseRowStyle }}>
         <View style={{ width: COL_SET, alignItems: 'center', justifyContent: 'center' }}>
           {renderSetCell()}
         </View>
-        {/* Columna ANTERIOR: ancho fijo en weight_reps (alinea con la cabecera); en otros tipos
-            ancho de contenido para no truncar valores largos (p. ej. ritmo "5km @ 5:00/km"). */}
-        <View style={{ width: isWeightReps ? COL_PREV : undefined, flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
-          <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} timeUnit={timeUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
+        <View style={{ width: COL_PREV, alignItems: 'center', justifyContent: 'center' }}>
+          <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
         </View>
-        <View className="flex-row items-center flex-1" style={{ gap: 8 }}>
-          {renderInputs()}
-        </View>
+        {columns.map(({ field, decimal }) => {
+          const [value, onChange, placeholder] = fieldState[field]
+          return (
+            <View key={field} style={{ flex: 1 }}>
+              <SetValueInput field={field} decimal={decimal} value={value} onChange={onChange}
+                placeholder={placeholder} active={isActive} />
+            </View>
+          )
+        })}
         {/* Columna «Notas»: se colapsa si RIR, notas y vídeo están off (misma condición
-            annotationColumn que la cabecera). weight_reps: ancho fijo (alineada). Otros tipos:
-            ancho natural (la etiqueta no cabe en 42px y no hay cabecera que la alinee). */}
+            annotationColumn que la cabecera). Más ancha con la escala RPE (palabras). */}
         {annotationColumn && (
-          <View style={{ width: isWeightReps ? COL_RIR : undefined, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: getEffortColumnWidth(measurementType, showRirInput), alignItems: 'center', justifyContent: 'center' }}>
             {showEffort && <EffortPicker value={rir} measurementType={measurementType} note={notes} hasVideo={hasVideo}
-              active={isActive} emptyDash={isWeightReps} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
+              active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
           </View>
         )}
         <View style={{ width: COL_CHECK, alignItems: 'center', justifyContent: 'center' }}>
           {renderCheckIndicator()}
         </View>
       </View>
+
+      {showTimer && <ExecutionTimer seconds={Number(time)} />}
 
       {showProgressionHint && <ProgressionHint prevReps={previousSet.reps} repsTarget={repsTarget} />}
 

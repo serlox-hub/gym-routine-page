@@ -9,13 +9,14 @@ import { colors } from '../../lib/styles'
 // (todos los MeasurementType vía formatPreviousSetValue) y, si el usuario usa RIR (`showRir`) y la
 // serie previa lo registró, una segunda línea discreta con el esfuerzo ("@2"), mismo formato que la
 // columna de esfuerzo actual. Es contexto de progresión (cómo de duro fue la última vez), no solo
-// qué peso. Un punto sutil marca que hubo nota/vídeo; tocar abre el detalle. El valor ya alimenta el
-// prefill automático de los inputs (useSetInputs).
+// qué peso. Un punto sutil marca que hubo nota/vídeo. El valor ya alimenta el prefill automático
+// de los inputs (useSetInputs).
+// SIEMPRE se puede tocar (haya nota o no): la columna mide 46px y elide ("2 × 3:2…"), así que la
+// hoja de detalle es el ÚNICO sitio donde se lee el valor entero, y encima con unidades.
 export default function PreviousSetCell({
   previousSet,
   measurementType = MeasurementType.WEIGHT_REPS,
   weightUnit = 'kg',
-  timeUnit = 's',
   distanceUnit = 'm',
   showRir = false,
 }) {
@@ -27,24 +28,25 @@ export default function PreviousSetCell({
     return <Text style={{ color: colors.textDisabled, fontSize: 12, textAlign: 'center' }}>–</Text>
   }
 
-  const interactive = !!previousSet.notes || !!previousSet.videoUrl
-  // weight_reps: sin unidad de peso ("75 × 6"); la cabecera KG ya la indica. Otros tipos la
-  // conservan (no tienen cabecera que desambigüe: "5km × 30:00", "Nv5 × 12:00").
-  const hideWeightUnit = measurementType === MeasurementType.WEIGHT_REPS
-  const valueText = formatPreviousSetValue(previousSet, measurementType, { weightUnit, timeUnit, distanceUnit, hideWeightUnit })
+  const hasDetail = !!previousSet.notes || !!previousSet.videoUrl
+  // Sin unidades ("75 × 6", "12 × 20:00"): TODOS los tipos tienen cabecera de columna que ya las
+  // indica (ver getSetColumns), y en 46px no caben. Ver docs/DECISIONS.md.
+  const valueText = formatPreviousSetValue(previousSet, measurementType, { weightUnit, distanceUnit, hideUnits: true })
+  // En la hoja SÍ van las unidades: allí no hay cabecera que las diga.
+  const fullValueText = formatPreviousSetValue(previousSet, measurementType, { weightUnit, distanceUnit })
   const effortText = formatPreviousSetEffort(previousSet, measurementType, showRir)
 
   // Punto de "hay nota/vídeo" IDÉNTICO al de la celda SERIE (6px, textLight, superíndice): mismo
   // significado (esta serie tiene detalle) → mismo indicador. Ver renderSetCell en SetRow.
   const valueEl = (
-    // maxWidth acota el Text al ancho de columna (weight_reps: 54px) para que numberOfLines={1}
+    // maxWidth acota el Text al ancho de columna (COL_PREV) para que numberOfLines={1}
     // trunque en vez de desbordar (paridad con el overflow/ellipsis del gemelo web).
     <View style={{ maxWidth: '100%', alignItems: 'center' }}>
       <View style={{ position: 'relative', maxWidth: '100%' }}>
         <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500', textAlign: 'center' }}>
           {valueText}
         </Text>
-        {interactive && <View style={{ position: 'absolute', top: '50%', right: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight, transform: [{ translateY: -9 }] }} />}
+        {hasDetail && <View style={{ position: 'absolute', top: '50%', right: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight, transform: [{ translateY: -9 }] }} />}
       </View>
       {effortText && (
         <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 10, fontWeight: '500', textAlign: 'center' }}>
@@ -54,16 +56,14 @@ export default function PreviousSetCell({
     </View>
   )
 
-  if (!interactive) {
-    return valueEl
-  }
-
   return (
     <>
+      {/* hitSlop vertical generoso = área táctil (#10) sin crecer el layout: al ser pulsable en
+          todas las filas es el tercer objetivo de la fila. */}
       <Pressable
         onPress={() => setShowDetail(true)}
         accessibilityLabel={t('workout:set.lastTime')}
-        hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+        hitSlop={{ top: 14, bottom: 14, left: 6, right: 6 }}
         className="active:opacity-70"
       >
         {valueEl}
@@ -71,6 +71,9 @@ export default function PreviousSetCell({
       <SetNotesView
         isOpen={showDetail}
         onClose={() => setShowDetail(false)}
+        title={t('workout:set.lastTime')}
+        summary={fullValueText}
+        effort={effortText}
         notes={previousSet.notes}
         videoUrl={previousSet.videoUrl}
       />
