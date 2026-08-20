@@ -65,7 +65,8 @@ export function ExerciseFormPanel({ exerciseId = null, isSystem, initialName = '
 
   return (
     <div className="p-4">
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(80vh - 220px)' }}>
+      {/* px-1 -mx-1: el ring de foco se corta si el padding horizontal vive en el padre. Ver CLAUDE.md · Styling */}
+      <div className="overflow-y-auto px-1 -mx-1" style={{ maxHeight: 'calc(80vh - 220px)' }}>
         <ExerciseForm
           initialData={initialData}
           onSubmit={handleSubmit}

@@ -55,7 +55,8 @@ export default function ExercisePickerModal({
 
       {isCreatingNew ? (
         <>
-          <div className="flex-1 overflow-y-auto min-h-0">
+          {/* px-1 -mx-1: el ring de foco se corta si el padding horizontal vive en el padre. Ver CLAUDE.md · Styling */}
+          <div className="flex-1 overflow-y-auto min-h-0 px-1 -mx-1">
             <ExerciseForm
               id="create-exercise-form"
               onSubmit={handleCreateExercise}

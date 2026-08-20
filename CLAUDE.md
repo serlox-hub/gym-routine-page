@@ -181,6 +181,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 - Use Tailwind CSS classes (web) / NativeWind classes (mobile)
 - Use style objects from `lib/styles.js` for consistency
 - **Safe Area (native)**: Todo contenido visible debe respetar el safe area (notch, Dynamic Island, home indicator). Usar `SafeAreaView` de `react-native-safe-area-context` para layouts, o `useSafeAreaInsets()` para elementos con `position: 'absolute'` que necesitan offset manual. Nunca usar valores fijos de `top`/`bottom` sin sumar el inset correspondiente.
+- **Contenedor con scroll que contiene inputs (web)**: el padding horizontal va en el propio elemento con `overflow-*-auto`, nunca delegado al padre o al hijo. `overflow-y-auto` recorta también en el eje X, y el ring de foco de `Input`/`Select`/`Textarea` (`focus:ring-1`) es un `box-shadow` que pinta 1px FUERA de la caja: sin padding propio queda cortado a izquierda y derecha. Si no se quiere cambiar la métrica visual, `px-1 -mx-1` en la caja de scroll.
 
 ### Color System (CRITICAL)
 
