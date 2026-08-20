@@ -9,7 +9,7 @@ import { colors } from '../../lib/styles.js'
 import { getExistingSupersetIds, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
+function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { id, name } = day
@@ -44,7 +44,9 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
     dayId: id,
     isStarting: startSessionMutation.isPending,
     isLoading: loadingBlocks,
+    hasSynced: activeSessionSynced,
   })
+  const isBusy = dayAction === WORKOUT_START_ACTION.BUSY
 
   const handleStartWorkout = (e) => {
     e.stopPropagation()
@@ -76,7 +78,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
         return
       case WORKOUT_START_ACTION.BUSY:
         e.stopPropagation()
-        return  // bloques sin cargar o arranque en vuelo
+        return  // bloques sin cargar, arranque en vuelo, o sesión activa aún desconocida
     }
   }
 
@@ -135,11 +137,15 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
             {!isEditing && (
               <button
                 onClick={handleStartPress}
-                disabled={dayAction === WORKOUT_START_ACTION.BUSY}
+                disabled={isBusy}
                 className="p-1 rounded hover:opacity-80 disabled:opacity-40"
                 style={{ opacity: dayAction === WORKOUT_START_ACTION.BLOCKED ? 0.4 : undefined }}
               >
-                <Play size={20} style={{ color: colors.success }} />
+                {/* BUSY es transitorio: se pinta cargando, no como un play que no responde. */}
+                {isBusy
+                  ? <LoadingSpinner inline />
+                  : <Play size={20} style={{ color: colors.success }} />
+                }
               </button>
             )}
             {isEditing && (

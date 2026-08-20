@@ -371,6 +371,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
   const reassignGym = useReassignSessionGym()
   const { hasMultiple, gymId: selectedGymId } = useSelectedGym()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
+  const activeSessionSynced = useWorkoutStore(state => state.activeSessionSynced)
 
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -493,7 +494,8 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
                 {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </span>
               <DropdownMenu items={[
-                !hasActiveSession && { icon: Play, label: t('workout:history.repeatWorkout'), onClick: () => setShowRepeatConfirm(true) },
+                // Mientras no se sepa si hay sesión activa no se ofrece: rebotaría en el guard del servidor.
+                !hasActiveSession && activeSessionSynced && { icon: Play, label: t('workout:history.repeatWorkout'), onClick: () => setShowRepeatConfirm(true) },
                 { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
                 { icon: Share2, label: t('common:buttons.share'), onClick: async () => {
                   const summaryData = await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })

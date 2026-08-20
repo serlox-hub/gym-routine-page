@@ -25,6 +25,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const [isEditing, setIsEditing] = useState(!!startEditing)
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
+  const activeSessionSynced = useWorkoutStore(state => state.activeSessionSynced)
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [dayToDelete, setDayToDelete] = useState(null)
@@ -277,6 +278,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
               dayNames={days.map(d => d.name)}
               hasActiveSession={hasActiveSession}
               activeRoutineDayId={activeRoutineDayId}
+              activeSessionSynced={activeSessionSynced}
               navigation={navigation}
             />
           ))

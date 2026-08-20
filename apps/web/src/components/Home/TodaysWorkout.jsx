@@ -5,7 +5,7 @@ import { useRoutines, useSelectedGym, getFreeWorkoutAction, WORKOUT_START_ACTION
 import { useStartSession } from '../../hooks/useWorkout.js'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { RoutineCard } from '../Routine/index.js'
-import { Skeleton } from '../ui/index.js'
+import { LoadingSpinner, Skeleton } from '../ui/index.js'
 import { colors, design } from '../../lib/styles.js'
 
 function TodaysWorkout() {
@@ -16,13 +16,18 @@ function TodaysWorkout() {
   const startSessionMutation = useStartSession()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
+  const activeSessionSynced = useWorkoutStore(state => state.activeSessionSynced)
   const freeAction = getFreeWorkoutAction({
     hasActiveSession,
     routineDayId: activeRoutineDayId,
     isStarting: startSessionMutation.isPending,
+    hasSynced: activeSessionSynced,
   })
   const isFreeSessionActive = freeAction === WORKOUT_START_ACTION.RESUME
   const isRoutineSessionActive = freeAction === WORKOUT_START_ACTION.BLOCKED
+  // BUSY es transitorio (arranque en vuelo, o todavía no se sabe si hay sesión). Se pinta
+  // como cargando en vez de dejar el botón intacto y comerse la pulsación en silencio.
+  const isBusy = freeAction === WORKOUT_START_ACTION.BUSY
 
   const pinnedRoutine = routines?.find(r => r.is_favorite)
   const hasRoutines = routines && routines.length > 0
@@ -43,7 +48,7 @@ function TodaysWorkout() {
         })
         return
       case WORKOUT_START_ACTION.BUSY:
-        return  // el arranque está en vuelo, ignorar la pulsación
+        return  // arranque en vuelo, o todavía no se sabe si hay sesión: ignorar
     }
   }
 
@@ -126,6 +131,7 @@ function TodaysWorkout() {
         {/* Free workout button */}
         <button
           onClick={handleFreeWorkoutPress}
+          disabled={isBusy}
           className="flex items-center justify-center gap-2"
           style={{
             backgroundColor: colors.bgSecondary,
@@ -133,13 +139,16 @@ function TodaysWorkout() {
             borderRadius: 14,
             height: 48,
             width: '100%',
-            opacity: isRoutineSessionActive ? 0.5 : 1,
-            cursor: 'pointer',
+            opacity: isRoutineSessionActive || isBusy ? 0.5 : 1,
+            cursor: isBusy ? 'default' : 'pointer',
           }}
-          onMouseEnter={!isRoutineSessionActive ? (e) => e.currentTarget.style.backgroundColor = colors.bgAlt : undefined}
-          onMouseLeave={!isRoutineSessionActive ? (e) => e.currentTarget.style.backgroundColor = colors.bgSecondary : undefined}
+          onMouseEnter={!isRoutineSessionActive && !isBusy ? (e) => e.currentTarget.style.backgroundColor = colors.bgAlt : undefined}
+          onMouseLeave={!isRoutineSessionActive && !isBusy ? (e) => e.currentTarget.style.backgroundColor = colors.bgSecondary : undefined}
         >
-          <Plus size={16} style={{ color: colors.success }} />
+          {isBusy
+            ? <LoadingSpinner inline />
+            : <Plus size={16} style={{ color: colors.success }} />
+          }
           <span style={{ color: colors.textPrimary, fontSize: design.cardTitleSize, fontWeight: 600 }}>
             {isFreeSessionActive
               ? t('workout:session.resume')

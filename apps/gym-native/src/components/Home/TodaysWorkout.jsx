@@ -6,7 +6,7 @@ import { useRoutines, useSelectedGym, getFreeWorkoutAction, WORKOUT_START_ACTION
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { RoutineCard } from '../Routine'
-import { Skeleton } from '../ui'
+import { LoadingSpinner, Skeleton } from '../ui'
 import { colors, design } from '../../lib/styles'
 
 function TodaysWorkout({ navigation }) {
@@ -16,13 +16,18 @@ function TodaysWorkout({ navigation }) {
   const { gymId } = useSelectedGym()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
+  const activeSessionSynced = useWorkoutStore(state => state.activeSessionSynced)
   const freeAction = getFreeWorkoutAction({
     hasActiveSession,
     routineDayId: activeRoutineDayId,
     isStarting: startSessionMutation.isPending,
+    hasSynced: activeSessionSynced,
   })
   const isFreeSessionActive = freeAction === WORKOUT_START_ACTION.RESUME
   const isRoutineSessionActive = freeAction === WORKOUT_START_ACTION.BLOCKED
+  // BUSY es transitorio (arranque en vuelo, o todavía no se sabe si hay sesión). Se pinta
+  // como cargando en vez de dejar el botón intacto y comerse la pulsación en silencio.
+  const isBusy = freeAction === WORKOUT_START_ACTION.BUSY
 
   const pinnedRoutine = routines?.find(r => r.is_favorite)
   const hasRoutines = routines && routines.length > 0
@@ -43,7 +48,7 @@ function TodaysWorkout({ navigation }) {
         startSessionMutation.mutate({ gymId })
         return
       case WORKOUT_START_ACTION.BUSY:
-        return  // el arranque está en vuelo, ignorar la pulsación
+        return  // arranque en vuelo, o todavía no se sabe si hay sesión: ignorar
     }
   }
 
@@ -130,19 +135,23 @@ function TodaysWorkout({ navigation }) {
       {/* Free workout button */}
       <Pressable
         onPress={handleFreeWorkoutPress}
+        disabled={isBusy}
         className="flex-row items-center justify-center gap-2"
         onPressIn={() => setFreePressed(true)}
         onPressOut={() => setFreePressed(false)}
         style={{
-          backgroundColor: freePressed && !isRoutineSessionActive ? colors.bgAlt : colors.bgSecondary,
+          backgroundColor: freePressed && !isRoutineSessionActive && !isBusy ? colors.bgAlt : colors.bgSecondary,
           borderWidth: 1,
           borderColor: colors.border,
           borderRadius: 14,
           height: 48,
-          opacity: isRoutineSessionActive ? 0.5 : 1,
+          opacity: isRoutineSessionActive || isBusy ? 0.5 : 1,
         }}
       >
-        <Plus size={16} color={colors.success} />
+        {isBusy
+          ? <LoadingSpinner inline />
+          : <Plus size={16} color={colors.success} />
+        }
         <Text style={{ color: colors.textPrimary, fontSize: design.cardTitleSize, fontWeight: '600' }}>
           {isFreeSessionActive
             ? t('workout:session.resume')

@@ -18,6 +18,7 @@ function RoutineDetail() {
   const isEditing = location.pathname.endsWith('/edit')
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
+  const activeSessionSynced = useWorkoutStore(state => state.activeSessionSynced)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
   const [selectedDayId, setSelectedDayId] = useState(null)
@@ -356,6 +357,7 @@ function RoutineDetail() {
                 isReorderingDays={reorderDays.isPending}
                 hasActiveSession={hasActiveSession}
                 activeRoutineDayId={activeRoutineDayId}
+                activeSessionSynced={activeSessionSynced}
               />
             ))
           )}

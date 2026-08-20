@@ -28,6 +28,7 @@ export default function DayCard({
   dayNames,
   hasActiveSession,
   activeRoutineDayId,
+  activeSessionSynced,
   navigation: _navigation,
 }) {
   const { t } = useTranslation()
@@ -58,7 +59,9 @@ export default function DayCard({
     dayId: id,
     isStarting: startSessionMutation.isPending,
     isLoading: loadingBlocks,
+    hasSynced: activeSessionSynced,
   })
+  const isBusy = dayAction === WORKOUT_START_ACTION.BUSY
 
   const handleClick = () => {
     setIsExpanded(!isExpanded)
@@ -88,7 +91,7 @@ export default function DayCard({
         handleStartWorkout()
         return
       case WORKOUT_START_ACTION.BUSY:
-        return  // bloques sin cargar o arranque en vuelo
+        return  // bloques sin cargar, arranque en vuelo, o sesión activa aún desconocida
     }
   }
 
@@ -134,11 +137,19 @@ export default function DayCard({
             {!isEditing && (
               <Pressable
                 onPress={handleStartPress}
-                disabled={dayAction === WORKOUT_START_ACTION.BUSY}
+                disabled={isBusy}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={{ padding: 4, opacity: dayAction === WORKOUT_START_ACTION.BLOCKED ? 0.4 : 1 }}
+                style={{
+                  padding: 4,
+                  // El 0.4 de BLOCKED es la convención "no disponible, pero responde"; BUSY se
+                  // atenúa igual que en web porque en native `disabled` no atenúa por sí solo.
+                  opacity: dayAction === WORKOUT_START_ACTION.BLOCKED || isBusy ? 0.4 : 1,
+                }}
               >
-                <Play size={20} color={colors.success} />
+                {isBusy
+                  ? <LoadingSpinner inline />
+                  : <Play size={20} color={colors.success} />
+                }
               </Pressable>
             )}
             {isEditing && (

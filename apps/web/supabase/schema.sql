@@ -617,9 +617,27 @@ CREATE OR REPLACE FUNCTION "public"."start_workout_session"("p_routine_day_id" i
 DECLARE
   v_session workout_sessions%ROWTYPE;
 BEGIN
-  INSERT INTO workout_sessions (routine_day_id, routine_name, day_name, status, user_id, gym_id)
-  VALUES (p_routine_day_id, p_routine_name, p_day_name, 'in_progress', auth.uid(), p_gym_id)
-  RETURNING * INTO v_session;
+  -- Sin usuario no se escribe nada. Verificado antes de este guard: con solo la anon key el
+  -- RPC devolvía 200 e insertaba una fila con `user_id NULL`, y el índice único no las limita
+  -- (en un índice los NULL son distintos entre sí), o sea basura escribible sin autenticar.
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM workout_sessions
+    WHERE user_id = auth.uid() AND status = 'in_progress'
+  ) THEN
+    RAISE EXCEPTION 'session_already_in_progress' USING ERRCODE = 'P0001';
+  END IF;
+
+  BEGIN
+    INSERT INTO workout_sessions (routine_day_id, routine_name, day_name, status, user_id, gym_id)
+    VALUES (p_routine_day_id, p_routine_name, p_day_name, 'in_progress', auth.uid(), p_gym_id)
+    RETURNING * INTO v_session;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'session_already_in_progress' USING ERRCODE = 'P0001';
+  END;
 
   IF jsonb_array_length(p_exercises) > 0 THEN
     INSERT INTO session_exercises (
@@ -1551,6 +1569,10 @@ CREATE INDEX "idx_workout_sessions_user_status" ON "public"."workout_sessions" U
 
 
 CREATE INDEX "idx_ws_gym" ON "public"."workout_sessions" USING "btree" ("gym_id");
+
+
+
+CREATE UNIQUE INDEX "workout_sessions_one_in_progress_per_user" ON "public"."workout_sessions" USING "btree" ("user_id") WHERE ("status" = 'in_progress'::"public"."session_status");
 
 
 

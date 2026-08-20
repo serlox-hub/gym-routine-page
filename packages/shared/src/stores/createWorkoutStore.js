@@ -7,6 +7,12 @@ import { persist } from 'zustand/middleware'
  */
 export function workoutStoreState(set, get) {
   return {
+    // ¿Ya sabemos si hay una sesión activa en el servidor para el usuario actual?
+    // "No hay sesión" y "todavía no lo sé" son estados distintos: sin esto la UI
+    // los confunde y deja arrancar un entrenamiento encima de otro (issue #30).
+    // NO se persiste: en frío hay que volver a preguntar al servidor.
+    activeSessionSynced: false,
+
     // Current session
     sessionId: null,
     routineDayId: null,
@@ -49,6 +55,10 @@ export function workoutStoreState(set, get) {
     restTimeInitial: 0,
     restTimerMinimized: false,
     restTimerContext: {},  // { setNumber, totalSets, exerciseName }
+
+    // Marca que la sincronización con el servidor ya respondió (o falló, y entonces
+    // lo mejor que tenemos es el estado local persistido).
+    setActiveSessionSynced: (synced) => set({ activeSessionSynced: synced }),
 
     // Start a new workout session
     // routineId and routineDayId can be null for free sessions
@@ -390,6 +400,9 @@ export function createWorkoutStore(storage) {
       const {
         restTimerActive: _rta, restTimerEndTime: _rte,
         restTimeInitial: _rti, restTimerMinimized: _rtm,
+        // activeSessionSynced fuera: rehidratarlo a true daría por sabido lo que
+        // todavía no se ha preguntado, que es justo el bug que evita (issue #30).
+        activeSessionSynced: _ass,
         ...rest
       } = state
       return rest

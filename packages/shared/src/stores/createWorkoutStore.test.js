@@ -547,6 +547,36 @@ describe('createWorkoutStore', () => {
     })
   })
 
+  // issue #30: si esta bandera se persistiera, en frío rehidrataría a `true` y la app daría
+  // por sabido lo que todavía no ha preguntado al servidor. Es EL invariante del arreglo.
+  describe('activeSessionSynced', () => {
+    it('arranca en false', () => {
+      expect(createWorkoutStore(makeMemStorage().storage).getState().activeSessionSynced).toBe(false)
+    })
+
+    it('NO se persiste: no entra en el JSON y en frío vuelve a false', () => {
+      const mem = makeMemStorage()
+      const s1 = createWorkoutStore(mem.storage)
+
+      act(() => { s1.getState().setActiveSessionSynced(true) })
+      expect(s1.getState().activeSessionSynced).toBe(true)
+
+      expect(mem.raw.get('workout-session')).not.toContain('activeSessionSynced')
+      expect(createWorkoutStore(mem.storage).getState().activeSessionSynced).toBe(false)
+    })
+
+    it('startSession y endSession no la tocan (no es estado de sesión, es de sincronización)', () => {
+      const s1 = createWorkoutStore(makeMemStorage().storage)
+      act(() => { s1.getState().setActiveSessionSynced(true) })
+
+      act(() => { s1.getState().startSession('s-1', null, null, null) })
+      expect(s1.getState().activeSessionSynced).toBe(true)
+
+      act(() => { s1.getState().endSession() })
+      expect(s1.getState().activeSessionSynced).toBe(true)
+    })
+  })
+
   describe('Factory', () => {
     it('creates independent store instances', () => {
       const store1 = createWorkoutStore()

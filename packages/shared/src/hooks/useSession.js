@@ -33,6 +33,7 @@ import { useUserId } from './useAuth.js'
 import { usePreference } from './usePreferences.js'
 import { useSetSelectedGym } from './useGyms.js'
 import { useAllUserExerciseGymUnits } from './useExercises.js'
+import { isSessionAlreadyInProgressError } from '../lib/workoutStartAction.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 
@@ -40,44 +41,83 @@ import { t } from '../i18n/index.js'
 // SESSION RESTORATION
 // ============================================
 
-export function useRestoreActiveSession({ onVisibilityChange } = {}) {
-  const restoreSession = useWorkoutStore(state => state.restoreSession)
-  const endSession = useWorkoutStore(state => state.endSession)
+// Contador de sincronizaciones para descartar respuestas obsoletas. Dos sincronizaciones
+// pueden solaparse (el cambio de usuario y el de visibilidad, p. ej.) y resolver en orden
+// inverso: sin esto, la vieja pisaría el estado de la nueva o daría por sabido lo que
+// todavía está en vuelo, que es la misma ventana que cierra el issue #30.
+let syncEpoch = 0
 
-  const syncRef = useRef()
-  syncRef.current = async () => {
-    try {
-      const activeSession = await fetchActiveSession()
-      const localSessionId = getWorkoutStore().getState().sessionId
+/**
+ * Pone el estado local de sesión al día con el servidor.
+ *
+ * Fuera del hook porque no solo la necesita el efecto: cuando el servidor rechaza un
+ * arranque con `session_already_in_progress` sabe algo que el cliente no, y sin volver a
+ * preguntar el aviso no sería accionable (diría "termina el entrenamiento" sin que la UI
+ * muestre ninguno). Lee y escribe el store por `getWorkoutStore()`, así que no depende de React.
+ */
+export async function syncActiveSessionState() {
+  const epoch = ++syncEpoch
+  const store = getWorkoutStore()
+  const vigente = () => epoch === syncEpoch
 
-      if (!localSessionId) {
-        if (!activeSession) return
-        const rawSets = await fetchCompletedSetsForSession(activeSession.id)
-        const completedSets = buildCompletedSetsMap(rawSets)
-        restoreSession({
-          sessionId: activeSession.id,
-          routineDayId: activeSession.routine_day_id,
-          routineId: activeSession.routine_days?.routine_id || null,
-          gymId: activeSession.gym_id ?? null,
-          startedAt: activeSession.started_at,
-          completedSets,
-          cachedSetData: completedSets,
-        })
-      } else if (!activeSession || activeSession.id !== localSessionId) {
-        endSession()
-      }
-    } catch {
-      // Error de red — no tocar el estado local para no perder datos
+  try {
+    const activeSession = await fetchActiveSession()
+    if (!vigente()) return
+    const { sessionId: localSessionId, restoreSession, endSession } = store.getState()
+
+    if (!localSessionId) {
+      if (!activeSession) return
+      const rawSets = await fetchCompletedSetsForSession(activeSession.id)
+      if (!vigente()) return
+      const completedSets = buildCompletedSetsMap(rawSets)
+      restoreSession({
+        sessionId: activeSession.id,
+        routineDayId: activeSession.routine_day_id,
+        routineId: activeSession.routine_days?.routine_id || null,
+        gymId: activeSession.gym_id ?? null,
+        startedAt: activeSession.started_at,
+        completedSets,
+        cachedSetData: completedSets,
+      })
+    } else if (!activeSession || activeSession.id !== localSessionId) {
+      endSession()
     }
+  } catch {
+    // Error de red — no tocar el estado local para no perder datos
+  } finally {
+    // También tras un fallo: sin red lo mejor que tenemos es el estado local persistido,
+    // y dejar los botones de arranque inertes para siempre sería peor.
+    if (vigente()) store.getState().setActiveSessionSynced(true)
   }
+}
+
+export function useRestoreActiveSession({ onVisibilityChange } = {}) {
+  const userId = useUserId()
+
+  // El suscriptor va por ref y NO en las deps: los wrappers de cada app lo crean nuevo en
+  // cada render, así que tenerlo en las deps re-lanzaba el efecto en cada render. Antes eso
+  // era el único motivo por el que la sesión se re-sincronizaba tras el login (de rebote, y
+  // memoizar el callback lo habría matado en silencio); ahora el disparo es `userId`, que es
+  // lo que de verdad significa "hay que volver a preguntar". Contrapartida asumida: si un
+  // llamador empezara a pasar `onVisibilityChange` a mitad de vida, no se resuscribiría.
+  const onVisibilityChangeRef = useRef(onVisibilityChange)
+  onVisibilityChangeRef.current = onVisibilityChange
 
   useEffect(() => {
-    syncRef.current()
+    // El usuario ha cambiado (o todavía no se sabe): lo que supiéramos ya no vale.
+    getWorkoutStore().getState().setActiveSessionSynced(false)
 
-    if (!onVisibilityChange) return
-    const cleanup = onVisibilityChange(() => syncRef.current())
-    return cleanup
-  }, [onVisibilityChange])
+    // Sin usuario no hay nada que preguntar: `fetchActiveSession` se apoya en RLS, así que
+    // sin sesión de auth devuelve vacío siempre. Consultarlo en la pantalla de login es una
+    // petición tirada en el momento más sensible a latencia.
+    if (!userId) return
+
+    syncActiveSessionState()
+
+    const subscribe = onVisibilityChangeRef.current
+    if (!subscribe) return
+    return subscribe(() => syncActiveSessionState())
+  }, [userId])
 }
 
 // ============================================
@@ -109,8 +149,21 @@ export function useStartSession({ onStartError } = {}) {
     // cuelga de onSuccess) y sin aviso parece que el botón no hace nada. Ningún llamador pasaba
     // onError, así que el toast va aquí, en el hook compartido, y no en cada botón de las dos apps.
     // `onStartError` sigue siendo para la limpieza propia de cada plataforma (native cierra la hoja).
-    onError: () => {
-      getNotifier()?.show(t('workout:session.startFailed'), 'error')
+    onError: (error) => {
+      // "Ya tienes una sesión en marcha" (guard de la BD, migración 058) no es una avería:
+      // es el invariante haciendo su trabajo, normalmente porque el cliente arrancó antes de
+      // saber que había sesión. Merece decir qué pasa en vez del error genérico.
+      const alreadyActive = isSessionAlreadyInProgressError(error)
+      if (alreadyActive) {
+        // El servidor sabe algo que el cliente no. Sin ponerse al día, el aviso no sería
+        // accionable: pediría terminar un entrenamiento que la UI insiste en que no existe.
+        syncActiveSessionState()
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
+      }
+      getNotifier()?.show(
+        alreadyActive ? t('workout:session.finishCurrentFirst') : t('workout:session.startFailed'),
+        alreadyActive ? 'info' : 'error',
+      )
       onStartError?.()
     },
   })

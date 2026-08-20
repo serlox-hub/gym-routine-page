@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getFreeWorkoutAction, getRoutineDayAction, WORKOUT_START_ACTION } from './workoutStartAction.js'
+import { getFreeWorkoutAction, getRoutineDayAction, isSessionAlreadyInProgressError, SESSION_ALREADY_IN_PROGRESS, WORKOUT_START_ACTION } from './workoutStartAction.js'
 
 describe('getFreeWorkoutAction', () => {
   it('arranca una sesión nueva cuando no hay ninguna en marcha', () => {
@@ -44,6 +44,24 @@ describe('getFreeWorkoutAction', () => {
   it('la sesión en marcha manda sobre isStarting', () => {
     expect(getFreeWorkoutAction({ hasActiveSession: true, routineDayId: 3, isStarting: true }))
       .toBe(WORKOUT_START_ACTION.BLOCKED)
+  })
+
+  // issue #30: "no hay sesión" y "todavía no lo sé" no pueden dar lo mismo
+  it('no deja arrancar mientras no se sepa si hay sesión activa', () => {
+    expect(getFreeWorkoutAction({ hasActiveSession: false, routineDayId: null, hasSynced: false }))
+      .toBe(WORKOUT_START_ACTION.BUSY)
+  })
+
+  it('sin sincronizar pero con sesión local conocida, no espera: eso ya es información', () => {
+    expect(getFreeWorkoutAction({ hasActiveSession: true, routineDayId: null, hasSynced: false }))
+      .toBe(WORKOUT_START_ACTION.RESUME)
+    expect(getFreeWorkoutAction({ hasActiveSession: true, routineDayId: 4, hasSynced: false }))
+      .toBe(WORKOUT_START_ACTION.BLOCKED)
+  })
+
+  it('hasSynced por defecto es true (no rompe a los llamadores que no lo pasan)', () => {
+    expect(getFreeWorkoutAction({ hasActiveSession: false, routineDayId: null }))
+      .toBe(WORKOUT_START_ACTION.START)
   })
 })
 
@@ -92,5 +110,46 @@ describe('getRoutineDayAction', () => {
       .toBe(WORKOUT_START_ACTION.RESUME)
     expect(getRoutineDayAction({ hasActiveSession: true, activeRoutineDayId: 0, dayId: 1 }))
       .toBe(WORKOUT_START_ACTION.BLOCKED)
+  })
+
+  // issue #30
+  it('no deja arrancar mientras no se sepa si hay sesión activa', () => {
+    expect(getRoutineDayAction({ hasActiveSession: false, activeRoutineDayId: null, dayId: 5, hasSynced: false }))
+      .toBe(WORKOUT_START_ACTION.BUSY)
+  })
+
+  it('sin sincronizar pero con sesión local conocida, decide con ella', () => {
+    expect(getRoutineDayAction({ hasActiveSession: true, activeRoutineDayId: 5, dayId: 5, hasSynced: false }))
+      .toBe(WORKOUT_START_ACTION.RESUME)
+    expect(getRoutineDayAction({ hasActiveSession: true, activeRoutineDayId: 9, dayId: 5, hasSynced: false }))
+      .toBe(WORKOUT_START_ACTION.BLOCKED)
+  })
+
+  it('hasSynced por defecto es true', () => {
+    expect(getRoutineDayAction({ hasActiveSession: false, activeRoutineDayId: null, dayId: 5 }))
+      .toBe(WORKOUT_START_ACTION.START)
+  })
+})
+
+describe('isSessionAlreadyInProgressError', () => {
+  it('reconoce el token que levanta el RPC', () => {
+    expect(isSessionAlreadyInProgressError({ message: SESSION_ALREADY_IN_PROGRESS, code: 'P0001' })).toBe(true)
+  })
+
+  it('lo reconoce aunque venga envuelto en más texto', () => {
+    expect(isSessionAlreadyInProgressError({
+      message: 'unexpected error: session_already_in_progress (SQLSTATE P0001)',
+    })).toBe(true)
+  })
+
+  it('no confunde otros fallos con este', () => {
+    expect(isSessionAlreadyInProgressError({ message: 'network error', code: '500' })).toBe(false)
+    expect(isSessionAlreadyInProgressError({ message: 'permission denied', code: '42501' })).toBe(false)
+  })
+
+  it('aguanta un error sin forma', () => {
+    expect(isSessionAlreadyInProgressError(null)).toBe(false)
+    expect(isSessionAlreadyInProgressError(undefined)).toBe(false)
+    expect(isSessionAlreadyInProgressError({})).toBe(false)
   })
 })
