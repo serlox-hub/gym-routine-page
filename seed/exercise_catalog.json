@@ -28,7 +28,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en el banco con los ojos debajo de la barra. Agarra la barra algo más ancho que los hombros, pies firmes en el suelo y escápulas retraídas.",
@@ -69,7 +68,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el banco a 30-45°. Acuéstate con los pies firmes, escápulas retraídas y agarre algo más ancho que los hombros.",
@@ -110,7 +108,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el banco en declive (-15 a -30°). Asegura las piernas en los soportes. Agarre algo más ancho que los hombros.",
@@ -151,7 +148,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en el banco con una mancuerna en cada muslo. Acuéstate llevando las mancuernas al pecho con las rodillas. Pies firmes, escápulas retraídas.",
@@ -192,7 +188,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Banco a 30-45°. Lleva las mancuernas a posición con ayuda de las rodillas. Escápulas retraídas, pies firmes en el suelo.",
@@ -233,7 +228,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Banco en declive, piernas aseguradas. Lleva las mancuernas al pecho desde los muslos. Escápulas retraídas.",
@@ -274,7 +268,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en el banco con agarre al ancho de los hombros o ligeramente más cerrado. Escápulas retraídas, pies firmes.",
@@ -315,7 +308,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Posiciona el banco plano dentro de la Smith con la barra alineada al pecho medio. Escápulas retraídas, pies firmes.",
@@ -356,7 +348,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Banco a 30-45° dentro de la Smith, barra alineada con la parte alta del pecho. Escápulas retraídas, pies firmes.",
@@ -397,7 +388,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que las asas queden a la altura del pecho medio. Espalda apoyada, pies firmes en el suelo.",
@@ -438,7 +428,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que las asas estén a la altura del pecho. Espalda apoyada, pies firmes.",
@@ -478,7 +467,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en banco plano con una mancuerna en cada mano, brazos extendidos arriba con los codos ligeramente flexionados.",
@@ -518,7 +506,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Banco a 30-45°. Mancuernas arriba con codos ligeramente flexionados, palmas enfrentadas.",
@@ -558,7 +545,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Banco en declive con piernas aseguradas. Mancuernas arriba, codos ligeramente flexionados, palmas enfrentadas.",
@@ -598,7 +584,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Poleas en posición alta. Colócate en el centro, un paso adelante, torso ligeramente inclinado. Agarra un asa con cada mano.",
@@ -638,7 +623,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Poleas en posición baja. Colócate en el centro, un paso adelante. Agarra las asas con palmas hacia arriba/adelante.",
@@ -678,7 +662,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Poleas a la altura del pecho. Colócate en el centro, un paso adelante, torso recto o ligeramente inclinado.",
@@ -718,7 +701,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que los brazos queden a la altura del pecho. Espalda contra el respaldo, pies firmes. Agarra las asas o apoya los antebrazos en las almohadillas.",
@@ -759,7 +741,6 @@
         "Espalda",
         "Tríceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en un banco plano. Sostén una mancuerna con ambas manos por un extremo, brazos extendidos sobre el pecho.",
@@ -800,7 +781,6 @@
         "Espalda",
         "Tríceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea alta con barra recta o cuerda. Colócate de frente a la polea, un paso atrás, torso inclinado. Brazos extendidos agarrando el accesorio arriba.",
@@ -841,7 +821,6 @@
         "Espalda",
         "Tríceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que los hombros queden alineados con el eje de la máquina. Espalda contra el respaldo, pies firmes. Apoya los codos/antebrazos en las almohadillas.",
@@ -882,7 +861,6 @@
         "Pecho",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Agarra las barras paralelas con los brazos extendidos. Inclina el torso hacia delante para enfatizar pecho. Cruza los pies atrás.",
@@ -923,7 +901,6 @@
         "Pecho",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca el cinturón de lastre con el peso elegido. Agarra las barras con brazos extendidos, torso inclinado hacia delante.",
@@ -964,7 +941,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Manos en el suelo algo más anchas que los hombros. Cuerpo recto de cabeza a talones, abdomen activado.",
@@ -1005,7 +981,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Manos en una superficie elevada (banco, cajón). Cuerpo recto, pies en el suelo.",
@@ -1046,7 +1021,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Pies elevados en un banco o cajón, manos en el suelo algo más anchas que los hombros. Cuerpo recto.",
@@ -1087,7 +1061,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Manos juntas debajo del pecho formando un diamante con los pulgares e índices. Cuerpo recto, abdomen activado.",
@@ -1128,7 +1101,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en el suelo con rodillas flexionadas. Lleva las mancuernas a posición de press. Los codos tocarán el suelo abajo.",
@@ -1168,7 +1140,6 @@
       "secondary_muscles": [
         "Tríceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en banco plano. Junta las mancuernas con las caras planas tocándose (hexagonales), palmas enfrentadas.",
@@ -1210,7 +1181,6 @@
         "Hombros",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea a la altura del pecho. Colócate de espaldas, un pie adelante para estabilidad. Agarra el asa con una mano a la altura del pecho.",
@@ -1251,7 +1221,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Cuélgate de la barra con agarre prono (palmas hacia fuera) a la anchura de los hombros o ligeramente más ancho. Brazos completamente extendidos, escápulas relajadas.",
@@ -1292,7 +1261,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca el peso en un cinturón de lastre o sujeta una mancuerna entre los pies. Cuélgate con agarre prono a la anchura de los hombros, brazos extendidos.",
@@ -1333,7 +1301,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Cuélgate de la barra con agarre supino (palmas hacia ti) a la anchura de los hombros. Brazos completamente extendidos.",
@@ -1374,7 +1341,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Agarra las asas paralelas con las palmas enfrentadas. Cuélgate con brazos extendidos y el core activado.",
@@ -1414,7 +1380,6 @@
       "secondary_muscles": [
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Sube a la plataforma de la máquina, coloca las rodillas (o pies) en el soporte y agarra la barra con agarre prono. Selecciona el contrapeso de asistencia.",
@@ -1455,7 +1420,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los muslos bien sujetos bajo las almohadillas. Agarra la barra con agarre prono algo más ancho que los hombros.",
@@ -1496,7 +1460,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los muslos bajo las almohadillas. Agarra la barra con agarre supino (palmas hacia ti) a la anchura de los hombros.",
@@ -1537,7 +1500,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los muslos bien sujetos. Agarra la barra prono con las manos bien separadas, cerca de los extremos de la barra.",
@@ -1578,7 +1540,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los muslos bajo las almohadillas. Agarra la barra o accesorio con las manos juntas, separadas unos 15-20 cm.",
@@ -1619,7 +1580,6 @@
         "Antebrazo",
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "en": {
           "cues": [
@@ -1647,7 +1607,6 @@
       "name_en": "Wide Neutral-Grip Lat Pulldown",
       "muscle_group": "Espalda",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "en": {
           "cues": [
@@ -1678,7 +1637,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca un asa en la polea alta. Siéntate de frente o ligeramente lateral y agarra con una mano.",
@@ -1719,7 +1677,6 @@
         "Bíceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate erguido con los muslos bajo las almohadillas. Agarre prono ancho. Inclina ligeramente la cabeza hacia delante.",
@@ -1760,7 +1717,6 @@
         "Tríceps",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie frente a la polea alta, un paso atrás. Agarra la barra o cuerda con brazos extendidos y ligera flexión de codos. Inclina el torso ligeramente hacia delante.",
@@ -1802,7 +1758,6 @@
         "Antebrazo",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie, pies a la anchura de los hombros. Inclínate con la cadera hasta que el torso quede a unos 45°. Agarra la barra prono algo más ancho que los hombros. Rodillas ligeramente flexionadas.",
@@ -1843,7 +1798,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie, pies a la anchura de los hombros. Inclínate con la cadera a unos 45°. Agarra la barra supino (palmas hacia arriba) a la anchura de los hombros. Rodillas ligeramente flexionadas.",
@@ -1884,7 +1838,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Apoya una mano y la rodilla del mismo lado en un banco. El otro pie en el suelo. Coge la mancuerna con el brazo libre, colgando perpendicular al suelo.",
@@ -1925,7 +1878,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los pies en las plataformas, rodillas ligeramente flexionadas. Agarra el accesorio con los brazos extendidos y el torso erguido.",
@@ -1966,7 +1918,6 @@
         "Bíceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los pies en las plataformas. Agarra una barra larga con agarre prono ancho. Torso erguido, brazos extendidos.",
@@ -2007,7 +1958,6 @@
         "Bíceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los pies en las plataformas. Coloca la barra V y agarra con las palmas enfrentadas. Torso erguido, brazos extendidos.",
@@ -2048,7 +1998,6 @@
         "Bíceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los pies en las plataformas. Agarra cada extremo de la cuerda con agarre neutro. Torso erguido.",
@@ -2090,7 +2039,6 @@
         "Antebrazo",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate frente a la polea baja. Agarra un asa con una mano, brazo extendido. Torso erguido, core activado para evitar rotación.",
@@ -2131,7 +2079,6 @@
         "Bíceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie o sentado frente a una polea alta. Agarra la cuerda o barra con ambas manos. Brazos extendidos hacia arriba y adelante.",
@@ -2169,7 +2116,6 @@
       "name_en": "T-Bar Row Machine",
       "muscle_group": "Espalda",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "en": {
           "cues": [
@@ -2199,7 +2145,6 @@
       "secondary_muscles": [
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en la máquina con el pecho apoyado en la almohadilla. Ajusta la altura para que las asas queden a la altura del pecho. Agarra las asas.",
@@ -2241,7 +2186,6 @@
         "Antebrazo",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con pies a la anchura de los hombros. Inclínate hasta que el torso quede paralelo al suelo. Agarre prono algo más ancho que los hombros. La barra empieza en el suelo cada repetición.",
@@ -2283,7 +2227,6 @@
         "Antebrazo",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Colócate perpendicular al extremo de una barra T o landmine. Adelanta la pierna contraria al brazo que trabaja. Agarra el extremo grueso de la barra con una mano.",
@@ -2324,7 +2267,6 @@
         "Bíceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca un banco inclinado a unos 30-45°. Túmbate boca abajo con el pecho apoyado. Coge una mancuerna en cada mano con los brazos colgando.",
@@ -2365,7 +2307,6 @@
         "Bíceps",
         "Abdominales"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Coloca una barra a la altura de la cadera en un rack. Cuélgate debajo con agarre prono, cuerpo recto y talones en el suelo.",
@@ -2407,7 +2348,6 @@
         "Abdominales",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Posición de plancha alta con las manos sobre dos mancuernas. Pies separados (más ancho = más estable). Core activado.",
@@ -2450,7 +2390,6 @@
         "Cuádriceps",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Pies a la anchura de las caderas, barra sobre el medio del pie. Agarre prono o mixto a la anchura de los hombros. Caderas más altas que las rodillas, hombros sobre la barra.",
@@ -2493,7 +2432,6 @@
         "Isquiotibiales",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Pies muy separados con las puntas hacia fuera. Agarra la barra entre las piernas con brazos rectos. Caderas cerca de la barra, torso más erguido que en convencional.",
@@ -2535,7 +2473,6 @@
         "Isquiotibiales",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca la barra en un rack a la altura de las rodillas o justo por debajo. Agarre prono o mixto a la anchura de los hombros. Posición similar al peso muerto pero con menos flexión de caderas.",
@@ -2575,7 +2512,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra a la altura de los muslos, agarre prono a la anchura de los hombros. Brazos rectos, hombros relajados.",
@@ -2615,7 +2551,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con una mancuerna en cada mano a los lados del cuerpo. Brazos rectos, hombros relajados.",
@@ -2655,7 +2590,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie dentro de la máquina Smith con la barra a la altura de los muslos. Agarre prono a la anchura de los hombros. Desbloquea la barra.",
@@ -2696,7 +2630,6 @@
         "Isquiotibiales",
         "Glúteos"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Colócate en el banco de hiperextensiones con las caderas sobre la almohadilla. Los pies bien sujetos. Brazos cruzados en el pecho o detrás de la cabeza.",
@@ -2737,7 +2670,6 @@
         "Isquiotibiales",
         "Glúteos"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Colócate en el banco de hiperextensiones con un disco abrazado al pecho o una barra detrás de la nuca. Caderas sobre la almohadilla, pies sujetos.",
@@ -2777,7 +2709,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Túmbate boca abajo en un banco inclinado a unos 30-45°. Brazos colgando con mancuernas ligeras y pulgares hacia arriba.",
@@ -2817,7 +2748,6 @@
       "secondary_muscles": [
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea a la altura de la cara. Agarra la cuerda con ambas manos, palmas enfrentadas. Da un paso atrás con los brazos extendidos.",
@@ -2859,7 +2789,6 @@
         "Pecho",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con los pies a la anchura de los hombros. Agarra la barra a la anchura de los hombros, apoyada en la parte alta del pecho con los codos ligeramente por delante.",
@@ -2900,7 +2829,6 @@
         "Tríceps",
         "Pecho"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en un banco con respaldo vertical (85-90°). Agarra la barra a la anchura de los hombros, apoyada en la parte alta del pecho.",
@@ -2941,7 +2869,6 @@
         "Tríceps",
         "Pecho"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en un banco con respaldo a 85-90°. Sube las mancuernas a la altura de los hombros con las palmas mirando al frente y los codos a unos 45° del torso.",
@@ -2983,7 +2910,6 @@
         "Pecho",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con los pies a la anchura de los hombros. Sube las mancuernas a la altura de los hombros con las palmas al frente.",
@@ -3024,7 +2950,6 @@
         "Tríceps",
         "Pecho"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en banco con respaldo a 85-90°. Sube las mancuernas a la altura del pecho con las palmas mirando hacia ti (como al final de un curl).",
@@ -3064,7 +2989,6 @@
       "secondary_muscles": [
         "Tríceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que los agarres queden a la altura de los hombros. Siéntate con la espalda pegada al respaldo y agarra las empuñaduras.",
@@ -3104,7 +3028,6 @@
       "secondary_muscles": [
         "Tríceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca un banco con respaldo a 85-90° dentro de la Smith. Ajusta la altura de la barra para que quede a la altura de la barbilla al sentarte. Agarre a la anchura de los hombros.",
@@ -3146,7 +3069,6 @@
         "Cuádriceps",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con los pies a la anchura de las caderas. Barra apoyada en la parte alta del pecho con agarre a la anchura de los hombros, codos ligeramente adelantados.",
@@ -3184,7 +3106,6 @@
       "name_en": "Dumbbell Lateral Raise",
       "muscle_group": "Hombros",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas a los lados, ligera flexión de codos. Pies a la anchura de los hombros, torso ligeramente inclinado hacia delante.",
@@ -3222,7 +3143,6 @@
       "name_en": "Cable Lateral Raise",
       "muscle_group": "Hombros",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca la polea en la posición más baja. De pie de lado a la máquina, agarra el asa con la mano más alejada. Ligera flexión de codos.",
@@ -3260,7 +3180,6 @@
       "name_en": "Machine Lateral Raise",
       "muscle_group": "Hombros",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que las almohadillas queden justo por encima de los codos. Siéntate con la espalda recta y los brazos a los lados.",
@@ -3300,7 +3219,6 @@
       "secondary_muscles": [
         "Pecho"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas frente a los muslos, palmas mirando hacia el cuerpo. Ligera flexión de codos.",
@@ -3340,7 +3258,6 @@
       "secondary_muscles": [
         "Pecho"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra apoyada en los muslos, agarre a la anchura de los hombros o ligeramente más estrecho, palmas hacia el cuerpo.",
@@ -3380,7 +3297,6 @@
       "secondary_muscles": [
         "Pecho"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea en posición baja. De espaldas a la máquina, pasa el cable entre las piernas y agarra el asa con una o ambas manos.",
@@ -3420,7 +3336,6 @@
       "secondary_muscles": [
         "Pecho"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con un disco sujeto con ambas manos a las 3 y las 9 (por los lados), brazos extendidos frente a los muslos.",
@@ -3460,7 +3375,6 @@
       "secondary_muscles": [
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Inclínate hacia delante con el torso casi paralelo al suelo, rodillas ligeramente flexionadas. Mancuernas colgando debajo del pecho con palmas enfrentadas.",
@@ -3500,7 +3414,6 @@
       "secondary_muscles": [
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Poleas a la altura del pecho, cruzando los cables. Agarra el asa izquierda con la mano derecha y viceversa, sin accesorios o con asas de estribo.",
@@ -3540,7 +3453,6 @@
       "secondary_muscles": [
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate mirando hacia la máquina (al revés del uso normal). Ajusta los brazos para que las asas queden frente a ti a la altura de los hombros. Pecho contra el respaldo.",
@@ -3580,7 +3492,6 @@
       "secondary_muscles": [
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Inclina un banco a 30-45°. Túmbate boca abajo con el pecho apoyado en el banco. Mancuernas colgando con los brazos perpendiculares al suelo.",
@@ -3621,7 +3532,6 @@
         "Espalda",
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra frente a los muslos, agarre algo más estrecho que la anchura de los hombros. Pies a la anchura de las caderas.",
@@ -3662,7 +3572,6 @@
         "Espalda",
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas frente a los muslos, palmas mirando al cuerpo. Pies a la anchura de las caderas.",
@@ -3703,7 +3612,6 @@
         "Espalda",
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea en posición baja con barra recta o EZ. De pie frente a la máquina, agarra la barra con las manos algo más estrechas que los hombros.",
@@ -3741,7 +3649,6 @@
       "name_en": "Dumbbell External Rotation",
       "muscle_group": "Hombros",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Túmbate de lado o de pie con el codo pegado al costado flexionado a 90°. Mancuerna ligera en la mano del brazo de trabajo. Puedes poner una toalla entre el codo y el torso.",
@@ -3779,7 +3686,6 @@
       "name_en": "Cable External Rotation",
       "muscle_group": "Hombros",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea a la altura del codo. De pie de lado a la máquina, agarra el asa con la mano más alejada. Codo pegado al costado a 90°.",
@@ -3817,7 +3723,6 @@
       "name_en": "Band External Rotation",
       "muscle_group": "Hombros",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Sujeta una banda elástica con ambas manos, codos pegados al costado a 90°. Los antebrazos apuntan al frente, paralelos entre sí.",
@@ -3857,7 +3762,6 @@
       "secondary_muscles": [
         "Espalda"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie con los brazos extendidos al frente a la altura de los hombros. Sujeta una banda elástica con ambas manos, separadas a la anchura de los hombros.",
@@ -3899,7 +3803,6 @@
         "Tríceps",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca un extremo de la barra en una esquina o en un accesorio landmine. De pie frente al extremo libre, sujétalo con ambas manos a la altura del pecho.",
@@ -3941,7 +3844,6 @@
         "Tríceps",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Barra en landmine. De pie en posición escalonada (pie contrario al brazo de trabajo adelantado). Sujeta el extremo con una mano a la altura del hombro.",
@@ -3982,7 +3884,6 @@
         "Tríceps",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la kettlebell en posición de rack: codo pegado al cuerpo, kettlebell apoyada en el antebrazo y el hombro. Pies a la anchura de los hombros.",
@@ -4020,7 +3921,6 @@
       "name_en": "Dumbbell Lu Raise",
       "muscle_group": "Hombros",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas ligeras a los lados. El movimiento combina elevación lateral hasta 90° seguida de una rotación y press por encima de la cabeza.",
@@ -4060,7 +3960,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra recta, agarre supino (palmas arriba) a la anchura de los hombros. Brazos extendidos, codos pegados al costado.",
@@ -4100,7 +3999,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra EZ, agarra las curvas interiores con las palmas hacia arriba. Brazos extendidos, codos pegados al costado.",
@@ -4140,7 +4038,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas a los lados, palmas mirando al cuerpo. Pies a la anchura de los hombros.",
@@ -4180,7 +4077,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas a los lados, palmas mirando al frente (supinadas). Codos pegados al costado.",
@@ -4220,7 +4116,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas a los lados, palmas mirando al cuerpo (agarre neutro). Codos pegados al costado.",
@@ -4258,7 +4153,6 @@
       "name_en": "Dumbbell Concentration Curl",
       "muscle_group": "Bíceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Sentado en un banco, inclínate y apoya la parte posterior del brazo (tríceps) contra la cara interna del muslo. Mancuerna en la mano con el brazo extendido.",
@@ -4298,7 +4192,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en el banco predicador con los brazos apoyados en la almohadilla inclinada. Agarra la barra EZ por las curvas interiores, palmas hacia arriba.",
@@ -4338,7 +4231,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en el banco predicador con un brazo apoyado en la almohadilla. Mancuerna en la mano con agarre supino.",
@@ -4376,7 +4268,6 @@
       "name_en": "Incline Dumbbell Curl",
       "muscle_group": "Bíceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Banco inclinado a 45-60°. Siéntate con la espalda pegada al respaldo. Brazos colgando a los lados con mancuernas, palmas al frente.",
@@ -4416,7 +4307,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea en posición baja con barra recta. De pie frente a la máquina, agarra la barra con palmas hacia arriba a la anchura de los hombros.",
@@ -4454,7 +4344,6 @@
       "name_en": "High Cable Curl",
       "muscle_group": "Bíceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Poleas altas en una estación de cable cruzado. De pie en el centro, agarra las asas con palmas hacia arriba, brazos extendidos a los lados a la altura de los hombros.",
@@ -4492,7 +4381,6 @@
       "name_en": "EZ-Bar Spider Curl",
       "muscle_group": "Bíceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Inclina un banco a 45° y apóyate con el pecho en la parte alta (lado inclinado hacia arriba). Los brazos cuelgan verticalmente con la barra EZ.",
@@ -4530,7 +4418,6 @@
       "name_en": "Dumbbell Spider Curl",
       "muscle_group": "Bíceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Banco inclinado a 45°, apóyate con el pecho en la parte alta. Brazos colgando verticalmente con mancuernas, palmas al frente.",
@@ -4570,7 +4457,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con barra recta, agarre supino a la anchura de los hombros. Brazos extendidos con la barra frente a los muslos.",
@@ -4610,7 +4496,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas a los lados, palmas al frente. Pies a la anchura de los hombros.",
@@ -4650,7 +4535,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas a los lados, palmas al frente (supinadas). Codos pegados al costado.",
@@ -4688,7 +4572,6 @@
       "name_en": "Bayesian Cable Curl",
       "muscle_group": "Bíceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea baja detrás de ti. De pie de espaldas a la máquina, agarra el asa con una mano. Da un paso adelante para tensar el cable con el brazo extendido detrás del cuerpo.",
@@ -4726,7 +4609,6 @@
       "name_en": "Machine Bicep Curl",
       "muscle_group": "Bíceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que los codos queden alineados con el eje de rotación de la máquina. Apoya los brazos en la almohadilla y agarra las asas.",
@@ -4766,7 +4648,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea en posición baja con accesorio de cuerda. De pie frente a la máquina, agarra los extremos de la cuerda con agarre neutro (palmas enfrentadas).",
@@ -4806,7 +4687,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Banco inclinado a 45-60°. Siéntate con la espalda pegada al respaldo. Mancuernas colgando a los lados con agarre neutro (palmas enfrentadas).",
@@ -4846,7 +4726,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie sujetando una kettlebell por el asa con una o ambas manos, brazos extendidos frente a los muslos. El peso colgante de la kettlebell desafía el agarre.",
@@ -4884,7 +4763,6 @@
       "name_en": "Straight Bar Tricep Pushdown",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea alta con barra recta. Colócate de frente, agarre prono (palmas abajo) al ancho de los hombros. Codos pegados al torso.",
@@ -4922,7 +4800,6 @@
       "name_en": "V-Bar Tricep Pushdown",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea alta con barra V. Agarre neutro (palmas enfrentadas), codos pegados al cuerpo.",
@@ -4960,7 +4837,6 @@
       "name_en": "Rope Tricep Pushdown",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea alta con cuerda. Agarra los extremos con agarre neutro. Codos pegados al cuerpo, torso ligeramente inclinado.",
@@ -4998,7 +4874,6 @@
       "name_en": "Underhand Tricep Pushdown",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea alta con barra recta o EZ. Agarre supino (palmas hacia arriba), codos pegados al torso.",
@@ -5036,7 +4911,6 @@
       "name_en": "Single-Arm Tricep Pushdown",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea alta con asa de una mano. Colócate de frente, codo pegado al costado. La otra mano puede apoyarse en la estructura.",
@@ -5077,7 +4951,6 @@
         "Pecho",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en banco plano. Agarra la barra EZ en la curva interna con agarre cerrado. Brazos extendidos sobre la frente.",
@@ -5118,7 +4991,6 @@
         "Pecho",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en banco plano. Una mancuerna en cada mano con agarre neutro (palmas enfrentadas). Brazos extendidos sobre la cara.",
@@ -5159,7 +5031,6 @@
         "Pecho",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en banco plano. Agarra la barra recta con agarre cerrado (ancho de hombros o menos). Brazos extendidos sobre la frente.",
@@ -5197,7 +5068,6 @@
       "name_en": "Overhead Dumbbell Tricep Extension",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Sentado o de pie. Sostén una mancuerna con ambas manos por un extremo, brazos extendidos por encima de la cabeza.",
@@ -5235,7 +5105,6 @@
       "name_en": "Single-Arm Overhead Dumbbell Tricep Extension",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Sentado o de pie. Una mancuerna en una mano, brazo extendido sobre la cabeza. La otra mano puede estabilizar el codo.",
@@ -5273,7 +5142,6 @@
       "name_en": "Overhead Cable Tricep Extension",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea baja con barra o asa. De espaldas a la polea, un paso adelante. Brazos sobre la cabeza, codos flexionados.",
@@ -5311,7 +5179,6 @@
       "name_en": "Overhead Rope Cable Tricep Extension",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea baja con cuerda. De espaldas a la polea, un paso adelante. Agarra la cuerda detrás de la cabeza con codos flexionados.",
@@ -5349,7 +5216,6 @@
       "name_en": "Dumbbell Tricep Kickback",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Inclínate apoyando una mano y rodilla en un banco. Brazo de trabajo con el codo a 90°, pegado al torso, paralelo al suelo.",
@@ -5387,7 +5253,6 @@
       "name_en": "Cable Tricep Kickback",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Polea baja con asa. Inclínate hacia delante, codo a 90° pegado al costado, brazo paralelo al suelo.",
@@ -5428,7 +5293,6 @@
         "Pecho",
         "Hombros"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Manos en el borde de un banco detrás de ti, dedos hacia delante. Piernas extendidas o flexionadas según nivel. Trasero cerca del banco.",
@@ -5469,7 +5333,6 @@
         "Pecho",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Misma posición que fondos en banco, pero con un disco o peso en los muslos. Piernas en otro banco para mayor rango.",
@@ -5507,7 +5370,6 @@
       "name_en": "Machine Tricep Extension",
       "muscle_group": "Tríceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que los codos queden alineados con el eje de la máquina. Espalda contra el respaldo, agarra las asas.",
@@ -5548,7 +5410,6 @@
         "Pecho",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en banco plano. Agarra la barra con agarre al ancho de hombros o ligeramente cerrado. Brazos extendidos sobre el pecho alto.",
@@ -5588,7 +5449,6 @@
       "secondary_muscles": [
         "Pecho"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Acuéstate en banco plano con mancuernas sostenidas arriba, brazos extendidos, palmas mirando a los pies.",
@@ -5626,7 +5486,6 @@
       "name_en": "Barbell Wrist Curl",
       "muscle_group": "Antebrazo",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en un banco con los antebrazos apoyados en los muslos, muñecas sobresaliendo del borde de las rodillas. Agarra la barra con agarre supino.",
@@ -5664,7 +5523,6 @@
       "name_en": "Dumbbell Wrist Curl",
       "muscle_group": "Antebrazo",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los antebrazos apoyados en los muslos, muñecas fuera de las rodillas. Una mancuerna en cada mano con agarre supino.",
@@ -5702,7 +5560,6 @@
       "name_en": "Barbell Reverse Wrist Curl",
       "muscle_group": "Antebrazo",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los antebrazos apoyados en los muslos, muñecas fuera de las rodillas. Agarra la barra con agarre prono (palmas hacia abajo).",
@@ -5740,7 +5597,6 @@
       "name_en": "Dumbbell Reverse Wrist Curl",
       "muscle_group": "Antebrazo",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con los antebrazos apoyados en los muslos, muñecas fuera de las rodillas. Mancuernas con agarre prono (palmas hacia abajo).",
@@ -5780,7 +5636,6 @@
       "secondary_muscles": [
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra EZ agarrada en prono (palmas hacia abajo) a la anchura de los hombros. Codos pegados al cuerpo.",
@@ -5820,7 +5675,6 @@
       "secondary_muscles": [
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra recta agarrada en prono a la anchura de los hombros. Codos pegados al cuerpo, brazos extendidos.",
@@ -5860,7 +5714,6 @@
       "secondary_muscles": [
         "Bíceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie frente a la polea baja. Agarra la barra recta o EZ con agarre prono. Codos pegados al cuerpo.",
@@ -5902,7 +5755,6 @@
         "Hombros",
         "Abdominales"
       ],
-      "measurement_type": "weight_distance",
       "instructions": {
         "es": {
           "setup": "Coge una mancuerna pesada o kettlebell en cada mano. De pie erguido con hombros atrás y abajo. Core activado.",
@@ -5942,7 +5794,6 @@
       "secondary_muscles": [
         "Espalda"
       ],
-      "measurement_type": "time",
       "instructions": {
         "es": {
           "setup": "Cuélgate de una barra con agarre prono a la anchura de los hombros. Brazos completamente extendidos. Hombros relajados (no empaquetados).",
@@ -5980,7 +5831,6 @@
       "name_en": "Plate Pinch Hold",
       "muscle_group": "Antebrazo",
       "secondary_muscles": [],
-      "measurement_type": "weight_time",
       "instructions": {
         "es": {
           "setup": "Junta dos discos lisos (cara lisa hacia fuera) y sujétalos con los dedos en pinza (pulgar de un lado, dedos del otro). De pie erguido.",
@@ -6018,7 +5868,6 @@
       "name_en": "Wrist Roller",
       "muscle_group": "Antebrazo",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con los brazos extendidos al frente a la altura de los hombros, sosteniendo el rodillo con ambas manos. El peso cuelga de la cuerda.",
@@ -6056,7 +5905,6 @@
       "name_en": "Hand Gripper",
       "muscle_group": "Antebrazo",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coge el gripper con una mano. Coloca la parte fija contra la palma y la parte móvil contra los dedos. Codo puede estar flexionado o brazo recto.",
@@ -6099,7 +5947,6 @@
         "Espalda",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca la barra sobre los trapecios superiores, pies a la anchura de hombros con las puntas ligeramente hacia fuera.",
@@ -6142,7 +5989,6 @@
         "Espalda",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca la barra sobre la espina de la escápula (más baja que en barra alta), agarre ancho. Pies ligeramente más abiertos que los hombros.",
@@ -6184,7 +6030,6 @@
         "Abdominales",
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Apoya la barra en los deltoides frontales, codos altos apuntando al frente. Pies a la anchura de hombros.",
@@ -6225,7 +6070,6 @@
         "Glúteos",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Sujeta una mancuerna vertical contra el pecho, agarrándola por un extremo con ambas manos. Pies a la anchura de hombros o ligeramente más abiertos.",
@@ -6266,7 +6110,6 @@
         "Glúteos",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Sujeta la kettlebell por los cuernos contra el pecho, con los codos pegados al cuerpo. Pies a la anchura de hombros.",
@@ -6307,7 +6150,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Colócate bajo la barra con los pies ligeramente adelantados respecto a la cadera. Barra sobre los trapecios, desbloquea girando las muñecas.",
@@ -6347,7 +6189,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Apoya la espalda completamente en el respaldo, hombros bajo las almohadillas. Pies en la mitad inferior de la plataforma, separados al ancho de hombros.",
@@ -6388,7 +6229,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca el empeine del pie trasero sobre un banco. Pie delantero a unos 60-70 cm del banco. Mancuerna en cada mano.",
@@ -6429,7 +6269,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Barra sobre los trapecios como en una sentadilla. Empeine del pie trasero apoyado en un banco. Pie delantero firme en el suelo.",
@@ -6470,7 +6309,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Barra de la Smith sobre los trapecios. Pie trasero en un banco detrás de ti. Ajusta el pie delantero para que la rodilla quede alineada al bajar.",
@@ -6508,7 +6346,6 @@
       "name_en": "Sissy Squat",
       "muscle_group": "Cuádriceps",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie, sujétate a un soporte para mantener el equilibrio. Pies al ancho de caderas, de puntillas.",
@@ -6548,7 +6385,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Colócate en la máquina con la espalda contra el respaldo y los hombros bajo las almohadillas. Pies en la parte inferior de la plataforma.",
@@ -6588,7 +6424,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Colócate el cinturón de carga en la cadera con el peso colgando entre las piernas. Pies en las plataformas elevadas, al ancho de hombros.",
@@ -6629,7 +6464,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en la prensa a 45°, espalda y glúteo firmemente apoyados. Pies al ancho de hombros en la plataforma.",
@@ -6670,7 +6504,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con la espalda recta contra el respaldo. Pies al ancho de hombros en la plataforma, rodillas alineadas con los pies.",
@@ -6710,7 +6543,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en la prensa con la espalda bien apoyada. Coloca los pies juntos en el centro-bajo de la plataforma.",
@@ -6748,7 +6580,6 @@
       "name_en": "Machine Leg Extension",
       "muscle_group": "Cuádriceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el respaldo para que las rodillas queden alineadas con el eje de la máquina. Rodillo en la parte baja de las espinillas, justo encima del tobillo.",
@@ -6786,7 +6617,6 @@
       "name_en": "Single-Leg Machine Leg Extension",
       "muscle_group": "Cuádriceps",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Misma configuración que la extensión bilateral pero trabaja una pierna a la vez. Rodilla alineada con el eje, rodillo sobre el tobillo.",
@@ -6827,7 +6657,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con una mancuerna en cada mano, brazos extendidos a los lados. Pies juntos.",
@@ -6868,7 +6697,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Barra sobre los trapecios como en una sentadilla. De pie con los pies juntos, core activado.",
@@ -6909,7 +6737,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas a los lados o barra en los trapecios. Necesitas espacio para caminar hacia delante.",
@@ -6950,7 +6777,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con una mancuerna en cada mano, brazos a los lados. Pies a la anchura de caderas.",
@@ -6991,7 +6817,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con mancuernas a los lados o una mancuerna en posición goblet. Pies juntos.",
@@ -7032,7 +6857,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie frente a un cajón o banco a la altura de la rodilla. Mancuerna en cada mano, brazos extendidos.",
@@ -7073,7 +6897,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Barra sobre los trapecios, de pie frente a un cajón estable. Asegúrate de tener buen equilibrio antes de empezar.",
@@ -7114,7 +6937,6 @@
         "Glúteos",
         "Abdominales"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie sobre una pierna, la pierna libre extendida al frente. Brazos al frente para contrapeso.",
@@ -7155,7 +6977,6 @@
         "Glúteos",
         "Pantorrillas"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie con los pies al ancho de hombros, brazos a los lados o manos detrás de la cabeza.",
@@ -7195,7 +7016,6 @@
       "secondary_muscles": [
         "Pantorrillas"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Túmbate boca abajo en la máquina, rodillas alineadas con el eje de rotación. Rodillo justo por encima de los talones, caderas pegadas a la almohadilla.",
@@ -7235,7 +7055,6 @@
       "secondary_muscles": [
         "Pantorrillas"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con la espalda apoyada, rodillas alineadas con el eje de la máquina. Rodillo sobre la parte trasera de los tobillos, almohadilla del muslo ajustada sobre las rodillas.",
@@ -7275,7 +7094,6 @@
       "secondary_muscles": [
         "Pantorrillas"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie frente a la máquina, apoya el muslo en la almohadilla. Rodillo sobre el tendón de Aquiles, agárrate a las asas.",
@@ -7315,7 +7133,6 @@
       "secondary_muscles": [
         "Pantorrillas"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Túmbate en la máquina de curl femoral tumbado. Usa solo una pierna, rodillo sobre el tobillo. La pierna libre descansa al lado sin participar.",
@@ -7357,7 +7174,6 @@
         "Glúteos",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra en las manos, agarre prono al ancho de hombros. Rodillas ligeramente flexionadas, pies al ancho de caderas.",
@@ -7399,7 +7215,6 @@
         "Glúteos",
         "Antebrazo"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con una mancuerna en cada mano, agarre neutro frente a los muslos. Rodillas ligeramente flexionadas.",
@@ -7441,7 +7256,6 @@
         "Espalda",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie sobre una pierna, mancuerna en la mano contraria (o en ambas). Rodilla de apoyo ligeramente flexionada.",
@@ -7482,7 +7296,6 @@
         "Glúteos",
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con la barra, agarre prono al ancho de hombros. Piernas con mínima flexión de rodilla (casi rectas). Pies al ancho de caderas.",
@@ -7523,7 +7336,6 @@
         "Glúteos",
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Barra sobre los trapecios como en una sentadilla. Pies al ancho de hombros, rodillas ligeramente flexionadas.",
@@ -7564,7 +7376,6 @@
         "Glúteos",
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Sentado en un banco con la barra sobre los trapecios. Pies firmes en el suelo, más abiertos que los hombros para que el torso baje entre las piernas.",
@@ -7604,7 +7415,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De rodillas con los tobillos fijados (por un compañero o una barra baja). Cuerpo recto desde las rodillas hasta la cabeza.",
@@ -7644,7 +7454,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Misma posición que el curl nórdico pero con una banda elástica enganchada a un punto alto y sujeta al pecho, o con las manos apoyadas en un cajón para asistir.",
@@ -7685,7 +7494,6 @@
         "Glúteos",
         "Espalda"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Túmbate boca abajo en la máquina de hiperextensión inversa con la cadera en el borde. Agárrate a las asas, piernas colgando.",
@@ -7726,7 +7534,6 @@
         "Glúteos",
         "Abdominales"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba, talones sobre una pelota suiza, brazos a los lados en el suelo. Eleva la cadera formando una línea recta.",
@@ -7767,7 +7574,6 @@
         "Glúteos",
         "Abdominales"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba, talones sobre discos deslizantes (o toallas en suelo liso). Brazos a los lados, cadera elevada.",
@@ -7807,7 +7613,6 @@
       "secondary_muscles": [
         "Pantorrillas"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie frente a una polea baja, engancha la tobillera al cable. Sujétate a la máquina para mantener el equilibrio.",
@@ -7848,7 +7653,6 @@
         "Glúteos",
         "Espalda"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Colócate en la máquina GHD con las rodillas en la almohadilla y los pies enganchados. Empieza con el torso vertical.",
@@ -7889,7 +7693,6 @@
         "Isquiotibiales",
         "Cuádriceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Apoya la parte media-alta de la espalda en un banco y coloca la barra sobre el pliegue de la cadera con un pad. Pies a la anchura de los hombros, rodillas a 90° en la posición final.",
@@ -7930,7 +7733,6 @@
         "Isquiotibiales",
         "Cuádriceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Apoya la espalda alta en un banco y sujeta una mancuerna sobre el pliegue de la cadera con ambas manos. Pies a la anchura de los hombros.",
@@ -7971,7 +7773,6 @@
         "Isquiotibiales",
         "Cuádriceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el respaldo y la almohadilla de la cadera de la máquina. Siéntate con la espalda apoyada y los pies firmes en la plataforma, rodillas a 90° arriba.",
@@ -8012,7 +7813,6 @@
         "Isquiotibiales",
         "Abdominales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Apoya la espalda alta en un banco con un pie en el suelo y la otra pierna elevada (rodilla al pecho o extendida). Puedes añadir peso sobre la cadera del lado de trabajo.",
@@ -8052,7 +7852,6 @@
       "secondary_muscles": [
         "Isquiotibiales"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Túmbate boca arriba con las rodillas flexionadas, pies apoyados en el suelo a la anchura de la cadera. Brazos a los lados con las palmas hacia abajo.",
@@ -8092,7 +7891,6 @@
       "secondary_muscles": [
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Túmbate boca arriba con la barra sobre el pliegue de la cadera (usa pad). Rodillas flexionadas, pies a la anchura de la cadera. Sujeta la barra con ambas manos.",
@@ -8133,7 +7931,6 @@
         "Isquiotibiales",
         "Abdominales"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Túmbate boca arriba con una rodilla flexionada y el pie apoyado. Eleva la otra pierna con la rodilla al pecho o extendida hacia el techo.",
@@ -8173,7 +7970,6 @@
       "secondary_muscles": [
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca una tobillera en la polea baja y engánchala al tobillo. De pie frente a la máquina, agárrate a la estructura para mantener el equilibrio. Inclina ligeramente el torso hacia delante.",
@@ -8213,7 +8009,6 @@
       "secondary_muscles": [
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta la máquina y coloca el pie en la plataforma. Apóyate en los agarres con el pecho contra el soporte y la espalda en posición neutra.",
@@ -8251,7 +8046,6 @@
       "name_en": "Machine Hip Abduction",
       "muscle_group": "Glúteos",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en la máquina con la espalda apoyada y las almohadillas en la parte externa de las rodillas o muslos. Pies en los apoyos.",
@@ -8289,7 +8083,6 @@
       "name_en": "Cable Hip Abduction",
       "muscle_group": "Glúteos",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca una tobillera en la polea baja y engánchala al tobillo de la pierna de trabajo. De pie de lado a la máquina, agárrate a la estructura.",
@@ -8327,7 +8120,6 @@
       "name_en": "Banded Hip Abduction",
       "muscle_group": "Glúteos",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca una banda elástica por encima de las rodillas. Puedes hacerlo de pie, sentado o en posición de sentadilla parcial.",
@@ -8368,7 +8160,6 @@
         "Cuádriceps",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con los pies más abiertos que los hombros, puntas hacia fuera a 45°. Sujeta una mancuerna verticalmente entre las piernas con ambas manos.",
@@ -8409,7 +8200,6 @@
         "Cuádriceps",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca la barra en la espalda alta (posición de sentadilla). Pies más abiertos que los hombros con las puntas hacia fuera a 45°.",
@@ -8447,7 +8237,6 @@
       "name_en": "Machine Hip Adduction",
       "muscle_group": "Glúteos",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en la máquina con la espalda apoyada y las almohadillas en la parte interna de las rodillas o muslos. Comienza con las piernas abiertas.",
@@ -8485,7 +8274,6 @@
       "name_en": "Cable Hip Adduction",
       "muscle_group": "Glúteos",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca una tobillera en la polea baja y engánchala al tobillo de la pierna de trabajo. De pie de lado a la máquina, la pierna de trabajo es la más cercana a la polea.",
@@ -8523,7 +8311,6 @@
       "name_en": "Banded Clamshell",
       "muscle_group": "Glúteos",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Túmbate de lado con una banda elástica por encima de las rodillas. Rodillas flexionadas a 90°, pies juntos y caderas apiladas.",
@@ -8561,7 +8348,6 @@
       "name_en": "Frog Pump",
       "muscle_group": "Glúteos",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Túmbate boca arriba con las plantas de los pies juntas y las rodillas abiertas (posición de mariposa). Los talones deben estar cerca de los glúteos.",
@@ -8599,7 +8385,6 @@
       "name_en": "Standing Machine Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Colócate bajo las almohadillas de la máquina con las puntas de los pies en el borde de la plataforma. Los talones quedan en el aire. Piernas casi extendidas.",
@@ -8637,7 +8422,6 @@
       "name_en": "Seated Machine Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate con las almohadillas sobre los muslos (cerca de las rodillas) y las puntas de los pies en el borde de la plataforma. Rodillas a 90°.",
@@ -8675,7 +8459,6 @@
       "name_en": "Leg Press Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en la prensa de piernas y coloca solo las puntas de los pies en la parte baja de la plataforma. Piernas casi extendidas, desbloquea los seguros.",
@@ -8713,7 +8496,6 @@
       "name_en": "Dumbbell Standing Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie sobre un escalón o disco con las puntas de los pies en el borde. Sujeta una mancuerna en una mano y agárrate a algo para equilibrarte.",
@@ -8751,7 +8533,6 @@
       "name_en": "Barbell Standing Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca la barra en la espalda alta como en una sentadilla. Puntas de los pies en el borde de un escalón o disco, talones en el aire.",
@@ -8789,7 +8570,6 @@
       "name_en": "Smith Machine Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca la barra de la Smith en los hombros. Puntas de los pies en el borde de un escalón o disco debajo de la barra, talones en el aire.",
@@ -8827,7 +8607,6 @@
       "name_en": "Single-Leg Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie sobre un escalón con la punta de un pie en el borde. La otra pierna queda en el aire. Agárrate a algo para equilibrarte. Puedes sujetar una mancuerna.",
@@ -8865,7 +8644,6 @@
       "name_en": "Donkey Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Inclínate hacia delante apoyando los antebrazos en un soporte alto (máquina, banco alto). Puntas de los pies en el borde de un escalón, talones en el aire. La cadera queda flexionada a 90°.",
@@ -8903,7 +8681,6 @@
       "name_en": "Calf Jumps",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie con los pies a la anchura de la cadera, rodillas casi extendidas. Brazos a los lados o en la cintura.",
@@ -8941,7 +8718,6 @@
       "name_en": "Hack Squat Calf Raise",
       "muscle_group": "Pantorrillas",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Colócate en la máquina de hack squat con la espalda en el respaldo. Solo las puntas de los pies en la parte baja de la plataforma, piernas casi extendidas.",
@@ -8979,7 +8755,6 @@
       "name_en": "Floor Crunch",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba con rodillas flexionadas y pies apoyados en el suelo. Manos detrás de las orejas sin entrelazar los dedos.",
@@ -9017,7 +8792,6 @@
       "name_en": "Kneeling Cable Crunch",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De rodillas frente a la polea alta, sujeta la cuerda por detrás de la cabeza. Caderas fijas ligeramente detrás de las rodillas.",
@@ -9055,7 +8829,6 @@
       "name_en": "Cable Crunch Machine",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en la máquina con la espalda apoyada en el respaldo y los pies sujetos. Agarra las asas a la altura del pecho o detrás de la cabeza según el diseño.",
@@ -9093,7 +8866,6 @@
       "name_en": "Machine Crunch",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Siéntate en la máquina, ajusta la almohadilla al pecho y sujeta bien los pies. Espalda apoyada en el respaldo.",
@@ -9131,7 +8903,6 @@
       "name_en": "Reverse Crunch",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba con brazos a los lados. Eleva las piernas con rodillas flexionadas a 90 grados.",
@@ -9169,7 +8940,6 @@
       "name_en": "Bicycle Crunch",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba, manos detrás de las orejas, piernas elevadas con rodillas a 90 grados.",
@@ -9207,7 +8977,6 @@
       "name_en": "Weighted Crunch",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba con rodillas flexionadas. Sujeta un disco o mancuerna contra el pecho o con brazos extendidos sobre la cabeza.",
@@ -9247,7 +9016,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Cuélgate de una barra con agarre prono a la anchura de los hombros. Brazos extendidos, cuerpo inmóvil.",
@@ -9285,7 +9053,6 @@
       "name_en": "Parallel Bar Leg Raise",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Apóyate en las paralelas o en la estación de dip con los antebrazos en las almohadillas y la espalda contra el respaldo.",
@@ -9323,7 +9090,6 @@
       "name_en": "Lying Leg Raise",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba con las manos debajo de los glúteos o a los lados. Piernas juntas y extendidas.",
@@ -9363,7 +9129,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Cuélgate de una barra con agarre a la anchura de los hombros. Brazos extendidos, cuerpo recto.",
@@ -9404,7 +9169,6 @@
         "Hombros",
         "Glúteos"
       ],
-      "measurement_type": "time",
       "instructions": {
         "es": {
           "setup": "Apoya los antebrazos y las puntas de los pies en el suelo. Codos directamente debajo de los hombros.",
@@ -9445,7 +9209,6 @@
         "Hombros",
         "Glúteos"
       ],
-      "measurement_type": "time",
       "instructions": {
         "es": {
           "setup": "Apóyate sobre un antebrazo con el codo debajo del hombro. Pies apilados o uno delante del otro. Cuerpo de lado.",
@@ -9486,7 +9249,6 @@
         "Hombros",
         "Glúteos"
       ],
-      "measurement_type": "weight_time",
       "instructions": {
         "es": {
           "setup": "Posición de plancha frontal con un disco o peso colocado en la zona media de la espalda. Pide a alguien que te lo coloque o deslízalo desde un banco.",
@@ -9527,7 +9289,6 @@
         "Hombros",
         "Espalda"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De rodillas sobre una colchoneta, sujeta la rueda abdominal con ambas manos en el suelo frente a ti.",
@@ -9567,7 +9328,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie de lado a la polea alta, pies a la anchura de los hombros. Sujeta el asa con ambas manos con los brazos extendidos arriba hacia la polea.",
@@ -9607,7 +9367,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie de lado a la polea baja, pies a la anchura de los hombros. Sujeta el asa con ambas manos abajo hacia la polea.",
@@ -9645,7 +9404,6 @@
       "name_en": "Weighted Russian Twist",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Sentado en el suelo con rodillas flexionadas y pies ligeramente elevados. Inclina el tronco hacia atrás unos 45 grados. Sujeta un disco o mancuerna con ambas manos frente al pecho.",
@@ -9685,7 +9443,6 @@
       "secondary_muscles": [
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie de lado a la polea a la altura del pecho. Sujeta el asa con ambas manos pegadas al esternón. Pies a la anchura de los hombros.",
@@ -9723,7 +9480,6 @@
       "name_en": "Sit-Up",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba con rodillas flexionadas y pies apoyados en el suelo (o sujetos). Brazos cruzados sobre el pecho o manos detrás de las orejas.",
@@ -9761,7 +9517,6 @@
       "name_en": "V-Up",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba con piernas extendidas y brazos extendidos por encima de la cabeza.",
@@ -9802,7 +9557,6 @@
         "Hombros",
         "Cuádriceps"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "En posición de flexión de brazos (push-up) con brazos extendidos, manos debajo de los hombros. Cuerpo en línea recta.",
@@ -9842,7 +9596,6 @@
       "secondary_muscles": [
         "Espalda"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado en un banco, agarra el borde por detrás de la cabeza con ambas manos. Solo los hombros y la parte alta de la espalda tocan el banco.",
@@ -9880,7 +9633,6 @@
       "name_en": "Hollow Hold",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "time",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba con brazos extendidos por encima de la cabeza y piernas juntas extendidas.",
@@ -9918,7 +9670,6 @@
       "name_en": "Dead Bug",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado boca arriba con brazos extendidos hacia el techo y rodillas flexionadas a 90 grados (espinillas paralelas al suelo).",
@@ -9959,7 +9710,6 @@
         "Glúteos",
         "Espalda"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "En cuadrupedia: manos debajo de los hombros, rodillas debajo de las caderas. Espalda neutra.",
@@ -9997,7 +9747,6 @@
       "name_en": "Decline Bench Crunch",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Tumbado en un banco declinado con los pies sujetos en los rodillos. Manos cruzadas sobre el pecho o detrás de las orejas.",
@@ -10037,7 +9786,6 @@
       "secondary_muscles": [
         "Cuádriceps"
       ],
-      "measurement_type": "time",
       "instructions": {
         "es": {
           "setup": "Apóyate en paralelas, anillas o el suelo con las manos a los lados de las caderas. Brazos completamente extendidos.",
@@ -10077,7 +9825,6 @@
       "secondary_muscles": [
         "Antebrazo"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Cuélgate de una barra con agarre prono a la anchura de los hombros. Brazos extendidos, cuerpo inmóvil.",
@@ -10115,7 +9862,6 @@
       "name_en": "Cable Oblique Twist",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie de lado a la polea a la altura del pecho. Sujeta el asa con ambas manos y brazos extendidos frente a ti. Pies a la anchura de los hombros.",
@@ -10153,7 +9899,6 @@
       "name_en": "Dumbbell Side Crunch",
       "muscle_group": "Abdominales",
       "secondary_muscles": [],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "De pie con una mancuerna en una mano y el brazo extendido a lo largo del cuerpo. El otro brazo detrás de la cabeza o en la cadera.",
@@ -10194,7 +9939,6 @@
         "Tríceps",
         "Hombros"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que las asas queden a la altura del pecho bajo. Espalda y cabeza apoyadas, pies firmes.",
@@ -10235,7 +9979,6 @@
         "Hombros",
         "Tríceps"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Ajusta el asiento para que las asas queden a la altura del pecho alto/clavícula. Espalda apoyada, pies firmes.",
@@ -10273,7 +10016,6 @@
       "name_en": "Band Shoulder Dislocates",
       "muscle_group": "Hombros",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "Coge una banda elástica con las manos más anchas que los hombros, brazos extendidos por delante del cuerpo.",
@@ -10314,7 +10056,6 @@
         "Glúteos",
         "Isquiotibiales"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "Coloca un cajón o banco detrás a una altura que te lleve a paralelo o algo más. Barra sobre los trapecios, pies al ancho de hombros.",
@@ -10354,7 +10095,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "time",
       "instructions": {
         "es": {
           "setup": "Apoya la espalda plana contra una pared y desliza hacia abajo hasta que las rodillas queden a 90°, como sentado en una silla invisible.",
@@ -10394,7 +10134,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "weight_reps",
       "instructions": {
         "es": {
           "setup": "En la prensa inclinada, coloca un pie centrado en la plataforma. La otra pierna descansa a un lado. Espalda y cadera apoyadas.",
@@ -10432,7 +10171,6 @@
       "name_en": "Running",
       "muscle_group": "Cardio",
       "secondary_muscles": [],
-      "measurement_type": "distance_pace",
       "instructions": {
         "es": {
           "setup": "Calienta unos minutos con trote suave. Postura erguida, mirada al frente, hombros relajados.",
@@ -10470,7 +10208,6 @@
       "name_en": "Ankle Circles",
       "muscle_group": "Movilidad",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie o sentado, eleva un pie del suelo o apóyalo sobre la punta.",
@@ -10508,7 +10245,6 @@
       "name_en": "Arm Circles",
       "muscle_group": "Movilidad",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie, brazos extendidos en cruz a la altura de los hombros.",
@@ -10548,7 +10284,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie, pies al ancho de hombros, puntas ligeramente hacia fuera. Brazos al frente para equilibrar.",
@@ -10588,7 +10323,6 @@
       "secondary_muscles": [
         "Glúteos"
       ],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie, pies al ancho de cadera, tronco erguido.",
@@ -10626,7 +10360,6 @@
       "name_en": "Hip Circles",
       "muscle_group": "Movilidad",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie, pies al ancho de hombros, manos en la cintura.",
@@ -10664,7 +10397,6 @@
       "name_en": "Knee Circles",
       "muscle_group": "Movilidad",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie, pies y rodillas juntos, semiflexionadas, manos sobre las rodillas.",
@@ -10702,7 +10434,6 @@
       "name_en": "Leg Swings",
       "muscle_group": "Movilidad",
       "secondary_muscles": [],
-      "measurement_type": "reps_only",
       "instructions": {
         "es": {
           "setup": "De pie junto a una pared o soporte para apoyarte. Peso sobre una pierna.",

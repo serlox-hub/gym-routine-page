@@ -1,5 +1,5 @@
 import { getClient } from './_client.js'
-import { MeasurementType } from '../lib/measurementTypes.js'
+import { normalizeTrackedFields } from '../lib/measurementFields.js'
 import { GIF_BUCKET, getExerciseGifPath } from '../lib/exerciseMedia.js'
 import { t } from '../i18n/index.js'
 
@@ -21,7 +21,7 @@ export async function fetchExercisesWithMuscleGroup() {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
-      id, name:name_es, name_en, measurement_type,
+      id, name:name_es, name_en, tracked_fields,
       is_system, gif_key,
       muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
       equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
@@ -138,7 +138,7 @@ export async function fetchExercise(exerciseId) {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
-      id, name:name_es, name_en, measurement_type,
+      id, name:name_es, name_en, tracked_fields,
       is_system, instructions, deleted_at, gif_key,
       muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
       equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
@@ -156,7 +156,7 @@ export async function createExercise({ userId, exercise, muscleGroupId }) {
     .insert({
       name_es: exercise.name,
       instructions: exercise.instructions || null,
-      measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
+      tracked_fields: normalizeTrackedFields(exercise.tracked_fields),
       muscle_group_id: muscleGroupId || null,
       user_id: userId,
     })
@@ -173,7 +173,7 @@ export async function updateExercise({ exerciseId, exercise, muscleGroupId }) {
     .update({
       name_es: exercise.name,
       instructions: exercise.instructions || null,
-      measurement_type: exercise.measurement_type || MeasurementType.WEIGHT_REPS,
+      tracked_fields: normalizeTrackedFields(exercise.tracked_fields),
       muscle_group_id: muscleGroupId || null,
     })
     .eq('id', exerciseId)

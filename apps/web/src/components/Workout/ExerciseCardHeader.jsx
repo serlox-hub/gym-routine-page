@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown, CheckCircle2 } from 'lucide-react'
 import { DropdownMenu } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { getMuscleGroupName, formatEffortBadge, MeasurementType } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, getMuscleGroupName, formatEffortBadge } from '@gym/shared'
 
 function MetaPill({ children }) {
   return (
@@ -29,7 +29,7 @@ function ExerciseCardHeader({
   series,
   reps,
   rir,
-  measurementType = MeasurementType.WEIGHT_REPS,
+  trackedFields = DEFAULT_TRACKED_FIELDS,
   rest_seconds,
   collapsed,
   isCompleted = false,
@@ -41,8 +41,8 @@ function ExerciseCardHeader({
 
   const setsRepsParts = []
   if (series > 0 && reps) setsRepsParts.push(`${series} × ${reps}`)
-  // La escala depende del tipo de medición (RIR con reps, RPE textual en el resto): nunca crudo.
-  if (rir != null) setsRepsParts.push(formatEffortBadge(rir, measurementType))
+  // La escala depende del lo que mide el ejercicio (RIR con reps, RPE textual en el resto): nunca crudo.
+  if (rir != null) setsRepsParts.push(formatEffortBadge(rir, trackedFields))
   const setsRepsText = setsRepsParts.join(' · ')
 
   return (

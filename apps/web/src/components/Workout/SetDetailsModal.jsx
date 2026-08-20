@@ -6,7 +6,7 @@ import VideoPlayer from './VideoPlayer.jsx'
 import { colors } from '../../lib/styles.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
 import { usePreference } from '../../hooks/usePreferences.js'
-import { getEffortOptions, getEffortInfo, measurementTypeUsesReps } from '@gym/shared'
+import { getEffortOptions, getEffortInfo, tracksReps } from '@gym/shared'
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 
@@ -41,7 +41,7 @@ function SetDetailsModal({
   initialVideoUrl,
   rir,
   onRirChange,
-  measurementType,
+  trackedFields,
   showEffortScale = true,
   setType = 'normal',
   onSetTypeChange,
@@ -55,8 +55,8 @@ function SetDetailsModal({
   const videoEnabled = canUploadVideo && showVideoUpload
   const showVideo = videoEnabled && allowVideo
 
-  const usesReps = measurementTypeUsesReps(measurementType)
-  const effortOptions = getEffortOptions(measurementType)
+  const usesReps = tracksReps(trackedFields)
+  const effortOptions = getEffortOptions(trackedFields)
 
   const [note, setNote] = useState('')
   const [videoUrl, setVideoUrl] = useState(null)
@@ -149,7 +149,7 @@ function SetDetailsModal({
                   {effortOptions.map(option => {
                     const selected = rir === option.value
                     // RIR: código · palabra (autoexplicable, #10). RPE: la palabra directa.
-                    const info = usesReps ? getEffortInfo(option.value, measurementType) : null
+                    const info = usesReps ? getEffortInfo(option.value, trackedFields) : null
                     return (
                       <button key={option.value}
                         onClick={() => handleRirSelect(option.value)}

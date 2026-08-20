@@ -9,10 +9,10 @@ import {
   formatSupersetLabel,
   getEffortLabel,
   getEffortOptions,
-  getRepsLabel,
-  getRepsPlaceholder,
+  getTargetLabel,
+  getTargetPlaceholder,
   getExerciseName,
-  resolveMeasurementType,
+  resolveTrackedFields,
 } from '@gym/shared'
 
 function FormField({ label, required, secondary, error, children }) {
@@ -84,7 +84,7 @@ function OptionPicker({ value, onChange, options, title, emptyLabel }) {
 
 /**
  * Formulario para configurar series, objetivo, esfuerzo y notas de un ejercicio.
- * Espejo del equivalente web: los campos se adaptan al `measurement_type`
+ * Espejo del equivalente web: los campos se adaptan al `tracked_fields`
  * (objetivo en reps/tiempo/distancia/kcal, esfuerzo en RIR o RPE). `series`
  * aplica a todos los tipos: define cuántas filas se registran en la sesión.
  */
@@ -101,10 +101,10 @@ export default function ExerciseConfigForm({
 }) {
   const { t } = useTranslation()
   const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }))
-  const measurementType = resolveMeasurementType(exercise)
+  const trackedFields = resolveTrackedFields(exercise)
   const effortOptions = [
     { value: '', label: t('common:labels.none') },
-    ...getEffortOptions(measurementType).map(opt => ({ value: String(opt.value), label: opt.label })),
+    ...getEffortOptions(trackedFields).map(opt => ({ value: String(opt.value), label: opt.label })),
   ]
   const supersetOptions = [
     { value: '', label: t('routine:superset.noSuperset') },
@@ -132,11 +132,11 @@ export default function ExerciseConfigForm({
           </FormField>
         </View>
         <View className="flex-1">
-          <FormField label={getRepsLabel(measurementType)} required error={errors.reps}>
+          <FormField label={getTargetLabel(trackedFields)} required error={errors.reps}>
             <TextInput
               value={form.reps}
               onChangeText={update('reps')}
-              placeholder={getRepsPlaceholder(measurementType)}
+              placeholder={getTargetPlaceholder(trackedFields)}
               placeholderTextColor={colors.textMuted}
               style={inputStyle}
             />
@@ -149,12 +149,12 @@ export default function ExerciseConfigForm({
 
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <FormField label={getEffortLabel(measurementType)} secondary error={errors.rir}>
+            <FormField label={getEffortLabel(trackedFields)} secondary error={errors.rir}>
               <OptionPicker
                 value={form.rir}
                 onChange={update('rir')}
                 options={effortOptions}
-                title={getEffortLabel(measurementType)}
+                title={getEffortLabel(trackedFields)}
                 emptyLabel={t('common:labels.none')}
               />
             </FormField>

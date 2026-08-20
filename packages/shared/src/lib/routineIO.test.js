@@ -76,10 +76,10 @@ describe('routineIO - funciones puras (shared)', () => {
 
       const prompt = buildChatbotPrompt(params)
 
-      expect(prompt).toContain('"version": 6')
+      expect(prompt).toContain('"version": 7')
       expect(prompt).toContain('"exercises":')
       expect(prompt).toContain('"routine":')
-      expect(prompt).toContain('"measurement_type"')
+      expect(prompt).toContain('"tracked_fields"')
       expect(prompt).toContain('"muscle_group_name"')
       expect(prompt).toContain('JSON')
     })
@@ -108,7 +108,7 @@ describe('routineIO - funciones puras (shared)', () => {
     it('incluye el formato JSON compartido', () => {
       const prompt = buildAdaptRoutinePrompt()
 
-      expect(prompt).toContain('"version": 6')
+      expect(prompt).toContain('"version": 7')
       expect(prompt).toContain('"exercises":')
       expect(prompt).toContain('"routine":')
       expect(prompt).toContain('"duration_min"')
@@ -122,26 +122,29 @@ describe('routineIO - funciones puras (shared)', () => {
       expect(prompt).toContain('BLOCK FIELDS')
     })
 
-    it('no incluye tipos de medición obsoletos', () => {
+    it('no incluye campos de medición obsoletos', () => {
       const prompt = buildAdaptRoutinePrompt()
 
       expect(prompt).not.toContain('reps_per_side')
       expect(prompt).not.toContain('time_per_side')
     })
 
-    it('incluye solo los 4 tipos de medición válidos', () => {
+    it('documenta los campos de medición, no combinaciones cerradas', () => {
       const prompt = buildAdaptRoutinePrompt()
 
-      expect(prompt).toContain('"weight_reps"')
-      expect(prompt).toContain('"reps_only"')
-      expect(prompt).toContain('"time"')
-      expect(prompt).toContain('"distance"')
+      expect(prompt).toContain('tracked_fields')
+      for (const field of ['weight', 'reps', 'time', 'distance', 'pace', 'level', 'calories']) {
+        expect(prompt, field).toContain(`"${field}"`)
+      }
+      // Los 12 tipos del modelo anterior ya no se le ofrecen a la IA
+      expect(prompt).not.toContain('"weight_reps"')
+      expect(prompt).not.toContain('"level_time"')
     })
   })
 
   describe('constantes compartidas', () => {
     it('ROUTINE_JSON_FORMAT contiene estructura válida', () => {
-      expect(ROUTINE_JSON_FORMAT).toContain('"version": 6')
+      expect(ROUTINE_JSON_FORMAT).toContain('"version": 7')
       expect(ROUTINE_JSON_FORMAT).toContain('"exercises"')
       expect(ROUTINE_JSON_FORMAT).toContain('"routine"')
       expect(ROUTINE_JSON_FORMAT).toContain('"duration_min"')
@@ -150,7 +153,7 @@ describe('routineIO - funciones puras (shared)', () => {
     it('ROUTINE_JSON_RULES contiene documentación de campos', () => {
       expect(ROUTINE_JSON_RULES).toContain('IMPORTANT RULES')
       expect(ROUTINE_JSON_RULES).toContain('EXERCISE FIELDS')
-      expect(ROUTINE_JSON_RULES).toContain('measurement_type')
+      expect(ROUTINE_JSON_RULES).toContain('tracked_fields')
       expect(ROUTINE_JSON_RULES).toContain('muscle_group_name')
     })
 

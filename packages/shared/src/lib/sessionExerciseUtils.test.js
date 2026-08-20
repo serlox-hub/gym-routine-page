@@ -120,23 +120,23 @@ describe('diffSessionExerciseFields', () => {
 
 describe('buildEmptySetData', () => {
   const base = { sessionId: 's1', sessionExerciseId: 'se1', setNumber: 1 }
-  const build = (measurement_type) => buildEmptySetData({ ...base, exercise: { measurement_type } })
+  const build = (tracked_fields) => buildEmptySetData({ ...base, exercise: { tracked_fields } })
 
-  it('arranca a 0 los campos del tipo y omite el resto (el upsert no los toca)', () => {
-    expect(build('weight_reps')).toEqual({ ...base, weight: 0, repsCompleted: 0, rirActual: null, notes: null, videoUrl: null })
-    expect(build('reps_only')).toEqual({ ...base, repsCompleted: 0, rirActual: null, notes: null, videoUrl: null })
-    expect(build('time')).toEqual({ ...base, timeSeconds: 0, rirActual: null, notes: null, videoUrl: null })
-    expect(build('weight_time')).toEqual({ ...base, weight: 0, timeSeconds: 0, rirActual: null, notes: null, videoUrl: null })
-    expect(build('distance')).toEqual({ ...base, distanceMeters: 0, rirActual: null, notes: null, videoUrl: null })
+  it('arranca a 0 los campos del ejercicio y omite el resto (el upsert no los toca)', () => {
+    expect(build(['weight', 'reps'])).toEqual({ ...base, weight: 0, repsCompleted: 0, rirActual: null, notes: null, videoUrl: null })
+    expect(build(['reps'])).toEqual({ ...base, repsCompleted: 0, rirActual: null, notes: null, videoUrl: null })
+    expect(build(['time'])).toEqual({ ...base, timeSeconds: 0, rirActual: null, notes: null, videoUrl: null })
+    expect(build(['weight', 'time'])).toEqual({ ...base, weight: 0, timeSeconds: 0, rirActual: null, notes: null, videoUrl: null })
+    expect(build(['distance'])).toEqual({ ...base, distanceMeters: 0, rirActual: null, notes: null, videoUrl: null })
   })
 
   it('cubre también nivel, calorías y ritmo (antes nacían sin inicializar)', () => {
-    expect(build('level_time')).toEqual({ ...base, level: 0, timeSeconds: 0, rirActual: null, notes: null, videoUrl: null })
-    expect(build('level_calories')).toEqual({ ...base, level: 0, caloriesBurned: 0, rirActual: null, notes: null, videoUrl: null })
-    expect(build('distance_pace')).toEqual({ ...base, distanceMeters: 0, paceSeconds: 0, rirActual: null, notes: null, videoUrl: null })
+    expect(build(['level', 'time'])).toEqual({ ...base, level: 0, timeSeconds: 0, rirActual: null, notes: null, videoUrl: null })
+    expect(build(['level', 'calories'])).toEqual({ ...base, level: 0, caloriesBurned: 0, rirActual: null, notes: null, videoUrl: null })
+    expect(build(['distance', 'pace'])).toEqual({ ...base, distanceMeters: 0, paceSeconds: 0, rirActual: null, notes: null, videoUrl: null })
   })
 
-  it('usa weight_reps por defecto si no hay measurement_type', () => {
+  it('usa peso × reps por defecto si el ejercicio no declara campos', () => {
     expect(build(undefined)).toEqual({ ...base, weight: 0, repsCompleted: 0, rirActual: null, notes: null, videoUrl: null })
     expect(build(null)).toEqual({ ...base, weight: 0, repsCompleted: 0, rirActual: null, notes: null, videoUrl: null })
   })

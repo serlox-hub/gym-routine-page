@@ -77,7 +77,7 @@ setup('create test data', async () => {
         .from('exercises')
         .insert({
           name_es: 'Press Banca E2E Test',
-          measurement_type: 'weight_reps',
+          tracked_fields: ['weight', 'reps'],
           muscle_group_id: muscleGroups[0].id,
           user_id: userId,
         })

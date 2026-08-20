@@ -1,61 +1,70 @@
-import { MeasurementType, WEIGHT_MEASUREMENT_TYPES, REPS_MEASUREMENT_TYPES } from './measurementTypes.js'
+import { SetField, normalizeTrackedFields } from './measurementFields.js'
 import { calculateEpley1RM } from './workoutCalculations.js'
 import { t } from '../i18n/index.js'
 
 // ============================================
-// TRACKABLE METRICS PER MEASUREMENT TYPE
+// MÉTRICAS SEGÚN LO QUE MIDE EL EJERCICIO
 // ============================================
 
-// Métricas calculadas para stats/charts (se guardan en exercise_session_stats)
-const METRIC_MAP = {
-  [MeasurementType.WEIGHT_REPS]: ['weight', 'reps', '1rm', 'volume', 'repPR'],
-  [MeasurementType.REPS_ONLY]: ['reps'],
-  [MeasurementType.TIME]: ['time'],
-  [MeasurementType.WEIGHT_TIME]: ['weight', 'time'],
-  [MeasurementType.DISTANCE]: ['distance'],
-  [MeasurementType.WEIGHT_DISTANCE]: ['weight', 'distance'],
-  [MeasurementType.CALORIES]: [],
-  [MeasurementType.LEVEL_TIME]: ['time'],
-  [MeasurementType.LEVEL_DISTANCE]: ['distance'],
-  [MeasurementType.LEVEL_CALORIES]: [],
-  [MeasurementType.DISTANCE_TIME]: ['distance', 'time'],
-  [MeasurementType.DISTANCE_PACE]: ['distance', 'pace'],
+// Campo → métrica que se guarda en `exercise_session_stats`. El nivel y las calorías NO tienen
+// columna ahí (no hay best_level/best_calories), así que no son métricas: se registran en la
+// serie pero no alimentan stats, gráficas ni PRs. Añadir esa dimensión es otro ticket.
+const FIELD_METRIC = {
+  [SetField.WEIGHT]: 'weight',
+  [SetField.REPS]: 'reps',
+  [SetField.TIME]: 'time',
+  [SetField.DISTANCE]: 'distance',
+  [SetField.PACE]: 'pace',
 }
 
-// Métricas que disparan PRs (subconjunto de METRIC_MAP).
-// weight_reps: modelo Strong/Hevy → weight (heaviest ever) + 1RM est. + repPR
-// (mejor peso por cada rep count exacto). Otros tipos: una métrica unificada.
-const PR_METRIC_MAP = {
-  [MeasurementType.WEIGHT_REPS]: ['1rm', 'weight', 'repPR'],
-  [MeasurementType.REPS_ONLY]: ['reps'],
-  [MeasurementType.TIME]: ['time'],
-  [MeasurementType.WEIGHT_TIME]: [],
-  [MeasurementType.DISTANCE]: ['distance'],
-  [MeasurementType.WEIGHT_DISTANCE]: [],
-  [MeasurementType.CALORIES]: [],
-  [MeasurementType.LEVEL_TIME]: [],
-  [MeasurementType.LEVEL_DISTANCE]: [],
-  [MeasurementType.LEVEL_CALORIES]: [],
-  [MeasurementType.DISTANCE_TIME]: [],
-  [MeasurementType.DISTANCE_PACE]: ['pace'],
+/**
+ * Métricas calculadas para stats y gráficas. Peso + reps juntos habilitan además las derivadas
+ * del modelo de fuerza (1RM estimado, volumen y rep-PR), que no significan nada sin las dos.
+ * @param {string[]} trackedFields
+ * @returns {string[]}
+ */
+export function getTrackableMetrics(trackedFields) {
+  const fields = normalizeTrackedFields(trackedFields)
+  const metrics = fields.map(f => FIELD_METRIC[f]).filter(Boolean)
+  if (fields.includes(SetField.WEIGHT) && fields.includes(SetField.REPS)) {
+    metrics.push('1rm', 'volume', 'repPR')
+  }
+  return metrics
 }
 
-export function getTrackableMetrics(measurementType) {
-  return METRIC_MAP[measurementType] || []
-}
-
-export function getPRMetrics(measurementType) {
-  return PR_METRIC_MAP[measurementType] || METRIC_MAP[measurementType] || []
+/**
+ * Métricas que disparan PRs (subconjunto de las anteriores).
+ *
+ * Un récord solo tiene sentido cuando la marca es COMPARABLE entre sesiones, es decir cuando el
+ * ejercicio varía en una sola dimensión. Con dos o más (peso × tiempo, nivel × distancia, la bici
+ * con nivel × distancia × tiempo) no hay un "mejor" objetivo: más distancia a menos nivel no es
+ * mejor ni peor. Dos excepciones, que son las dos formas de colapsar dos dimensiones en una:
+ * peso × reps con el 1RM estimado (modelo Strong/Hevy, más heaviest-ever y rep-PR por rep count),
+ * y el ritmo, que ya normaliza el tiempo por la distancia.
+ * @param {string[]} trackedFields
+ * @returns {string[]}
+ */
+export function getPRMetrics(trackedFields) {
+  const fields = normalizeTrackedFields(trackedFields)
+  if (fields.length === 2 && fields.includes(SetField.WEIGHT) && fields.includes(SetField.REPS)) {
+    return ['1rm', 'weight', 'repPR']
+  }
+  if (fields.includes(SetField.PACE)) return ['pace']
+  if (fields.length === 1) {
+    const metric = FIELD_METRIC[fields[0]]
+    return metric ? [metric] : []
+  }
+  return []
 }
 
 // ============================================
 // SESSION STATS CALCULATION
 // ============================================
 
-export function calculateSessionExerciseStats(sets, measurementType) {
+export function calculateSessionExerciseStats(sets, trackedFields) {
   if (!sets || sets.length === 0) return null
 
-  const metrics = getTrackableMetrics(measurementType)
+  const metrics = getTrackableMetrics(trackedFields)
   const stats = { totalSets: sets.length }
 
   if (metrics.includes('weight')) {
@@ -223,13 +232,13 @@ const DEFAULT_FLAGS = {
   prRepCounts: null,
 }
 
-export function detectNewPersonalRecords(currentStats, previousBests, measurementType) {
+export function detectNewPersonalRecords(currentStats, previousBests, trackedFields) {
   const flags = { ...DEFAULT_FLAGS }
   const details = []
 
   if (!currentStats || !previousBests) return { flags, details }
 
-  const prMetrics = measurementType ? getPRMetrics(measurementType) : null
+  const prMetrics = trackedFields ? getPRMetrics(trackedFields) : null
 
   for (const { stat, flag, unit, metric } of PR_FIELDS) {
     if (prMetrics && !prMetrics.includes(metric)) continue
@@ -308,8 +317,8 @@ export function detectNewPersonalRecords(currentStats, previousBests, measuremen
 // REAL-TIME PR DETECTION (PER SET)
 // ============================================
 
-export function evaluateSetForPR(setData, runningBests, preSessionBests, measurementType, weightUnit = 'kg') {
-  const metrics = getPRMetrics(measurementType)
+export function evaluateSetForPR(setData, runningBests, preSessionBests, trackedFields, weightUnit = 'kg') {
+  const metrics = getPRMetrics(trackedFields)
   const newRecords = []
   const updatedRunningBests = { ...runningBests }
 
@@ -427,11 +436,11 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, measure
  *
  * @param {Array<{setNumber:number, weight?:number, repsCompleted?:number, timeSeconds?:number, distanceMeters?:number, paceSeconds?:number}>} completedSets
  * @param {Object|null} preSessionBests - Mejores marcas previas del ejercicio (null/'none' → sin historial → sin PR)
- * @param {string} measurementType
+ * @param {string[]} trackedFields
  * @param {string} [weightUnit='kg'] - Unidad para las etiquetas de los records
  * @returns {Array<{setNumber:number, records:Array}>} series que son PR, con sus records, ordenadas por setNumber
  */
-export function computeExercisePRSets(completedSets, preSessionBests, measurementType, weightUnit = 'kg') {
+export function computeExercisePRSets(completedSets, preSessionBests, trackedFields, weightUnit = 'kg') {
   if (!completedSets?.length || !preSessionBests || preSessionBests === 'none') return []
 
   const ordered = [...completedSets].sort((a, b) => a.setNumber - b.setNumber)
@@ -446,7 +455,7 @@ export function computeExercisePRSets(completedSets, preSessionBests, measuremen
       distance_meters: set.distanceMeters ?? null,
       pace_seconds: set.paceSeconds ?? null,
     }
-    const { newRecords, updatedRunningBests } = evaluateSetForPR(dbFormatSet, running, preSessionBests, measurementType, weightUnit)
+    const { newRecords, updatedRunningBests } = evaluateSetForPR(dbFormatSet, running, preSessionBests, trackedFields, weightUnit)
     running = updatedRunningBests
     if (newRecords.length > 0) prSets.push({ setNumber: set.setNumber, records: newRecords })
   }
@@ -459,8 +468,8 @@ export function computeExercisePRSets(completedSets, preSessionBests, measuremen
  * necesita records ni unidad de peso).
  * @returns {number[]} setNumbers que son PR en la sesión
  */
-export function computeExercisePRSetNumbers(completedSets, preSessionBests, measurementType) {
-  return computeExercisePRSets(completedSets, preSessionBests, measurementType).map(r => r.setNumber)
+export function computeExercisePRSetNumbers(completedSets, preSessionBests, trackedFields) {
+  return computeExercisePRSets(completedSets, preSessionBests, trackedFields).map(r => r.setNumber)
 }
 
 // ============================================

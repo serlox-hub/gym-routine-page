@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, FileText, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import { formatSetValue, formatShortDate, calculateTotalVolume, formatEffortBadge, MeasurementType } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, formatSetValue, formatShortDate, calculateTotalVolume, formatEffortBadge } from '@gym/shared'
 
-function HistoryTable({ sessions, measurementType = MeasurementType.WEIGHT_REPS, weightUnit = 'kg', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
+function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUnit = 'kg', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
   const { t } = useTranslation()
 
   if (!sessions || sessions.length === 0) {
@@ -75,7 +75,7 @@ function HistoryTable({ sessions, measurementType = MeasurementType.WEIGHT_REPS,
                     )}
                     {set.rir_actual !== null && set.rir_actual !== undefined && (
                       <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        {formatEffortBadge(set.rir_actual, measurementType)}
+                        {formatEffortBadge(set.rir_actual, trackedFields)}
                       </span>
                     )}
                   </div>

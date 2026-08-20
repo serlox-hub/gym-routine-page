@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { LineChart } from 'react-native-gifted-charts'
-import { CHART_RANGES, MeasurementType, filterRecordsByRange, transformSessionsToChartData, convertWeightValue } from '@gym/shared'
+import { CHART_RANGES, tracksReps, tracksWeight, filterRecordsByRange, transformSessionsToChartData, convertWeightValue } from '@gym/shared'
 import ChartRangeToggle from './ChartRangeToggle.jsx'
 import { colors } from '../../lib/styles'
 
@@ -31,7 +31,7 @@ function statRowToPoint(row, displayUnit, unitByGym) {
   }
 }
 
-export default function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, measurementType, weightUnit = 'kg' }) {
+export default function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, trackedFields, weightUnit = 'kg' }) {
   const { t } = useTranslation()
   const [chartWidth, setChartWidth] = useState(0)
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
@@ -45,7 +45,9 @@ export default function ExerciseProgressChart({ sessions, chartRows, overlayGyms
     [TABS.VOLUME]: { dataKey: 'volume', color: colors.success, label: t('workout:summary.totalVolume') },
     [TABS.E1RM]: { dataKey: 'e1rm', color: colors.success, label: t('workout:summary.best1rm') },
   }
-  const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
+  // Volumen y 1RM solo tienen sentido con peso Y reps (ver getTrackableMetrics): son las
+  // derivadas del modelo de fuerza, no se calculan para ningún otro ejercicio.
+  const showVolumeTabs = tracksWeight(trackedFields) && tracksReps(trackedFields)
   const { dataKey, color: lineColor, label } = TAB_CONFIG[activeTab]
 
   // Datos para modo overlay: una serie por gym
@@ -91,8 +93,8 @@ export default function ExerciseProgressChart({ sessions, chartRows, overlayGyms
         .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate))
     }
     const filteredSessions = filterRecordsByRange(sessions, range, 'date')
-    return transformSessionsToChartData(filteredSessions, measurementType, { weightUnit })
-  }, [isOverlay, isStatRows, chartRows, sessions, range, measurementType, weightUnit])
+    return transformSessionsToChartData(filteredSessions, trackedFields, { weightUnit })
+  }, [isOverlay, isStatRows, chartRows, sessions, range, trackedFields, weightUnit])
 
   const enoughSource = isStatRows ? (chartRows?.length ?? 0) >= 2 : (sessions?.length ?? 0) >= 2
   if (!enoughSource) return null

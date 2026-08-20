@@ -99,7 +99,7 @@ function DurationInput({ seconds, onChange, onCommit, disabled, active = false, 
 
 /**
  * Input de UNA columna de valor de la fila de serie. Qué columnas hay (y con qué cabecera)
- * lo decide `getSetColumns(measurementType)` en @gym/shared; aquí solo se pinta la que toque.
+ * lo decide `getSetColumns(trackedFields)` en @gym/shared; aquí solo se pinta la que toque.
  * `onCommit` se dispara al salir del campo (ya normalizado): lo usa la edición desde el
  * historial, que guarda en blur en vez de con el check de la sesión.
  */

@@ -4,9 +4,9 @@ import { Play, X } from 'lucide-react'
 import { formatDuration, formatElapsedSeconds } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 
-// Cuenta atrás de la duración de la serie. Vive como SUBFILA de la serie activa (igual que
-// ProgressionHint), no dentro de la fila: en la fila no cabía (robaba ancho a los inputs en
-// móvil) y al arrancar cambiaba de tamaño, descuadrando el grid. Ver docs/DECISIONS.md.
+// Cuenta atrás de la duración de la serie. Es un item de la SUBFILA compartida (SetRowMeta,
+// junto a la referencia anterior y al aviso de progresión), no de la fila: dentro robaba ancho a
+// los inputs en móvil y al arrancar cambiaba de tamaño, descuadrando el grid. Ver DECISIONS.
 function ExecutionTimer({ seconds }) {
   const { t } = useTranslation()
   const [isRunning, setIsRunning] = useState(false)
@@ -95,7 +95,7 @@ function ExecutionTimer({ seconds }) {
 
   if (!isRunning && remaining === seconds) {
     return (
-      <div className="mt-1 pl-1">
+      <div>
         <button
           onClick={handleStart}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:opacity-80"
@@ -110,7 +110,7 @@ function ExecutionTimer({ seconds }) {
   }
 
   return (
-    <div className="mt-1 pl-1 flex items-center gap-2">
+    <div className="flex items-center gap-2">
       <span
         className={`font-mono font-bold ${isCritical || isDone ? 'animate-pulse' : ''}`}
         style={{ color: isDone ? colors.success : isCritical ? colors.danger : colors.textPrimary, fontSize: 15 }}

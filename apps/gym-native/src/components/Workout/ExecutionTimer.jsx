@@ -6,9 +6,9 @@ import * as Haptics from 'expo-haptics'
 import { formatDuration, formatElapsedSeconds } from '@gym/shared'
 import { colors } from '../../lib/styles'
 
-// Cuenta atrás de la duración de la serie. Vive como SUBFILA de la serie activa (igual que
-// ProgressionHint), no dentro de la fila: en la fila no cabía (robaba ancho a los inputs en
-// móvil) y al arrancar cambiaba de tamaño, descuadrando las columnas. Ver docs/DECISIONS.md.
+// Cuenta atrás de la duración de la serie. Es un item de la SUBFILA compartida (SetRowMeta,
+// junto a la referencia anterior y al aviso de progresión), no de la fila: dentro robaba ancho a
+// los inputs en móvil y al arrancar cambiaba de tamaño, descuadrando las columnas. Ver DECISIONS.
 export default function ExecutionTimer({ seconds }) {
   const { t } = useTranslation()
   const [isRunning, setIsRunning] = useState(false)
@@ -67,7 +67,7 @@ export default function ExecutionTimer({ seconds }) {
 
   if (!isRunning && remaining === seconds) {
     return (
-      <View className="mt-1 pl-1 flex-row">
+      <View className="flex-row">
         <Pressable
           onPress={handleStart}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -86,7 +86,7 @@ export default function ExecutionTimer({ seconds }) {
   }
 
   return (
-    <View className="mt-1 pl-1 flex-row items-center" style={{ gap: 8 }}>
+    <View className="flex-row items-center" style={{ gap: 8 }}>
       <Text
         className="font-bold"
         style={{

@@ -1,23 +1,20 @@
 import { t } from '../i18n/index.js'
-import {
-  getDefaultReps,
-  getRepsLabel,
-  isValidEffortValue,
-} from './measurementTypes.js'
+import { isValidEffortValue } from './effortScale.js'
+import { getDefaultTarget, getTargetLabel, sameTrackedFields } from './measurementFields.js'
 
 const DEFAULT_SERIES = 3
 
 /**
  * Estado inicial del formulario de configuración de un ejercicio en rutina.
- * El objetivo (`reps`) se prellena según el tipo de medición: para `level_time`
- * es "30s", no "8-12".
- * @param {string} [measurementType]
+ * El objetivo (`reps`) se prellena según lo que mide el ejercicio: uno de nivel × tiempo
+ * arranca en "30s", no en "8-12".
+ * @param {string[]} [trackedFields]
  * @returns {object}
  */
-export function buildExerciseConfigForm(measurementType) {
+export function buildExerciseConfigForm(trackedFields) {
   return {
     series: String(DEFAULT_SERIES),
-    reps: getDefaultReps(measurementType),
+    reps: getDefaultTarget(trackedFields),
     rir: '',
     rest_seconds: '',
     notes: '',
@@ -29,16 +26,16 @@ export function buildExerciseConfigForm(measurementType) {
  * Formulario a partir de una fila ya guardada (`routine_exercises` o
  * `session_exercises`), para editarla.
  *
- * El esfuerzo se descarta si no pertenece a la escala del tipo actual: hay filas
+ * El esfuerzo se descarta si no pertenece a la escala actual del ejercicio: hay filas
  * antiguas con RIR (0, o F = -1) en ejercicios sin reps, y mantenerlas dejaría el
  * formulario en un estado que nunca se puede guardar.
  *
  * @param {{series?: number, reps?: string, rir?: number|null, rest_seconds?: number|null, notes?: string|null, superset_group?: number|null}} row
- * @param {string} measurementType
+ * @param {string[]} trackedFields
  * @returns {object}
  */
-export function buildExerciseConfigFormFromRow(row, measurementType) {
-  const effortInScale = row.rir != null && isValidEffortValue(row.rir, measurementType)
+export function buildExerciseConfigFormFromRow(row, trackedFields) {
+  const effortInScale = row.rir != null && isValidEffortValue(row.rir, trackedFields)
   return {
     series: row.series != null ? String(row.series) : '',
     reps: row.reps ?? '',
@@ -51,42 +48,43 @@ export function buildExerciseConfigFormFromRow(row, measurementType) {
 
 /**
  * Formulario a enviar al reemplazar un ejercicio por otro.
- * Limpia lo que es propio del ejercicio saliente (esfuerzo y notas) y, si el
- * tipo de medición cambia, también el objetivo: conservar "8-12" al reemplazar
- * un weight_reps por un level_time dejaría "Tiempo: 8-12" en la rutina.
+ * Limpia lo que es propio del ejercicio saliente (esfuerzo y notas) y, si lo que se mide
+ * cambia, también el objetivo: conservar "8-12" al reemplazar un peso × reps por un
+ * nivel × tiempo dejaría "Tiempo: 8-12" en la rutina.
  * @param {object} form
- * @param {string} newMeasurementType
- * @param {string} [oldMeasurementType]
+ * @param {string[]} newTrackedFields
+ * @param {string[]} [oldTrackedFields]
  * @returns {object}
  */
-export function buildReplaceExerciseForm(form, newMeasurementType, oldMeasurementType) {
-  const typeChanged = newMeasurementType !== oldMeasurementType
+export function buildReplaceExerciseForm(form, newTrackedFields, oldTrackedFields) {
+  // Comparación por VALOR: son arrays, y `!==` daría siempre "cambió" aunque midan lo mismo.
+  const fieldsChanged = !sameTrackedFields(newTrackedFields, oldTrackedFields)
   return {
     ...form,
-    reps: typeChanged ? getDefaultReps(newMeasurementType) : form.reps,
+    reps: fieldsChanged ? getDefaultTarget(newTrackedFields) : form.reps,
     rir: '',
     notes: '',
   }
 }
 
 /**
- * Valida el formulario de configuración según el tipo de medición del ejercicio.
+ * Valida el formulario de configuración según lo que mide el ejercicio.
  * Devuelve un error por campo para pintarlo inline junto al input.
  *
- * `series` es obligatorio para TODOS los tipos, incluidos los de nivel/cardio:
+ * `series` es obligatorio para TODOS los ejercicios, incluidos los de nivel/cardio:
  * es el número de filas que la pantalla de sesión genera para registrar
  * (3 × 30s a nivel 8 son 3 series), y `routine_exercises.series` es NOT NULL.
- * Lo que cambia por tipo es el objetivo (`reps` = reps/tiempo/distancia/kcal)
+ * Lo que cambia según los campos es el objetivo (`reps` = reps/tiempo/distancia/kcal)
  * y la escala de esfuerzo (`rir` = RIR con reps, RPE sin ellas).
  *
  * Vale igual para rutina y para sesión: `series` y `reps` son NOT NULL en
  * `routine_exercises` y en `session_exercises`.
  *
  * @param {object} form - Formulario en crudo (todos los valores string)
- * @param {string} measurementType
+ * @param {string[]} trackedFields
  * @returns {{valid: boolean, errors: Record<string, string>}}
  */
-export function validateExerciseConfigForm(form, measurementType) {
+export function validateExerciseConfigForm(form, trackedFields) {
   const errors = {}
 
   const series = parseInt(form.series, 10)
@@ -95,10 +93,10 @@ export function validateExerciseConfigForm(form, measurementType) {
   }
 
   if (!String(form.reps ?? '').trim()) {
-    errors.reps = t('validation:targetRequired', { field: getRepsLabel(measurementType) })
+    errors.reps = t('validation:targetRequired', { field: getTargetLabel(trackedFields) })
   }
 
-  if (!isEmptyField(form.rir) && !isValidEffortValue(parseInt(form.rir, 10), measurementType)) {
+  if (!isEmptyField(form.rir) && !isValidEffortValue(parseInt(form.rir, 10), trackedFields)) {
     errors.rir = t('validation:effortInvalid')
   }
 

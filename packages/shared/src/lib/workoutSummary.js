@@ -22,7 +22,7 @@ export function formatDurationHumanReadable(minutes) {
 
 /**
  * Calcula volumen total (peso × reps) de todos los sets que tengan peso y reps.
- * No depende de measurement_type ya que no siempre está disponible en el query.
+ * No depende de tracked_fields ya que no siempre está disponible en el query.
  */
 export function calculateSessionTotalVolume(exercises) {
   if (!exercises?.length) return 0
@@ -101,7 +101,7 @@ function formatShortDate(dateStr) {
  * @param {Object} session - session data de endSessionMutation (routine_name, day_name, duration_minutes, started_at)
  * @param {Array} detectedPRs - PRs detectados [{exerciseId, exerciseName, details: [{type, label, newValue, unit}]}]
  * @param {Object} completedSets - snapshot del store {key: {sessionExerciseId, weight, repsCompleted, ...}}
- * @param {Array} sessionExercises - del query cache [{id, exercise_id, exercises: {id, name, measurement_type}, ...}]
+ * @param {Array} sessionExercises - del query cache [{id, exercise_id, exercises: {id, name, tracked_fields}, ...}]
  */
 export function buildWorkoutSummaryFromEndSession(session, detectedPRs, completedSets, sessionExercises, { weightUnit = 'kg' } = {}) {
   const prExerciseIds = new Set((detectedPRs || []).map(pr => pr.exerciseId))

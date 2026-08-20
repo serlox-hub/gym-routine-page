@@ -5,17 +5,17 @@ import {
   formatSupersetLabel,
   getEffortLabel,
   getEffortOptions,
-  getRepsLabel,
-  getRepsPlaceholder,
+  getTargetLabel,
+  getTargetPlaceholder,
   getExerciseName,
-  resolveMeasurementType,
+  resolveTrackedFields,
 } from '@gym/shared'
 
 /**
  * Formulario para configurar series, objetivo, esfuerzo y notas de un ejercicio.
  * Reutilizable para añadir y editar ejercicios en rutinas/sesiones.
  *
- * Los campos se adaptan al `measurement_type`: el objetivo cambia de etiqueta
+ * Los campos se adaptan al `tracked_fields`: el objetivo cambia de etiqueta
  * (reps/tiempo/distancia/kcal) y el esfuerzo cambia de escala (RIR con reps,
  * RPE sin ellas). `series` aplica a todos los tipos: define cuántas filas se
  * registran en la sesión.
@@ -32,8 +32,8 @@ function ExerciseConfigForm({
   errors = {},
 }) {
   const { t } = useTranslation()
-  const measurementType = resolveMeasurementType(exercise)
-  const effortLabel = getEffortLabel(measurementType)
+  const trackedFields = resolveTrackedFields(exercise)
+  const effortLabel = getEffortLabel(trackedFields)
 
   return (
     <div className="space-y-4">
@@ -58,11 +58,11 @@ function ExerciseConfigForm({
           error={errors.series}
         />
         <Input
-          label={<>{getRepsLabel(measurementType)} <span style={{ color: colors.danger }}>*</span></>}
+          label={<>{getTargetLabel(trackedFields)} <span style={{ color: colors.danger }}>*</span></>}
           type="text"
           value={form.reps}
           onChange={(e) => setForm(prev => ({ ...prev, reps: e.target.value }))}
-          placeholder={getRepsPlaceholder(measurementType)}
+          placeholder={getTargetPlaceholder(trackedFields)}
           error={errors.reps}
         />
       </div>
@@ -85,7 +85,7 @@ function ExerciseConfigForm({
             error={errors.rir}
           >
             <option value="">{t('common:labels.none')}</option>
-            {getEffortOptions(measurementType).map(opt => (
+            {getEffortOptions(trackedFields).map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </Select>

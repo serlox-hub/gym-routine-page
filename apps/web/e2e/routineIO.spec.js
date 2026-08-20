@@ -32,6 +32,8 @@ test.describe('Import/Export de rutinas', () => {
 
   test('puede importar una rutina desde archivo JSON', async ({ page }) => {
     // Crear archivo temporal de prueba
+    // Export v5 A PROPÓSITO (con `measurement_type`, el modelo anterior a tracked_fields):
+    // importar un JSON antiguo tiene que seguir funcionando. Ver importedTrackedFields.
     const testRoutine = {
       version: 5,
       exportedAt: new Date().toISOString(),

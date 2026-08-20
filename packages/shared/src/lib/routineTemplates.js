@@ -99,7 +99,7 @@ function e(name, series, reps, rir, rest, notes) {
 /**
  * Construye el objeto plantilla. `data.exercises` se DERIVA de los ejercicios de los días
  * (solo `name_es`): al coincidir con el catálogo, importRoutine los enlaza por nombre y
- * hereda measurement_type/grupo muscular/GIF del ejercicio del sistema.
+ * hereda tracked_fields/grupo muscular/GIF del ejercicio del sistema.
  */
 function makeTemplate({ id, goal, daysPerWeek, level, equipment = 'full', name, description, days }) {
   const exerciseNames = new Set()

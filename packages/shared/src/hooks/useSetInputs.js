@@ -10,8 +10,8 @@ import {
   buildCachedMeasurementValues,
   setMeasurementValuesChanged,
   formatRepsPlaceholder,
-  metersToDistanceUnit,
 } from '../lib/setUtils.js'
+import { metersToDistanceUnit } from '../lib/measurementFields.js'
 import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
 
 /**
@@ -28,10 +28,10 @@ import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
  *   (commit idempotente vía setMeasurementValuesChanged → timer + unmount no duplican)
  *
  * @param {{sessionExerciseId: string|number, setNumber: number, exerciseId: number,
- *   measurementType: string, weightUnit?: string, distanceUnit?: string,
+ *   trackedFields: string[], weightUnit?: string, distanceUnit?: string,
  *   previousSet?: Object, repsTarget?: string|number}} params
  */
-export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measurementType, weightUnit, distanceUnit = 'm', previousSet, repsTarget }) {
+export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit = 'm', previousSet, repsTarget }) {
   const setKey = createSetKey(sessionExerciseId, setNumber)
   const isCompleted = useWorkoutStore(state => !!state.completedSets[setKey])
   const setData = useWorkoutStore(state => state.completedSets[setKey])
@@ -129,28 +129,28 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, measure
     if (converted?.weight != null) setWeight(converted.weight)
   }, [weightConversionNonce, setKey])
 
-  const isValid = () => isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace })
+  const isValid = () => isSetDataValid(trackedFields, { weight, reps, time, distance, calories, level, pace })
   const repsPlaceholder = formatRepsPlaceholder(repsTarget)
 
   const commit = useCallback(() => {
     const formData = { weight, reps, time, distance, calories, level, pace }
     if (isCompleted) {
-      if (!isSetDataValid(measurementType, formData)) return
-      const values = getSetMeasurementValues(measurementType, formData, { distanceUnit })
+      if (!isSetDataValid(trackedFields, formData)) return
+      const values = getSetMeasurementValues(trackedFields, formData, { distanceUnit })
       if (!setMeasurementValuesChanged(setData, values)) return
-      updateCompletedSet(buildCompletedSetData(measurementType, formData, {
+      updateCompletedSet(buildCompletedSetData(trackedFields, formData, {
         sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit,
         rirActual: setData?.rirActual, notes: setData?.notes, videoUrl: setData?.videoUrl, setType: setData?.setType,
       }))
     } else {
       // Incluye los campos vaciados como null → borrar un valor persiste (sobrescribe la
       // caché); una fila pendiente sin datos no dispara escritura (todo null == ausente).
-      const cached = buildCachedMeasurementValues(measurementType, formData, { distanceUnit })
+      const cached = buildCachedMeasurementValues(trackedFields, formData, { distanceUnit })
       if (setMeasurementValuesChanged(cachedData, cached)) {
         setCachedSetData(sessionExerciseId, setNumber, cached)
       }
     }
-  }, [weight, reps, time, distance, calories, level, pace, isCompleted, setData, cachedData, measurementType, distanceUnit, sessionExerciseId, exerciseId, setNumber, weightUnit, updateCompletedSet, setCachedSetData])
+  }, [weight, reps, time, distance, calories, level, pace, isCompleted, setData, cachedData, trackedFields, distanceUnit, sessionExerciseId, exerciseId, setNumber, weightUnit, updateCompletedSet, setCachedSetData])
 
   useEffect(() => {
     const handle = setTimeout(commit, SET_EDIT_DEBOUNCE_MS)

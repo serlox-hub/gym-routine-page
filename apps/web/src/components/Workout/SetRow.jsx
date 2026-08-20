@@ -6,41 +6,40 @@ import { useIsPRSet } from './PRContext.jsx'
 import SetDetailsModal from './SetDetailsModal.jsx'
 import EffortPicker from './EffortPicker.jsx'
 import SetValueInput from './SetInputs.jsx'
-import ExecutionTimer from './ExecutionTimer.jsx'
-import PreviousSetCell from './PreviousSetCell.jsx'
-import ProgressionHint from './ProgressionHint.jsx'
+import SetRowMeta from './SetRowMeta.jsx'
 import {
-  MeasurementType,
+  DEFAULT_TRACKED_FIELDS,
   buildCompletedSetData,
   getNotifier,
   useSetInputs,
   shouldSuggestProgression,
   shouldShowAnnotationColumn,
   getSetColumns,
-  measurementTypeUsesTime,
+  tracksTime,
   effortRendersAsWord,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useUpdateSetVideo } from '../../hooks/useWorkout.js'
 import { uploadVideo } from '../../lib/videoStorage.js'
 
-// Layout columnar (tipo hoja de cálculo, patrón Strong/Hevy): SET · ANTERIOR · [valores] · [NOTAS] · ✓.
-// MISMO grid para TODOS los measurement types: las columnas de valor (1 o 2) las decide
-// `getSetColumns(measurementType)` y su unidad va en la CABECERA (ver SetsList), no dentro de la
-// fila. Antes los tipos que no eran weight_reps usaban una rama flex con anchos fijos y unidades
-// inline ("nv × 1200 s") que NO encogía → la fila desbordaba la card. Ver docs/DECISIONS.md.
+// Layout columnar (tipo hoja de cálculo, patrón Strong/Hevy): SET · [valores] · [NOTAS] · ✓.
+// MISMO grid mida lo que mida el ejercicio: las columnas de valor (1 a 3) las decide
+// `getSetColumns(trackedFields)` y su unidad va en la CABECERA (ver SetsList), no dentro de la
+// fila. Es lo que permite que la fila lleve solo inputs `w-full` en tracks `minmax(0,1fr)`, que
+// no pueden desbordar por construcción. Ver docs/DECISIONS.md.
 // La celda SET es la identidad de la serie (nº / «D» dropset) y es SIEMPRE inerte: la entrada a
 // la anotación (RIR + nota + vídeo) es el chip de la columna «Notas» (ver EffortPicker), que
-// lleva el glifo/punto de detalle. La columna ANTERIOR muestra la misma serie de la última
-// sesión (ver PreviousSetCell). La columna «Notas» existe si hay algo que anotar (RIR, notas o
+// lleva el glifo/punto de detalle. La columna «Notas» existe si hay algo que anotar (RIR, notas o
 // vídeo activados; ver shouldShowAnnotationColumn); se colapsa solo si se apagan las tres prefs.
+// La referencia de la última sesión NO es columna: vive en la subfila SetRowMeta junto al aviso
+// de progresión y al timer, siempre en el mismo sitio (antes ocupaba 46px fijos, que con 3
+// columnas de valor dejaban los inputs a ~26px).
 // Fuente única del grid (SetsList importa este helper para su cabecera → sin desincronizar).
 // Anchos afinados para móvil (360-390px): las columnas fijas se comen el hueco de los valores.
 // ✓ y «Notas» = 44px = área táctil mínima recomendada (issue #10): NO bajar de ahí (choca con
-// a11y); si falta ancho, recortar antes SET/PREV/gap. Las columnas de valor (1fr) absorben el
-// resto y NUNCA desbordan (inputs w-full + minmax(0,1fr)). Aritmética en docs/DECISIONS.md.
+// a11y); si falta ancho, recortar antes SET/gap. Las columnas de valor (1fr) absorben el
+// resto y NUNCA desbordan. Aritmética del reparto en `MAX_TRACKED_FIELDS` (lib/measurementFields.js).
 const COL_SET = 32 // cabe el chip «D» de dropset (26px)
-const COL_PREV = 46 // "72,5 × 12" a 11px mide 46; lo más largo (cardio) elide
 const COL_EFFORT = 44
 // La escala RPE pinta PALABRAS ("Moderado" = 51px a 10px + padding), no "@2": su columna necesita
 // más ancho o el chip se sale de la celda. Ver EffortPicker.
@@ -53,14 +52,14 @@ export const SET_ROW_ACCENT = 3
 
 /**
  * Plantilla de columnas del grid de la fila (y de la cabecera de SetsList).
- * @param {number} valueColumns - columnas de valor del tipo de medición (1 o 2)
+ * @param {number} valueColumns - columnas de valor del ejercicio (1 a 3)
  * @param {boolean} annotationColumn - ¿hay columna «Notas»?
  * @param {boolean} wordEffort - la columna «Notas» muestra palabras (escala RPE), no "@2"
  */
 export function getSetGridTemplate(valueColumns, annotationColumn, wordEffort = false) {
   const values = Array.from({ length: valueColumns }, () => 'minmax(0, 1fr)').join(' ')
   const effort = annotationColumn ? ` ${wordEffort ? COL_EFFORT_WORD : COL_EFFORT}px` : ''
-  return `${COL_SET}px ${COL_PREV}px ${values}${effort} ${COL_CHECK}px`
+  return `${COL_SET}px ${values}${effort} ${COL_CHECK}px`
 }
 
 function SetRow({
@@ -69,7 +68,7 @@ function SetRow({
   exerciseName,
   sessionExerciseId,
   exerciseId,
-  measurementType = MeasurementType.WEIGHT_REPS,
+  trackedFields = DEFAULT_TRACKED_FIELDS,
   weightUnit = 'kg',
   distanceUnit = 'm',
   descansoSeg,
@@ -91,7 +90,7 @@ function SetRow({
     rir, setRir,
     notes, setType, saveDetails, setSetType,
     isCompleted, setData, isValid, repsPlaceholder,
-  } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, measurementType, weightUnit, distanceUnit, previousSet, repsTarget })
+  } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit, previousSet, repsTarget })
 
   const { data: preferences } = usePreferences()
   const { mutate: updateSetVideo } = useUpdateSetVideo()
@@ -147,7 +146,7 @@ function SetRow({
     // (nota vaciada) es un override válido → distinguir de undefined (completar desde el check).
     const finalNotes = notesOverride !== undefined ? notesOverride : notes
     const data = buildCompletedSetData(
-      measurementType,
+      trackedFields,
       { weight, reps, time, distance, calories, level, pace },
       { sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes: finalNotes, setType }
     )
@@ -177,9 +176,9 @@ function SetRow({
     }
   }
 
-  // Columnas de valor del tipo de medición (1 o 2) + su estado. La cabecera (SetsList) lleva la
-  // unidad, así que en la fila solo van inputs desnudos: es lo que deja que encojan sin desbordar.
-  const columns = getSetColumns(measurementType, { weightUnit, distanceUnit })
+  // Columnas de valor del ejercicio (1 a 3) + su estado. La cabecera (SetsList) lleva la unidad,
+  // así que en la fila solo van inputs desnudos: es lo que deja que encojan sin desbordar.
+  const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
   const fieldState = {
     weight: [weight, setWeight],
     reps: [reps, setReps, repsPlaceholder],
@@ -195,13 +194,13 @@ function SetRow({
   const isDropset = setType === 'dropset'
 
   // Cuenta atrás de la serie: solo en la fila activa y con una duración ya puesta (sin dato no hay
-  // nada que contar). Va como subfila, fuera del grid: en la fila robaba el ancho de los inputs.
-  const showTimer = measurementTypeUsesTime(measurementType) && isActive && !isCompleted && Number(time) > 0
+  // nada que contar). Va en la subfila, fuera del grid: en la fila robaba el ancho de los inputs.
+  const showTimer = tracksTime(trackedFields) && isActive && !isCompleted && Number(time) > 0
 
   // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
   // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
   const showProgressionHint = progressionEnabled && !isCompleted &&
-    shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight, rirTarget })
+    shouldSuggestProgression({ previousSet, repsTarget, trackedFields, currentWeight: weight, rirTarget })
   // El chip (entrada de anotación) se muestra en la fila activa o completada si la columna existe.
   const showEffort = annotationColumn && (isActive || isCompleted)
 
@@ -299,15 +298,12 @@ function SetRow({
       <div
         className="grid items-center py-1 px-1 rounded-lg"
         style={{
-          gridTemplateColumns: getSetGridTemplate(columns.length, annotationColumn, effortRendersAsWord(measurementType, showRirInput)),
+          gridTemplateColumns: getSetGridTemplate(columns.length, annotationColumn, effortRendersAsWord(trackedFields, showRirInput)),
           gap: SET_ROW_GAP,
           ...baseRowStyle,
         }}
       >
         <div className="flex items-center justify-center">{renderSetCell()}</div>
-        <div className="flex items-center justify-center" style={{ minWidth: 0 }}>
-          <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
-        </div>
         {columns.map(({ field, decimal }) => {
           const [value, onChange, placeholder] = fieldState[field]
           return (
@@ -319,16 +315,23 @@ function SetRow({
         })}
         {annotationColumn && (
           <div className="flex items-center justify-center min-w-0">
-            {showEffort && <EffortPicker value={rir} measurementType={measurementType} note={notes} hasVideo={hasVideo}
+            {showEffort && <EffortPicker value={rir} trackedFields={trackedFields} note={notes} hasVideo={hasVideo}
               active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
           </div>
         )}
         <div className="flex items-center justify-center">{renderCheckIndicator()}</div>
       </div>
 
-      {showTimer && <ExecutionTimer seconds={Number(time)} />}
-
-      {showProgressionHint && <ProgressionHint prevReps={previousSet.reps} repsTarget={repsTarget} />}
+      <SetRowMeta
+        previousSet={previousSet}
+        trackedFields={trackedFields}
+        weightUnit={weightUnit}
+        distanceUnit={distanceUnit}
+        showRir={showRirInput}
+        showProgressionHint={showProgressionHint}
+        repsTarget={repsTarget}
+        timerSeconds={showTimer ? Number(time) : 0}
+      />
 
       <SetDetailsModal
         isOpen={showModal}
@@ -342,7 +345,7 @@ function SetRow({
         initialVideoUrl={setData?.videoUrl}
         rir={rir}
         onRirChange={setRir}
-        measurementType={measurementType}
+        trackedFields={trackedFields}
         showEffortScale={showRirInput}
         setType={setType}
         onSetTypeChange={setSetType}

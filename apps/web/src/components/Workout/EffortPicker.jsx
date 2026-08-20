@@ -12,7 +12,7 @@ import { getEffortLabel, formatEffortBadge, effortRendersAsWord } from '@gym/sha
  * inerte; el RIR se ve de un vistazo aquí (patrón Strong/Hevy).
  */
 export default function EffortPicker({
-  value, measurementType, note, hasVideo = false, active = false, showEffortScale = true, onOpenDetails,
+  value, trackedFields, note, hasVideo = false, active = false, showEffortScale = true, onOpenDetails,
 }) {
   const { t } = useTranslation()
 
@@ -24,12 +24,12 @@ export default function EffortPicker({
   const inviteBorder = primary === 'empty' && active
   const textColor = (rirSet || active) ? colors.textSecondary : colors.textMuted
   // Siempre la etiqueta ("@2" en RIR, "Duro" en RPE): el número de RPE no dice nada al usuario.
-  const compactValue = formatEffortBadge(value, measurementType)
+  const compactValue = formatEffortBadge(value, trackedFields)
   // Vacío = guion, nunca la palabra "Esfuerzo": la columna mide 44-62px y la etiqueta ya está en
   // la cabecera «NOTAS». El nombre completo va en el aria-label/title.
-  const chipLabel = showEffortScale ? getEffortLabel(measurementType) : t('workout:set.notes')
+  const chipLabel = showEffortScale ? getEffortLabel(trackedFields) : t('workout:set.notes')
   // La escala RPE pinta palabras ("Moderado"); a 10px caben en su columna (ver COL_EFFORT_WORD).
-  const isWordValue = primary === 'rir' && effortRendersAsWord(measurementType, showEffortScale)
+  const isWordValue = primary === 'rir' && effortRendersAsWord(trackedFields, showEffortScale)
 
   return (
     // Botón transparente a 44×44 = área táctil (#10); el pill visual va en el span interior.

@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef } from 'react'
+import { memo, useState, useEffect, useRef, useMemo } from 'react'
 import { View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Info, Trash2, ArrowUpDown, Repeat2, Pencil } from 'lucide-react-native'
@@ -13,7 +13,7 @@ import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
-import { getHaptics, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, resolveMeasurementType } from '@gym/shared'
+import { getHaptics, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, resolveTrackedFields } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorder, currentIndex = 0, totalExercises = 1, positionLabels = [], isReordering = false, existingSupersets = [] }) {
@@ -29,7 +29,11 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const gymId = useWorkoutStore(state => state.gymId)
   const { data: override } = useUserExerciseOverride(exercise?.id)
   const { value: progressionEnabled } = usePreference('progression_suggestions')
-  const measurementType = resolveMeasurementType(exercise)
+  // useMemo, NO llamada directa: devuelve un array NUEVO en cada render y esta prop viaja a
+  // `memo(SetRow)` y a las deps del commit con debounce de `useSetInputs`. Sin memo se
+  // re-renderizan todas las filas y el timer de guardado se rearma sin parar. `exercise` viene de
+  // la caché de query, así que su referencia es estable entre renders.
+  const trackedFields = useMemo(() => resolveTrackedFields(exercise), [exercise])
   const weightUnit = useResolvedWeightUnit(exercise?.id, gymId)
   const exerciseKey = sessionExerciseId || id
 
@@ -81,7 +85,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       <ExerciseCardHeader
         exerciseName={getExerciseName(exercise)}
         muscleGroup={exercise.muscle_group}
-        series={series} reps={reps} rir={rir} measurementType={measurementType} rest_seconds={rest_seconds}
+        series={series} reps={reps} rir={rir} trackedFields={trackedFields} rest_seconds={rest_seconds}
         collapsed={collapsed}
         isCompleted={isCompleted}
         onToggleCollapse={toggleExpanded}
@@ -99,10 +103,10 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
               <ExerciseCardNotes exercise={exercise} notes={notes} />
             </View>
           )}
-          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} progressionEnabled={progressionEnabled} measurementType={measurementType} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} rirTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
+          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} progressionEnabled={progressionEnabled} trackedFields={trackedFields} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} rirTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
         </>
       )}
-      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} measurementType={measurementType} routineDayId={routineDayId} />
+      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} trackedFields={trackedFields} routineDayId={routineDayId} />
       <ConfirmModal isOpen={showRemoveConfirm} title={t('workout:exercise.removeFromSession')} message={t('workout:exercise.removeFromSessionConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
       <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
       {showReorder && <ReorderModal visible onClose={() => setShowReorder(false)} totalItems={totalExercises} currentIndex={currentIndex} positionLabels={positionLabels} onSelect={(i) => { onReorder(currentIndex, i); setShowReorder(false) }} />}

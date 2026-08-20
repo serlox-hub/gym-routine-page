@@ -9,7 +9,7 @@ import { useCanUploadVideo } from '../../hooks/useAuth'
 import { usePreference } from '../../hooks/usePreferences'
 import { getVideoUrl } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
-import { getEffortOptions, getEffortInfo, measurementTypeUsesReps } from '@gym/shared'
+import { getEffortOptions, getEffortInfo, tracksReps } from '@gym/shared'
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 
@@ -78,7 +78,7 @@ export default function SetDetailsModal({
   initialVideoUrl,
   rir,
   onRirChange,
-  measurementType,
+  trackedFields,
   showEffortScale = true,
   setType = 'normal',
   onSetTypeChange,
@@ -92,8 +92,8 @@ export default function SetDetailsModal({
   const videoEnabled = canUploadVideo && showVideoUpload
   const showVideo = videoEnabled && allowVideo
 
-  const usesReps = measurementTypeUsesReps(measurementType)
-  const effortOptions = getEffortOptions(measurementType)
+  const usesReps = tracksReps(trackedFields)
+  const effortOptions = getEffortOptions(trackedFields)
 
   const [note, setNote] = useState('')
   const [videoUri, setVideoUri] = useState(null)
@@ -170,7 +170,7 @@ export default function SetDetailsModal({
                 {effortOptions.map(option => {
                   const selected = rir === option.value
                   // RIR: código · palabra (autoexplicable, #10). RPE: la palabra directa.
-                  const info = usesReps ? getEffortInfo(option.value, measurementType) : null
+                  const info = usesReps ? getEffortInfo(option.value, trackedFields) : null
                   const rowColor = selected ? colors.bgPrimary : colors.textPrimary
                   return (
                     <Pressable key={option.value}

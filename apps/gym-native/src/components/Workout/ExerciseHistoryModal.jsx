@@ -8,13 +8,11 @@ import SetNotesView from './SetNotesView'
 import GymSelector from './GymSelector'
 import { colors } from '../../lib/styles'
 import {
-  MeasurementType,
-  measurementTypeUsesTime,
-  measurementTypeUsesDistance,
+  DEFAULT_TRACKED_FIELDS,
+  getExerciseStatCards,
   calculateExerciseStats,
   formatSetValue,
   formatShortDate,
-  formatSecondsToMMSS,
   formatEffortBadge,
   useSelectedGym,
   useResolvedWeightUnit,
@@ -37,42 +35,13 @@ function StatCard({ label, value }) {
   )
 }
 
-function getStatCards(stats, measurementType, weightUnit, distanceUnit, t) {
-  if (!stats) return []
-  if (measurementType === MeasurementType.WEIGHT_REPS) {
-    const cards = []
-    if (stats.best1RM > 0) cards.push({ label: t('workout:summary.best1rm'), value: `${stats.best1RM} ${weightUnit}` })
-    if (stats.maxWeight > 0) cards.push({ label: t('workout:summary.maxWeight'), value: `${stats.maxWeight} ${weightUnit}` })
-    return cards
-  }
-  if (measurementType === MeasurementType.REPS_ONLY) {
-    const cards = []
-    if (stats.maxReps > 0) cards.push({ label: t('workout:summary.maxReps'), value: stats.maxReps })
-    if (stats.avgReps > 0) cards.push({ label: t('workout:summary.avgReps'), value: stats.avgReps })
-    return cards
-  }
-  if (measurementTypeUsesTime(measurementType)) {
-    const cards = []
-    if (stats.maxTime > 0) cards.push({ label: t('workout:summary.maxTime'), value: formatSecondsToMMSS(stats.maxTime) })
-    if (stats.avgTime > 0) cards.push({ label: t('workout:summary.avgTime'), value: formatSecondsToMMSS(stats.avgTime) })
-    return cards
-  }
-  if (measurementTypeUsesDistance(measurementType)) {
-    const cards = []
-    if (stats.maxDistance > 0) cards.push({ label: t('workout:summary.maxDistance'), value: `${stats.maxDistance} ${distanceUnit}` })
-    if (stats.avgDistance > 0) cards.push({ label: t('workout:summary.avgDistance'), value: `${stats.avgDistance} ${distanceUnit}` })
-    return cards
-  }
-  return []
-}
-
-function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm', chartRows, overlayGyms, unitByGym }) {
+function ProgressTab({ sessions, stats, trackedFields, weightUnit, distanceUnit = 'm', chartRows, overlayGyms, unitByGym }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
   }
 
-  const statCards = getStatCards(stats, measurementType, weightUnit, distanceUnit, t)
+  const statCards = getExerciseStatCards(stats, trackedFields, { weightUnit, distanceUnit })
 
   // En modo gym-aware el gráfico se dibuja desde chartRows (filas de stats por gym)
   const usesChartRows = Array.isArray(chartRows)
@@ -83,7 +52,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUni
       {chartSource >= 2 ? (
         <ExerciseProgressChart
           sessions={sessions}
-          measurementType={measurementType}
+          trackedFields={trackedFields}
           weightUnit={weightUnit}
           chartRows={chartRows}
           overlayGyms={overlayGyms}
@@ -106,7 +75,7 @@ function ProgressTab({ sessions, stats, measurementType, weightUnit, distanceUni
   )
 }
 
-function HistoryTab({ sessions, measurementType = MeasurementType.WEIGHT_REPS, weightUnit, distanceUnit, onSelectSet, onSessionClick }) {
+function HistoryTab({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUnit, distanceUnit, onSelectSet, onSessionClick }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return <Text className="text-secondary text-center py-8">{t('exercise:noHistory')}</Text>
@@ -173,7 +142,7 @@ function HistoryTab({ sessions, measurementType = MeasurementType.WEIGHT_REPS, w
                     )}
                     {set.rir_actual !== null && set.rir_actual !== undefined && (
                       <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
-                        {formatEffortBadge(set.rir_actual, measurementType)}
+                        {formatEffortBadge(set.rir_actual, trackedFields)}
                       </Text>
                     )}
                   </View>
@@ -192,7 +161,7 @@ export default function ExerciseHistoryModal({
   onClose,
   exerciseId,
   exerciseName,
-  measurementType = MeasurementType.WEIGHT_REPS,
+  trackedFields = DEFAULT_TRACKED_FIELDS,
   distanceUnit = 'm',
   routineDayId = null,
   onSessionClick,
@@ -283,8 +252,8 @@ export default function ExerciseHistoryModal({
     [isOverlay, sessions, unitByGym, weightUnit]
   )
   const stats = useMemo(
-    () => calculateExerciseStats(displaySummary, measurementType),
-    [displaySummary, measurementType]
+    () => calculateExerciseStats(displaySummary, trackedFields),
+    [displaySummary, trackedFields]
   )
 
   const handleSessionClick = (sessionId, date) => {
@@ -378,7 +347,7 @@ export default function ExerciseHistoryModal({
             <ProgressTab
               sessions={displaySummary}
               stats={stats}
-              measurementType={measurementType}
+              trackedFields={trackedFields}
               weightUnit={weightUnit}
               chartRows={hasMultiple ? chartRows : undefined}
               overlayGyms={isOverlay ? overlayGyms : undefined}
@@ -386,7 +355,7 @@ export default function ExerciseHistoryModal({
             />
             <HistoryTab
               sessions={displaySessions}
-              measurementType={measurementType}
+              trackedFields={trackedFields}
               weightUnit={weightUnit}
               distanceUnit={distanceUnit}
               onSelectSet={setSelectedSet}

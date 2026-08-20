@@ -13,6 +13,7 @@ import {
   transformSessionsToDurationChartData,
   calculateAverageDuration,
   calculateExerciseStats,
+  getExerciseStatCards,
 } from './workoutCalculations.js'
 
 describe('workoutCalculations', () => {
@@ -99,7 +100,7 @@ describe('workoutCalculations', () => {
         { weight: 100 },
         { weight: 90 },
       ]
-      expect(getBestValueFromSets(sets, 'weight_reps', { weightUnit: 'kg' })).toEqual({ value: 100, unit: 'kg' })
+      expect(getBestValueFromSets(sets, ['weight', 'reps'], { weightUnit: 'kg' })).toEqual({ value: 100, unit: 'kg' })
     })
 
     it('obtiene mejor tiempo para time', () => {
@@ -108,7 +109,7 @@ describe('workoutCalculations', () => {
         { time_seconds: 60 },
         { time_seconds: 45 },
       ]
-      expect(getBestValueFromSets(sets, 'time')).toEqual({ value: 60, unit: 's' })
+      expect(getBestValueFromSets(sets, ['time'])).toEqual({ value: 60, unit: 's' })
     })
 
     it('obtiene mejores reps para reps_only', () => {
@@ -117,12 +118,12 @@ describe('workoutCalculations', () => {
         { reps_completed: 15 },
         { reps_completed: 12 },
       ]
-      expect(getBestValueFromSets(sets, 'reps_only')).toEqual({ value: 15, unit: 'reps' })
+      expect(getBestValueFromSets(sets, ['reps'])).toEqual({ value: 15, unit: 'reps' })
     })
 
     it('usa reps como fallback', () => {
       const sets = [{ reps: 10 }, { reps: 15 }]
-      expect(getBestValueFromSets(sets, 'reps_only')).toEqual({ value: 15, unit: 'reps' })
+      expect(getBestValueFromSets(sets, ['reps'])).toEqual({ value: 15, unit: 'reps' })
     })
 
     it('obtiene mejor nivel para level_time', () => {
@@ -131,7 +132,7 @@ describe('workoutCalculations', () => {
         { level: 12, time_seconds: 1200 },
         { level: 10, time_seconds: 1500 },
       ]
-      expect(getBestValueFromSets(sets, 'level_time')).toEqual({ value: 12, unit: 'nv' })
+      expect(getBestValueFromSets(sets, ['level', 'time'])).toEqual({ value: 12, unit: 'nv' })
     })
 
     it('obtiene mejor nivel para level_distance', () => {
@@ -139,7 +140,7 @@ describe('workoutCalculations', () => {
         { level: 5, distance_meters: 3000 },
         { level: 10, distance_meters: 5000 },
       ]
-      expect(getBestValueFromSets(sets, 'level_distance')).toEqual({ value: 10, unit: 'nv' })
+      expect(getBestValueFromSets(sets, ['level', 'distance'])).toEqual({ value: 10, unit: 'nv' })
     })
 
     it('obtiene mejor nivel para level_calories', () => {
@@ -147,7 +148,7 @@ describe('workoutCalculations', () => {
         { level: 7, calories_burned: 150 },
         { level: 9, calories_burned: 200 },
       ]
-      expect(getBestValueFromSets(sets, 'level_calories')).toEqual({ value: 9, unit: 'nv' })
+      expect(getBestValueFromSets(sets, ['level', 'calories'])).toEqual({ value: 9, unit: 'nv' })
     })
 
     it('obtiene mejor distancia para distance_time', () => {
@@ -155,7 +156,7 @@ describe('workoutCalculations', () => {
         { distance_meters: 3000, time_seconds: 900 },
         { distance_meters: 5000, time_seconds: 1500 },
       ]
-      expect(getBestValueFromSets(sets, 'distance_time')).toEqual({ value: 5000, unit: 'm' })
+      expect(getBestValueFromSets(sets, ['distance', 'time'])).toEqual({ value: 5000, unit: 'm' })
     })
   })
 
@@ -189,11 +190,11 @@ describe('workoutCalculations', () => {
 
   describe('transformSessionsToChartData', () => {
     it('retorna array vacío para sessions vacías', () => {
-      expect(transformSessionsToChartData([], 'weight_reps')).toEqual([])
+      expect(transformSessionsToChartData([], ['weight', 'reps'])).toEqual([])
     })
 
     it('retorna array vacío si es null', () => {
-      expect(transformSessionsToChartData(null, 'weight_reps')).toEqual([])
+      expect(transformSessionsToChartData(null, ['weight', 'reps'])).toEqual([])
     })
 
     it('transforma sesiones a datos de gráfico', () => {
@@ -206,7 +207,7 @@ describe('workoutCalculations', () => {
           ],
         },
       ]
-      const result = transformSessionsToChartData(sessions, 'weight_reps')
+      const result = transformSessionsToChartData(sessions, ['weight', 'reps'])
       expect(result).toHaveLength(1)
       expect(result[0]).toMatchObject({
         best: 100,
@@ -537,11 +538,11 @@ describe('workoutCalculations', () => {
 
   describe('calculateExerciseStats', () => {
     it('retorna null para sessions vacías', () => {
-      expect(calculateExerciseStats([], 'weight_reps')).toBeNull()
+      expect(calculateExerciseStats([], ['weight', 'reps'])).toBeNull()
     })
 
     it('retorna null si sessions es null', () => {
-      expect(calculateExerciseStats(null, 'weight_reps')).toBeNull()
+      expect(calculateExerciseStats(null, ['weight', 'reps'])).toBeNull()
     })
 
     it('calcula estadísticas para weight_reps', () => {
@@ -558,7 +559,7 @@ describe('workoutCalculations', () => {
           ],
         },
       ]
-      const result = calculateExerciseStats(sessions, 'weight_reps')
+      const result = calculateExerciseStats(sessions, ['weight', 'reps'])
 
       expect(result.sessionCount).toBe(2)
       expect(result.maxWeight).toBe(100)
@@ -581,7 +582,7 @@ describe('workoutCalculations', () => {
           ],
         },
       ]
-      const result = calculateExerciseStats(sessions, 'reps_only')
+      const result = calculateExerciseStats(sessions, ['reps'])
 
       expect(result.sessionCount).toBe(2)
       expect(result.maxReps).toBe(15)
@@ -596,24 +597,108 @@ describe('workoutCalculations', () => {
         { sets: [{ time_seconds: 60 }, { time_seconds: 90 }] },
         { sets: [{ time_seconds: 120 }] },
       ]
-      const result = calculateExerciseStats(sessions, 'time')
+      const result = calculateExerciseStats(sessions, ['time'])
 
       expect(result.maxTime).toBe(120)
       expect(result.avgTime).toBe(90)
       expect(result.maxWeight).toBe(0)
     })
 
+    // `distance_meters`, no `distance`: el historial pasa las filas de completed_sets tal cual
+    // (useExerciseHistorySummary). El fixture antiguo usaba `distance`, que no existe en ninguna
+    // fila real, así que el test iba verde mientras maxDistance salía siempre a 0 en la app.
     it('calcula max y avg para ejercicios de distancia', () => {
       const sessions = [
-        { sets: [{ distance: 100 }, { distance: 200 }] },
-        { sets: [{ distance: 150 }] },
+        { sets: [{ distance_meters: 100 }, { distance_meters: 200 }] },
+        { sets: [{ distance_meters: 150 }] },
       ]
-      const result = calculateExerciseStats(sessions, 'distance')
+      const result = calculateExerciseStats(sessions, ['distance'])
 
       expect(result.maxDistance).toBe(200)
       expect(result.avgDistance).toBe(150)
       expect(result.maxWeight).toBe(0)
     })
 
+    // Las cuatro combinaciones de un solo campo que el enum anterior no permitía expresar.
+    it('resume el ritmo con el MÍNIMO (menor es mejor)', () => {
+      const sessions = [{ sets: [{ pace_seconds: 300 }, { pace_seconds: 270 }, { pace_seconds: 330 }] }]
+      const result = calculateExerciseStats(sessions, ['pace'])
+
+      expect(result.bestPace).toBe(270)
+      expect(result.avgPace).toBe(300)
+    })
+
+    it('resume el peso solo, el nivel solo y las calorías solas', () => {
+      expect(calculateExerciseStats([{ sets: [{ weight: 40 }, { weight: 60 }] }], ['weight']).maxWeight).toBe(60)
+
+      const level = calculateExerciseStats([{ sets: [{ level: 8 }, { level: 12 }] }], ['level'])
+      expect(level.maxLevel).toBe(12)
+      expect(level.avgLevel).toBe(10)
+
+      const kcal = calculateExerciseStats([{ sets: [{ calories_burned: 200 }, { calories_burned: 300 }] }], ['calories'])
+      expect(kcal.maxCalories).toBe(300)
+      expect(kcal.avgCalories).toBe(250)
+    })
+  })
+})
+
+describe('getExerciseStatCards', () => {
+  const stats = {
+    best1RM: 120, maxWeight: 100, maxReps: 15, avgReps: 12,
+    maxTime: 1200, avgTime: 900, maxDistance: 5000, avgDistance: 4000,
+  }
+  const labels = (fields, units) => getExerciseStatCards(stats, fields, units).map(c => c.label)
+  const values = (fields, units) => getExerciseStatCards(stats, fields, units).map(c => c.value)
+  const valuesOf = (someStats, fields, units) => getExerciseStatCards(someStats, fields, units).map(c => c.value)
+
+  it('sin stats no hay tarjetas', () => {
+    expect(getExerciseStatCards(null, ['weight', 'reps'])).toEqual([])
+  })
+
+  // Las ramas tienen que ir en el MISMO orden que calculateExerciseStats, que es quien rellena
+  // `stats`: si divergen, la tarjeta pide una métrica que esa rama no calculó y sale vacía.
+  it('peso + reps: 1RM y peso máximo, con la unidad recibida', () => {
+    expect(labels(['weight', 'reps'])).toEqual(['Est. 1RM', 'Máx Peso'])
+    expect(values(['weight', 'reps'], { weightUnit: 'lb' })).toEqual(['120 lb', '100 lb'])
+  })
+
+  it('solo reps: máximas y media', () => {
+    expect(values(['reps'])).toEqual([15, 12])
+  })
+
+  it('tiempo: en mm:ss, nunca en segundos crudos', () => {
+    expect(values(['level', 'time'])).toEqual(['20:00', '15:00'])
+  })
+
+  it('distancia: con la unidad recibida', () => {
+    expect(values(['distance'], { distanceUnit: 'km' })).toEqual(['5000 km', '4000 km'])
+  })
+
+  it('el tiempo manda sobre la distancia cuando el ejercicio mide los dos', () => {
+    expect(values(['distance', 'time'])).toEqual(['20:00', '15:00'])
+  })
+
+  it('sin métrica resumible no hay tarjetas (calorías, nivel × calorías)', () => {
+    expect(getExerciseStatCards(stats, ['calories'])).toEqual([])
+    expect(getExerciseStatCards(stats, ['level', 'calories'])).toEqual([])
+  })
+
+  it('omite las tarjetas cuyo valor es 0', () => {
+    expect(getExerciseStatCards({ maxReps: 0, avgReps: 8 }, ['reps'])).toHaveLength(1)
+  })
+
+  // Ramas de las combinaciones de un solo campo: antes se quedaban sin ninguna tarjeta.
+  it('el ritmo solo se pinta en mm:ss por unidad de distancia', () => {
+    expect(getExerciseStatCards({ bestPace: 270, avgPace: 300 }, ['pace'], { distanceUnit: 'km' }))
+      .toEqual([
+        { label: 'Mejor Ritmo', value: '4:30/km' },
+        { label: 'Media Ritmo', value: '5:00/km' },
+      ])
+  })
+
+  it('peso solo, nivel solo y calorías solas tienen tarjetas', () => {
+    expect(valuesOf({ maxWeight: 60 }, ['weight'], { weightUnit: 'lb' })).toEqual(['60 lb'])
+    expect(valuesOf({ maxLevel: 12, avgLevel: 10 }, ['level'])).toEqual([12, 10])
+    expect(valuesOf({ maxCalories: 300, avgCalories: 250 }, ['calories'])).toEqual(['300 kcal', '250 kcal'])
   })
 })

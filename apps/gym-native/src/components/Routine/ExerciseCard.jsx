@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Modal, ReorderModal } from '../ui'
 import { ExerciseHistoryModal } from '../Workout'
 import { colors } from '../../lib/styles'
-import { formatEffortBadge, getExerciseName, resolveMeasurementType } from '@gym/shared'
+import { formatEffortBadge, getExerciseName, resolveTrackedFields } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 export default function ExerciseCard({
@@ -30,7 +30,9 @@ export default function ExerciseCard({
   const [showReorder, setShowReorder] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
-  const measurementType = resolveMeasurementType(exercise)
+  // Memoizado como en WorkoutExerciseCard: devuelve un array nuevo por render y viaja a los
+  // useMemo de ExerciseHistoryModal. `exercise` viene de la caché de query (referencia estable).
+  const trackedFields = useMemo(() => resolveTrackedFields(exercise), [exercise])
 
   const borderStyle = getMuscleGroupBorderStyle(exercise?.muscle_group?.name)
   const rnBorderStyle = {
@@ -72,7 +74,7 @@ export default function ExerciseCard({
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
               <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
               {rir !== null && rir !== undefined && (
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, measurementType)}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
               )}
               {rest_seconds > 0 && (
                 <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</Text>
@@ -86,7 +88,7 @@ export default function ExerciseCard({
           onClose={() => setShowHistory(false)}
           exerciseId={exercise?.id}
           exerciseName={getExerciseName(exercise)}
-          measurementType={measurementType}
+          trackedFields={trackedFields}
           routineDayId={routineDayId}
           onSessionClick={(sessionId, date) => {
             setShowHistory(false)
@@ -124,7 +126,7 @@ export default function ExerciseCard({
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
           <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
           {rir !== null && rir !== undefined && (
-            <Text style={{ color: colors.purple, fontSize: 12 }}>{formatEffortBadge(rir, measurementType)}</Text>
+            <Text style={{ color: colors.purple, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
           )}
           {rest_seconds > 0 && (
             <Text style={{ color: colors.warning, fontSize: 12 }}>{rest_seconds}s</Text>

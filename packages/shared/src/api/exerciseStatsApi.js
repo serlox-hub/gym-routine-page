@@ -1,6 +1,6 @@
 import { getClient } from './_client.js'
 import { calculateSessionExerciseStats, mergeExerciseStats } from '../lib/sessionStatsCalculation.js'
-import { resolveMeasurementType } from '../lib/measurementTypes.js'
+import { resolveTrackedFields } from '../lib/measurementFields.js'
 
 // ============================================
 // UPSERT SESSION STATS (al finalizar sesión)
@@ -215,7 +215,7 @@ export async function recalculateSessionStats(sessionId) {
 
   const { data: sessionExercises, error: seErr } = await client
     .from('session_exercises')
-    .select('id, exercise_id, exercise:exercises!inner ( measurement_type )')
+    .select('id, exercise_id, exercise:exercises!inner ( tracked_fields )')
     .eq('session_id', sessionId)
   if (seErr) throw seErr
 
@@ -228,8 +228,8 @@ export async function recalculateSessionStats(sessionId) {
   const exerciseMap = {}
   const exerciseIds = new Set()
   for (const se of sessionExercises || []) {
-    const mt = resolveMeasurementType(se.exercise)
-    exerciseMap[se.id] = { exerciseId: se.exercise_id, measurementType: mt }
+    const fields = resolveTrackedFields(se.exercise)
+    exerciseMap[se.id] = { exerciseId: se.exercise_id, trackedFields: fields }
     exerciseIds.add(se.exercise_id)
   }
 
@@ -243,7 +243,7 @@ export async function recalculateSessionStats(sessionId) {
   for (const [seId, exSets] of Object.entries(setsByExercise)) {
     const info = exerciseMap[seId]
     if (!info) continue
-    const stats = calculateSessionExerciseStats(exSets, info.measurementType)
+    const stats = calculateSessionExerciseStats(exSets, info.trackedFields)
     if (!stats) continue
     if (!statsPerExercise[info.exerciseId]) {
       statsPerExercise[info.exerciseId] = stats

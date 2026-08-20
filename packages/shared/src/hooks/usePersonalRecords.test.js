@@ -25,7 +25,7 @@ vi.mock('../api/exerciseApi.js', () => ({
 
 // Catálogo de la sesión (un ejercicio weight_reps).
 const mockSessionExercises = {
-  data: [{ id: 'se1', exercise_id: 101, exercise: { measurement_type: 'weight_reps', name: 'Press Banca' } }],
+  data: [{ id: 'se1', exercise_id: 101, exercise: { tracked_fields: ['weight', 'reps'], name: 'Press Banca' } }],
 }
 vi.mock('./useSessionExercises.js', () => ({
   useSessionExercises: () => mockSessionExercises,
@@ -54,7 +54,7 @@ describe('useSessionPRDetection', () => {
     mockStore.gymId = 'gym-1'
     mockStore.completedSets = {}
     mockSessionExercises.data = [
-      { id: 'se1', exercise_id: 101, exercise: { measurement_type: 'weight_reps', name: 'Press Banca' } },
+      { id: 'se1', exercise_id: 101, exercise: { tracked_fields: ['weight', 'reps'], name: 'Press Banca' } },
     ]
   })
 
@@ -111,8 +111,8 @@ describe('useSessionPRDetection', () => {
 
   it('restaurar sesión con varios ejercicios: un único fetch en lote (no N en serie)', async () => {
     mockSessionExercises.data = [
-      { id: 'se1', exercise_id: 101, exercise: { measurement_type: 'weight_reps', name: 'Press Banca' } },
-      { id: 'se2', exercise_id: 102, exercise: { measurement_type: 'weight_reps', name: 'Sentadilla' } },
+      { id: 'se1', exercise_id: 101, exercise: { tracked_fields: ['weight', 'reps'], name: 'Press Banca' } },
+      { id: 'se2', exercise_id: 102, exercise: { tracked_fields: ['weight', 'reps'], name: 'Sentadilla' } },
     ]
     mockStore.completedSets = {
       'se1-1': completed(1, 110, 5),
@@ -135,8 +135,8 @@ describe('useSessionPRDetection', () => {
 
   it('cache parcial: al añadir un ejercicio en vivo solo pide el faltante (no re-pide el cacheado)', async () => {
     mockSessionExercises.data = [
-      { id: 'se1', exercise_id: 101, exercise: { measurement_type: 'weight_reps', name: 'Press Banca' } },
-      { id: 'se2', exercise_id: 102, exercise: { measurement_type: 'weight_reps', name: 'Sentadilla' } },
+      { id: 'se1', exercise_id: 101, exercise: { tracked_fields: ['weight', 'reps'], name: 'Press Banca' } },
+      { id: 'se2', exercise_id: 102, exercise: { tracked_fields: ['weight', 'reps'], name: 'Sentadilla' } },
     ]
     mockStore.completedSets = { 'se1-1': completed(1, 110, 5) }
     fetchExerciseBests.mockResolvedValue({

@@ -20,55 +20,58 @@ describe('sessionStatsCalculation', () => {
 
   describe('getTrackableMetrics', () => {
     it('retorna weight, reps, 1rm, volume, repPR para weight_reps', () => {
-      expect(getTrackableMetrics('weight_reps')).toEqual(['weight', 'reps', '1rm', 'volume', 'repPR'])
+      expect(getTrackableMetrics(['weight', 'reps'])).toEqual(['weight', 'reps', '1rm', 'volume', 'repPR'])
     })
 
     it('retorna solo reps para reps_only', () => {
-      expect(getTrackableMetrics('reps_only')).toEqual(['reps'])
+      expect(getTrackableMetrics(['reps'])).toEqual(['reps'])
     })
 
     it('retorna time para time', () => {
-      expect(getTrackableMetrics('time')).toEqual(['time'])
+      expect(getTrackableMetrics(['time'])).toEqual(['time'])
     })
 
     it('retorna weight y time para weight_time', () => {
-      expect(getTrackableMetrics('weight_time')).toEqual(['weight', 'time'])
+      expect(getTrackableMetrics(['weight', 'time'])).toEqual(['weight', 'time'])
     })
 
     it('retorna distance para distance', () => {
-      expect(getTrackableMetrics('distance')).toEqual(['distance'])
+      expect(getTrackableMetrics(['distance'])).toEqual(['distance'])
     })
 
     it('retorna weight y distance para weight_distance', () => {
-      expect(getTrackableMetrics('weight_distance')).toEqual(['weight', 'distance'])
+      expect(getTrackableMetrics(['weight', 'distance'])).toEqual(['weight', 'distance'])
     })
 
     it('retorna vacío para calories (no hay columna en BD)', () => {
-      expect(getTrackableMetrics('calories')).toEqual([])
+      expect(getTrackableMetrics(['calories'])).toEqual([])
     })
 
     it('retorna time para level_time', () => {
-      expect(getTrackableMetrics('level_time')).toEqual(['time'])
+      expect(getTrackableMetrics(['level', 'time'])).toEqual(['time'])
     })
 
     it('retorna distance para level_distance', () => {
-      expect(getTrackableMetrics('level_distance')).toEqual(['distance'])
+      expect(getTrackableMetrics(['level', 'distance'])).toEqual(['distance'])
     })
 
     it('retorna vacío para level_calories', () => {
-      expect(getTrackableMetrics('level_calories')).toEqual([])
+      expect(getTrackableMetrics(['level', 'calories'])).toEqual([])
     })
 
     it('retorna distance y time para distance_time', () => {
-      expect(getTrackableMetrics('distance_time')).toEqual(['distance', 'time'])
+      expect(getTrackableMetrics(['distance', 'time'])).toEqual(['distance', 'time'])
     })
 
     it('retorna distance y pace para distance_pace', () => {
-      expect(getTrackableMetrics('distance_pace')).toEqual(['distance', 'pace'])
+      expect(getTrackableMetrics(['distance', 'pace'])).toEqual(['distance', 'pace'])
     })
 
-    it('retorna vacío para tipo desconocido', () => {
-      expect(getTrackableMetrics('unknown_type')).toEqual([])
+    // Campos ilegibles caen al default de lectura (peso × reps), como el resto de la app: es
+    // preferible calcular las métricas del caso más común que dejar el ejercicio sin ninguna.
+    it('unos campos ilegibles caen al default de lectura', () => {
+      expect(getTrackableMetrics(['lo_que_sea'])).toEqual(getTrackableMetrics(['weight', 'reps']))
+      expect(getTrackableMetrics(null)).toEqual(getTrackableMetrics(['weight', 'reps']))
     })
   })
 
@@ -78,31 +81,31 @@ describe('sessionStatsCalculation', () => {
 
   describe('getPRMetrics', () => {
     it('weight_reps: 1RM, peso (heaviest ever) y rep-PR-por-rep-count', () => {
-      expect(getPRMetrics('weight_reps')).toEqual(['1rm', 'weight', 'repPR'])
+      expect(getPRMetrics(['weight', 'reps'])).toEqual(['1rm', 'weight', 'repPR'])
     })
 
     it('reps_only solo reps', () => {
-      expect(getPRMetrics('reps_only')).toEqual(['reps'])
+      expect(getPRMetrics(['reps'])).toEqual(['reps'])
     })
 
     it('time solo tiempo', () => {
-      expect(getPRMetrics('time')).toEqual(['time'])
+      expect(getPRMetrics(['time'])).toEqual(['time'])
     })
 
     it('distance solo distancia', () => {
-      expect(getPRMetrics('distance')).toEqual(['distance'])
+      expect(getPRMetrics(['distance'])).toEqual(['distance'])
     })
 
     it('distance_pace solo ritmo', () => {
-      expect(getPRMetrics('distance_pace')).toEqual(['pace'])
+      expect(getPRMetrics(['distance', 'pace'])).toEqual(['pace'])
     })
 
     it('tipos compuestos sin fórmula unificada no disparan PRs', () => {
-      expect(getPRMetrics('weight_time')).toEqual([])
-      expect(getPRMetrics('weight_distance')).toEqual([])
-      expect(getPRMetrics('distance_time')).toEqual([])
-      expect(getPRMetrics('level_time')).toEqual([])
-      expect(getPRMetrics('level_distance')).toEqual([])
+      expect(getPRMetrics(['weight', 'time'])).toEqual([])
+      expect(getPRMetrics(['weight', 'distance'])).toEqual([])
+      expect(getPRMetrics(['distance', 'time'])).toEqual([])
+      expect(getPRMetrics(['level', 'time'])).toEqual([])
+      expect(getPRMetrics(['level', 'distance'])).toEqual([])
     })
   })
 
@@ -112,11 +115,11 @@ describe('sessionStatsCalculation', () => {
 
   describe('calculateSessionExerciseStats', () => {
     it('retorna null para sets vacíos', () => {
-      expect(calculateSessionExerciseStats([], 'weight_reps')).toBeNull()
+      expect(calculateSessionExerciseStats([], ['weight', 'reps'])).toBeNull()
     })
 
     it('retorna null si sets es null', () => {
-      expect(calculateSessionExerciseStats(null, 'weight_reps')).toBeNull()
+      expect(calculateSessionExerciseStats(null, ['weight', 'reps'])).toBeNull()
     })
 
     describe('weight_reps', () => {
@@ -127,34 +130,34 @@ describe('sessionStatsCalculation', () => {
       ]
 
       it('calcula bestWeight', () => {
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.bestWeight).toBe(100)
       })
 
       it('calcula bestReps', () => {
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.bestReps).toBe(10)
       })
 
       it('calcula best1rm (Epley)', () => {
         // 100x8=127, 100x6=120, 90x10=120 → max=127
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.best1rm).toBe(127)
       })
 
       it('calcula totalVolume', () => {
         // 800 + 600 + 900 = 2300
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.totalVolume).toBe(2300)
       })
 
       it('calcula totalSets', () => {
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.totalSets).toBe(3)
       })
 
       it('no incluye métricas de tiempo/distancia', () => {
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.bestTimeSeconds).toBeUndefined()
         expect(stats.bestDistanceMeters).toBeUndefined()
         expect(stats.bestPaceSeconds).toBeUndefined()
@@ -162,7 +165,7 @@ describe('sessionStatsCalculation', () => {
 
       it('calcula bestPerReps con el peso máximo por cada rep count exacto', () => {
         // Sets: 100×8, 100×6, 90×10 → {"8": 100, "6": 100, "10": 90}
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.bestPerReps).toEqual({ '8': 100, '6': 100, '10': 90 })
       })
 
@@ -172,7 +175,7 @@ describe('sessionStatsCalculation', () => {
           { weight: 100, reps_completed: 5 },
           { weight: 95, reps_completed: 5 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.bestPerReps).toEqual({ '5': 100 })
       })
 
@@ -181,7 +184,7 @@ describe('sessionStatsCalculation', () => {
           { weight: 0, reps_completed: 5 },
           { weight: 100, reps_completed: 0 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.bestPerReps).toBeNull()
       })
     })
@@ -193,7 +196,7 @@ describe('sessionStatsCalculation', () => {
           { reps_completed: 12 },
           { reps_completed: 10 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'reps_only')
+        const stats = calculateSessionExerciseStats(sets, ['reps'])
         expect(stats.bestReps).toBe(15)
         expect(stats.bestWeight).toBeUndefined()
         expect(stats.best1rm).toBeUndefined()
@@ -208,7 +211,7 @@ describe('sessionStatsCalculation', () => {
           { time_seconds: 90 },
           { time_seconds: 45 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'time')
+        const stats = calculateSessionExerciseStats(sets, ['time'])
         expect(stats.bestTimeSeconds).toBe(90)
         expect(stats.totalSets).toBe(3)
       })
@@ -220,7 +223,7 @@ describe('sessionStatsCalculation', () => {
           { weight: 20, time_seconds: 60 },
           { weight: 25, time_seconds: 45 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'weight_time')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'time'])
         expect(stats.bestWeight).toBe(25)
         expect(stats.bestTimeSeconds).toBe(60)
       })
@@ -232,7 +235,7 @@ describe('sessionStatsCalculation', () => {
           { distance_meters: 5000 },
           { distance_meters: 3000 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'distance')
+        const stats = calculateSessionExerciseStats(sets, ['distance'])
         expect(stats.bestDistanceMeters).toBe(5000)
       })
     })
@@ -243,7 +246,7 @@ describe('sessionStatsCalculation', () => {
           { weight: 40, distance_meters: 50 },
           { weight: 50, distance_meters: 30 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'weight_distance')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'distance'])
         expect(stats.bestWeight).toBe(50)
         expect(stats.bestDistanceMeters).toBe(50)
       })
@@ -255,7 +258,7 @@ describe('sessionStatsCalculation', () => {
           { distance_meters: 5000, time_seconds: 1200 },
           { distance_meters: 3000, time_seconds: 1800 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'distance_time')
+        const stats = calculateSessionExerciseStats(sets, ['distance', 'time'])
         expect(stats.bestDistanceMeters).toBe(5000)
         expect(stats.bestTimeSeconds).toBe(1800)
       })
@@ -267,7 +270,7 @@ describe('sessionStatsCalculation', () => {
           { distance_meters: 5000, pace_seconds: 300 },
           { distance_meters: 10000, pace_seconds: 330 },
         ]
-        const stats = calculateSessionExerciseStats(sets, 'distance_pace')
+        const stats = calculateSessionExerciseStats(sets, ['distance', 'pace'])
         expect(stats.bestDistanceMeters).toBe(10000)
         expect(stats.bestPaceSeconds).toBe(300) // menor = mejor
       })
@@ -276,14 +279,14 @@ describe('sessionStatsCalculation', () => {
     describe('calories y level_calories', () => {
       it('retorna solo totalSets para calories', () => {
         const sets = [{ calories_burned: 150 }]
-        const stats = calculateSessionExerciseStats(sets, 'calories')
+        const stats = calculateSessionExerciseStats(sets, ['calories'])
         expect(stats.totalSets).toBe(1)
         expect(stats.bestWeight).toBeUndefined()
       })
 
       it('retorna solo totalSets para level_calories', () => {
         const sets = [{ level: 10, calories_burned: 200 }]
-        const stats = calculateSessionExerciseStats(sets, 'level_calories')
+        const stats = calculateSessionExerciseStats(sets, ['level', 'calories'])
         expect(stats.totalSets).toBe(1)
       })
     })
@@ -291,26 +294,26 @@ describe('sessionStatsCalculation', () => {
     describe('edge cases', () => {
       it('pone null si todos los pesos son 0', () => {
         const sets = [{ weight: 0, reps_completed: 10 }]
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.bestWeight).toBeNull()
       })
 
       it('pone null si no hay reps', () => {
         const sets = [{ weight: 100 }]
-        const stats = calculateSessionExerciseStats(sets, 'weight_reps')
+        const stats = calculateSessionExerciseStats(sets, ['weight', 'reps'])
         expect(stats.bestReps).toBeNull()
         expect(stats.best1rm).toBeNull()
       })
 
       it('pone null si todos los tiempos son 0', () => {
         const sets = [{ time_seconds: 0 }]
-        const stats = calculateSessionExerciseStats(sets, 'time')
+        const stats = calculateSessionExerciseStats(sets, ['time'])
         expect(stats.bestTimeSeconds).toBeNull()
       })
 
       it('pone null para pace si no hay datos', () => {
         const sets = [{ distance_meters: 5000 }]
-        const stats = calculateSessionExerciseStats(sets, 'distance_pace')
+        const stats = calculateSessionExerciseStats(sets, ['distance', 'pace'])
         expect(stats.bestPaceSeconds).toBeNull()
       })
     })
@@ -443,7 +446,7 @@ describe('sessionStatsCalculation', () => {
       // 90×10 → 1RM=120, 100×5 → 1RM=117. Strong/Hevy: weight es PR aunque 1RM no.
       const current = { bestWeight: 100, bestReps: 5, best1rm: 117, totalVolume: 500 }
       const previous = { bestWeight: 90, bestReps: 10, best1rm: 120, totalVolume: 900 }
-      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       expect(flags.isPrWeight).toBe(true) // 100>90, modelo Strong/Hevy
       expect(flags.isPr1rm).toBe(false) // 117 < 120
     })
@@ -452,7 +455,7 @@ describe('sessionStatsCalculation', () => {
       // 100×8 → 1RM=127 vs 90×10 → 1RM=120
       const current = { bestWeight: 100, bestReps: 8, best1rm: 127, totalVolume: 800 }
       const previous = { bestWeight: 90, bestReps: 10, best1rm: 120, totalVolume: 900 }
-      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       expect(flags.isPrWeight).toBe(true)
       expect(flags.isPr1rm).toBe(true)
     })
@@ -460,7 +463,7 @@ describe('sessionStatsCalculation', () => {
     it('weight_time: no dispara PRs (sin fórmula unificada)', () => {
       const current = { bestWeight: 30, bestTimeSeconds: 60 }
       const previous = { bestWeight: 25, bestTimeSeconds: 90 }
-      const { flags, details } = detectNewPersonalRecords(current, previous, 'weight_time')
+      const { flags, details } = detectNewPersonalRecords(current, previous, ['weight', 'time'])
       expect(flags.isPrWeight).toBe(false)
       expect(flags.isPrTime).toBe(false)
       expect(details).toHaveLength(0)
@@ -480,12 +483,12 @@ describe('sessionStatsCalculation', () => {
 
   describe('evaluateSetForPR', () => {
     it('retorna vacío si setData es null', () => {
-      const { newRecords } = evaluateSetForPR(null, {}, { bestWeight: 100 }, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(null, {}, { bestWeight: 100 }, ['weight', 'reps'])
       expect(newRecords).toHaveLength(0)
     })
 
     it('retorna vacío si preSessionBests es null', () => {
-      const { newRecords } = evaluateSetForPR({ weight: 110 }, {}, null, 'weight_reps')
+      const { newRecords } = evaluateSetForPR({ weight: 110 }, {}, null, ['weight', 'reps'])
       expect(newRecords).toHaveLength(0)
     })
 
@@ -494,7 +497,7 @@ describe('sessionStatsCalculation', () => {
       const runningBests = {}
       const preBests = { bestWeight: 100, bestReps: 10, best1rm: 130 }
 
-      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, ['weight', 'reps'])
 
       const weightPR = newRecords.find(r => r.type === 'bestWeight')
       expect(weightPR).toBeDefined()
@@ -506,7 +509,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 30, time_seconds: 60 }
       const preBests = { bestWeight: 25, bestTimeSeconds: 90 }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_time')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'time'])
       expect(newRecords).toHaveLength(0)
     })
 
@@ -515,7 +518,7 @@ describe('sessionStatsCalculation', () => {
       const runningBests = {}
       const preBests = { bestWeight: 100, best1rm: 120 }
 
-      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, ['weight', 'reps'])
 
       const e1rmPR = newRecords.find(r => r.type === 'best1rm')
       expect(e1rmPR).toBeDefined()
@@ -527,7 +530,7 @@ describe('sessionStatsCalculation', () => {
       const runningBests = { best1rm: 130 }
       const preBests = { best1rm: 130 }
 
-      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, ['weight', 'reps'])
       expect(newRecords).toHaveLength(0)
     })
 
@@ -536,7 +539,7 @@ describe('sessionStatsCalculation', () => {
       const runningBests = {}
       const preBests = { best1rm: 0 }
 
-      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, ['weight', 'reps'])
       expect(newRecords).toHaveLength(0)
     })
 
@@ -545,12 +548,12 @@ describe('sessionStatsCalculation', () => {
 
       // Set 1: 100×8 → 1RM=127 — PR contra preSession (120)
       const set1 = { weight: 100, reps_completed: 8 }
-      const result1 = evaluateSetForPR(set1, {}, preBests, 'weight_reps')
+      const result1 = evaluateSetForPR(set1, {}, preBests, ['weight', 'reps'])
       expect(result1.newRecords.find(r => r.type === 'best1rm')).toBeDefined()
 
       // Set 3: 110×6 → 1RM=132 — PR contra running best (127)
       const set3 = { weight: 110, reps_completed: 6 }
-      const result3 = evaluateSetForPR(set3, result1.updatedRunningBests, preBests, 'weight_reps')
+      const result3 = evaluateSetForPR(set3, result1.updatedRunningBests, preBests, ['weight', 'reps'])
       expect(result3.newRecords.find(r => r.type === 'best1rm')).toBeDefined()
       expect(result3.newRecords.find(r => r.type === 'best1rm').value).toBe(132)
     })
@@ -560,11 +563,11 @@ describe('sessionStatsCalculation', () => {
 
       // Set 1: 100×8 → 1RM=127 — PR
       const set1 = { weight: 100, reps_completed: 8 }
-      const result1 = evaluateSetForPR(set1, {}, preBests, 'weight_reps')
+      const result1 = evaluateSetForPR(set1, {}, preBests, ['weight', 'reps'])
 
       // Set 2: 95×8 → 1RM=120 — no supera running best (127)
       const set2 = { weight: 95, reps_completed: 8 }
-      const result2 = evaluateSetForPR(set2, result1.updatedRunningBests, preBests, 'weight_reps')
+      const result2 = evaluateSetForPR(set2, result1.updatedRunningBests, preBests, ['weight', 'reps'])
       expect(result2.newRecords.find(r => r.type === 'best1rm')).toBeUndefined()
     })
 
@@ -572,7 +575,7 @@ describe('sessionStatsCalculation', () => {
       const set = { distance_meters: 5000, pace_seconds: 280 }
       const preBests = { bestDistanceMeters: 5000, bestPaceSeconds: 300 }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'distance_pace')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['distance', 'pace'])
       expect(newRecords.find(r => r.type === 'bestPaceSeconds')).toBeDefined()
     })
 
@@ -580,7 +583,7 @@ describe('sessionStatsCalculation', () => {
       const set = { distance_meters: 5000, pace_seconds: 320 }
       const preBests = { bestDistanceMeters: 5000, bestPaceSeconds: 300 }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'distance_pace')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['distance', 'pace'])
       expect(newRecords.find(r => r.type === 'bestPaceSeconds')).toBeUndefined()
     })
 
@@ -588,7 +591,7 @@ describe('sessionStatsCalculation', () => {
       const set = { reps_completed: 20 }
       const preBests = { bestReps: 15 }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'reps_only')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['reps'])
       expect(newRecords.find(r => r.type === 'bestReps')).toBeDefined()
     })
 
@@ -596,7 +599,7 @@ describe('sessionStatsCalculation', () => {
       const set = { time_seconds: 120 }
       const preBests = { bestTimeSeconds: 90 }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'time')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['time'])
       expect(newRecords.find(r => r.type === 'bestTimeSeconds')).toBeDefined()
     })
 
@@ -604,7 +607,7 @@ describe('sessionStatsCalculation', () => {
       const set = { distance_meters: 6000 }
       const preBests = { bestDistanceMeters: 5000 }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'distance')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['distance'])
       expect(newRecords.find(r => r.type === 'bestDistanceMeters')).toBeDefined()
     })
 
@@ -612,7 +615,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 100, reps_completed: 10, time_seconds: 60 }
       const preBests = { bestTimeSeconds: 30 } // sería PR, pero weight_reps no trackea time
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
       expect(newRecords.find(r => r.type === 'bestTimeSeconds')).toBeUndefined()
     })
 
@@ -620,7 +623,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 80, reps_completed: 10 } // 1RM=107
       const preBests = { best1rm: 130 }
 
-      const { updatedRunningBests } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+      const { updatedRunningBests } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
       expect(updatedRunningBests.best1rm).toBe(107)
     })
 
@@ -632,7 +635,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 110, reps_completed: 5 }
       const preBests = { best1rm: 130, bestPerReps: { '5': 100, '8': 80 } }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
 
       const repPR = newRecords.find(r => r.type === 'repPR')
       expect(repPR).toBeDefined()
@@ -646,7 +649,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 80, reps_completed: 8 }
       const preBests = { best1rm: 130, bestPerReps: { '5': 100 } }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
 
       const repPR = newRecords.find(r => r.type === 'repPR')
       expect(repPR).toBeDefined()
@@ -658,7 +661,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 90, reps_completed: 5 }
       const preBests = { best1rm: 130, bestPerReps: { '5': 100 } }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
       expect(newRecords.find(r => r.type === 'repPR')).toBeUndefined()
     })
 
@@ -666,7 +669,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 100, reps_completed: 5 }
       const preBests = { best1rm: 130 } // sin bestPerReps
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
       expect(newRecords.find(r => r.type === 'repPR')).toBeUndefined()
     })
 
@@ -675,12 +678,12 @@ describe('sessionStatsCalculation', () => {
 
       // Set 1: 100×9 → repPR (supera 90 histórico a 9+ reps)
       const set1 = { weight: 100, reps_completed: 9 }
-      const result1 = evaluateSetForPR(set1, {}, preBests, 'weight_reps')
+      const result1 = evaluateSetForPR(set1, {}, preBests, ['weight', 'reps'])
       expect(result1.newRecords.find(r => r.type === 'repPR')).toBeDefined()
 
       // Set 2: 100×8 — dominado por el 100×9 ya hecho, NO es PR
       const set2 = { weight: 100, reps_completed: 8 }
-      const result2 = evaluateSetForPR(set2, result1.updatedRunningBests, preBests, 'weight_reps')
+      const result2 = evaluateSetForPR(set2, result1.updatedRunningBests, preBests, ['weight', 'reps'])
       expect(result2.newRecords.find(r => r.type === 'repPR')).toBeUndefined()
     })
 
@@ -689,18 +692,18 @@ describe('sessionStatsCalculation', () => {
 
       // Set 1: 110×5 → repPR
       const set1 = { weight: 110, reps_completed: 5 }
-      const result1 = evaluateSetForPR(set1, {}, preBests, 'weight_reps')
+      const result1 = evaluateSetForPR(set1, {}, preBests, ['weight', 'reps'])
       expect(result1.newRecords.find(r => r.type === 'repPR')).toBeDefined()
       expect(result1.updatedRunningBests.bestPerReps['5']).toBe(110)
 
       // Set 2: 105×5 — no supera running (110), no PR
       const set2 = { weight: 105, reps_completed: 5 }
-      const result2 = evaluateSetForPR(set2, result1.updatedRunningBests, preBests, 'weight_reps')
+      const result2 = evaluateSetForPR(set2, result1.updatedRunningBests, preBests, ['weight', 'reps'])
       expect(result2.newRecords.find(r => r.type === 'repPR')).toBeUndefined()
 
       // Set 3: 115×5 — supera running (110), PR
       const set3 = { weight: 115, reps_completed: 5 }
-      const result3 = evaluateSetForPR(set3, result1.updatedRunningBests, preBests, 'weight_reps')
+      const result3 = evaluateSetForPR(set3, result1.updatedRunningBests, preBests, ['weight', 'reps'])
       expect(result3.newRecords.find(r => r.type === 'repPR')).toBeDefined()
     })
 
@@ -712,7 +715,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 110, reps_completed: 5 }
       const preBests = { best1rm: 120, bestWeight: 100, bestPerReps: { '5': 100 } }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
 
       expect(newRecords.find(r => r.type === 'bestWeight').unit).toBe('kg')
       expect(newRecords.find(r => r.type === 'best1rm').unit).toBe('kg')
@@ -723,7 +726,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 110, reps_completed: 5 }
       const preBests = { best1rm: 120, bestWeight: 100, bestPerReps: { '5': 100 } }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps', 'lb')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'], 'lb')
 
       expect(newRecords.find(r => r.type === 'bestWeight').unit).toBe('lb')
       expect(newRecords.find(r => r.type === 'best1rm').unit).toBe('lb')
@@ -734,7 +737,7 @@ describe('sessionStatsCalculation', () => {
       const set = { weight: 110, reps_completed: 5 }
       const preBests = { best1rm: 120, bestWeight: 100, bestPerReps: { '5': 100 } }
 
-      const { newRecords } = evaluateSetForPR(set, {}, preBests, 'weight_reps')
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
 
       // Las labels vienen del namespace workout:pr (idioma de los tests = es por defecto)
       expect(newRecords.find(r => r.type === 'bestWeight').label).toBe('Peso')
@@ -743,19 +746,19 @@ describe('sessionStatsCalculation', () => {
 
     it('weightUnit no afecta a records que no son de peso (reps/tiempo/distancia/pace)', () => {
       const repsSet = { reps_completed: 20 }
-      const repsResult = evaluateSetForPR(repsSet, {}, { bestReps: 15 }, 'reps_only', 'lb')
+      const repsResult = evaluateSetForPR(repsSet, {}, { bestReps: 15 }, ['reps'], 'lb')
       expect(repsResult.newRecords.find(r => r.type === 'bestReps').unit).toBe('reps')
 
       const timeSet = { time_seconds: 120 }
-      const timeResult = evaluateSetForPR(timeSet, {}, { bestTimeSeconds: 90 }, 'time', 'lb')
+      const timeResult = evaluateSetForPR(timeSet, {}, { bestTimeSeconds: 90 }, ['time'], 'lb')
       expect(timeResult.newRecords.find(r => r.type === 'bestTimeSeconds').unit).toBe('s')
 
       const distSet = { distance_meters: 6000 }
-      const distResult = evaluateSetForPR(distSet, {}, { bestDistanceMeters: 5000 }, 'distance', 'lb')
+      const distResult = evaluateSetForPR(distSet, {}, { bestDistanceMeters: 5000 }, ['distance'], 'lb')
       expect(distResult.newRecords.find(r => r.type === 'bestDistanceMeters').unit).toBe('m')
 
       const paceSet = { distance_meters: 5000, pace_seconds: 280 }
-      const paceResult = evaluateSetForPR(paceSet, {}, { bestDistanceMeters: 5000, bestPaceSeconds: 300 }, 'distance_pace', 'lb')
+      const paceResult = evaluateSetForPR(paceSet, {}, { bestDistanceMeters: 5000, bestPaceSeconds: 300 }, ['distance', 'pace'], 'lb')
       expect(paceResult.newRecords.find(r => r.type === 'bestPaceSeconds').unit).toBe('s/km')
     })
   })
@@ -952,7 +955,7 @@ describe('sessionStatsCalculation', () => {
     it('detecta prRepCounts cuando peso supera el récord en algún rep count', () => {
       const current = { best1rm: 130, bestPerReps: { '5': 110, '8': 80 } }
       const previous = { best1rm: 120, bestPerReps: { '5': 100, '8': 85 } }
-      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       // 110>100 → PR @5; 80<85 → no PR @8
       expect(flags.prRepCounts).toEqual([5])
     })
@@ -960,7 +963,7 @@ describe('sessionStatsCalculation', () => {
     it('detecta prRepCounts incluyendo primera vez a un rep count nuevo', () => {
       const current = { best1rm: 130, bestPerReps: { '5': 100, '12': 60 } }
       const previous = { best1rm: 120, bestPerReps: { '5': 100 } } // sin entrada a 12
-      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       // 100=100 (no PR) y 12 reps es primera vez con historial → PR
       expect(flags.prRepCounts).toEqual([12])
     })
@@ -968,21 +971,21 @@ describe('sessionStatsCalculation', () => {
     it('NO marca prRepCounts si previousBests no tiene bestPerReps (transitorio)', () => {
       const current = { best1rm: 130, bestPerReps: { '5': 100 } }
       const previous = { best1rm: 120 }
-      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       expect(flags.prRepCounts).toBeNull()
     })
 
     it('NO marca prRepCounts si current no tiene bestPerReps', () => {
       const current = { best1rm: 130 }
       const previous = { bestPerReps: { '5': 100 } }
-      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       expect(flags.prRepCounts).toBeNull()
     })
 
     it('NO marca un rep count dominado por más reps al mismo peso en la misma sesión (100×9 y 100×8 → solo 9)', () => {
       const current = { best1rm: 130, bestPerReps: { '9': 100, '8': 100 } }
       const previous = { best1rm: 120, bestPerReps: { '9': 90, '8': 90 } }
-      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       // 100×9 supera su récord; 100×8 queda dominado por el 100×9 de la misma sesión
       expect(flags.prRepCounts).toEqual([9])
     })
@@ -990,7 +993,7 @@ describe('sessionStatsCalculation', () => {
     it('prRepCounts viene ordenado ascendente', () => {
       const current = { best1rm: 130, bestPerReps: { '8': 90, '5': 110, '3': 120 } }
       const previous = { best1rm: 120, bestPerReps: { '5': 100, '8': 80, '3': 115 } }
-      const { flags } = detectNewPersonalRecords(current, previous, 'weight_reps')
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       expect(flags.prRepCounts).toEqual([3, 5, 8])
     })
   })
@@ -1001,32 +1004,32 @@ describe('sessionStatsCalculation', () => {
 
   describe('computeExercisePRSetNumbers', () => {
     it('retorna vacío sin series', () => {
-      expect(computeExercisePRSetNumbers([], { bestWeight: 100 }, 'weight_reps')).toEqual([])
+      expect(computeExercisePRSetNumbers([], { bestWeight: 100 }, ['weight', 'reps'])).toEqual([])
     })
 
     it('retorna vacío sin historial previo (null o "none")', () => {
       const sets = [{ setNumber: 1, weight: 200, repsCompleted: 10 }]
-      expect(computeExercisePRSetNumbers(sets, null, 'weight_reps')).toEqual([])
-      expect(computeExercisePRSetNumbers(sets, 'none', 'weight_reps')).toEqual([])
+      expect(computeExercisePRSetNumbers(sets, null, ['weight', 'reps'])).toEqual([])
+      expect(computeExercisePRSetNumbers(sets, 'none', ['weight', 'reps'])).toEqual([])
     })
 
     it('marca como PR la serie que bate el peso/1RM previo', () => {
       const sets = [{ setNumber: 1, weight: 110, repsCompleted: 5 }]
       const preBests = { bestWeight: 100, best1rm: 120 }
-      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1])
+      expect(computeExercisePRSetNumbers(sets, preBests, ['weight', 'reps'])).toEqual([1])
     })
 
     it('edición HACIA ARRIBA: un peso que antes no batía ahora es PR', () => {
       // Simula haber completado floja y luego subido el peso: el recálculo la marca.
       const preBests = { bestWeight: 100, best1rm: 120 }
-      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 90, repsCompleted: 5 }], preBests, 'weight_reps')).toEqual([])
-      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 115, repsCompleted: 5 }], preBests, 'weight_reps')).toEqual([1])
+      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 90, repsCompleted: 5 }], preBests, ['weight', 'reps'])).toEqual([])
+      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 115, repsCompleted: 5 }], preBests, ['weight', 'reps'])).toEqual([1])
     })
 
     it('edición HACIA ABAJO: deja de ser PR (el bug que arregla el recálculo desde cero)', () => {
       // Con el acumulador incremental el trofeo quedaba congelado; aquí desaparece.
       const preBests = { bestWeight: 100, best1rm: 120 }
-      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 90, repsCompleted: 5 }], preBests, 'weight_reps')).toEqual([])
+      expect(computeExercisePRSetNumbers([{ setNumber: 1, weight: 90, repsCompleted: 5 }], preBests, ['weight', 'reps'])).toEqual([])
     })
 
     it('reprocesa en orden: una serie posterior menor no es PR (dominancia del running best)', () => {
@@ -1035,7 +1038,7 @@ describe('sessionStatsCalculation', () => {
         { setNumber: 2, weight: 105, repsCompleted: 5 },
       ]
       const preBests = { bestWeight: 100, best1rm: 120 }
-      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1])
+      expect(computeExercisePRSetNumbers(sets, preBests, ['weight', 'reps'])).toEqual([1])
     })
 
     it('ordena por setNumber aunque el array llegue desordenado', () => {
@@ -1044,7 +1047,7 @@ describe('sessionStatsCalculation', () => {
         { setNumber: 1, weight: 110, repsCompleted: 5 },
       ]
       const preBests = { bestWeight: 100, best1rm: 120 }
-      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1])
+      expect(computeExercisePRSetNumbers(sets, preBests, ['weight', 'reps'])).toEqual([1])
     })
 
     it('marca varias series si cada una supera a la anterior', () => {
@@ -1053,19 +1056,19 @@ describe('sessionStatsCalculation', () => {
         { setNumber: 2, weight: 110, repsCompleted: 3 },
       ]
       const preBests = { bestWeight: 100, best1rm: 200 }
-      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1, 2])
+      expect(computeExercisePRSetNumbers(sets, preBests, ['weight', 'reps'])).toEqual([1, 2])
     })
 
     it('detecta repPR por rep-count aunque peso/1RM no batan récord', () => {
       const sets = [{ setNumber: 1, weight: 105, repsCompleted: 5 }]
       const preBests = { bestWeight: 200, best1rm: 200, bestPerReps: { '5': 100 } }
-      expect(computeExercisePRSetNumbers(sets, preBests, 'weight_reps')).toEqual([1])
+      expect(computeExercisePRSetNumbers(sets, preBests, ['weight', 'reps'])).toEqual([1])
     })
 
     it('métrica de pace (menor = mejor): serie más rápida es PR', () => {
       const sets = [{ setNumber: 1, distanceMeters: 5000, paceSeconds: 280 }]
       const preBests = { bestDistanceMeters: 5000, bestPaceSeconds: 300 }
-      expect(computeExercisePRSetNumbers(sets, preBests, 'distance_pace')).toEqual([1])
+      expect(computeExercisePRSetNumbers(sets, preBests, ['distance', 'pace'])).toEqual([1])
     })
   })
 
@@ -1073,7 +1076,7 @@ describe('sessionStatsCalculation', () => {
     it('devuelve setNumber + records por cada serie-PR', () => {
       const sets = [{ setNumber: 1, weight: 110, repsCompleted: 5 }]
       const preBests = { bestWeight: 100, best1rm: 120 }
-      const result = computeExercisePRSets(sets, preBests, 'weight_reps')
+      const result = computeExercisePRSets(sets, preBests, ['weight', 'reps'])
       expect(result).toHaveLength(1)
       expect(result[0].setNumber).toBe(1)
       expect(result[0].records.length).toBeGreaterThan(0)
@@ -1083,14 +1086,14 @@ describe('sessionStatsCalculation', () => {
     it('propaga weightUnit a las etiquetas de los records', () => {
       const sets = [{ setNumber: 1, weight: 250, repsCompleted: 5 }]
       const preBests = { bestWeight: 200, best1rm: 240 }
-      const result = computeExercisePRSets(sets, preBests, 'weight_reps', 'lb')
+      const result = computeExercisePRSets(sets, preBests, ['weight', 'reps'], 'lb')
       expect(result[0].records.find(r => r.type === 'bestWeight').unit).toBe('lb')
     })
 
     it('retorna vacío sin historial previo', () => {
       const sets = [{ setNumber: 1, weight: 200, repsCompleted: 10 }]
-      expect(computeExercisePRSets(sets, null, 'weight_reps')).toEqual([])
-      expect(computeExercisePRSets(sets, 'none', 'weight_reps')).toEqual([])
+      expect(computeExercisePRSets(sets, null, ['weight', 'reps'])).toEqual([])
+      expect(computeExercisePRSets(sets, 'none', ['weight', 'reps'])).toEqual([])
     })
   })
 })

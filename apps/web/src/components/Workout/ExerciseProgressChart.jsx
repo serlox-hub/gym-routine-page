@@ -10,7 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { CHART_RANGES, MeasurementType, filterRecordsByRange, transformSessionsToChartData, convertWeightValue } from '@gym/shared'
+import { CHART_RANGES, tracksReps, tracksWeight, filterRecordsByRange, transformSessionsToChartData, convertWeightValue } from '@gym/shared'
 import { ChartRangeToggle } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
@@ -39,11 +39,13 @@ function statRowToPoint(row, displayUnit, unitByGym) {
   }
 }
 
-function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, measurementType, weightUnit = 'kg' }) {
+function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, trackedFields, weightUnit = 'kg' }) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
   const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
-  const showVolumeTabs = measurementType === MeasurementType.WEIGHT_REPS
+  // Volumen y 1RM solo tienen sentido con peso Y reps (ver getTrackableMetrics): son las
+  // derivadas del modelo de fuerza, no se calculan para ningún otro ejercicio.
+  const showVolumeTabs = tracksWeight(trackedFields) && tracksReps(trackedFields)
 
   const isOverlay = Array.isArray(overlayGyms) && overlayGyms.length > 0
   const isStatRows = Array.isArray(chartRows)
@@ -96,8 +98,8 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, me
         .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate))
     }
     const filteredSessions = filterRecordsByRange(sessions, range, 'date')
-    return transformSessionsToChartData(filteredSessions, measurementType, { weightUnit })
-  }, [isOverlay, isStatRows, chartRows, sessions, range, measurementType, weightUnit])
+    return transformSessionsToChartData(filteredSessions, trackedFields, { weightUnit })
+  }, [isOverlay, isStatRows, chartRows, sessions, range, trackedFields, weightUnit])
 
   const chartData = isOverlay ? overlayData.data : singleData
   const enoughSource = isStatRows ? (chartRows?.length ?? 0) >= 2 : (sessions?.length ?? 0) >= 2

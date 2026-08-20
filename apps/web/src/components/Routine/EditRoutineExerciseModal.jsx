@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { buildExerciseConfigForm, buildExerciseConfigFormFromRow, buildReplaceExerciseForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm, resolveMeasurementType } from '@gym/shared'
+import { buildExerciseConfigForm, buildExerciseConfigFormFromRow, buildReplaceExerciseForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm, resolveTrackedFields } from '@gym/shared'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
 import ExercisePickerModal from './ExercisePickerModal.jsx'
 import { ExerciseFormPanel } from '../Exercise/index.js'
@@ -36,14 +36,14 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
     if (routineExercise) {
       setView('config')
       setErrors({})
-      setForm(buildExerciseConfigFormFromRow(routineExercise, resolveMeasurementType(routineExercise.exercise)))
+      setForm(buildExerciseConfigFormFromRow(routineExercise, resolveTrackedFields(routineExercise.exercise)))
     }
   }, [routineExercise])
 
   if (!routineExercise) return null
 
   const handleSubmit = () => {
-    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveMeasurementType(exercise))
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveTrackedFields(exercise))
     setErrors(formErrors)
     if (!valid) return
     onSubmit({ exerciseId: routineExercise.id, ...parseExerciseConfigForm(form) })
@@ -54,7 +54,7 @@ function EditRoutineExerciseModal({ isOpen, onClose, onSubmit, isPending, routin
   // reemplazo tampoco edita esos campos: los hereda, y si cambia el tipo de
   // medición el objetivo se resetea a un default garantizado válido.
   const handleReplace = (newExercise) => {
-    const replaceForm = buildReplaceExerciseForm(form, resolveMeasurementType(newExercise), resolveMeasurementType(exercise))
+    const replaceForm = buildReplaceExerciseForm(form, resolveTrackedFields(newExercise), resolveTrackedFields(exercise))
     onSubmit({ exerciseId: routineExercise.id, exercise_id: newExercise.id, ...parseExerciseConfigForm(replaceForm) })
   }
 

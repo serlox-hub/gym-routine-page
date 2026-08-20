@@ -1,3 +1,4 @@
+import { resolveTrackedFields } from './measurementFields.js'
 import { getSetColumns, buildSetFieldsPayload } from './setColumns.js'
 
 /**
@@ -38,14 +39,14 @@ export function diffSessionExerciseFields(edited, original) {
 }
 
 /**
- * Genera los campos de una serie vacía según el tipo de medición del ejercicio: los campos del
- * tipo arrancan a 0 y el resto ni se envían (el upsert no toca las columnas ausentes).
+ * Genera los campos de una serie vacía según lo que mide el ejercicio: sus campos arrancan a 0 y
+ * el resto ni se envían (el upsert no toca las columnas ausentes).
  * Usa las MISMAS columnas que pinta la fila (`getSetColumns`) — con la lista vieja
  * (peso/reps/tiempo/distancia) una serie añadida a un ejercicio de nivel o calorías nacía sin
  * inicializar sus propios campos.
  */
 export function buildEmptySetData({ sessionId, sessionExerciseId, setNumber, exercise }) {
-  const columns = getSetColumns(exercise?.measurement_type)
+  const columns = getSetColumns(resolveTrackedFields(exercise))
   const zeros = Object.fromEntries(columns.map(({ field }) => [field, 0]))
 
   return {

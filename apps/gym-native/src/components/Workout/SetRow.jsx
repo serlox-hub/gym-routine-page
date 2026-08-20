@@ -5,11 +5,9 @@ import { useIsPRSet } from './PRContext'
 import SetDetailsModal from './SetDetailsModal'
 import EffortPicker from './EffortPicker'
 import SetValueInput from './SetInputs'
-import ExecutionTimer from './ExecutionTimer'
-import PreviousSetCell from './PreviousSetCell'
-import ProgressionHint from './ProgressionHint'
+import SetRowMeta from './SetRowMeta'
 import {
-  MeasurementType,
+  DEFAULT_TRACKED_FIELDS,
   buildCompletedSetData,
   getNotifier,
   t,
@@ -17,7 +15,7 @@ import {
   shouldSuggestProgression,
   shouldShowAnnotationColumn,
   getSetColumns,
-  measurementTypeUsesTime,
+  tracksTime,
   effortRendersAsWord,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
@@ -25,19 +23,19 @@ import { useUpdateSetVideo } from '../../hooks/useWorkout'
 import { uploadVideo } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
 
-// Layout columnar (deben coincidir fila y cabecera de SetsList): SET · ÚLTIMA · [valores] · NOTAS · ✓.
-// MISMO layout para TODOS los measurement types: las columnas de valor (1 o 2) las decide
-// `getSetColumns(measurementType)` y su unidad va en la CABECERA (ver SetsList), no dentro de la
-// fila. Antes los tipos que no eran weight_reps metían unidades inline ("nv × 1200 s") con anchos
-// fijos que no encogían → la fila se salía de la card. Ver docs/DECISIONS.md.
+// Layout columnar (deben coincidir fila y cabecera de SetsList): SET · [valores] · NOTAS · ✓.
+// MISMO layout mida lo que mida el ejercicio: las columnas de valor (1 a 3) las decide
+// `getSetColumns(trackedFields)` y su unidad va en la CABECERA (ver SetsList), no dentro de la
+// fila. Es lo que permite que la fila lleve solo inputs flexibles y no se salga de la card.
+// Ver docs/DECISIONS.md.
 // La celda SET (número / «D») es SIEMPRE inerte: la entrada a la anotación (RIR + nota + vídeo)
 // es el chip de la columna «Notas» (ver EffortPicker). La columna existe si hay algo que anotar
-// (RIR, notas o vídeo; ver shouldShowAnnotationColumn). La columna ANTERIOR muestra la misma serie
-// de la última sesión (ver PreviousSetCell), sin unidades (las dice la cabecera) y elidiendo.
+// (RIR, notas o vídeo; ver shouldShowAnnotationColumn). La referencia de la última sesión NO es
+// columna: vive en la subfila SetRowMeta junto al aviso de progresión y al timer, siempre en el
+// mismo sitio (antes ocupaba 46px fijos, que con 3 columnas de valor dejaban los inputs a ~26px).
 // Fuente única de anchos (SetsList importa estas constantes para su cabecera → sin desincronizar).
 // Afinados para móvil estrecho (360-390px): las fijas comen el hueco de los valores.
 export const COL_SET = 32
-export const COL_PREV = 46
 // COL_RIR/COL_CHECK se quedan en 42/34 (NO 44 como web): el área táctil de 44px se logra con
 // hitSlop en los botones, no ensanchando la columna → se conserva el hueco de los valores sin
 // perder a11y. No subir a 44 "por paridad" ni bajar web a 34. Ver docs/DECISIONS.md (#10).
@@ -52,8 +50,8 @@ export const SET_ROW_GAP = 6
 export const SET_ROW_ACCENT = 3
 
 /** Ancho de la columna «Notas»: la escala RPE pinta palabras, la RIR el compacto "@2". */
-export function getEffortColumnWidth(measurementType, showEffortScale) {
-  return effortRendersAsWord(measurementType, showEffortScale) ? COL_RIR_WORD : COL_RIR
+export function getEffortColumnWidth(trackedFields, showEffortScale) {
+  return effortRendersAsWord(trackedFields, showEffortScale) ? COL_RIR_WORD : COL_RIR
 }
 
 function SetRow({
@@ -62,7 +60,7 @@ function SetRow({
   exerciseName,
   sessionExerciseId,
   exerciseId,
-  measurementType = MeasurementType.WEIGHT_REPS,
+  trackedFields = DEFAULT_TRACKED_FIELDS,
   weightUnit = 'kg',
   distanceUnit = 'm',
   descansoSeg,
@@ -83,7 +81,7 @@ function SetRow({
     rir, setRir,
     notes, setType, saveDetails, setSetType,
     isCompleted, setData, isValid, repsPlaceholder,
-  } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, measurementType, weightUnit, distanceUnit, previousSet, repsTarget })
+  } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit, previousSet, repsTarget })
 
   const { data: preferences } = usePreferences()
   const { mutate: updateSetVideo } = useUpdateSetVideo()
@@ -139,7 +137,7 @@ function SetRow({
     // (nota vaciada) es un override válido → distinguir de undefined (completar desde el check).
     const finalNotes = notesOverride !== undefined ? notesOverride : notes
     const data = buildCompletedSetData(
-      measurementType,
+      trackedFields,
       { weight, reps, time, distance, calories, level, pace },
       { sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes: finalNotes, setType },
     )
@@ -169,9 +167,9 @@ function SetRow({
     }
   }
 
-  // Columnas de valor del tipo de medición (1 o 2) + su estado. La cabecera (SetsList) lleva la
-  // unidad, así que en la fila solo van inputs desnudos: es lo que deja que encojan sin desbordar.
-  const columns = getSetColumns(measurementType, { weightUnit, distanceUnit })
+  // Columnas de valor del ejercicio (1 a 3) + su estado. La cabecera (SetsList) lleva la unidad,
+  // así que en la fila solo van inputs desnudos: es lo que deja que encojan sin desbordar.
+  const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
   const fieldState = {
     weight: [weight, setWeight],
     reps: [reps, setReps, repsPlaceholder],
@@ -187,14 +185,14 @@ function SetRow({
   const isDropset = setType === 'dropset'
   // El chip (entrada de anotación) se muestra en la fila activa o completada si la columna existe.
   const showEffort = annotationColumn && (isActive || isCompleted)
-  // Cuenta atrás de la serie: solo en la fila activa y con una duración ya puesta. Va como
+  // Cuenta atrás de la serie: solo en la fila activa y con una duración ya puesta. Va en la
   // subfila, fuera de la fila: dentro robaba el ancho de los inputs y descuadraba al arrancar.
-  const showTimer = measurementTypeUsesTime(measurementType) && isActive && !isCompleted && Number(time) > 0
+  const showTimer = tracksTime(trackedFields) && isActive && !isCompleted && Number(time) > 0
 
   // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
   // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
   const showProgressionHint = progressionEnabled && !isCompleted &&
-    shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight: weight, rirTarget })
+    shouldSuggestProgression({ previousSet, repsTarget, trackedFields, currentWeight: weight, rirTarget })
 
   // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
   // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten
@@ -286,9 +284,6 @@ function SetRow({
         <View style={{ width: COL_SET, alignItems: 'center', justifyContent: 'center' }}>
           {renderSetCell()}
         </View>
-        <View style={{ width: COL_PREV, alignItems: 'center', justifyContent: 'center' }}>
-          <PreviousSetCell previousSet={previousSet} measurementType={measurementType} weightUnit={weightUnit} distanceUnit={distanceUnit} showRir={showRirInput} />
-        </View>
         {columns.map(({ field, decimal }) => {
           const [value, onChange, placeholder] = fieldState[field]
           return (
@@ -301,8 +296,8 @@ function SetRow({
         {/* Columna «Notas»: se colapsa si RIR, notas y vídeo están off (misma condición
             annotationColumn que la cabecera). Más ancha con la escala RPE (palabras). */}
         {annotationColumn && (
-          <View style={{ width: getEffortColumnWidth(measurementType, showRirInput), alignItems: 'center', justifyContent: 'center' }}>
-            {showEffort && <EffortPicker value={rir} measurementType={measurementType} note={notes} hasVideo={hasVideo}
+          <View style={{ width: getEffortColumnWidth(trackedFields, showRirInput), alignItems: 'center', justifyContent: 'center' }}>
+            {showEffort && <EffortPicker value={rir} trackedFields={trackedFields} note={notes} hasVideo={hasVideo}
               active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
           </View>
         )}
@@ -311,9 +306,16 @@ function SetRow({
         </View>
       </View>
 
-      {showTimer && <ExecutionTimer seconds={Number(time)} />}
-
-      {showProgressionHint && <ProgressionHint prevReps={previousSet.reps} repsTarget={repsTarget} />}
+      <SetRowMeta
+        previousSet={previousSet}
+        trackedFields={trackedFields}
+        weightUnit={weightUnit}
+        distanceUnit={distanceUnit}
+        showRir={showRirInput}
+        showProgressionHint={showProgressionHint}
+        repsTarget={repsTarget}
+        timerSeconds={showTimer ? Number(time) : 0}
+      />
 
       <SetDetailsModal
         isOpen={showModal}
@@ -327,7 +329,7 @@ function SetRow({
         initialVideoUrl={setData?.videoUrl}
         rir={rir}
         onRirChange={setRir}
-        measurementType={measurementType}
+        trackedFields={trackedFields}
         showEffortScale={showRirInput}
         setType={setType}
         onSetTypeChange={setSetType}

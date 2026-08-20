@@ -5,7 +5,7 @@ import { computeExercisePRSets, computeExercisePRSetNumbers } from '../lib/sessi
 import { fetchExerciseBests } from '../api/exerciseStatsApi.js'
 import { fetchUserExerciseGymUnit } from '../api/exerciseApi.js'
 import { resolveWeightUnit } from '../lib/exerciseUtils.js'
-import { resolveMeasurementType } from '../lib/measurementTypes.js'
+import { resolveTrackedFields } from '../lib/measurementFields.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 import { useWorkoutStore } from './_stores.js'
@@ -174,18 +174,18 @@ export function useSessionPRDetection() {
       for (const [sessionExerciseId, sets] of byExercise) {
         const sessionExercise = sessionExercises.find(se => se.id === sessionExerciseId)
         if (!sessionExercise) continue
-        const measurementType = resolveMeasurementType(sessionExercise.exercise)
+        const trackedFields = resolveTrackedFields(sessionExercise.exercise)
         const preBests = await readPreSessionBests(sessionExercise.exercise_id)
         if (cancelled) return
         if (preBests === 'none') continue
 
         // Trofeo: solo necesita QUÉ series son PR (sin records ni unidad de peso). Los
         // records con unidad se calculan luego, solo para la serie que se celebre.
-        const prSetNumbers = computeExercisePRSetNumbers(sets, preBests, measurementType)
+        const prSetNumbers = computeExercisePRSetNumbers(sets, preBests, trackedFields)
         for (const setNumber of prSetNumbers) {
           const key = `${sessionExerciseId}-${setNumber}`
           nextKeys.add(key)
-          prContextByKey.set(key, { sessionExercise, sets, preBests, measurementType, setNumber })
+          prContextByKey.set(key, { sessionExercise, sets, preBests, trackedFields, setNumber })
         }
       }
       if (cancelled) return
@@ -214,7 +214,7 @@ export function useSessionPRDetection() {
       // dejaría series marcadas como celebradas sin haber mostrado el toast.
       if (cancelled) return
       for (const key of newlyPR) notifiedKeysRef.current.add(key)
-      const records = computeExercisePRSets(ctx.sets, ctx.preBests, ctx.measurementType, weightUnit)
+      const records = computeExercisePRSets(ctx.sets, ctx.preBests, ctx.trackedFields, weightUnit)
         .find(r => r.setNumber === ctx.setNumber)?.records
       if (records?.length) {
         showPRNotification(ctx.sessionExercise.exercise?.name || t('workout:pr.exerciseFallback'), records)

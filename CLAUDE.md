@@ -298,7 +298,8 @@ Key relations:
 - `exercises.muscle_group_id` → Single muscle group per exercise
 - `routine_exercises` → Config del ejercicio en un día de rutina (series, reps, rir, notas); cuelga de `routine_days` vía `routine_day_id` (ya NO existe `routine_blocks`; el calentamiento es `is_warmup`, la superserie es `superset_group`)
 - `session_exercises` → Ejercicio realizado en una sesión (referencia opcional a `routine_exercise_id`)
-- `completed_sets` → Series realizadas con peso/reps, cuelgan de `session_exercises`
+- `completed_sets` → Series realizadas, cuelgan de `session_exercises`. Tiene columna propia para los 7 campos de medición (`weight`, `reps_completed`, `time_seconds`, `distance_meters`, `calories_burned`, `level`, `pace_seconds`); cuáles se usan lo decide el ejercicio
+- `exercises.tracked_fields` (`measurement_field[]`, 1 a 3) → **qué mide** el ejercicio. Sustituye al enum `measurement_type` (12 combinaciones cerradas). De ahí se derivan columnas de la fila, validación, formato, métricas de stats y de PR: ver `lib/measurementFields.js` y resolver SIEMPRE con `resolveTrackedFields(exercise)`
 
 Deletion strategy:
 - `exercises` → Soft delete (`deleted_at`). Necesario porque sesiones pasadas referencian ejercicios.
@@ -356,10 +357,11 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ Devolver las flechitas a los `input[type=number]` de web: `index.css` las quita **globalmente** a propósito (en móvil no se usan y Chrome les reserva ~14px DENTRO del input, que en columnas estrechas recortan el valor). Decisión de app, no parche de una pantalla
 - ❌ Adding translation keys to only one language (must add to both es/ and en/)
 - ❌ Defaults silenciosos en el parseo de formularios (`parseInt(x) || 3`). Un campo obligatorio se **valida** y se muestra el error inline; el parser no inventa valores. Ver `routineExerciseForm.js` y `docs/DECISIONS.md`
-- ❌ Etiquetas de unidad dentro de la fila de serie de la sesión (`nv ×`, `s`, `kcal`) ni anchos fijos en sus inputs. La unidad va en la **cabecera** de columna (`getSetColumns`) y la fila solo lleva inputs `w-full` en tracks `minmax(0,1fr)` — si no, la fila desborda la card. Todos los measurement types comparten el mismo grid. Ver `docs/DECISIONS.md`
+- ❌ Etiquetas de unidad dentro de la fila de serie de la sesión (`nv ×`, `s`, `kcal`) ni anchos fijos en sus inputs. La unidad va en la **cabecera** de columna (`getSetColumns`) y la fila solo lleva inputs `w-full` en tracks `minmax(0,1fr)` — si no, la fila desborda la card. Mismo grid mida lo que mida el ejercicio. Ver `docs/DECISIONS.md`
 - ❌ Pintar una duración en segundos crudos (`{timeSeconds}s`, `1200 s`) o pedirla en dos cajas mm+ss. Display: `formatDuration()`. Entrada: `SetValueInput` con campo `time`/`pace` (relleno por dígitos, `durationInput.js`). No hay unidad de tiempo configurable
-- ❌ Rangos numéricos fijos para campos que dependen del `measurement_type`. El esfuerzo usa dos escalas (RIR `-1..3` con reps, RPE `1..5` sin ellas): usar `getEffortOptions()` / `isValidEffortValue()`, nunca `min=0 max=5`
-- ❌ Pintar un valor de esfuerzo crudo (`RIR {rir}`, `` `@${rir}` ``, `String(rir)`). Siempre `formatEffortBadge(value, measurementType)` — en RPE el número guardado es un índice interno, la palabra es el dato. Si el componente tiene el `exercise`, resuelve el tipo con `resolveMeasurementType(exercise)` (fallback único de lectura); si no lo tiene, recíbelo como prop. Ver `docs/DECISIONS.md`
+- ❌ Rangos numéricos fijos para campos que dependen de lo que mide el ejercicio. El esfuerzo usa dos escalas (RIR `-1..3` si mide reps, RPE `1..5` si no): usar `getEffortOptions()` / `isValidEffortValue()`, nunca `min=0 max=5`
+- ❌ Pintar un valor de esfuerzo crudo (`RIR {rir}`, `` `@${rir}` ``, `String(rir)`). Siempre `formatEffortBadge(value, trackedFields)` — en RPE el número guardado es un índice interno, la palabra es el dato. Si el componente tiene el `exercise`, resuelve los campos con `resolveTrackedFields(exercise)` (fallback único de lectura); si no lo tiene, recíbelos como prop. Ver `docs/DECISIONS.md`
+- ❌ Meter en la fila de serie nada que no sea un dato de la serie (referencia de la última vez, aviso de progresión, timer). Van a la subfila `SetRowMeta`, siempre en el mismo sitio, o roban ancho a los inputs. Ver `docs/DECISIONS.md`
 - ❌ Differences between web and native — all screens must have the same appearance, section order, and functionality on both platforms unless technically impossible
 
 ## What TO Do
@@ -405,7 +407,8 @@ Extract when logic:
 | Calendar logic | `calendarUtils.js` | `generateCalendarDays()` |
 | Array operations | `arrayUtils.js` | `reorderArrayItem()`, `filterExercises()` |
 | Form validation | `validation.js` | `validateSignupForm()`, `validateRoutineForm()` |
-| Measurement types | `measurementTypes.js` | `measurementTypeUsesWeight()`, `getEffortOptions()`, `isValidEffortValue()` |
+| Campos de medición del ejercicio | `measurementFields.js` | `resolveTrackedFields()`, `normalizeTrackedFields()`, `tracksReps()`, `getPrimaryTargetField()`, `getDefaultTarget()` |
+| Escala de esfuerzo (RIR/RPE) | `effortScale.js` | `getEffortOptions()`, `isValidEffortValue()`, `formatEffortBadge()` |
 | Columnas de la fila de serie (sesión) | `setColumns.js` | `getSetColumns()` |
 | Input de duración por dígitos (mm:ss) | `durationInput.js` | `durationDigitsToSeconds()`, `secondsToDurationDigits()`, `formatDurationDigits()` |
 | Form de config de ejercicio en rutina/sesión | `routineExerciseForm.js` | `buildExerciseConfigForm()`, `validateExerciseConfigForm()`, `parseExerciseConfigForm()` |
@@ -417,7 +420,7 @@ All these files live in `packages/shared/src/lib/` and are exported via `@gym/sh
 
 ### Archivos críticos: import/export de rutinas (JSON)
 
-Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 6**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
+Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 7**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
 
 ⚠️ **Emparejar por CLAVE ESTABLE** (`name_en` → `name_es` normalizado, vía `lib/exerciseMatch.js`), NUNCA por `name_es` solo. `importRoutine` debe seguir aceptando versiones antiguas del JSON.
 

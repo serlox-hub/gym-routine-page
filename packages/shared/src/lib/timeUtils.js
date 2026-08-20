@@ -14,6 +14,17 @@ export function formatSecondsToMMSS(seconds) {
 }
 
 /**
+ * Igual que formatSecondsToMMSS pero tolerante: redondea decimales y devuelve '' si no hay valor.
+ * Es el formato del RITMO (min/km), donde el dato llega de BD y puede venir nulo.
+ * @param {number|null|undefined} totalSeconds
+ * @returns {string} "5:00", o '' si no hay valor
+ */
+export function formatSecondsAsMMSS(totalSeconds) {
+  if (!totalSeconds && totalSeconds !== 0) return ''
+  return formatSecondsToMMSS(Math.round(Number(totalSeconds)))
+}
+
+/**
  * Formatea segundos transcurridos en formato MM:SS o H:MM:SS si supera la hora.
  * @param {number} seconds - Segundos totales
  * @returns {string} Formato "MM:SS" o "H:MM:SS"
@@ -36,15 +47,13 @@ export function formatElapsedSeconds(seconds) {
  * ⚠️ El " min" NO es decorativo: "24:00" a secas se lee como horas tan fácil como como minutos.
  * Con 3 segmentos ("3:24:00") no hace falta, ahí las horas ya se ven.
  * @param {number} seconds
- * @param {{unitHint?: boolean}} [options] - unitHint false omite el " min": para la columna
- *   ANTERIOR de la sesión, donde no cabe (46px) y la cabecera MM:SS ya está a la vista.
  * @returns {string}
  */
-export function formatDuration(seconds, { unitHint = true } = {}) {
+export function formatDuration(seconds) {
   const safe = Math.max(0, Math.round(Number(seconds) || 0))
   if (safe < 60) return `${safe}s`
   const formatted = formatElapsedSeconds(safe)
-  return unitHint && safe < 3600 ? `${formatted} min` : formatted
+  return safe < 3600 ? `${formatted} min` : formatted
 }
 
 /**

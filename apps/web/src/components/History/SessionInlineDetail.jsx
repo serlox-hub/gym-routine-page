@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
-import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveMeasurementType } from '@gym/shared'
+import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
@@ -39,15 +39,15 @@ import {
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 import { colors } from '../../lib/styles.js'
 
-// Fila editable del historial. Usa las MISMAS columnas por tipo de medición que la sesión
+// Fila editable del historial. Usa las MISMAS columnas por lo que mide el ejercicio que la sesión
 // (getSetColumns + SetValueInput): antes tenía su propia lista peso/reps/tiempo/distancia, así que
 // nivel, kcal y ritmo NO se podían editar y el tiempo se pedía en segundos crudos. Guarda al salir
 // de cada campo (onCommit), no con un check como la sesión.
 function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUnit, isSetPR, onUpsert, onDelete }) {
   const { t } = useTranslation()
-  const measurementType = resolveMeasurementType(exercise)
+  const trackedFields = resolveTrackedFields(exercise)
   // distanceUnit aún sin cablear en ninguna pantalla (issue #24): al activarlo, también aquí.
-  const columns = getSetColumns(measurementType, { weightUnit })
+  const columns = getSetColumns(trackedFields, { weightUnit })
 
   const [values, setValues] = useState(() => getSetFieldValues(set, columns))
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
@@ -57,7 +57,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
   const [videoUploadError, setVideoUploadError] = useState(false)
   const [pendingVideoFile, setPendingVideoFile] = useState(null)
 
-  // Solo los campos del tipo: las columnas que no viajan en el payload no se tocan en el upsert.
+  // Solo los campos del ejercicio: las columnas que no viajan en el payload no se tocan en el upsert.
   const buildPayload = (overrides = {}) => ({
     sessionId,
     sessionExerciseId,
@@ -171,7 +171,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
       {hasRir && (
         <button onClick={() => setShowDetails(true)} style={{ ...badgeStyle, padding: '3px 7px' }} title={t('workout:set.rir')}>
           <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
-            {formatEffortBadge(set.rir_actual, measurementType)}
+            {formatEffortBadge(set.rir_actual, trackedFields)}
           </span>
         </button>
       )}
@@ -243,7 +243,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
         setNumber={set.set_number}
         initialNote={set.notes}
         initialVideoUrl={set.video_url}
-        measurementType={measurementType}
+        trackedFields={trackedFields}
         showEffortScale={false}
         showSetType={false}
       />
@@ -258,7 +258,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
   const [showHistory, setShowHistory] = useState(false)
-  const measurementType = resolveMeasurementType(exercise)
+  const trackedFields = resolveTrackedFields(exercise)
   const isHistoryClickable = !exercise.deleted_at && !isEditing
 
   return (
@@ -338,7 +338,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 )}
                 {set.rir_actual !== null && set.rir_actual !== undefined && (
                   <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                    {formatEffortBadge(set.rir_actual, measurementType)}
+                    {formatEffortBadge(set.rir_actual, trackedFields)}
                   </span>
                 )}
               </div>
@@ -352,7 +352,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         onClose={() => setShowHistory(false)}
         exerciseId={exercise.id}
         exerciseName={getExerciseName(exercise)}
-        measurementType={measurementType}
+        trackedFields={trackedFields}
       />
     </Card>
   )

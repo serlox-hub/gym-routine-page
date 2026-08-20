@@ -35,7 +35,7 @@ describe('recalculateSessionStats', () => {
     const client = buildClient({
       session: { user_id: USER_ID, started_at: STARTED_AT },
       sessionExercises: [
-        { id: 'se-1', exercise_id: 100, exercise: { measurement_type: 'weight_reps' } },
+        { id: 'se-1', exercise_id: 100, exercise: { tracked_fields: ['weight', 'reps'] } },
       ],
       sets: [
         { session_exercise_id: 'se-1', weight: 80, reps_completed: 10, time_seconds: null, distance_meters: null, pace_seconds: null },
@@ -56,8 +56,8 @@ describe('recalculateSessionStats', () => {
     const client = buildClient({
       session: { user_id: USER_ID, started_at: STARTED_AT },
       sessionExercises: [
-        { id: 'se-warm', exercise_id: 100, exercise: { measurement_type: 'weight_reps' } },
-        { id: 'se-main', exercise_id: 100, exercise: { measurement_type: 'weight_reps' } },
+        { id: 'se-warm', exercise_id: 100, exercise: { tracked_fields: ['weight', 'reps'] } },
+        { id: 'se-main', exercise_id: 100, exercise: { tracked_fields: ['weight', 'reps'] } },
       ],
       sets: [
         { session_exercise_id: 'se-warm', weight: 40, reps_completed: 12, time_seconds: null, distance_meters: null, pace_seconds: null },
@@ -76,8 +76,8 @@ describe('recalculateSessionStats', () => {
     const client = buildClient({
       session: { user_id: USER_ID, started_at: STARTED_AT },
       sessionExercises: [
-        { id: 'se-1', exercise_id: 100, exercise: { measurement_type: 'weight_reps' } },
-        { id: 'se-2', exercise_id: 200, exercise: { measurement_type: 'weight_reps' } },
+        { id: 'se-1', exercise_id: 100, exercise: { tracked_fields: ['weight', 'reps'] } },
+        { id: 'se-2', exercise_id: 200, exercise: { tracked_fields: ['weight', 'reps'] } },
       ],
       // Solo quedan sets para se-1; se-2 quedó vacío
       sets: [
@@ -99,7 +99,7 @@ describe('recalculateSessionStats', () => {
     const client = buildClient({
       session: { user_id: USER_ID, started_at: STARTED_AT },
       sessionExercises: [
-        { id: 'se-1', exercise_id: 100, exercise: { measurement_type: 'weight_reps' } },
+        { id: 'se-1', exercise_id: 100, exercise: { tracked_fields: ['weight', 'reps'] } },
       ],
       sets: [],
     })

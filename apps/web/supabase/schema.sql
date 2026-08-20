@@ -23,23 +23,18 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
-CREATE TYPE "public"."measurement_type" AS ENUM (
-    'weight_reps',
-    'reps_only',
+CREATE TYPE "public"."measurement_field" AS ENUM (
+    'weight',
+    'reps',
     'time',
-    'weight_time',
     'distance',
-    'weight_distance',
     'calories',
-    'level_time',
-    'level_distance',
-    'level_calories',
-    'distance_time',
-    'distance_pace'
+    'level',
+    'pace'
 );
 
 
-ALTER TYPE "public"."measurement_type" OWNER TO "postgres";
+ALTER TYPE "public"."measurement_field" OWNER TO "postgres";
 
 
 CREATE TYPE "public"."session_status" AS ENUM (
@@ -817,7 +812,6 @@ COMMENT ON COLUMN "public"."exercise_session_stats"."pr_rep_counts" IS 'Rep coun
 CREATE TABLE IF NOT EXISTS "public"."exercises" (
     "id" integer NOT NULL,
     "name_es" "text" NOT NULL,
-    "measurement_type" "public"."measurement_type" DEFAULT 'weight_reps'::"public"."measurement_type",
     "muscle_group_id" integer,
     "user_id" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"(),
@@ -826,7 +820,9 @@ CREATE TABLE IF NOT EXISTS "public"."exercises" (
     "is_system" boolean DEFAULT false NOT NULL,
     "instructions" "jsonb",
     "equipment_type_id" integer,
-    "gif_key" "text"
+    "gif_key" "text",
+    "tracked_fields" "public"."measurement_field"[] DEFAULT '{weight,reps}'::"public"."measurement_field"[] NOT NULL,
+    CONSTRAINT "exercises_tracked_fields_len" CHECK ((("array_length"("tracked_fields", 1) >= 1) AND ("array_length"("tracked_fields", 1) <= 3)))
 );
 
 
@@ -838,6 +834,10 @@ COMMENT ON COLUMN "public"."exercises"."muscle_group_id" IS 'Grupo muscular prin
 
 
 COMMENT ON COLUMN "public"."exercises"."gif_key" IS 'Id de producto Gym Visual. URL pública: <storage>/exercise-gifs/gif/<gif_key>_<360|720>.gif';
+
+
+
+COMMENT ON COLUMN "public"."exercises"."tracked_fields" IS 'Campos que se registran en cada serie. La app los normaliza al leerlos (orden canónico), así que el orden guardado aquí es irrelevante.';
 
 
 
@@ -945,7 +945,6 @@ CREATE TABLE IF NOT EXISTS "public"."routine_exercises" (
     "rest_seconds" integer,
     "notes" "text",
     "superset_group" integer,
-    "measurement_type" "public"."measurement_type",
     "user_id" "uuid" NOT NULL,
     "routine_day_id" integer NOT NULL,
     "is_warmup" boolean DEFAULT false

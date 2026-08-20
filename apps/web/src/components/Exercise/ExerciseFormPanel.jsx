@@ -57,7 +57,7 @@ export function ExerciseFormPanel({ exerciseId = null, isSystem, initialName = '
   const initialData = isEdit && exercise
     ? {
       name: exercise.name,
-      measurement_type: exercise.measurement_type,
+      tracked_fields: exercise.tracked_fields,
       instructions: getExerciseInstructions(exercise),
       muscle_group_id: exercise.muscle_group_id,
     }

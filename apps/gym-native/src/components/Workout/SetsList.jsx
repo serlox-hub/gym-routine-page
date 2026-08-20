@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { CircleMinus, CirclePlus, Clock } from 'lucide-react-native'
-import SetRow, { COL_SET, COL_PREV, COL_CHECK, SET_ROW_GAP, SET_ROW_ACCENT, getEffortColumnWidth } from './SetRow'
+import SetRow, { COL_SET, COL_CHECK, SET_ROW_GAP, SET_ROW_ACCENT, getEffortColumnWidth } from './SetRow'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreferences } from '../../hooks/usePreferences'
 import { colors } from '../../lib/styles'
@@ -21,7 +21,7 @@ function SetsList({
   setsCount,
   previousWorkout,
   progressionEnabled = false,
-  measurementType,
+  trackedFields,
   weightUnit,
   distanceUnit,
   rest_seconds,
@@ -37,9 +37,9 @@ function SetsList({
   // Columna «Notas» presente si hay algo que anotar (RIR/notas/vídeo). Helper compartido con SetRow.
   const annotationColumn = shouldShowAnnotationColumn(preferences)
   const completedSets = useWorkoutStore(state => state.completedSets)
-  // Columnas de valor del tipo (1 o 2) — mismas que pinta SetRow, con su cabecera y unidad
-  const columns = getSetColumns(measurementType, { weightUnit, distanceUnit })
-  const effortWidth = getEffortColumnWidth(measurementType, preferences?.show_rir_input ?? true)
+  // Columnas de valor del ejercicio (1 a 3) — mismas que pinta SetRow, con su cabecera y unidad
+  const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
+  const effortWidth = getEffortColumnWidth(trackedFields, preferences?.show_rir_input ?? true)
   const activeSetNumber = (() => {
     for (let i = 1; i <= setsCount; i++) {
       if (!completedSets[`${exerciseKey}-${i}`]) return i
@@ -50,7 +50,7 @@ function SetsList({
   return (
     <>
       {/* Recencia de la referencia (la sesión anterior ahora se muestra inline por fila; ver
-          PreviousSetCell). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
+          PreviousSetLine, dentro de SetRowMeta). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
       <View style={{ marginTop: 12, marginBottom: 12 }}>
         {previousWorkout === undefined ? (
           <View style={{ height: 16, width: 160, borderRadius: 4, backgroundColor: colors.bgTertiary }} />
@@ -71,7 +71,7 @@ function SetsList({
         )}
       </View>
 
-      {/* Cabecera de columnas para TODOS los tipos de medición: es donde vive la unidad de cada
+      {/* Cabecera de columnas, mida lo que mida el ejercicio: es donde vive la unidad de cada
           columna (KG, MM:SS, NIVEL…), lo que permite que la fila lleve solo inputs y no desborde.
           Anchos desde las constantes de SetRow (fuente única) y misma condición annotationColumn.
           paddingLeft = 4 + la barra de "hecho" de las filas, o la cabecera queda 3px desplazada. */}
@@ -79,9 +79,6 @@ function SetsList({
         <View style={{ flexDirection: 'row', gap: SET_ROW_GAP, marginBottom: 12, paddingHorizontal: 4, paddingLeft: 4 + SET_ROW_ACCENT }}>
           <Text numberOfLines={1} style={[HEADER_STYLE, { width: COL_SET }]}>
             {t('workout:set.set').toUpperCase()}
-          </Text>
-          <Text numberOfLines={1} style={[HEADER_STYLE, { width: COL_PREV }]}>
-            {t('workout:set.previousShort').toUpperCase()}
           </Text>
           {columns.map(col => (
             <Text key={col.field} numberOfLines={1} style={[HEADER_STYLE, { flex: 1 }]}>{col.label}</Text>
@@ -108,7 +105,7 @@ function SetsList({
                 exerciseName={exercise.name}
                 sessionExerciseId={exerciseKey}
                 exerciseId={exercise.id}
-                measurementType={measurementType}
+                trackedFields={trackedFields}
                 weightUnit={weightUnit}
                 distanceUnit={distanceUnit}
                 descansoSeg={rest_seconds}

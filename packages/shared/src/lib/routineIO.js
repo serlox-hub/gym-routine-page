@@ -2,12 +2,12 @@ import { t, getCurrentLocale } from '../i18n/index.js'
 
 export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
-  "version": 6,
+  "version": 7,
   "exercises": [
     {
       "name_es": "Exercise name in Spanish",
       "name_en": "Exercise name in English (optional, improves catalog matching)",
-      "measurement_type": "weight_reps",
+      "tracked_fields": ["weight", "reps"],
       "muscle_group_name": "Pecho",
       "instructions": "Exercise instructions (optional)"
     }
@@ -58,16 +58,18 @@ export const ROUTINE_JSON_RULES = `IMPORTANT RULES:
 EXERCISE FIELDS (in "exercises"):
 - name_es: exercise name in Spanish (REQUIRED)
 - name_en: common English name (optional; improves matching with the app catalog)
-- measurement_type (REQUIRED, one of):
-  - "weight_reps": weight × repetitions (e.g.: bench press)
-  - "reps_only": reps only without weight (e.g.: pull-ups)
-  - "time": time (e.g.: plank)
-  - "distance": distance (e.g.: farmer walk)
-  - "level_time": level × time (e.g.: stationary bike)
-  - "level_distance": level × distance (e.g.: elliptical)
-  - "level_calories": level × calories (e.g.: rowing machine)
-  - "distance_time": distance × time (e.g.: treadmill)
-  - "distance_pace": distance × pace (e.g.: running with pace min/km)
+- tracked_fields (REQUIRED): what gets logged for each set, as an array of 1 to 3 of these:
+  - "weight": load lifted
+  - "reps": repetitions
+  - "time": duration of the set
+  - "distance": distance covered
+  - "pace": pace (min per distance unit)
+  - "level": machine resistance level
+  - "calories": calories burned
+  Examples: bench press ["weight","reps"], pull-ups ["reps"], plank ["time"],
+  farmer walk ["weight","distance"], stationary bike ["level","distance","time"],
+  treadmill ["distance","time"], rowing machine ["level","calories"],
+  running with target pace ["distance","pace"]
 - muscle_group_name (REQUIRED, one of):
   - "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps"
   - "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas"
@@ -84,7 +86,7 @@ ROUTINE EXERCISE FIELDS (in "blocks[].exercises"):
 - exercise_name: must match "name_es" from exercises (REQUIRED)
 - series: number of sets (REQUIRED)
 - reps: string with reps, time or distance (REQUIRED, e.g.: "8-12", "30s", "40m")
-- rir: effort. Scale depends on the exercise measurement_type: -1..3 for types with reps (weight_reps, reps_only; -1 = to failure, 3 = 3 or more in reserve), 1..5 for any other type (RPE, 1 = easy, 5 = max). Optional
+- rir: effort. Scale depends on whether the exercise tracks reps: -1..3 when "reps" is in tracked_fields (-1 = to failure, 3 = 3 or more in reserve), 1..5 otherwise (RPE, 1 = easy, 5 = max). Optional
 - rest_seconds: rest between sets in seconds (optional)
 - notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest", "Tempo 3-1-1-0")`
 

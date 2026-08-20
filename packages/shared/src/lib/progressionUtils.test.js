@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { parseRepsRange, didSetHitTop, metEffortTarget, shouldSuggestProgression } from './progressionUtils.js'
-import { MeasurementType } from './measurementTypes.js'
 import { SET_TYPES } from './constants.js'
 
 describe('parseRepsRange', () => {
@@ -44,7 +43,7 @@ describe('parseRepsRange', () => {
 })
 
 describe('didSetHitTop', () => {
-  const wr = MeasurementType.WEIGHT_REPS
+  const wr = ['weight', 'reps']
 
   it('true cuando las reps igualan el tope del rango', () => {
     expect(didSetHitTop({ weight: 10, reps: 12 }, '8-12', wr)).toBe(true)
@@ -81,7 +80,7 @@ describe('didSetHitTop', () => {
   })
 
   it('false para tipos distintos de weight_reps', () => {
-    expect(didSetHitTop({ weight: 10, reps: 12 }, '8-12', MeasurementType.REPS_ONLY)).toBe(false)
+    expect(didSetHitTop({ weight: 10, reps: 12 }, '8-12', ['reps'])).toBe(false)
   })
 
   it('rango degenerado (número único): true si iguala el objetivo', () => {
@@ -117,53 +116,62 @@ describe('metEffortTarget', () => {
 })
 
 describe('shouldSuggestProgression', () => {
-  const wr = MeasurementType.WEIGHT_REPS
+  const wr = ['weight', 'reps']
   const hitTop = { weight: 80, reps: 12 } // llegó al tope de 8-12
 
   it('false cuando la serie no llegó al tope (aunque no haya peso tecleado)', () => {
-    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10 }, repsTarget: '8-12', measurementType: wr, currentWeight: '' })).toBe(false)
+    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10 }, repsTarget: '8-12', trackedFields: wr, currentWeight: '' })).toBe(false)
   })
 
   it('true si llegó al tope y aún no hay peso tecleado (vacío → NaN)', () => {
-    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', measurementType: wr, currentWeight: '' })).toBe(true)
-    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', measurementType: wr, currentWeight: null })).toBe(true)
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: wr, currentWeight: '' })).toBe(true)
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: wr, currentWeight: null })).toBe(true)
   })
 
   it('true si el peso tecleado iguala al anterior (aún no ha subido)', () => {
-    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', measurementType: wr, currentWeight: '80' })).toBe(true)
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: wr, currentWeight: '80' })).toBe(true)
   })
 
   it('true si el peso tecleado es menor que el anterior', () => {
-    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', measurementType: wr, currentWeight: '75' })).toBe(true)
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: wr, currentWeight: '75' })).toBe(true)
   })
 
   it('false una vez tecleas un peso mayor que el anterior (nudge cumplido)', () => {
-    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', measurementType: wr, currentWeight: '82.5' })).toBe(false)
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: wr, currentWeight: '82.5' })).toBe(false)
   })
 
   it('reconoce el peso mayor con coma decimal (parseDecimal)', () => {
-    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', measurementType: wr, currentWeight: '82,5' })).toBe(false)
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: wr, currentWeight: '82,5' })).toBe(false)
   })
 
   // Gate de esfuerzo (RIR): con RIR objetivo, llegar al tope de reps no basta si el esfuerzo fue
   // más profundo de lo prescrito. Caso del usuario: 10 reps @ RIR 0 con objetivo 8-10 @ RIR 2.
   it('false: llegó al tope de reps pero con RIR real por debajo del objetivo (no ganó la subida)', () => {
-    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: 0 }, repsTarget: '8-10', measurementType: wr, currentWeight: '', rirTarget: 2 })).toBe(false)
+    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: 0 }, repsTarget: '8-10', trackedFields: wr, currentWeight: '', rirTarget: 2 })).toBe(false)
   })
 
   it('true: llegó al tope de reps y el RIR real cumple el objetivo', () => {
-    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: 2 }, repsTarget: '8-10', measurementType: wr, currentWeight: '', rirTarget: 2 })).toBe(true)
+    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: 2 }, repsTarget: '8-10', trackedFields: wr, currentWeight: '', rirTarget: 2 })).toBe(true)
   })
 
   it('true: llegó al tope con más reserva de la pedida (RIR real > objetivo)', () => {
-    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: 3 }, repsTarget: '8-10', measurementType: wr, currentWeight: '', rirTarget: 2 })).toBe(true)
+    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: 3 }, repsTarget: '8-10', trackedFields: wr, currentWeight: '', rirTarget: 2 })).toBe(true)
   })
 
   it('true: rutina sin RIR objetivo → cae a solo-reps aunque el RIR real fuera 0', () => {
-    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: 0 }, repsTarget: '8-10', measurementType: wr, currentWeight: '', rirTarget: null })).toBe(true)
+    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: 0 }, repsTarget: '8-10', trackedFields: wr, currentWeight: '', rirTarget: null })).toBe(true)
   })
 
   it('true: RIR real no registrado → cae a solo-reps aunque haya objetivo', () => {
-    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: null }, repsTarget: '8-10', measurementType: wr, currentWeight: '', rirTarget: 2 })).toBe(true)
+    expect(shouldSuggestProgression({ previousSet: { weight: 80, reps: 10, rir: null }, repsTarget: '8-10', trackedFields: wr, currentWeight: '', rirTarget: 2 })).toBe(true)
+  })
+
+  // La sugerencia es "sube el peso", así que solo aplica si el ejercicio mide EXACTAMENTE peso y
+  // reps: sin peso no hay nada que subir, y con una tercera dimensión (tiempo, nivel) llegar al
+  // tope de reps ya no implica que toque subir. Ver didSetHitTop.
+  it('false si el ejercicio no mide exactamente peso y reps', () => {
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: ['reps'], currentWeight: '' })).toBe(false)
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: ['weight', 'reps', 'time'], currentWeight: '' })).toBe(false)
+    expect(shouldSuggestProgression({ previousSet: hitTop, repsTarget: '8-12', trackedFields: ['level', 'time'], currentWeight: '' })).toBe(false)
   })
 })

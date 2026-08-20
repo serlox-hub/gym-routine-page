@@ -86,7 +86,6 @@
     },
     "startTimer": "Iniciar {{time}}",
     "stopTimer": "Parar",
-    "previousShort": "Última",
     "levelShort": "Nv"
   },
   "rest": {
@@ -147,7 +146,13 @@
     "avgDistance": "Media Dist.",
     "best1rm": "Est. 1RM",
     "sessions": "Sesiones",
-    "noSets": "Sin series completadas"
+    "noSets": "Sin series completadas",
+    "maxLevel": "Máx Nivel",
+    "avgLevel": "Media Nivel",
+    "maxCalories": "Máx Kcal",
+    "avgCalories": "Media Kcal",
+    "bestPace": "Mejor Ritmo",
+    "avgPace": "Media Ritmo"
   },
   "history": {
     "title": "Histórico",

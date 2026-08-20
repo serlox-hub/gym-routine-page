@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  formatSecondsAsMMSS,
   formatSecondsToMMSS,
   formatElapsedSeconds,
   formatDuration,
@@ -12,6 +13,29 @@ import {
 } from './timeUtils.js'
 
 describe('timeUtils', () => {
+  // Variante tolerante usada por el RITMO: el dato llega de BD, puede ser nulo y viene en segundos
+  // que no tienen por qué ser enteros. Es su única diferencia con formatSecondsToMMSS.
+  describe('formatSecondsAsMMSS', () => {
+    it('sin valor devuelve cadena vacía', () => {
+      expect(formatSecondsAsMMSS(null)).toBe('')
+      expect(formatSecondsAsMMSS(undefined)).toBe('')
+    })
+
+    it('el 0 es un valor, no un vacío', () => {
+      expect(formatSecondsAsMMSS(0)).toBe('0:00')
+    })
+
+    it('formatea un ritmo típico', () => {
+      expect(formatSecondsAsMMSS(300)).toBe('5:00')
+      expect(formatSecondsAsMMSS(330)).toBe('5:30')
+    })
+
+    it('redondea los decimales en vez de arrastrarlos al display', () => {
+      expect(formatSecondsAsMMSS(300.6)).toBe('5:01')
+      expect(formatSecondsAsMMSS(300.2)).toBe('5:00')
+    })
+  })
+
   describe('formatSecondsToMMSS', () => {
     it('formatea 0 segundos', () => {
       expect(formatSecondsToMMSS(0)).toBe('0:00')
@@ -52,11 +76,6 @@ describe('timeUtils', () => {
     it('con horas no lleva pista: los 3 segmentos ya se leen', () => {
       expect(formatDuration(3600)).toBe('1:00:00')
       expect(formatDuration(12240)).toBe('3:24:00')
-    })
-
-    it('unitHint false quita la pista (columna ANTERIOR de la sesión)', () => {
-      expect(formatDuration(1440, { unitHint: false })).toBe('24:00')
-      expect(formatDuration(45, { unitHint: false })).toBe('45s')
     })
 
     it('valores raros: negativo, null, no numérico', () => {

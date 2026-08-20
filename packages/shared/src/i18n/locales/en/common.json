@@ -86,7 +86,15 @@
     "unexpected": "An unexpected error occurred",
     "videoLoad": "Error loading video"
   },
-  "daysShort": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  "daysShort": [
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun"
+  ],
   "confirm": {
     "deleteTitle": "Confirm deletion",
     "areYouSure": "Are you sure?",
@@ -213,7 +221,7 @@
     "optionsDescription": "Configure how you want to import the routine",
     "configDescription": "Configure import options",
     "updateExisting": "Update existing exercises",
-    "updateExistingDesc": "If an exercise already exists, update its configuration (measurement type, muscle group, etc.)",
+    "updateExistingDesc": "If an exercise already exists, update its setup (what it tracks, muscle group, etc.)",
     "importing": "Importing routine...",
     "importError": "Import failed",
     "invalidFormat": "Invalid file format",

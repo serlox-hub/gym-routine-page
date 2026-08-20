@@ -90,11 +90,11 @@ describe('workoutSummary', () => {
     const sessionExercises = [
       {
         id: 'se-1',
-        exercises: { id: 1, name: 'Press banca', measurement_type: 'weight_reps' },
+        exercises: { id: 1, name: 'Press banca', tracked_fields: ['weight', 'reps'] },
       },
       {
         id: 'se-2',
-        exercises: { id: 2, name: 'Dominadas', measurement_type: 'reps_only' },
+        exercises: { id: 2, name: 'Dominadas', tracked_fields: ['reps'] },
       },
     ]
 
@@ -148,7 +148,7 @@ describe('workoutSummary', () => {
     // issue #11: la mejor serie de cardio LEVEL_CALORIES debe mostrar nivel y calorías
     it('formatea la mejor serie con level y calorías (tipo level_calories)', () => {
       const cardioExercises = [
-        { id: 'se-3', exercises: { id: 3, name: 'Elíptica', measurement_type: 'level_calories' } },
+        { id: 'se-3', exercises: { id: 3, name: 'Elíptica', tracked_fields: ['level', 'calories'] } },
       ]
       const cardioSets = {
         'se-3-1': { sessionExerciseId: 'se-3', level: 8, caloriesBurned: 120, setNumber: 1 },
@@ -169,7 +169,7 @@ describe('workoutSummary', () => {
       exercises: [
         {
           sessionExerciseId: 'se-1',
-          exercise: { id: 1, name: 'Sentadilla', measurement_type: 'weight_reps' },
+          exercise: { id: 1, name: 'Sentadilla', tracked_fields: ['weight', 'reps'] },
           sets: [
             { weight: 100, reps_completed: 8, set_number: 1 },
             { weight: 100, reps_completed: 6, set_number: 2 },

@@ -20,7 +20,7 @@
  * Toda la lógica es pura para ser DRY web+native y testeable sin React.
  */
 
-import { MeasurementType } from './measurementTypes.js'
+import { SetField, normalizeTrackedFields } from './measurementFields.js'
 import { SET_TYPES } from './constants.js'
 import { parseDecimal } from './numberUtils.js'
 
@@ -56,14 +56,17 @@ export function parseRepsRange(reps) {
 /**
  * ¿Esta serie de la última sesión alcanzó (≥) el tope del rango de reps? Es la
  * señal de progresión por serie: true → sugerir subir el peso de esta serie.
- * Excluye dropsets y series sin peso/reps; solo aplica a weight_reps.
+ * Excluye dropsets y series sin peso/reps. Solo aplica a ejercicios que miden EXACTAMENTE peso
+ * y reps: la señal es "llegaste al tope del rango, sube el peso", y con una tercera dimensión
+ * (tiempo, nivel…) el tope de reps ya no implica que toque subir.
  * @param {{weight?: number|null, reps?: number|null, setType?: string}|null|undefined} previousSet
  * @param {string} repsTarget - rango objetivo (ej. "8-12")
- * @param {string} measurementType
+ * @param {string[]} trackedFields - campos del ejercicio
  * @returns {boolean}
  */
-export function didSetHitTop(previousSet, repsTarget, measurementType) {
-  if (measurementType !== MeasurementType.WEIGHT_REPS) return false
+export function didSetHitTop(previousSet, repsTarget, trackedFields) {
+  const fields = normalizeTrackedFields(trackedFields)
+  if (fields.length !== 2 || !fields.includes(SetField.WEIGHT) || !fields.includes(SetField.REPS)) return false
   if (!previousSet || previousSet.setType === SET_TYPES.DROPSET) return false
   if (previousSet.weight == null || previousSet.reps == null) return false
   const range = parseRepsRange(repsTarget)
@@ -94,14 +97,14 @@ export function metEffortTarget(rirActual, rirTarget) {
  * @param {object} params
  * @param {{weight?: number|null, reps?: number|null, rir?: number|null, setType?: string}|null|undefined} params.previousSet
  * @param {string} params.repsTarget - rango objetivo (ej. "8-12")
- * @param {string} params.measurementType
+ * @param {string[]} params.trackedFields
  * @param {number|string|null} params.currentWeight - peso tecleado hoy (string del input o número).
  *   Vacío/NaN cuenta como "aún no ha subido" → sigue sugiriendo.
  * @param {number|null} [params.rirTarget] - RIR objetivo de la rutina; null/ausente → gate de esfuerzo inactivo.
  * @returns {boolean}
  */
-export function shouldSuggestProgression({ previousSet, repsTarget, measurementType, currentWeight, rirTarget }) {
-  if (!didSetHitTop(previousSet, repsTarget, measurementType)) return false
+export function shouldSuggestProgression({ previousSet, repsTarget, trackedFields, currentWeight, rirTarget }) {
+  if (!didSetHitTop(previousSet, repsTarget, trackedFields)) return false
   if (!metEffortTarget(previousSet.rir, rirTarget)) return false
   return !(parseDecimal(currentWeight) > Number(previousSet.weight))
 }

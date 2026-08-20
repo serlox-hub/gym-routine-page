@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../ui'
-import { buildExerciseConfigForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm, resolveMeasurementType } from '@gym/shared'
+import { buildExerciseConfigForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm, resolveTrackedFields } from '@gym/shared'
 import ExercisePickerModal from './ExercisePickerModal'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm'
 
@@ -33,13 +33,13 @@ export default function AddExerciseModal({
 
   const handleSelectExercise = (exercise) => {
     setSelectedExercise(exercise)
-    setForm(buildExerciseConfigForm(resolveMeasurementType(exercise)))
+    setForm(buildExerciseConfigForm(resolveTrackedFields(exercise)))
     setErrors({})
   }
 
   const handleSubmit = () => {
     if (!selectedExercise) return
-    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveMeasurementType(selectedExercise))
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveTrackedFields(selectedExercise))
     setErrors(formErrors)
     if (!valid) return
     onSubmit({

@@ -2,7 +2,9 @@
  * Utilidades para cálculos de entrenamiento
  */
 
-import { MeasurementType, measurementTypeUsesTime, measurementTypeUsesDistance } from './measurementTypes.js'
+import { t } from '../i18n/index.js'
+import { SetField, getPrimaryChartField, tracksDistance, tracksLevel, tracksPace, tracksReps, tracksTime, tracksWeight } from './measurementFields.js'
+import { formatSecondsToMMSS } from './timeUtils.js'
 
 /**
  * Calcula el 1RM estimado usando la fórmula Epley
@@ -41,59 +43,43 @@ export function calculateTotalVolume(sets) {
   }, 0)
 }
 
+// Campo que resume la serie → unidad con la que se etiqueta en la gráfica. El peso es el único
+// cuya unidad depende de la configuración (kg/lb); el resto son fijas.
+const CHART_FIELD_METRIC = {
+  [SetField.WEIGHT]: { column: 'weight', unit: null },
+  [SetField.LEVEL]: { column: 'level', unit: 'nv' },
+  [SetField.DISTANCE]: { column: 'distance_meters', unit: 'm' },
+  [SetField.CALORIES]: { column: 'calories_burned', unit: 'kcal' },
+  [SetField.TIME]: { column: 'time_seconds', unit: 's' },
+  // El ritmo es el único donde MENOR es mejor (min/km). Va después de la distancia en la prioridad,
+  // así que un ejercicio de distancia × ritmo sigue resumiéndose por distancia; solo manda cuando
+  // el ritmo va solo (correr contra un ritmo objetivo, que el enum anterior no permitía expresar).
+  [SetField.PACE]: { column: 'pace_seconds', unit: 's/km', lowerIsBetter: true },
+  [SetField.REPS]: { column: 'reps_completed', unit: 'reps' },
+}
+
 /**
- * Obtiene el mejor valor de un conjunto de series según el tipo de medición
+ * Mejor valor de un conjunto de series, en el campo que mejor resume el ejercicio
+ * (ver getPrimaryChartField: peso si lo hay, si no nivel, si no la magnitud del trabajo).
  * @param {Array} sets - Array de series
- * @param {string} measurementType - Tipo de medición
+ * @param {string[]} trackedFields - campos del ejercicio
  * @returns {{value: number, unit: string}}
  */
-export function getBestValueFromSets(sets, measurementType, { weightUnit = 'kg' } = {}) {
+export function getBestValueFromSets(sets, trackedFields, { weightUnit = 'kg' } = {}) {
   if (!sets || sets.length === 0) return { value: 0, unit: '' }
 
-  let bestValue = 0
-  let unit = ''
+  const field = getPrimaryChartField(trackedFields)
+  const { column, unit, lowerIsBetter } = CHART_FIELD_METRIC[field]
 
+  let bestValue = 0
   sets.forEach(set => {
-    if (measurementType === MeasurementType.WEIGHT_REPS || measurementType === MeasurementType.WEIGHT_DISTANCE || measurementType === MeasurementType.WEIGHT_TIME) {
-      if (set.weight && set.weight > bestValue) {
-        bestValue = set.weight
-        unit = weightUnit
-      }
-    } else if (measurementType === MeasurementType.TIME) {
-      if (set.time_seconds && set.time_seconds > bestValue) {
-        bestValue = set.time_seconds
-        unit = 's'
-      }
-    } else if (measurementType === MeasurementType.DISTANCE) {
-      if (set.distance_meters && set.distance_meters > bestValue) {
-        bestValue = set.distance_meters
-        unit = 'm'
-      }
-    } else if (measurementType === MeasurementType.CALORIES) {
-      if (set.calories_burned && set.calories_burned > bestValue) {
-        bestValue = set.calories_burned
-        unit = 'kcal'
-      }
-    } else if (measurementType === MeasurementType.LEVEL_TIME || measurementType === MeasurementType.LEVEL_DISTANCE || measurementType === MeasurementType.LEVEL_CALORIES) {
-      if (set.level && set.level > bestValue) {
-        bestValue = set.level
-        unit = 'nv'
-      }
-    } else if (measurementType === MeasurementType.DISTANCE_TIME) {
-      if (set.distance_meters && set.distance_meters > bestValue) {
-        bestValue = set.distance_meters
-        unit = 'm'
-      }
-    } else {
-      const reps = set.reps_completed || set.reps || 0
-      if (reps > bestValue) {
-        bestValue = reps
-        unit = 'reps'
-      }
-    }
+    // `reps` (sin sufijo) es el nombre que usan las series ya transformadas para historial.
+    const value = set[column] ?? (field === SetField.REPS ? set.reps : null)
+    if (!value) return
+    if (bestValue === 0 || (lowerIsBetter ? value < bestValue : value > bestValue)) bestValue = value
   })
 
-  return { value: bestValue, unit }
+  return { value: bestValue, unit: bestValue > 0 ? (unit ?? weightUnit) : '' }
 }
 
 /**
@@ -117,10 +103,10 @@ export function getBest1RMFromSets(sets) {
 /**
  * Transforma sesiones a datos para gráficos de progreso
  * @param {Array} sessions - Array de sesiones con sets
- * @param {string} measurementType - Tipo de medición
+ * @param {string[]} trackedFields - campos del ejercicio
  * @returns {Array<{date: string, best: number, volume: number, e1rm: number, unit: string}>}
  */
-export function transformSessionsToChartData(sessions, measurementType, { weightUnit = 'kg' } = {}) {
+export function transformSessionsToChartData(sessions, trackedFields, { weightUnit = 'kg' } = {}) {
   if (!sessions || sessions.length === 0) return []
 
   const sortedSessions = [...sessions].reverse()
@@ -129,7 +115,7 @@ export function transformSessionsToChartData(sessions, measurementType, { weight
     const date = new Date(session.date)
     const dateLabel = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 
-    const { value: bestValue, unit } = getBestValueFromSets(session.sets, measurementType, { weightUnit })
+    const { value: bestValue, unit } = getBestValueFromSets(session.sets, trackedFields, { weightUnit })
     const totalVolume = calculateTotalVolume(session.sets)
     const bestE1RM = getBest1RMFromSets(session.sets)
 
@@ -272,63 +258,130 @@ export function calculateAverageDuration(chartData) {
 }
 
 /**
- * Calcula estadísticas de progresión para un ejercicio
- * @param {Array} sessions - Array de sesiones con sets
- * @param {string} measurementType - Tipo de medición
- * @returns {{best1RM: number, maxWeight: number, maxReps: number, totalVolume: number, sessionCount: number}|null}
+ * Tarjetas de resumen del historial de un ejercicio ("Mejor 1RM", "Tiempo máx"…), a partir de lo
+ * que devuelve `calculateExerciseStats`.
+ *
+ * ⚠️ Vive AQUÍ, pegada a `calculateExerciseStats`, porque comparten el orden de ramas: las tarjetas
+ * solo pueden pedir las métricas que aquella rama calculó. Separadas (estaban duplicadas en web y
+ * native) el acoplamiento solo se sostenía con un comentario, y una tarjeta pidiendo una métrica
+ * no calculada sale vacía sin avisar.
+ * @param {object|null} stats - salida de calculateExerciseStats
+ * @param {string[]} trackedFields - campos del ejercicio
+ * @param {{weightUnit?: string, distanceUnit?: string}} [units]
+ * @returns {Array<{label: string, value: string|number}>} vacío si no hay stats o no hay nada que resumir
  */
-export function calculateExerciseStats(sessions, measurementType) {
+export function getExerciseStatCards(stats, trackedFields, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
+  if (!stats) return []
+
+  const cards = []
+  const push = (condition, key, value) => {
+    if (condition) cards.push({ label: t(`workout:summary.${key}`), value })
+  }
+
+  if (tracksWeight(trackedFields) && tracksReps(trackedFields)) {
+    push(stats.best1RM > 0, 'best1rm', `${stats.best1RM} ${weightUnit}`)
+    push(stats.maxWeight > 0, 'maxWeight', `${stats.maxWeight} ${weightUnit}`)
+  } else if (tracksReps(trackedFields)) {
+    push(stats.maxReps > 0, 'maxReps', stats.maxReps)
+    push(stats.avgReps > 0, 'avgReps', stats.avgReps)
+  } else if (tracksTime(trackedFields)) {
+    push(stats.maxTime > 0, 'maxTime', formatSecondsToMMSS(stats.maxTime))
+    push(stats.avgTime > 0, 'avgTime', formatSecondsToMMSS(stats.avgTime))
+  } else if (tracksDistance(trackedFields)) {
+    push(stats.maxDistance > 0, 'maxDistance', `${stats.maxDistance} ${distanceUnit}`)
+    push(stats.avgDistance > 0, 'avgDistance', `${stats.avgDistance} ${distanceUnit}`)
+  } else if (tracksPace(trackedFields)) {
+    push(stats.bestPace > 0, 'bestPace', `${formatSecondsToMMSS(stats.bestPace)}/${distanceUnit}`)
+    push(stats.avgPace > 0, 'avgPace', `${formatSecondsToMMSS(stats.avgPace)}/${distanceUnit}`)
+  } else if (tracksWeight(trackedFields)) {
+    push(stats.maxWeight > 0, 'maxWeight', `${stats.maxWeight} ${weightUnit}`)
+  } else if (tracksLevel(trackedFields)) {
+    push(stats.maxLevel > 0, 'maxLevel', stats.maxLevel)
+    push(stats.avgLevel > 0, 'avgLevel', stats.avgLevel)
+  } else {
+    push(stats.maxCalories > 0, 'maxCalories', `${stats.maxCalories} kcal`)
+    push(stats.avgCalories > 0, 'avgCalories', `${stats.avgCalories} kcal`)
+  }
+
+  return cards
+}
+
+/**
+ * Calcula estadísticas de progresión de un ejercicio a partir de su historial.
+ *
+ * Ramas EXCLUYENTES por prioridad: resume el ejercicio por su métrica principal, no por todas a la
+ * vez (peso × tiempo se resume por tiempo, no por peso y tiempo). ⚠️ El orden tiene que coincidir
+ * con el de `getExerciseStatCards`, que es quien pinta lo que aquí se calcula.
+ *
+ * Las cuatro últimas ramas (ritmo, peso solo, nivel, calorías) cubren combinaciones que el enum
+ * anterior no permitía y que con la selección libre de campos sí existen; sin ellas, esos
+ * ejercicios se quedaban sin resumen ninguno.
+ * @param {Array} sessions - Array de sesiones con sets (filas de completed_sets, snake_case)
+ * @param {string[]} trackedFields - campos del ejercicio
+ * @returns {object|null} solo las claves de la rama que aplica; el resto a 0
+ */
+export function calculateExerciseStats(sessions, trackedFields) {
   if (!sessions || sessions.length === 0) return null
 
   const allSets = sessions.flatMap(s => s.sets)
   if (allSets.length === 0) return null
 
-  let best1RM = 0
-  let maxWeight = 0
-  let maxReps = 0
-  let avgReps = 0
-  let totalVolume = 0
-  let maxTime = 0
-  let avgTime = 0
-  let maxDistance = 0
-  let avgDistance = 0
-
-  if (measurementType === MeasurementType.WEIGHT_REPS) {
-    best1RM = getBest1RMFromSets(allSets)
-    maxWeight = Math.max(...allSets.map(s => s.weight || 0))
-    maxReps = Math.max(...allSets.map(s => s.reps_completed || 0))
-    totalVolume = calculateTotalVolume(allSets)
-  } else if (measurementType === MeasurementType.REPS_ONLY) {
-    const reps = allSets.map(s => s.reps_completed || 0)
-    maxReps = Math.max(...reps)
-    avgReps = Math.round(reps.reduce((a, b) => a + b, 0) / reps.length)
-  } else if (measurementTypeUsesTime(measurementType)) {
-    const times = allSets.map(s => s.time_seconds || 0).filter(t => t > 0)
-    if (times.length > 0) {
-      maxTime = Math.max(...times)
-      avgTime = Math.round(times.reduce((a, b) => a + b, 0) / times.length)
-    }
-  } else if (measurementTypeUsesDistance(measurementType)) {
-    const distances = allSets.map(s => s.distance || 0).filter(d => d > 0)
-    if (distances.length > 0) {
-      maxDistance = Math.max(...distances)
-      avgDistance = Math.round(distances.reduce((a, b) => a + b, 0) / distances.length * 10) / 10
-    }
-  }
-
-  return {
-    best1RM,
-    maxWeight,
-    maxReps,
-    avgReps,
-    totalVolume,
-    maxTime,
-    avgTime,
-    maxDistance,
-    avgDistance,
+  const stats = {
+    best1RM: 0, maxWeight: 0, maxReps: 0, avgReps: 0, totalVolume: 0,
+    maxTime: 0, avgTime: 0, maxDistance: 0, avgDistance: 0,
+    maxLevel: 0, avgLevel: 0, maxCalories: 0, avgCalories: 0, bestPace: 0, avgPace: 0,
     sessionCount: sessions.length,
   }
+
+  // Valores > 0 de una columna de completed_sets. El 0 se descarta a propósito: en estas columnas
+  // significa "no registrado", así que arrastraría las medias hacia abajo.
+  const valuesOf = (column) => allSets.map(set => set[column] || 0).filter(v => v > 0)
+  const avg = (values, decimals = 0) => {
+    const factor = 10 ** decimals
+    return Math.round(values.reduce((a, b) => a + b, 0) / values.length * factor) / factor
+  }
+  const fill = (column, maxKey, avgKey, decimals = 0) => {
+    const values = valuesOf(column)
+    if (values.length === 0) return
+    stats[maxKey] = Math.max(...values)
+    if (avgKey) stats[avgKey] = avg(values, decimals)
+  }
+
+  if (tracksWeight(trackedFields) && tracksReps(trackedFields)) {
+    stats.best1RM = getBest1RMFromSets(allSets)
+    stats.maxWeight = Math.max(...allSets.map(set => set.weight || 0))
+    stats.maxReps = Math.max(...allSets.map(set => set.reps_completed || 0))
+    stats.totalVolume = calculateTotalVolume(allSets)
+  } else if (tracksReps(trackedFields)) {
+    // Sin filtrar el 0: aquí una serie a 0 reps sí es un dato (la media lo refleja).
+    const reps = allSets.map(set => set.reps_completed || 0)
+    stats.maxReps = Math.max(...reps)
+    stats.avgReps = avg(reps)
+  } else if (tracksTime(trackedFields)) {
+    fill('time_seconds', 'maxTime', 'avgTime')
+  } else if (tracksDistance(trackedFields)) {
+    // `distance_meters`, el nombre de la columna: el historial pasa las filas de completed_sets sin
+    // transformar (ver useExerciseHistorySummary). Antes leía `s.distance`, que no existe, así que
+    // maxDistance/avgDistance salían siempre a 0 y sus tarjetas nunca se pintaban.
+    fill('distance_meters', 'maxDistance', 'avgDistance', 1)
+  } else if (tracksPace(trackedFields)) {
+    // En ritmo MENOR es mejor (min/km): el "mejor" es el mínimo, no el máximo.
+    const paces = valuesOf('pace_seconds')
+    if (paces.length > 0) {
+      stats.bestPace = Math.min(...paces)
+      stats.avgPace = avg(paces)
+    }
+  } else if (tracksWeight(trackedFields)) {
+    fill('weight', 'maxWeight', null, 1)
+  } else if (tracksLevel(trackedFields)) {
+    fill('level', 'maxLevel', 'avgLevel')
+  } else {
+    fill('calories_burned', 'maxCalories', 'avgCalories')
+  }
+
+  return stats
 }
+
 
 /**
  * Construye un mapa de PRs por exercise_id a partir de los datos de PRs de sesion.

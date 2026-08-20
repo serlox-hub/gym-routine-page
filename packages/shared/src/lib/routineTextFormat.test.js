@@ -3,8 +3,8 @@ import { formatRoutineAsText } from './routineTextFormat.js'
 
 const baseExportData = {
   exercises: [
-    { name_es: 'Press banca', measurement_type: 'weight_reps' },
-    { name_es: 'Press inclinado mancuernas', measurement_type: 'weight_reps' },
+    { name_es: 'Press banca', tracked_fields: ['weight', 'reps'] },
+    { name_es: 'Press inclinado mancuernas', tracked_fields: ['weight', 'reps'] },
   ],
   routine: {
     name: 'Push Pull Legs',
@@ -54,9 +54,9 @@ describe('formatRoutineAsText', () => {
     expect(out).toContain('- Press inclinado mancuernas · 3×10-12 · @1 · 1 min de descanso')
   })
 
-  it('usa la escala del tipo de medición del ejercicio, no siempre RIR', () => {
+  it('usa la escala del ejercicio del ejercicio, no siempre RIR', () => {
     const data = {
-      exercises: [{ name_es: 'Cinta', measurement_type: 'level_time' }],
+      exercises: [{ name_es: 'Cinta', tracked_fields: ['level', 'time'] }],
       routine: {
         name: 'R',
         days: [{

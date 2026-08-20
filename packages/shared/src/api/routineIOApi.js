@@ -1,11 +1,11 @@
 import { getClient } from './_client.js'
 import { BLOCK_NAMES } from '../lib/constants.js'
-import { MeasurementType } from '../lib/measurementTypes.js'
+import { normalizeTrackedFields, trackedFieldsFromLegacyType } from '../lib/measurementFields.js'
 import { t } from '../i18n/index.js'
 import { normalizeExerciseName, buildExerciseIndex, resolveExerciseId } from '../lib/exerciseMatch.js'
 
-/** Versión actual del esquema de export/import JSON. v6 añade `name_en` por ejercicio. */
-export const ROUTINE_EXPORT_VERSION = 6
+/** Versión del esquema de export/import JSON. v7 sustituye `measurement_type` por `tracked_fields`; v6 añadió `name_en` por ejercicio. */
+export const ROUTINE_EXPORT_VERSION = 7
 
 // Índice grupo-muscular por nombre normalizado (name_en + name_es) → id.
 // Solo se usa al CREAR ejercicios custom (cuando el ejercicio no está en el catálogo).
@@ -76,7 +76,7 @@ export async function exportRoutine(routineId) {
           exercise:exercises (
             id,
             name:name_es,
-            measurement_type,
+            tracked_fields,
             instructions,
             muscle_group:muscle_groups!muscle_group_id(name:name_es)
           )
@@ -147,7 +147,7 @@ export async function exportRoutine(routineId) {
     .select(`
       name:name_es,
       name_en,
-      measurement_type,
+      tracked_fields,
       instructions,
       muscle_group:muscle_groups!muscle_group_id(name:name_es)
     `)
@@ -161,7 +161,7 @@ export async function exportRoutine(routineId) {
     exercises: exercises.map(ex => ({
       name_es: ex.name,
       name_en: ex.name_en,
-      measurement_type: ex.measurement_type,
+      tracked_fields: ex.tracked_fields,
       instructions: ex.instructions,
       muscle_group_name: ex.muscle_group?.name,
     })),
@@ -173,12 +173,28 @@ export async function exportRoutine(routineId) {
 }
 
 /**
+ * Campos que mide un ejercicio del JSON importado.
+ *
+ * v7 en adelante trae `tracked_fields`. Los exports v6 y anteriores traen `measurement_type`, uno
+ * de los 12 tipos cerrados que existían antes: se traduce a campos. Un JSON antiguo tiene que
+ * seguir importándose sin tocarlo, así que este es el ÚNICO punto de la app que conoce esos
+ * nombres. Sin ninguno de los dos, el default (peso × reps), igual que hacía el import viejo.
+ * @param {{tracked_fields?: string[], measurement_type?: string}} exportedExercise
+ * @returns {string[]}
+ */
+function importedTrackedFields(exportedExercise) {
+  return exportedExercise.tracked_fields
+    ? normalizeTrackedFields(exportedExercise.tracked_fields)
+    : trackedFieldsFromLegacyType(exportedExercise.measurement_type)
+}
+
+/**
  * Importa una rutina desde JSON a la cuenta del usuario.
  *
  * Empareja cada ejercicio con el catálogo/custom por CLAVE ESTABLE (name_en → name_es,
  * normalizado y tolerante a acentos/mayúsculas/espacios) vía `exerciseMatch`. Solo crea un
  * ejercicio custom si no hay match. Retrocompatible con exports v4/v5 (sin name_en → casan
- * por name_es).
+ * por name_es) y con el `measurement_type` de v6 y anteriores (ver importedTrackedFields).
  * @param {object|string} jsonData
  * @param {string} userId
  * @param {object} options
@@ -230,7 +246,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
           await getClient()
             .from('exercises')
             .update({
-              measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
+              tracked_fields: importedTrackedFields(ex),
               instructions: ex.instructions,
               muscle_group_id: resolveMuscleGroupId(ex.muscle_group_name, await getMuscleGroupIndex()),
             })
@@ -241,7 +257,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
           .from('exercises')
           .insert({
             name_es: exName,
-            measurement_type: ex.measurement_type || MeasurementType.WEIGHT_REPS,
+            tracked_fields: importedTrackedFields(ex),
             instructions: ex.instructions,
             muscle_group_id: resolveMuscleGroupId(ex.muscle_group_name, await getMuscleGroupIndex()),
             user_id: userId,

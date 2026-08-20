@@ -194,7 +194,7 @@ describe('workoutTransforms', () => {
         superset_group: null,
         is_extra: false,
         is_warmup: false,
-        exercise: { id: 10, name: 'Press banca', measurement_type: 'weight_reps' },
+        exercise: { id: 10, name: 'Press banca', tracked_fields: ['weight', 'reps'] },
       },
       {
         id: 2,
@@ -208,7 +208,7 @@ describe('workoutTransforms', () => {
         superset_group: null,
         is_extra: false,
         is_warmup: false,
-        exercise: { id: 11, name: 'Press inclinado', measurement_type: 'weight_reps' },
+        exercise: { id: 11, name: 'Press inclinado', tracked_fields: ['weight', 'reps'] },
       },
     ]
 
@@ -584,7 +584,7 @@ describe('workoutTransforms', () => {
     it('produce exactamente las mismas claves de exercise que el select de fetchSessionExercises', () => {
       const result = buildSessionExercisesCache(sessionExercises, blocks)
       expect(Object.keys(result[0].exercise).sort()).toEqual([
-        'gif_key', 'id', 'instructions', 'is_system', 'measurement_type', 'muscle_group', 'name', 'name_en',
+        'gif_key', 'id', 'instructions', 'is_system', 'muscle_group', 'name', 'name_en', 'tracked_fields',
       ])
     })
 

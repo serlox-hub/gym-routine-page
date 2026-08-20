@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS, SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
-import { resolveMeasurementType } from '../lib/measurementTypes.js'
+import { resolveTrackedFields } from '../lib/measurementFields.js'
 import { planSessionWeightConversion, resolveUnitsForExercises, buildGymChangeJob, pickGymUnitOverrides } from '../lib/sessionGymChange.js'
 import {
   buildSessionExercisesCache,
@@ -329,20 +329,20 @@ async function computeSessionStats({ sessionId, sessionDate, userId, gymId = nul
       setsByExercise[seId].push(storeSetToDbFormat(storeSet))
     }
 
-    // Mapear sessionExerciseId → exerciseId + measurementType
+    // Mapear sessionExerciseId → exerciseId + campos que mide
     const exerciseMap = {}
     const exerciseIds = []
-    const measurementTypes = {}
+    const trackedFieldsByExercise = {}
     for (const se of sessionExercises) {
       if (!setsByExercise[se.id]) continue
-      const mt = resolveMeasurementType(se.exercise)
+      const fields = resolveTrackedFields(se.exercise)
       exerciseMap[se.id] = {
         exerciseId: se.exercise_id,
-        measurementType: mt,
+        trackedFields: fields,
       }
       if (!exerciseIds.includes(se.exercise_id)) {
         exerciseIds.push(se.exercise_id)
-        measurementTypes[se.exercise_id] = mt
+        trackedFieldsByExercise[se.exercise_id] = fields
       }
     }
 
@@ -353,7 +353,7 @@ async function computeSessionStats({ sessionId, sessionDate, userId, gymId = nul
     for (const [seId, sets] of Object.entries(setsByExercise)) {
       const info = exerciseMap[seId]
       if (!info) continue
-      const stats = calculateSessionExerciseStats(sets, info.measurementType)
+      const stats = calculateSessionExerciseStats(sets, info.trackedFields)
       if (!stats) continue
 
       // Agregar stats por exerciseId (puede haber múltiples sessionExerciseId para el mismo exerciseId)
@@ -375,7 +375,7 @@ async function computeSessionStats({ sessionId, sessionDate, userId, gymId = nul
       if (!stats) continue
 
       const bests = previousBests[exerciseId] || null
-      const { flags, details } = detectNewPersonalRecords(stats, bests, measurementTypes[exerciseId])
+      const { flags, details } = detectNewPersonalRecords(stats, bests, trackedFieldsByExercise[exerciseId])
 
       statsRows.push({
         userId,

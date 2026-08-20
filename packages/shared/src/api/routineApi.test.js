@@ -35,7 +35,7 @@ describe('exportRoutine', () => {
         exercise: {
           id: `ex-${dayId}`,
           name: `Ejercicio ${dayId}`,
-          measurement_type: 'weight_reps',
+          tracked_fields: ['weight', 'reps'],
           instructions: null,
           muscle_group: { name: 'Pecho' },
         },
@@ -43,12 +43,12 @@ describe('exportRoutine', () => {
     ]
     const fakeExercises = [
       {
-        name: 'Ejercicio day-1', measurement_type: 'weight_reps',
+        name: 'Ejercicio day-1', tracked_fields: ['weight', 'reps'],
 
         instructions: null, muscle_group: { name: 'Pecho' },
       },
       {
-        name: 'Ejercicio day-2', measurement_type: 'weight_reps',
+        name: 'Ejercicio day-2', tracked_fields: ['weight', 'reps'],
 
         instructions: null, muscle_group: { name: 'Pecho' },
       },
@@ -108,14 +108,14 @@ describe('exportRoutine', () => {
     expect(fromCalls.length).toBe(fakeDays.length + 3)
   })
 
-  it('el catálogo lleva name_es y measurement_type (los empareja formatRoutineAsText)', async () => {
+  it('el catálogo lleva name_es y tracked_fields (los empareja formatRoutineAsText)', async () => {
     const fakeRoutine = { name: 'Rutina Test', description: null, goal: null }
     const fakeDays = [{ id: 'day-1', name: 'Día 1', estimated_duration_min: 60, sort_order: 1 }]
     const fakeRoutineExercises = [{
       series: 3, reps: '20min', rir: 4, rest_seconds: null, notes: null, sort_order: 1, is_warmup: false,
-      exercise: { id: 'ex-1', name: 'Cinta', measurement_type: 'level_time', instructions: null, muscle_group: { name: 'Cardio' } },
+      exercise: { id: 'ex-1', name: 'Cinta', tracked_fields: ['level', 'time'], instructions: null, muscle_group: { name: 'Cardio' } },
     }]
-    const fakeExercises = [{ name: 'Cinta', name_en: 'Treadmill', measurement_type: 'level_time', instructions: null, muscle_group: { name: 'Cardio' } }]
+    const fakeExercises = [{ name: 'Cinta', name_en: 'Treadmill', tracked_fields: ['level', 'time'], instructions: null, muscle_group: { name: 'Cardio' } }]
 
     getClient.mockImplementation(() => ({
       from: (table) => {
@@ -134,8 +134,8 @@ describe('exportRoutine', () => {
 
     const exported = await exportRoutine('routine-123')
 
-    // Sin measurement_type en el catálogo el texto degrada a la escala RIR: "@4" en vez de "Muy duro"
-    expect(exported.exercises[0]).toMatchObject({ name_es: 'Cinta', measurement_type: 'level_time' })
+    // Sin tracked_fields en el catálogo el texto degrada a la escala RIR: "@4" en vez de "Muy duro"
+    expect(exported.exercises[0]).toMatchObject({ name_es: 'Cinta', tracked_fields: ['level', 'time'] })
     // El nombre del bloque es la clave del emparejamiento: debe salir de la misma columna
     expect(exported.routine.days[0].blocks[0].exercises[0].exercise_name).toBe('Cinta')
     // Contrato completo (no solo el shape): el consumidor real resuelve la escala con ese catálogo
@@ -158,13 +158,12 @@ describe('importRoutine', () => {
     let dayIdCounter = 200
 
     const sampleJson = {
-      version: 5,
+      version: 7,
       exportedAt: '2026-01-01T00:00:00.000Z',
       exercises: [
         {
           name_es: 'Press Banca',
-          measurement_type: 'weight_reps',
-  
+          tracked_fields: ['weight', 'reps'],
           instructions: null,
           muscle_group_name: 'Pecho',
         },
@@ -315,6 +314,80 @@ describe('importRoutine', () => {
     expect(result.name).toBe('Rutina Importada')
   })
 
+  // Retrocompatibilidad declarada como invariante en docs/routine-io.md: un JSON exportado antes
+  // de v7 trae `measurement_type` (uno de los 12 tipos cerrados) y tiene que seguir importándose.
+  // Cubre el cableado de importedTrackedFields(); el mapa en sí lo testea measurementFields.test.js.
+  it('importa un export v6 con measurement_type y lo traduce a campos', async () => {
+    const insertCalls = {}
+    const legacyJson = {
+      version: 6,
+      exercises: [
+        { name_es: 'Cinta', name_en: 'Treadmill', measurement_type: 'level_time', muscle_group_name: 'Cardio' },
+      ],
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [
+              { exercise_name: 'Cinta', series: 3, reps: '20min' },
+            ] },
+          ] },
+        ],
+      },
+    }
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (!insertCalls[table]) insertCalls[table] = []
+        if (table === 'muscle_groups') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            then: (resolve) => resolve({ data: [{ id: 'mg-cardio', name_es: 'Cardio' }], error: null }),
+          }
+        }
+        if (table === 'exercises') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            // Catálogo vacío → no hay match, así que crea un custom y ahí se ve qué campos escribe
+            then: (resolve) => resolve({ data: [], error: null }),
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: 'ex-cinta' }, error: null }),
+              }
+            }),
+          }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return {
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }),
+              }
+            }),
+          }
+        }
+        return {
+          insert: vi.fn((record) => {
+            insertCalls[table].push(record)
+            return Promise.resolve({ data: null, error: null })
+          }),
+        }
+      },
+    }))
+
+    await importRoutine(legacyJson, 'user-123', {})
+
+    expect(insertCalls['exercises']).toHaveLength(1)
+    expect(insertCalls['exercises'][0].tracked_fields).toEqual(['level', 'time'])
+    expect(insertCalls['exercises'][0].measurement_type).toBeUndefined()
+  })
+
   it('enlaza con un ejercicio de sistema por name_en (no crea custom) y resuelve la ref del día', async () => {
     const insertCalls = {}
     const systemRow = { id: 'sys-bench', name_es: 'Press de banca con barra', name_en: 'Barbell Bench Press' }
@@ -322,9 +395,9 @@ describe('importRoutine', () => {
     // El export referencia el ejercicio con un name_es distinto al del catálogo, pero con el
     // name_en correcto → debe casar por name_en y NO crear un ejercicio custom.
     const json = {
-      version: 6,
+      version: 7,
       exercises: [
-        { name_es: 'Press banca', name_en: 'Barbell Bench Press', measurement_type: 'weight_reps', muscle_group_name: 'Pecho' },
+        { name_es: 'Press banca', name_en: 'Barbell Bench Press', tracked_fields: ['weight', 'reps'], muscle_group_name: 'Pecho' },
       ],
       routine: {
         name: 'R', description: null,
@@ -403,14 +476,14 @@ describe('duplicateRoutine', () => {
         series: 3, reps: '10', rir: 2, rest_seconds: 60,
         notes: null, sort_order: 1, is_warmup: false,
         exercise: {
-          id: 'ex-1', name: 'Sentadilla', measurement_type: 'weight_reps',
+          id: 'ex-1', name: 'Sentadilla', tracked_fields: ['weight', 'reps'],
           instructions: null, muscle_group: { name: 'Piernas' },
         },
       },
     ]
     const fakeExercises = [
       {
-        name: 'Sentadilla', measurement_type: 'weight_reps',
+        name: 'Sentadilla', tracked_fields: ['weight', 'reps'],
 
         instructions: null, muscle_group: { name: 'Piernas' },
       },

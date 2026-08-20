@@ -6,15 +6,17 @@ import { Button } from '../ui'
 import { useMuscleGroups } from '../../hooks/useExercises'
 import { colors, inputStyle } from '../../lib/styles'
 import {
-  MEASUREMENT_TYPE_OPTIONS,
-  MeasurementType,
+  DEFAULT_TRACKED_FIELDS,
+  isTrackedFieldsSelectionValid,
   getMuscleGroupColor,
   getMuscleGroupName,
+  normalizeTrackedFields,
 } from '@gym/shared'
+import TrackedFieldsPicker from './TrackedFieldsPicker'
 
 const DEFAULT_FORM = {
   name: '',
-  measurement_type: MeasurementType.WEIGHT_REPS,
+  tracked_fields: DEFAULT_TRACKED_FIELDS,
   instructions: '',
 }
 
@@ -58,7 +60,6 @@ export default function ExerciseForm({
   const [form, setForm] = useState(DEFAULT_FORM)
   const [selectedMuscleGroupId, setSelectedMuscleGroupId] = useState(null)
   const [error, setError] = useState(null)
-  const [showMeasurementPicker, setShowMeasurementPicker] = useState(false)
   const [showMuscleGroupPicker, setShowMuscleGroupPicker] = useState(false)
   const formRef = useRef({ form, selectedMuscleGroupId })
 
@@ -69,20 +70,22 @@ export default function ExerciseForm({
   // Depende de los valores planos para no resetear el form cada vez que el
   // padre recrea el objeto initialData.
   const initialName = initialData?.name
-  const initialMeasurementType = initialData?.measurement_type
+  // Los campos llegan como array: se serializa para que el efecto no dispare en cada render por
+  // recibir una referencia nueva con el mismo contenido.
+  const initialTrackedFieldsKey = initialData?.tracked_fields?.join(',')
   const initialInstructions = initialData?.instructions
   const initialMuscleGroupId = initialData?.muscle_group_id
   useEffect(() => {
-    if (initialName === undefined && initialMeasurementType === undefined && initialInstructions === undefined && initialMuscleGroupId === undefined) {
+    if (initialName === undefined && initialTrackedFieldsKey === undefined && initialInstructions === undefined && initialMuscleGroupId === undefined) {
       return
     }
     setForm({
       name: initialName || '',
-      measurement_type: initialMeasurementType || MeasurementType.WEIGHT_REPS,
+      tracked_fields: normalizeTrackedFields(initialTrackedFieldsKey?.split(',')),
       instructions: initialInstructions || '',
     })
     setSelectedMuscleGroupId(initialMuscleGroupId || null)
-  }, [initialName, initialMeasurementType, initialInstructions, initialMuscleGroupId])
+  }, [initialName, initialTrackedFieldsKey, initialInstructions, initialMuscleGroupId])
 
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
@@ -90,6 +93,7 @@ export default function ExerciseForm({
     setError(null)
     const { form: f, selectedMuscleGroupId: mgId } = formRef.current
     if (!f.name.trim()) { setError(t('exercise:nameRequired')); return }
+    if (!isTrackedFieldsSelectionValid(f.tracked_fields)) { setError(t('validation:trackedFieldsRequired')); return }
     if (!mgId) { setError(t('exercise:muscleGroupRequired')); return }
     onSubmit(f, mgId)
   }
@@ -101,7 +105,6 @@ export default function ExerciseForm({
 
   if (isLoading) return <Text className="text-secondary text-center py-8">{t('common:buttons.loading')}</Text>
 
-  const selectedMeasurement = MEASUREMENT_TYPE_OPTIONS.find(o => o.value === form.measurement_type)
   const selectedGroup = muscleGroups?.find(g => g.id === selectedMuscleGroupId)
 
   const muscleGroupOptions = muscleGroups?.map(g => ({
@@ -137,17 +140,11 @@ export default function ExerciseForm({
       </View>
 
       <View className="mb-4">
-        <Text className="text-primary text-sm font-medium mb-2">
-          {t('exercise:measurementType')}{!minimal && <Text style={{ color: colors.danger }}> *</Text>}
-        </Text>
-        <Pressable
-          onPress={() => setShowMeasurementPicker(true)}
-          className="flex-row items-center justify-between p-3 rounded-lg"
-          style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
-        >
-          <Text className="text-primary">{selectedMeasurement?.label || t('common:buttons.select')}</Text>
-          <ChevronDown size={16} color={colors.textSecondary} />
-        </Pressable>
+        <TrackedFieldsPicker
+          value={form.tracked_fields}
+          onChange={(fields) => handleChange('tracked_fields', fields)}
+          required={!minimal}
+        />
       </View>
 
       <View className="mb-4">
@@ -190,15 +187,6 @@ export default function ExerciseForm({
           {t('common:buttons.save')}
         </Button>
       )}
-
-      <BottomSheetPicker
-        visible={showMeasurementPicker}
-        onClose={() => setShowMeasurementPicker(false)}
-        title={t('exercise:measurementType')}
-        options={MEASUREMENT_TYPE_OPTIONS}
-        selected={form.measurement_type}
-        onSelect={(v) => handleChange('measurement_type', v)}
-      />
 
       <BottomSheetPicker
         visible={showMuscleGroupPicker}

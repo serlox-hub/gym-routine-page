@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS, buildExerciseConfigForm, buildExerciseConfigFormFromRow, diffSessionExerciseFields, validateExerciseConfigForm, resolveMeasurementType } from '@gym/shared'
+import { QUERY_KEYS, buildExerciseConfigForm, buildExerciseConfigFormFromRow, diffSessionExerciseFields, validateExerciseConfigForm, resolveTrackedFields } from '@gym/shared'
 import { Modal } from '../ui'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm'
 import { ExerciseFormPanel } from '../Exercise'
@@ -55,12 +55,12 @@ export default function EditSessionExerciseModal({
     if (isOpen && sessionExercise) {
       setView('session')
       setErrors({})
-      setForm(buildExerciseConfigFormFromRow(sessionExercise, resolveMeasurementType(sessionExercise.exercise)))
+      setForm(buildExerciseConfigFormFromRow(sessionExercise, resolveTrackedFields(sessionExercise.exercise)))
     }
   }, [isOpen, sessionExercise])
 
   const handleSave = () => {
-    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveMeasurementType(sessionExercise?.exercise))
+    const { valid, errors: formErrors } = validateExerciseConfigForm(form, resolveTrackedFields(sessionExercise?.exercise))
     setErrors(formErrors)
     if (!valid) return
     const { fields, newSeries } = diffSessionExerciseFields(

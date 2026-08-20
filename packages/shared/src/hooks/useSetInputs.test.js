@@ -35,7 +35,7 @@ import * as workoutApi from '../api/workoutApi.js'
 
 const store = useWorkoutStore._mockStore
 const KEY = 'ex-1-1'
-const PARAMS = { sessionExerciseId: 'ex-1', setNumber: 1, exerciseId: 10, measurementType: 'weight_reps' }
+const PARAMS = { sessionExerciseId: 'ex-1', setNumber: 1, exerciseId: 10, trackedFields: ['weight', 'reps'] }
 
 function wrapper() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -202,5 +202,48 @@ describe('useSetInputs — prefill de la sesión anterior (sugerencia)', () => {
     rerender({ ...PARAMS, previousSet: { weight: 45.36 } })
     // sigue siendo lo tecleado por el usuario, no la sugerencia del gym nuevo
     expect(result.current.weight).toBe(80)
+  })
+})
+
+// Lo que el hook persiste lo decide `trackedFields`, no una lista fija: es el único punto donde
+// eso se traduce a columnas, así que hace falta al menos un caso con campos distintos del default.
+describe('useSetInputs — los campos del ejercicio deciden qué se valida y qué se guarda', () => {
+  const BIKE = { ...PARAMS, trackedFields: ['level', 'distance', 'time'] }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+  })
+
+  it('isValid exige los tres campos de la bici, no peso y reps', () => {
+    const { result } = renderHook(() => useSetInputs(BIKE), { wrapper: wrapper() })
+
+    act(() => { result.current.setWeight('80'); result.current.setReps('10') })
+    expect(result.current.isValid()).toBe(false)
+
+    act(() => { result.current.setLevel('12'); result.current.setDistance('5000'); result.current.setTime('1200') })
+    expect(result.current.isValid()).toBe(true)
+  })
+
+  it('cachea nivel, distancia y tiempo, y NO manda peso ni reps', async () => {
+    const { result } = renderHook(() => useSetInputs(BIKE), { wrapper: wrapper() })
+
+    act(() => { result.current.setLevel('12'); result.current.setDistance('5000'); result.current.setTime('1200') })
+    await waitFor(() => expect(store.setCachedSetData).toHaveBeenCalled())
+
+    const cached = store.setCachedSetData.mock.calls.at(-1)[2]
+    expect(cached).toMatchObject({ level: 12, distanceMeters: 5000, timeSeconds: 1200 })
+    // Las columnas ausentes del payload no se tocan en el upsert: un peso viejo seguiría intacto
+    expect(cached).not.toHaveProperty('weight')
+    expect(cached).not.toHaveProperty('repsCompleted')
+  })
+
+  it('lee del store solo los campos del ejercicio', () => {
+    store.completedSets = { [KEY]: { level: 8, distanceMeters: 4000, timeSeconds: 900, weight: 999 } }
+    const { result } = renderHook(() => useSetInputs(BIKE), { wrapper: wrapper() })
+    expect(result.current.level).toBe(8)
+    expect(result.current.distance).toBe(4000)
+    expect(result.current.time).toBe(900)
   })
 })

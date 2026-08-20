@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import ExerciseProgressChart from './ExerciseProgressChart.jsx'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType, measurementTypeUsesTime, measurementTypeUsesDistance, formatSecondsToMMSS } from '@gym/shared'
+import { getExerciseStatCards } from '@gym/shared'
 
 function StatCard({ label, value }) {
   return (
@@ -15,41 +15,7 @@ function StatCard({ label, value }) {
   )
 }
 
-function getStatCards(stats, measurementType, weightUnit, distanceUnit, t) {
-  if (!stats) return []
-
-  if (measurementType === MeasurementType.WEIGHT_REPS) {
-    const cards = []
-    if (stats.best1RM > 0) cards.push({ label: t('workout:summary.best1rm'), value: `${stats.best1RM} ${weightUnit}` })
-    if (stats.maxWeight > 0) cards.push({ label: t('workout:summary.maxWeight'), value: `${stats.maxWeight} ${weightUnit}` })
-    return cards
-  }
-
-  if (measurementType === MeasurementType.REPS_ONLY) {
-    const cards = []
-    if (stats.maxReps > 0) cards.push({ label: t('workout:summary.maxReps'), value: stats.maxReps })
-    if (stats.avgReps > 0) cards.push({ label: t('workout:summary.avgReps'), value: stats.avgReps })
-    return cards
-  }
-
-  if (measurementTypeUsesTime(measurementType)) {
-    const cards = []
-    if (stats.maxTime > 0) cards.push({ label: t('workout:summary.maxTime'), value: formatSecondsToMMSS(stats.maxTime) })
-    if (stats.avgTime > 0) cards.push({ label: t('workout:summary.avgTime'), value: formatSecondsToMMSS(stats.avgTime) })
-    return cards
-  }
-
-  if (measurementTypeUsesDistance(measurementType)) {
-    const cards = []
-    if (stats.maxDistance > 0) cards.push({ label: t('workout:summary.maxDistance'), value: `${stats.maxDistance} ${distanceUnit}` })
-    if (stats.avgDistance > 0) cards.push({ label: t('workout:summary.avgDistance'), value: `${stats.avgDistance} ${distanceUnit}` })
-    return cards
-  }
-
-  return []
-}
-
-function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUnit = 'm', chartRows, overlayGyms, unitByGym }) {
+function HistoryChart({ sessions, stats, trackedFields, weightUnit, distanceUnit = 'm', chartRows, overlayGyms, unitByGym }) {
   const { t } = useTranslation()
   if (!sessions || sessions.length === 0) {
     return (
@@ -59,7 +25,7 @@ function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUn
     )
   }
 
-  const statCards = getStatCards(stats, measurementType, weightUnit, distanceUnit, t)
+  const statCards = getExerciseStatCards(stats, trackedFields, { weightUnit, distanceUnit })
 
   // En modo gym-aware el gráfico se dibuja desde chartRows (filas de stats por gym)
   const usesChartRows = Array.isArray(chartRows)
@@ -74,7 +40,7 @@ function HistoryChart({ sessions, stats, measurementType, weightUnit, distanceUn
           chartRows={usesChartRows ? chartRows : undefined}
           overlayGyms={overlayGyms}
           unitByGym={unitByGym}
-          measurementType={measurementType}
+          trackedFields={trackedFields}
           weightUnit={weightUnit}
         />
       ) : (

@@ -263,14 +263,14 @@ describe('fetchExercise', () => {
 
 describe('createExercise', () => {
   it('inserta un ejercicio y devuelve el registro creado', async () => {
-    const fakeCreated = { id: 'ex-new', name: 'Curl bíceps', measurement_type: 'weight_reps' }
+    const fakeCreated = { id: 'ex-new', name: 'Curl bíceps', tracked_fields: ['weight', 'reps'] }
     getClient.mockReturnValue(makeClientMock({
       exercises: { data: fakeCreated, error: null },
     }))
 
     const result = await createExercise({
       userId: 'user-1',
-      exercise: { name: 'Curl bíceps', measurement_type: 'weight_reps' },
+      exercise: { name: 'Curl bíceps', tracked_fields: ['weight', 'reps'] },
       muscleGroupId: 'mg-1',
     })
     expect(result).toEqual(fakeCreated)

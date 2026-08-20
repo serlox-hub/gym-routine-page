@@ -23,7 +23,7 @@ function SetsList({
   setsCount,
   previousWorkout,
   progressionEnabled = false,
-  measurementType,
+  trackedFields,
   weightUnit,
   distanceUnit,
   rest_seconds,
@@ -39,8 +39,8 @@ function SetsList({
   // Columna «Notas» presente si hay algo que anotar (RIR/notas/vídeo). Helper compartido con SetRow.
   const annotationColumn = shouldShowAnnotationColumn(preferences)
   const completedSets = useWorkoutStore(state => state.completedSets)
-  // Columnas de valor del tipo (1 o 2) — mismas que pinta SetRow, con su cabecera y unidad
-  const columns = getSetColumns(measurementType, { weightUnit, distanceUnit })
+  // Columnas de valor del ejercicio (1 a 3) — mismas que pinta SetRow, con su cabecera y unidad
+  const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
   const activeSetNumber = (() => {
     for (let i = 1; i <= setsCount; i++) {
       if (!completedSets[`${exerciseKey}-${i}`]) return i
@@ -51,7 +51,7 @@ function SetsList({
   return (
     <>
       {/* Recencia de la referencia (la sesión anterior ahora se muestra inline por fila; ver
-          PreviousSetCell). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
+          PreviousSetLine, dentro de SetRowMeta). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
       <div className="mt-3 mb-3">
         {previousWorkout === undefined ? (
           <div className="h-4 rounded w-40 animate-pulse" style={{ backgroundColor: colors.bgTertiary }} />
@@ -70,18 +70,17 @@ function SetsList({
         )}
       </div>
 
-      {/* Cabecera de columnas para TODOS los tipos de medición: es donde vive la unidad de cada
+      {/* Cabecera de columnas, mida lo que mida el ejercicio: es donde vive la unidad de cada
           columna (KG, MM:SS, NIVEL…), lo que permite que la fila lleve solo inputs y no desborde.
           Grid desde el helper de SetRow (fuente única) con la misma condición annotationColumn. */}
       {setsCount > 0 && (
         <div className="grid items-center mb-3 px-1" style={{
-          gridTemplateColumns: getSetGridTemplate(columns.length, annotationColumn, effortRendersAsWord(measurementType, preferences?.show_rir_input ?? true)),
+          gridTemplateColumns: getSetGridTemplate(columns.length, annotationColumn, effortRendersAsWord(trackedFields, preferences?.show_rir_input ?? true)),
           gap: SET_ROW_GAP,
           // Alinea con las filas, que llevan la barra de "hecho" a la izquierda
           paddingLeft: `calc(0.25rem + ${SET_ROW_ACCENT}px)`,
         }}>
           <span style={HEADER_STYLE}>{t('workout:set.set').toUpperCase()}</span>
-          <span style={HEADER_STYLE}>{t('workout:set.previousShort').toUpperCase()}</span>
           {columns.map(col => (
             <span key={col.field} style={HEADER_STYLE}>{col.label}</span>
           ))}
@@ -105,7 +104,7 @@ function SetsList({
                 exerciseName={exercise.name}
                 sessionExerciseId={exerciseKey}
                 exerciseId={exercise.id}
-                measurementType={measurementType}
+                trackedFields={trackedFields}
                 weightUnit={weightUnit}
                 distanceUnit={distanceUnit}
                 descansoSeg={rest_seconds}

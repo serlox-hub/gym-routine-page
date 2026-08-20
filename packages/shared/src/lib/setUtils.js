@@ -2,50 +2,17 @@
  * Utilidades para manejo de series (sets)
  */
 
-import { t } from '../i18n/index.js'
-import { MeasurementType, formatEffortBadge } from './measurementTypes.js'
-import { parseDecimal } from './numberUtils.js'
-import { formatDuration } from './timeUtils.js'
-
-// "Nv"/"reps" son COPY, no símbolos de unidad (kg, m, kcal sí lo son): en inglés se leían
-// "Nv12 × 30:00 min". Ver docs/DECISIONS.md.
-const repsUnit = () => t('workout:set.reps').toLowerCase()
-
-/**
- * Formatea un número con coma decimal (formato español)
- */
-function formatNumber(value) {
-  if (value == null) return ''
-  return Number(value).toLocaleString('es-ES')
-}
-
-/**
- * Formatea segundos como mm:ss
- */
-export function formatSecondsAsMMSS(totalSeconds) {
-  if (!totalSeconds && totalSeconds !== 0) return ''
-  const s = Math.round(Number(totalSeconds))
-  const min = Math.floor(s / 60)
-  const sec = s % 60
-  return `${min}:${String(sec).padStart(2, '0')}`
-}
-
-/**
- * Convierte un valor de distancia a metros según la unidad
- */
-export function distanceToMeters(value, distanceUnit) {
-  const num = parseDecimal(value)
-  if (isNaN(num)) return 0
-  return distanceUnit === 'km' ? Math.round(num * 1000) : num
-}
-
-/**
- * Convierte metros a la unidad indicada
- */
-export function metersToDistanceUnit(meters, distanceUnit) {
-  if (!meters) return 0
-  return distanceUnit === 'km' ? +(meters / 1000).toFixed(3) : meters
-}
+import { formatEffortBadge } from './effortScale.js'
+import {
+  FIELD_ORDER,
+  SetField,
+  formatFieldValue,
+  getFieldMeta,
+  getFieldSeparator,
+  metersToDistanceUnit,
+  normalizeTrackedFields,
+  parseFieldValue,
+} from './measurementFields.js'
 
 /**
  * Crea una clave única para identificar una serie
@@ -75,112 +42,49 @@ export function generateExtraExerciseId() {
 }
 
 /**
- * Valida si los datos de una serie son válidos según el tipo de medición
- * @param {string} measurementType - Tipo de medición
+ * ¿Están rellenos todos los campos que mide el ejercicio? Es la condición para poder completar
+ * la serie.
+ * @param {string[]} trackedFields - campos del ejercicio
  * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number, calories?: string|number, level?: string|number, pace?: string|number}} data - Datos de la serie
  * @returns {boolean}
  */
-export function isSetDataValid(measurementType, { weight, reps, time, distance, calories, level, pace }) {
-  switch (measurementType) {
-    case MeasurementType.WEIGHT_REPS:
-      return weight !== '' && weight !== undefined && reps !== '' && reps !== undefined
-    case MeasurementType.REPS_ONLY:
-      return reps !== '' && reps !== undefined
-    case MeasurementType.TIME:
-      return time !== '' && time !== undefined
-    case MeasurementType.WEIGHT_TIME:
-      return weight !== '' && weight !== undefined && time !== '' && time !== undefined
-    case MeasurementType.DISTANCE:
-      return distance !== '' && distance !== undefined
-    case MeasurementType.WEIGHT_DISTANCE:
-      return weight !== '' && weight !== undefined && distance !== '' && distance !== undefined
-    case MeasurementType.CALORIES:
-      return calories !== '' && calories !== undefined
-    case MeasurementType.LEVEL_TIME:
-      return level !== '' && level !== undefined && time !== '' && time !== undefined
-    case MeasurementType.LEVEL_DISTANCE:
-      return level !== '' && level !== undefined && distance !== '' && distance !== undefined
-    case MeasurementType.LEVEL_CALORIES:
-      return level !== '' && level !== undefined && calories !== '' && calories !== undefined
-    case MeasurementType.DISTANCE_TIME:
-      return distance !== '' && distance !== undefined && time !== '' && time !== undefined
-    case MeasurementType.DISTANCE_PACE:
-      return distance !== '' && distance !== undefined && pace !== '' && pace !== undefined && pace > 0
-    default:
-      return false
-  }
+export function isSetDataValid(trackedFields, data) {
+  return normalizeTrackedFields(trackedFields).every(field => {
+    const value = data?.[field]
+    if (value === '' || value === undefined || value === null) return false
+    // El ritmo es el único campo con mínimo: un 0 significaría velocidad infinita, y además es
+    // lo que devuelve el input de duración mientras está a medio teclear.
+    if (field === SetField.PACE) return Number(value) > 0
+    return true
+  })
 }
 
 /**
- * Extrae y tipa solo los valores de medición de una serie según su tipo.
- * Devuelve las claves internas ({weight, repsCompleted, timeSeconds, ...}) sin
- * metadatos (ids, rir, notas). Es la fuente única del mapeo formulario→datos que
- * comparten buildCompletedSetData (guardar), la caché de edición y las comparaciones.
- * @param {string} measurementType - Tipo de medición
+ * Extrae y tipa solo los valores de medición de una serie. Devuelve las claves internas
+ * ({weight, repsCompleted, timeSeconds, ...}) sin metadatos (ids, rir, notas). Es la fuente única
+ * del mapeo formulario→datos que comparten buildCompletedSetData (guardar), la caché de edición y
+ * las comparaciones.
+ * @param {string[]} trackedFields - campos del ejercicio
  * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number, calories?: string|number, level?: string|number, pace?: string|number}} formData
  * @param {{distanceUnit?: string}} [options]
- * @returns {Object} Solo los campos de medición del tipo (pueden ser NaN si el input está vacío)
+ * @returns {Object} Solo los campos que mide el ejercicio (pueden ser NaN si el input está vacío)
  */
-export function getSetMeasurementValues(measurementType, formData, { distanceUnit = 'm' } = {}) {
-  const { weight, reps, time, distance, calories, level, pace } = formData
+export function getSetMeasurementValues(trackedFields, formData, { distanceUnit = 'm' } = {}) {
   const data = {}
-  switch (measurementType) {
-    case MeasurementType.WEIGHT_REPS:
-      data.weight = parseDecimal(weight)
-      data.repsCompleted = parseInt(reps)
-      break
-    case MeasurementType.REPS_ONLY:
-      data.repsCompleted = parseInt(reps)
-      break
-    case MeasurementType.TIME:
-      data.timeSeconds = parseInt(time)
-      break
-    case MeasurementType.WEIGHT_TIME:
-      data.weight = parseDecimal(weight)
-      data.timeSeconds = parseInt(time)
-      break
-    case MeasurementType.DISTANCE:
-      data.distanceMeters = distanceToMeters(distance, distanceUnit)
-      break
-    case MeasurementType.WEIGHT_DISTANCE:
-      data.weight = parseDecimal(weight)
-      data.distanceMeters = distanceToMeters(distance, distanceUnit)
-      break
-    case MeasurementType.CALORIES:
-      data.caloriesBurned = parseInt(calories)
-      break
-    case MeasurementType.LEVEL_TIME:
-      data.level = parseInt(level)
-      data.timeSeconds = parseInt(time)
-      break
-    case MeasurementType.LEVEL_DISTANCE:
-      data.level = parseInt(level)
-      data.distanceMeters = distanceToMeters(distance, distanceUnit)
-      break
-    case MeasurementType.LEVEL_CALORIES:
-      data.level = parseInt(level)
-      data.caloriesBurned = parseInt(calories)
-      break
-    case MeasurementType.DISTANCE_TIME:
-      data.distanceMeters = distanceToMeters(distance, distanceUnit)
-      data.timeSeconds = parseInt(time)
-      break
-    case MeasurementType.DISTANCE_PACE:
-      data.distanceMeters = distanceToMeters(distance, distanceUnit)
-      data.paceSeconds = parseInt(pace)
-      break
-  }
+  normalizeTrackedFields(trackedFields).forEach(field => {
+    data[getFieldMeta(field).payloadKey] = parseFieldValue(field, formData?.[field], { distanceUnit })
+  })
   return data
 }
 
 /**
  * Construye el objeto de datos para completar una serie
- * @param {string} measurementType - Tipo de medición
+ * @param {string[]} trackedFields - campos del ejercicio
  * @param {{weight?: string, reps?: string, time?: string, distance?: string, calories?: string}} formData - Datos del formulario
  * @param {{routineExerciseId?: string|number, sessionExerciseId?: string|number, exerciseId: number, setNumber: number, weightUnit?: string, rirActual?: number, notes?: string, videoUrl?: string}} info - Información adicional
  * @returns {Object} Datos para guardar la serie
  */
-export function buildCompletedSetData(measurementType, formData, info) {
+export function buildCompletedSetData(trackedFields, formData, info) {
   const { routineExerciseId, sessionExerciseId, exerciseId, setNumber, distanceUnit = 'm', rirActual, notes, videoUrl, setType } = info
 
   const data = {
@@ -188,7 +92,7 @@ export function buildCompletedSetData(measurementType, formData, info) {
     setNumber,
     rirActual,
     notes,
-    ...getSetMeasurementValues(measurementType, formData, { distanceUnit }),
+    ...getSetMeasurementValues(trackedFields, formData, { distanceUnit }),
   }
 
   // Soportar ambos IDs para flexibilidad
@@ -201,14 +105,14 @@ export function buildCompletedSetData(measurementType, formData, info) {
 }
 
 /**
- * Valores de medición para CACHEAR una serie NO completada. Devuelve los campos del tipo
+ * Valores de medición para CACHEAR una serie NO completada. Devuelve los campos del ejercicio
  * con los vacíos normalizados a `null` (NO los descarta): así, al vaciar un campo, el
  * borrado sobrescribe la caché (el store hace merge) y no reaparece el valor viejo al
  * reabrir el ejercicio. `null` lo muestra `getSetInitialInputValues` como ''. Nunca NaN.
- * @returns {Object} Los campos de medición del tipo; vacíos como null
+ * @returns {Object} Los campos de medición del ejercicio; vacíos como null
  */
-export function buildCachedMeasurementValues(measurementType, formData, { distanceUnit = 'm' } = {}) {
-  const values = getSetMeasurementValues(measurementType, formData, { distanceUnit })
+export function buildCachedMeasurementValues(trackedFields, formData, { distanceUnit = 'm' } = {}) {
+  const values = getSetMeasurementValues(trackedFields, formData, { distanceUnit })
   const cached = {}
   for (const [key, value] of Object.entries(values)) {
     cached[key] = (typeof value === 'number' && Number.isNaN(value)) ? null : value
@@ -268,116 +172,81 @@ export function formatRepsPlaceholder(repsTarget) {
 }
 
 /**
- * Formatea el valor de una serie para mostrar (ej: "80kg × 12 reps")
- * @param {{weight?: number, weight_unit?: string, reps_completed?: number, time_seconds?: number, distance_meters?: number}} set - Datos de la serie
+ * Formatea el valor de una serie leída de BD (snake_case), para historial y resúmenes.
+ * No recibe los campos del ejercicio: pinta lo que la fila tenga a null, en el orden canónico
+ * de columnas. Las reps siempre llevan unidad ("80kg × 12 reps"): aquí hay sitio de sobra y no
+ * hay cabecera que la indique, a diferencia de la fila de la sesión.
+ * @param {{weight?: number, weight_unit?: string, reps_completed?: number, time_seconds?: number, distance_meters?: number, calories_burned?: number, level?: number, pace_seconds?: number}} set
  * @returns {string}
  */
 export function formatSetValue(set, { distanceUnit = 'm' } = {}) {
-  const parts = []
-  if (set.level != null) {
-    parts.push(`${t('workout:set.levelShort')}${set.level}`)
-  }
-  if (set.weight != null) {
-    parts.push(`${formatNumber(set.weight)}${set.weight_unit || 'kg'}`)
-  }
-  if (set.reps_completed != null) {
-    parts.push(`${set.reps_completed} ${repsUnit()}`)
-  }
-  if (set.time_seconds != null) {
-    parts.push(formatDuration(set.time_seconds))
-  }
-  if (set.distance_meters != null) {
-    const val = metersToDistanceUnit(set.distance_meters, distanceUnit)
-    parts.push(`${formatNumber(val)}${distanceUnit}`)
-  }
-  if (set.pace_seconds != null) {
-    parts.push(`${formatSecondsAsMMSS(set.pace_seconds)}/${distanceUnit}`)
-  }
-  if (set.calories_burned != null) {
-    parts.push(`${set.calories_burned}kcal`)
-  }
-  return parts.join(' × ')
+  const options = { weightUnit: set.weight_unit || 'kg', distanceUnit, repsUnit: true }
+  return joinFieldParts(
+    FIELD_ORDER
+      .filter(field => set[getFieldMeta(field).column] != null)
+      .map(field => ({ field, text: formatFieldValue(field, set[getFieldMeta(field).column], options) }))
+  )
 }
 
 /**
- * Formatea el valor de una serie según el tipo de medición (para historial)
- * @param {{weight?: number, weightUnit?: string, reps?: number, timeSeconds?: number, distanceMeters?: number}} set - Datos de la serie
- * @param {string} measurementType - Tipo de medición
- * @param {{distanceUnit?: string, hideUnits?: boolean}} [options]
- *   hideUnits: omite TODAS las unidades y prefijos (ej. "75 × 6" en vez de "75kg × 6", "12 × 20:00"
- *   en vez de "Nv12 × 20:00"). Se usa en la columna ANTERIOR de la sesión, donde la cabecera de
- *   cada columna ya dice la unidad (redundante y no cabe en ~54px).
+ * Une las partes ya formateadas de una serie con su separador ("×", o "@" antes del ritmo).
+ * @param {Array<{field: string, text: string}>} parts
  * @returns {string}
  */
-export function formatSetValueByType(set, measurementType, { distanceUnit = 'm', hideUnits = false } = {}) {
-  const unit = (suffix) => hideUnits ? '' : suffix
-  const wUnit = unit(set.weightUnit || 'kg')
-  const dUnit = unit(distanceUnit)
-  const dVal = set.distanceMeters != null ? metersToDistanceUnit(set.distanceMeters, distanceUnit) : 0
-  const fmtWeight = () => `${formatNumber(set.weight)}${wUnit}`
-  const fmtDistance = () => `${formatNumber(dVal)}${dUnit}`
-  const fmtTime = (s) => formatDuration(s, { unitHint: !hideUnits })
-  const fmtReps = () => `${set.reps}${unit(` ${repsUnit()}`)}`
-  const fmtCalories = () => `${set.caloriesBurned}${unit('kcal')}`
-  const fmtLevel = () => `${unit(t('workout:set.levelShort'))}${set.level}`
-  switch (measurementType) {
-    case MeasurementType.WEIGHT_REPS:
-      return set.weight != null
-        ? `${fmtWeight()} × ${set.reps}`
-        : fmtReps()
-    case MeasurementType.REPS_ONLY:
-      return fmtReps()
-    case MeasurementType.TIME:
-      return fmtTime(set.timeSeconds)
-    case MeasurementType.WEIGHT_TIME:
-      return set.weight != null
-        ? `${fmtWeight()} × ${fmtTime(set.timeSeconds)}`
-        : fmtTime(set.timeSeconds)
-    case MeasurementType.DISTANCE:
-      return fmtDistance()
-    case MeasurementType.WEIGHT_DISTANCE:
-      return set.weight != null
-        ? `${fmtWeight()} × ${fmtDistance()}`
-        : fmtDistance()
-    case MeasurementType.CALORIES:
-      return fmtCalories()
-    case MeasurementType.LEVEL_TIME:
-      return `${fmtLevel()} × ${fmtTime(set.timeSeconds)}`
-    case MeasurementType.LEVEL_DISTANCE:
-      return `${fmtLevel()} × ${fmtDistance()}`
-    case MeasurementType.LEVEL_CALORIES:
-      return `${fmtLevel()} × ${fmtCalories()}`
-    case MeasurementType.DISTANCE_TIME:
-      return `${fmtDistance()} × ${fmtTime(set.timeSeconds)}`
-    case MeasurementType.DISTANCE_PACE:
-      return `${fmtDistance()} @ ${formatSecondsAsMMSS(set.paceSeconds)}${unit(`/${distanceUnit}`)}`
-    default:
-      return set.weight != null ? `${fmtWeight()} × ${set.reps}` : `${set.reps}`
-  }
+function joinFieldParts(parts) {
+  return parts.reduce(
+    (acc, { field, text }, i) => i === 0 ? text : acc + getFieldSeparator(field) + text,
+    ''
+  )
 }
 
 /**
- * Formatea el valor de una serie para la columna ANTERIOR (referencia inline por fila).
- * Con `hideUnits` omite las unidades (las cabeceras ya las indican); ver formatSetValueByType.
+ * Formatea el valor de una serie con los campos que mide el ejercicio (objeto de display en
+ * camelCase: weight, reps, timeSeconds, distanceMeters, caloriesBurned, level, paceSeconds).
+ *
+ * Solo pinta los campos CON valor, así que un peso a null en un ejercicio de peso × reps sale
+ * como "12 reps" en vez de " × 12". Las reps llevan unidad únicamente cuando van solas: junto a
+ * otro campo el "reps" sobra y roba sitio ("80kg × 12").
+ * @param {object} set
+ * @param {string[]} trackedFields - campos del ejercicio
+ * @param {{distanceUnit?: string}} [options]
+ * @returns {string}
  */
-export function formatPreviousSetValue(set, measurementType, { weightUnit = 'kg', distanceUnit = 'm', hideUnits = false } = {}) {
-  return formatSetValueByType({ ...set, weightUnit }, measurementType, { distanceUnit, hideUnits })
+export function formatSetValueByType(set, trackedFields, { distanceUnit = 'm' } = {}) {
+  const present = normalizeTrackedFields(trackedFields)
+    .filter(field => set[getFieldMeta(field).displayKey] != null)
+  const options = {
+    weightUnit: set.weightUnit || 'kg',
+    distanceUnit,
+    repsUnit: present.length === 1,
+  }
+  return joinFieldParts(present.map(field => ({
+    field,
+    text: formatFieldValue(field, set[getFieldMeta(field).displayKey], options),
+  })))
 }
 
 /**
- * Esfuerzo (RIR/RPE) de la serie anterior para la segunda línea de la columna ANTERIOR.
+ * Formatea el valor de la serie de la sesión anterior (subfila SetRowMeta → PreviousSetLine).
+ */
+export function formatPreviousSetValue(set, trackedFields, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
+  return formatSetValueByType({ ...set, weightUnit }, trackedFields, { distanceUnit })
+}
+
+/**
+ * Esfuerzo (RIR/RPE) de la serie anterior, al final de su línea en la subfila.
  * Devuelve el badge ("@2" en tipos con reps, etiqueta RPE en el resto vía formatEffortBadge, mismo
  * formato que la columna de esfuerzo actual) o null si no procede: `showRir` false (el usuario ha
  * ocultado la escala de RIR/esfuerzo, así que tampoco mostramos el histórico) o la serie previa no
  * registró esfuerzo. Gating idéntico web+native.
  * @param {{rir?: number}} previousSet
- * @param {string} measurementType
+ * @param {string[]} trackedFields
  * @param {boolean} showRir
  * @returns {string|null}
  */
-export function formatPreviousSetEffort(previousSet, measurementType, showRir) {
+export function formatPreviousSetEffort(previousSet, trackedFields, showRir) {
   if (!showRir || previousSet?.rir == null) return null
-  return formatEffortBadge(previousSet.rir, measurementType) || null
+  return formatEffortBadge(previousSet.rir, trackedFields) || null
 }
 
 /**

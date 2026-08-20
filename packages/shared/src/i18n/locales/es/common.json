@@ -86,7 +86,15 @@
     "unexpected": "Ha ocurrido un error inesperado",
     "videoLoad": "Error al cargar video"
   },
-  "daysShort": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+  "daysShort": [
+    "Lun",
+    "Mar",
+    "Mié",
+    "Jue",
+    "Vie",
+    "Sáb",
+    "Dom"
+  ],
   "confirm": {
     "deleteTitle": "Confirmar eliminación",
     "areYouSure": "¿Estás seguro?",
@@ -213,7 +221,7 @@
     "optionsDescription": "Configura cómo quieres importar la rutina",
     "configDescription": "Configura las opciones de importación",
     "updateExisting": "Actualizar ejercicios existentes",
-    "updateExistingDesc": "Si un ejercicio ya existe, actualiza su configuración (tipo de medición, grupo muscular, etc.)",
+    "updateExistingDesc": "Si un ejercicio ya existe, actualiza su configuración (qué mide, grupo muscular, etc.)",
     "importing": "Importando rutina...",
     "importError": "Error al importar",
     "invalidFormat": "Formato de archivo no válido",

@@ -34,19 +34,14 @@
     "normal": "Normal",
     "dropset": "Dropset"
   },
-  "measurementTypes": {
-    "weight_reps": "Peso × Reps",
-    "reps_only": "Solo reps",
+  "measurementFields": {
+    "weight": "Peso",
+    "reps": "Reps",
     "time": "Tiempo",
-    "weight_time": "Peso × Tiempo",
     "distance": "Distancia",
-    "weight_distance": "Peso × Distancia",
     "calories": "Calorías",
-    "level_time": "Nivel × Tiempo",
-    "level_distance": "Nivel × Distancia",
-    "level_calories": "Nivel × Calorías",
-    "distance_time": "Distancia × Tiempo",
-    "distance_pace": "Distancia × Ritmo"
+    "level": "Nivel",
+    "pace": "Ritmo"
   },
   "volumeLegend": {
     "belowMv": "Insuficiente",

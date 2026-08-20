@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
-import { Card, BottomActions, Input, Select, Textarea } from '../ui/index.js'
+import { Card, BottomActions, Input, Textarea } from '../ui/index.js'
 import { useMuscleGroups } from '../../hooks/useExercises.js'
 import { colors } from '../../lib/styles.js'
 import {
-  MEASUREMENT_TYPE_OPTIONS,
-  MeasurementType,
+  DEFAULT_TRACKED_FIELDS,
+  isTrackedFieldsSelectionValid,
   getMuscleGroupColor,
   getMuscleGroupName,
+  normalizeTrackedFields,
 } from '@gym/shared'
+import TrackedFieldsPicker from './TrackedFieldsPicker.jsx'
 
 function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
   const { t } = useTranslation()
@@ -61,7 +63,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
 
 const DEFAULT_FORM = {
   name: '',
-  measurement_type: MeasurementType.WEIGHT_REPS,
+  tracked_fields: DEFAULT_TRACKED_FIELDS,
   instructions: '',
 }
 
@@ -100,20 +102,22 @@ function ExerciseForm({
   // Populate form with initial data. Depende de los valores planos para no
   // resetear el form cada vez que el padre recrea el objeto initialData.
   const initialName = initialData?.name
-  const initialMeasurementType = initialData?.measurement_type
+  // Los campos llegan como array: se serializa para que el efecto no dispare en cada render por
+  // recibir una referencia nueva con el mismo contenido.
+  const initialTrackedFieldsKey = initialData?.tracked_fields?.join(',')
   const initialInstructions = initialData?.instructions
   const initialMuscleGroupId = initialData?.muscle_group_id
   useEffect(() => {
-    if (initialName === undefined && initialMeasurementType === undefined && initialInstructions === undefined && initialMuscleGroupId === undefined) {
+    if (initialName === undefined && initialTrackedFieldsKey === undefined && initialInstructions === undefined && initialMuscleGroupId === undefined) {
       return
     }
     setForm({
       name: initialName || '',
-      measurement_type: initialMeasurementType || MeasurementType.WEIGHT_REPS,
+      tracked_fields: normalizeTrackedFields(initialTrackedFieldsKey?.split(',')),
       instructions: initialInstructions || '',
     })
     setSelectedMuscleGroupId(initialMuscleGroupId || null)
-  }, [initialName, initialMeasurementType, initialInstructions, initialMuscleGroupId])
+  }, [initialName, initialTrackedFieldsKey, initialInstructions, initialMuscleGroupId])
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -126,6 +130,11 @@ function ExerciseForm({
 
     if (!f.name.trim()) {
       setError(t('exercise:nameRequired'))
+      return
+    }
+
+    if (!isTrackedFieldsSelectionValid(f.tracked_fields)) {
+      setError(t('validation:trackedFieldsRequired'))
       return
     }
 
@@ -182,15 +191,11 @@ function ExerciseForm({
       </Wrapper>
 
       <Wrapper className={compact ? '' : 'p-4'}>
-        <Select
-          label={minimal ? t('exercise:measurementType') : <>{t('exercise:measurementType')} <span style={{ color: colors.danger }}>*</span></>}
-          value={form.measurement_type}
-          onChange={(e) => handleChange('measurement_type', e.target.value)}
-        >
-          {MEASUREMENT_TYPE_OPTIONS.map(type => (
-            <option key={type.value} value={type.value}>{type.label}</option>
-          ))}
-        </Select>
+        <TrackedFieldsPicker
+          value={form.tracked_fields}
+          onChange={(fields) => handleChange('tracked_fields', fields)}
+          required={!minimal}
+        />
       </Wrapper>
 
 

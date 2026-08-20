@@ -1,5 +1,5 @@
 import { APP_URL, BLOCK_NAMES } from './constants.js'
-import { formatEffortBadge } from './measurementTypes.js'
+import { formatEffortBadge } from './effortScale.js'
 import { t } from '../i18n/index.js'
 
 /**
@@ -14,12 +14,12 @@ export function formatRoutineAsText(exportData) {
   const { routine } = exportData
   const lines = []
 
-  // El ejercicio dentro de `blocks` solo trae el nombre; el tipo de medición (que decide la escala
-  // de esfuerzo) vive en el catálogo del propio export, emparejado por `name_es` = `exercise_name`.
+  // El ejercicio dentro de `blocks` solo trae el nombre; lo que mide (que decide la escala de
+  // esfuerzo) vive en el catálogo del propio export, emparejado por `name_es` = `exercise_name`.
   // Si dos ejercicios comparten `name_es` (custom + sistema) gana el último: asumido, el import
   // solo crea un custom cuando no hay match, así que la colisión es marginal.
-  const measurementTypeByName = new Map(
-    (exportData.exercises || []).map(ex => [ex.name_es, ex.measurement_type])
+  const trackedFieldsByName = new Map(
+    (exportData.exercises || []).map(ex => [ex.name_es, ex.tracked_fields])
   )
 
   lines.push(`*${routine.name}*`)
@@ -43,7 +43,7 @@ export function formatRoutineAsText(exportData) {
         lines.push(`${formatBlockName(block.name)}:`)
       }
       for (const ex of block.exercises) {
-        lines.push(formatExerciseLine(ex, measurementTypeByName.get(ex.exercise_name)))
+        lines.push(formatExerciseLine(ex, trackedFieldsByName.get(ex.exercise_name)))
       }
     }
   }
@@ -68,9 +68,9 @@ function formatBlockName(name) {
   return name
 }
 
-function formatExerciseLine(exercise, measurementType) {
+function formatExerciseLine(exercise, trackedFields) {
   const parts = [`${exercise.series}×${exercise.reps}`]
-  if (exercise.rir != null) parts.push(formatEffortBadge(exercise.rir, measurementType))
+  if (exercise.rir != null) parts.push(formatEffortBadge(exercise.rir, trackedFields))
   if (exercise.rest_seconds) parts.push(formatRest(exercise.rest_seconds))
   return `- ${exercise.exercise_name} · ${parts.join(' · ')}`
 }

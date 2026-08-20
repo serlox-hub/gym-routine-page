@@ -66,8 +66,8 @@ function VideoPlayer({ videoKey }) {
 
 /**
  * Detalle de una serie ya registrada. `summary`/`effort` (opcionales) muestran su valor completo
- * CON unidades: es la única forma de leer entero lo que la columna ANTERIOR elide en 46px
- * (ver PreviousSetCell). Sin ellos, la hoja es solo nota + vídeo (resto de llamantes).
+ * CON unidades, para no repetir el formateo desde el llamante (ver PreviousSetLine).
+ * Sin ellos, la hoja es solo nota + vídeo (resto de llamantes).
  */
 function SetNotesView({ isOpen, onClose, notes, videoUrl, summary, effort, title }) {
   const { t } = useTranslation()

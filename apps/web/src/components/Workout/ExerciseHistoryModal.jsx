@@ -10,13 +10,13 @@ import HistoryChart from './HistoryChart.jsx'
 import HistoryTable from './HistoryTable.jsx'
 import GymSelector from './GymSelector.jsx'
 import { colors } from '../../lib/styles.js'
-import { MeasurementType, calculateExerciseStats, useResolvedWeightUnit, useExerciseUnitsByGym, usePreference, convertSessionsToDisplayUnit } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, calculateExerciseStats, useResolvedWeightUnit, useExerciseUnitsByGym, usePreference, convertSessionsToDisplayUnit } from '@gym/shared'
 
 const SCOPE = { GLOBAL: 'global', DAY: 'day' }
 // gymFilter: null → un gym (el seleccionado), 'all' → overlay de todos los gyms
 const ALL_GYMS = 'all'
 
-function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measurementType = MeasurementType.WEIGHT_REPS, distanceUnit = 'm', routineDayId = null }) {
+function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, trackedFields = DEFAULT_TRACKED_FIELDS, distanceUnit = 'm', routineDayId = null }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [selectedSet, setSelectedSet] = useState(null)
@@ -99,7 +99,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
     () => (isOverlay ? convertSessionsToDisplayUnit(historySessions, unitByGym, weightUnit) : historySessions),
     [isOverlay, historySessions, unitByGym, weightUnit]
   )
-  const stats = useMemo(() => calculateExerciseStats(displaySummary, measurementType), [displaySummary, measurementType])
+  const stats = useMemo(() => calculateExerciseStats(displaySummary, trackedFields), [displaySummary, trackedFields])
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} position="bottom" maxWidth="max-w-lg" className="max-h-[85vh] flex flex-col" noBorder>
@@ -162,14 +162,14 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, measu
             <HistoryChart
               sessions={displaySummary}
               stats={stats}
-              measurementType={measurementType}
+              trackedFields={trackedFields}
               weightUnit={weightUnit}
               distanceUnit={distanceUnit}
               chartRows={hasMultiple ? chartRows : undefined}
               overlayGyms={isOverlay ? overlayGyms : undefined}
               unitByGym={isOverlay ? unitByGym : undefined}
             />
-            <HistoryTable sessions={displayHistory} measurementType={measurementType} weightUnit={weightUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
+            <HistoryTable sessions={displayHistory} trackedFields={trackedFields} weightUnit={weightUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
               onSessionClick={handleSessionClick} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onLoadMore={fetchNextPage} />
           </>
         )}

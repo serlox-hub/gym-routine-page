@@ -168,7 +168,7 @@ export function workoutStoreState(set, get) {
       const key = `${sessionExerciseId}-${setNumber}`
       const existing = state.completedSets[key]
       if (!existing) return state
-      // Ignorar claves undefined (campos que el tipo de medición no usa) para no
+      // Ignorar claves undefined (campos que lo que mide el ejercicio no usa) para no
       // sobrescribir valores presentes con undefined.
       const clean = {}
       for (const [k, v] of Object.entries(values)) {

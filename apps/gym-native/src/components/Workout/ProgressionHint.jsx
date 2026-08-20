@@ -5,16 +5,16 @@ import { TrendingUp, Info, X } from 'lucide-react-native'
 import { Modal } from '../ui'
 import { colors } from '../../lib/styles'
 
-// Subfila de progresión por serie (issue #13): "↗ Sube el peso" (direccional, sin cifra —
-// el salto depende del equipo) a la vista + el porqué a un tap (ⓘ → modal). Una línea para
-// no cargar la fila; ver DECISIONS #13.
+// Aviso de progresión por serie (issue #13): "↗ Sube el peso" (direccional, sin cifra —
+// el salto depende del equipo) a la vista + el porqué a un tap (ⓘ → modal). Es un item de la
+// subfila compartida (SetRowMeta), que ya pone el margen y el padding; ver DECISIONS #13.
 export default function ProgressionHint({ prevReps, repsTarget }) {
   const { t } = useTranslation()
   const [showWhy, setShowWhy] = useState(false)
 
   return (
     <>
-      <View className="flex-row items-center" style={{ gap: 6, marginTop: 4, paddingLeft: 4 }}>
+      <View className="flex-row items-center" style={{ gap: 6 }}>
         <TrendingUp size={12} color={colors.orange} />
         <Text className="text-xs" style={{ color: colors.orange, fontWeight: '600' }}>
           {t('workout:progression.increase')}
