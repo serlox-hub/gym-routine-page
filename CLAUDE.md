@@ -286,6 +286,8 @@ export function getSensationLabels() {
 
 **Fuente de verdad del estado ACTUAL**: `apps/web/supabase/schema.sql` (dump schema-only generado, commiteado). Consulta ESE archivo para saber qué tablas/columnas/constraints/RPCs existen HOY. Las migraciones (`apps/web/supabase/migrations/`) son el ledger append-only para *aplicar* cambios, malas para *consultar* el estado actual (p. ej. `routine_blocks` se creó y luego se eliminó en la 031). Regenerar con `npm run db:schema` (requiere Docker; ver checklist más abajo). Rationale y gotchas en `docs/DECISIONS.md` (issue #19). El diagrama de abajo es solo orientación de alto nivel.
 
+**Permisos**: los de los roles de la API (`anon`, `authenticated`, `service_role`) se conceden en migraciones (ver 057), ya NO se heredan de los default privileges de la imagen de Postgres, que dejó de darlos. Una tabla nueva necesita su GRANT (o los default privileges ya restaurados) o la app responde 42501. Lo que protege los datos es RLS, no la ausencia de GRANT.
+
 ```
 muscle_groups ← exercises (muscle_group_id)
     ↓

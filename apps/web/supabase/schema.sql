@@ -2095,190 +2095,190 @@ GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_facto
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_measurements" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_measurements" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_measurements" TO "service_role";
+GRANT ALL ON TABLE "public"."body_measurements" TO "anon";
+GRANT ALL ON TABLE "public"."body_measurements" TO "authenticated";
+GRANT ALL ON TABLE "public"."body_measurements" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_weight_records" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_weight_records" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_weight_records" TO "service_role";
+GRANT ALL ON TABLE "public"."body_weight_records" TO "anon";
+GRANT ALL ON TABLE "public"."body_weight_records" TO "authenticated";
+GRANT ALL ON TABLE "public"."body_weight_records" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."completed_sets" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."completed_sets" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."completed_sets" TO "service_role";
+GRANT ALL ON TABLE "public"."completed_sets" TO "anon";
+GRANT ALL ON TABLE "public"."completed_sets" TO "authenticated";
+GRANT ALL ON TABLE "public"."completed_sets" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."equipment_types" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."equipment_types" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."equipment_types" TO "service_role";
+GRANT ALL ON TABLE "public"."equipment_types" TO "anon";
+GRANT ALL ON TABLE "public"."equipment_types" TO "authenticated";
+GRANT ALL ON TABLE "public"."equipment_types" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."equipment_types_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."equipment_types_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."equipment_types_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."equipment_types_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."equipment_types_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."equipment_types_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_secondary_muscles" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_secondary_muscles" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_secondary_muscles" TO "service_role";
+GRANT ALL ON TABLE "public"."exercise_secondary_muscles" TO "anon";
+GRANT ALL ON TABLE "public"."exercise_secondary_muscles" TO "authenticated";
+GRANT ALL ON TABLE "public"."exercise_secondary_muscles" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_session_stats" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_session_stats" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_session_stats" TO "service_role";
+GRANT ALL ON TABLE "public"."exercise_session_stats" TO "anon";
+GRANT ALL ON TABLE "public"."exercise_session_stats" TO "authenticated";
+GRANT ALL ON TABLE "public"."exercise_session_stats" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercises" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercises" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercises" TO "service_role";
+GRANT ALL ON TABLE "public"."exercises" TO "anon";
+GRANT ALL ON TABLE "public"."exercises" TO "authenticated";
+GRANT ALL ON TABLE "public"."exercises" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."exercises_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."exercises_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."exercises_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."exercises_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."exercises_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."exercises_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gyms" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gyms" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gyms" TO "service_role";
+GRANT ALL ON TABLE "public"."gyms" TO "anon";
+GRANT ALL ON TABLE "public"."gyms" TO "authenticated";
+GRANT ALL ON TABLE "public"."gyms" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."gyms_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."gyms_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."gyms_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."gyms_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."gyms_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."gyms_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."muscle_groups" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."muscle_groups" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."muscle_groups" TO "service_role";
+GRANT ALL ON TABLE "public"."muscle_groups" TO "anon";
+GRANT ALL ON TABLE "public"."muscle_groups" TO "authenticated";
+GRANT ALL ON TABLE "public"."muscle_groups" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."muscle_groups_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."muscle_groups_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."muscle_groups_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."muscle_groups_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."muscle_groups_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."muscle_groups_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_days" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_days" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_days" TO "service_role";
+GRANT ALL ON TABLE "public"."routine_days" TO "anon";
+GRANT ALL ON TABLE "public"."routine_days" TO "authenticated";
+GRANT ALL ON TABLE "public"."routine_days" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."routine_days_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."routine_days_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."routine_days_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."routine_days_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."routine_days_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."routine_days_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_exercises" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_exercises" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_exercises" TO "service_role";
+GRANT ALL ON TABLE "public"."routine_exercises" TO "anon";
+GRANT ALL ON TABLE "public"."routine_exercises" TO "authenticated";
+GRANT ALL ON TABLE "public"."routine_exercises" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."routine_exercises_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."routine_exercises_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."routine_exercises_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."routine_exercises_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."routine_exercises_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."routine_exercises_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routines" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routines" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routines" TO "service_role";
+GRANT ALL ON TABLE "public"."routines" TO "anon";
+GRANT ALL ON TABLE "public"."routines" TO "authenticated";
+GRANT ALL ON TABLE "public"."routines" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."routines_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."routines_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."routines_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."routines_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."routines_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."routines_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."session_exercises" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."session_exercises" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."session_exercises" TO "service_role";
+GRANT ALL ON TABLE "public"."session_exercises" TO "anon";
+GRANT ALL ON TABLE "public"."session_exercises" TO "authenticated";
+GRANT ALL ON TABLE "public"."session_exercises" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."session_exercises_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."session_exercises_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."session_exercises_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."session_exercises_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."session_exercises_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."session_exercises_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_gym_units" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_gym_units" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_gym_units" TO "service_role";
+GRANT ALL ON TABLE "public"."user_exercise_gym_units" TO "anon";
+GRANT ALL ON TABLE "public"."user_exercise_gym_units" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_exercise_gym_units" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_overrides" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_overrides" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_overrides" TO "service_role";
+GRANT ALL ON TABLE "public"."user_exercise_overrides" TO "anon";
+GRANT ALL ON TABLE "public"."user_exercise_overrides" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_exercise_overrides" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_feedback" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_feedback" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_feedback" TO "service_role";
+GRANT ALL ON TABLE "public"."user_feedback" TO "anon";
+GRANT ALL ON TABLE "public"."user_feedback" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_feedback" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."user_feedback_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."user_feedback_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."user_feedback_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."user_feedback_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."user_feedback_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."user_feedback_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_preferences" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_preferences" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_preferences" TO "service_role";
+GRANT ALL ON TABLE "public"."user_preferences" TO "anon";
+GRANT ALL ON TABLE "public"."user_preferences" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_preferences" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."user_preferences_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."user_preferences_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."user_preferences_id_seq" TO "service_role";
+GRANT ALL ON SEQUENCE "public"."user_preferences_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."user_preferences_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."user_preferences_id_seq" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_settings" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_settings" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_settings" TO "service_role";
+GRANT ALL ON TABLE "public"."user_settings" TO "anon";
+GRANT ALL ON TABLE "public"."user_settings" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_settings" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."workout_sessions" TO "anon";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."workout_sessions" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."workout_sessions" TO "service_role";
+GRANT ALL ON TABLE "public"."workout_sessions" TO "anon";
+GRANT ALL ON TABLE "public"."workout_sessions" TO "authenticated";
+GRANT ALL ON TABLE "public"."workout_sessions" TO "service_role";
 
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "service_role";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
 
 
 
@@ -2293,9 +2293,9 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUN
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "service_role";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
 
 
 
