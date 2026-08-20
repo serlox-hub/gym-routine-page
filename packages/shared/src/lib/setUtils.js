@@ -6,6 +6,7 @@ import { formatEffortBadge } from './effortScale.js'
 import {
   FIELD_ORDER,
   SetField,
+  tracksReps,
   formatFieldValue,
   getFieldMeta,
   getFieldSeparator,
@@ -169,6 +170,28 @@ export function setMeasurementValuesChanged(stored, values) {
  */
 export function formatRepsPlaceholder(repsTarget) {
   return repsTarget != null && String(repsTarget).trim() !== '' ? String(repsTarget) : '—'
+}
+
+/**
+ * Objetivo de la rutina para pintarlo en la subfila de la serie, o null si no procede.
+ *
+ * Los ejercicios que miden reps ya lo ven como placeholder del propio input de reps, que es donde
+ * mejor está: pegado a donde se teclea. Los que NO miden reps no lo veían en ningún sitio, porque
+ * ese placeholder solo se pinta en la columna de reps y un cardio no la tiene: escribías "5km" en
+ * la rutina y al entrenar no había nada que te lo recordara.
+ *
+ * No se ancla a una columna a propósito. El objetivo es texto libre ("20min", "5km", "100kcal") y
+ * la app no sabe a qué campo se refiere, así que meterlo como placeholder de una columna concreta
+ * pondría "20min" dentro de la caja de metros. Cuando el objetivo sepa de qué campo habla (issue
+ * del modelo progresable/objetivo/resultado), esto podrá volver a su columna.
+ * @param {string[]} trackedFields
+ * @param {string|number|null|undefined} target - `routine_exercises.reps`
+ * @returns {string|null}
+ */
+export function formatSetTargetHint(trackedFields, target) {
+  if (tracksReps(trackedFields)) return null
+  const text = target == null ? '' : String(target).trim()
+  return text === '' ? null : text
 }
 
 /**

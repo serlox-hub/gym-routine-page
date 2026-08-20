@@ -10,6 +10,7 @@ import {
   getSetInitialInputValues,
   setMeasurementValuesChanged,
   formatRepsPlaceholder,
+  formatSetTargetHint,
   formatSetValue,
   formatSetValueByType,
   formatPreviousSetValue,
@@ -730,3 +731,28 @@ describe('setUtils', () => {
   })
 })
 
+describe('formatSetTargetHint', () => {
+  // Con reps el objetivo ya se ve como placeholder del propio input, así que no se duplica.
+  it('null si el ejercicio mide reps', () => {
+    expect(formatSetTargetHint(['weight', 'reps'], '8-12')).toBeNull()
+    expect(formatSetTargetHint(['reps'], '15')).toBeNull()
+  })
+
+  it('devuelve el objetivo en los que no miden reps (antes era invisible al entrenar)', () => {
+    expect(formatSetTargetHint(['level', 'distance', 'time'], '5km')).toBe('5km')
+    expect(formatSetTargetHint(['time'], '30s')).toBe('30s')
+    expect(formatSetTargetHint(['level', 'calories'], 100)).toBe('100')
+  })
+
+  it('null si no hay objetivo que mostrar', () => {
+    expect(formatSetTargetHint(['time'], null)).toBeNull()
+    expect(formatSetTargetHint(['time'], undefined)).toBeNull()
+    expect(formatSetTargetHint(['time'], '')).toBeNull()
+    expect(formatSetTargetHint(['time'], '   ')).toBeNull()
+  })
+
+  // Sin campos cae al default (peso × reps), que sí mide reps → no se pinta.
+  it('sin campos no pinta nada', () => {
+    expect(formatSetTargetHint(null, '8-12')).toBeNull()
+  })
+})

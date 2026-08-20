@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next'
+import { formatSetTargetHint } from '@gym/shared'
+import { colors } from '../../lib/styles.js'
 import PreviousSetLine from './PreviousSetLine.jsx'
 import ProgressionHint from './ProgressionHint.jsx'
 import ExecutionTimer from './ExecutionTimer.jsx'
@@ -22,11 +25,20 @@ function SetRowMeta({
   repsTarget,
   timerSeconds,
 }) {
+  const { t } = useTranslation()
   const showTimer = timerSeconds > 0
-  if (!previousSet && !showProgressionHint && !showTimer) return null
+  // `repsTarget` es el objetivo de la rutina (columna `routine_exercises.reps`), que no siempre
+  // habla de reps: en un cardio es "20min" o "5km". Ver formatSetTargetHint.
+  const targetHint = formatSetTargetHint(trackedFields, repsTarget)
+  if (!previousSet && !showProgressionHint && !showTimer && !targetHint) return null
 
   return (
     <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 pl-1">
+      {targetHint && (
+        <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
+          {t('workout:set.target')} {targetHint}
+        </span>
+      )}
       <PreviousSetLine
         previousSet={previousSet}
         trackedFields={trackedFields}

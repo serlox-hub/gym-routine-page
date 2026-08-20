@@ -86,7 +86,8 @@
     },
     "startTimer": "Start {{time}}",
     "stopTimer": "Stop",
-    "levelShort": "Lv"
+    "levelShort": "Lv",
+    "target": "Target"
   },
   "rest": {
     "title": "Rest",

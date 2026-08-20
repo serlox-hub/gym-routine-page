@@ -1,4 +1,7 @@
-import { View } from 'react-native'
+import { View, Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { formatSetTargetHint } from '@gym/shared'
+import { colors } from '../../lib/styles'
 import PreviousSetLine from './PreviousSetLine'
 import ProgressionHint from './ProgressionHint'
 import ExecutionTimer from './ExecutionTimer'
@@ -23,11 +26,20 @@ export default function SetRowMeta({
   repsTarget,
   timerSeconds,
 }) {
+  const { t } = useTranslation()
   const showTimer = timerSeconds > 0
-  if (!previousSet && !showProgressionHint && !showTimer) return null
+  // `repsTarget` es el objetivo de la rutina (columna `routine_exercises.reps`), que no siempre
+  // habla de reps: en un cardio es "20min" o "5km". Ver formatSetTargetHint.
+  const targetHint = formatSetTargetHint(trackedFields, repsTarget)
+  if (!previousSet && !showProgressionHint && !showTimer && !targetHint) return null
 
   return (
     <View className="flex-row flex-wrap items-center" style={{ columnGap: 12, rowGap: 4, marginTop: 4, paddingLeft: 4 }}>
+      {targetHint && (
+        <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: '500' }}>
+          {t('workout:set.target')} {targetHint}
+        </Text>
+      )}
       <PreviousSetLine
         previousSet={previousSet}
         trackedFields={trackedFields}

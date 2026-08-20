@@ -86,7 +86,8 @@
     },
     "startTimer": "Iniciar {{time}}",
     "stopTimer": "Parar",
-    "levelShort": "Nv"
+    "levelShort": "Nv",
+    "target": "Objetivo"
   },
   "rest": {
     "title": "Descanso",
