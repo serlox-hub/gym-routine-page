@@ -69,6 +69,9 @@
   "exercise": {
     "config": "In routine",
     "series": "Sets",
+    "targetField": "Target in",
+    "level": "Level",
+    "levelPlaceholder": "E.g. 8",
     "reps": "Reps",
     "rest": "Rest (sec)",
     "restPlaceholder": "E.g. 90",

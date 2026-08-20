@@ -13,7 +13,9 @@ export async function fetchSessionExercises(sessionId) {
       routine_exercise_id,
       sort_order,
       series,
+      target_field,
       reps,
+      level,
       rir,
       rest_seconds,
       notes,
@@ -62,7 +64,7 @@ export async function updateSessionExerciseSortOrder(id, sortOrder) {
   if (error) throw error
 }
 
-export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, series, reps, rir, restSeconds, notes, supersetGroup, isWarmup = false }) {
+export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, series, targetField, reps, level, rir, restSeconds, notes, supersetGroup, isWarmup = false }) {
   const { data, error } = await getClient()
     .from('session_exercises')
     .insert({
@@ -72,7 +74,9 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
       sort_order: sortOrder,
       // Sin defaults: son NOT NULL y los valida el formulario. Ver addExerciseToDay.
       series,
+      target_field: targetField ?? null,
       reps,
+      level: level ?? null,
       rir,
       rest_seconds: restSeconds,
       notes,
@@ -85,7 +89,9 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
       exercise_id,
       sort_order,
       series,
+      target_field,
       reps,
+      level,
       rir,
       rest_seconds,
       notes,
@@ -131,7 +137,7 @@ export async function updateSessionExerciseExerciseId({ sessionExerciseId, newEx
   return data
 }
 
-export async function addSessionExercise({ sessionId, exercise, series, reps, rir, rest_seconds, notes, superset_group }) {
+export async function addSessionExercise({ sessionId, exercise, series, target_field, reps, level, rir, rest_seconds, notes, superset_group }) {
   const existing = await fetchSessionExercisesSortOrder(sessionId)
 
   let insertSortOrder
@@ -174,7 +180,9 @@ export async function addSessionExercise({ sessionId, exercise, series, reps, ri
     exerciseId: exercise.id,
     sortOrder: insertSortOrder,
     series,
+    targetField: target_field,
     reps,
+    level,
     rir,
     restSeconds: rest_seconds,
     notes,

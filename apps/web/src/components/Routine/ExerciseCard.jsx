@@ -4,7 +4,7 @@ import { ChevronRight, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2 }
 import { Modal, ReorderModal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
-import { getExerciseName, formatEffortBadge, resolveTrackedFields } from '@gym/shared'
+import { SetField, getExerciseName, formatEffortBadge, formatFieldValue, resolveTrackedFields } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function ExerciseCard({
@@ -23,7 +23,7 @@ function ExerciseCard({
   positionLabels = [],
 }) {
   const { t } = useTranslation()
-  const { exercise, series, reps, rir, rest_seconds } = routineExercise
+  const { exercise, series, reps, level, rir, rest_seconds } = routineExercise
   const [showHistory, setShowHistory] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showReorder, setShowReorder] = useState(false)
@@ -65,6 +65,7 @@ function ExerciseCard({
               </h4>
               <div className="flex flex-wrap gap-3 mt-1">
                 <span style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</span>
+                {level != null && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</span>}
                 {rir !== null && rir !== undefined && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</span>}
                 {rest_seconds > 0 && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</span>}
               </div>
@@ -105,6 +106,7 @@ function ExerciseCard({
             <h4 className="font-medium text-sm truncate">{getExerciseName(exercise)}</h4>
             <div className="flex flex-wrap gap-2 mt-1">
               <span className="text-xs" style={{ color: colors.textSecondary }}>{series}×{reps}</span>
+              {level != null && <span className="text-xs" style={{ color: colors.textSecondary }}>{formatFieldValue(SetField.LEVEL, level)}</span>}
               {rir !== null && rir !== undefined && <span className="text-xs" style={{ color: colors.purple }}>{formatEffortBadge(rir, trackedFields)}</span>}
               {rest_seconds > 0 && <span className="text-xs" style={{ color: colors.warning }}>{rest_seconds}s</span>}
             </div>

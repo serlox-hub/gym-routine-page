@@ -76,7 +76,7 @@ describe('routineIO - funciones puras (shared)', () => {
 
       const prompt = buildChatbotPrompt(params)
 
-      expect(prompt).toContain('"version": 7')
+      expect(prompt).toContain('"version": 8')
       expect(prompt).toContain('"exercises":')
       expect(prompt).toContain('"routine":')
       expect(prompt).toContain('"tracked_fields"')
@@ -108,7 +108,7 @@ describe('routineIO - funciones puras (shared)', () => {
     it('incluye el formato JSON compartido', () => {
       const prompt = buildAdaptRoutinePrompt()
 
-      expect(prompt).toContain('"version": 7')
+      expect(prompt).toContain('"version": 8')
       expect(prompt).toContain('"exercises":')
       expect(prompt).toContain('"routine":')
       expect(prompt).toContain('"duration_min"')
@@ -144,7 +144,7 @@ describe('routineIO - funciones puras (shared)', () => {
 
   describe('constantes compartidas', () => {
     it('ROUTINE_JSON_FORMAT contiene estructura válida', () => {
-      expect(ROUTINE_JSON_FORMAT).toContain('"version": 7')
+      expect(ROUTINE_JSON_FORMAT).toContain('"version": 8')
       expect(ROUTINE_JSON_FORMAT).toContain('"exercises"')
       expect(ROUTINE_JSON_FORMAT).toContain('"routine"')
       expect(ROUTINE_JSON_FORMAT).toContain('"duration_min"')

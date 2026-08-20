@@ -3,13 +3,16 @@ import {
   buildExerciseConfigForm,
   buildExerciseConfigFormFromRow,
   buildReplaceExerciseForm,
+  buildTargetFieldChangeForm,
   parseExerciseConfigForm,
   validateExerciseConfigForm,
 } from './routineExerciseForm.js'
 
 const fullForm = {
   series: '4',
+  target_field: 'reps',
   reps: '10-12',
+  level: '',
   rir: '2',
   rest_seconds: '90',
   notes: 'Controlar excéntrica',
@@ -25,10 +28,21 @@ describe('buildExerciseConfigForm', () => {
     expect(buildExerciseConfigForm(['distance', 'time']).reps).toBe('5km')
   })
 
+  it('propone el campo objetivo, no solo su valor', () => {
+    expect(buildExerciseConfigForm(['weight', 'reps']).target_field).toBe('reps')
+    expect(buildExerciseConfigForm(['level', 'time']).target_field).toBe('time')
+    // La bici (nivel × distancia × tiempo) arranca en distancia, que es lo que la app asumía
+    expect(buildExerciseConfigForm(['level', 'distance', 'time']).target_field).toBe('distance')
+    // Sin campo prescribible: objetivo vacío, lo pide la validación
+    expect(buildExerciseConfigForm(['weight']).target_field).toBe('')
+  })
+
   it('deja el resto de campos vacíos y las series por defecto', () => {
     expect(buildExerciseConfigForm(['level', 'time'])).toEqual({
       series: '3',
+      target_field: 'time',
       reps: '30s',
+      level: '',
       rir: '',
       rest_seconds: '',
       notes: '',
@@ -41,7 +55,33 @@ describe('buildExerciseConfigForm', () => {
   })
 })
 
+describe('buildTargetFieldChangeForm', () => {
+  it('cambiar de campo reescribe el valor con el default del nuevo (con su unidad)', () => {
+    const bike = ['level', 'distance', 'time']
+    const form = { ...fullForm, target_field: 'distance', reps: '5km' }
+    expect(buildTargetFieldChangeForm(form, 'time', bike)).toMatchObject({ target_field: 'time', reps: '30s' })
+  })
+
+  it('elegir el mismo campo no toca nada', () => {
+    const form = { ...fullForm, target_field: 'reps', reps: '5' }
+    expect(buildTargetFieldChangeForm(form, 'reps', ['weight', 'reps'])).toBe(form)
+  })
+})
+
 describe('validateExerciseConfigForm', () => {
+  it('el nivel prescrito tiene que ser un entero dentro del rango de smallint', () => {
+    const withLevel = (level) => validateExerciseConfigForm({ ...fullForm, level }, ['level', 'time'])
+    expect(withLevel('8').valid).toBe(true)
+    expect(withLevel('0').valid).toBe(true)
+    expect(withLevel('').valid).toBe(true)
+    // 40000 pasaría el "es un número" y moriría en BD con 22003 (smallint)
+    expect(withLevel('40000').errors.level).toBeTruthy()
+    expect(withLevel('-1').errors.level).toBeTruthy()
+    // "8.5" con parseInt se guardaría como 8, un nivel que el usuario no escribió
+    expect(withLevel('8.5').errors.level).toBeTruthy()
+    expect(withLevel('ocho').errors.level).toBeTruthy()
+  })
+
   it('acepta un formulario completo', () => {
     const { valid, errors } = validateExerciseConfigForm(fullForm, ['weight', 'reps'])
     expect(valid).toBe(true)
@@ -109,8 +149,22 @@ describe('buildExerciseConfigFormFromRow', () => {
 
   it('convierte la fila guardada a strings de formulario', () => {
     expect(buildExerciseConfigFormFromRow(row, ['level', 'time'])).toEqual({
-      series: '4', reps: '30s', rir: '3', rest_seconds: '60', notes: 'nota', superset_group: '2',
+      series: '4', target_field: 'time', reps: '30s', level: '', rir: '3', rest_seconds: '60',
+      notes: 'nota', superset_group: '2',
     })
+  })
+
+  it('respeta el campo objetivo guardado y descarta el que el ejercicio ya no mide', () => {
+    const bike = ['level', 'distance', 'time']
+    expect(buildExerciseConfigFormFromRow({ ...row, target_field: 'time' }, bike).target_field).toBe('time')
+    // Fila con objetivo en reps y ejercicio que dejó de medirlas → cae al default de la bici
+    expect(buildExerciseConfigFormFromRow({ ...row, target_field: 'reps' }, bike).target_field).toBe('distance')
+  })
+
+  it('trae el nivel prescrito como string, y el 0 no se pierde', () => {
+    expect(buildExerciseConfigFormFromRow({ ...row, level: 8 }, ['level', 'time']).level).toBe('8')
+    expect(buildExerciseConfigFormFromRow({ ...row, level: 0 }, ['level', 'time']).level).toBe('0')
+    expect(buildExerciseConfigFormFromRow({ ...row, level: null }, ['level', 'time']).level).toBe('')
   })
 
   it('descarta el esfuerzo heredado que no pertenece a la escala del tipo', () => {
@@ -152,6 +206,17 @@ describe('buildReplaceExerciseForm', () => {
     expect(result.reps).toBe('10-12')
   })
 
+  it('reajusta también el campo objetivo, no solo su valor', () => {
+    expect(buildReplaceExerciseForm(fullForm, ['level', 'time'], ['weight', 'reps']).target_field).toBe('time')
+    expect(buildReplaceExerciseForm(fullForm, ['weight', 'reps'], ['weight', 'reps']).target_field).toBe('reps')
+  })
+
+  it('el nivel prescrito no sobrevive a un ejercicio que no mide nivel', () => {
+    const withLevel = { ...fullForm, target_field: 'time', level: '8' }
+    expect(buildReplaceExerciseForm(withLevel, ['weight', 'reps'], ['level', 'time']).level).toBe('')
+    expect(buildReplaceExerciseForm(withLevel, ['level', 'time'], ['level', 'time']).level).toBe('8')
+  })
+
   it('limpia esfuerzo y notas del ejercicio saliente y conserva series y superserie', () => {
     const result = buildReplaceExerciseForm(fullForm, ['level', 'time'], ['weight', 'reps'])
     expect(result.rir).toBe('')
@@ -165,7 +230,9 @@ describe('parseExerciseConfigForm', () => {
   it('parsea todos los campos correctamente', () => {
     expect(parseExerciseConfigForm(fullForm)).toEqual({
       series: 4,
+      target_field: 'reps',
       reps: '10-12',
+      level: null,
       rir: 2,
       rest_seconds: 90,
       notes: 'Controlar excéntrica',
@@ -187,6 +254,12 @@ describe('parseExerciseConfigForm', () => {
 
   it('no sustituye el objetivo por "8-12" cuando viene vacío', () => {
     expect(parseExerciseConfigForm({ ...fullForm, reps: '' }).reps).toBe('')
+  })
+
+  it('el nivel prescrito se tipa, y el 0 es un nivel válido', () => {
+    expect(parseExerciseConfigForm({ ...fullForm, level: '8' }).level).toBe(8)
+    expect(parseExerciseConfigForm({ ...fullForm, level: '0' }).level).toBe(0)
+    expect(parseExerciseConfigForm({ ...fullForm, level: '' }).level).toBeNull()
   })
 
   it('conserva rir 0 y RIR al fallo (-1)', () => {

@@ -1,11 +1,11 @@
 import { getClient } from './_client.js'
 import { BLOCK_NAMES } from '../lib/constants.js'
-import { normalizeTrackedFields, trackedFieldsFromLegacyType } from '../lib/measurementFields.js'
+import { MAX_PRESCRIBED_LEVEL, isTargetField, normalizeTrackedFields, resolveTargetField, trackedFieldsFromLegacyType } from '../lib/measurementFields.js'
 import { t } from '../i18n/index.js'
 import { normalizeExerciseName, buildExerciseIndex, resolveExerciseId } from '../lib/exerciseMatch.js'
 
-/** Versión del esquema de export/import JSON. v7 sustituye `measurement_type` por `tracked_fields`; v6 añadió `name_en` por ejercicio. */
-export const ROUTINE_EXPORT_VERSION = 7
+/** Versión del esquema de export/import JSON. v8 añade `target_field` (de qué campo habla el objetivo) y `level` (nivel prescrito) por ejercicio del día; v7 sustituyó `measurement_type` por `tracked_fields`. */
+export const ROUTINE_EXPORT_VERSION = 8
 
 // Índice grupo-muscular por nombre normalizado (name_en + name_es) → id.
 // Solo se usa al CREAR ejercicios custom (cuando el ejercicio no está en el catálogo).
@@ -67,7 +67,9 @@ export async function exportRoutine(routineId) {
         .from('routine_exercises')
         .select(`
           series,
+          target_field,
           reps,
+          level,
           rir,
           rest_seconds,
           notes,
@@ -103,7 +105,9 @@ export async function exportRoutine(routineId) {
               return {
                 exercise_name: re.exercise.name,
                 series: re.series,
+                target_field: re.target_field,
                 reps: re.reps,
+                level: re.level,
                 rir: re.rir,
                 rest_seconds: re.rest_seconds,
                 notes: re.notes,
@@ -123,7 +127,9 @@ export async function exportRoutine(routineId) {
               return {
                 exercise_name: re.exercise.name,
                 series: re.series,
+                target_field: re.target_field,
                 reps: re.reps,
+                level: re.level,
                 rir: re.rir,
                 rest_seconds: re.rest_seconds,
                 notes: re.notes,
@@ -189,12 +195,44 @@ function importedTrackedFields(exportedExercise) {
 }
 
 /**
+ * Campo del que habla el objetivo de un ejercicio de un día del JSON importado.
+ *
+ * v8 en adelante lo trae explícito. En v7 y anteriores el objetivo era texto libre sin campo, así
+ * que se deriva de lo que mide el ejercicio con la misma prioridad que la app venía asumiendo
+ * (`resolveTargetField` → `getDefaultTargetField`), que es lo que hizo el backfill de la migración.
+ * Si el día referencia un ejercicio sin definición en el JSON no se sabe qué mide: se valida que
+ * al menos sea un campo objetivo real y si no se deja null, que lo resuelve la app al leer. El JSON
+ * es entrada NO confiable (lo genera una IA o se edita a mano) y el CHECK de la columna convertiría
+ * un `"target_field": "weight"` en un 23514 que aborta el import entero, no en un campo ignorado.
+ * @param {{target_field?: string|null}} exportedRoutineExercise
+ * @param {string[]|undefined} trackedFields
+ * @returns {string|null}
+ */
+function importedTargetField(exportedRoutineExercise, trackedFields) {
+  const declared = exportedRoutineExercise.target_field
+  if (!trackedFields) return isTargetField(declared) ? declared : null
+  return resolveTargetField(declared, trackedFields)
+}
+
+/**
+ * Nivel prescrito de un ejercicio del JSON importado. Misma razón que arriba: `level` es `smallint`
+ * con CHECK `>= 0`, así que un decimal, un negativo o un texto abortarían el import completo.
+ * @param {{level?: unknown}} exportedRoutineExercise
+ * @returns {number|null}
+ */
+function importedLevel(exportedRoutineExercise) {
+  const level = Number(exportedRoutineExercise.level)
+  return Number.isInteger(level) && level >= 0 && level <= MAX_PRESCRIBED_LEVEL ? level : null
+}
+
+/**
  * Importa una rutina desde JSON a la cuenta del usuario.
  *
  * Empareja cada ejercicio con el catálogo/custom por CLAVE ESTABLE (name_en → name_es,
  * normalizado y tolerante a acentos/mayúsculas/espacios) vía `exerciseMatch`. Solo crea un
  * ejercicio custom si no hay match. Retrocompatible con exports v4/v5 (sin name_en → casan
- * por name_es) y con el `measurement_type` de v6 y anteriores (ver importedTrackedFields).
+ * por name_es), con el `measurement_type` de v6 y anteriores (ver importedTrackedFields) y con el
+ * objetivo sin campo de v7 y anteriores (ver importedTargetField).
  * @param {object|string} jsonData
  * @param {string} userId
  * @param {object} options
@@ -224,6 +262,8 @@ export async function importRoutine(jsonData, userId, options = {}) {
 
   // nombre-normalizado del export -> exercise_id (para resolver las refs de los días)
   const exerciseMap = new Map()
+  // nombre-normalizado del export -> campos que mide (para derivar el objetivo de un JSON < v8)
+  const trackedFieldsMap = new Map()
 
   // Crear o actualizar ejercicios (solo si el export incluye definiciones)
   if (exportedExercises && exportedExercises.length > 0) {
@@ -238,6 +278,13 @@ export async function importRoutine(jsonData, userId, options = {}) {
     for (const ex of exportedExercises) {
       const exName = ex.name_es || ex.name
       const matchedId = resolveExerciseId(ex, exerciseIndex)
+      // Solo si el JSON DECLARA lo que mide. Las plantillas (routineTemplates) traen solo el
+      // nombre y heredan los campos del catálogo al casar: ahí no se puede derivar el objetivo,
+      // y `importedTrackedFields` devolvería el default (peso × reps), que en una plancha
+      // guardaría un objetivo de reps.
+      if (ex.tracked_fields || ex.measurement_type) {
+        trackedFieldsMap.set(normalizeExerciseName(exName), importedTrackedFields(ex))
+      }
 
       if (matchedId) {
         exerciseMap.set(normalizeExerciseName(exName), matchedId)
@@ -309,7 +356,8 @@ export async function importRoutine(jsonData, userId, options = {}) {
       for (const ex of block.exercises || []) {
         // Primero el mapa del export; si el día referencia un ejercicio sin definición
         // en `exercises`, resolver directamente contra el índice (catálogo + custom).
-        const exerciseId = exerciseMap.get(normalizeExerciseName(ex.exercise_name))
+        const normalizedName = normalizeExerciseName(ex.exercise_name)
+        const exerciseId = exerciseMap.get(normalizedName)
           ?? resolveExerciseId({ name: ex.exercise_name }, exerciseIndex)
 
         if (exerciseId) {
@@ -317,7 +365,9 @@ export async function importRoutine(jsonData, userId, options = {}) {
             routine_day_id: newDay.id,
             exercise_id: exerciseId,
             series: ex.series,
+            target_field: importedTargetField(ex, trackedFieldsMap.get(normalizedName)),
             reps: ex.reps,
+            level: importedLevel(ex),
             rir: ex.rir,
             rest_seconds: ex.rest_seconds,
             notes: ex.notes,

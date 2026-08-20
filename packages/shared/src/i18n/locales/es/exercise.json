@@ -76,7 +76,8 @@
     "reps": "Repeticiones",
     "time": "Tiempo",
     "distance": "Distancia",
-    "calories": "Calorías"
+    "calories": "Calorías",
+    "target": "Objetivo"
   },
   "repsPlaceholder": {
     "reps": "Ej: 8-12",

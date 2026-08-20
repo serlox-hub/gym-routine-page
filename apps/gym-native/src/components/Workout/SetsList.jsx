@@ -20,13 +20,16 @@ function SetsList({
   exercise,
   setsCount,
   previousWorkout,
+  previousLoaded = false,
   progressionEnabled = false,
   trackedFields,
   weightUnit,
   distanceUnit,
   rest_seconds,
   reps,
-  rirTarget,
+  targetField,
+  levelTarget,
+  effortTarget,
   onCompleteSet,
   onUncompleteSet,
   onRemoveSet,
@@ -110,8 +113,11 @@ function SetsList({
                 distanceUnit={distanceUnit}
                 descansoSeg={rest_seconds}
                 previousSet={previousSet}
-                repsTarget={reps}
-                rirTarget={rirTarget}
+                previousLoaded={previousLoaded}
+                target={reps}
+                targetField={targetField}
+                levelTarget={levelTarget}
+                effortTarget={effortTarget}
                 progressionEnabled={progressionEnabled}
                 isActive={activeSetNumber === i + 1}
                 onComplete={onCompleteSet}

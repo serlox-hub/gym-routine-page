@@ -6,13 +6,13 @@ import { formatEffortBadge } from './effortScale.js'
 import {
   FIELD_ORDER,
   SetField,
-  tracksReps,
   formatFieldValue,
   getFieldMeta,
   getFieldSeparator,
   metersToDistanceUnit,
   normalizeTrackedFields,
   parseFieldValue,
+  resolveTargetField,
 } from './measurementFields.js'
 
 /**
@@ -163,33 +163,33 @@ export function setMeasurementValuesChanged(stored, values) {
 }
 
 /**
- * Placeholder para el input de reps: el objetivo del ejercicio (ej. "8-12") cuando existe,
- * o "—" si no hay objetivo. Da orientación en filas sin historial.
- * @param {string|number|null|undefined} repsTarget
+ * Placeholder del input de la columna OBJETIVO en la fila de serie: el valor prescrito por la
+ * rutina (ej. "8-12", "20min") cuando existe, o "—" si no hay objetivo. Da orientación en filas
+ * sin historial, pegado a donde se teclea.
+ *
+ * No confundir con `getTargetPlaceholder` (measurementFields), que es el "Ej: 8-12" del
+ * FORMULARIO de configuración; esto pinta el objetivo real de este ejercicio.
+ * @param {string|number|null|undefined} target
  * @returns {string}
  */
-export function formatRepsPlaceholder(repsTarget) {
-  return repsTarget != null && String(repsTarget).trim() !== '' ? String(repsTarget) : '—'
+export function formatSetTargetPlaceholder(target) {
+  return target != null && String(target).trim() !== '' ? String(target) : '—'
 }
 
 /**
  * Objetivo de la rutina para pintarlo en la subfila de la serie, o null si no procede.
  *
- * Los ejercicios que miden reps ya lo ven como placeholder del propio input de reps, que es donde
- * mejor está: pegado a donde se teclea. Los que NO miden reps no lo veían en ningún sitio, porque
- * ese placeholder solo se pinta en la columna de reps y un cardio no la tiene: escribías "5km" en
- * la rutina y al entrenar no había nada que te lo recordara.
- *
- * No se ancla a una columna a propósito. El objetivo es texto libre ("20min", "5km", "100kcal") y
- * la app no sabe a qué campo se refiere, así que meterlo como placeholder de una columna concreta
- * pondría "20min" dentro de la caja de metros. Cuando el objetivo sepa de qué campo habla (issue
- * del modelo progresable/objetivo/resultado), esto podrá volver a su columna.
+ * Con el campo objetivo guardado (issue #28) el objetivo vive en el placeholder de SU columna, que
+ * es donde mejor está: pegado a donde se teclea. Esta subfila queda solo para el caso en el que no
+ * hay columna a la que anclarlo: un ejercicio que no mide ninguno de los cuatro campos que pueden
+ * ser objetivo (p. ej. solo peso) y cuyo objetivo es texto libre sin campo.
  * @param {string[]} trackedFields
  * @param {string|number|null|undefined} target - `routine_exercises.reps`
+ * @param {string|null} [targetField] - `routine_exercises.target_field`
  * @returns {string|null}
  */
-export function formatSetTargetHint(trackedFields, target) {
-  if (tracksReps(trackedFields)) return null
+export function formatSetTargetHint(trackedFields, target, targetField) {
+  if (resolveTargetField(targetField, trackedFields)) return null
   const text = target == null ? '' : String(target).trim()
   return text === '' ? null : text
 }

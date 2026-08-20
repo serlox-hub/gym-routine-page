@@ -70,6 +70,9 @@ function formatBlockName(name) {
 
 function formatExerciseLine(exercise, trackedFields) {
   const parts = [`${exercise.series}×${exercise.reps}`]
+  // El nivel prescrito va con su palabra ("Nivel 8"): en un texto para pegar en un chat, el "Nv8"
+  // compacto de la fila de serie no se entiende sin la cabecera de columna que lo acompaña.
+  if (exercise.level != null) parts.push(`${t('workout:set.level')} ${exercise.level}`)
   if (exercise.rir != null) parts.push(formatEffortBadge(exercise.rir, trackedFields))
   if (exercise.rest_seconds) parts.push(formatRest(exercise.rest_seconds))
   return `- ${exercise.exercise_name} · ${parts.join(' · ')}`

@@ -29,9 +29,15 @@
     "volume": "Volume"
   },
   "progression": {
-    "increase": "Add weight",
+    "increase": {
+      "weight": "Add weight",
+      "level": "Raise the level"
+    },
     "title": "Ready to progress!",
-    "why": "You reached the top of your range ({{range}}) with {{reps}} reps. If you want to keep progressing, add weight.",
+    "why": {
+      "weight": "You hit the top of your target ({{target}}) with {{value}}. If you want to keep progressing, add weight.",
+      "level": "You hit the top of your target ({{target}}) with {{value}}. If you want to keep progressing, raise the level."
+    },
     "whyLabel": "Why increase"
   },
   "set": {

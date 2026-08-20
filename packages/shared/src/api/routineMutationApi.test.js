@@ -339,6 +339,48 @@ describe('addExerciseToDay', () => {
     expect(result.sort_order).toBe(1)
   })
 
+  // El campo objetivo y el nivel prescrito viajan a BD o el objetivo vuelve a adivinarse al leer
+  // (issue #28). Se comprueba el payload real del insert, no solo que no reviente.
+  it('escribe el campo objetivo y el nivel prescrito', async () => {
+    let insertMock
+    let callCount = 0
+    getClient.mockImplementation(() => {
+      callCount++
+      if (callCount === 1) return makeClientMock({ routine_exercises: { data: [], error: null } })
+      const client = makeClientMock({ routine_exercises: { data: { id: 52 }, error: null } })
+      const from = client.from
+      client.from = (table) => { insertMock = from(table); return insertMock }
+      return client
+    })
+
+    await addExerciseToDay({
+      dayId: 10, exerciseId: 'ex-1', series: 3, target_field: 'time', reps: '20min', level: 8,
+    })
+
+    expect(insertMock.insert).toHaveBeenCalledWith(expect.objectContaining({
+      target_field: 'time', reps: '20min', level: 8,
+    }))
+  })
+
+  it('sin campo objetivo ni nivel los manda como null, no undefined', async () => {
+    let insertMock
+    let callCount = 0
+    getClient.mockImplementation(() => {
+      callCount++
+      if (callCount === 1) return makeClientMock({ routine_exercises: { data: [], error: null } })
+      const client = makeClientMock({ routine_exercises: { data: { id: 53 }, error: null } })
+      const from = client.from
+      client.from = (table) => { insertMock = from(table); return insertMock }
+      return client
+    })
+
+    await addExerciseToDay({ dayId: 10, exerciseId: 'ex-1', series: 3, reps: '8-12' })
+
+    expect(insertMock.insert).toHaveBeenCalledWith(expect.objectContaining({
+      target_field: null, level: null,
+    }))
+  })
+
   it('throws when max sort_order fetch fails', async () => {
     getClient.mockImplementation(() =>
       makeClientMock({ routine_exercises: { data: null, error: new Error('permission denied') } })

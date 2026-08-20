@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, Info, X } from 'lucide-react-native'
+import { getProgressionLabel, getProgressionReason } from '@gym/shared'
 import { Modal } from '../ui'
 import { colors } from '../../lib/styles'
 
-// Aviso de progresión por serie (issue #13): "↗ Sube el peso" (direccional, sin cifra —
-// el salto depende del equipo) a la vista + el porqué a un tap (ⓘ → modal). Es un item de la
-// subfila compartida (SetRowMeta), que ya pone el margen y el padding; ver DECISIONS #13.
-export default function ProgressionHint({ prevReps, repsTarget }) {
+// Aviso de progresión por serie (issue #13): "↗ Sube el peso" / "↗ Sube el nivel" (direccional,
+// sin cifra — el salto depende del equipo) a la vista + el porqué a un tap (ⓘ → modal). Qué se
+// sube lo decide el campo progresable del ejercicio (issue #28), así que el texto sale de
+// `getProgressionLabel`, no de una cadena fija. Es un item de la subfila compartida (SetRowMeta),
+// que ya pone el margen y el padding; ver DECISIONS #13.
+export default function ProgressionHint({ previousSet, target, targetField, trackedFields, distanceUnit }) {
   const { t } = useTranslation()
   const [showWhy, setShowWhy] = useState(false)
 
@@ -17,7 +20,7 @@ export default function ProgressionHint({ prevReps, repsTarget }) {
       <View className="flex-row items-center" style={{ gap: 6 }}>
         <TrendingUp size={12} color={colors.orange} />
         <Text className="text-xs" style={{ color: colors.orange, fontWeight: '600' }}>
-          {t('workout:progression.increase')}
+          {getProgressionLabel(trackedFields)}
         </Text>
         <Pressable
           onPress={() => setShowWhy(true)}
@@ -37,7 +40,7 @@ export default function ProgressionHint({ prevReps, repsTarget }) {
           </Pressable>
         </View>
         <Text className="text-sm" style={{ color: colors.textSecondary }}>
-          {t('workout:progression.why', { reps: prevReps, range: repsTarget })}
+          {getProgressionReason({ previousSet, target, trackedFields, targetField, distanceUnit })}
         </Text>
         <Pressable
           onPress={() => setShowWhy(false)}

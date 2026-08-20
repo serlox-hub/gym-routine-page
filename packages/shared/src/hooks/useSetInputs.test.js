@@ -247,3 +247,115 @@ describe('useSetInputs — los campos del ejercicio deciden qué se valida y qu�
     expect(result.current.time).toBe(900)
   })
 })
+
+// El nivel prescrito por la rutina (`routine_exercises.level`) siembra la columna de nivel, pero
+// pierde contra cualquier dato real: lo de la última vez manda (si progresaste a nivel 9, la rutina
+// sigue diciendo 8 y sembrarla encima sería una regresión). De ahí el guard `previousLoaded`.
+describe('useSetInputs — nivel prescrito por la rutina', () => {
+  const BIKE = { ...PARAMS, trackedFields: ['level', 'distance', 'time'] }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+  })
+
+  it('siembra el nivel prescrito cuando la referencia ya está resuelta y no trae nivel', async () => {
+    const { result } = renderHook(
+      () => useSetInputs({ ...BIKE, levelTarget: 8, previousLoaded: true }),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.level).toBe(8))
+  })
+
+  it('siembra el 0: es un nivel válido, no un vacío', async () => {
+    const { result } = renderHook(
+      () => useSetInputs({ ...BIKE, levelTarget: 0, previousLoaded: true }),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.level).toBe(0))
+  })
+
+  // La carrera: la query del "Anterior" llega asíncrona. Sembrar antes de saber qué trae haría que
+  // el prescrito ganara siempre, porque el prefill de la referencia solo rellena lo vacío.
+  it('NO siembra mientras la referencia está sin resolver, y sí al resolverse', async () => {
+    const { result, rerender } = renderHook(
+      ({ previousLoaded }) => useSetInputs({ ...BIKE, levelTarget: 8, previousLoaded }),
+      { wrapper: wrapper(), initialProps: { previousLoaded: false } },
+    )
+    expect(result.current.level).toBe('')
+
+    rerender({ previousLoaded: true })
+    await waitFor(() => expect(result.current.level).toBe(8))
+  })
+
+  it('no pisa el nivel de la última vez (lo de la última vez manda)', async () => {
+    const { result } = renderHook(
+      () => useSetInputs({ ...BIKE, levelTarget: 8, previousLoaded: true, previousSet: { level: 9 } }),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.level).toBe(9))
+  })
+
+  it('no pisa lo ya tecleado (caché de edición) ni la serie completada', async () => {
+    store.cachedSetData = { [KEY]: { level: 5 } }
+    const cached = renderHook(
+      () => useSetInputs({ ...BIKE, levelTarget: 8, previousLoaded: true }),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(cached.result.current.level).toBe(5))
+
+    store.cachedSetData = {}
+    store.completedSets = { [KEY]: { level: 6 } }
+    const completed = renderHook(
+      () => useSetInputs({ ...BIKE, levelTarget: 8, previousLoaded: true }),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(completed.result.current.level).toBe(6))
+  })
+
+  it('sin nivel prescrito la columna se queda vacía', () => {
+    const { result } = renderHook(
+      () => useSetInputs({ ...BIKE, levelTarget: null, previousLoaded: true }),
+      { wrapper: wrapper() },
+    )
+    expect(result.current.level).toBe('')
+  })
+})
+
+describe('useSetInputs — objetivo y progresable', () => {
+  const BIKE = { ...PARAMS, trackedFields: ['level', 'distance', 'time'] }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+  })
+
+  it('targetPlaceholder es el objetivo de la rutina, o — si no hay', () => {
+    const withTarget = renderHook(() => useSetInputs({ ...BIKE, target: '20min' }), { wrapper: wrapper() })
+    expect(withTarget.result.current.targetPlaceholder).toBe('20min')
+
+    const without = renderHook(() => useSetInputs({ ...BIKE }), { wrapper: wrapper() })
+    expect(without.result.current.targetPlaceholder).toBe('—')
+  })
+
+  it('targetField sale RESUELTO: descarta el guardado que el ejercicio no mide', () => {
+    const saved = renderHook(() => useSetInputs({ ...BIKE, targetField: 'time' }), { wrapper: wrapper() })
+    expect(saved.result.current.targetField).toBe('time')
+
+    // 'reps' no es de la bici → cae al default (distancia), que sí tiene columna
+    const stale = renderHook(() => useSetInputs({ ...BIKE, targetField: 'reps' }), { wrapper: wrapper() })
+    expect(stale.result.current.targetField).toBe('distance')
+  })
+
+  it('progressableValue es el nivel en un cardio y el peso cuando lo mide', () => {
+    const bike = renderHook(() => useSetInputs(BIKE), { wrapper: wrapper() })
+    act(() => { bike.result.current.setLevel('9'); bike.result.current.setWeight('80') })
+    expect(bike.result.current.progressableValue).toBe('9')
+
+    const wr = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
+    act(() => { wr.result.current.setWeight('80') })
+    expect(wr.result.current.progressableValue).toBe('80')
+  })
+})

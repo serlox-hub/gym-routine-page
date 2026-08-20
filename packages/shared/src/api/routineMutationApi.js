@@ -145,7 +145,7 @@ export async function reorderRoutineExercises(exercises) {
   if (error) throw error
 }
 
-export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, rest_seconds, notes, esCalentamiento = false, superset_group }) {
+export async function addExerciseToDay({ dayId, exerciseId, series, target_field, reps, level, rir, rest_seconds, notes, esCalentamiento = false, superset_group }) {
   // Obtener el maximo orden de ejercicios en el día
   const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')
@@ -166,7 +166,9 @@ export async function addExerciseToDay({ dayId, exerciseId, series, reps, rir, r
       // (validateExerciseConfigForm). Un valor ausente debe reventar aquí, no
       // convertirse en "3 series de 8-12" en un ejercicio de cardio.
       series,
+      target_field: target_field ?? null,
       reps,
+      level: level ?? null,
       rir: rir ?? null,
       rest_seconds: rest_seconds ?? null,
       sort_order: nextExerciseOrder,
@@ -199,7 +201,9 @@ export async function duplicateRoutineExercise({ routineExercise }) {
       is_warmup: routineExercise.is_warmup || false,
       exercise_id: routineExercise.exercise_id,
       series: routineExercise.series,
+      target_field: routineExercise.target_field ?? null,
       reps: routineExercise.reps,
+      level: routineExercise.level ?? null,
       rir: routineExercise.rir,
       rest_seconds: routineExercise.rest_seconds,
       notes: routineExercise.notes,

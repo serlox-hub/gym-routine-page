@@ -624,7 +624,7 @@ BEGIN
   IF jsonb_array_length(p_exercises) > 0 THEN
     INSERT INTO session_exercises (
       session_id, exercise_id, routine_exercise_id, sort_order,
-      series, reps, rir, rest_seconds, notes,
+      series, target_field, reps, level, rir, rest_seconds, notes,
       superset_group, is_extra, is_warmup
     )
     SELECT
@@ -633,7 +633,9 @@ BEGIN
       (item->>'routine_exercise_id')::INT,
       (item->>'sort_order')::INT,
       (item->>'series')::INT,
+      (item->>'target_field')::measurement_field,
       (item->>'reps')::TEXT,
+      (item->>'level')::SMALLINT,
       (item->>'rir')::INT,
       (item->>'rest_seconds')::INT,
       item->>'notes',
@@ -947,7 +949,11 @@ CREATE TABLE IF NOT EXISTS "public"."routine_exercises" (
     "superset_group" integer,
     "user_id" "uuid" NOT NULL,
     "routine_day_id" integer NOT NULL,
-    "is_warmup" boolean DEFAULT false
+    "is_warmup" boolean DEFAULT false,
+    "target_field" "public"."measurement_field",
+    "level" smallint,
+    CONSTRAINT "routine_exercises_level_non_negative" CHECK ((("level" IS NULL) OR ("level" >= 0))),
+    CONSTRAINT "routine_exercises_target_field_prescribable" CHECK ((("target_field" IS NULL) OR ("target_field" = ANY (ARRAY['reps'::"public"."measurement_field", 'time'::"public"."measurement_field", 'distance'::"public"."measurement_field", 'calories'::"public"."measurement_field"]))))
 );
 
 
@@ -955,6 +961,14 @@ ALTER TABLE "public"."routine_exercises" OWNER TO "postgres";
 
 
 COMMENT ON COLUMN "public"."routine_exercises"."superset_group" IS 'Agrupa ejercicios en supersets. NULL = individual, mismo número = mismo superset';
+
+
+
+COMMENT ON COLUMN "public"."routine_exercises"."target_field" IS 'Campo del que habla el objetivo guardado en `reps` ("8-12" reps, "20min" de tiempo, "5km"). NULL = el ejercicio no mide nada prescribible y el objetivo es texto libre sin campo.';
+
+
+
+COMMENT ON COLUMN "public"."routine_exercises"."level" IS 'Nivel de la máquina prescrito por la rutina. No es un resultado: es un ajuste que se pone antes de empezar, y es el progresable del cardio (juega el papel del peso).';
 
 
 
@@ -1016,7 +1030,11 @@ CREATE TABLE IF NOT EXISTS "public"."session_exercises" (
     "notes" "text",
     "superset_group" integer,
     "is_extra" boolean DEFAULT false,
-    "is_warmup" boolean DEFAULT false
+    "is_warmup" boolean DEFAULT false,
+    "target_field" "public"."measurement_field",
+    "level" smallint,
+    CONSTRAINT "session_exercises_level_non_negative" CHECK ((("level" IS NULL) OR ("level" >= 0))),
+    CONSTRAINT "session_exercises_target_field_prescribable" CHECK ((("target_field" IS NULL) OR ("target_field" = ANY (ARRAY['reps'::"public"."measurement_field", 'time'::"public"."measurement_field", 'distance'::"public"."measurement_field", 'calories'::"public"."measurement_field"]))))
 );
 
 
@@ -1032,6 +1050,14 @@ COMMENT ON COLUMN "public"."session_exercises"."routine_exercise_id" IS 'Referen
 
 
 COMMENT ON COLUMN "public"."session_exercises"."is_extra" IS 'TRUE si el ejercicio fue añadido durante la sesión, no venía de la rutina.';
+
+
+
+COMMENT ON COLUMN "public"."session_exercises"."target_field" IS 'Snapshot de routine_exercises.target_field al iniciar la sesión.';
+
+
+
+COMMENT ON COLUMN "public"."session_exercises"."level" IS 'Snapshot de routine_exercises.level al iniciar la sesión.';
 
 
 
@@ -2055,276 +2081,204 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 REVOKE ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."convert_user_measurements"("p_factor" numeric) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."convert_user_measurements"("p_factor" numeric) TO "anon";
 GRANT ALL ON FUNCTION "public"."convert_user_measurements"("p_factor" numeric) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."convert_user_measurements"("p_factor" numeric) TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) TO "anon";
 GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_set_routine_exercise_user_id"() TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_set_routine_exercise_user_id"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_set_routine_exercise_user_id"() TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_measurements" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_measurements" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_measurements" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."fn_sync_routine_exercise_user_id"() TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_sync_routine_exercise_user_id"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_sync_routine_exercise_user_id"() TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_weight_records" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_weight_records" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."body_weight_records" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "anon";
-GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."completed_sets" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."completed_sets" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."completed_sets" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."get_all_users"() TO "anon";
-GRANT ALL ON FUNCTION "public"."get_all_users"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_all_users"() TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."equipment_types" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."equipment_types" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."equipment_types" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."is_admin"("check_user_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."is_admin"("check_user_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."is_admin"("check_user_id" "uuid") TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."equipment_types_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."equipment_types_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."equipment_types_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) TO "anon";
-GRANT ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_secondary_muscles" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_secondary_muscles" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_secondary_muscles" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."reorder_routine_days"("day_orders" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."reorder_routine_days"("day_orders" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."reorder_routine_days"("day_orders" "jsonb") TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_session_stats" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_session_stats" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercise_session_stats" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."reorder_routine_exercises"("exercise_orders" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."reorder_routine_exercises"("exercise_orders" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."reorder_routine_exercises"("exercise_orders" "jsonb") TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercises" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercises" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."exercises" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."exercises_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."exercises_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."exercises_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."set_routine_block_user_id"() TO "anon";
-GRANT ALL ON FUNCTION "public"."set_routine_block_user_id"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."set_routine_block_user_id"() TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gyms" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gyms" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gyms" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) TO "anon";
-GRANT ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."gyms_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."gyms_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."gyms_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."body_measurements" TO "anon";
-GRANT ALL ON TABLE "public"."body_measurements" TO "authenticated";
-GRANT ALL ON TABLE "public"."body_measurements" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."muscle_groups" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."muscle_groups" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."muscle_groups" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."body_weight_records" TO "anon";
-GRANT ALL ON TABLE "public"."body_weight_records" TO "authenticated";
-GRANT ALL ON TABLE "public"."body_weight_records" TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."muscle_groups_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."muscle_groups_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."muscle_groups_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."completed_sets" TO "anon";
-GRANT ALL ON TABLE "public"."completed_sets" TO "authenticated";
-GRANT ALL ON TABLE "public"."completed_sets" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_days" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_days" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_days" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."equipment_types" TO "anon";
-GRANT ALL ON TABLE "public"."equipment_types" TO "authenticated";
-GRANT ALL ON TABLE "public"."equipment_types" TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."routine_days_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."routine_days_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."routine_days_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."equipment_types_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."equipment_types_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."equipment_types_id_seq" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_exercises" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_exercises" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routine_exercises" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."exercise_secondary_muscles" TO "anon";
-GRANT ALL ON TABLE "public"."exercise_secondary_muscles" TO "authenticated";
-GRANT ALL ON TABLE "public"."exercise_secondary_muscles" TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."routine_exercises_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."routine_exercises_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."routine_exercises_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."exercise_session_stats" TO "anon";
-GRANT ALL ON TABLE "public"."exercise_session_stats" TO "authenticated";
-GRANT ALL ON TABLE "public"."exercise_session_stats" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routines" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routines" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."routines" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."exercises" TO "anon";
-GRANT ALL ON TABLE "public"."exercises" TO "authenticated";
-GRANT ALL ON TABLE "public"."exercises" TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."routines_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."routines_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."routines_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."exercises_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."exercises_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."exercises_id_seq" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."session_exercises" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."session_exercises" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."session_exercises" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."gyms" TO "anon";
-GRANT ALL ON TABLE "public"."gyms" TO "authenticated";
-GRANT ALL ON TABLE "public"."gyms" TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."session_exercises_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."session_exercises_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."session_exercises_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."gyms_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."gyms_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."gyms_id_seq" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_gym_units" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_gym_units" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_gym_units" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."muscle_groups" TO "anon";
-GRANT ALL ON TABLE "public"."muscle_groups" TO "authenticated";
-GRANT ALL ON TABLE "public"."muscle_groups" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_overrides" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_overrides" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_exercise_overrides" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."muscle_groups_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."muscle_groups_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."muscle_groups_id_seq" TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."routine_days" TO "anon";
-GRANT ALL ON TABLE "public"."routine_days" TO "authenticated";
-GRANT ALL ON TABLE "public"."routine_days" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_feedback" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_feedback" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_feedback" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."routine_days_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."routine_days_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."routine_days_id_seq" TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."user_feedback_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."user_feedback_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."user_feedback_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."routine_exercises" TO "anon";
-GRANT ALL ON TABLE "public"."routine_exercises" TO "authenticated";
-GRANT ALL ON TABLE "public"."routine_exercises" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_preferences" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_preferences" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_preferences" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."routine_exercises_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."routine_exercises_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."routine_exercises_id_seq" TO "service_role";
+GRANT UPDATE ON SEQUENCE "public"."user_preferences_id_seq" TO "anon";
+GRANT UPDATE ON SEQUENCE "public"."user_preferences_id_seq" TO "authenticated";
+GRANT UPDATE ON SEQUENCE "public"."user_preferences_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."routines" TO "anon";
-GRANT ALL ON TABLE "public"."routines" TO "authenticated";
-GRANT ALL ON TABLE "public"."routines" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_settings" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_settings" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."user_settings" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."routines_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."routines_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."routines_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."session_exercises" TO "anon";
-GRANT ALL ON TABLE "public"."session_exercises" TO "authenticated";
-GRANT ALL ON TABLE "public"."session_exercises" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."session_exercises_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."session_exercises_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."session_exercises_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."user_exercise_gym_units" TO "anon";
-GRANT ALL ON TABLE "public"."user_exercise_gym_units" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_exercise_gym_units" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."user_exercise_overrides" TO "anon";
-GRANT ALL ON TABLE "public"."user_exercise_overrides" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_exercise_overrides" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."user_exercise_overrides_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."user_feedback" TO "anon";
-GRANT ALL ON TABLE "public"."user_feedback" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_feedback" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."user_feedback_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."user_feedback_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."user_feedback_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."user_preferences" TO "anon";
-GRANT ALL ON TABLE "public"."user_preferences" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_preferences" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."user_preferences_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."user_preferences_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."user_preferences_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."user_settings" TO "anon";
-GRANT ALL ON TABLE "public"."user_settings" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_settings" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."workout_sessions" TO "anon";
-GRANT ALL ON TABLE "public"."workout_sessions" TO "authenticated";
-GRANT ALL ON TABLE "public"."workout_sessions" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."workout_sessions" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."workout_sessions" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."workout_sessions" TO "service_role";
 
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "service_role";
 
 
 
@@ -2332,9 +2286,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQ
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
 
 
 
@@ -2342,9 +2293,9 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUN
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "service_role";
 
 
 

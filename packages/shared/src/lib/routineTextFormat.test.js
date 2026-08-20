@@ -72,6 +72,24 @@ describe('formatRoutineAsText', () => {
     expect(out).not.toContain('@4')
   })
 
+  it('incluye el nivel prescrito con su palabra, no en la forma compacta de la fila', () => {
+    const data = {
+      exercises: [{ name_es: 'Bici', tracked_fields: ['level', 'distance', 'time'] }],
+      routine: {
+        name: 'R',
+        days: [{
+          name: 'D1', sort_order: 0,
+          blocks: [{ name: 'Principal', sort_order: 1, exercises: [
+            { exercise_name: 'Bici', series: 1, reps: '20min', level: 8, rir: null, rest_seconds: null },
+          ] }],
+        }],
+      },
+    }
+    const out = formatRoutineAsText(data)
+    expect(out).toContain('- Bici · 1×20min · Nivel 8')
+    expect(out).not.toContain('Nv8')
+  })
+
   it('cae a la escala RIR si el ejercicio no está en el catálogo del export', () => {
     const data = {
       routine: {

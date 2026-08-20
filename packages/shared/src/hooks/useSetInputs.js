@@ -9,9 +9,9 @@ import {
   getSetMeasurementValues,
   buildCachedMeasurementValues,
   setMeasurementValuesChanged,
-  formatRepsPlaceholder,
+  formatSetTargetPlaceholder,
 } from '../lib/setUtils.js'
-import { metersToDistanceUnit } from '../lib/measurementFields.js'
+import { SetField, getProgressableField, metersToDistanceUnit, resolveTargetField } from '../lib/measurementFields.js'
 import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
 
 /**
@@ -29,9 +29,11 @@ import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
  *
  * @param {{sessionExerciseId: string|number, setNumber: number, exerciseId: number,
  *   trackedFields: string[], weightUnit?: string, distanceUnit?: string,
- *   previousSet?: Object, repsTarget?: string|number}} params
+ *   previousSet?: Object, previousLoaded?: boolean (¿resuelta la query del "Anterior"? default false,
+ *     conservador: sin saberlo no se siembra el nivel prescrito), target?: string|number,
+ *   targetField?: string|null, levelTarget?: number|null}} params
  */
-export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit = 'm', previousSet, repsTarget }) {
+export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit = 'm', previousSet, previousLoaded = false, target, targetField, levelTarget }) {
   const setKey = createSetKey(sessionExerciseId, setNumber)
   const isCompleted = useWorkoutStore(state => !!state.completedSets[setKey])
   const setData = useWorkoutStore(state => state.completedSets[setKey])
@@ -129,8 +131,31 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     if (converted?.weight != null) setWeight(converted.weight)
   }, [weightConversionNonce, setKey])
 
+  // Nivel prescrito por la rutina (`routine_exercises.level`): siembra la columna de nivel cuando
+  // no hay nada más de donde sacarlo. Espera a que la referencia de la última vez esté resuelta
+  // (`previousLoaded`) porque lo de la última vez MANDA: si progresaste a nivel 9 la rutina sigue
+  // diciendo 8, y sembrar el 8 encima sería una regresión. Sin esa espera, el nivel prescrito
+  // llegaría antes que la referencia y ganaría la carrera.
+  // El `previousSet?.level != null` NO es redundante aunque hoy el updater funcional lo cubra: hace
+  // que la precedencia no dependa del ORDEN de los efectos. Si este efecto pasara a declararse
+  // antes que el prefill, sin esa condición sembraría el 8 y el prefill ya vería la casilla llena.
+  useEffect(() => {
+    if (levelTarget == null || !previousLoaded) return
+    if (setData || cachedData || previousSet?.level != null) return
+    setLevel(current => (current === '' ? levelTarget : current))
+  }, [levelTarget, previousLoaded, previousSet, setData, cachedData])
+
   const isValid = () => isSetDataValid(trackedFields, { weight, reps, time, distance, calories, level, pace })
-  const repsPlaceholder = formatRepsPlaceholder(repsTarget)
+  // El objetivo de la rutina se pinta como placeholder de SU columna (la del campo objetivo), no
+  // solo en la de reps: en un cardio "20min" es la pista de la columna de tiempo.
+  const targetPlaceholder = formatSetTargetPlaceholder(target)
+  const resolvedTargetField = resolveTargetField(targetField, trackedFields)
+  // Valor VIVO del campo progresable (lo que se compara con la sesión anterior para apagar el
+  // aviso de progresión). Se resuelve aquí y no en cada SetRow: es el hook el que tiene los
+  // estados de los siete campos, y duplicar el mapeo en web y native garantiza que un día uno
+  // de los dos lo corrija y el otro no.
+  const progressableField = getProgressableField(trackedFields)
+  const progressableValue = progressableField === SetField.LEVEL ? level : weight
 
   const commit = useCallback(() => {
     const formData = { weight, reps, time, distance, calories, level, pace }
@@ -176,6 +201,8 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     setData,
     cachedData,
     isValid,
-    repsPlaceholder,
+    targetPlaceholder,
+    targetField: resolvedTargetField,
+    progressableValue,
   }
 }

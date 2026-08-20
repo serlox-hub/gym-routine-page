@@ -9,7 +9,7 @@ import {
   buildCachedMeasurementValues,
   getSetInitialInputValues,
   setMeasurementValuesChanged,
-  formatRepsPlaceholder,
+  formatSetTargetPlaceholder,
   formatSetTargetHint,
   formatSetValue,
   formatSetValueByType,
@@ -479,17 +479,17 @@ describe('setUtils', () => {
     })
   })
 
-  describe('formatRepsPlaceholder', () => {
+  describe('formatSetTargetPlaceholder', () => {
     it('devuelve el objetivo cuando existe', () => {
-      expect(formatRepsPlaceholder('8-12')).toBe('8-12')
-      expect(formatRepsPlaceholder(10)).toBe('10')
+      expect(formatSetTargetPlaceholder('8-12')).toBe('8-12')
+      expect(formatSetTargetPlaceholder(10)).toBe('10')
     })
 
     it('devuelve — sin objetivo', () => {
-      expect(formatRepsPlaceholder(null)).toBe('—')
-      expect(formatRepsPlaceholder(undefined)).toBe('—')
-      expect(formatRepsPlaceholder('')).toBe('—')
-      expect(formatRepsPlaceholder('  ')).toBe('—')
+      expect(formatSetTargetPlaceholder(null)).toBe('—')
+      expect(formatSetTargetPlaceholder(undefined)).toBe('—')
+      expect(formatSetTargetPlaceholder('')).toBe('—')
+      expect(formatSetTargetPlaceholder('  ')).toBe('—')
     })
   })
 
@@ -732,27 +732,29 @@ describe('setUtils', () => {
 })
 
 describe('formatSetTargetHint', () => {
-  // Con reps el objetivo ya se ve como placeholder del propio input, así que no se duplica.
-  it('null si el ejercicio mide reps', () => {
-    expect(formatSetTargetHint(['weight', 'reps'], '8-12')).toBeNull()
-    expect(formatSetTargetHint(['reps'], '15')).toBeNull()
+  // El objetivo se pinta en el placeholder de SU columna, así que la subfila no lo duplica.
+  it('null cuando el objetivo tiene columna a la que anclarse', () => {
+    expect(formatSetTargetHint(['weight', 'reps'], '8-12', 'reps')).toBeNull()
+    expect(formatSetTargetHint(['level', 'distance', 'time'], '5km', 'distance')).toBeNull()
+    expect(formatSetTargetHint(['time'], '30s', 'time')).toBeNull()
+    // Campo guardado que el ejercicio no mide: se resuelve a uno que sí, y también tiene columna
+    expect(formatSetTargetHint(['level', 'time'], '30s', 'reps')).toBeNull()
   })
 
-  it('devuelve el objetivo en los que no miden reps (antes era invisible al entrenar)', () => {
-    expect(formatSetTargetHint(['level', 'distance', 'time'], '5km')).toBe('5km')
-    expect(formatSetTargetHint(['time'], '30s')).toBe('30s')
-    expect(formatSetTargetHint(['level', 'calories'], 100)).toBe('100')
+  it('pinta el objetivo solo si el ejercicio no mide nada prescribible', () => {
+    expect(formatSetTargetHint(['weight'], '8-12', null)).toBe('8-12')
+    expect(formatSetTargetHint(['weight', 'level'], 'lo que aguantes', null)).toBe('lo que aguantes')
   })
 
   it('null si no hay objetivo que mostrar', () => {
-    expect(formatSetTargetHint(['time'], null)).toBeNull()
-    expect(formatSetTargetHint(['time'], undefined)).toBeNull()
-    expect(formatSetTargetHint(['time'], '')).toBeNull()
-    expect(formatSetTargetHint(['time'], '   ')).toBeNull()
+    expect(formatSetTargetHint(['weight'], null, null)).toBeNull()
+    expect(formatSetTargetHint(['weight'], undefined, null)).toBeNull()
+    expect(formatSetTargetHint(['weight'], '', null)).toBeNull()
+    expect(formatSetTargetHint(['weight'], '   ', null)).toBeNull()
   })
 
-  // Sin campos cae al default (peso × reps), que sí mide reps → no se pinta.
+  // Sin campos cae al default (peso × reps), cuyo objetivo va en la columna de reps.
   it('sin campos no pinta nada', () => {
-    expect(formatSetTargetHint(null, '8-12')).toBeNull()
+    expect(formatSetTargetHint(null, '8-12', null)).toBeNull()
   })
 })

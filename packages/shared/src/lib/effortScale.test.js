@@ -6,6 +6,7 @@ import {
   getEffortLabel,
   getEffortOptions,
   isValidEffortValue,
+  metEffortTarget,
 } from './effortScale.js'
 
 const WEIGHT_REPS = ['weight', 'reps']
@@ -121,5 +122,39 @@ describe('effortRendersAsWord', () => {
     expect(effortRendersAsWord(WEIGHT_REPS, true)).toBe(false)
     // Sin campos cae al default (peso × reps) → RIR compacto
     expect(effortRendersAsWord(null, true)).toBe(false)
+  })
+})
+
+// Gate de autorregulación de la progresión. La comparación se invierte entre escalas: en RIR el
+// número son reps EN RESERVA (más alto = más fácil) y en RPE es esfuerzo PERCIBIDO (más alto = más
+// duro). Ver metEffortTarget.
+describe('metEffortTarget', () => {
+  it('true si no hay objetivo (rutina sin esfuerzo) → gate inactivo', () => {
+    expect(metEffortTarget(0, null, WEIGHT_REPS)).toBe(true)
+    expect(metEffortTarget(0, undefined, WEIGHT_REPS)).toBe(true)
+  })
+
+  it('true si no se registró el esfuerzo real → gate inactivo', () => {
+    expect(metEffortTarget(null, 2, WEIGHT_REPS)).toBe(true)
+    expect(metEffortTarget(undefined, 2, WEIGHT_REPS)).toBe(true)
+  })
+
+  it('RIR: cumple si la reserva real iguala o supera la pedida', () => {
+    expect(metEffortTarget(2, 2, WEIGHT_REPS)).toBe(true)
+    expect(metEffortTarget(3, 2, WEIGHT_REPS)).toBe(true)
+    expect(metEffortTarget(1, 2, WEIGHT_REPS)).toBe(false)
+    expect(metEffortTarget(0, 2, WEIGHT_REPS)).toBe(false)
+  })
+
+  it('RIR objetivo 0 (al fallo): cualquier reserva real ≥ 0 pasa', () => {
+    expect(metEffortTarget(0, 0, WEIGHT_REPS)).toBe(true)
+    expect(metEffortTarget(3, 0, WEIGHT_REPS)).toBe(true)
+  })
+
+  it('RPE: cumple si el esfuerzo real no fue más duro que el prescrito', () => {
+    expect(metEffortTarget(3, 3, BIKE)).toBe(true)
+    expect(metEffortTarget(2, 3, BIKE)).toBe(true)
+    expect(metEffortTarget(4, 3, BIKE)).toBe(false)
+    expect(metEffortTarget(5, 3, BIKE)).toBe(false)
   })
 })

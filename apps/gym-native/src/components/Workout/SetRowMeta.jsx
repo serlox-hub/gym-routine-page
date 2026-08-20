@@ -23,14 +23,15 @@ export default function SetRowMeta({
   distanceUnit,
   showRir,
   showProgressionHint,
-  repsTarget,
+  target,
+  targetField,
   timerSeconds,
 }) {
   const { t } = useTranslation()
   const showTimer = timerSeconds > 0
-  // `repsTarget` es el objetivo de la rutina (columna `routine_exercises.reps`), que no siempre
-  // habla de reps: en un cardio es "20min" o "5km". Ver formatSetTargetHint.
-  const targetHint = formatSetTargetHint(trackedFields, repsTarget)
+  // El objetivo de la rutina se pinta en el placeholder de SU columna (ver SetRow). Aquí solo
+  // queda cuando no hay columna a la que anclarlo. Ver formatSetTargetHint.
+  const targetHint = formatSetTargetHint(trackedFields, target, targetField)
   if (!previousSet && !showProgressionHint && !showTimer && !targetHint) return null
 
   return (
@@ -47,7 +48,15 @@ export default function SetRowMeta({
         distanceUnit={distanceUnit}
         showRir={showRir}
       />
-      {showProgressionHint && <ProgressionHint prevReps={previousSet?.reps} repsTarget={repsTarget} />}
+      {showProgressionHint && (
+        <ProgressionHint
+          previousSet={previousSet}
+          target={target}
+          targetField={targetField}
+          trackedFields={trackedFields}
+          distanceUnit={distanceUnit}
+        />
+      )}
       {showTimer && <ExecutionTimer seconds={timerSeconds} />}
     </View>
   )

@@ -43,6 +43,32 @@ describe('diffSessionExerciseFields', () => {
     expect(fields.reps).toBe('30s')
   })
 
+  it('detecta el cambio de campo objetivo (de qué habla el valor)', () => {
+    const edited = { series: '3', targetField: 'time', reps: '30s', level: '', rir: '2', restSeconds: '90', notes: 'Nota original' }
+    const { fields } = diffSessionExerciseFields(edited, { ...original, target_field: 'reps' })
+    expect(fields.target_field).toBe('time')
+  })
+
+  it('el campo objetivo vacío se manda como null (ejercicio sin nada prescribible)', () => {
+    const edited = { series: '3', targetField: '', reps: '10', level: '', rir: '2', restSeconds: '90', notes: 'Nota original' }
+    const { fields } = diffSessionExerciseFields(edited, { ...original, target_field: 'reps' })
+    expect(fields.target_field).toBeNull()
+  })
+
+  it('no toca el campo objetivo si el formulario no lo trae', () => {
+    const edited = { series: '3', reps: '10', rir: '2', restSeconds: '90', notes: 'Nota original' }
+    const { fields } = diffSessionExerciseFields(edited, { ...original, target_field: 'reps' })
+    expect(fields).not.toHaveProperty('target_field')
+  })
+
+  it('detecta el nivel prescrito, incluido el 0, y su borrado', () => {
+    const base = { series: '3', reps: '10', rir: '2', restSeconds: '90', notes: 'Nota original' }
+    expect(diffSessionExerciseFields({ ...base, level: '8' }, original).fields.level).toBe(8)
+    expect(diffSessionExerciseFields({ ...base, level: '0' }, original).fields.level).toBe(0)
+    expect(diffSessionExerciseFields({ ...base, level: '' }, { ...original, level: 8 }).fields.level).toBeNull()
+    expect(diffSessionExerciseFields({ ...base, level: '8' }, { ...original, level: 8 }).fields).not.toHaveProperty('level')
+  })
+
   it('detecta cambio de rir', () => {
     const edited = { series: '3', reps: '10', rir: '1', restSeconds: '90', notes: 'Nota original' }
     const { fields } = diffSessionExerciseFields(edited, original)

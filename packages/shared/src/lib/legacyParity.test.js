@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { trackedFieldsFromLegacyType } from './measurementFields.js'
-import { getDefaultTarget, getTargetLabel } from './measurementFields.js'
+import { getDefaultTarget, getDefaultTargetField, getTargetLabel } from './measurementFields.js'
 import { getSetColumns } from './setColumns.js'
 import { getPRMetrics, getTrackableMetrics } from './sessionStatsCalculation.js'
 import { formatSetValueByType } from './setUtils.js'
@@ -146,8 +146,11 @@ describe('paridad con los 12 measurement_type históricos', () => {
     expect(getSetColumns(fields).map(c => c.field)).toEqual(columns)
     expect(getTrackableMetrics(fields)).toEqual(metrics)
     expect(getPRMetrics(fields)).toEqual(prMetrics)
-    expect(getTargetLabel(fields)).toBe(targetLabel)
-    expect(getDefaultTarget(fields)).toBe(defaultTarget)
+    // El objetivo ya es explícito por fila (issue #28); lo que se comprueba aquí es que el campo
+    // PROPUESTO al añadir el ejercicio sigue siendo el que la app venía asumiendo con el enum.
+    const targetField = getDefaultTargetField(fields)
+    expect(getTargetLabel(targetField)).toBe(targetLabel)
+    expect(getDefaultTarget(targetField, fields)).toBe(defaultTarget)
     expect(formatSetValueByType(set, fields)).toBe(formatted)
   })
 
@@ -172,7 +175,7 @@ describe('bici estática (nivel × distancia × tiempo)', () => {
   })
 
   it('el objetivo va en kilómetros y el valor se lee entero', () => {
-    expect(getDefaultTarget(BIKE)).toBe('5km')
+    expect(getDefaultTarget(getDefaultTargetField(BIKE), BIKE)).toBe('5km')
     expect(formatSetValueByType({ level: 12, distanceMeters: 5000, timeSeconds: 1200 }, BIKE))
       .toBe('Nv12 × 5000m × 20:00 min')
   })

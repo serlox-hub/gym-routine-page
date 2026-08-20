@@ -2,7 +2,7 @@ import { t, getCurrentLocale } from '../i18n/index.js'
 
 export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
-  "version": 7,
+  "version": 8,
   "exercises": [
     {
       "name_es": "Exercise name in Spanish",
@@ -35,6 +35,7 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
               {
                 "exercise_name": "Exercise name",
                 "series": 4,
+                "target_field": "reps",
                 "reps": "8-12",
                 "rir": 2,
                 "rest_seconds": 90,
@@ -85,7 +86,9 @@ BLOCK FIELDS (in "days[].blocks"):
 ROUTINE EXERCISE FIELDS (in "blocks[].exercises"):
 - exercise_name: must match "name_es" from exercises (REQUIRED)
 - series: number of sets (REQUIRED)
-- reps: string with reps, time or distance (REQUIRED, e.g.: "8-12", "30s", "40m")
+- target_field: which measurement the prescription in "reps" refers to (REQUIRED). One of "reps", "time", "distance", "calories", and it must be present in that exercise's tracked_fields. Pick what makes sense for the exercise: a stationary bike is usually prescribed by "time", a treadmill run by "distance"
+- reps: the prescribed value for target_field (REQUIRED). Always write the unit: "8-12" for reps, "30s" or "20min" for time, "40m" or "5km" for distance, "100kcal" for calories
+- level: machine resistance level for this routine, only for exercises that track "level" (optional, e.g.: 8)
 - rir: effort. Scale depends on whether the exercise tracks reps: -1..3 when "reps" is in tracked_fields (-1 = to failure, 3 = 3 or more in reserve), 1..5 otherwise (RPE, 1 = easy, 5 = max). Optional
 - rest_seconds: rest between sets in seconds (optional)
 - notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest", "Tempo 3-1-1-0")`

@@ -17,7 +17,7 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [], existingSupersets = [] }) {
   const { t } = useTranslation()
-  const { id, sessionExerciseId, exercise, series, reps, rir, notes, rest_seconds } = sessionExercise
+  const { id, sessionExerciseId, exercise, series, reps, target_field, level, rir, notes, rest_seconds } = sessionExercise
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
@@ -45,7 +45,10 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const sessionId = useWorkoutStore(state => state.sessionId)
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
   const setExerciseSetCount = useWorkoutStore(state => state.setExerciseSetCount)
-  const { data: previousWorkout } = usePreviousWorkout(exercise.id, { gymId, routineDayId, sessionId })
+  // `isFetched` es true tras resolverse la query, con dato O con error (dataUpdateCount o
+  // errorUpdateCount > 0). Es lo que hace falta para sembrar el nivel prescrito: con la referencia
+  // caída seguimos dando la pista que sí tenemos, en vez de dejar la columna vacía para siempre.
+  const { data: previousWorkout, isFetched: previousFetched } = usePreviousWorkout(exercise.id, { gymId, routineDayId, sessionId })
   // Número de filas = series configuradas en la rutina (session_exercises.series).
   // El usuario puede añadir/quitar filas manualmente (queda en exerciseSetCounts).
   const setsCount = exerciseSetCounts[exerciseKey] ?? series
@@ -90,7 +93,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       <ExerciseCardHeader
         exerciseName={getExerciseName(exercise)}
         muscleGroup={exercise.muscle_group}
-        series={series} reps={reps} rir={rir} trackedFields={trackedFields} rest_seconds={rest_seconds}
+        series={series} reps={reps} level={level} rir={rir} trackedFields={trackedFields} rest_seconds={rest_seconds}
         collapsed={collapsed}
         isCompleted={isCompleted}
         onToggleCollapse={toggleExpanded}
@@ -108,7 +111,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
               <ExerciseCardNotes exercise={exercise} notes={notes} />
             </div>
           )}
-          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} progressionEnabled={progressionEnabled} trackedFields={trackedFields} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} rirTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
+          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} previousLoaded={previousFetched} progressionEnabled={progressionEnabled} trackedFields={trackedFields} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} targetField={target_field} levelTarget={level} effortTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
         </>
       )}
       <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} trackedFields={trackedFields} routineDayId={routineDayId} />

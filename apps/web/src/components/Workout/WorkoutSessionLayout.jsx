@@ -157,7 +157,9 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     addSessionExerciseMutation.mutate({
       exercise: data.exercise,
       series: data.series,
+      target_field: data.target_field,
       reps: data.reps,
+      level: data.level,
       rir: data.rir,
       rest_seconds: data.rest_seconds,
       notes: data.notes,

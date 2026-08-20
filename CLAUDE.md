@@ -299,6 +299,7 @@ Key relations:
 - `routine_exercises` → Config del ejercicio en un día de rutina (series, reps, rir, notas); cuelga de `routine_days` vía `routine_day_id` (ya NO existe `routine_blocks`; el calentamiento es `is_warmup`, la superserie es `superset_group`)
 - `session_exercises` → Ejercicio realizado en una sesión (referencia opcional a `routine_exercise_id`)
 - `completed_sets` → Series realizadas, cuelgan de `session_exercises`. Tiene columna propia para los 7 campos de medición (`weight`, `reps_completed`, `time_seconds`, `distance_meters`, `calories_burned`, `level`, `pace_seconds`); cuáles se usan lo decide el ejercicio
+- `routine_exercises.target_field` (+ snapshot en `session_exercises`) → **de qué campo habla el objetivo** guardado en `reps` (que es texto libre: "8-12", "20min", "5km"). El valor mantiene el nombre `reps` por historia. `routine_exercises.level` = nivel de máquina prescrito. Papeles de los campos (progresable / objetivo / resultado) en `lib/measurementFields.js`; resolver SIEMPRE con `resolveTargetField(row.target_field, trackedFields)`
 - `exercises.tracked_fields` (`measurement_field[]`, 1 a 3) → **qué mide** el ejercicio. Sustituye al enum `measurement_type` (12 combinaciones cerradas). De ahí se derivan columnas de la fila, validación, formato, métricas de stats y de PR: ver `lib/measurementFields.js` y resolver SIEMPRE con `resolveTrackedFields(exercise)`
 
 Deletion strategy:
@@ -361,6 +362,9 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ Pintar una duración en segundos crudos (`{timeSeconds}s`, `1200 s`) o pedirla en dos cajas mm+ss. Display: `formatDuration()`. Entrada: `SetValueInput` con campo `time`/`pace` (relleno por dígitos, `durationInput.js`). No hay unidad de tiempo configurable
 - ❌ Rangos numéricos fijos para campos que dependen de lo que mide el ejercicio. El esfuerzo usa dos escalas (RIR `-1..3` si mide reps, RPE `1..5` si no): usar `getEffortOptions()` / `isValidEffortValue()`, nunca `min=0 max=5`
 - ❌ Pintar un valor de esfuerzo crudo (`RIR {rir}`, `` `@${rir}` ``, `String(rir)`). Siempre `formatEffortBadge(value, trackedFields)` — en RPE el número guardado es un índice interno, la palabra es el dato. Si el componente tiene el `exercise`, resuelve los campos con `resolveTrackedFields(exercise)` (fallback único de lectura); si no lo tiene, recíbelos como prop. Ver `docs/DECISIONS.md`
+- ❌ Adivinar de qué campo habla el objetivo de una rutina a partir de `tracked_fields`. El campo se GUARDA (`routine_exercises.target_field`) y se lee con `resolveTargetField()`; `getDefaultTargetField()` es solo el default del formulario y la lectura de filas antiguas. Y para comparar el objetivo con lo hecho hace falta su unidad: `parseTargetRange(target, targetField)`, que devuelve null si "20" no dice si son segundos o minutos
+- ❌ Asumir que lo que se progresa es el peso ("Sube el peso" fijo, `currentWeight`, exigir peso + reps). El progresable lo decide `getProgressableField()`: peso si el ejercicio lo mide, NIVEL si no (en un cardio el nivel juega el papel del peso). Ver `docs/DECISIONS.md`
+- ❌ Comparar un esfuerzo real con el prescrito a mano (`real >= objetivo`). La escala invierte el sentido (RIR: más alto = más fácil; RPE: más alto = más duro) → `metEffortTarget(real, objetivo, trackedFields)`
 - ❌ Meter en la fila de serie nada que no sea un dato de la serie (referencia de la última vez, aviso de progresión, timer). Van a la subfila `SetRowMeta`, siempre en el mismo sitio, o roban ancho a los inputs. Ver `docs/DECISIONS.md`
 - ❌ Differences between web and native — all screens must have the same appearance, section order, and functionality on both platforms unless technically impossible
 
@@ -407,8 +411,10 @@ Extract when logic:
 | Calendar logic | `calendarUtils.js` | `generateCalendarDays()` |
 | Array operations | `arrayUtils.js` | `reorderArrayItem()`, `filterExercises()` |
 | Form validation | `validation.js` | `validateSignupForm()`, `validateRoutineForm()` |
-| Campos de medición del ejercicio | `measurementFields.js` | `resolveTrackedFields()`, `normalizeTrackedFields()`, `tracksReps()`, `getPrimaryTargetField()`, `getDefaultTarget()` |
-| Escala de esfuerzo (RIR/RPE) | `effortScale.js` | `getEffortOptions()`, `isValidEffortValue()`, `formatEffortBadge()` |
+| Campos de medición del ejercicio | `measurementFields.js` | `resolveTrackedFields()`, `normalizeTrackedFields()`, `tracksReps()` |
+| Papeles de los campos (objetivo / progresable) | `measurementFields.js` | `resolveTargetField()`, `getTargetableFields()`, `getDefaultTargetField()`, `getProgressableField()`, `getDefaultTarget()` |
+| Progresión por serie (doble progresión) | `progressionUtils.js` | `parseTargetRange()`, `shouldSuggestProgression()`, `getProgressionLabel()` |
+| Escala de esfuerzo (RIR/RPE) | `effortScale.js` | `getEffortOptions()`, `isValidEffortValue()`, `formatEffortBadge()`, `metEffortTarget()` |
 | Columnas de la fila de serie (sesión) | `setColumns.js` | `getSetColumns()` |
 | Input de duración por dígitos (mm:ss) | `durationInput.js` | `durationDigitsToSeconds()`, `secondsToDurationDigits()`, `formatDurationDigits()` |
 | Form de config de ejercicio en rutina/sesión | `routineExerciseForm.js` | `buildExerciseConfigForm()`, `validateExerciseConfigForm()`, `parseExerciseConfigForm()` |
@@ -420,7 +426,7 @@ All these files live in `packages/shared/src/lib/` and are exported via `@gym/sh
 
 ### Archivos críticos: import/export de rutinas (JSON)
 
-Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 7**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
+Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 8**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
 
 ⚠️ **Emparejar por CLAVE ESTABLE** (`name_en` → `name_es` normalizado, vía `lib/exerciseMatch.js`), NUNCA por `name_es` solo. `importRoutine` debe seguir aceptando versiones antiguas del JSON.
 

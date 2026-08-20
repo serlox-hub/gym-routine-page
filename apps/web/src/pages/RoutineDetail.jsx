@@ -98,13 +98,15 @@ function RoutineDetail() {
     setShowAddExercise(true)
   }
 
-  const handleAddExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, superset_group }) => {
+  const handleAddExercise = async ({ exerciseId, series, target_field, reps, level, rir, rest_seconds, notes, superset_group }) => {
     try {
       await addExercise.mutateAsync({
         dayId: selectedDayId,
         exerciseId,
         series,
+        target_field,
         reps,
+        level,
         rir,
         rest_seconds,
         notes,
@@ -135,9 +137,9 @@ function RoutineDetail() {
     setShowEditExercise(true)
   }
 
-  const handleEditExercise = async ({ exerciseId, series, reps, rir, rest_seconds, notes, superset_group, exercise_id }) => {
+  const handleEditExercise = async ({ exerciseId, series, target_field, reps, level, rir, rest_seconds, notes, superset_group, exercise_id }) => {
     try {
-      const data = { series, reps, rir, rest_seconds, notes, superset_group }
+      const data = { series, target_field, reps, level, rir, rest_seconds, notes, superset_group }
       if (exercise_id) data.exercise_id = exercise_id
       await updateExercise.mutateAsync({
         exerciseId,

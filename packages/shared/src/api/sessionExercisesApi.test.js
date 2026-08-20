@@ -37,6 +37,35 @@ describe('fetchSessionExercises', () => {
     expect(result).toHaveLength(2)
   })
 
+  // Un ejercicio extra añadido en sesión también prescribe (campo objetivo + nivel): sin estas
+  // columnas en el insert, el objetivo volvería a adivinarse al pintar la fila (issue #28).
+  it('escribe el campo objetivo y el nivel prescrito', async () => {
+    const mock = makeQueryMock({ data: { id: 'se-new' }, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+
+    await insertSessionExercise({
+      sessionId: 'session-1', exerciseId: 'ex-1', sortOrder: 1, series: 3,
+      targetField: 'time', reps: '20min', level: 8,
+    })
+
+    expect(mock.insert).toHaveBeenCalledWith(expect.objectContaining({
+      target_field: 'time', reps: '20min', level: 8,
+    }))
+  })
+
+  it('sin campo objetivo ni nivel los manda como null, no undefined', async () => {
+    const mock = makeQueryMock({ data: { id: 'se-new' }, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+
+    await insertSessionExercise({
+      sessionId: 'session-1', exerciseId: 'ex-1', sortOrder: 1, series: 3, reps: '8-12',
+    })
+
+    expect(mock.insert).toHaveBeenCalledWith(expect.objectContaining({
+      target_field: null, level: null,
+    }))
+  })
+
   it('throws when Supabase returns error', async () => {
     const mock = makeQueryMock({ data: null, error: new Error('fetch failed') })
     getClient.mockReturnValue({ from: () => mock })

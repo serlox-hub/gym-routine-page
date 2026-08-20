@@ -9,6 +9,7 @@
   "seriesMin": "Pon al menos 1 serie",
   "targetRequired": "Indica un valor para {{field}}",
   "effortInvalid": "Ese valor de esfuerzo no es válido",
+  "levelInvalid": "Pon un nivel entre 0 y {{max}}",
   "restInvalid": "El descanso no puede ser negativo",
   "trackedFieldsRequired": "Elige al menos una medida"
 }

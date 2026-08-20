@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { exportRoutine, importRoutine, duplicateRoutine } from './routineApi.js'
+// La versión se importa del módulo que la define (el barrel de routineApi no la re-exporta:
+// nadie fuera del import/export necesita el número).
+import { ROUTINE_EXPORT_VERSION } from './routineIOApi.js'
 import { makeQueryMock } from './_testUtils.js'
 import { formatRoutineAsText } from '../lib/routineTextFormat.js'
 
@@ -112,7 +115,8 @@ describe('exportRoutine', () => {
     const fakeRoutine = { name: 'Rutina Test', description: null, goal: null }
     const fakeDays = [{ id: 'day-1', name: 'Día 1', estimated_duration_min: 60, sort_order: 1 }]
     const fakeRoutineExercises = [{
-      series: 3, reps: '20min', rir: 4, rest_seconds: null, notes: null, sort_order: 1, is_warmup: false,
+      series: 3, target_field: 'time', reps: '20min', level: 8, rir: 4, rest_seconds: null,
+      notes: null, sort_order: 1, is_warmup: false,
       exercise: { id: 'ex-1', name: 'Cinta', tracked_fields: ['level', 'time'], instructions: null, muscle_group: { name: 'Cardio' } },
     }]
     const fakeExercises = [{ name: 'Cinta', name_en: 'Treadmill', tracked_fields: ['level', 'time'], instructions: null, muscle_group: { name: 'Cardio' } }]
@@ -138,6 +142,10 @@ describe('exportRoutine', () => {
     expect(exported.exercises[0]).toMatchObject({ name_es: 'Cinta', tracked_fields: ['level', 'time'] })
     // El nombre del bloque es la clave del emparejamiento: debe salir de la misma columna
     expect(exported.routine.days[0].blocks[0].exercises[0].exercise_name).toBe('Cinta')
+    // El objetivo viaja con SU CAMPO y con el nivel prescrito (esquema v8): sin ellos, un
+    // re-import volvería a derivar el campo y perdería el nivel.
+    expect(exported.routine.days[0].blocks[0].exercises[0]).toMatchObject({ target_field: 'time', level: 8 })
+    expect(exported.version).toBe(ROUTINE_EXPORT_VERSION)
     // Contrato completo (no solo el shape): el consumidor real resuelve la escala con ese catálogo
     expect(formatRoutineAsText(exported)).toContain('Muy duro')
   })
@@ -386,6 +394,104 @@ describe('importRoutine', () => {
     expect(insertCalls['exercises']).toHaveLength(1)
     expect(insertCalls['exercises'][0].tracked_fields).toEqual(['level', 'time'])
     expect(insertCalls['exercises'][0].measurement_type).toBeUndefined()
+  })
+
+  // Retrocompatibilidad del objetivo (issue #28): v8 trae `target_field`; en un JSON anterior el
+  // objetivo era texto libre sin campo y se deriva de lo que mide el ejercicio, igual que hizo el
+  // backfill de la migración 056.
+  it.each([
+    ['v8 respeta el campo objetivo del JSON', 8, 'time', 'time'],
+    ['v7 lo deriva de tracked_fields', 7, undefined, 'distance'],
+  ])('%s', async (_name, version, exportedTargetField, expected) => {
+    const insertCalls = {}
+    const json = {
+      version,
+      // Bici: nivel × distancia × tiempo. Derivado cae en distancia, pero se puede prescribir tiempo.
+      exercises: [
+        { name_es: 'Bici estática', tracked_fields: ['level', 'distance', 'time'], muscle_group_name: 'Cardio' },
+      ],
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [
+              { exercise_name: 'Bici estática', series: 1, reps: '20min', target_field: exportedTargetField, level: 8 },
+            ] },
+          ] },
+        ],
+      },
+    }
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (!insertCalls[table]) insertCalls[table] = []
+        if (table === 'exercises') {
+          const p = Promise.resolve({ data: [], error: null })
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            then: p.then.bind(p),
+            insert: vi.fn(() => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'ex-bike' }, error: null }) })),
+          }
+        }
+        if (table === 'muscle_groups') {
+          const p = Promise.resolve({ data: [{ id: 'mg-cardio', name_es: 'Cardio' }], error: null })
+          return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return { insert: vi.fn((record) => { insertCalls[table].push(record); return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) } }) }
+        }
+        return { insert: vi.fn((record) => { insertCalls[table].push(...(Array.isArray(record) ? record : [record])); return Promise.resolve({ data: null, error: null }) }) }
+      },
+    }))
+
+    await importRoutine(json, 'user-1', {})
+
+    expect(insertCalls['routine_exercises'][0]).toMatchObject({ target_field: expected, reps: '20min', level: 8 })
+  })
+
+  // El JSON es entrada NO confiable (la genera una IA o se edita a mano) y los CHECK de las
+  // columnas nuevas convertirían un valor raro en un 23514/22P02 que aborta el import ENTERO.
+  it('sanea el campo objetivo y el nivel de un JSON con valores imposibles', async () => {
+    const insertCalls = {}
+    const systemRow = { id: 'sys-bench', name_es: 'Press banca', name_en: 'Bench Press' }
+    const json = {
+      version: 8,
+      // Sin catálogo de ejercicios: el día referencia por nombre y no se sabe qué mide, así que
+      // `target_field` no se puede validar contra los campos y solo queda comprobar que es un
+      // campo objetivo real.
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [
+              { exercise_name: 'Press banca', series: 3, reps: '8-12', target_field: 'weight', level: -5 },
+            ] },
+          ] },
+        ],
+      },
+    }
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (!insertCalls[table]) insertCalls[table] = []
+        if (table === 'exercises') {
+          const p = Promise.resolve({ data: [systemRow], error: null })
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), is: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return { insert: vi.fn((record) => { insertCalls[table].push(record); return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) } }) }
+        }
+        return { insert: vi.fn((record) => { insertCalls[table].push(...(Array.isArray(record) ? record : [record])); return Promise.resolve({ data: null, error: null }) }) }
+      },
+    }))
+
+    await importRoutine(json, 'user-1', {})
+
+    // 'weight' nunca es objetivo y un nivel negativo viola el CHECK: entran como null, y la app
+    // resuelve el campo al leer.
+    expect(insertCalls['routine_exercises'][0]).toMatchObject({ target_field: null, level: null })
   })
 
   it('enlaza con un ejercicio de sistema por name_en (no crea custom) y resuelve la ref del día', async () => {

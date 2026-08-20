@@ -5,8 +5,8 @@ import { getSetColumns, buildSetFieldsPayload } from './setColumns.js'
  * Compara los valores editados con los originales del session exercise
  * y devuelve solo los campos que cambiaron.
  *
- * @param {{ series: string, reps: string, rir: string, restSeconds: string, notes: string }} edited
- * @param {{ series: number, reps: string, rir: number|null, rest_seconds: number|null, notes: string|null }} original
+ * @param {{ series: string, targetField: string, reps: string, level: string, rir: string, restSeconds: string, notes: string }} edited
+ * @param {{ series: number, target_field: string|null, reps: string, level: number|null, rir: number|null, rest_seconds: number|null, notes: string|null }} original
  * @returns {{ fields: object, newSeries: number|null }}
  */
 export function diffSessionExerciseFields(edited, original) {
@@ -18,6 +18,18 @@ export function diffSessionExerciseFields(edited, original) {
   // `session_exercises.reps` es NOT NULL: nunca se envía vacío (el formulario lo
   // valida antes), así que un valor vacío se ignora en lugar de mandar null.
   if (edited.reps && edited.reps !== (original.reps ?? '')) fields.reps = edited.reps
+
+  // El campo del que habla el objetivo. El formulario siempre lo resuelve (nunca vacío mientras
+  // el ejercicio mida algo prescribible), así que un valor vacío es "este ejercicio no tiene
+  // campo objetivo" y se manda como null.
+  if (edited.targetField !== undefined) {
+    const editedTargetField = edited.targetField === '' ? null : edited.targetField
+    if (editedTargetField !== (original.target_field ?? null)) fields.target_field = editedTargetField
+  }
+
+  const newLevel = parseInt(edited.level, 10)
+  if (edited.level === '' && original.level != null) fields.level = null
+  else if (!isNaN(newLevel) && newLevel !== original.level) fields.level = newLevel
 
   const newRir = parseInt(edited.rir, 10)
   if (edited.rir === '' && original.rir != null) fields.rir = null

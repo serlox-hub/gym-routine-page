@@ -64,7 +64,7 @@ export default function EditSessionExerciseModal({
     setErrors(formErrors)
     if (!valid) return
     const { fields, newSeries } = diffSessionExerciseFields(
-      { series: form.series, reps: form.reps, rir: form.rir, restSeconds: form.rest_seconds, notes: form.notes, supersetGroup: form.superset_group },
+      { series: form.series, targetField: form.target_field, reps: form.reps, level: form.level, rir: form.rir, restSeconds: form.rest_seconds, notes: form.notes, supersetGroup: form.superset_group },
       sessionExercise,
     )
     if (Object.keys(fields).length > 0) {

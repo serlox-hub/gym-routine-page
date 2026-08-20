@@ -47,6 +47,27 @@ export function isValidEffortValue(value, trackedFields) {
 }
 
 /**
+ * ¿El esfuerzo real de la serie cumplió el prescrito, es decir NO fue más duro de lo pedido?
+ * Es el gate de autorregulación de la progresión (ver progressionUtils).
+ *
+ * La comparación se INVIERTE entre las dos escalas y por eso no puede vivir fuera de aquí:
+ * en RIR el número son reps en reserva (3 es más fácil que 0, cumple si `real >= objetivo`),
+ * mientras que en RPE es esfuerzo percibido (5 es más duro que 1, cumple si `real <= objetivo`).
+ * Degrada a `true` (no bloquea) si falta el objetivo (rutina sin esfuerzo) o el real (no se
+ * registró): el esfuerzo es opcional y en ese caso la decisión cae a solo-objetivo.
+ * @param {number|null|undefined} actual - esfuerzo real de la serie previa
+ * @param {number|null|undefined} target - esfuerzo objetivo de la rutina
+ * @param {string[]} trackedFields
+ * @returns {boolean}
+ */
+export function metEffortTarget(actual, target, trackedFields) {
+  if (actual == null || target == null) return true
+  return tracksReps(trackedFields)
+    ? Number(actual) >= Number(target)
+    : Number(actual) <= Number(target)
+}
+
+/**
  * Info de display de un valor de esfuerzo guardado. Devuelve { label, description } o null.
  */
 export function getEffortInfo(value, trackedFields) {

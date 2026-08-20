@@ -6,13 +6,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, NumberTextInput } from '../ui'
 import { colors, inputStyle } from '../../lib/styles'
 import {
+  buildTargetFieldChangeForm,
   formatSupersetLabel,
   getEffortLabel,
   getEffortOptions,
   getTargetLabel,
   getTargetPlaceholder,
+  getTargetableFields,
   getExerciseName,
+  resolveTargetField,
   resolveTrackedFields,
+  tracksLevel,
 } from '@gym/shared'
 
 function FormField({ label, required, secondary, error, children }) {
@@ -84,9 +88,10 @@ function OptionPicker({ value, onChange, options, title, emptyLabel }) {
 
 /**
  * Formulario para configurar series, objetivo, esfuerzo y notas de un ejercicio.
- * Espejo del equivalente web: los campos se adaptan al `tracked_fields`
- * (objetivo en reps/tiempo/distancia/kcal, esfuerzo en RIR o RPE). `series`
- * aplica a todos los tipos: define cuántas filas se registran en la sesión.
+ * Espejo del equivalente web: los campos se adaptan al `tracked_fields` (el objetivo se prescribe
+ * sobre el campo que ELIGE el usuario, el esfuerzo va en RIR o RPE, y los ejercicios de nivel
+ * pueden prescribirlo). `series` aplica a todos los tipos: define cuántas filas se registran en
+ * la sesión.
  */
 export default function ExerciseConfigForm({
   exercise,
@@ -102,6 +107,28 @@ export default function ExerciseConfigForm({
   const { t } = useTranslation()
   const update = (field) => (value) => setForm(prev => ({ ...prev, [field]: value }))
   const trackedFields = resolveTrackedFields(exercise)
+  const targetField = resolveTargetField(form.target_field, trackedFields)
+  const targetableFields = getTargetableFields(trackedFields)
+  const showLevel = tracksLevel(trackedFields)
+  // Mismo nombre que la etiqueta del input de objetivo (getTargetLabel), no el corto de columna:
+  // "Reps" en el selector junto a un label "Repeticiones" son dos nombres del mismo campo.
+  const targetFieldOptions = targetableFields.map(field => ({ value: field, label: getTargetLabel(field) }))
+  // Con más de un campo prescribible se pregunta PRIMERO de qué campo habla el objetivo (fila de
+  // arriba, junto a series) y el valor baja a la fila siguiente: se elige y luego se escribe. Con
+  // uno solo no hay nada que elegir y el valor ocupa ese hueco, como siempre.
+  const hasTargetFieldChoice = targetableFields.length > 1
+
+  const targetValueField = (
+    <FormField label={getTargetLabel(targetField)} required error={errors.reps}>
+      <TextInput
+        value={form.reps}
+        onChangeText={update('reps')}
+        placeholder={getTargetPlaceholder(targetField, trackedFields)}
+        placeholderTextColor={colors.textMuted}
+        style={inputStyle}
+      />
+    </FormField>
+  )
   const effortOptions = [
     { value: '', label: t('common:labels.none') },
     ...getEffortOptions(trackedFields).map(opt => ({ value: String(opt.value), label: opt.label })),
@@ -132,17 +159,28 @@ export default function ExerciseConfigForm({
           </FormField>
         </View>
         <View className="flex-1">
-          <FormField label={getTargetLabel(trackedFields)} required error={errors.reps}>
-            <TextInput
-              value={form.reps}
-              onChangeText={update('reps')}
-              placeholder={getTargetPlaceholder(trackedFields)}
-              placeholderTextColor={colors.textMuted}
-              style={inputStyle}
-            />
-          </FormField>
+          {hasTargetFieldChoice ? (
+            /* Cambiar de campo resetea el valor (buildTargetFieldChangeForm): "8-12" en un
+               objetivo de tiempo serían 8-12 segundos. */
+            <FormField label={t('routine:exercise.targetField')}>
+              <OptionPicker
+                value={targetField ?? ''}
+                onChange={(value) => setForm(prev => buildTargetFieldChangeForm(prev, value, trackedFields))}
+                options={targetFieldOptions}
+                title={t('routine:exercise.targetField')}
+                emptyLabel={t('common:labels.none')}
+              />
+            </FormField>
+          ) : targetValueField}
         </View>
       </View>
+
+      {hasTargetFieldChoice && (
+        <View className="flex-row gap-3 mb-4">
+          <View className="flex-1">{targetValueField}</View>
+          <View className="flex-1" />
+        </View>
+      )}
 
       <View className={`gap-3 ${isSessionMode ? '' : 'pt-3 border-t border-border'}`}>
         {!isSessionMode && <Text className="text-secondary text-xs">{t('common:labels.optional')}</Text>}
@@ -172,6 +210,26 @@ export default function ExerciseConfigForm({
             </FormField>
           </View>
         </View>
+
+        {/* Nivel de la máquina: no es un resultado, es un ajuste que pones antes de empezar, y
+            hasta ahora solo cabía en las notas. */}
+        {showLevel && (
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <FormField label={t('routine:exercise.level')} secondary error={errors.level}>
+                <NumberTextInput
+                  value={form.level}
+                  onChangeText={update('level')}
+                  placeholder={t('routine:exercise.levelPlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="numeric"
+                  style={inputStyle}
+                />
+              </FormField>
+            </View>
+            <View className="flex-1" />
+          </View>
+        )}
 
         <FormField label={t('routine:exercise.notes')} secondary>
           <TextInput

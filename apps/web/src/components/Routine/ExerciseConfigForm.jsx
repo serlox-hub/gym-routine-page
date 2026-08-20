@@ -2,23 +2,29 @@ import { useTranslation } from 'react-i18next'
 import { Button, Input, Select } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import {
+  buildTargetFieldChangeForm,
   formatSupersetLabel,
   getEffortLabel,
   getEffortOptions,
   getTargetLabel,
   getTargetPlaceholder,
+  getTargetableFields,
   getExerciseName,
+  MAX_PRESCRIBED_LEVEL,
+  resolveTargetField,
   resolveTrackedFields,
+  tracksLevel,
 } from '@gym/shared'
 
 /**
  * Formulario para configurar series, objetivo, esfuerzo y notas de un ejercicio.
  * Reutilizable para añadir y editar ejercicios en rutinas/sesiones.
  *
- * Los campos se adaptan al `tracked_fields`: el objetivo cambia de etiqueta
- * (reps/tiempo/distancia/kcal) y el esfuerzo cambia de escala (RIR con reps,
- * RPE sin ellas). `series` aplica a todos los tipos: define cuántas filas se
- * registran en la sesión.
+ * Los campos se adaptan al `tracked_fields`: el objetivo se prescribe sobre el campo que ELIGE el
+ * usuario (selector «Objetivo en», solo cuando el ejercicio mide más de uno prescribible) y el
+ * esfuerzo cambia de escala (RIR con reps, RPE sin ellas). Los ejercicios que miden nivel pueden
+ * además prescribirlo, que es lo que hace que la progresión de un cardio tenga sentido (el nivel
+ * juega el papel del peso). `series` aplica a todos: define cuántas filas se registran en la sesión.
  */
 function ExerciseConfigForm({
   exercise,
@@ -34,6 +40,24 @@ function ExerciseConfigForm({
   const { t } = useTranslation()
   const trackedFields = resolveTrackedFields(exercise)
   const effortLabel = getEffortLabel(trackedFields)
+  const targetField = resolveTargetField(form.target_field, trackedFields)
+  const targetableFields = getTargetableFields(trackedFields)
+  const showLevel = tracksLevel(trackedFields)
+  // Con más de un campo prescribible se pregunta PRIMERO de qué campo habla el objetivo (fila de
+  // arriba, junto a series) y el valor baja a la fila siguiente: se elige y luego se escribe. Con
+  // uno solo no hay nada que elegir y el valor ocupa ese hueco, como siempre.
+  const hasTargetFieldChoice = targetableFields.length > 1
+
+  const targetValueInput = (
+    <Input
+      label={<>{getTargetLabel(targetField)} <span style={{ color: colors.danger }}>*</span></>}
+      type="text"
+      value={form.reps}
+      onChange={(e) => setForm(prev => ({ ...prev, reps: e.target.value }))}
+      placeholder={getTargetPlaceholder(targetField, trackedFields)}
+      error={errors.reps}
+    />
+  )
 
   return (
     <div className="space-y-4">
@@ -57,15 +81,24 @@ function ExerciseConfigForm({
           onChange={(e) => setForm(prev => ({ ...prev, series: e.target.value }))}
           error={errors.series}
         />
-        <Input
-          label={<>{getTargetLabel(trackedFields)} <span style={{ color: colors.danger }}>*</span></>}
-          type="text"
-          value={form.reps}
-          onChange={(e) => setForm(prev => ({ ...prev, reps: e.target.value }))}
-          placeholder={getTargetPlaceholder(trackedFields)}
-          error={errors.reps}
-        />
+        {hasTargetFieldChoice ? (
+          // Cambiar de campo resetea el valor (buildTargetFieldChangeForm): "8-12" en un objetivo
+          // de tiempo serían 8-12 segundos.
+          <Select
+            label={t('routine:exercise.targetField')}
+            value={targetField ?? ''}
+            onChange={(e) => setForm(prev => buildTargetFieldChangeForm(prev, e.target.value, trackedFields))}
+          >
+            {targetableFields.map(field => (
+              <option key={field} value={field}>{getTargetLabel(field)}</option>
+            ))}
+          </Select>
+        ) : targetValueInput}
       </div>
+
+      {hasTargetFieldChoice && (
+        <div className="grid grid-cols-2 gap-3">{targetValueInput}</div>
+      )}
 
       <div
         className={`space-y-3 ${isSessionMode ? '' : 'pt-3 mt-1 border-t'}`}
@@ -99,6 +132,24 @@ function ExerciseConfigForm({
             error={errors.rest_seconds}
           />
         </div>
+
+        {/* Nivel de la máquina: no es un resultado, es un ajuste que pones antes de empezar, y
+            hasta ahora solo cabía en las notas. */}
+        {showLevel && (
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label={t('routine:exercise.level')}
+              type="number"
+              min="0"
+              max={MAX_PRESCRIBED_LEVEL}
+              step="1"
+              value={form.level}
+              onChange={(e) => setForm(prev => ({ ...prev, level: e.target.value }))}
+              placeholder={t('routine:exercise.levelPlaceholder')}
+              error={errors.level}
+            />
+          </div>
+        )}
 
         <div>
           <label className="text-sm font-medium block mb-1" style={{ color: colors.textSecondary }}>{t('routine:exercise.notes')}</label>

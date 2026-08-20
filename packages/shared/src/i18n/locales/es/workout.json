@@ -29,9 +29,15 @@
     "volume": "Volumen"
   },
   "progression": {
-    "increase": "Sube el peso",
+    "increase": {
+      "weight": "Sube el peso",
+      "level": "Sube el nivel"
+    },
     "title": "¡Listo para progresar!",
-    "why": "Alcanzaste el tope de tu rango ({{range}}) con {{reps}} reps. Si quieres seguir progresando, sube el peso.",
+    "why": {
+      "weight": "Llegaste al tope del objetivo ({{target}}) con {{value}}. Si quieres seguir progresando, sube el peso.",
+      "level": "Llegaste al tope del objetivo ({{target}}) con {{value}}. Si quieres seguir progresando, sube el nivel."
+    },
     "whyLabel": "Por qué subir"
   },
   "set": {

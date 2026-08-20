@@ -11,10 +11,13 @@ import {
   getFieldHeader,
   getFieldName,
   getFieldUnit,
+  getDefaultTargetField,
   getPrimaryChartField,
-  getPrimaryTargetField,
+  getProgressableField,
   getTargetLabel,
   getTargetPlaceholder,
+  getTargetableFields,
+  resolveTargetField,
   isTrackedFieldsSelectionValid,
   isValidField,
   metersToDistanceUnit,
@@ -226,26 +229,83 @@ describe('formatFieldValue', () => {
   })
 })
 
-describe('campo primario del objetivo', () => {
+describe('campos que pueden ser objetivo', () => {
   it('ignora peso, nivel y ritmo (no son objetivo, son cómo se hace)', () => {
-    expect(getPrimaryTargetField(['weight', 'reps'])).toBe(SetField.REPS)
-    expect(getPrimaryTargetField(['level', 'time'])).toBe(SetField.TIME)
-    expect(getPrimaryTargetField(['distance', 'pace'])).toBe(SetField.DISTANCE)
-    expect(getPrimaryTargetField(['weight'])).toBeNull()
+    expect(getTargetableFields(['weight', 'reps'])).toEqual([SetField.REPS])
+    expect(getTargetableFields(['level', 'time'])).toEqual([SetField.TIME])
+    expect(getTargetableFields(['distance', 'pace'])).toEqual([SetField.DISTANCE])
+    expect(getTargetableFields(['weight'])).toEqual([])
   })
 
-  it('la distancia manda sobre el tiempo (cardio de recorrido)', () => {
-    expect(getPrimaryTargetField(['distance', 'time'])).toBe(SetField.DISTANCE)
-    expect(getPrimaryTargetField(BIKE)).toBe(SetField.DISTANCE)
+  it('la bici ofrece elegir entre distancia y tiempo, en orden canónico', () => {
+    expect(getTargetableFields(BIKE)).toEqual([SetField.DISTANCE, SetField.TIME])
+  })
+})
+
+describe('getDefaultTargetField', () => {
+  it('propone lo que la app venía asumiendo: reps > distancia > tiempo > calorías', () => {
+    expect(getDefaultTargetField(['weight', 'reps'])).toBe(SetField.REPS)
+    expect(getDefaultTargetField(['level', 'time'])).toBe(SetField.TIME)
+    expect(getDefaultTargetField(['distance', 'time'])).toBe(SetField.DISTANCE)
+    expect(getDefaultTargetField(BIKE)).toBe(SetField.DISTANCE)
+    expect(getDefaultTargetField(['level', 'calories'])).toBe(SetField.CALORIES)
+  })
+
+  it('null si el ejercicio no mide nada prescribible', () => {
+    expect(getDefaultTargetField(['weight'])).toBeNull()
+    expect(getDefaultTargetField(['distance', 'pace'])).toBe(SetField.DISTANCE)
+  })
+})
+
+describe('resolveTargetField', () => {
+  it('respeta el campo guardado cuando el ejercicio lo mide', () => {
+    expect(resolveTargetField(SetField.TIME, BIKE)).toBe(SetField.TIME)
+    expect(resolveTargetField(SetField.DISTANCE, BIKE)).toBe(SetField.DISTANCE)
+  })
+
+  it('descarta el guardado si el ejercicio ya no mide ese campo', () => {
+    expect(resolveTargetField(SetField.REPS, ['level', 'time'])).toBe(SetField.TIME)
+    // El peso nunca es objetivo, ni guardado a mano en BD
+    expect(resolveTargetField(SetField.WEIGHT, ['weight', 'reps'])).toBe(SetField.REPS)
+  })
+
+  it('sin campo guardado cae al default', () => {
+    expect(resolveTargetField(null, BIKE)).toBe(SetField.DISTANCE)
+    expect(resolveTargetField(undefined, ['time'])).toBe(SetField.TIME)
+    expect(resolveTargetField(null, ['weight'])).toBeNull()
+  })
+})
+
+describe('getProgressableField', () => {
+  it('el peso cuando lo mide, y el nivel cuando no (el nivel es el peso del cardio)', () => {
+    expect(getProgressableField(['weight', 'reps'])).toBe(SetField.WEIGHT)
+    expect(getProgressableField(['weight', 'level'])).toBe(SetField.WEIGHT)
+    expect(getProgressableField(BIKE)).toBe(SetField.LEVEL)
+    expect(getProgressableField(['level', 'calories'])).toBe(SetField.LEVEL)
+  })
+
+  it('null si no hay nada que subir', () => {
+    expect(getProgressableField(['distance', 'time'])).toBeNull()
+    expect(getProgressableField(['reps'])).toBeNull()
   })
 })
 
 describe('getDefaultTarget', () => {
   it('la distancia sola se escribe en metros y la de recorrido en kilómetros', () => {
-    expect(getDefaultTarget(['distance'])).toBe('40m')
-    expect(getDefaultTarget(['distance', 'time'])).toBe('5km')
-    expect(getDefaultTarget(['distance', 'pace'])).toBe('5km')
-    expect(getDefaultTarget(BIKE)).toBe('5km')
+    expect(getDefaultTarget(SetField.DISTANCE, ['distance'])).toBe('40m')
+    expect(getDefaultTarget(SetField.DISTANCE, ['distance', 'time'])).toBe('5km')
+    expect(getDefaultTarget(SetField.DISTANCE, ['distance', 'pace'])).toBe('5km')
+    expect(getDefaultTarget(SetField.DISTANCE, BIKE)).toBe('5km')
+  })
+
+  it('el resto sale del campo objetivo, siempre con unidad explícita', () => {
+    expect(getDefaultTarget(SetField.REPS, ['weight', 'reps'])).toBe('8-12')
+    expect(getDefaultTarget(SetField.TIME, ['level', 'time'])).toBe('30s')
+    expect(getDefaultTarget(SetField.CALORIES, ['level', 'calories'])).toBe('100kcal')
+  })
+
+  it('vacío sin campo objetivo: no hay default que inventar', () => {
+    expect(getDefaultTarget(null, ['weight'])).toBe('')
   })
 })
 
@@ -286,14 +346,18 @@ describe('trackedFieldsFromLegacyType', () => {
 })
 
 describe('etiquetas del objetivo', () => {
-  it('describen el campo primario', () => {
-    expect(getTargetLabel(['weight', 'reps'])).toBe('Repeticiones')
-    expect(getTargetLabel(['level', 'time'])).toBe('Tiempo')
-    expect(getTargetLabel(BIKE)).toBe('Distancia')
+  it('describen el campo objetivo elegido', () => {
+    expect(getTargetLabel(SetField.REPS)).toBe('Repeticiones')
+    expect(getTargetLabel(SetField.TIME)).toBe('Tiempo')
+    expect(getTargetLabel(SetField.DISTANCE)).toBe('Distancia')
+  })
+
+  it('sin campo objetivo, la etiqueta neutra', () => {
+    expect(getTargetLabel(null)).toBe('Objetivo')
   })
 
   it('el placeholder de distancia distingue metros de kilómetros', () => {
-    expect(getTargetPlaceholder(['distance'])).toBe('Ej: 40m')
-    expect(getTargetPlaceholder(BIKE)).toBe('Ej: 5km')
+    expect(getTargetPlaceholder(SetField.DISTANCE, ['distance'])).toBe('Ej: 40m')
+    expect(getTargetPlaceholder(SetField.DISTANCE, BIKE)).toBe('Ej: 5km')
   })
 })

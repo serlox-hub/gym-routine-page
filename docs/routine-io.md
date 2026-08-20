@@ -1,13 +1,13 @@
 # Import/export de rutinas (JSON) — detalle
 
-Referencia de consulta (no invariante). La invariante corta (dos archivos, versión 7, emparejar
+Referencia de consulta (no invariante). La invariante corta (dos archivos, versión 8, emparejar
 por clave estable, retrocompatibilidad) + puntero viven en `CLAUDE.md` → "Archivos críticos:
 import/export de rutinas (JSON)". Aquí el detalle completo, el rationale del emparejamiento y el
 checklist de "cuando cambie el modelo de datos".
 
 ## Los dos archivos (no confundir)
 
-- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 7**) y mapea BD ↔ JSON.
+- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 8**) y mapea BD ↔ JSON.
 - **`packages/shared/src/lib/routineIO.js`** — prompts de IA (`buildChatbotPrompt`, `buildAdaptRoutinePrompt`) y el doc del formato (`ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`). Puro, sin BD.
 
 ⚠️ **Tercer consumidor del shape del export:** `packages/shared/src/lib/routineTextFormat.js` (compartir rutina como texto) empareja `blocks[].exercises[].exercise_name` con `exercises[].name_es` para leer sus `tracked_fields`, que deciden la escala de esfuerzo. Si se recortan columnas del catálogo del export, **degrada en silencio** a la escala RIR (un RPE se pintaría `@4` en vez de "Muy duro"). Hay test de shape en `routineApi.test.js`.
@@ -32,6 +32,19 @@ tipos cerrados. `importRoutine` acepta las dos formas vía `importedTrackedField
 ⚠️ Ese mapa legacy es el **único** sitio de la app que conoce los 12 nombres antiguos, y no se
 borra al retirar el último dato v6: un usuario puede importar un JSON exportado hace meses.
 `legacyParity.test.js` congela la salida de los 12 tipos.
+
+## De qué habla el objetivo: `target_field` (v8) y el nivel prescrito
+
+Desde v8 cada ejercicio de un día lleva `target_field` (`reps` | `time` | `distance` | `calories`,
+de qué campo habla el valor de `reps`) y `level` (nivel de máquina prescrito). Hasta v7 el objetivo
+era texto libre sin campo: `importRoutine` lo deriva con `importedTargetField()` (`routineIOApi.js`)
+a partir de los `tracked_fields` que declare el JSON, con la misma prioridad que aplicó el backfill
+de la migración 056 (`resolveTargetField` → `getDefaultTargetField`).
+
+⚠️ Si el JSON **no declara** lo que mide el ejercicio (caso de `routineTemplates.js`, que solo trae
+`name_es` y hereda los campos del catálogo al casar), `target_field` se inserta como NULL a
+propósito: derivarlo del default `weight,reps` guardaría un objetivo de reps en una plancha. La app
+lo resuelve al leer con `resolveTargetField()`.
 
 ## Cuando se modifique el modelo de datos
 

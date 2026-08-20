@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Modal, ReorderModal } from '../ui'
 import { ExerciseHistoryModal } from '../Workout'
 import { colors } from '../../lib/styles'
-import { formatEffortBadge, getExerciseName, resolveTrackedFields } from '@gym/shared'
+import { SetField, formatEffortBadge, formatFieldValue, getExerciseName, resolveTrackedFields } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 export default function ExerciseCard({
@@ -26,7 +26,7 @@ export default function ExerciseCard({
 }) {
   const { t } = useTranslation()
   const navigation = useNavigation()
-  const { exercise, series, reps, rir, rest_seconds } = routineExercise
+  const { exercise, series, reps, level, rir, rest_seconds } = routineExercise
   const [showReorder, setShowReorder] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
@@ -73,6 +73,9 @@ export default function ExerciseCard({
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
               <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
+              {level != null && (
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</Text>
+              )}
               {rir !== null && rir !== undefined && (
                 <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
               )}
@@ -125,6 +128,9 @@ export default function ExerciseCard({
         </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
           <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
+          {level != null && (
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</Text>
+          )}
           {rir !== null && rir !== undefined && (
             <Text style={{ color: colors.purple, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
           )}

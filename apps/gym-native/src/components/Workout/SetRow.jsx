@@ -65,8 +65,11 @@ function SetRow({
   distanceUnit = 'm',
   descansoSeg,
   previousSet,
-  repsTarget,
-  rirTarget = null,
+  previousLoaded = false,
+  target,
+  targetField = null,
+  levelTarget = null,
+  effortTarget = null,
   progressionEnabled = false,
   isActive = false,
   onComplete,
@@ -80,8 +83,8 @@ function SetRow({
     calories, setCalories, level, setLevel, pace, setPace,
     rir, setRir,
     notes, setType, saveDetails, setSetType,
-    isCompleted, setData, isValid, repsPlaceholder,
-  } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit, previousSet, repsTarget })
+    isCompleted, setData, isValid, targetPlaceholder, targetField: resolvedTargetField, progressableValue,
+  } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit, previousSet, previousLoaded, target, targetField, levelTarget })
 
   const { data: preferences } = usePreferences()
   const { mutate: updateSetVideo } = useUpdateSetVideo()
@@ -172,7 +175,7 @@ function SetRow({
   const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
   const fieldState = {
     weight: [weight, setWeight],
-    reps: [reps, setReps, repsPlaceholder],
+    reps: [reps, setReps],
     time: [time, setTime],
     distance: [distance, setDistance],
     calories: [calories, setCalories],
@@ -189,10 +192,11 @@ function SetRow({
   // subfila, fuera de la fila: dentro robaba el ancho de los inputs y descuadraba al arrancar.
   const showTimer = tracksTime(trackedFields) && isActive && !isCompleted && Number(time) > 0
 
-  // Aviso de progresión (issue #13): esta serie llegó al tope del rango la última vez.
-  // Se oculta al completar la serie o al teclear un peso mayor que el anterior (nudge cumplido).
+  // Aviso de progresión (issue #13): esta serie cumplió el objetivo prescrito la última vez.
+  // Se oculta al completar la serie o al teclear un progresable mayor que el anterior (nudge
+  // cumplido). El progresable es el peso, o el NIVEL en los ejercicios que no miden peso.
   const showProgressionHint = progressionEnabled && !isCompleted &&
-    shouldSuggestProgression({ previousSet, repsTarget, trackedFields, currentWeight: weight, rirTarget })
+    shouldSuggestProgression({ previousSet, target, trackedFields, targetField, currentProgressable: progressableValue, effortTarget })
 
   // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
   // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten
@@ -285,7 +289,13 @@ function SetRow({
           {renderSetCell()}
         </View>
         {columns.map(({ field, decimal }) => {
-          const [value, onChange, placeholder] = fieldState[field]
+          const [value, onChange] = fieldState[field]
+          // El objetivo de la rutina se pinta en la columna DE SU CAMPO (issue #28): en un cardio
+          // "20min" es la pista de la columna de tiempo, no de la de reps (que no existe).
+          // Se pinta CRUDO, tal como lo escribió el usuario ("20min", "20-30min", "5km"), aunque la
+          // cabecera diga MM:SS o M: es la prescripción literal y los rangos se ven enteros.
+          // Normalizarlo al formato de la caja convertiría "5km" en "5000". No lo "arregles".
+          const placeholder = field === resolvedTargetField ? targetPlaceholder : undefined
           return (
             <View key={field} style={{ flex: 1 }}>
               <SetValueInput field={field} decimal={decimal} value={value} onChange={onChange}
@@ -313,7 +323,8 @@ function SetRow({
         distanceUnit={distanceUnit}
         showRir={showRirInput}
         showProgressionHint={showProgressionHint}
-        repsTarget={repsTarget}
+        target={target}
+        targetField={targetField}
         timerSeconds={showTimer ? Number(time) : 0}
       />
 

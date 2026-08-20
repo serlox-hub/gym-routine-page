@@ -60,6 +60,14 @@ export const MAX_TRACKED_FIELDS = 3
 export const DEFAULT_TRACKED_FIELDS = [SetField.WEIGHT, SetField.REPS]
 
 /**
+ * Tope del nivel de máquina, tanto el prescrito (`routine_exercises.level`) como el registrado.
+ * Ambas columnas son `smallint`, así que sin tope un 40000 pasa la validación y muere en BD con
+ * 22003; y ninguna máquina de gimnasio pasa de tres cifras. Lo comparten la validación del
+ * formulario y el saneo del JSON importado.
+ */
+export const MAX_PRESCRIBED_LEVEL = 999
+
+/**
  * Metadatos estáticos por campo:
  * - `column`     columna de `completed_sets` (fila leída de BD, snake_case)
  * - `payloadKey` clave del payload de `upsertCompletedSet` (escritura, camelCase)
@@ -300,17 +308,79 @@ export function getFieldSeparator(field) {
 }
 
 // ============================================
-// CAMPOS PRIMARIOS (objetivo y gráficas)
+// PAPELES DE LOS CAMPOS (progresable / objetivo / resultado)
 // ============================================
 
-// Qué campo es "el objetivo" del ejercicio en la config de rutina (el que se escribe como "8-12",
-// "30s", "5km"). El peso, el nivel y el ritmo nunca son objetivo: son cómo se hace, no cuánto.
-const TARGET_FIELD_PRIORITY = [SetField.REPS, SetField.DISTANCE, SetField.TIME, SetField.CALORIES]
+/**
+ * Cada campo de un ejercicio juega uno de tres papeles, y el papel lo decide EL EJERCICIO, no el
+ * tipo de campo (issue #28):
+ * - progresable: lo que empujas hacia arriba con el tiempo (peso en el press banca, NIVEL en la bici)
+ * - objetivo:    lo que prescribe la rutina ("8-12", "20 min", "5 km")
+ * - resultado:   lo que sale de hacerlo (en la bici, la distancia si el objetivo es el tiempo)
+ *
+ * El objetivo se GUARDA (`routine_exercises.target_field`), ya no se adivina al pintarlo: el valor
+ * es texto libre y sin el campo la app no sabía si "20min" hablaba de tiempo o de qué.
+ */
 
-/** Campo que representa el objetivo del ejercicio, o null si no mide ninguno de los cuatro. */
-export function getPrimaryTargetField(fields) {
-  const tracked = normalizeTrackedFields(fields)
-  return TARGET_FIELD_PRIORITY.find(f => tracked.includes(f)) ?? null
+// Campos que pueden ser objetivo: los que expresan "cuánto" pide la rutina. No se exporta (la
+// pregunta pública es `isTargetField`/`getTargetableFields`); la migración 056 lo cita por nombre.
+const TARGET_FIELDS = [SetField.REPS, SetField.TIME, SetField.DISTANCE, SetField.CALORIES]
+
+/** ¿Este campo puede ser el objetivo de un ejercicio? El peso, el nivel y el ritmo nunca lo son:
+ * los dos primeros son el progresable y el tercero sale de dividir distancia entre tiempo. */
+export function isTargetField(field) {
+  return TARGET_FIELDS.includes(field)
+}
+
+/** Campos entre los que se elige el objetivo de ESTE ejercicio, en orden canónico (0 a 3). */
+export function getTargetableFields(trackedFields) {
+  const tracked = normalizeTrackedFields(trackedFields)
+  return FIELD_ORDER.filter(field => isTargetField(field) && tracked.includes(field))
+}
+
+// Orden en el que se propone el objetivo cuando el ejercicio se añade a una rutina y nadie ha
+// elegido todavía. Es la lista heredada del enum de 12 tipos (distancia antes que tiempo porque
+// `distance_time` etiquetaba distancia): se conserva SOLO como default de formulario y como
+// lectura de filas antiguas, para que el backfill y el import de JSON viejo coincidan con lo que
+// la app venía asumiendo. Ya no decide nada en pantalla.
+const DEFAULT_TARGET_PRIORITY = [SetField.REPS, SetField.DISTANCE, SetField.TIME, SetField.CALORIES]
+
+/**
+ * Campo objetivo propuesto para un ejercicio sin elección guardada. null si no mide ninguno de los
+ * cuatro (p. ej. solo peso): ahí el objetivo es texto libre sin campo al que anclarse.
+ * @param {string[]|null} trackedFields
+ * @returns {string|null}
+ */
+export function getDefaultTargetField(trackedFields) {
+  const tracked = normalizeTrackedFields(trackedFields)
+  return DEFAULT_TARGET_PRIORITY.find(field => tracked.includes(field)) ?? null
+}
+
+/**
+ * Campo objetivo de una fila de rutina/sesión, con el fallback único de la app (mismo patrón que
+ * `resolveTrackedFields`). Se descarta el guardado si el ejercicio ya no mide ese campo: cambiar
+ * `tracked_fields` de peso × reps a nivel × tiempo dejaría un objetivo apuntando a reps.
+ * @param {string|null|undefined} targetField - `routine_exercises.target_field` / `session_exercises.target_field`
+ * @param {string[]|null} trackedFields
+ * @returns {string|null}
+ */
+export function resolveTargetField(targetField, trackedFields) {
+  const targetable = getTargetableFields(trackedFields)
+  return targetable.includes(targetField) ? targetField : getDefaultTargetField(trackedFields)
+}
+
+/**
+ * Campo PROGRESABLE del ejercicio: el que se sube con el tiempo. Derivado, no configurable — el
+ * peso cuando lo mide y el nivel cuando no (en una máquina de cardio el nivel juega exactamente
+ * el papel del peso). null si no mide ninguno de los dos: no hay nada que subir.
+ * @param {string[]|null} trackedFields
+ * @returns {string|null}
+ */
+export function getProgressableField(trackedFields) {
+  const tracked = normalizeTrackedFields(trackedFields)
+  if (tracked.includes(SetField.WEIGHT)) return SetField.WEIGHT
+  if (tracked.includes(SetField.LEVEL)) return SetField.LEVEL
+  return null
 }
 
 // Qué campo resume una serie en gráficas y tarjetas de historial. El peso manda cuando lo hay
@@ -326,47 +396,57 @@ export function getPrimaryChartField(fields) {
   return CHART_FIELD_PRIORITY.find(f => tracked.includes(f)) ?? SetField.REPS
 }
 
-/** Etiqueta del campo objetivo en la config de rutina ("Reps", "Tiempo", "Distancia"). */
-export function getTargetLabel(fields) {
-  const field = getPrimaryTargetField(fields)
-  switch (field) {
+/**
+ * Etiqueta del objetivo en la config de rutina ("Repeticiones", "Tiempo", "Distancia").
+ * Sin campo objetivo se queda en "Objetivo": el valor sigue siendo obligatorio (texto libre),
+ * solo que no habla de ninguna de las medidas del ejercicio.
+ * @param {string|null} targetField
+ */
+export function getTargetLabel(targetField) {
+  switch (targetField) {
+    case SetField.REPS: return t('exercise:repsLabel.reps')
     case SetField.TIME: return t('exercise:repsLabel.time')
     case SetField.DISTANCE: return t('exercise:repsLabel.distance')
     case SetField.CALORIES: return t('exercise:repsLabel.calories')
-    default: return t('exercise:repsLabel.reps')
+    default: return t('exercise:repsLabel.target')
   }
 }
 
-/** Placeholder del campo objetivo. */
-export function getTargetPlaceholder(fields) {
-  const field = getPrimaryTargetField(fields)
-  if (field === SetField.TIME) return t('exercise:repsPlaceholder.time')
-  if (field === SetField.CALORIES) return t('exercise:repsPlaceholder.calories')
-  if (field === SetField.DISTANCE) {
-    return isEnduranceDistance(fields)
-      ? t('exercise:repsPlaceholder.distanceTime')
-      : t('exercise:repsPlaceholder.distance')
+/** Placeholder del input de objetivo en el formulario ("Ej: 8-12"). */
+export function getTargetPlaceholder(targetField, trackedFields) {
+  switch (targetField) {
+    case SetField.REPS: return t('exercise:repsPlaceholder.reps')
+    case SetField.TIME: return t('exercise:repsPlaceholder.time')
+    case SetField.CALORIES: return t('exercise:repsPlaceholder.calories')
+    case SetField.DISTANCE:
+      return isEnduranceDistance(trackedFields)
+        ? t('exercise:repsPlaceholder.distanceTime')
+        : t('exercise:repsPlaceholder.distance')
+    default: return ''
   }
-  return t('exercise:repsPlaceholder.reps')
 }
 
 // Distancia acompañada de tiempo o ritmo = cardio de recorrido (cinta, bici, correr), donde el
 // objetivo se escribe en kilómetros. La distancia SOLA es trabajo corto (farmer walk, sprints):
-// se escribe en metros. Es el único caso en el que el default no sale del campo primario a secas.
+// se escribe en metros. Es el único default que no sale del campo objetivo a secas.
 function isEnduranceDistance(fields) {
   const tracked = normalizeTrackedFields(fields)
   return tracked.includes(SetField.DISTANCE) &&
     (tracked.includes(SetField.TIME) || tracked.includes(SetField.PACE))
 }
 
-/** Objetivo por defecto al añadir el ejercicio a una rutina. */
-export function getDefaultTarget(fields) {
-  const field = getPrimaryTargetField(fields)
-  switch (field) {
+/**
+ * Objetivo por defecto al añadir el ejercicio a una rutina o al cambiar de campo objetivo.
+ * Siempre lleva unidad explícita: es lo que permite que `parseTargetRange` (progressionUtils)
+ * sepa si "20" son segundos o minutos.
+ */
+export function getDefaultTarget(targetField, trackedFields) {
+  switch (targetField) {
     case SetField.TIME: return '30s'
     case SetField.CALORIES: return '100kcal'
-    case SetField.DISTANCE: return isEnduranceDistance(fields) ? '5km' : '40m'
-    default: return '8-12'
+    case SetField.DISTANCE: return isEnduranceDistance(trackedFields) ? '5km' : '40m'
+    case SetField.REPS: return '8-12'
+    default: return ''
   }
 }
 

@@ -2,7 +2,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native'
 import { ChevronDown, CheckCircle2 } from 'lucide-react-native'
 import { DropdownMenu } from '../ui'
 import { colors } from '../../lib/styles'
-import { DEFAULT_TRACKED_FIELDS, getMuscleGroupName, formatEffortBadge, t } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, SetField, getMuscleGroupName, formatEffortBadge, formatFieldValue, t } from '@gym/shared'
 
 function MetaPill({ children }) {
   return (
@@ -17,6 +17,7 @@ function ExerciseCardHeader({
   muscleGroup,
   series,
   reps,
+  level,
   rir,
   trackedFields = DEFAULT_TRACKED_FIELDS,
   rest_seconds,
@@ -29,6 +30,8 @@ function ExerciseCardHeader({
 
   const setsRepsParts = []
   if (series > 0 && reps) setsRepsParts.push(`${series} × ${reps}`)
+  // Nivel prescrito por la rutina ("Nv8"): forma compacta, igual que en la fila de serie.
+  if (level != null) setsRepsParts.push(formatFieldValue(SetField.LEVEL, level))
   // La escala depende del lo que mide el ejercicio (RIR con reps, RPE textual en el resto): nunca crudo.
   if (rir != null) setsRepsParts.push(formatEffortBadge(rir, trackedFields))
   const setsRepsText = setsRepsParts.join(' · ')
