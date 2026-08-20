@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Check, AlertCircle, Info } from 'lucide-react'
-import { colors } from '../../lib/styles.js'
+import { colors, design } from '../../lib/styles.js'
 
 const TOAST_DURATION = 3000
 
@@ -40,11 +40,14 @@ function Toast() {
 
   return (
     <div
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg max-w-sm w-[calc(100%-2rem)] cursor-pointer"
+      className="fixed left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg max-w-sm w-[calc(100%-2rem)] cursor-pointer"
       style={{
+        // Abajo, como en native: arriba tapaba el ActiveSessionBanner, y varios avisos
+        // (p. ej. "termina el entrenamiento en curso") piden justo la acción que escondían.
+        bottom: design.tabBarFootprint,
         backgroundColor: colors.bgSecondary,
         border: `1px solid ${colors.border}`,
-        animation: 'toast-slide-down 0.3s ease-out',
+        animation: 'toast-slide-up 0.3s ease-out',
       }}
       onClick={() => setToast(null)}
     >
@@ -53,8 +56,8 @@ function Toast() {
         {toast.message}
       </span>
       <style>{`
-        @keyframes toast-slide-down {
-          from { transform: translate(-50%, -100%); opacity: 0; }
+        @keyframes toast-slide-up {
+          from { transform: translate(-50%, 100%); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }
         }
       `}</style>

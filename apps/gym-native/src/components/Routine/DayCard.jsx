@@ -7,7 +7,7 @@ import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise,
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
-import { getExistingSupersetIds, moveItemToPosition, useSelectedGym } from '@gym/shared'
+import { getExistingSupersetIds, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import BlockSection from './BlockSection'
 
 export default function DayCard({
@@ -52,7 +52,13 @@ export default function DayCard({
   const allExercises = [...warmupExercises, ...mainExercises]
   const existingSupersets = getExistingSupersetIds(allExercises)
 
-  const isThisDayActive = hasActiveSession && activeRoutineDayId === id
+  const dayAction = getRoutineDayAction({
+    hasActiveSession,
+    activeRoutineDayId,
+    dayId: id,
+    isStarting: startSessionMutation.isPending,
+    isLoading: loadingBlocks,
+  })
 
   const handleClick = () => {
     setIsExpanded(!isExpanded)
@@ -67,6 +73,23 @@ export default function DayCard({
 
   const handleContinueWorkout = () => {
     useWorkoutStore.getState().showWorkout()
+  }
+
+  // Mismo criterio que el botón de entrenamiento libre: bloqueado no puede ser mudo.
+  const handleStartPress = () => {
+    switch (dayAction) {
+      case WORKOUT_START_ACTION.RESUME:
+        handleContinueWorkout()
+        return
+      case WORKOUT_START_ACTION.BLOCKED:
+        getNotifier()?.show(t('workout:session.finishCurrentFirst'), 'info')
+        return
+      case WORKOUT_START_ACTION.START:
+        handleStartWorkout()
+        return
+      case WORKOUT_START_ACTION.BUSY:
+        return  // bloques sin cargar o arranque en vuelo
+    }
   }
 
   const handleReorderWarmup = (exerciseId, newIndex) => {
@@ -110,10 +133,10 @@ export default function DayCard({
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 }}>
             {!isEditing && (
               <Pressable
-                onPress={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
-                disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
+                onPress={handleStartPress}
+                disabled={dayAction === WORKOUT_START_ACTION.BUSY}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={{ padding: 4, opacity: (hasActiveSession && !isThisDayActive) ? 0.4 : 1 }}
+                style={{ padding: 4, opacity: dayAction === WORKOUT_START_ACTION.BLOCKED ? 0.4 : 1 }}
               >
                 <Play size={20} color={colors.success} />
               </Pressable>

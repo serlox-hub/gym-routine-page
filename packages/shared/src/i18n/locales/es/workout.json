@@ -5,6 +5,8 @@
     "setProgress": "Serie {{current}} de {{total}}",
     "start": "Iniciar",
     "startFailed": "No se pudo empezar el entrenamiento. Inténtalo de nuevo.",
+    "finishRoutineFirst": "Tienes un entrenamiento de rutina en marcha. Termínalo para empezar uno libre.",
+    "finishCurrentFirst": "Tienes un entrenamiento en marcha. Termínalo para empezar otro.",
     "end": "Finalizar entrenamiento",
     "endConfirm": "¿Seguro que quieres finalizar el entrenamiento?",
     "pendingSetsWarning_one": "Te queda {{count}} serie sin completar. Si terminas ahora no contará.",

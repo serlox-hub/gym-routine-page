@@ -184,6 +184,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 - **Safe Area (native)**: Todo contenido visible debe respetar el safe area (notch, Dynamic Island, home indicator). Usar `SafeAreaView` de `react-native-safe-area-context` para layouts, o `useSafeAreaInsets()` para elementos con `position: 'absolute'` que necesitan offset manual. Nunca usar valores fijos de `top`/`bottom` sin sumar el inset correspondiente.
 - **Contenedor con scroll que contiene inputs (web)**: el padding horizontal va en el propio elemento con `overflow-*-auto`, nunca delegado al padre o al hijo. `overflow-y-auto` recorta también en el eje X, y el ring de foco de `Input`/`Select`/`Textarea` (`focus:ring-1`) es un `box-shadow` que pinta 1px FUERA de la caja: sin padding propio queda cortado a izquierda y derecha. Si no se quiere cambiar la métrica visual, `px-1 -mx-1` en la caja de scroll.
 - **Charts de recharts (web)**: la altura va en el propio `ResponsiveContainer` como número (`height={180}`), nunca en un div padre con `height="100%"` en el container. Recharts arranca midiendo -1x-1 y avisa por consola en cada montaje (también en el build de producción). Ver `docs/DECISIONS.md`.
+- **Botón bloqueado (no disponible, pero responde)**: cuando una acción no cabe por el estado (p. ej. solo puede haber una sesión de entrenamiento a la vez), el botón NO se deja mudo. Patrón: atenuado (`opacity` 0.4–0.5) + `cursor: pointer` + **sin** feedback de hover/pulsación, y al pulsar un aviso que explica por qué. Atenuado sin hover = "no disponible"; que responda = "te digo por qué". `disabled` real se reserva para lo transitorio (cargando, mutación en vuelo). Ver `TodaysWorkout` y `DayCard` en ambas plataformas, y `lib/workoutStartAction.js`.
 
 ### Color System (CRITICAL)
 
@@ -420,6 +421,7 @@ Extract when logic:
 | Papeles de los campos (objetivo / progresable) | `measurementFields.js` | `resolveTargetField()`, `getTargetableFields()`, `getDefaultTargetField()`, `getProgressableField()`, `getDefaultTarget()` |
 | Progresión por serie (doble progresión) | `progressionUtils.js` | `parseTargetRange()`, `shouldSuggestProgression()`, `getProgressionLabel()` |
 | Escala de esfuerzo (RIR/RPE) | `effortScale.js` | `getEffortOptions()`, `isValidEffortValue()`, `formatEffortBadge()`, `metEffortTarget()` |
+| Acción de los botones de arrancar entrenamiento | `workoutStartAction.js` | `getFreeWorkoutAction()`, `getRoutineDayAction()` |
 | Columnas de la fila de serie (sesión) | `setColumns.js` | `getSetColumns()` |
 | Input de duración por dígitos (mm:ss) | `durationInput.js` | `durationDigitsToSeconds()`, `secondsToDurationDigits()`, `formatDurationDigits()` |
 | Form de config de ejercicio en rutina/sesión | `routineExerciseForm.js` | `buildExerciseConfigForm()`, `validateExerciseConfigForm()`, `parseExerciseConfigForm()` |

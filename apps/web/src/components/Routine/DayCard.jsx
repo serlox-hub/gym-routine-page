@@ -6,7 +6,7 @@ import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, Modal } from '../ui/i
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
-import { getExistingSupersetIds, moveItemToPosition, useSelectedGym } from '@gym/shared'
+import { getExistingSupersetIds, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import BlockSection from './BlockSection.jsx'
 
 function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId }) {
@@ -38,7 +38,13 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
     setIsExpanded(!isExpanded)
   }
 
-  const isThisDayActive = hasActiveSession && activeRoutineDayId === id
+  const dayAction = getRoutineDayAction({
+    hasActiveSession,
+    activeRoutineDayId,
+    dayId: id,
+    isStarting: startSessionMutation.isPending,
+    isLoading: loadingBlocks,
+  })
 
   const handleStartWorkout = (e) => {
     e.stopPropagation()
@@ -53,6 +59,25 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
   const handleContinueWorkout = (e) => {
     e.stopPropagation()
     navigate(`/routine/${routineId}/day/${id}/workout`)
+  }
+
+  // Mismo criterio que el botón de entrenamiento libre: bloqueado no puede ser mudo.
+  const handleStartPress = (e) => {
+    switch (dayAction) {
+      case WORKOUT_START_ACTION.RESUME:
+        handleContinueWorkout(e)
+        return
+      case WORKOUT_START_ACTION.BLOCKED:
+        e.stopPropagation()
+        getNotifier()?.show(t('workout:session.finishCurrentFirst'), 'info')
+        return
+      case WORKOUT_START_ACTION.START:
+        handleStartWorkout(e)
+        return
+      case WORKOUT_START_ACTION.BUSY:
+        e.stopPropagation()
+        return  // bloques sin cargar o arranque en vuelo
+    }
   }
 
   const handleReorderWarmup = (exerciseId, newIndex) => {
@@ -109,9 +134,10 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
           <div className="flex items-center gap-2 shrink-0 ml-2">
             {!isEditing && (
               <button
-                onClick={isThisDayActive ? handleContinueWorkout : handleStartWorkout}
-                disabled={startSessionMutation.isPending || loadingBlocks || (hasActiveSession && !isThisDayActive)}
+                onClick={handleStartPress}
+                disabled={dayAction === WORKOUT_START_ACTION.BUSY}
                 className="p-1 rounded hover:opacity-80 disabled:opacity-40"
+                style={{ opacity: dayAction === WORKOUT_START_ACTION.BLOCKED ? 0.4 : undefined }}
               >
                 <Play size={20} style={{ color: colors.success }} />
               </button>

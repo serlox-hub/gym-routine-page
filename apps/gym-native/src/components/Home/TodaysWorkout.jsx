@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, ChevronRight } from 'lucide-react-native'
-import { useRoutines, useSelectedGym } from '@gym/shared'
+import { useRoutines, useSelectedGym, getFreeWorkoutAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { RoutineCard } from '../Routine'
@@ -16,16 +16,35 @@ function TodaysWorkout({ navigation }) {
   const { gymId } = useSelectedGym()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
-  const isFreeSessionActive = hasActiveSession && activeRoutineDayId === null
-  const isRoutineSessionActive = hasActiveSession && activeRoutineDayId !== null
+  const freeAction = getFreeWorkoutAction({
+    hasActiveSession,
+    routineDayId: activeRoutineDayId,
+    isStarting: startSessionMutation.isPending,
+  })
+  const isFreeSessionActive = freeAction === WORKOUT_START_ACTION.RESUME
+  const isRoutineSessionActive = freeAction === WORKOUT_START_ACTION.BLOCKED
 
   const pinnedRoutine = routines?.find(r => r.is_favorite)
   const hasRoutines = routines && routines.length > 0
   const [freePressed, setFreePressed] = useState(false)
 
-  const handleStartFreeWorkout = () => {
-    useWorkoutStore.getState().showWorkout()
-    startSessionMutation.mutate({ gymId })
+  // Un botón que no responde y no dice nada parece roto. El caso BLOCKED (hay una sesión
+  // de rutina en marcha) se explica con un aviso en vez de ignorar la pulsación.
+  const handleFreeWorkoutPress = () => {
+    switch (freeAction) {
+      case WORKOUT_START_ACTION.RESUME:
+        useWorkoutStore.getState().showWorkout()
+        return
+      case WORKOUT_START_ACTION.BLOCKED:
+        getNotifier()?.show(t('workout:session.finishRoutineFirst'), 'info')
+        return
+      case WORKOUT_START_ACTION.START:
+        useWorkoutStore.getState().showWorkout()
+        startSessionMutation.mutate({ gymId })
+        return
+      case WORKOUT_START_ACTION.BUSY:
+        return  // el arranque está en vuelo, ignorar la pulsación
+    }
   }
 
   return (
@@ -110,15 +129,7 @@ function TodaysWorkout({ navigation }) {
 
       {/* Free workout button */}
       <Pressable
-        onPress={
-          isFreeSessionActive
-            ? () => useWorkoutStore.getState().showWorkout()
-            : isRoutineSessionActive
-              ? undefined
-              : !startSessionMutation.isPending
-                ? handleStartFreeWorkout
-                : undefined
-        }
+        onPress={handleFreeWorkoutPress}
         className="flex-row items-center justify-center gap-2"
         onPressIn={() => setFreePressed(true)}
         onPressOut={() => setFreePressed(false)}

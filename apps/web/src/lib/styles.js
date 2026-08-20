@@ -14,6 +14,9 @@ export const design = {
   tabBarHeight: 62,
   tabBarRadius: 36,
   tabBarPadding: 4,
+  // Hueco total que ocupa la barra inferior (16 arriba + alto + 21 abajo). Lo que
+  // flote sobre ella (toasts) tiene que dejarlo libre o queda debajo de la barra.
+  tabBarFootprint: 99,
   tabPillRadius: 26,
   tabFontSize: 9,
   tabLetterSpacing: 1,

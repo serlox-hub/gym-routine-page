@@ -3,6 +3,8 @@
     "active": "Active session",
     "start": "Start",
     "startFailed": "Could not start the workout. Try again.",
+    "finishRoutineFirst": "You have a routine workout in progress. Finish it to start a free one.",
+    "finishCurrentFirst": "You have a workout in progress. Finish it to start another one.",
     "end": "End workout",
     "finishWorkout": "Finish workout",
     "setProgress": "Set {{current}} of {{total}}",
