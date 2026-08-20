@@ -182,6 +182,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 - Use style objects from `lib/styles.js` for consistency
 - **Safe Area (native)**: Todo contenido visible debe respetar el safe area (notch, Dynamic Island, home indicator). Usar `SafeAreaView` de `react-native-safe-area-context` para layouts, o `useSafeAreaInsets()` para elementos con `position: 'absolute'` que necesitan offset manual. Nunca usar valores fijos de `top`/`bottom` sin sumar el inset correspondiente.
 - **Contenedor con scroll que contiene inputs (web)**: el padding horizontal va en el propio elemento con `overflow-*-auto`, nunca delegado al padre o al hijo. `overflow-y-auto` recorta también en el eje X, y el ring de foco de `Input`/`Select`/`Textarea` (`focus:ring-1`) es un `box-shadow` que pinta 1px FUERA de la caja: sin padding propio queda cortado a izquierda y derecha. Si no se quiere cambiar la métrica visual, `px-1 -mx-1` en la caja de scroll.
+- **Charts de recharts (web)**: la altura va en el propio `ResponsiveContainer` como número (`height={180}`), nunca en un div padre con `height="100%"` en el container. Recharts arranca midiendo -1x-1 y avisa por consola en cada montaje (también en el build de producción). Ver `docs/DECISIONS.md`.
 
 ### Color System (CRITICAL)
 

@@ -303,68 +303,69 @@ function StreakCard() {
           </div>
 
           {/* Chart */}
-          <div style={{ height: design.chartHeight.web }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={webChartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barGap={4}>
-                <defs>
-                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={gradients.lime[0]} />
-                    <stop offset="100%" stopColor={gradients.lime[1]} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="label"
-                  tick={({ x, y, payload, index }) => {
-                    const entry = chartData[index]
-                    const isPastOrToday = entry && entry.dateStr <= todayStr
-                    return (
-                      <text x={x} y={y + 12} textAnchor="middle" fill={isPastOrToday ? colors.success : colors.textMuted} fontSize={11} fontWeight={isPastOrToday ? 600 : 500}>
-                        {payload.value}
-                      </text>
-                    )
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis domain={[0, chartMax]} hide />
-                <Tooltip
-                  cursor={false}
-                  position={{ y: design.chartHeight.web - 20 }}
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.[0]) return null
-                    const mins = payload[0].payload.durationMinutes
-                    if (!mins) return null
-                    return (
-                      <div className="rounded px-2 py-1" style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}>
-                        <span style={{ color: colors.textPrimary, fontSize: 11 }}>{mins} min</span>
-                      </div>
-                    )
-                  }}
-                />
-                <Bar
-                  dataKey="barValue"
-                  radius={[design.barRadius, design.barRadius, design.barRadius, design.barRadius]}
-                  maxBarSize={40}
-                  onClick={(data) => {
-                    if (data?.durationMinutes > 0 && data.dateStr) {
-                      navigate('/history', { state: { date: data.dateStr } })
-                    }
-                  }}
-                >
-                  {webChartData.map((entry, index) => {
-                    const clickable = !viewedIsRest && entry.durationMinutes > 0
-                    return (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={clickable ? 'url(#barGradient)' : colors.borderSubtle}
-                        cursor={clickable ? 'pointer' : 'default'}
-                      />
-                    )
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {/* La altura va en el ResponsiveContainer como número, no en un div padre con height
+              en %: recharts mide -1x-1 en el primer render y avisa por consola en cada montaje.
+              Con una altura fija ya resuelve sin esperar al ResizeObserver. */}
+          <ResponsiveContainer width="100%" height={design.chartHeight.web}>
+            <BarChart data={webChartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barGap={4}>
+              <defs>
+                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={gradients.lime[0]} />
+                  <stop offset="100%" stopColor={gradients.lime[1]} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="label"
+                tick={({ x, y, payload, index }) => {
+                  const entry = chartData[index]
+                  const isPastOrToday = entry && entry.dateStr <= todayStr
+                  return (
+                    <text x={x} y={y + 12} textAnchor="middle" fill={isPastOrToday ? colors.success : colors.textMuted} fontSize={11} fontWeight={isPastOrToday ? 600 : 500}>
+                      {payload.value}
+                    </text>
+                  )
+                }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis domain={[0, chartMax]} hide />
+              <Tooltip
+                cursor={false}
+                position={{ y: design.chartHeight.web - 20 }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.[0]) return null
+                  const mins = payload[0].payload.durationMinutes
+                  if (!mins) return null
+                  return (
+                    <div className="rounded px-2 py-1" style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}>
+                      <span style={{ color: colors.textPrimary, fontSize: 11 }}>{mins} min</span>
+                    </div>
+                  )
+                }}
+              />
+              <Bar
+                dataKey="barValue"
+                radius={[design.barRadius, design.barRadius, design.barRadius, design.barRadius]}
+                maxBarSize={40}
+                onClick={(data) => {
+                  if (data?.durationMinutes > 0 && data.dateStr) {
+                    navigate('/history', { state: { date: data.dateStr } })
+                  }
+                }}
+              >
+                {webChartData.map((entry, index) => {
+                  const clickable = !viewedIsRest && entry.durationMinutes > 0
+                  return (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={clickable ? 'url(#barGradient)' : colors.borderSubtle}
+                      cursor={clickable ? 'pointer' : 'default'}
+                    />
+                  )
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Dot pagination */}

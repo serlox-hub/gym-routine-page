@@ -160,60 +160,60 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, tr
   return (
     <div className="mb-4">
       {header}
-      <div style={{ height: isOverlay ? 180 : 150 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 10, fill: colors.textSecondary }}
-              stroke={colors.border}
+      {/* Altura como número (no un div padre con height en %): si no, recharts mide -1x-1
+          en el primer render y avisa por consola. */}
+      <ResponsiveContainer width="100%" height={isOverlay ? 180 : 150}>
+        <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 10, fill: colors.textSecondary }}
+            stroke={colors.border}
+          />
+          <YAxis
+            tick={{ fontSize: 10, fill: colors.textSecondary }}
+            stroke={colors.border}
+            domain={['dataMin', 'auto']}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: colors.bgSecondary,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            labelStyle={{ color: colors.textPrimary }}
+            formatter={tooltipFormatter}
+          />
+          {isOverlay ? (
+            <>
+              <Legend wrapperStyle={{ fontSize: 11, color: colors.textSecondary }} />
+              {overlayData.series.map(s => (
+                <Line
+                  key={s.key}
+                  type="monotone"
+                  dataKey={s.key}
+                  name={s.name}
+                  stroke={s.color}
+                  strokeWidth={2}
+                  dot={{ fill: s.color, r: 3 }}
+                  activeDot={{ r: 5 }}
+                  connectNulls
+                />
+              ))}
+            </>
+          ) : (
+            <Line
+              type="monotone"
+              dataKey={dataKey}
+              stroke={lineColor}
+              strokeWidth={2}
+              dot={{ fill: lineColor, r: 3 }}
+              activeDot={{ r: 5 }}
             />
-            <YAxis
-              tick={{ fontSize: 10, fill: colors.textSecondary }}
-              stroke={colors.border}
-              domain={['dataMin', 'auto']}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: colors.bgSecondary,
-                border: `1px solid ${colors.border}`,
-                borderRadius: 8,
-                fontSize: 12,
-              }}
-              labelStyle={{ color: colors.textPrimary }}
-              formatter={tooltipFormatter}
-            />
-            {isOverlay ? (
-              <>
-                <Legend wrapperStyle={{ fontSize: 11, color: colors.textSecondary }} />
-                {overlayData.series.map(s => (
-                  <Line
-                    key={s.key}
-                    type="monotone"
-                    dataKey={s.key}
-                    name={s.name}
-                    stroke={s.color}
-                    strokeWidth={2}
-                    dot={{ fill: s.color, r: 3 }}
-                    activeDot={{ r: 5 }}
-                    connectNulls
-                  />
-                ))}
-              </>
-            ) : (
-              <Line
-                type="monotone"
-                dataKey={dataKey}
-                stroke={lineColor}
-                strokeWidth={2}
-                dot={{ fill: lineColor, r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+          )}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }

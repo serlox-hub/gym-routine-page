@@ -52,42 +52,42 @@ function MeasurementChart({ records, measurementType, unit = 'cm' }) {
   return (
     <div>
       {header}
-      <div style={{ height: 180 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 10, fill: colors.textSecondary }}
-              stroke={colors.border}
-            />
-            <YAxis
-              tick={{ fontSize: 10, fill: colors.textSecondary }}
-              stroke={colors.border}
-              domain={['dataMin - 2', 'dataMax + 2']}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: colors.bgSecondary,
-                border: `1px solid ${colors.border}`,
-                borderRadius: 8,
-                fontSize: 12,
-              }}
-              labelStyle={{ color: colors.textPrimary }}
-              labelFormatter={(_, payload) => payload[0]?.payload?.fullDate || ''}
-              formatter={(value) => [`${value} ${unit}`, label]}
-            />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={colors.success}
-              strokeWidth={2}
-              dot={{ fill: colors.success, r: 3 }}
-              activeDot={{ r: 5 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Altura como número (no un div padre con height en %): si no, recharts mide -1x-1
+          en el primer render y avisa por consola. */}
+      <ResponsiveContainer width="100%" height={180}>
+        <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 10, fill: colors.textSecondary }}
+            stroke={colors.border}
+          />
+          <YAxis
+            tick={{ fontSize: 10, fill: colors.textSecondary }}
+            stroke={colors.border}
+            domain={['dataMin - 2', 'dataMax + 2']}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: colors.bgSecondary,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            labelStyle={{ color: colors.textPrimary }}
+            labelFormatter={(_, payload) => payload[0]?.payload?.fullDate || ''}
+            formatter={(value) => [`${value} ${unit}`, label]}
+          />
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke={colors.success}
+            strokeWidth={2}
+            dot={{ fill: colors.success, r: 3 }}
+            activeDot={{ r: 5 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }
