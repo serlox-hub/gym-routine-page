@@ -2,6 +2,7 @@
   "session": {
     "active": "Active session",
     "start": "Start",
+    "startFailed": "Could not start the workout. Try again.",
     "end": "End workout",
     "finishWorkout": "Finish workout",
     "setProgress": "Set {{current}} of {{total}}",

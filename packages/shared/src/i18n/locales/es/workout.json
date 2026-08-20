@@ -4,6 +4,7 @@
     "finishWorkout": "Terminar entrenamiento",
     "setProgress": "Serie {{current}} de {{total}}",
     "start": "Iniciar",
+    "startFailed": "No se pudo empezar el entrenamiento. Inténtalo de nuevo.",
     "end": "Finalizar entrenamiento",
     "endConfirm": "¿Seguro que quieres finalizar el entrenamiento?",
     "pendingSetsWarning_one": "Te queda {{count}} serie sin completar. Si terminas ahora no contará.",

@@ -105,7 +105,12 @@ export function useStartSession({ onStartError } = {}) {
 
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_SESSION] })
     },
+    // Un fallo al arrancar no puede quedarse en silencio: la pantalla no cambia (la navegación
+    // cuelga de onSuccess) y sin aviso parece que el botón no hace nada. Ningún llamador pasaba
+    // onError, así que el toast va aquí, en el hook compartido, y no en cada botón de las dos apps.
+    // `onStartError` sigue siendo para la limpieza propia de cada plataforma (native cierra la hoja).
     onError: () => {
+      getNotifier()?.show(t('workout:session.startFailed'), 'error')
       onStartError?.()
     },
   })
