@@ -19,12 +19,14 @@ import { makeQueryMock, makeClientMock } from './_testUtils.js'
 
 vi.mock('./_client.js', () => ({
   getClient: vi.fn(),
+  getGifBaseUrl: vi.fn(() => null),
 }))
 
-import { getClient } from './_client.js'
+import { getClient, getGifBaseUrl } from './_client.js'
 
 beforeEach(() => {
   vi.clearAllMocks()
+  getGifBaseUrl.mockReturnValue(null)
 })
 
 // ============================================
@@ -53,6 +55,14 @@ describe('getExerciseGifUrl', () => {
     const { getPublicUrl } = mockStorageClient()
     getExerciseGifUrl('1519')
     expect(getPublicUrl).toHaveBeenCalledWith('gif/1519_360.gif')
+  })
+
+  it('con gifBaseUrl inyectada resuelve contra esa base y no toca el Storage', () => {
+    const { from } = mockStorageClient()
+    getGifBaseUrl.mockReturnValue('https://otra.supabase.co/storage/v1/object/public/exercise-gifs')
+    expect(getExerciseGifUrl('1519', 'xs'))
+      .toBe('https://otra.supabase.co/storage/v1/object/public/exercise-gifs/gif/1519_180.gif')
+    expect(from).not.toHaveBeenCalled()
   })
 
   it('devuelve null sin gif_key y no toca el cliente', () => {

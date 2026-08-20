@@ -22,3 +22,18 @@ export function getExerciseGifPath(gifKey, size = 'sm') {
   const px = GIF_SIZES[size] ?? GIF_SIZES.sm
   return `gif/${gifKey}_${px}.gif`
 }
+
+/**
+ * URL pública del GIF a partir de una base explícita (sin pasar por el cliente Supabase).
+ * Sirve para apuntar los GIFs a un Storage distinto del de la app: en desarrollo local el
+ * bucket está vacío y cada tarjeta de sesión dispara un 404 que Chrome bloquea por ORB.
+ * @param {string|null|undefined} baseUrl - base del bucket público, con o sin barra final
+ * @param {string|number|null} gifKey - `exercises.gif_key`
+ * @param {'xs'|'sm'|'lg'} [size='sm']
+ * @returns {string|null} URL absoluta, o null si falta la base o el gif_key
+ */
+export function buildExerciseGifUrl(baseUrl, gifKey, size = 'sm') {
+  const path = getExerciseGifPath(gifKey, size)
+  if (!path || !baseUrl) return null
+  return `${String(baseUrl).replace(/\/+$/, '')}/${path}`
+}

@@ -23,7 +23,11 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 i18n.use(initReactI18next).use(LanguageDetector)
 initI18n({ detection: { order: ['localStorage', 'navigator'], caches: ['localStorage'] } })
-initApi(supabase)
+// gifBaseUrl solo en desarrollo: en producción los GIFs salen del Storage del propio
+// cliente y la variable se ignora, para que no pueda desviarlos por accidente.
+initApi(supabase, {
+  gifBaseUrl: import.meta.env.DEV ? import.meta.env.VITE_EXERCISE_GIFS_BASE_URL : null,
+})
 initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
 initNotifications((message, type = 'success') => {
   getShowToast()?.(message, type)

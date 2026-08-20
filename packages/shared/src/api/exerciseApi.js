@@ -1,16 +1,19 @@
-import { getClient } from './_client.js'
+import { getClient, getGifBaseUrl } from './_client.js'
 import { normalizeTrackedFields } from '../lib/measurementFields.js'
-import { GIF_BUCKET, getExerciseGifPath } from '../lib/exerciseMedia.js'
+import { GIF_BUCKET, getExerciseGifPath, buildExerciseGifUrl } from '../lib/exerciseMedia.js'
 import { t } from '../i18n/index.js'
 
 /**
  * URL pública del GIF de un ejercicio, o null si no tiene animación.
- * Resuelve la base del Storage a través del cliente Supabase inyectado.
+ * Resuelve la base del Storage a través del cliente Supabase inyectado, salvo que
+ * `initApi` haya recibido un `gifBaseUrl` (desarrollo local: el bucket está vacío).
  * @param {string|number|null} gifKey - `exercises.gif_key`
  * @param {'xs'|'sm'|'lg'} [size='sm'] - xs=180 (listas), sm=360 (sesión), lg=720 (pantalla completa)
  * @returns {string|null}
  */
 export function getExerciseGifUrl(gifKey, size = 'sm') {
+  const base = getGifBaseUrl()
+  if (base) return buildExerciseGifUrl(base, gifKey, size)
   const path = getExerciseGifPath(gifKey, size)
   if (!path) return null
   const { data } = getClient().storage.from(GIF_BUCKET).getPublicUrl(path)

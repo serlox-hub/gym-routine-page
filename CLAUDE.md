@@ -66,7 +66,8 @@ import { initReactI18next } from 'react-i18next'
 
 i18n.use(initReactI18next)
 initI18n()                                // i18n (auto-inits with 'es', call before render)
-initApi(supabaseClient)                   // inject Supabase client before any API call
+initApi(supabaseClient, { gifBaseUrl })   // client before any API call; gifBaseUrl opcional
+                                          // (base alternativa de GIFs, ver docs/DECISIONS.md)
 initStores({ authStore, workoutStore })   // inject store instances
 initNotifications(showToast)              // inject platform-specific toast function
 ```

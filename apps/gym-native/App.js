@@ -30,7 +30,11 @@ if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
 
 i18n.use(initReactI18next)
 initI18n()
-initApi(supabase)
+// gifBaseUrl solo en desarrollo: en producción los GIFs salen del Storage del propio
+// cliente y la variable se ignora, para que no pueda desviarlos por accidente.
+initApi(supabase, {
+  gifBaseUrl: __DEV__ ? process.env.EXPO_PUBLIC_EXERCISE_GIFS_BASE_URL : null,
+})
 initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
 initNotifications((message, type = 'success') =>
   Toast.show({ type, text1: message })
