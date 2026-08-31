@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Check, AlertCircle, Info } from 'lucide-react'
 import { colors, design } from '../../lib/styles.js'
+import LoadingSpinner from './LoadingSpinner.jsx'
 
 const TOAST_DURATION = 3000
 
@@ -29,7 +30,8 @@ function Toast() {
   }, [show])
 
   useEffect(() => {
-    if (!toast) return
+    // type 'loading' no se autooculta: se sustituye por el toast de éxito/error que lo sigue
+    if (!toast || toast.type === 'loading') return
     const timer = setTimeout(() => setToast(null), TOAST_DURATION)
     return () => clearTimeout(timer)
   }, [toast])
@@ -51,7 +53,9 @@ function Toast() {
       }}
       onClick={() => setToast(null)}
     >
-      <Icon size={18} style={{ color, flexShrink: 0 }} />
+      {toast.type === 'loading'
+        ? <LoadingSpinner inline />
+        : <Icon size={18} style={{ color, flexShrink: 0 }} />}
       <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
         {toast.message}
       </span>

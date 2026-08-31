@@ -26,6 +26,7 @@ vi.mock('../api/routineApi.js', () => ({
   addExerciseToDay: vi.fn(),
   duplicateRoutineExercise: vi.fn(),
   moveRoutineExerciseToDay: vi.fn(),
+  duplicateRoutine: vi.fn(),
 }))
 
 // Mock useAuth to avoid _stores.js initStores requirement
@@ -49,6 +50,7 @@ import {
   deleteRoutine,
   updateRoutineExercise,
   addExerciseToDay,
+  duplicateRoutine,
 } from '../api/routineApi.js'
 
 import {
@@ -62,6 +64,7 @@ import {
   useDeleteRoutine,
   useUpdateRoutineExercise,
   useAddExerciseToDay,
+  useDuplicateRoutine,
 } from './useRoutines.js'
 
 function createWrapper() {
@@ -261,5 +264,29 @@ describe('useRoutines — mutations', () => {
     })
 
     expect(addExerciseToDay).toHaveBeenCalledWith(addArgs)
+  })
+
+  it('useDuplicateRoutine: llama a duplicateRoutine con routineId, userId y newName', async () => {
+    duplicateRoutine.mockResolvedValueOnce({ id: 'routine-copy' })
+
+    const { result } = renderHook(() => useDuplicateRoutine(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ routineId: 'routine-1', newName: 'Copia' })
+    })
+
+    expect(duplicateRoutine).toHaveBeenCalledWith('routine-1', 'user-123', 'Copia')
+  })
+
+  it('useDuplicateRoutine: newName es opcional', async () => {
+    duplicateRoutine.mockResolvedValueOnce({ id: 'routine-copy' })
+
+    const { result } = renderHook(() => useDuplicateRoutine(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ routineId: 'routine-1' })
+    })
+
+    expect(duplicateRoutine).toHaveBeenCalledWith('routine-1', 'user-123', undefined)
   })
 })

@@ -51,13 +51,16 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
   const duplicateRoutine = useDuplicateRoutine()
 
   const handleDuplicate = async () => {
+    // Sin guard, un segundo tap durante la espera (importRoutine carga el catálogo
+    // de ejercicios, puede tardar) crea copias de más.
+    if (duplicateRoutine.isPending) return
     Toast.show({ type: 'loading', text1: t('routine:duplicating'), autoHide: false })
     try {
       const newRoutine = await duplicateRoutine.mutateAsync({ routineId: parseInt(routineId) })
-      Toast.show({ type: 'success', text1: t('routine:duplicated') })
+      // Éxito notificado por el propio hook (useDuplicateRoutine), sustituye el toast de carga
       navigation.replace('RoutineDetail', { routineId: newRoutine.id })
     } catch {
-      Toast.show({ type: 'error', text1: t('routine:duplicateError') })
+      // Error notificado por el propio hook (useDuplicateRoutine)
     }
   }
 

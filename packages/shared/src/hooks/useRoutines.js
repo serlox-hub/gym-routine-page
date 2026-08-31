@@ -23,6 +23,7 @@ import {
   addExerciseToDay as apiAddExerciseToDay,
   duplicateRoutineExercise as apiDuplicateRoutineExercise,
   moveRoutineExerciseToDay as apiMoveRoutineExerciseToDay,
+  duplicateRoutine as apiDuplicateRoutine,
   importRoutine,
 } from '../api/routineApi.js'
 import { getNotifier } from '../notifications.js'
@@ -280,7 +281,21 @@ export function useReorderRoutineExercises() {
   })
 }
 
-// useDuplicateRoutine queda per-app: exportRoutine/importRoutine usan supabase directo y no estan en shared
+export function useDuplicateRoutine() {
+  const queryClient = useQueryClient()
+  const userId = useUserId()
+
+  return useMutation({
+    mutationFn: ({ routineId, newName }) => apiDuplicateRoutine(routineId, userId, newName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      getNotifier()?.show(t('routine:duplicated'), 'success')
+    },
+    onError: () => {
+      getNotifier()?.show(t('routine:duplicateError'), 'error')
+    },
+  })
+}
 
 export function useAddExerciseToDay() {
   const queryClient = useQueryClient()

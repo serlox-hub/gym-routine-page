@@ -52,7 +52,7 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
       const filename = `${sanitizeFilename(routine.name)}.json`
       downloadRoutineAsJson(data, filename)
     } catch {
-      // Silent fail - export errors are not critical
+      getNotifier()?.show(t('routine:exportError'), 'error')
     }
   }
 
@@ -72,11 +72,15 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
   }
 
   const handleDuplicate = async () => {
+    // El menú se cierra al pulsar y la duplicación puede tardar (importRoutine carga el
+    // catálogo de ejercicios); sin guard, un segundo tap durante la espera crea copias de más.
+    if (duplicateRoutine.isPending) return
+    getNotifier()?.show(t('routine:duplicating'), 'loading')
     try {
-      const newRoutine = await duplicateRoutine.mutateAsync(parseInt(routineId))
-      navigate(`/routine/${newRoutine.id}`)
+      const newRoutine = await duplicateRoutine.mutateAsync({ routineId: parseInt(routineId) })
+      navigate(`/routine/${newRoutine.id}`, { replace: true })
     } catch {
-      // Error handled by mutation
+      // Error notificado por el propio hook (useDuplicateRoutine)
     }
   }
 
