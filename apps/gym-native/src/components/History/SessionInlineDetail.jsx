@@ -729,6 +729,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
         message={t('workout:history.repeatConfirm')}
         confirmText={t('workout:session.start')}
         loadingText={t('common:buttons.loading')}
+        variant="primary"
         isLoading={startSessionMutation.isPending}
         onConfirm={handleRepeatWorkout}
         onCancel={() => setShowRepeatConfirm(false)}
