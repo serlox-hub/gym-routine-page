@@ -1,0 +1,74 @@
+{
+  "$schema": "/Users/sergio/Projects/Serlox/agent-system/config/agent-system.schema.json",
+  "project": "gym-routine-page",
+  "commands": {
+    "install": "npm install",
+    "lint": "npm run lint",
+    "lintFix": "npm run lint:fix -w apps/web && npm run lint:fix -w apps/gym-native",
+    "typecheck": null,
+    "test": "npm run test",
+    "testTargeted": "npm run test:run -w apps/web --",
+    "build": "npm run build"
+  },
+  "dev": {
+    "services": [
+      {
+        "name": "web",
+        "command": "npm run dev -w apps/web -- --port {port}",
+        "portBase": 300,
+        "url": "http://localhost:{port}"
+      }
+    ]
+  },
+  "branch": {
+    "pattern": "^(?:feat|fix|refactor|chore|docs)/(\\d+)-",
+    "prefixes": {
+      "feat": "enhancement",
+      "fix": "bug",
+      "refactor": "refactor",
+      "docs": "documentation",
+      "chore": null
+    }
+  },
+  "review": {
+    "commitGuard": true,
+    "largeDiffThreshold": 400,
+    "excludePattern": "^CHANGELOG\\.md$|^(pnpm-lock\\.yaml|package-lock\\.json|yarn\\.lock|bun\\.lockb)$",
+    "domainAxes": [
+      "Falsy vs ausente: cualquier `||`/`!valor` sobre un campo de dominio (peso, reps, rir, ids, series, rest_seconds) que pueda ser legítimamente 0/''/false es sospechoso — debe usar `??`/`== null`. Ya ha causado bugs reales: RIR 0 (fallo real) tratado como 'sin dato', un routine_day_id de 0 colándose como sesión libre, series/rest_seconds en 0 sobrescritos a un default.",
+      "Cadena de forma duplicada: un campo de ejercicio/serie que viaja por selects, cache-seeding builders (p. ej. buildSessionExercisesCache), mutation payloads, restore-al-store y mapeos de resumen/historial debe rastrearse por TODOS esos eslabones al añadirlo o tocarlo. Olvidar uno lo hace desaparecer solo en un camino concreto (p. ej. sesiones sembradas desde caché) y el staleTime lo enmascara — ya pasó con gif_key y con level/calories_burned.",
+      "Payload parcial sobre fila/objeto completo: un handler que reenvía solo un subconjunto de campos a una función que hace upsert/merge completo puede vaciar en silencio lo que no toca. Al cambiar el contrato de un componente o hook compartido, revisar TODOS sus consumidores, no solo el que motivó el cambio — ya pasó con SetDetailsModal (compartido entre sesión e historial).",
+      "Tablas de despacho por tipo de medición no exhaustivas: cualquier mapa/switch keyed por measurement_type/tracked_fields (columnas de fila, validación, formato) debe cubrir todos los tipos y fallar visiblemente, no caer en un fallback silencioso a weight_reps. Pedir o comprobar que existe un test de cruce contra measurementTypes.js (patrón setColumns.test.js).",
+      "'Todavía no sé' ≠ 'no': una decisión de UI que depende de un dato que llega de fetch/RLS/store rehidratado (sesión activa, gym de la sesión, preferencias) necesita un tercer estado explícito para la ventana entre montar y tener la respuesta real. Tratar 'aún no sé' como 'no hay' abre condiciones de carrera (doble sesión, fuga cross-gym) — patrón ya documentado en CLAUDE.md para sesión activa, aplica igual a cualquier gate parecido.",
+      "RLS silenciosa: una query que se apoya en políticas RLS para acotar por usuario (sin .eq('user_id', …) explícito) devuelve vacío SIN error si no hay usuario o la sesión aún no está lista — indistinguible de 'no hay datos'. Si alimenta una decisión de UI, hay que descartar ese caso explícitamente.",
+      "Efectos con dependencias inestables: un callback recreado en cada render (el patrón 'wrapper de app inyecta callback a hook compartido' de CLAUDE.md) metido en las deps de un useEffect puede re-disparar sin que ningún test lo note. Hubo un caso real de 14 consultas por arranque en vez de 2, detectado solo midiendo en el navegador, no en tests.",
+      "Estado local sembrado una vez + debounce: un input con useState(() => valorInicial) más un commit debounced ignora o revierte cambios externos posteriores (conversión de unidad, cambio de gym, nuevo 'anterior') salvo que exista una señal explícita de resync (nonce/ref). Al tocar cualquier mutación que reescriba en vivo un valor que también gestiona un hook de input compartido (useSetInputs y similares), verificar que existe esa señal.",
+      "i18n en render: siempre useTranslation() dentro de componentes (web y native); el t estático de @gym/shared no se resuscribe a languageChanged y deja texto visible en el idioma anterior tras un cambio en caliente. Ese t estático solo es válido en lib/ / api/ / hooks fuera de render.",
+      "Resolución de campos dependientes del ejercicio: qué mide, qué es objetivo/progresable, en qué unidad de peso y qué escala de esfuerzo usa SIEMPRE se resuelven vía su función única (resolveTrackedFields/resolveTargetField/resolveWeightUnit/effortScale) en TODO camino — display, formularios, validación y stats —, nunca un `||`/branch ad-hoc en un componente. Ya causó bugs reales (RPE mostrado como número crudo, selector RIR ofrecido a un ejercicio de cardio).",
+      "DRY + paridad web/native: lógica que se repite entre apps/web y apps/gym-native (cálculo, hook, transformación) vive en packages/shared/src/lib o /hooks como función pura; una copia casi idéntica en ambas apps es la forma en que divergen en silencio. Precedente real: useDuplicateRoutine estaba duplicado byte a byte entre ambas apps, y eso fue lo que permitió que cada una recibiera el argumento con una forma distinta (bug de 'duplicar rutina no funciona').",
+      "Sistema de color: nunca hex/rgba hardcodeado en componentes, siempre colors.X de lib/styles.js (idéntico en ambos styles.js). El lima (success) es la trampa: en wash translúcido sobre fondo oscuro vira a oliva/caqui (no tiene azul) — solo se usa SÓLIDO (borde/barra/icono/texto) para marcar 'hecho'; el wash suave (successBg) sí vale para 'seleccionado/activo'. Sobre un relleno lima sólido, el primer plano es SIEMPRE bgPrimary (oscuro), nunca white.",
+      "Botón bloqueado: una acción que no cabe por el estado (p. ej. solo puede haber una sesión a la vez) nunca deja el botón mudo ni con disabled real sin más — atenuado + cursor pointer + sin hover, y al pulsar explica por qué (patrón workoutStartAction.js). disabled real se reserva para lo transitorio (cargando, mutación en vuelo) y también se pinta (atenuado + LoadingSpinner inline). Dos incidentes reales: un botón con onClick=undefined que 'no hacía nada', y una ventana de ~300ms tras login donde el botón parecía disponible y podía arrancar una sesión duplicada.",
+      "Emparejamiento de ejercicios: el emparejamiento ejercicio→catálogo (import/export/duplicado de rutinas, IA) va SIEMPRE por clave estable name_en normalizado (lib/exerciseMatch.js), nunca por name_es a secas. Emparejar por nombre localizado ha creado ejercicios 'custom' huérfanos (sin GIF, sin grupo muscular) en al menos dos incidentes reales (plantillas de onboarding, import JSON pre-v6).",
+      "Inputs numéricos: un <input type=number>/TextInput numérico crudo en vez de CaretEndInput/NumberTextInput (cursor al final) o DecimalInput (decimales) es un defecto, no un detalle de UI. Bug real: type=number delega el separador decimal en el locale del NAVEGADOR, no en el idioma de la app — con locale de punto, teclear '82,5' guarda 825 sin ningún aviso (validity.valid=true). Afectó a peso, distancia, medidas corporales y el conversor.",
+      "IDs en query keys: siempre String() antes de comparar o usar como key de React Query — web recibe params de ruta como string, native como número; un === entre ambos, o una key con tipos mixtos, puede leer 'otro día'/'otro ejercicio' como el mismo o al revés. Ya causó un bug real en DayCard.",
+      "GRANTs en migraciones: una migración que crea una tabla nueva en public necesita su GRANT explícito (o los default privileges restaurados en la 057) — ya NO se heredan de la imagen de Postgres. Sin él la app responde 42501 aunque RLS esté bien configurado; RLS protege los datos, la ausencia de GRANT solo rompe la app."
+    ]
+  },
+  "tests": {
+    "framework": "vitest",
+    "expertiseDoc": null,
+    "locationRule": "Co-ubicado como <name>.test.js junto al archivo que testea (packages/shared/src/lib, packages/shared/src/api, packages/shared/src/hooks)."
+  },
+  "architect": {
+    "issueProvider": "github",
+    "specSections": [
+      "Problem",
+      "Constraints",
+      "Approach",
+      "Contract",
+      "Out of scope",
+      "Acceptance"
+    ],
+    "challengeSpec": true
+  }
+}
