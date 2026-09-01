@@ -7,7 +7,7 @@ import {
   useRoutine, useRoutineDays, useRoutineAllExercises,
   useCreateRoutineDay, useDeleteRoutine, useDeleteRoutineDay,
   useReorderRoutineDays, useAddExerciseToDay, useUpdateRoutineExercise,
-  useDuplicateRoutineExercise, useMoveRoutineExerciseToDay,
+  useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay,
   useSetFavoriteRoutine,
 } from '../hooks/useRoutines'
 import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui'
@@ -54,6 +54,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const addExercise = useAddExerciseToDay()
   const updateExercise = useUpdateRoutineExercise()
   const duplicateExercise = useDuplicateRoutineExercise()
+  const duplicateDay = useDuplicateRoutineDay()
   const moveExercise = useMoveRoutineExerciseToDay()
   const setFavoriteMutation = useSetFavoriteRoutine()
   const [descExpanded, setDescExpanded] = useState(false)
@@ -100,6 +101,18 @@ export default function RoutineDetailScreen({ route, navigation }) {
     if (!newDays) return
     try {
       await reorderDays.mutateAsync({ routineId, days: newDays })
+    } catch { /* handled by TanStack Query */ }
+  }
+
+  const handleDuplicateDay = async (dayId) => {
+    const day = days?.find(d => d.id === dayId)
+    if (!day) return
+    try {
+      await duplicateDay.mutateAsync({
+        dayId,
+        newName: `${day.name} ${t('routine:duplicateSuffix')}`,
+        routineId,
+      })
     } catch { /* handled by TanStack Query */ }
   }
 
@@ -272,6 +285,8 @@ export default function RoutineDetailScreen({ route, navigation }) {
               }}
               onMoveExerciseToDay={handleOpenMoveModal}
               onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
+              onDuplicate={handleDuplicateDay}
+              isDuplicatingDay={duplicateDay.isPending}
               onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
               currentIndex={index}
               totalDays={days.length}
