@@ -9,9 +9,9 @@ import SetRowMeta from './SetRowMeta'
 import {
   DEFAULT_TRACKED_FIELDS,
   buildCompletedSetData,
-  getNotifier,
   t,
   useSetInputs,
+  useSetVideoUpload,
   shouldSuggestProgression,
   shouldShowAnnotationColumn,
   getSetColumns,
@@ -19,9 +19,9 @@ import {
   effortRendersAsWord,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
-import { useUpdateSetVideo } from '../../hooks/useWorkout'
 import { uploadVideo } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
+import { LoadingSpinner } from '../ui'
 
 // Layout columnar (deben coincidir fila y cabecera de SetsList): SET · [valores] · NOTAS · ✓.
 // MISMO layout mida lo que mida el ejercicio: las columnas de valor (1 a 3) las decide
@@ -87,87 +87,92 @@ function SetRow({
   } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit, previousSet, previousLoaded, target, targetField, levelTarget })
 
   const { data: preferences } = usePreferences()
-  const { mutate: updateSetVideo } = useUpdateSetVideo()
-  const [isUploadingVideo, setIsUploadingVideo] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [videoUploadError, setVideoUploadError] = useState(false)
-  const [pendingVideoFile, setPendingVideoFile] = useState(null)
   const [showModal, setShowModal] = useState(false)
+
+  // Subida de vídeo (issue #31): el archivo elegido en la hoja se sube a MinIO EN CUANTO se
+  // elige, complete o no la serie todavía — subir no depende de que exista fila en BD. Si la
+  // serie aún no está completada, el resultado se queda en `preCompleteUrl` (solo en memoria,
+  // nunca se escribe a `completed_sets`) hasta que el usuario completa: entonces viaja en el
+  // MISMO payload de completar (una sola escritura, sin carrera contra la fila sin crear). Si ya
+  // estaba completada, el vídeo se adjunta con el UPDATE de siempre. Orquestación compartida
+  // web+native en `useSetVideoUpload` — ver docs/DECISIONS.md. `uploadVideo` nativo pide el uri
+  // del asset, no el objeto entero → se adapta aquí, la única pieza específica de plataforma.
+  const {
+    isUploading: isUploadingVideo,
+    progress: uploadProgress,
+    hasError: videoUploadError,
+    preCompleteUrl,
+    upload: uploadVideoFile,
+    retry: retryVideoUpload,
+    reset: resetVideoUpload,
+    removeVideo,
+  } = useSetVideoUpload({ sessionExerciseId, setNumber, uploadVideo: (file, onProgress) => uploadVideo(file?.uri, onProgress) })
 
   const showRirInput = preferences?.show_rir_input ?? true
   // Columna «Notas» (entrada estable de anotación; el número nunca abre nada). Helper compartido
   // con SetsList → cabecera y filas nunca se desincronizan. Se colapsa solo con las 3 prefs off.
   const annotationColumn = shouldShowAnnotationColumn(preferences)
 
-  const uploadVideoInBackground = async (file) => {
-    setIsUploadingVideo(true)
-    setUploadProgress(0)
-    setVideoUploadError(false)
-    setPendingVideoFile(file)
-    try {
-      const uploadedUrl = await uploadVideo(file?.uri, setUploadProgress)
-      updateSetVideo({ sessionExerciseId, setNumber, videoUrl: uploadedUrl })
-      setPendingVideoFile(null)
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('Video upload failed:', err)
-      setVideoUploadError(true)
-      getNotifier()?.show(t('workout:set.videoUploadError'), 'error')
-    } finally {
-      setIsUploadingVideo(false)
-    }
-  }
-
-  const handleRetryVideoUpload = () => {
-    if (pendingVideoFile) {
-      uploadVideoInBackground(pendingVideoFile)
-    }
-  }
+  const handleRetryVideoUpload = () => retryVideoUpload({ isCompleted })
 
   const handleCheckPress = () => {
     if (isCompleted) {
       onUncomplete({ sessionExerciseId, setNumber })
-    } else if (isValid()) {
-      // Un toque: registra la serie (con el RIR inline actual) e inicia el descanso.
+    } else if (isValid() && !isUploadingVideo) {
+      // Un toque: registra la serie (con el RIR inline actual) e inicia el descanso. Bloqueado
+      // mientras sube un vídeo elegido en la hoja: completar sin esperar lo dejaría huérfano
+      // (ver useSetVideoUpload) — el botón «Completar» de la hoja tiene el mismo guard.
       handleCompleteSet()
     }
   }
 
   const handleCompleteSet = (notesOverride) => {
-    // Incluye los detalles ya fijados inline / en la hoja antes de completar (rir, notas, tipo).
-    // notesOverride: la nota recién tecleada en la hoja aún no está en `notes` (es estado local
-    // de la hoja, solo se vuelca al cerrar); al completar desde la hoja se pasa explícita. `null`
-    // (nota vaciada) es un override válido → distinguir de undefined (completar desde el check).
+    // Incluye los detalles ya fijados inline / en la hoja antes de completar (rir, notas, tipo,
+    // y el vídeo si ya terminó de subir — preCompleteUrl). notesOverride: la nota recién tecleada
+    // en la hoja aún no está en `notes` (es estado local de la hoja, solo se vuelca al cerrar); al
+    // completar desde la hoja se pasa explícita. `null` (nota vaciada) es un override válido →
+    // distinguir de undefined (completar desde el check).
     const finalNotes = notesOverride !== undefined ? notesOverride : notes
     const data = buildCompletedSetData(
       trackedFields,
       { weight, reps, time, distance, calories, level, pace },
-      { sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes: finalNotes, setType },
+      { sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes: finalNotes, setType, videoUrl: preCompleteUrl ?? undefined },
     )
     onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
   }
 
   // Completar desde el botón «Completar» de la hoja: vuelca la nota tecleada al estado local
-  // (el chip de la fila queda en sync) y completa con el RIR/tipo vivos + esa nota. saveDetails
-  // solo cachea (la serie aún no está completada); la escritura al servidor la hace la mutación
-  // de completar con la nota ya en el payload → una sola escritura.
+  // (el chip de la fila queda en sync) y completa con el RIR/tipo vivos + esa nota + el vídeo si
+  // ya terminó de subir (`preCompleteUrl`, leído dentro de `handleCompleteSet`). El botón está
+  // deshabilitado mientras `isUploadingVideo` (ver SetDetailsModal), así que este handler no
+  // puede dispararse a mitad de una subida — cierra la hoja siempre, sin excepciones.
   const handleCompleteFromModal = ({ notes: nextNotes }) => {
-    setShowModal(false)
     saveDetails({ notes: nextNotes, setType })
     handleCompleteSet(nextNotes)
+    setShowModal(false)
+  }
+
+  // Elegir un vídeo en la hoja dispara la subida YA (issue #31), complete o no la serie —
+  // `useSetVideoUpload` decide el destino según `isCompleted` en ese instante.
+  const handleSelectVideo = (file) => uploadVideoFile(file, { isCompleted })
+
+  // Quitar el vídeo desde la hoja: si la serie ya está completada, borra en BD; si no, nunca se
+  // escribió nada (pre-completar solo vive en memoria) — basta descartar el estado local.
+  const handleRemoveVideoFromModal = () => {
+    if (isCompleted) {
+      removeVideo()
+    } else {
+      resetVideoUpload()
+    }
   }
 
   // Al cerrar la hoja: la nota se persiste vía saveDetails (preservando RIR y el tipo actual, que
-  // ya se fijó en vivo desde la hoja). El vídeo va aparte (solo en series completadas): añadir =
-  // subida en background; quitar = updateSetVideo. RIR y tipo se persistieron en vivo (setRir/setSetType).
-  const handleModalSubmit = ({ notes: nextNotes, videoUrl: nextVideoUrl, videoFile }) => {
+  // ya se fijó en vivo desde la hoja). RIR y tipo se persistieron en vivo (setRir/setSetType). El
+  // vídeo de una serie NO completada ya se disparó al elegirlo (handleSelectVideo) — aquí no hay
+  // nada más que hacer con él.
+  const handleModalSubmit = ({ notes: nextNotes }) => {
     saveDetails({ notes: nextNotes, setType })
     setShowModal(false)
-    if (videoFile) {
-      uploadVideoInBackground(videoFile)
-    } else if (isCompleted && !!setData?.videoUrl && !nextVideoUrl) {
-      updateSetVideo({ sessionExerciseId, setNumber, videoUrl: null })
-    }
   }
 
   // Columnas de valor del ejercicio (1 a 3) + su estado. La cabecera (SetsList) lleva la unidad,
@@ -265,19 +270,24 @@ function SetRow({
         </Pressable>
       )
     }
-    // Cualquier fila con datos válidos se puede completar; isActive solo colorea el borde
+    // Cualquier fila con datos válidos se puede completar; isActive solo colorea el borde.
+    // Bloqueado (disabled real, transitorio) mientras sube un vídeo elegido en la hoja — completar
+    // sin esperar lo dejaría huérfano (issue #31, ver useSetVideoUpload); se pinta con spinner.
+    const blocked = !isValid() || isUploadingVideo
     return (
       <Pressable
         onPress={handleCheckPress}
-        disabled={!isValid()}
+        disabled={blocked}
         hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel={t('workout:set.complete')}
-        accessibilityState={{ disabled: !isValid() }}
+        accessibilityState={{ disabled: blocked }}
         className="w-7 h-7 items-center justify-center active:opacity-70"
-        style={{ opacity: isValid() ? 1 : 0.6 }}
+        style={{ opacity: blocked ? 0.6 : 1 }}
       >
-        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: isActive ? colors.success : colors.textMuted }} />
+        {isUploadingVideo
+          ? <LoadingSpinner inline />
+          : <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: isActive ? colors.success : colors.textMuted }} />}
       </Pressable>
     )
   }
@@ -335,9 +345,12 @@ function SetRow({
         onComplete={isCompleted ? undefined : handleCompleteFromModal}
         canComplete={isValid()}
         setNumber={setNumber}
-        allowVideo={isCompleted}
+        isUploadingVideo={isUploadingVideo}
+        uploadProgress={uploadProgress}
+        onSelectVideo={handleSelectVideo}
+        onRemoveVideo={handleRemoveVideoFromModal}
         initialNote={notes}
-        initialVideoUrl={setData?.videoUrl}
+        initialVideoUrl={isCompleted ? setData?.videoUrl : preCompleteUrl}
         rir={rir}
         onRirChange={setRir}
         trackedFields={trackedFields}
