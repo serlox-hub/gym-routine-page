@@ -54,15 +54,20 @@ export default function EffortPicker({
           fontWeight: 600,
           minWidth: 34,
           minHeight: 20,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        {primary === 'rir' && compactValue}
+        {/* El overflow:hidden del ellipsis solo envuelve el VALOR DE TEXTO (único caso que puede
+            desbordar): vivir en el span exterior recortaría la bolita, que sobresale de sus
+            límites; envolver también los iconos los blockifica como texto y descuadra su alto
+            (13px fijos) frente al de un pill con solo texto. */}
+        {primary === 'rir' && (
+          <span style={{ maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {compactValue}
+          </span>
+        )}
         {primary === 'note' && <StickyNote size={13} color={colors.textSecondary} />}
         {primary === 'video' && <Video size={13} color={colors.textSecondary} />}
         {primary === 'empty' && (showEffortScale ? '–' : <StickyNote size={13} color={colors.textMuted} />)}
