@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Video, X, ChevronRight } from 'lucide-react'
-import { Modal, Button } from '../ui/index.js'
+import { Modal, Button, LoadingSpinner } from '../ui/index.js'
 import VideoPlayer from './VideoPlayer.jsx'
 import { colors } from '../../lib/styles.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -17,10 +17,11 @@ const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
  * autoguarda al cerrar.
  *
  * Modelo de interacción unificado (a petición del usuario): TODO se edita dentro de la hoja,
- * nada abre otra superficie, y cerrar = guardado. RIR y tipo son CONTROLADOS (viven en el
- * padre vía onRirChange/onSetTypeChange → persisten al instante, patrón de #8); nota y vídeo
- * son locales y se confirman al cerrar (autosave). El usuario no percibe esa diferencia: para
- * él todo ocurre en la hoja y el cierre confirma. Ver DECISIONS.
+ * nada abre otra superficie. RIR y tipo son CONTROLADOS (viven en el padre vía
+ * onRirChange/onSetTypeChange → persisten al instante, patrón de #8). La nota es local y se
+ * confirma al cerrar (autosave). El vídeo (issue #31) se dispara al elegir/quitar, YA — no
+ * espera al cierre (`onSelectVideo`/`onRemoveVideo`): así puede subir mientras el usuario sigue
+ * en la hoja, complete o no la serie todavía. Ver DECISIONS.
  *
  * Botón «Completar» (opt-in aditivo): si el padre pasa `onComplete` (solo en sesión y solo si la
  * serie NO está completada), la hoja muestra un botón que anota + completa la serie de una, para
@@ -36,7 +37,10 @@ function SetDetailsModal({
   onComplete,
   canComplete = true,
   setNumber,
-  allowVideo = true,
+  isUploadingVideo = false,
+  uploadProgress = 0,
+  onSelectVideo,
+  onRemoveVideo,
   initialNote,
   initialVideoUrl,
   rir,
@@ -51,9 +55,10 @@ function SetDetailsModal({
   const canUploadVideo = useCanUploadVideo()
   const { value: showSetNotes } = usePreference('show_set_notes')
   const { value: showVideoUpload } = usePreference('show_video_upload')
-  // El vídeo se adjunta a una serie ya completada; antes de completar solo se avisa.
-  const videoEnabled = canUploadVideo && showVideoUpload
-  const showVideo = videoEnabled && allowVideo
+  // El vídeo se puede elegir aunque la serie aún no esté completada (issue #31): el archivo solo
+  // vive en estado local de esta hoja hasta que se pulsa «Completar» (ver SetRow), así que no hay
+  // gate por `isCompleted` aquí.
+  const showVideo = canUploadVideo && showVideoUpload
 
   const usesReps = tracksReps(trackedFields)
   const effortOptions = getEffortOptions(trackedFields)
@@ -85,6 +90,8 @@ function SetDetailsModal({
     onRirChange?.(rir === optionValue ? null : optionValue)
   }
 
+  // Elegir un archivo dispara la subida YA (issue #31; ver SetRow/useSetVideoUpload) — no espera
+  // a cerrar la hoja. La vista previa local (blob) es instantánea, independiente de la red.
   const handleVideoSelect = (e) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -97,23 +104,22 @@ function SetDetailsModal({
       setVideoError(null)
       setVideoFile(file)
       setVideoUrl(URL.createObjectURL(file))
-      setHasChanges(true)
+      onSelectVideo?.(file)
     }
   }
 
   const handleRemoveVideo = () => {
     setVideoFile(null)
     setVideoUrl(null)
-    setHasChanges(true)
     if (fileInputRef.current) fileInputRef.current.value = ''
+    onRemoveVideo?.()
   }
 
-  // Autosave al cerrar: solo la nota y el vídeo (RIR/tipo ya persisten en vivo). Si no hubo
-  // cambios en nota/vídeo, solo cierra.
+  // Autosave al cerrar: solo la nota (RIR/tipo ya persisten en vivo, vídeo ya se maneja al elegir
+  // /quitar — ver arriba). Si no hubo cambios en la nota, solo cierra.
   const handleClose = () => {
     if (hasChanges) {
-      const existingVideoUrl = (!videoFile && videoUrl) ? initialVideoUrl : null
-      onSubmit({ notes: note.trim() || null, videoUrl: existingVideoUrl, videoFile })
+      onSubmit({ notes: note.trim() || null })
     } else {
       onClose()
     }
@@ -239,6 +245,17 @@ function SetDetailsModal({
                       style={{ backgroundColor: colors.overlay }}>
                       <X size={16} style={{ color: colors.textPrimary }} />
                     </button>
+                    {/* Progreso de subida (issue #31): visible sin salir de la hoja mientras el
+                        botón «Completar» está bloqueado por isUploadingVideo. */}
+                    {isUploadingVideo && (
+                      <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-3 py-2"
+                        style={{ backgroundColor: colors.overlay }}>
+                        <div className="flex-1 rounded-full overflow-hidden" style={{ height: 4, backgroundColor: colors.bgTertiary }}>
+                          <div className="h-full rounded-full" style={{ width: `${uploadProgress}%`, backgroundColor: colors.purple, transition: 'width 150ms linear' }} />
+                        </div>
+                        <span style={{ color: colors.white, fontSize: 11, fontWeight: 700 }}>{uploadProgress}%</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -267,18 +284,6 @@ function SetDetailsModal({
                 )}
               </div>
             )}
-
-            {/* Aviso: el vídeo se adjunta tras completar la serie */}
-            {videoEnabled && !allowVideo && (
-              <div className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: colors.bgTertiary, opacity: 0.7 }}>
-                <div className="flex items-center justify-center rounded-lg" style={{ width: 40, height: 40, backgroundColor: colors.bgPrimary }}>
-                  <Video size={20} style={{ color: colors.textMuted }} />
-                </div>
-                <div style={{ color: colors.textSecondary, fontSize: 13 }}>
-                  {t('workout:set.videoAfterComplete')}
-                </div>
-              </div>
-            )}
           </div>
           <div className="pb-5" />
         </div>
@@ -286,17 +291,24 @@ function SetDetailsModal({
 
       {/* Footer: «Completar» solo en sesión y solo si la serie aún no está hecha (onComplete
           presente). Anota + completa de una; deshabilitado si los datos no son válidos (mismo
-          gate que el check). Cerrar sin pulsarlo NO completa (solo autoguarda). */}
+          gate que el check) o mientras sube un vídeo recién elegido (issue #31: completar sin
+          esperar lo dejaría huérfano, ver useSetVideoUpload) — «tras la subida, o sin ella».
+          Cerrar sin pulsarlo NO completa (solo autoguarda la nota). */}
       {onComplete && (
         <div className="px-5 pt-3 pb-5 shrink-0" style={{ borderTop: `1px solid ${colors.borderSubtle}` }}>
           <Button
             variant="primary"
             size="lg"
             className="w-full"
-            disabled={!canComplete}
+            disabled={!canComplete || isUploadingVideo}
             onClick={() => onComplete({ notes: note.trim() || null })}
           >
-            {t('workout:set.complete')}
+            {isUploadingVideo ? (
+              <span className="flex items-center justify-center gap-2">
+                <LoadingSpinner inline />
+                {t('workout:set.videoUploading')}
+              </span>
+            ) : t('workout:set.complete')}
           </Button>
         </div>
       )}

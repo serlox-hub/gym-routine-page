@@ -59,8 +59,9 @@ function SetVideoPreview({ uri }) {
  * peso/reps se editan inline en la fila (no aquí). Sin botón Guardar.
  *
  * Modelo unificado (a petición del usuario): TODO se edita dentro de la hoja, nada abre otra
- * superficie, cerrar = guardado. RIR y tipo son CONTROLADOS (persisten al instante vía el padre);
- * nota y vídeo son locales y se confirman al cerrar. Paridad con web. Ver DECISIONS.
+ * superficie. RIR y tipo son CONTROLADOS (persisten al instante vía el padre). La nota es local y
+ * se confirma al cerrar. El vídeo (issue #31) se dispara al elegir/quitar, YA — no espera al
+ * cierre (`onSelectVideo`/`onRemoveVideo`). Paridad con web. Ver DECISIONS.
  *
  * Botón «Completar» (opt-in aditivo): si el padre pasa `onComplete` (solo en sesión y solo si la
  * serie NO está completada), anota + completa de una. Cerrar sin pulsarlo NO completa (solo
@@ -73,7 +74,10 @@ export default function SetDetailsModal({
   onComplete,
   canComplete = true,
   setNumber,
-  allowVideo = true,
+  isUploadingVideo = false,
+  uploadProgress = 0,
+  onSelectVideo,
+  onRemoveVideo,
   initialNote,
   initialVideoUrl,
   rir,
@@ -88,23 +92,22 @@ export default function SetDetailsModal({
   const canUploadVideo = useCanUploadVideo()
   const { value: showSetNotes } = usePreference('show_set_notes')
   const { value: showVideoUpload } = usePreference('show_video_upload')
-  // El vídeo se adjunta a una serie ya completada; antes de completar solo se avisa.
-  const videoEnabled = canUploadVideo && showVideoUpload
-  const showVideo = videoEnabled && allowVideo
+  // El vídeo se puede elegir aunque la serie aún no esté completada (issue #31): el archivo solo
+  // vive en estado local de esta hoja hasta que se pulsa «Completar» (ver SetRow), así que no hay
+  // gate por `isCompleted` aquí.
+  const showVideo = canUploadVideo && showVideoUpload
 
   const usesReps = tracksReps(trackedFields)
   const effortOptions = getEffortOptions(trackedFields)
 
   const [note, setNote] = useState('')
   const [videoUri, setVideoUri] = useState(null)
-  const [videoFile, setVideoFile] = useState(null)
   const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       setNote(initialNote ?? '')
       setVideoUri(initialVideoUrl ?? null)
-      setVideoFile(null)
       setHasChanges(false)
     }
   }, [isOpen, initialNote, initialVideoUrl])
@@ -114,6 +117,8 @@ export default function SetDetailsModal({
     onRirChange?.(rir === optionValue ? null : optionValue)
   }
 
+  // Elegir un archivo dispara la subida YA (issue #31; ver SetRow/useSetVideoUpload) — no espera
+  // a cerrar la hoja. La vista previa local (uri del asset) es instantánea, independiente de la red.
   const handleVideoSelect = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], quality: 0.8 })
     if (result.canceled) return
@@ -123,22 +128,20 @@ export default function SetDetailsModal({
       Alert.alert(t('workout:set.videoTooLarge'), t('workout:set.videoTooLargeDetail', { size: sizeMB }))
       return
     }
-    setVideoFile(asset)
     setVideoUri(asset.uri)
-    setHasChanges(true)
+    onSelectVideo?.(asset)
   }
 
   const handleRemoveVideo = () => {
-    setVideoFile(null)
     setVideoUri(null)
-    setHasChanges(true)
+    onRemoveVideo?.()
   }
 
-  // Autosave al cerrar: solo la nota y el vídeo (RIR/tipo ya persisten en vivo).
+  // Autosave al cerrar: solo la nota (RIR/tipo ya persisten en vivo, vídeo ya se maneja al elegir
+  // /quitar — ver arriba). Si no hubo cambios en la nota, solo cierra.
   const handleClose = () => {
     if (hasChanges) {
-      const existingVideoUrl = (!videoFile && videoUri) ? initialVideoUrl : null
-      onSubmit({ notes: note.trim() || null, videoUrl: existingVideoUrl, videoFile })
+      onSubmit({ notes: note.trim() || null })
     } else {
       onClose()
     }
@@ -250,6 +253,16 @@ export default function SetDetailsModal({
                     style={{ position: 'absolute', top: 8, right: 8, padding: 6, borderRadius: 999, backgroundColor: colors.overlay }}>
                     <X size={16} color={colors.white} />
                   </Pressable>
+                  {/* Progreso de subida (issue #31): visible sin salir de la hoja mientras el
+                      botón «Completar» está bloqueado por isUploadingVideo. */}
+                  {isUploadingVideo && (
+                    <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.overlay }}>
+                      <View style={{ flex: 1, height: 4, borderRadius: 999, overflow: 'hidden', backgroundColor: colors.bgTertiary }}>
+                        <View style={{ height: '100%', width: `${uploadProgress}%`, borderRadius: 999, backgroundColor: colors.purple }} />
+                      </View>
+                      <Text style={{ color: colors.white, fontSize: 11, fontWeight: '700' }}>{uploadProgress}%</Text>
+                    </View>
+                  )}
                 </View>
               ) : (
                 <Pressable onPress={handleVideoSelect}
@@ -266,27 +279,17 @@ export default function SetDetailsModal({
               )}
             </View>
           )}
-
-          {/* Aviso: el vídeo se adjunta tras completar la serie */}
-          {videoEnabled && !allowVideo && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, backgroundColor: colors.bgTertiary, opacity: 0.7 }}>
-              <View style={{ width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgPrimary }}>
-                <Video size={20} color={colors.textMuted} />
-              </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1 }}>
-                {t('workout:set.videoAfterComplete')}
-              </Text>
-            </View>
-          )}
         </View>
       </ScrollView>
 
       {/* Footer: «Completar» solo en sesión y solo si la serie aún no está hecha (onComplete
           presente). Anota + completa de una; deshabilitado si los datos no son válidos (mismo
-          gate que el check). Cerrar sin pulsarlo NO completa (solo autoguarda). */}
+          gate que el check) o mientras sube un vídeo recién elegido (issue #31: completar sin
+          esperar lo dejaría huérfano, ver useSetVideoUpload) — «tras la subida, o sin ella».
+          Cerrar sin pulsarlo NO completa (solo autoguarda la nota). */}
       {onComplete && (
         <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
-          <Button variant="primary" size="lg" className="w-full" disabled={!canComplete}
+          <Button variant="primary" size="lg" className="w-full" disabled={!canComplete} loading={isUploadingVideo}
             onPress={() => onComplete({ notes: note.trim() || null })}>
             {t('workout:set.complete')}
           </Button>

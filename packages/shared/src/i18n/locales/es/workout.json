@@ -82,11 +82,11 @@
     "videoTooLarge": "Video demasiado grande",
     "videoTooLargeDetail": "{{size}} MB. Máximo permitido: 100 MB",
     "videoUploadError": "Error al subir el vídeo",
+    "videoUploading": "Subiendo vídeo…",
     "videoLoadError": "Error al cargar el vídeo",
     "weightConverter": "Conversor de peso",
     "setNumber": "Serie {{number}}",
     "detailsTitle": "SERIE {{number}} · DETALLES",
-    "videoAfterComplete": "Podrás añadir un vídeo al completar la serie",
     "video": "Vídeo",
     "type": {
       "label": "Tipo de serie",
