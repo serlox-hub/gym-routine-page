@@ -348,6 +348,12 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - One feature/fix per commit
 - No co-author or AI attribution lines
 
+## PRs y auto-merge
+`main` solo permite **squash merge** (sin merge commit ni rebase): cada PR aterriza como un único commit cuyo mensaje es el título de la PR (`squash_merge_commit_title: PR_TITLE`). Ese commit es lo que `scripts/bump-version.js` escanea para decidir el bump semántico, así que **el título de la PR debe seguir Conventional Commits en inglés** (`feat:`, `fix:`, `chore:`, etc. — igual que un mensaje de commit normal, ver arriba), aunque la descripción vaya en español. Lo valida el workflow `pr-title.yml` (check requerido).
+- Para activar auto-merge en una PR: `gh pr merge --auto --squash`. Se fusiona sola en cuanto el check `test` (CI) pase — no hace falta esperar ni pedir revisión.
+- `main` NO exige "pull request obligatoria" en branch protection (solo status checks) para que `version.yml` pueda pushear el commit de bump directamente a `main` tras cada merge. Tampoco exige "rama al día", para que ese commit de bump no deje cada PR abierta pendiente de "Update branch".
+- **`version.yml` pushea con `secrets.RELEASE_TOKEN` (PAT del dueño del repo), no con `GITHUB_TOKEN`.** Los required status checks bloquean CUALQUIER push a `main`, no solo el botón de merge — el bot de Actions no es admin del repo y no tiene bypass. Un PAT de un admin sí lo salta (`enforce_admins: false`). Detalle y alternativas descartadas en `docs/DECISIONS.md`.
+
 ## What NOT to Do
 - ❌ TypeScript
 - ❌ Multiple components per file
