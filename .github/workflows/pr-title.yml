@@ -1,0 +1,20 @@
+name: PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+    branches: [main]
+
+jobs:
+  lint-title:
+    name: Formato Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar titulo de la PR
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ ! "$TITLE" =~ ^(feat|fix|chore|refactor|docs|test|ci|perf|style)(\([a-zA-Z0-9_-]+\))?!?:\ .+ ]]; then
+            echo "::error::El titulo de la PR debe seguir Conventional Commits (se usa como commit al hacer squash, y de ahi sale el versionado automatico): tipo(scope): descripcion. Ej: fix(historial): boton se veia rojo"
+            exit 1
+          fi
