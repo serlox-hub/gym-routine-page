@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronDown, Play, Pencil, ArrowUpDown } from 'lucide-react'
+import { Trash2, ChevronDown, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react'
 import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, Modal } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
@@ -9,7 +9,7 @@ import { colors } from '../../lib/styles.js'
 import { getExistingSupersetIds, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced }) {
+function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { id, name } = day
@@ -159,6 +159,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                       setShowRenameModal(true)
                     }
                   },
+                  { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
                   totalDays > 1 && {
                     icon: ArrowUpDown,
                     label: t('routine:reorder'),

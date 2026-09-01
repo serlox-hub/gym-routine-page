@@ -19,6 +19,7 @@ import {
   reorderRoutineExercises,
   addExerciseToDay,
   duplicateRoutineExercise,
+  duplicateRoutineDay,
   moveRoutineExerciseToDay,
 } from './routineMutationApi.js'
 
@@ -463,6 +464,33 @@ describe('duplicateRoutineExercise', () => {
       return makeClientMock({ routine_exercises: { data: null, error: new Error('duplicate failed') } })
     })
     await expect(duplicateRoutineExercise({ routineExercise: { routine_day_id: 20 } })).rejects.toThrow('duplicate failed')
+  })
+})
+
+// ============================================
+// duplicateRoutineDay
+// ============================================
+
+describe('duplicateRoutineDay', () => {
+  it('calls the duplicate_routine_day RPC with the day id and the pre-localized name', async () => {
+    const newDay = { id: 99, routine_id: 1, name: 'Día A (copia)', estimated_duration_min: 45, sort_order: 2 }
+    const clientMock = { rpc: vi.fn().mockResolvedValue({ data: newDay, error: null }) }
+    getClient.mockReturnValue(clientMock)
+
+    const result = await duplicateRoutineDay({ dayId: 10, newName: 'Día A (copia)' })
+
+    expect(result).toEqual(newDay)
+    expect(clientMock.rpc).toHaveBeenCalledWith('duplicate_routine_day', {
+      p_day_id: 10,
+      p_new_name: 'Día A (copia)',
+    })
+  })
+
+  it('throws when the rpc returns an error', async () => {
+    const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: new Error('Acceso denegado al día') }) }
+    getClient.mockReturnValue(clientMock)
+
+    await expect(duplicateRoutineDay({ dayId: 10, newName: 'Día A (copia)' })).rejects.toThrow('Acceso denegado al día')
   })
 })
 

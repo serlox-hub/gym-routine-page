@@ -217,6 +217,20 @@ export async function duplicateRoutineExercise({ routineExercise }) {
   return data
 }
 
+export async function duplicateRoutineDay({ dayId, newName }) {
+  // RPC (no dos escrituras client-side): si el insert de ejercicios fallara tras el del día, un
+  // client-side de dos pasos dejaría un día "(copia)" vacío y permanente sin avisar al usuario.
+  // La función es plpgsql: una excepción revierte también el día ya insertado. Ver migración
+  // 059_duplicate_routine_day.sql.
+  const { data, error } = await getClient().rpc('duplicate_routine_day', {
+    p_day_id: dayId,
+    p_new_name: newName,
+  })
+
+  if (error) throw error
+  return data
+}
+
 export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, esCalentamiento = false }) {
   const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')

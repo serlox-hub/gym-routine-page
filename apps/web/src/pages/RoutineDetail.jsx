@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, Pencil, Repeat, Layers, CalendarDays } from 'lucide-react'
-import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
+import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui/index.js'
 import { DayCard, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, RoutineEditForm, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
 import { moveItemToPosition } from '@gym/shared'
@@ -43,6 +43,7 @@ function RoutineDetail() {
   const deleteDay = useDeleteRoutineDay()
   const reorderDays = useReorderRoutineDays()
   const duplicateExercise = useDuplicateRoutineExercise()
+  const duplicateDay = useDuplicateRoutineDay()
   const moveExercise = useMoveRoutineExerciseToDay()
   const setFavoriteMutation = useSetFavoriteRoutine()
 
@@ -161,6 +162,20 @@ function RoutineDetail() {
     try {
       await deleteDay.mutateAsync({ dayId: dayToDelete.id, routineId })
       setDayToDelete(null)
+    } catch {
+      // Error handled by TanStack Query
+    }
+  }
+
+  const handleDuplicateDay = async (dayId) => {
+    const day = days?.find(d => d.id === dayId)
+    if (!day) return
+    try {
+      await duplicateDay.mutateAsync({
+        dayId,
+        newName: `${day.name} ${t('routine:duplicateSuffix')}`,
+        routineId,
+      })
     } catch {
       // Error handled by TanStack Query
     }
@@ -350,6 +365,8 @@ function RoutineDetail() {
                 onDuplicateExercise={handleDuplicateExercise}
                 onMoveExerciseToDay={handleOpenMoveModal}
                 onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
+                onDuplicate={handleDuplicateDay}
+                isDuplicatingDay={duplicateDay.isPending}
                 onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
                 currentIndex={index}
                 totalDays={days.length}

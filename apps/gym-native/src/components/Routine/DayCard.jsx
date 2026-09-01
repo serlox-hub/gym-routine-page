@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronDown, ChevronRight, Play, Pencil, ArrowUpDown } from 'lucide-react-native'
+import { Trash2, ChevronDown, ChevronRight, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react-native'
 import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, Modal, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
@@ -22,6 +22,8 @@ export default function DayCard({
   onDuplicateExercise,
   onMoveExerciseToDay,
   onDelete,
+  onDuplicate,
+  isDuplicatingDay = false,
   onReorderToPosition,
   currentIndex,
   totalDays,
@@ -163,6 +165,7 @@ export default function DayCard({
                       setShowRenameModal(true)
                     },
                   },
+                  { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
                   ...(totalDays > 1 ? [{
                     icon: ArrowUpDown,
                     label: t('routine:reorder'),

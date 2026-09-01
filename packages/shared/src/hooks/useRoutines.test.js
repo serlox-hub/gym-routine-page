@@ -25,6 +25,7 @@ vi.mock('../api/routineApi.js', () => ({
   reorderRoutineExercises: vi.fn(),
   addExerciseToDay: vi.fn(),
   duplicateRoutineExercise: vi.fn(),
+  duplicateRoutineDay: vi.fn(),
   moveRoutineExerciseToDay: vi.fn(),
   duplicateRoutine: vi.fn(),
 }))
@@ -50,6 +51,7 @@ import {
   deleteRoutine,
   updateRoutineExercise,
   addExerciseToDay,
+  duplicateRoutineDay,
   duplicateRoutine,
 } from '../api/routineApi.js'
 
@@ -65,6 +67,7 @@ import {
   useUpdateRoutineExercise,
   useAddExerciseToDay,
   useDuplicateRoutine,
+  useDuplicateRoutineDay,
 } from './useRoutines.js'
 
 function createWrapper() {
@@ -288,5 +291,17 @@ describe('useRoutines — mutations', () => {
     })
 
     expect(duplicateRoutine).toHaveBeenCalledWith('routine-1', 'user-123', undefined)
+  })
+
+  it('useDuplicateRoutineDay: llama a duplicateRoutineDay con dayId y newName', async () => {
+    duplicateRoutineDay.mockResolvedValueOnce({ id: 'day-copy' })
+
+    const { result } = renderHook(() => useDuplicateRoutineDay(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ dayId: 'day-1', newName: 'Día 1 (copia)', routineId: 'routine-1' })
+    })
+
+    expect(duplicateRoutineDay).toHaveBeenCalledWith({ dayId: 'day-1', newName: 'Día 1 (copia)' })
   })
 })

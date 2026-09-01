@@ -51,6 +51,8 @@
     "add": "Add day",
     "edit": "Edit day",
     "delete": "Delete day",
+    "duplicate": "Duplicate day",
+    "duplicated": "Day duplicated",
     "deleteConfirm": "Delete this day and all its exercises?",
     "noDays": "No days in this routine yet",
     "noDaysHint": "Start by adding your first workout day",

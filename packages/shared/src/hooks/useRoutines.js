@@ -22,6 +22,7 @@ import {
   reorderRoutineExercises as apiReorderRoutineExercises,
   addExerciseToDay as apiAddExerciseToDay,
   duplicateRoutineExercise as apiDuplicateRoutineExercise,
+  duplicateRoutineDay as apiDuplicateRoutineDay,
   moveRoutineExerciseToDay as apiMoveRoutineExerciseToDay,
   duplicateRoutine as apiDuplicateRoutine,
   importRoutine,
@@ -233,6 +234,18 @@ export function useDeleteRoutineDay() {
     mutationFn: ({ dayId }) => apiDeleteRoutineDay(dayId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
+    },
+  })
+}
+
+export function useDuplicateRoutineDay() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ dayId, newName }) => apiDuplicateRoutineDay({ dayId, newName }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
+      getNotifier()?.show(t('routine:day.duplicated'), 'success')
     },
   })
 }

@@ -56,3 +56,4 @@ lo resuelve al leer con `resolveTargetField()`.
 4. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA.
 5. Incrementar `ROUTINE_EXPORT_VERSION` si hay cambios breaking (importRoutine debe seguir aceptando versiones antiguas).
 6. Actualizar los tests (`routineIO.test.js`, `routineApi.test.js`, `exerciseMatch.test.js`).
+7. Si el campo va en `routine_exercises`: actualizar también la lista de columnas de la función `duplicate_routine_day` (migración `apps/web/supabase/migrations/059_duplicate_routine_day.sql`, INSERT hacia `routine_exercises`) — es una cuarta copia manual del shape de la fila, aparte de export/import/prompt IA. Un campo olvidado ahí desaparece en silencio solo al duplicar un día (no al exportar/importar).
