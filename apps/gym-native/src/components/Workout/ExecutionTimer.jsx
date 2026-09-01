@@ -1,66 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Play, X } from 'lucide-react-native'
-import * as Haptics from 'expo-haptics'
-import { formatDuration, formatElapsedSeconds } from '@gym/shared'
+import { formatDuration, formatElapsedSeconds, TIMER_BEEP_WINDOW_SECONDS } from '@gym/shared'
 import { colors } from '../../lib/styles'
+import { useExecutionTimer } from '../../hooks/useExecutionTimer'
 
 // Cuenta atrás de la duración de la serie. Es un item de la SUBFILA compartida (SetRowMeta,
 // junto a la referencia anterior y al aviso de progresión), no de la fila: dentro robaba ancho a
 // los inputs en móvil y al arrancar cambiaba de tamaño, descuadrando las columnas. Ver DECISIONS.
 export default function ExecutionTimer({ seconds }) {
   const { t } = useTranslation()
-  const [isRunning, setIsRunning] = useState(false)
-  const [remaining, setRemaining] = useState(seconds)
-  const intervalRef = useRef(null)
+  const { isRunning, remaining, start, stop } = useExecutionTimer(seconds)
 
-  useEffect(() => {
-    if (!isRunning) {
-      setRemaining(seconds)
-    }
-  }, [seconds, isRunning])
-
-  useEffect(() => {
-    if (isRunning && remaining > 0) {
-      intervalRef.current = setInterval(() => {
-        setRemaining(prev => {
-          if (prev <= 1) {
-            setIsRunning(false)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [isRunning, remaining])
-
-  useEffect(() => {
-    if (isRunning && remaining <= 3 && remaining > 0) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-    }
-    if (remaining === 0 && !isRunning) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    }
-  }, [remaining, isRunning])
-
-  const handleStart = () => {
-    if (seconds > 0) {
-      setRemaining(seconds)
-      setIsRunning(true)
-    }
-  }
-
-  const handleStop = () => {
-    setIsRunning(false)
-    setRemaining(seconds)
-  }
-
-  const isCritical = remaining <= 3 && remaining > 0
+  const isCritical = remaining <= TIMER_BEEP_WINDOW_SECONDS && remaining > 0
   const isDone = remaining === 0 && !isRunning
 
   const target = formatDuration(seconds)
@@ -69,7 +21,7 @@ export default function ExecutionTimer({ seconds }) {
     return (
       <View className="flex-row">
         <Pressable
-          onPress={handleStart}
+          onPress={start}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={t('workout:set.startTimer', { time: target })}
@@ -98,7 +50,7 @@ export default function ExecutionTimer({ seconds }) {
         {formatElapsedSeconds(remaining)}
       </Text>
 
-      <Pressable onPress={handleStop} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      <Pressable onPress={stop} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         accessibilityRole="button" accessibilityLabel={t('workout:set.stopTimer')} className="active:opacity-70">
         <X size={14} color={colors.textSecondary} />
       </Pressable>
