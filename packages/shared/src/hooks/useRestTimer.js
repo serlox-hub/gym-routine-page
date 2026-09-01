@@ -1,6 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useWorkoutStore, getWorkoutStore } from './_stores.js'
 
+// Segundos finales en los que el timer avisa con un beep antes de terminar.
+// Compartido con useExecutionTimer.js para que la cuenta atrás de una serie
+// por tiempo avise igual que el descanso entre series.
+export const TIMER_BEEP_WINDOW_SECONDS = 2
+
 // ============================================
 // TIMER ENGINE HOOK (montar una sola vez)
 // ============================================
@@ -25,7 +30,7 @@ export function useTimerEngine({ playSound, vibrateDevice, onTimerStart, onTimer
 
       timerUpdateCallbacks.forEach(cb => cb(remaining))
 
-      if (currentState.restTimerActive && remaining <= 2 && remaining > 0 && remaining !== lastBeepRef.current) {
+      if (currentState.restTimerActive && remaining <= TIMER_BEEP_WINDOW_SECONDS && remaining > 0 && remaining !== lastBeepRef.current) {
         lastBeepRef.current = remaining
         if (isSoundEnabled?.() !== false) playSound?.()
       }

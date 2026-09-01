@@ -15,25 +15,31 @@ export { useRestTimer }
 
 let timerSoundEnabled = true
 
-function playSound() {
+export function playSound() {
   if (!timerSoundEnabled) return
   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
 }
 
-function vibrateDevice() {
+export function vibrateDevice() {
   if (!timerSoundEnabled) return
   Vibration.vibrate([0, 200, 100, 200])
 }
 
-function isSoundEnabled() {
+export function isSoundEnabled() {
   return timerSoundEnabled
 }
 
-function onTimerStart(endTime) {
-  // Refresh sound preference on timer start
+// Refresca `timerSoundEnabled` desde AsyncStorage. Se llama al arrancar
+// cualquier timer (descanso o ejecución de serie) porque la lectura es
+// async y no hay forma de comprobar la preferencia de forma síncrona.
+export function refreshSoundPreference() {
   AsyncStorage.getItem('timer_sound_enabled').then(val => {
     timerSoundEnabled = val === null || val === 'true'
   })
+}
+
+function onTimerStart(endTime) {
+  refreshSoundPreference()
   activateKeepAwakeAsync()
   scheduleRestEndNotification(endTime)
 }

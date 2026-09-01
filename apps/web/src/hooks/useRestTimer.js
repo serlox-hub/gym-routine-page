@@ -10,7 +10,7 @@ export { useRestTimer }
 
 let audioContext = null
 
-function playSound() {
+export function playSound() {
   try {
     if (!audioContext) {
       audioContext = new (window.AudioContext || window.webkitAudioContext)()
@@ -30,13 +30,13 @@ function playSound() {
   }
 }
 
-function vibrateDevice() {
+export function vibrateDevice() {
   if (navigator.vibrate) {
     navigator.vibrate([200, 100, 200])
   }
 }
 
-function isSoundEnabled() {
+export function isSoundEnabled() {
   try {
     const pref = localStorage.getItem('timer_sound_enabled')
     return pref === null || pref === 'true'
