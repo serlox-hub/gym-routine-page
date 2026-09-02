@@ -83,7 +83,7 @@ function SetRow({
     calories, setCalories, level, setLevel, pace, setPace,
     rir, setRir,
     notes, setType, saveDetails, setSetType,
-    isCompleted, setData, isValid, targetPlaceholder, targetField: resolvedTargetField, progressableValue,
+    isCompleted, setData, isValid, targetPlaceholder, targetField: resolvedTargetField, progressableValue, suggestedFields,
   } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit, previousSet, previousLoaded, target, targetField, levelTarget })
 
   const { data: preferences } = usePreferences()
@@ -191,8 +191,13 @@ function SetRow({
   // Detalles desde el estado local (reflejan lo fijado antes o después de completar)
   const hasVideo = !!setData?.videoUrl
   const isDropset = setType === 'dropset'
-  // El chip (entrada de anotación) se muestra en la fila activa o completada si la columna existe.
-  const showEffort = annotationColumn && (isActive || isCompleted)
+  // El chip (entrada de anotación) se muestra en TODAS las filas si la columna existe: estaba
+  // limitado a la activa y la completada, y dejaba la columna «Notas» dentada bajo su propia
+  // cabecera. Anotar antes de hacer la serie ya era legal (la hoja funciona sin completar, vídeo
+  // incluido — ver useSetVideoUpload), así que esconderlo solo quitaba una entrada válida. Su
+  // estado vacío ya es discreto: pill neutro con guion en textMuted y el borde de invitación
+  // SOLO en la activa (ver EffortPicker), que es lo que sigue distinguiéndola.
+  const showEffort = annotationColumn
   // Cuenta atrás de la serie: solo en la fila activa y con una duración ya puesta. Va en la
   // subfila, fuera de la fila: dentro robaba el ancho de los inputs y descuadraba al arrancar.
   const showTimer = tracksTime(trackedFields) && isActive && !isCompleted && Number(time) > 0
@@ -203,13 +208,21 @@ function SetRow({
   const showProgressionHint = progressionEnabled && !isCompleted &&
     shouldSuggestProgression({ previousSet, target, trackedFields, targetField, currentProgressable: progressableValue, effortTarget })
 
-  // "Hecho" se marca con lima SÓLIDO (barra izquierda), no con relleno translúcido:
-  // el lima #BEFF00 en alpha sobre el navy vira a oliva. Completada y activa comparten
-  // relleno neutro sutil; la barra lima distingue lo hecho; la activa muestra sus inputs
-  // en caja lima (ver renderInputs); pendiente = transparente.
-  // (Todas llevan 3px de borde izq. transparente para no descuadrar el layout.)
+  // Fondo y barra de la serie. UN significado por canal (issue #39):
+  //   relleno FUERTE (bgHover) = "aquí estás"  → SOLO la activa, el único bloque elevado
+  //   barra lima SÓLIDA + check = "hecho"      → la completada, que baja a bgHoverSubtle
+  //   bgHoverSubtle                            = suelo del bloque, lo llevan todas las demás
+  // Lo hecho NO se marca con relleno translúcido lima: el lima en alpha sobre el navy vira a
+  // oliva. Y compartir bgHover entre activa y completada (como se hacía) dejaba dos bloques
+  // brillantes compitiendo, con el foco del entreno peleándose con lo ya cerrado.
+  // La pendiente tampoco va en transparente: sin relleno el bloque no tiene bordes, los valores
+  // flotan sin caja (el input es ghost en reposo, ver SetInputs) y el divisor interior se lee
+  // como separador ENTRE series.
+  // (Todas llevan 3px de borde izq., transparente salvo en la completada, para no descuadrar.)
+  // Lo lleva el CONTENEDOR del bloque (fila de valores + subfila de contexto), no la fila: es lo
+  // que hace que la serie y su contexto se lean como un solo bloque.
   const baseRowStyle = {
-    backgroundColor: (isCompleted || isActive) ? colors.bgHover : 'transparent',
+    backgroundColor: isActive ? colors.bgHover : colors.bgHoverSubtle,
     borderLeftWidth: SET_ROW_ACCENT,
     borderLeftColor: isCompleted ? colors.success : 'transparent',
   }
@@ -294,49 +307,56 @@ function SetRow({
 
   return (
     <>
-      <View className="flex-row items-center py-2.5 px-1 rounded-lg" style={{ gap: SET_ROW_GAP, ...baseRowStyle }}>
-        <View style={{ width: COL_SET, alignItems: 'center', justifyContent: 'center' }}>
-          {renderSetCell()}
-        </View>
-        {columns.map(({ field, decimal }) => {
-          const [value, onChange] = fieldState[field]
-          // El objetivo de la rutina se pinta en la columna DE SU CAMPO (issue #28): en un cardio
-          // "20min" es la pista de la columna de tiempo, no de la de reps (que no existe).
-          // Se pinta CRUDO, tal como lo escribió el usuario ("20min", "20-30min", "5km"), aunque la
-          // cabecera diga MM:SS o M: es la prescripción literal y los rangos se ven enteros.
-          // Normalizarlo al formato de la caja convertiría "5km" en "5000". No lo "arregles".
-          const placeholder = field === resolvedTargetField ? targetPlaceholder : undefined
-          return (
-            <View key={field} style={{ flex: 1 }}>
-              <SetValueInput field={field} decimal={decimal} value={value} onChange={onChange}
-                placeholder={placeholder} active={isActive} />
-            </View>
-          )
-        })}
-        {/* Columna «Notas»: se colapsa si RIR, notas y vídeo están off (misma condición
-            annotationColumn que la cabecera). Más ancha con la escala RPE (palabras). */}
-        {annotationColumn && (
-          <View style={{ width: getEffortColumnWidth(trackedFields, showRirInput), alignItems: 'center', justifyContent: 'center' }}>
-            {showEffort && <EffortPicker value={rir} trackedFields={trackedFields} note={notes} hasVideo={hasVideo}
-              active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
+      {/* Bloque de la serie: la fila de valores y su subfila de contexto comparten UN contenedor
+          (fondo + barra lima de "hecho"), o se leen como dos elementos sueltos apilados.
+          El inset izquierdo (borde + px-1) lo pone SOLO este contenedor: la fila interior no
+          añade padding horizontal o las columnas se desalinean de la cabecera de SetsList, que
+          compensa exactamente ese inset. Ver docs/DECISIONS.md. */}
+      <View className="px-1 rounded-lg" style={baseRowStyle}>
+        <View className="flex-row items-center py-3" style={{ gap: SET_ROW_GAP }}>
+          <View style={{ width: COL_SET, alignItems: 'center', justifyContent: 'center' }}>
+            {renderSetCell()}
           </View>
-        )}
-        <View style={{ width: COL_CHECK, alignItems: 'center', justifyContent: 'center' }}>
-          {renderCheckIndicator()}
+          {columns.map(({ field, decimal }) => {
+            const [value, onChange] = fieldState[field]
+            // El objetivo de la rutina se pinta en la columna DE SU CAMPO (issue #28): en un cardio
+            // "20min" es la pista de la columna de tiempo, no de la de reps (que no existe).
+            // Se pinta CRUDO, tal como lo escribió el usuario ("20min", "20-30min", "5km"), aunque la
+            // cabecera diga MM:SS o M: es la prescripción literal y los rangos se ven enteros.
+            // Normalizarlo al formato de la caja convertiría "5km" en "5000". No lo "arregles".
+            const placeholder = field === resolvedTargetField ? targetPlaceholder : undefined
+            return (
+              <View key={field} style={{ flex: 1 }}>
+                <SetValueInput field={field} decimal={decimal} value={value} onChange={onChange}
+                  placeholder={placeholder} active={isActive} suggested={suggestedFields[field]} />
+              </View>
+            )
+          })}
+          {/* Columna «Notas»: se colapsa si RIR, notas y vídeo están off (misma condición
+              annotationColumn que la cabecera). Más ancha con la escala RPE (palabras). */}
+          {annotationColumn && (
+            <View style={{ width: getEffortColumnWidth(trackedFields, showRirInput), alignItems: 'center', justifyContent: 'center' }}>
+              {showEffort && <EffortPicker value={rir} trackedFields={trackedFields} note={notes} hasVideo={hasVideo}
+                active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
+            </View>
+          )}
+          <View style={{ width: COL_CHECK, alignItems: 'center', justifyContent: 'center' }}>
+            {renderCheckIndicator()}
+          </View>
         </View>
-      </View>
 
-      <SetRowMeta
-        previousSet={previousSet}
-        trackedFields={trackedFields}
-        weightUnit={weightUnit}
-        distanceUnit={distanceUnit}
-        showRir={showRirInput}
-        showProgressionHint={showProgressionHint}
-        target={target}
-        targetField={targetField}
-        timerSeconds={showTimer ? Number(time) : 0}
-      />
+        <SetRowMeta
+          previousSet={previousSet}
+          trackedFields={trackedFields}
+          weightUnit={weightUnit}
+          distanceUnit={distanceUnit}
+          showRir={showRirInput}
+          showProgressionHint={showProgressionHint}
+          target={target}
+          targetField={targetField}
+          timerSeconds={showTimer ? Number(time) : 0}
+        />
+      </View>
 
       <SetDetailsModal
         isOpen={showModal}

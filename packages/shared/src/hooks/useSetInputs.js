@@ -7,11 +7,13 @@ import {
   buildCompletedSetData,
   getSetInitialInputValues,
   getSetMeasurementValues,
+  isSuggestedValue,
+  getSuggestedSetValues,
   buildCachedMeasurementValues,
   setMeasurementValuesChanged,
   formatSetTargetPlaceholder,
 } from '../lib/setUtils.js'
-import { SetField, getProgressableField, metersToDistanceUnit, resolveTargetField } from '../lib/measurementFields.js'
+import { SetField, getProgressableField, resolveTargetField } from '../lib/measurementFields.js'
 import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
 
 /**
@@ -108,13 +110,19 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     const changed = previousSetRef.current != null && previousSetRef.current !== previousSet
     previousSetRef.current = previousSet
     const pick = (current, next) => (changed || current === '') ? next : current
-    if (previousSet.weight != null) setWeight(w => pick(w, previousSet.weight))
-    if (previousSet.reps != null) setReps(r => pick(r, previousSet.reps))
-    if (previousSet.timeSeconds != null) setTime(tm => pick(tm, previousSet.timeSeconds))
-    if (previousSet.distanceMeters != null) setDistance(d => pick(d, metersToDistanceUnit(previousSet.distanceMeters, distanceUnit)))
-    if (previousSet.caloriesBurned != null) setCalories(c => pick(c, previousSet.caloriesBurned))
-    if (previousSet.level != null) setLevel(l => pick(l, previousSet.level))
-    if (previousSet.paceSeconds != null) setPace(p => pick(p, previousSet.paceSeconds))
+    // Qué se siembra en cada campo sale de getSuggestedSetValues, la misma fuente que decide
+    // luego si un valor SIGUE siendo la sugerencia (suggestedFields, más abajo).
+    // ⚠️ `levelTarget` NO se pasa aquí a propósito, aunque la otra llamada sí lo haga: el nivel
+    // prescrito solo puede sembrarse cuando `previousLoaded` es true (ver el efecto de más
+    // abajo), o pisa el nivel al que progresaste. Si se unifican las dos llamadas "por DRY", ese
+    // efecto deja de mandar y el 8 de la rutina sustituye en silencio a tu 9.
+    const seed = getSuggestedSetValues(previousSet, { distanceUnit })
+    const setters = {
+      [SetField.WEIGHT]: setWeight, [SetField.REPS]: setReps, [SetField.TIME]: setTime,
+      [SetField.DISTANCE]: setDistance, [SetField.CALORIES]: setCalories,
+      [SetField.LEVEL]: setLevel, [SetField.PACE]: setPace,
+    }
+    for (const [field, next] of Object.entries(seed)) setters[field](current => pick(current, next))
   }, [previousSet, setData, cachedData, distanceUnit])
 
   // Re-siembra el peso cuando una conversión de unidad (cambio de gym a mitad de sesión)
@@ -156,6 +164,19 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
   // de los dos lo corrija y el otro no.
   const progressableField = getProgressableField(trackedFields)
   const progressableValue = progressableField === SetField.LEVEL ? level : weight
+
+  // Qué campos siguen mostrando LA SUGERENCIA y no un dato del usuario; el consumidor los atenúa
+  // para que no se confundan con lo ya registrado. Comparación contra lo que se sembraría ahora
+  // mismo, sin rastrear ediciones: ver el porqué en isSuggestedValue.
+  const suggestions = getSuggestedSetValues(previousSet, { levelTarget, distanceUnit })
+  const suggestedFields = {}
+  for (const [field, value] of Object.entries({
+    [SetField.WEIGHT]: weight, [SetField.REPS]: reps, [SetField.TIME]: time,
+    [SetField.DISTANCE]: distance, [SetField.CALORIES]: calories,
+    [SetField.LEVEL]: level, [SetField.PACE]: pace,
+  })) {
+    suggestedFields[field] = isSuggestedValue({ value, suggestion: suggestions[field], isCompleted })
+  }
 
   const commit = useCallback(() => {
     const formData = { weight, reps, time, distance, calories, level, pace }
@@ -204,5 +225,6 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     targetPlaceholder,
     targetField: resolvedTargetField,
     progressableValue,
+    suggestedFields,
   }
 }

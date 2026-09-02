@@ -69,9 +69,13 @@ function ExerciseCardNotes({ exercise, notes }) {
   const exerciseName = getExerciseName(exercise)
 
   return (
+    // Cuerpo del panel de notas, PEGADO a su cabecera (`NotesToggleBar`, que ya redondea arriba
+    // y comparte `bgAlt`): sin margen superior ni caja propia, solo la línea que las separa.
+    // Los dos componentes se usan siempre juntos — `hasExerciseNotes` es exactamente la condición
+    // que hace que esto no devuelva null, así que el cuerpo nunca aparece sin cabecera.
     <div
-      className="mt-2 p-3 rounded text-sm space-y-2"
-      style={{ backgroundColor: colors.bgAlt, border: `1px solid ${colors.borderSubtle}` }}
+      className="p-3 rounded-b-lg text-sm space-y-2"
+      style={{ backgroundColor: colors.bgAlt, borderTop: `1px solid ${colors.borderSubtle}` }}
     >
       {gifKey && (
         <div className="flex justify-center">

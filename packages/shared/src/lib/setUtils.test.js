@@ -8,6 +8,8 @@ import {
   getSetMeasurementValues,
   buildCachedMeasurementValues,
   getSetInitialInputValues,
+  isSuggestedValue,
+  getSuggestedSetValues,
   setMeasurementValuesChanged,
   formatSetTargetPlaceholder,
   formatSetTargetHint,
@@ -18,6 +20,7 @@ import {
   getSetsForExercise,
   shouldShowAnnotationColumn,
 } from './setUtils.js'
+import { FIELD_ORDER } from './measurementFields.js'
 
 describe('setUtils', () => {
   describe('createSetKey', () => {
@@ -756,5 +759,83 @@ describe('formatSetTargetHint', () => {
   // Sin campos cae al default (peso × reps), cuyo objetivo va en la columna de reps.
   it('sin campos no pinta nada', () => {
     expect(formatSetTargetHint(null, '8-12', null)).toBeNull()
+  })
+})
+
+describe('getSuggestedSetValues', () => {
+  it('traduce las columnas de la serie anterior a los campos de la fila', () => {
+    expect(getSuggestedSetValues({ weight: 80, reps: 7, timeSeconds: 90, caloriesBurned: 12, level: 5, paceSeconds: 300 }))
+      .toEqual({ weight: 80, reps: 7, time: 90, calories: 12, level: 5, pace: 300 })
+  })
+
+  it('convierte la distancia a la unidad de display', () => {
+    expect(getSuggestedSetValues({ distanceMeters: 5000 }, { distanceUnit: 'km' }).distance).toBe(5)
+    expect(getSuggestedSetValues({ distanceMeters: 5000 }, { distanceUnit: 'm' }).distance).toBe(5000)
+  })
+
+  it('los campos sin dato no aparecen', () => {
+    expect(getSuggestedSetValues({ weight: 80 })).toEqual({ weight: 80 })
+  })
+
+  it('sin serie anterior no sugiere nada', () => {
+    expect(getSuggestedSetValues(null)).toEqual({})
+    expect(getSuggestedSetValues(undefined)).toEqual({})
+  })
+
+  it('el nivel prescrito entra solo si la sesión anterior no trae nivel (lo de la última vez manda)', () => {
+    expect(getSuggestedSetValues(null, { levelTarget: 8 }).level).toBe(8)
+    expect(getSuggestedSetValues({ level: 9 }, { levelTarget: 8 }).level).toBe(9)
+  })
+
+  it('el 0 de la serie anterior es un valor, no un hueco', () => {
+    expect(getSuggestedSetValues({ reps: 0 }).reps).toBe(0)
+  })
+
+  // Cruce contra FIELD_ORDER (mismo patrón que setColumns.test.js). Esta función es la fuente
+  // ÚNICA del prefill Y del atenuado de sugerencias, y enumera los campos a mano: un campo de
+  // medición nuevo se quedaría fuera en silencio (su columna se pinta y guarda, pero no recuerda
+  // la última vez ni se atenúa) sin que falle ni un test. Este es el test que lo caza.
+  it('cubre TODOS los campos de FIELD_ORDER, sin olvidar ninguno', () => {
+    const previousSet = {
+      weight: 80, reps: 7, timeSeconds: 90, distanceMeters: 5000, caloriesBurned: 12,
+      level: 5, paceSeconds: 300,
+    }
+    expect(Object.keys(getSuggestedSetValues(previousSet)).sort()).toEqual([...FIELD_ORDER].sort())
+  })
+})
+
+describe('isSuggestedValue', () => {
+  it('el valor sigue siendo el sembrado → sugerencia', () => {
+    expect(isSuggestedValue({ value: 80, suggestion: 80 })).toBe(true)
+  })
+
+  it('compara sin tipo: el input guarda strings y la sugerencia números', () => {
+    expect(isSuggestedValue({ value: '80', suggestion: 80 })).toBe(true)
+  })
+
+  it('el 0 SÍ es sugerencia: es un valor, no un hueco', () => {
+    expect(isSuggestedValue({ value: 0, suggestion: 0 })).toBe(true)
+  })
+
+  it('un valor distinto del sembrado es dato del usuario', () => {
+    expect(isSuggestedValue({ value: 85, suggestion: 80 })).toBe(false)
+  })
+
+  it('un campo vacío no es sugerencia (no hay nada que atenuar)', () => {
+    expect(isSuggestedValue({ value: '', suggestion: 80 })).toBe(false)
+    expect(isSuggestedValue({ value: null, suggestion: 80 })).toBe(false)
+  })
+
+  it('sin sugerencia no hay nada con lo que comparar', () => {
+    expect(isSuggestedValue({ value: 80, suggestion: null })).toBe(false)
+    expect(isSuggestedValue({ value: 80, suggestion: '' })).toBe(false)
+  })
+
+  it('una serie completada nunca es sugerencia, aunque repita lo de la última vez', () => {
+    expect(isSuggestedValue({ value: 80, suggestion: 80, isCompleted: true })).toBe(false)
+  })
+
+  it('sin argumentos no revienta', () => {
+    expect(isSuggestedValue()).toBe(false)
   })
 })

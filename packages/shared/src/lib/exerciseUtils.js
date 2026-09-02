@@ -134,7 +134,8 @@ export function getEquipmentName(equipmentType) {
 /**
  * Whether an exercise has any displayable notes (instructions, personal override, or routine comment).
  */
-// Decide si la pestaña "Notas y consejos" (técnica) tiene algo que mostrar.
+// Decide si la sección "Instrucciones y consejos" (técnica; clave `exercise:notesAndCues`,
+// barra en NotesToggleBar) tiene algo que mostrar.
 // Incluye el GIF del ejercicio: aunque no haya texto, si hay animación (gif_key)
 // merece la pena abrir la pestaña para verla. Ver issue #6.
 export function hasExerciseNotes(exercise, override, routineNotes) {

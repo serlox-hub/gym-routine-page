@@ -57,6 +57,9 @@ export const colors = {
   bgAlt: '#1C1C2E',
   bgTertiary: '#1E1E30',
   bgHover: 'rgba(255, 255, 255, 0.05)',
+  // Superficie elevada MÁS floja que bgHover, para bloques en reposo que aun así deben tener
+  // bordes propios (filas de serie pendientes): sin ella el bloque no se ve y su contenido flota.
+  bgHoverSubtle: 'rgba(255, 255, 255, 0.03)',
   border: '#2A2A42',
   borderSubtle: '#22223A',
 

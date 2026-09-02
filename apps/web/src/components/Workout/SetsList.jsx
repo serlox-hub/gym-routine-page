@@ -55,7 +55,7 @@ function SetsList({
     <>
       {/* Recencia de la referencia (la sesión anterior ahora se muestra inline por fila; ver
           PreviousSetLine, dentro de SetRowMeta). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
-      <div className="mt-3 mb-3">
+      <div className="mt-4 mb-3">
         {previousWorkout === undefined ? (
           <div className="h-4 rounded w-40 animate-pulse" style={{ backgroundColor: colors.bgTertiary }} />
         ) : previousWorkout ? (
@@ -80,7 +80,8 @@ function SetsList({
         <div className="grid items-center mb-3 px-1" style={{
           gridTemplateColumns: getSetGridTemplate(columns.length, annotationColumn, effortRendersAsWord(trackedFields, preferences?.show_rir_input ?? true)),
           gap: SET_ROW_GAP,
-          // Alinea con las filas, que llevan la barra de "hecho" a la izquierda
+          // Alinea con el bloque de cada serie: su inset izquierdo es UNO (px-1 del contenedor
+          // + la barra de "hecho"). Si el bloque cambia de padding, este calc() cambia con él.
           paddingLeft: `calc(0.25rem + ${SET_ROW_ACCENT}px)`,
         }}>
           <span style={HEADER_STYLE}>{t('workout:set.set').toUpperCase()}</span>
@@ -94,11 +95,14 @@ function SetsList({
         </div>
       )}
 
-      <div className="space-y-2">
+      {/* Cada SetRow es UN bloque (fila de valores + subfila de contexto comparten contenedor),
+          así que el space-y separa bloques enteros. Debe ser MAYOR que el padding interior del
+          bloque (8px) o la serie se agrupa con el contexto de la de abajo, no con el suyo. */}
+      <div className="space-y-3">
         {Array.from({ length: setsCount }, (_, i) => {
           const previousSet = previousWorkout?.sets?.find(s => s.setNumber === i + 1)
-          // Envoltorio para aislar la subfila de progresión (que SetRow pinta bajo la fila,
-          // reaccionando al peso en vivo) del space-y del contenedor. Ver ProgressionHint.
+          // Envoltorio necesario: SetRow devuelve un fragmento (bloque + hoja de detalles) y sin
+          // él el space-y también separaría la hoja.
           return (
             <div key={`${exerciseKey}-${i + 1}`}>
               <SetRow

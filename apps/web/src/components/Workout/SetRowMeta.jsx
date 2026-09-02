@@ -14,6 +14,11 @@ import ExecutionTimer from './ExecutionTimer.jsx'
  * uno. Al bajar los tres a UNA línea compartida, las columnas de valor recuperan el ancho que
  * ocupaba la columna y caben hasta 3 campos sin desbordar la card. La aritmética del reparto vive
  * en `MAX_TRACKED_FIELDS` (`lib/measurementFields.js`), que es la fuente única. Ver DECISIONS.
+ *
+ * Vive DENTRO del contenedor del bloque de la serie (ver `SetRow`), que ya pone el fondo y el
+ * inset izquierdo: aquí solo va el divisor interior (`border`, no `divider`: con el bloque ya
+ * relleno el separador no tiene que competir con los datos) y su padding vertical. No darle margen
+ * ni padding horizontal propios o el bloque se desalinea de la cabecera de `SetsList`.
  */
 function SetRowMeta({
   previousSet,
@@ -34,7 +39,10 @@ function SetRowMeta({
   if (!previousSet && !showProgressionHint && !showTimer && !targetHint) return null
 
   return (
-    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 pl-1">
+    <div
+      className="flex items-center flex-wrap gap-x-3 gap-y-1 py-2"
+      style={{ borderTop: `1px solid ${colors.border}` }}
+    >
       {targetHint && (
         <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
           {t('workout:set.target')} {targetHint}

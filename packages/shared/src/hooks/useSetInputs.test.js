@@ -205,6 +205,77 @@ describe('useSetInputs — prefill de la sesión anterior (sugerencia)', () => {
   })
 })
 
+// Distinguir la SUGERENCIA sembrada del dato del usuario es lo que permite atenuarla en la fila
+// (issue #39): sin esto, "80 × 7 que hiciste" y "80 × 7 que te proponemos" se pintan igual.
+describe('useSetInputs — suggestedFields: sugerencia sembrada vs dato del usuario', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+  })
+
+  it('lo sembrado desde previousSet queda marcado como sugerencia', async () => {
+    const { result } = renderHook(() => useSetInputs({ ...PARAMS, previousSet: { weight: 100, reps: 8 } }), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+    expect(result.current.suggestedFields.weight).toBe(true)
+    expect(result.current.suggestedFields.reps).toBe(true)
+  })
+
+  it('cambiar un campo lo saca de sugerencia SIN tocar los demás', async () => {
+    // `previousSet` estable a propósito: en la app sale del caché de query (misma referencia
+    // entre renders). Un objeto nuevo por render es, por contrato, "cambió el gym" → re-siembra.
+    const prev = { weight: 100, reps: 8 }
+    const { result } = renderHook(() => useSetInputs({ ...PARAMS, previousSet: prev }), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+
+    act(() => { result.current.setWeight(105) })
+    expect(result.current.suggestedFields.weight).toBe(false)
+    expect(result.current.suggestedFields.reps).toBe(true)
+  })
+
+  it('un campo vacío no es sugerencia (no hay nada que atenuar)', () => {
+    const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
+    expect(result.current.suggestedFields.weight).toBe(false)
+  })
+
+  it('sin sesión anterior no hay sugerencia que atenuar, aunque haya valor', () => {
+    const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
+    act(() => { result.current.setWeight(90) })
+    expect(result.current.suggestedFields.weight).toBe(false)
+  })
+
+  it('una serie completada nunca muestra sugerencias: son datos registrados', async () => {
+    store.completedSets = { [KEY]: { weight: 80, repsCompleted: 7 } }
+    const { result } = renderHook(() => useSetInputs({ ...PARAMS, previousSet: { weight: 80 } }), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.isCompleted).toBe(true))
+    expect(result.current.suggestedFields.weight).toBe(false)
+  })
+
+  // La regresión que mató al primer intento (rastrear qué campos se habían tecleado): el commit
+  // con debounce cachea la sugerencia sin que el usuario toque nada, así que al reexpandir el
+  // ejercicio la fila remontaba con cachedData y no volvía a atenuarse NUNCA. Comparar no
+  // depende de historia, así que sobrevive al remontaje.
+  it('sigue siendo sugerencia al REMONTAR con la sugerencia ya cacheada por el commit', () => {
+    store.cachedSetData = { [KEY]: { weight: 100, reps: 8 } }
+    const { result } = renderHook(() => useSetInputs({ ...PARAMS, previousSet: { weight: 100, reps: 8 } }), { wrapper: wrapper() })
+    expect(result.current.weight).toBe(100)
+    expect(result.current.suggestedFields.weight).toBe(true)
+  })
+
+  it('un valor cacheado DISTINTO del de la última vez es dato del usuario, no sugerencia', () => {
+    store.cachedSetData = { [KEY]: { weight: 105 } }
+    const { result } = renderHook(() => useSetInputs({ ...PARAMS, previousSet: { weight: 100 } }), { wrapper: wrapper() })
+    expect(result.current.suggestedFields.weight).toBe(false)
+  })
+
+  it('el nivel prescrito por la rutina también cuenta como sugerencia', async () => {
+    const BIKE = { ...PARAMS, trackedFields: ['level', 'distance', 'time'] }
+    const { result } = renderHook(() => useSetInputs({ ...BIKE, levelTarget: 8, previousLoaded: true }), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.level).toBe(8))
+    expect(result.current.suggestedFields.level).toBe(true)
+  })
+})
+
 // Lo que el hook persiste lo decide `trackedFields`, no una lista fija: es el único punto donde
 // eso se traduce a columnas, así que hace falta al menos un caso con campos distintos del default.
 describe('useSetInputs — los campos del ejercicio deciden qué se valida y qué se guarda', () => {

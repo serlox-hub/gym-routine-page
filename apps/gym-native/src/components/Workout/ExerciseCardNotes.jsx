@@ -71,8 +71,18 @@ function ExerciseCardNotes({ exercise, notes }) {
 
   return (
     <View
-      className="mt-2 p-3 rounded gap-2"
-      style={{ backgroundColor: colors.bgAlt, borderWidth: 1, borderColor: colors.borderSubtle }}
+      // Cuerpo del panel de notas, PEGADO a su cabecera (`NotesToggleBar`, que ya redondea arriba
+      // y comparte `bgAlt`): sin margen superior ni caja propia, solo la línea que las separa.
+      // Los dos se usan siempre juntos — `hasExerciseNotes` es exactamente la condición que hace
+      // que esto no devuelva null, así que el cuerpo nunca aparece sin cabecera.
+      className="p-3 gap-2"
+      style={{
+        backgroundColor: colors.bgAlt,
+        borderTopWidth: 1,
+        borderTopColor: colors.borderSubtle,
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
+      }}
     >
       {gifKey && (
         <View className="items-center">
