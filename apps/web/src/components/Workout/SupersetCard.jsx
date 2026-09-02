@@ -45,7 +45,9 @@ function SupersetCard({ exercises, supersetId, onCompleteSet, onUncompleteSet, o
         {exercises.map((sessionExercise, index) => (
           <div
             key={sessionExercise.sessionExerciseId || sessionExercise.id}
-            className="p-4"
+            // Mismo padding que la card de un ejercicio suelto (ver WorkoutExerciseCard): dentro
+            // de un superset la tarjeta no pinta su propio envoltorio, lo pone este.
+            className="px-4 py-5"
             style={getMuscleGroupBorderStyle(sessionExercise.exercise?.muscle_group?.name)}
           >
             <SupersetExerciseItem

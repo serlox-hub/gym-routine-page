@@ -36,10 +36,6 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const { expanded, toggle: toggleExpanded } = useExpandedExercise(exerciseKey)
   const collapsed = !expanded
-  // Notas montadas perezosamente y ocultadas (no desmontadas) al cerrar, para no
-  // re-pedir el GIF que contienen al alternarlas; se olvida la apertura al colapsar
-  const { open: showNotes, mounted: notesMounted, toggle: toggleNotes } = useLazyMountToggle(collapsed)
-
   const completedSets = useWorkoutStore(state => state.completedSets)
   const routineDayId = useWorkoutStore(state => state.routineDayId)
   const sessionId = useWorkoutStore(state => state.sessionId)
@@ -55,6 +51,13 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const completedCount = useMemo(() => Object.values(completedSets).filter(set => set.sessionExerciseId === exerciseKey).length, [completedSets, exerciseKey])
   const isCompleted = completedCount === setsCount && setsCount > 0
+
+  // Notas montadas perezosamente y ocultadas (no desmontadas) al cerrar, para no
+  // re-pedir el GIF que contienen al alternarlas; se olvida la apertura al colapsar.
+  // Arrancan CERRADAS: abrirlas solas empuja la cabecera del ejercicio fuera de pantalla
+  // (~400-500px de GIF + instrucciones por delante de la primera serie). Lo que se arregla es la
+  // barra, que ahora dice lo que esconde. Ver NotesToggleBar y docs/DECISIONS.md.
+  const { open: showNotes, mounted: notesMounted, toggle: toggleNotes } = useLazyMountToggle(collapsed)
 
   const updateFieldsMutation = useUpdateSessionExerciseFields()
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
@@ -82,7 +85,11 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const wrapperProps = isSuperset
     ? {}
     : {
-        className: collapsed ? 'px-4 py-2.5' : 'p-4',
+        // Expandida: MÁS aire, pero solo en vertical. El padding horizontal se queda en 16px a
+        // propósito — es una de las restas de la aritmética de anchos de `MAX_TRACKED_FIELDS`, y
+        // subirlo dejaría los inputs de un cardio de 3 campos por debajo de su mínimo legible.
+        // El mismo valor lo repite `SupersetCard` en su envoltorio por ejercicio.
+        className: collapsed ? 'px-4 py-2.5' : 'px-4 py-5',
         style: getMuscleGroupBorderStyle(exercise.muscle_group?.name),
       }
 
@@ -102,7 +109,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       {!collapsed && (
         <>
           {hasNotes && (
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 18 }}>
               <NotesToggleBar showNotes={showNotes} onToggle={toggleNotes} />
             </div>
           )}

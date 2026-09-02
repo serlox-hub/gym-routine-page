@@ -1,4 +1,4 @@
-import { ChevronDown, Clock, FileText, ChevronLeft } from 'lucide-react'
+import { BookOpen, ChevronDown, Clock, ChevronLeft } from 'lucide-react'
 import { colors, RGB_SUCCESS } from '../../lib/styles.js'
 
 function PhoneMockup({ children, className = '' }) {
@@ -147,8 +147,8 @@ function MockupWorkoutScreen() {
         </div>
         {/* Notes toggle */}
         <div className="mx-1.5 mb-1.5 flex items-center gap-1 rounded px-1.5 py-1" style={{ backgroundColor: colors.bgAlt }}>
-          <FileText size={8} color={colors.textSecondary} />
-          <span className="text-[7px] flex-1" style={{ color: colors.textSecondary }}>Notas y consejos</span>
+          <BookOpen size={8} color={colors.textPrimary} />
+          <span className="text-[7px] flex-1" style={{ color: colors.textPrimary }}>Instrucciones y consejos</span>
           <ChevronDown size={8} color={colors.textSecondary} />
         </div>
         {/* Previous session */}

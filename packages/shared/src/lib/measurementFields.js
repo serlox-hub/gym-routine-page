@@ -46,8 +46,9 @@ export const FIELD_ORDER = [
  * tiene columna propia para los 7).
  *
  * Aritmética (fuente única; la migración 055 y docs/DECISIONS.md remiten aquí, no repiten cifras).
- * A 360px de pantalla, la pista útil de la fila son **285px**: 360 − 64 (página `p-4` + card `p-4`)
- * − 8 (fila `px-1`) − 3 (`SET_ROW_ACCENT`, la barra de "hecho"). Las columnas fijas son
+ * A 360px de pantalla, la pista útil de la fila son **285px**: 360 − 64 (página `p-4` + card
+ * `px-4`) − 8 (`px-1` del CONTENEDOR del bloque de serie, ver `SetRow`; ya no lo pone la fila de
+ * valores) − 3 (`SET_ROW_ACCENT`, la barra de "hecho"). Las columnas fijas son
  * SERIE 32 + NOTAS 44 (62 en la escala RPE, que pinta palabras) + ✓ 44, con gap 6 entre las N+3
  * columnas. Lo que queda se reparte entre los N valores:
  *   N=2 (peso × reps, NOTAS 44) → (285 − 120 − 24) / 2 ≈ **70px** por input

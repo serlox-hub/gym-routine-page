@@ -33,7 +33,9 @@ export default function SupersetCard({ exercises, supersetId, onCompleteSet, onU
       {exercises.map((sessionExercise, index) => (
         <View
           key={sessionExercise.sessionExerciseId || sessionExercise.id}
-          className="p-4"
+          // Mismo padding que la card de un ejercicio suelto (ver WorkoutExerciseCard): dentro
+          // de un superset la tarjeta no pinta su propio envoltorio, lo pone este.
+          className="px-4 py-5"
           style={{
             ...getMuscleGroupBorderStyle(sessionExercise.exercise?.muscle_group?.name),
             ...(index < exercises.length - 1 ? { borderBottomWidth: 1, borderBottomColor: colors.border } : {}),

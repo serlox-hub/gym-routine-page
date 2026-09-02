@@ -54,7 +54,7 @@ function SetsList({
     <>
       {/* Recencia de la referencia (la sesión anterior ahora se muestra inline por fila; ver
           PreviousSetLine, dentro de SetRowMeta). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
-      <View style={{ marginTop: 12, marginBottom: 12 }}>
+      <View style={{ marginTop: 16, marginBottom: 12 }}>
         {previousWorkout === undefined ? (
           <View style={{ height: 16, width: 160, borderRadius: 4, backgroundColor: colors.bgTertiary }} />
         ) : previousWorkout ? (
@@ -77,7 +77,8 @@ function SetsList({
       {/* Cabecera de columnas, mida lo que mida el ejercicio: es donde vive la unidad de cada
           columna (KG, MM:SS, NIVEL…), lo que permite que la fila lleve solo inputs y no desborde.
           Anchos desde las constantes de SetRow (fuente única) y misma condición annotationColumn.
-          paddingLeft = 4 + la barra de "hecho" de las filas, o la cabecera queda 3px desplazada. */}
+          paddingLeft = 4 + la barra de "hecho": el inset izquierdo del bloque de cada serie es UNO
+          (px-1 del contenedor + la barra), y la cabecera lo compensa entero o queda desplazada. */}
       {setsCount > 0 && (
         <View style={{ flexDirection: 'row', gap: SET_ROW_GAP, marginBottom: 12, paddingHorizontal: 4, paddingLeft: 4 + SET_ROW_ACCENT }}>
           <Text numberOfLines={1} style={[HEADER_STYLE, { width: COL_SET }]}>
@@ -95,11 +96,16 @@ function SetsList({
         </View>
       )}
 
-      <View style={{ gap: 8 }}>
+      {/* Cada SetRow es UN bloque (fila de valores + subfila de contexto comparten contenedor),
+          así que el gap separa bloques enteros. Debe ser MAYOR que el padding interior del bloque
+          (12px arriba, 8px abajo en native) o la serie se agrupa con el contexto de la de abajo,
+          no con el suyo. Sin subfila de contexto el bloque son 12 arriba y 12 abajo, así que aquí
+          el margen es CERO: subir el `py-3` de la fila invierte la agrupación. */}
+      <View style={{ gap: 12 }}>
         {Array.from({ length: setsCount }, (_, i) => {
           const previousSet = previousWorkout?.sets?.find(s => s.setNumber === i + 1)
-          // Envoltorio para aislar la subfila de progresión (que SetRow pinta bajo la fila,
-          // reaccionando al peso en vivo) del gap del contenedor. Ver ProgressionHint.
+          // Envoltorio necesario: SetRow devuelve un fragmento (bloque + hoja de detalles) y sin
+          // él el gap también separaría la hoja.
           return (
             <View key={`${exerciseKey}-${i + 1}`}>
               <SetRow

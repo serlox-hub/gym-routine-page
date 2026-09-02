@@ -127,6 +127,67 @@ export function buildCachedMeasurementValues(trackedFields, formData, { distance
 }
 
 /**
+ * Qué valor se SIEMBRA en cada campo de una serie pendiente: lo de la sesión anterior, y el nivel
+ * prescrito por la rutina cuando la anterior no trae nivel.
+ *
+ * Fuente ÚNICA del prefill (`useSetInputs`) y de la detección de "esto sigue siendo una
+ * sugerencia" (`isSuggestedValue`). Estaban escritos por separado y el mapeo no es trivial
+ * (`timeSeconds` → `time`, `distanceMeters` → distancia en la unidad de display): duplicarlo
+ * garantizaba que un día uno de los dos se corrigiera y el otro no.
+ *
+ * @param {Object|null|undefined} previousSet - serie de la sesión anterior TAL COMO la devuelve
+ *   `buildPreviousWorkoutRef` (workoutTransforms.js): {weight, reps, timeSeconds, distanceMeters,
+ *   caloriesBurned, level, paceSeconds}. NO son las columnas de BD (snake_case) ni las
+ *   `payloadKey` (`repsCompleted`) que usa `getSetInitialInputValues` dos funciones más abajo.
+ * @param {{levelTarget?: number|null, distanceUnit?: string}} [options]
+ * @returns {Object} valores por campo; los campos sin sugerencia no aparecen
+ */
+export function getSuggestedSetValues(previousSet, { levelTarget = null, distanceUnit = 'm' } = {}) {
+  const suggested = {}
+  if (previousSet) {
+    if (previousSet.weight != null) suggested[SetField.WEIGHT] = previousSet.weight
+    if (previousSet.reps != null) suggested[SetField.REPS] = previousSet.reps
+    if (previousSet.timeSeconds != null) suggested[SetField.TIME] = previousSet.timeSeconds
+    if (previousSet.distanceMeters != null) suggested[SetField.DISTANCE] = metersToDistanceUnit(previousSet.distanceMeters, distanceUnit)
+    if (previousSet.caloriesBurned != null) suggested[SetField.CALORIES] = previousSet.caloriesBurned
+    if (previousSet.level != null) suggested[SetField.LEVEL] = previousSet.level
+    if (previousSet.paceSeconds != null) suggested[SetField.PACE] = previousSet.paceSeconds
+  }
+  // El nivel prescrito solo entra si la sesión anterior no dice nada: lo de la última vez MANDA
+  // (misma precedencia que el prefill; ver useSetInputs).
+  if (suggested[SetField.LEVEL] == null && levelTarget != null) suggested[SetField.LEVEL] = levelTarget
+  return suggested
+}
+
+/**
+ * ¿El valor que se ve en un campo es todavía la SUGERENCIA, o ya dice algo del usuario?
+ *
+ * Una fila pendiente no se pinta vacía: se siembra con lo de la sesión anterior para que
+ * completar de un toque repita el último entreno sin teclear. El efecto secundario es que
+ * "80 × 7 que hiciste" y "80 × 7 que te proponemos" se pintaban idénticos. El consumidor atenúa
+ * la sugerencia (issue #39).
+ *
+ * Es una COMPARACIÓN, no un historial: sugerencia = el valor sigue siendo exactamente el
+ * sembrado. Se eligió frente a rastrear qué campos ha tecleado el usuario porque ese rastro no
+ * sobrevive a nada — la fila se desmonta al colapsar el ejercicio, y el commit con debounce
+ * escribe la sugerencia en la caché del store 600ms después de montar SIN que el usuario toque
+ * nada, así que al reexpandir es indistinguible de un dato tecleado. Comparar no depende de
+ * historia y no puede desincronizarse.
+ *
+ * Contrapartida asumida: teclear a mano exactamente lo mismo que la última vez se sigue viendo
+ * atenuado. Es correcto en la práctica — el mensaje pasa a ser "esto no lo has cambiado".
+ *
+ * @param {{value: *, suggestion: *, isCompleted?: boolean}} params
+ * @returns {boolean}
+ */
+export function isSuggestedValue({ value, suggestion, isCompleted = false } = {}) {
+  if (isCompleted) return false
+  if (value === '' || value == null) return false
+  if (suggestion === '' || suggestion == null) return false
+  return String(value) === String(suggestion)
+}
+
+/**
  * Resuelve los valores iniciales de los inputs de una serie a partir de los datos
  * conocidos en el store: primero la caché de edición (más reciente), si no los datos
  * completados. La distancia se convierte de metros a la unidad de display del ejercicio.

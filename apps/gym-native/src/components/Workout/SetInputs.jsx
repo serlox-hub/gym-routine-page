@@ -23,16 +23,20 @@ const ghostStyle = { ...numericInputStyle, backgroundColor: 'transparent', borde
 
 // `boxed`: caja siempre visible (edición desde el historial, donde nada más indica que la fila
 // es editable). En la sesión manda el ghost: son 3-5 filas seguidas y las cajas hacen ruido.
-function useFocusStyle(active = false, boxed = false) {
+// `suggested`: el valor todavía es la sugerencia sembrada de la última sesión, no un dato del
+// usuario (ver isSuggestedValue). Se atenúa el TEXTO, no la caja: la fila sigue siendo editable
+// y completable de un toque, solo deja de mentir sobre de dónde sale el número (issue #39).
+function useFocusStyle(active = false, boxed = false, suggested = false) {
   const [focused, setFocused] = useState(false)
-  const style = active
+  const base = active
     ? { ...numericInputStyle, borderColor: colors.success }
     : (focused || boxed) ? numericInputStyle : ghostStyle
+  const style = suggested ? { ...base, color: colors.textSecondary } : base
   return { style, onFocus: () => setFocused(true), onBlur: () => setFocused(false) }
 }
 
-function NumberInput({ value, onChange, onCommit, disabled, inputMode = 'numeric', active = false, boxed = false, placeholder = '—' }) {
-  const { style, onFocus, onBlur } = useFocusStyle(active, boxed)
+function NumberInput({ value, onChange, onCommit, disabled, inputMode = 'numeric', active = false, boxed = false, suggested = false, placeholder = '—' }) {
+  const { style, onFocus, onBlur } = useFocusStyle(active, boxed, suggested)
   const handleChange = (raw) => {
     if (raw === '') { onChange(''); return }
     const normalized = raw.replace(',', '.')
@@ -60,8 +64,8 @@ function NumberInput({ value, onChange, onCommit, disabled, inputMode = 'numeric
  * ("130" → 1:30). La lógica pura vive en `durationInput.js` (compartida con web).
  * El valor que sale por onChange son SEGUNDOS; al salir del campo se normaliza (0:75 → 1:15).
  */
-function DurationInput({ seconds, onChange, onCommit, disabled, active = false, boxed = false, placeholder = '—' }) {
-  const { style, onFocus, onBlur } = useFocusStyle(active, boxed)
+function DurationInput({ seconds, onChange, onCommit, disabled, active = false, boxed = false, suggested = false, placeholder = '—' }) {
+  const { style, onFocus, onBlur } = useFocusStyle(active, boxed, suggested)
   const { text, setFromInput, normalize } = useDurationDigits(seconds, onChange)
 
   const handleBlur = () => {
@@ -91,9 +95,9 @@ function DurationInput({ seconds, onChange, onCommit, disabled, active = false, 
  * `onCommit` se dispara al salir del campo (ya normalizado): lo usa la edición desde el
  * historial, que guarda en blur en vez de con el check de la sesión.
  */
-export default function SetValueInput({ field, decimal = false, value, onChange, onCommit, disabled, active = false, boxed = false, placeholder }) {
+export default function SetValueInput({ field, decimal = false, value, onChange, onCommit, disabled, active = false, boxed = false, suggested = false, placeholder }) {
   if (field === SetField.TIME || field === SetField.PACE) {
-    return <DurationInput seconds={value} onChange={onChange} onCommit={onCommit} disabled={disabled} active={active} boxed={boxed} placeholder={placeholder} />
+    return <DurationInput seconds={value} onChange={onChange} onCommit={onCommit} disabled={disabled} active={active} boxed={boxed} suggested={suggested} placeholder={placeholder} />
   }
   return (
     <NumberInput
@@ -103,6 +107,7 @@ export default function SetValueInput({ field, decimal = false, value, onChange,
       disabled={disabled}
       active={active}
       boxed={boxed}
+      suggested={suggested}
       inputMode={decimal ? 'decimal' : 'numeric'}
       placeholder={placeholder}
     />
