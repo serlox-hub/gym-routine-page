@@ -60,6 +60,14 @@ export async function fetchRoutineDay(dayId) {
 export async function fetchRoutineDayExercises(dayId) {
   const { data, error } = await getClient()
     .from('routine_exercises')
+    // `*` en routine_exercises es deliberado (issue #22, cerrado): lo único que sobra es
+    // `user_id`, que RLS ya acota al propio usuario, y enumerar dejaría un fallo silencioso
+    // permanente — una columna nueva que nadie añada aquí llega `undefined`, sin error. La fila
+    // se consume entera y lejos (`duplicateRoutineExercise` lee hasta `routine_day_id`), y su
+    // shape ya tiene cuatro copias manuales (ver docs/routine-io.md). El select ANIDADO de
+    // `exercises` sí es lista fija (7 de 12 columnas) y por tanto SÍ tiene ese riesgo: una columna
+    // nueva del catálogo hay que añadirla aquí Y en las demás proyecciones (paso 8 del checklist
+    // de docs/routine-io.md). Se enumera porque necesita alias (`name:name_es`), no por tamaño.
     .select(`
       *,
       exercise:exercises (

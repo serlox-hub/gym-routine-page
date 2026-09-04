@@ -50,10 +50,11 @@ lo resuelve al leer con `resolveTargetField()`.
 
 (tablas `routines`, `routine_days`, `routine_exercises`, `exercises`)
 
-1. Tras crear/aplicar la migración, regenerar el snapshot: `npm run db:schema` (en `apps/web`, requiere Docker) y commitear `apps/web/supabase/schema.sql` junto con la migración. Mantiene el snapshot == migraciones.
+1. Tras crear/aplicar la migración, regenerar el snapshot: `npm run db:schema` (en `apps/web`, requiere Docker) y commitear `apps/web/supabase/schema.sql` junto con la migración. Mantiene el snapshot == migraciones. ⚠️ Ese script hace `db reset`; no lo sustituyas por un dump a secas (perdería la garantía) y ojo si tu `.env` apunta a la Supabase local: ver `CLAUDE.md` § Database Schema.
 2. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON.
 3. Actualizar `importRoutine()` para leer los nuevos campos del JSON.
 4. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA.
 5. Incrementar `ROUTINE_EXPORT_VERSION` si hay cambios breaking (importRoutine debe seguir aceptando versiones antiguas).
 6. Actualizar los tests (`routineIO.test.js`, `routineApi.test.js`, `exerciseMatch.test.js`).
 7. Si el campo va en `routine_exercises`: actualizar también la lista de columnas de la función `duplicate_routine_day` (migración `apps/web/supabase/migrations/059_duplicate_routine_day.sql`, INSERT hacia `routine_exercises`) — es una cuarta copia manual del shape de la fila, aparte de export/import/prompt IA. Un campo olvidado ahí desaparece en silencio solo al duplicar un día (no al exportar/importar).
+8. Si el campo va en `exercises` (catálogo): añadirlo a **todas** las proyecciones anidadas que lo necesiten (`grep -rn "exercise:exercises" packages/shared/src/api`: rutina, sesión, historial, export) y al builder de caché `buildSessionExercisesCache` (`lib/workoutTransforms.js`), que replica ese shape a mano. Son listas fijas: la que se olvide devuelve `undefined` sin error, y solo en su pantalla. Precedentes reales: `gif_key`, `level`/`calories_burned`.
