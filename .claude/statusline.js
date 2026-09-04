@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Claude Code Statusline
-// Shows: model | current task | directory | context usage
+// Shows: model (+ effort) | current task | directory | context usage
 
 const fs = require('fs');
 const path = require('path');
@@ -18,6 +18,8 @@ process.stdin.on('end', () => {
   try {
     const data = JSON.parse(input);
     const model = data.model?.display_name || 'Claude';
+    // Effort level: only present for models that expose it (low/medium/high/xhigh/max)
+    const effort = data.effort?.level || '';
     const dir = data.workspace?.current_dir || process.cwd();
     const session = data.session_id || '';
     const remaining = data.context_window?.remaining_percentage;
@@ -86,10 +88,11 @@ process.stdin.on('end', () => {
 
     // Output
     const dirname = path.basename(dir);
+    const modelLabel = effort ? `${model} · ${effort}` : model;
     if (task) {
-      process.stdout.write(`\x1b[2m${model}\x1b[0m │ \x1b[1m${task}\x1b[0m │ \x1b[2m${dirname}\x1b[0m${branch}${ctx}`);
+      process.stdout.write(`\x1b[2m${modelLabel}\x1b[0m │ \x1b[1m${task}\x1b[0m │ \x1b[2m${dirname}\x1b[0m${branch}${ctx}`);
     } else {
-      process.stdout.write(`\x1b[2m${model}\x1b[0m │ \x1b[2m${dirname}\x1b[0m${branch}${ctx}`);
+      process.stdout.write(`\x1b[2m${modelLabel}\x1b[0m │ \x1b[2m${dirname}\x1b[0m${branch}${ctx}`);
     }
   } catch (e) {
     // Silent fail - don't break statusline on parse errors
