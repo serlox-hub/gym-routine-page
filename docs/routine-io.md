@@ -50,7 +50,7 @@ lo resuelve al leer con `resolveTargetField()`.
 
 (tablas `routines`, `routine_days`, `routine_exercises`, `exercises`)
 
-1. Tras crear/aplicar la migración, regenerar el snapshot: `npm run db:schema` (en `apps/web`, requiere Docker) y commitear `apps/web/supabase/schema.sql` junto con la migración. Mantiene el snapshot == migraciones. ⚠️ Ese script hace `db reset`; no lo sustituyas por un dump a secas (perdería la garantía) y ojo si tu `.env` apunta a la Supabase local: ver `CLAUDE.md` § Database Schema.
+1. Tras crear/aplicar la migración, regenerar el snapshot: `npm run db:schema` (en `apps/web`, requiere Docker) y commitear `apps/web/supabase/schema.sql` junto con la migración. Mantiene el snapshot == migraciones. ⚠️ Ejecútalo desde `apps/web` y no lo sustituyas por un dump a secas: perdería la garantía de que el snapshot == migraciones. Ver `CLAUDE.md` § Database Schema.
 2. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON.
 3. Actualizar `importRoutine()` para leer los nuevos campos del JSON.
 4. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA.
