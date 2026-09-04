@@ -15,8 +15,6 @@ export {
   // Exercises
   useExercisesWithMuscleGroup,
   useExercise,
-  useExerciseStats,
-  useExerciseUsageDetail,
   useCreateExercise,
   useUpdateExercise,
   useDeleteExercise,

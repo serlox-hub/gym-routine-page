@@ -45,7 +45,6 @@
   "custom": "Personal",
   "system": "Sistema",
   "filterSource": "Origen",
-  "showUsage": "Mostrar uso en rutinas/sesiones",
   "systemExerciseInfo": "Este es un ejercicio del sistema. No se puede modificar, pero puedes añadir tus notas personales y ajustar la unidad de peso.",
   "personalNotes": "Notas",
   "personalNotesPlaceholder": "Ej: Respaldo en posición 3, agarre ancho...",
@@ -62,11 +61,7 @@
   "needMoreSessions": "Necesitas más sesiones para ver la progresión",
   "progressMinSessions": "Se necesitan al menos 2 sesiones para ver la progresión",
   "usage": {
-    "title": "Uso del ejercicio",
-    "inRoutine": "En rutina",
-    "inRoutines": "En rutinas",
-    "inSessions": "En sesiones",
-    "noUsage": "Este ejercicio no se usa en ninguna rutina ni sesión"
+    "inRoutine": "En rutina"
   },
   "effort": {
     "rir": "RIR",

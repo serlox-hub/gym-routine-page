@@ -183,8 +183,8 @@ describe('fetchRoutineBlocks', () => {
 describe('fetchRoutineAllExercises', () => {
   it('returns all exercises for a routine', async () => {
     const exercises = [
-      { id: 40, exercise_id: 'ex-1', routine_block: { routine_day: { routine_id: 1 } } },
-      { id: 41, exercise_id: 'ex-2', routine_block: { routine_day: { routine_id: 1 } } },
+      { id: 40, exercise_id: 'ex-1', routine_day: { routine_id: 1 } },
+      { id: 41, exercise_id: 'ex-2', routine_day: { routine_id: 1 } },
     ]
     const mock = makeQueryMock({ data: exercises, error: null })
     getClient.mockReturnValue({ from: () => mock })

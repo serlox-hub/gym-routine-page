@@ -2,8 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   fetchExercisesWithMuscleGroup,
   fetchMuscleGroups,
-  fetchExerciseStats,
-  fetchExerciseUsageDetail,
   fetchExercise,
   createExercise,
   updateExercise,
@@ -121,124 +119,6 @@ describe('fetchMuscleGroups', () => {
     }))
 
     await expect(fetchMuscleGroups()).rejects.toThrow('DB error')
-  })
-})
-
-// ============================================
-// fetchExerciseStats (Promise.all con dos tablas)
-// ============================================
-
-describe('fetchExerciseStats', () => {
-  it('devuelve sessionCounts y routineCounts agregados correctamente', async () => {
-    const sessionData = [
-      { exercise_id: 'ex-1' },
-      { exercise_id: 'ex-1' },
-      { exercise_id: 'ex-2' },
-    ]
-    const routineData = [
-      { exercise_id: 'ex-1', routine_block: { routine_day: { routine_id: 'r-1' } } },
-      // Duplicado — misma rutina + ejercicio, no debe contar doble
-      { exercise_id: 'ex-1', routine_block: { routine_day: { routine_id: 'r-1' } } },
-      { exercise_id: 'ex-1', routine_block: { routine_day: { routine_id: 'r-2' } } },
-    ]
-
-    getClient.mockReturnValue(makeClientMock({
-      session_exercises: { data: sessionData, error: null },
-      routine_exercises: { data: routineData, error: null },
-    }))
-
-    const result = await fetchExerciseStats()
-    expect(result.sessionCounts['ex-1']).toBe(2)
-    expect(result.sessionCounts['ex-2']).toBe(1)
-    // ex-1 en r-1 (deduplicado) + r-2 = 2
-    expect(result.routineCounts['ex-1']).toBe(2)
-  })
-
-  it('lanza error si falla la query de session_exercises', async () => {
-    const fakeError = new Error('session error')
-    getClient.mockReturnValue(makeClientMock({
-      session_exercises: { data: null, error: fakeError },
-      routine_exercises: { data: [], error: null },
-    }))
-
-    await expect(fetchExerciseStats()).rejects.toThrow('session error')
-  })
-
-  it('lanza error si falla la query de routine_exercises', async () => {
-    const fakeError = new Error('routine error')
-    getClient.mockReturnValue(makeClientMock({
-      session_exercises: { data: [], error: null },
-      routine_exercises: { data: null, error: fakeError },
-    }))
-
-    await expect(fetchExerciseStats()).rejects.toThrow('routine error')
-  })
-})
-
-// ============================================
-// fetchExerciseUsageDetail (Promise.all con dos tablas)
-// ============================================
-
-describe('fetchExerciseUsageDetail', () => {
-  it('devuelve rutinas y sesiones únicas del ejercicio', async () => {
-    const routineData = [
-      {
-        id: 're-1',
-        routine_block: {
-          routine_day: {
-            name: 'Día 1',
-            routine: { id: 'r-1', name: 'Rutina A' },
-          },
-        },
-      },
-      // Duplicado — misma rutina+día, no debe aparecer dos veces
-      {
-        id: 're-2',
-        routine_block: {
-          routine_day: {
-            name: 'Día 1',
-            routine: { id: 'r-1', name: 'Rutina A' },
-          },
-        },
-      },
-    ]
-    const sessionData = [
-      {
-        id: 'se-1',
-        workout_session: { id: 'ws-1', started_at: '2026-01-01T00:00:00Z', routine_name: 'Rutina A' },
-      },
-    ]
-
-    getClient.mockReturnValue(makeClientMock({
-      routine_exercises: { data: routineData, error: null },
-      session_exercises: { data: sessionData, error: null },
-    }))
-
-    const result = await fetchExerciseUsageDetail('ex-1')
-    expect(result.routines).toHaveLength(1)
-    expect(result.routines[0]).toMatchObject({ routineId: 'r-1', routineName: 'Rutina A', dayName: 'Día 1' })
-    expect(result.sessions).toHaveLength(1)
-    expect(result.sessions[0]).toMatchObject({ sessionId: 'ws-1' })
-  })
-
-  it('lanza error si falla la query de routine_exercises', async () => {
-    const fakeError = new Error('routine detail error')
-    getClient.mockReturnValue(makeClientMock({
-      routine_exercises: { data: null, error: fakeError },
-      session_exercises: { data: [], error: null },
-    }))
-
-    await expect(fetchExerciseUsageDetail('ex-1')).rejects.toThrow('routine detail error')
-  })
-
-  it('lanza error si falla la query de session_exercises', async () => {
-    const fakeError = new Error('session detail error')
-    getClient.mockReturnValue(makeClientMock({
-      routine_exercises: { data: [], error: null },
-      session_exercises: { data: null, error: fakeError },
-    }))
-
-    await expect(fetchExerciseUsageDetail('ex-1')).rejects.toThrow('session detail error')
   })
 })
 
