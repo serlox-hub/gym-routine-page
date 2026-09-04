@@ -7,8 +7,6 @@ import {
   fetchExercisesWithMuscleGroup,
   fetchMuscleGroups,
   fetchEquipmentTypes,
-  fetchExerciseStats,
-  fetchExerciseUsageDetail,
   fetchExercise,
   createExercise,
   updateExercise,
@@ -50,21 +48,6 @@ export function useEquipmentTypes() {
     select: (data) => [...data].sort((a, b) =>
       getEquipmentName(a).localeCompare(getEquipmentName(b))
     ),
-  })
-}
-
-export function useExerciseStats() {
-  return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_USAGE_COUNTS],
-    queryFn: fetchExerciseStats,
-  })
-}
-
-export function useExerciseUsageDetail(exerciseId) {
-  return useQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_USAGE_DETAIL, exerciseId],
-    queryFn: () => fetchExerciseUsageDetail(exerciseId),
-    enabled: !!exerciseId,
   })
 }
 
