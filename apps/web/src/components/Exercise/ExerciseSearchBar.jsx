@@ -10,7 +10,6 @@ function ExerciseSearchBar({
   muscleGroups, selectedMuscleGroup, onMuscleGroupChange,
   equipmentTypes, selectedEquipmentType, onEquipmentTypeChange,
   sourceFilter, onSourceFilterChange,
-  showUsage, onToggleUsage,
   autoFocus = false,
 }) {
   const { t } = useTranslation()
@@ -162,22 +161,6 @@ function ExerciseSearchBar({
                 ))}
               </div>
             </FilterSection>
-          )}
-
-          {/* Show usage toggle */}
-          {onToggleUsage && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showUsage}
-                onChange={(e) => onToggleUsage(e.target.checked)}
-                className="accent-current"
-                style={{ accentColor: colors.success }}
-              />
-              <span className="text-xs" style={{ color: colors.textSecondary }}>
-                {t('exercise:showUsage')}
-              </span>
-            </label>
           )}
         </div>
       </Modal>

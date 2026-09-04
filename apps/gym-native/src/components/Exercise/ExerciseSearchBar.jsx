@@ -10,7 +10,6 @@ export default function ExerciseSearchBar({
   muscleGroups, selectedMuscleGroup, onMuscleGroupChange,
   equipmentTypes, selectedEquipmentType, onEquipmentTypeChange,
   sourceFilter, onSourceFilterChange,
-  showUsage, onToggleUsage,
   autoFocus = false,
 }) {
   const { t } = useTranslation()
@@ -161,28 +160,6 @@ export default function ExerciseSearchBar({
                     ))}
                   </View>
                 </FilterSection>
-              )}
-
-              {/* Show usage toggle */}
-              {onToggleUsage && (
-                <Pressable
-                  onPress={() => onToggleUsage(!showUsage)}
-                  className="flex-row items-center gap-2"
-                >
-                  <View
-                    className="w-5 h-5 rounded items-center justify-center"
-                    style={{
-                      backgroundColor: showUsage ? colors.success : 'transparent',
-                      borderWidth: 1.5,
-                      borderColor: showUsage ? colors.success : colors.textSecondary,
-                    }}
-                  >
-                    {showUsage && <Text style={{ fontSize: 12, color: colors.bgPrimary, fontWeight: '700' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    {t('exercise:showUsage')}
-                  </Text>
-                </Pressable>
               )}
             </ScrollView>
           </Pressable>

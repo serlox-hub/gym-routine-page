@@ -45,7 +45,6 @@
   "custom": "Custom",
   "system": "System",
   "filterSource": "Source",
-  "showUsage": "Show usage in routines/sessions",
   "systemExerciseInfo": "This is a system exercise. It cannot be modified, but you can add your personal notes and adjust the weight unit.",
   "personalNotes": "Notes",
   "personalNotesPlaceholder": "E.g.: Backrest at position 3, wide grip...",
@@ -62,11 +61,7 @@
   "needMoreSessions": "You need more sessions to see progression",
   "progressMinSessions": "At least 2 sessions are needed to see progression",
   "usage": {
-    "title": "Exercise usage",
-    "inRoutine": "In routine",
-    "inRoutines": "In routines",
-    "inSessions": "In sessions",
-    "noUsage": "This exercise is not used in any routine or session"
+    "inRoutine": "In routine"
   },
   "effort": {
     "rir": "RIR",

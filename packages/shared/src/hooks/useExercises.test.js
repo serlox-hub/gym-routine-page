@@ -7,8 +7,6 @@ import React from 'react'
 vi.mock('../api/exerciseApi.js', () => ({
   fetchExercisesWithMuscleGroup: vi.fn(),
   fetchMuscleGroups: vi.fn(),
-  fetchExerciseStats: vi.fn(),
-  fetchExerciseUsageDetail: vi.fn(),
   fetchExercise: vi.fn(),
   createExercise: vi.fn(),
   updateExercise: vi.fn(),
