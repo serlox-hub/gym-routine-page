@@ -46,8 +46,10 @@ jobs:
       # es que las migraciones de ESTA rama se aplican sobre una BD limpia, así que el CI prueba
       # código + esquema juntos. Contra el remoto una migración nueva no se ejecutaba nunca, y el
       # orden obligado acababa siendo "aplica en prod, luego mergea".
-      # Este paso solo levanta el stack; quien reconstruye la BD es `npm run test:e2e`, que empieza
-      # por `supabase db reset` (ver apps/web/package.json).
+      # `supabase start` aplica las migraciones de la rama al crear el contenedor, sobre una BD
+      # limpia — de eso depende el check de drift del paso siguiente. El `db reset` con el que
+      # empieza `npm run test:e2e` las vuelve a aplicar: redundancia asumida en #55 a cambio de que
+      # el comando se comporte igual aquí que en local.
       # Se excluye todo lo que la app no usa (verificado: cero `.channel()`). Quedan 5 contenedores:
       # db, kong, auth, rest y storage. `storage` NO se excluye pese a que el único uso de Storage
       # en el cliente sea `getPublicUrl` (que solo construye una URL): la migración 047 escribe en
@@ -60,6 +62,25 @@ jobs:
           eval "$(npx supabase status -o env)"
           echo "VITE_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
           echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+
+      # `supabase/schema.sql` es la fuente de verdad declarada para "qué existe HOY" en la BD
+      # (CLAUDE.md § Database Schema) y hasta ahora nada comprobaba que lo fuera: el guard A7 solo
+      # mira que el archivo esté en el diff, no su contenido. Ya mintió — le faltaba la RPC
+      # `duplicate_routine_day` de la 059, que la app llama en producción (ver docs/DECISIONS.md).
+      # Aquí sale gratis porque la BD que acaba de levantar el paso anterior ES "las migraciones de
+      # esta rama sobre una BD limpia". Dumpea con `npm run db:dump`, el mismo script que usa
+      # `npm run db:schema`, para que compare literalmente lo que genera el comando que se le pide
+      # ejecutar a la gente — y no una copia de sus flags que pueda divergir en silencio.
+      # Va ANTES de los e2e a propósito: su precondición es justo lo que garantiza el paso anterior,
+      # y tarda segundos. Contrapartida asumida: si salta, los e2e de esa tanda no llegan a correr.
+      - name: Verificar que schema.sql no ha derivado de las migraciones
+        working-directory: apps/web
+        run: |
+          npm run db:dump -- /tmp/schema-ci.sql
+          if ! diff -u supabase/schema.sql /tmp/schema-ci.sql; then
+            echo "::error::supabase/schema.sql no coincide con el dump de las migraciones. Regeneralo con 'npm run db:schema' desde apps/web y commitealo junto a la migracion. Si el diff de arriba es enorme y sin relacion con tu cambio, comprueba que tu CLI de Supabase es la misma version que fija package-lock.json: es quien elige la imagen que genera el dump."
+            exit 1
+          fi
 
       # Credenciales fijas del usuario que crea `apps/web/supabase/seed.sql` en cada reset. No son
       # secretos: esa BD vive y muere dentro del job y usa el JWT secret público de la CLI.
