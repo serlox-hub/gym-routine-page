@@ -13,6 +13,7 @@
     "test": "npm run test:run -w apps/web",
     "test:shared": "npm run test:run -w apps/web -- packages/shared/src",
     "lint": "npm run lint -w apps/web && npm run lint -w apps/gym-native",
+    "db:check-drift": "node scripts/checkSchemaDrift.mjs",
     "check": "npm run lint && npm run test && npm run build"
   }
 }
