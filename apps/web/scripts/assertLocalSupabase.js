@@ -1,8 +1,4 @@
-import { config } from 'dotenv'
-
-// Mismo .env que playwright.config.js. Los valores que ya vengan del entorno ganan (dotenv no
-// sobreescribe), que es como el CI inyecta los de su instancia efímera.
-config({ path: '.env' })
+import './loadEnv.js'
 
 // Los e2e escriben de verdad (rutinas, sesiones, series, peso corporal) y no limpian nada detrás:
 // la BD es efímera y `npm run test:e2e` la reconstruye entera antes de cada ejecución. Apuntarlos
@@ -20,8 +16,9 @@ const url = process.env.VITE_SUPABASE_URL || ''
 if (!/^https?:\/\/(127\.0\.0\.1|localhost)([:/]|$)/.test(url)) {
   console.error(
     `\nLos e2e solo corren contra la Supabase LOCAL, y VITE_SUPABASE_URL apunta a "${url}".\n` +
-    'Levántala con `npx supabase start` desde apps/web y copia sus credenciales en .env\n' +
-    '(las imprime `npx supabase status -o env`). Ver apps/web/.env.example.\n'
+    'Levántala con `npx supabase start` desde apps/web y crea un .env.local con los valores.\n' +
+    'Están literales en apps/web/.env.example. NO toques tu .env: es la capa de debajo, con el\n' +
+    'proyecto remoto, y volver a él es tan simple como renombrar el .env.local.\n'
   )
   process.exit(1)
 }
