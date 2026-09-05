@@ -1,12 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
-import { config } from 'dotenv'
-// Aborta si VITE_SUPABASE_URL no es la Supabase local (el porqué, en el propio archivo). Carga el
-// .env por su cuenta, así que va antes que nada. En `npm run test:e2e` esto ya ha corrido vía
-// `pretest:e2e`; el import cubre un `playwright test` lanzado a pelo.
+// Cargar variables de entorno (.env.local gana sobre .env, como en Vite)
+import './scripts/loadEnv.js'
+// Aborta si VITE_SUPABASE_URL no es la Supabase local (el porqué, en el propio archivo). En
+// `npm run test:e2e` esto ya ha corrido vía `pretest:e2e`; el import cubre un `playwright test`
+// lanzado a pelo.
 import './scripts/assertLocalSupabase.js'
-
-// Cargar variables de entorno
-config({ path: '.env' })
 
 export default defineConfig({
   testDir: './e2e',
