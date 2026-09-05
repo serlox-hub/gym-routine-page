@@ -6,10 +6,12 @@ config({ path: '.env' })
 
 /**
  * Setup que crea datos de prueba para los tests e2e.
- * Crea una rutina con días, bloques y ejercicios para que los tests
- * que dependen de datos existentes puedan ejecutarse.
+ * Crea una rutina con día y ejercicio para que los tests que dependen de datos existentes
+ * puedan ejecutarse.
  *
- * Los datos se limpian en global.teardown.js
+ * Nadie limpia estos datos: `npm run test:e2e` resetea la BD antes de cada ejecución, así que
+ * siempre parte de cero. La comprobación de "ya existe" solo cubre relanzar Playwright a mano
+ * sobre una BD ya sembrada.
  */
 setup('create test data', async () => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL

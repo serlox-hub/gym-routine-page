@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
+    "pretest:e2e": "node scripts/assertLocalSupabase.js",
+    "test:e2e": "supabase db reset && playwright test",
     "test:e2e:ui": "playwright test --ui",
     "check": "npm run lint && npm run test:run && npm run test:e2e",
     "db:schema": "supabase db reset && supabase db dump --local --schema public -f supabase/schema.sql"
