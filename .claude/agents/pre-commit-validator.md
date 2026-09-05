@@ -29,7 +29,7 @@ En paralelo:
 1. `npm run lint` — 0 errores Y 0 warnings.
 2. `npm run test:shared` — todos los unitarios pasan.
 3. `npm run build` — build sin errores.
-Después (requiere build): `npm run test:e2e -w apps/web`.
+Después: `npm run test:e2e -w apps/web`. ⚠️ Necesita Docker y el stack de Supabase local levantado (`npx supabase start` desde `apps/web`), y **reconstruye la BD local entera** — empieza por `supabase db reset`. Es la única excepción a "no edites nada": el comando lo hace por ti. Si el stack no está levantado, repórtalo como **no ejecutado**, NO como fallo bloqueante.
 
 Reporta el resultado de cada uno. Si algo falla, es un hallazgo bloqueante (con el error concreto) — NO lo arregles tú.
 

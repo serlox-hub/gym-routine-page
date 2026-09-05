@@ -42,18 +42,37 @@ jobs:
         run: npx playwright install chromium --with-deps
         working-directory: apps/web
 
+      # BD efímera para los e2e, en vez del proyecto remoto. Lo que gana no es "no ensuciar prod":
+      # es que las migraciones de ESTA rama se aplican sobre una BD limpia, así que el CI prueba
+      # código + esquema juntos. Contra el remoto una migración nueva no se ejecutaba nunca, y el
+      # orden obligado acababa siendo "aplica en prod, luego mergea".
+      # Este paso solo levanta el stack; quien reconstruye la BD es `npm run test:e2e`, que empieza
+      # por `supabase db reset` (ver apps/web/package.json).
+      # Se excluye todo lo que la app no usa (verificado: cero `.channel()`). Quedan 5 contenedores:
+      # db, kong, auth, rest y storage. `storage` NO se excluye pese a que el único uso de Storage
+      # en el cliente sea `getPublicUrl` (que solo construye una URL): la migración 047 escribe en
+      # `storage.buckets`, y el `<img>` de las tarjetas sí hace un GET real contra esa URL pública
+      # (en CI `VITE_EXERCISE_GIFS_BASE_URL` va vacía → un 404 por tarjeta, inofensivo).
+      - name: Levantar Supabase local (BD efímera para los e2e)
+        working-directory: apps/web
+        run: |
+          npx supabase start -x imgproxy,edge-runtime,logflare,vector,supavisor,studio,mailpit,realtime,postgres-meta
+          eval "$(npx supabase status -o env)"
+          echo "VITE_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+
+      # Credenciales fijas del usuario que crea `apps/web/supabase/seed.sql` en cada reset. No son
+      # secretos: esa BD vive y muere dentro del job y usa el JWT secret público de la CLI.
       - name: Run e2e tests
         run: npm run test:e2e -w apps/web
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_TEST_EMAIL: e2e@local.test
+          E2E_TEST_PASSWORD: e2e-local-password
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report
-          path: playwright-report/
+          path: apps/web/playwright-report/
           retention-days: 7
