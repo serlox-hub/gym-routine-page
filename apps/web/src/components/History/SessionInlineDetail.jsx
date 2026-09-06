@@ -32,6 +32,7 @@ import {
   getMuscleGroupColor,
   usePreference,
   useResolvedWeightUnit,
+  useResolvedDistanceUnit,
   getNotifier,
   formatEffortBadge,
   buildSessionExercisesFromSession,
@@ -43,11 +44,10 @@ import { colors } from '../../lib/styles.js'
 // (getSetColumns + SetValueInput): antes tenía su propia lista peso/reps/tiempo/distancia, así que
 // nivel, kcal y ritmo NO se podían editar y el tiempo se pedía en segundos crudos. Guarda al salir
 // de cada campo (onCommit), no con un check como la sesión.
-function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUnit, isSetPR, onUpsert, onDelete }) {
+function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUnit, distanceUnit, isSetPR, onUpsert, onDelete }) {
   const { t } = useTranslation()
   const trackedFields = resolveTrackedFields(exercise)
-  // distanceUnit aún sin cablear en ninguna pantalla (issue #24): al activarlo, también aquí.
-  const columns = getSetColumns(trackedFields, { weightUnit })
+  const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
 
   const [values, setValues] = useState(() => getSetFieldValues(set, columns))
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
@@ -254,6 +254,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
 function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, gymId, isEditing, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
   const { t } = useTranslation()
   const weightUnit = useResolvedWeightUnit(exercise.id, gymId)
+  const distanceUnit = useResolvedDistanceUnit(exercise)
   const prData = prsByExercise[exercise.id]
   const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
@@ -292,6 +293,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 sessionId={sessionId}
                 sessionExerciseId={sessionExerciseId}
                 weightUnit={weightUnit}
+                distanceUnit={distanceUnit}
                 isSetPR={prSetNums?.has(set.set_number)}
                 onUpsert={onUpsertSet}
                 onDelete={onDeleteSet}
@@ -318,7 +320,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 {set.set_type === 'dropset' ? 'D' : set.set_number}
               </span>
               <span className="flex-1 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                {formatSetValue({ ...set, weight_unit: weightUnit })}
+                {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                 {isSetPR && (
                   <span className="inline-flex items-center gap-0.5" style={{ color: colors.warning, fontSize: 10, fontWeight: 600 }}>
                     <Trophy size={10} /> {t('workout:summary.pr')}
@@ -353,6 +355,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         exerciseId={exercise.id}
         exerciseName={getExerciseName(exercise)}
         trackedFields={trackedFields}
+        distanceUnit={distanceUnit}
       />
     </Card>
   )

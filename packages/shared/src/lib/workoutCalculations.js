@@ -3,7 +3,7 @@
  */
 
 import { t } from '../i18n/index.js'
-import { SetField, getPrimaryChartField, tracksDistance, tracksLevel, tracksPace, tracksReps, tracksTime, tracksWeight } from './measurementFields.js'
+import { PACE_DISTANCE_UNIT, SetField, getPrimaryChartField, metersToDistanceUnit, tracksDistance, tracksLevel, tracksPace, tracksReps, tracksTime, tracksWeight } from './measurementFields.js'
 import { formatSecondsToMMSS } from './timeUtils.js'
 
 /**
@@ -48,6 +48,7 @@ export function calculateTotalVolume(sets) {
 const CHART_FIELD_METRIC = {
   [SetField.WEIGHT]: { column: 'weight', unit: null },
   [SetField.LEVEL]: { column: 'level', unit: 'nv' },
+  // La unidad de la distancia la decide el ejercicio (m/km): esta es solo el valor por defecto.
   [SetField.DISTANCE]: { column: 'distance_meters', unit: 'm' },
   [SetField.CALORIES]: { column: 'calories_burned', unit: 'kcal' },
   [SetField.TIME]: { column: 'time_seconds', unit: 's' },
@@ -65,7 +66,7 @@ const CHART_FIELD_METRIC = {
  * @param {string[]} trackedFields - campos del ejercicio
  * @returns {{value: number, unit: string}}
  */
-export function getBestValueFromSets(sets, trackedFields, { weightUnit = 'kg' } = {}) {
+export function getBestValueFromSets(sets, trackedFields, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
   if (!sets || sets.length === 0) return { value: 0, unit: '' }
 
   const field = getPrimaryChartField(trackedFields)
@@ -79,7 +80,13 @@ export function getBestValueFromSets(sets, trackedFields, { weightUnit = 'kg' } 
     if (bestValue === 0 || (lowerIsBetter ? value < bestValue : value > bestValue)) bestValue = value
   })
 
-  return { value: bestValue, unit: bestValue > 0 ? (unit ?? weightUnit) : '' }
+  if (bestValue === 0) return { value: 0, unit: '' }
+  // La distancia se guarda en metros, pero el punto de la gráfica se lee junto a las tarjetas de
+  // resumen: si ahí pone "5 km", aquí no puede poner 5000.
+  if (field === SetField.DISTANCE) {
+    return { value: metersToDistanceUnit(bestValue, distanceUnit), unit: distanceUnit }
+  }
+  return { value: bestValue, unit: unit ?? weightUnit }
 }
 
 /**
@@ -106,7 +113,7 @@ export function getBest1RMFromSets(sets) {
  * @param {string[]} trackedFields - campos del ejercicio
  * @returns {Array<{date: string, best: number, volume: number, e1rm: number, unit: string}>}
  */
-export function transformSessionsToChartData(sessions, trackedFields, { weightUnit = 'kg' } = {}) {
+export function transformSessionsToChartData(sessions, trackedFields, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
   if (!sessions || sessions.length === 0) return []
 
   const sortedSessions = [...sessions].reverse()
@@ -115,7 +122,7 @@ export function transformSessionsToChartData(sessions, trackedFields, { weightUn
     const date = new Date(session.date)
     const dateLabel = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 
-    const { value: bestValue, unit } = getBestValueFromSets(session.sets, trackedFields, { weightUnit })
+    const { value: bestValue, unit } = getBestValueFromSets(session.sets, trackedFields, { weightUnit, distanceUnit })
     const totalVolume = calculateTotalVolume(session.sets)
     const bestE1RM = getBest1RMFromSets(session.sets)
 
@@ -288,11 +295,13 @@ export function getExerciseStatCards(stats, trackedFields, { weightUnit = 'kg', 
     push(stats.maxTime > 0, 'maxTime', formatSecondsToMMSS(stats.maxTime))
     push(stats.avgTime > 0, 'avgTime', formatSecondsToMMSS(stats.avgTime))
   } else if (tracksDistance(trackedFields)) {
-    push(stats.maxDistance > 0, 'maxDistance', `${stats.maxDistance} ${distanceUnit}`)
-    push(stats.avgDistance > 0, 'avgDistance', `${stats.avgDistance} ${distanceUnit}`)
+    // Las stats vienen en la unidad de BD (metros): convertir ANTES de pegarles la etiqueta, o
+    // un rodaje de 5000 m se anuncia como "5000 km".
+    push(stats.maxDistance > 0, 'maxDistance', `${metersToDistanceUnit(stats.maxDistance, distanceUnit)} ${distanceUnit}`)
+    push(stats.avgDistance > 0, 'avgDistance', `${metersToDistanceUnit(stats.avgDistance, distanceUnit)} ${distanceUnit}`)
   } else if (tracksPace(trackedFields)) {
-    push(stats.bestPace > 0, 'bestPace', `${formatSecondsToMMSS(stats.bestPace)}/${distanceUnit}`)
-    push(stats.avgPace > 0, 'avgPace', `${formatSecondsToMMSS(stats.avgPace)}/${distanceUnit}`)
+    push(stats.bestPace > 0, 'bestPace', `${formatSecondsToMMSS(stats.bestPace)}/${PACE_DISTANCE_UNIT}`)
+    push(stats.avgPace > 0, 'avgPace', `${formatSecondsToMMSS(stats.avgPace)}/${PACE_DISTANCE_UNIT}`)
   } else if (tracksWeight(trackedFields)) {
     push(stats.maxWeight > 0, 'maxWeight', `${stats.maxWeight} ${weightUnit}`)
   } else if (tracksLevel(trackedFields)) {

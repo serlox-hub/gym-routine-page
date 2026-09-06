@@ -42,6 +42,7 @@ function HistoryChart({ sessions, stats, trackedFields, weightUnit, distanceUnit
           unitByGym={unitByGym}
           trackedFields={trackedFields}
           weightUnit={weightUnit}
+          distanceUnit={distanceUnit}
         />
       ) : (
         <p className="text-center text-secondary py-4 text-sm">

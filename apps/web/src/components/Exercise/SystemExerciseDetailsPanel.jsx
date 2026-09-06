@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Info } from 'lucide-react'
-import { useChangeWeightUnit, useSelectedGym, useUserExerciseGymUnit, getGymDisplayName } from '@gym/shared'
-import { useUserExerciseOverride, useUpsertUserExerciseOverride } from '../../hooks/useExercises.js'
+import { useChangeWeightUnit, useSelectedGym, useUserExerciseGymUnit, getGymDisplayName, buildExerciseOverrideForm } from '@gym/shared'
+import { useExercise, useUserExerciseOverride, useUpsertUserExerciseOverride } from '../../hooks/useExercises.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 
 import { WeightUnitChangeModal } from '../Preferences/index.js'
+import DistanceUnitPicker from './DistanceUnitPicker.jsx'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm.jsx'
 import { colors, inputStyle } from '../../lib/styles.js'
 
 export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
   const { t } = useTranslation()
   const { gymId, gyms, hasMultiple } = useSelectedGym()
+  const { data: exercise } = useExercise(exerciseId)
   const { data: override } = useUserExerciseOverride(exerciseId)
   const { data: gymUnit } = useUserExerciseGymUnit(exerciseId, gymId)
   const upsertOverride = useUpsertUserExerciseOverride()
@@ -20,11 +22,22 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
 
   const [notes, setNotes] = useState('')
   const [weightUnit, setWeightUnit] = useState('')
+  const [distanceUnit, setDistanceUnit] = useState(null)
   const [showConvertModal, setShowConvertModal] = useState(false)
 
   useEffect(() => {
     if (override) setNotes(override.notes || '')
   }, [override])
+
+  // null = hereda la del ejercicio. Se guarda null cuando la elegida coincide con la del catálogo,
+  // para no congelar una preferencia que ya es la correcta.
+  useEffect(() => {
+    setDistanceUnit(override?.distance_unit ?? null)
+  }, [override])
+
+  const { effectiveDistanceUnit, showDistanceUnit, payload: overridePayload } = buildExerciseOverrideForm({
+    exercise, exerciseId, notes, distanceUnit,
+  })
 
   // La unidad es por (ejercicio, gym): reinicia al cambiar de gym activo.
   useEffect(() => {
@@ -43,14 +56,14 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
       setShowConvertModal(true)
       return
     }
-    upsertOverride.mutate({ exerciseId, notes }, {
+    upsertOverride.mutate(overridePayload, {
       onSuccess: () => onClose?.(),
     })
   }
 
   const applyUnitChange = (convertHistorical) => {
     // Notas y unidad son escrituras independientes (tablas distintas).
-    upsertOverride.mutate({ exerciseId, notes })
+    upsertOverride.mutate(overridePayload)
     changeWeightUnit.mutate(
       {
         scope: 'exercise',
@@ -123,6 +136,16 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
             })}
           </div>
         </div>
+
+        {showDistanceUnit && (
+          <div className="mt-4">
+            <DistanceUnitPicker
+              value={effectiveDistanceUnit}
+              onChange={setDistanceUnit}
+              label={t('exercise:distanceUnitOverride')}
+            />
+          </div>
+        )}
       </div>
 
       <div className="px-4 pb-4">

@@ -4,7 +4,7 @@ import { ChevronRight, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2 }
 import { Modal, ReorderModal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
-import { SetField, getExerciseName, formatEffortBadge, formatFieldValue, resolveTrackedFields } from '@gym/shared'
+import { SetField, getExerciseName, formatEffortBadge, formatFieldValue, resolveTrackedFields, useResolvedDistanceUnit } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function ExerciseCard({
@@ -31,6 +31,7 @@ function ExerciseCard({
   // Memoizado como en WorkoutExerciseCard: devuelve un array nuevo por render y viaja a los
   // useMemo de ExerciseHistoryModal. `exercise` viene de la caché de query (referencia estable).
   const trackedFields = useMemo(() => resolveTrackedFields(exercise), [exercise])
+  const distanceUnit = useResolvedDistanceUnit(exercise)
 
   const menuItems = [
     { icon: Pencil, label: t('common:buttons.edit'), onClick: onEdit },
@@ -79,6 +80,7 @@ function ExerciseCard({
           exerciseId={exercise.id}
           exerciseName={getExerciseName(exercise)}
           trackedFields={trackedFields}
+          distanceUnit={distanceUnit}
           routineDayId={routineDayId}
         />
       </>

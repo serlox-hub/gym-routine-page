@@ -318,10 +318,16 @@ Deletion strategy:
 
 ### Unidades de peso (por ejercicio + gimnasio)
 - Unidad resuelta en **runtime**, NO almacenada por serie: `resolveWeightUnit(unidad(ejercicio,gym), prefs)` = `(ejercicio,gym) > preferencia global > 'kg'`. Hook DRY `useResolvedWeightUnit(exerciseId, gymId)` (web+native).
-- Vive en `user_exercise_gym_units(user_id, exercise_id, gym_id, weight_unit)`. `user_exercise_overrides` = **solo notas**.
+- Vive en `user_exercise_gym_units(user_id, exercise_id, gym_id, weight_unit)`. En `user_exercise_overrides` **no hay peso** (notas + unidad de distancia, que no depende del gym).
 - **No hay almacenamiento canónico (`weight_kg`)**: stats/PRs/gráficas ya están segregados por gym (cada `(ejercicio,gym)` es coherente en una unidad y nunca se compara entre gyms). **Nunca comparar/agregar pesos crudos entre gyms distintos.**
 - Cambiar la unidad de un ejercicio afecta **solo al gym activo** (`useChangeWeightUnit` scope `'exercise'` con `gymId`; convierte datos con el RPC `convert_user_weights`).
 - Única vista cross-gym (overlay multi-gym del historial): convierte al vuelo con `convertWeightValue` + `unitByGym`. Detalle y rationale en `docs/DECISIONS.md`.
+
+### Unidad de distancia (por ejercicio)
+- `m`/`km` es **presentación y entrada**, nunca almacenamiento (la BD siempre en `distance_meters`). Cambiarla **no convierte datos**.
+- Resolver SIEMPRE con `resolveDistanceUnit(override, exercise)` / `useResolvedDistanceUnit(exercise)`: `user_exercise_overrides.distance_unit` > `exercises.distance_unit` > `'m'`. La escala la fija el EJERCICIO (remo en metros, cinta en km), no una preferencia global, y **no hay eje de gimnasio** (a diferencia del peso).
+- Overrides de todos los ejercicios en una query: `useUserExerciseDistanceUnits()`.
+- **El ritmo va siempre por kilómetro** (`PACE_DISTANCE_UNIT`), nunca compuesto con la unidad de distancia. Ver `docs/DECISIONS.md` (issue #24).
 
 ## Autonomía
 - No pidas permiso ni confirmación para ninguna acción (editar archivos, ejecutar comandos, crear/borrar, refactorizar, etc.). Actúa directamente.
@@ -379,6 +385,7 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ Defaults silenciosos en el parseo de formularios (`parseInt(x) || 3`). Un campo obligatorio se **valida** y se muestra el error inline; el parser no inventa valores. Ver `routineExerciseForm.js` y `docs/DECISIONS.md`
 - ❌ Etiquetas de unidad dentro de la fila de serie de la sesión (`nv ×`, `s`, `kcal`) ni anchos fijos en sus inputs. La unidad va en la **cabecera** de columna (`getSetColumns`) y la fila solo lleva inputs `w-full` en tracks `minmax(0,1fr)` — si no, la fila desborda la card. Mismo grid mida lo que mida el ejercicio. Ver `docs/DECISIONS.md`
 - ❌ Pintar una duración en segundos crudos (`{timeSeconds}s`, `1200 s`) o pedirla en dos cajas mm+ss. Display: `formatDuration()`. Entrada: `SetValueInput` con campo `time`/`pace` (relleno por dígitos, `durationInput.js`). No hay unidad de tiempo configurable
+- ❌ Pintar o teclear una distancia en metros crudos porque «es lo que hay en BD». La unidad la decide el ejercicio (`resolveDistanceUnit`), y quien la pinta convierte: `formatFieldValue`/`getSetColumns` ya lo hacen, y en la edición del historial la conversión sale de `column.unit`, la misma que rotula la cabecera
 - ❌ Rangos numéricos fijos para campos que dependen de lo que mide el ejercicio. El esfuerzo usa dos escalas (RIR `-1..3` si mide reps, RPE `1..5` si no): usar `getEffortOptions()` / `isValidEffortValue()`, nunca `min=0 max=5`
 - ❌ Pintar un valor de esfuerzo crudo (`RIR {rir}`, `` `@${rir}` ``, `String(rir)`). Siempre `formatEffortBadge(value, trackedFields)` — en RPE el número guardado es un índice interno, la palabra es el dato. Si el componente tiene el `exercise`, resuelve los campos con `resolveTrackedFields(exercise)` (fallback único de lectura); si no lo tiene, recíbelos como prop. Ver `docs/DECISIONS.md`
 - ❌ Adivinar de qué campo habla el objetivo de una rutina a partir de `tracked_fields`. El campo se GUARDA (`routine_exercises.target_field`) y se lee con `resolveTargetField()`; `getDefaultTargetField()` es solo el default del formulario y la lectura de filas antiguas. Y para comparar el objetivo con lo hecho hace falta su unidad: `parseTargetRange(target, targetField)`, que devuelve null si "20" no dice si son segundos o minutos
@@ -438,6 +445,7 @@ Extract when logic:
 | Columnas de la fila de serie (sesión) | `setColumns.js` | `getSetColumns()` |
 | Input de duración por dígitos (mm:ss) | `durationInput.js` | `durationDigitsToSeconds()`, `secondsToDurationDigits()`, `formatDurationDigits()` |
 | Form de config de ejercicio en rutina/sesión | `routineExerciseForm.js` | `buildExerciseConfigForm()`, `validateExerciseConfigForm()`, `parseExerciseConfigForm()` |
+| Form de override de ejercicio del sistema (notas + unidad) | `exerciseOverrideForm.js` | `buildExerciseOverrideForm()` |
 | Prompts IA / formato JSON rutinas | `routineIO.js` | `buildChatbotPrompt()`, `ROUTINE_JSON_FORMAT` |
 | Matching ejercicio→catálogo (import) | `exerciseMatch.js` | `normalizeExerciseName()`, `buildExerciseIndex()`, `resolveExerciseId()` |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
@@ -446,7 +454,7 @@ All these files live in `packages/shared/src/lib/` and are exported via `@gym/sh
 
 ### Archivos críticos: import/export de rutinas (JSON)
 
-Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 8**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
+Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 9**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
 
 ⚠️ **Emparejar por CLAVE ESTABLE** (`name_en` → `name_es` normalizado, vía `lib/exerciseMatch.js`), NUNCA por `name_es` solo. `importRoutine` debe seguir aceptando versiones antiguas del JSON.
 

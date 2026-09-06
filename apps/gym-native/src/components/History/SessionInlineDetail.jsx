@@ -31,6 +31,7 @@ import {
   getMuscleGroupColor,
   usePreference,
   useResolvedWeightUnit,
+  useResolvedDistanceUnit,
   getNotifier,
   formatEffortBadge,
   buildSessionExercisesFromSession,
@@ -42,11 +43,10 @@ import { colors } from '../../lib/styles'
 // (getSetColumns + SetValueInput): antes tenía su propia lista peso/reps/tiempo/distancia, así que
 // nivel, kcal y ritmo NO se podían editar y el tiempo se pedía en segundos crudos. Guarda al salir
 // de cada campo (onCommit), no con un check como la sesión.
-function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit }) {
+function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit, distanceUnit }) {
   const { t } = useTranslation()
   const trackedFields = resolveTrackedFields(exercise)
-  // distanceUnit aún sin cablear en ninguna pantalla (issue #24): al activarlo, también aquí.
-  const columns = getSetColumns(trackedFields, { weightUnit })
+  const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
 
   const [values, setValues] = useState(() => getSetFieldValues(set, columns))
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
@@ -248,6 +248,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
 function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, gymId, isEditing, navigation, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
   const { t } = useTranslation()
   const weightUnit = useResolvedWeightUnit(exercise.id, gymId)
+  const distanceUnit = useResolvedDistanceUnit(exercise)
   const prData = prsByExercise[exercise.id]
   const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
@@ -294,6 +295,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 onUpsert={onUpsertSet}
                 onDelete={onDeleteSet}
                 weightUnit={weightUnit}
+                distanceUnit={distanceUnit}
               />
             ))}
             <Pressable
@@ -318,7 +320,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
               </Text>
               <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ color: colors.textPrimary, fontSize: 13 }}>
-                  {formatSetValue({ ...set, weight_unit: weightUnit })}
+                  {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                 </Text>
                 {isSetPR && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
@@ -355,6 +357,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         exerciseId={exercise.id}
         exerciseName={getExerciseName(exercise)}
         trackedFields={trackedFields}
+        distanceUnit={distanceUnit}
         onSessionClick={(sid, date) => {
           setShowHistory(false)
           navigation.navigate('MainTabs', { screen: 'History', params: { sessionId: sid, date } })

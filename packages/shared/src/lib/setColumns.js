@@ -1,7 +1,10 @@
 import {
+  SetField,
+  distanceToMeters,
   getFieldHeader,
   getFieldMeta,
   getFieldUnit,
+  metersToDistanceUnit,
   normalizeTrackedFields,
 } from './measurementFields.js'
 import { toNullableFloat, toNullableInt } from './numberUtils.js'
@@ -38,9 +41,15 @@ export function getSetColumns(trackedFields, { weightUnit = 'kg', distanceUnit =
  */
 export function getSetFieldValues(set, columns) {
   const values = {}
-  columns.forEach(({ field }) => {
+  columns.forEach(({ field, unit }) => {
     const raw = set?.[getFieldMeta(field).column]
-    values[field] = raw == null ? '' : raw
+    if (raw == null) {
+      values[field] = ''
+      return
+    }
+    // La distancia se guarda en metros y se teclea en la unidad de SU columna (la misma que pinta
+    // la cabecera): tomarla de la columna es lo que impide que el input y el rótulo se desalineen.
+    values[field] = field === SetField.DISTANCE ? metersToDistanceUnit(raw, unit) : raw
   })
   return values
 }
@@ -55,9 +64,13 @@ export function getSetFieldValues(set, columns) {
  */
 export function buildSetFieldsPayload(values, columns) {
   const payload = {}
-  columns.forEach(({ field }) => {
+  columns.forEach(({ field, unit }) => {
     const { payloadKey, decimal } = getFieldMeta(field)
-    payload[payloadKey] = decimal ? toNullableFloat(values[field]) : toNullableInt(values[field])
+    const parsed = decimal ? toNullableFloat(values[field]) : toNullableInt(values[field])
+    // Vacío sigue siendo null (borrar un campo): solo se convierte lo que tiene valor.
+    payload[payloadKey] = field === SetField.DISTANCE && parsed != null
+      ? distanceToMeters(parsed, unit)
+      : parsed
   })
   return payload
 }

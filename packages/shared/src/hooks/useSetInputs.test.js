@@ -30,6 +30,7 @@ vi.mock('../api/workoutApi.js', () => ({
 }))
 
 import { useSetInputs } from './useSetInputs.js'
+import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
 import { useWorkoutStore } from './_stores.js'
 import * as workoutApi from '../api/workoutApi.js'
 
@@ -162,6 +163,61 @@ describe('useSetInputs — re-siembra por conversión de unidad (cambio de gym)'
     store.weightConversionNonce = 5 // ya venía >0 (p. ej. conversión previa en la sesión)
     const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
     expect(result.current.weight).toBe(190)
+  })
+})
+
+// La unidad de distancia NO está en el primer render (sale de una query de overrides) y además se
+// puede cambiar con la tarjeta abierta. El input se siembra una sola vez, así que sin re-sincronizar
+// la fila pinta metros bajo una cabecera "KM" y el commit con debounce reescribe la serie ×1000.
+describe('useSetInputs — la unidad de distancia cambia después de sembrar', () => {
+  const DISTANCE_PARAMS = { ...PARAMS, trackedFields: ['distance', 'time'] }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+  })
+
+  it('convierte el valor local a la unidad nueva, en los dos sentidos', () => {
+    store.completedSets = { [KEY]: { sessionExerciseId: 'ex-1', setNumber: 1, distanceMeters: 5000, timeSeconds: 1200 } }
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...DISTANCE_PARAMS, distanceUnit: 'm' },
+    })
+    expect(result.current.distance).toBe(5000)
+
+    rerender({ ...DISTANCE_PARAMS, distanceUnit: 'km' })
+    expect(result.current.distance).toBe(5)
+
+    rerender({ ...DISTANCE_PARAMS, distanceUnit: 'm' })
+    expect(result.current.distance).toBe(5000)
+  })
+
+  it('no toca un input vacío', () => {
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...DISTANCE_PARAMS, distanceUnit: 'm' },
+    })
+    expect(result.current.distance).toBe('')
+
+    rerender({ ...DISTANCE_PARAMS, distanceUnit: 'km' })
+    expect(result.current.distance).toBe('')
+  })
+
+  it('el commit con debounce NO reescribe la serie tras el cambio de unidad', async () => {
+    store.completedSets = { [KEY]: { sessionExerciseId: 'ex-1', setNumber: 1, distanceMeters: 5000, timeSeconds: 1200 } }
+    const { rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...DISTANCE_PARAMS, distanceUnit: 'm' },
+    })
+
+    rerender({ ...DISTANCE_PARAMS, distanceUnit: 'km' })
+    await new Promise(resolve => setTimeout(resolve, SET_EDIT_DEBOUNCE_MS + 100))
+
+    // Sin la re-sincronización, el commit convertiría los 5000 del input como si fueran km.
+    for (const [payload] of workoutApi.upsertCompletedSet.mock.calls) {
+      expect(payload.distanceMeters).toBe(5000)
+    }
   })
 })
 

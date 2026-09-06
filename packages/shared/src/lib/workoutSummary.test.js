@@ -158,6 +158,44 @@ describe('workoutSummary', () => {
       expect(summary.exercises[0].bestSet).toContain('120kcal')
       expect(summary.exercises[0].bestSet).toContain('Nv8')
     })
+
+    // issue #24: sin resolver la unidad, la mejor serie de un ejercicio en km se anunciaría como
+    // "5000m" (metros crudos de BD), no como los "5km" que el usuario tecleó.
+    it('formatea la distancia con la unidad del ejercicio del catálogo', () => {
+      const runExercises = [
+        { id: 'se-4', exercises: { id: 4, name: 'Cinta', tracked_fields: ['distance', 'time'], distance_unit: 'km' } },
+      ]
+      const runSets = {
+        'se-4-1': { sessionExerciseId: 'se-4', distanceMeters: 5000, timeSeconds: 1200, setNumber: 1 },
+      }
+      const summary = buildWorkoutSummaryFromEndSession(session, [], runSets, runExercises)
+      expect(summary.exercises[0].bestSet).toContain('5km')
+      expect(summary.exercises[0].bestSet).not.toContain('5000')
+    })
+
+    it('el override del usuario manda sobre la unidad del ejercicio', () => {
+      const runExercises = [
+        { id: 'se-4', exercises: { id: 4, name: 'Cinta', tracked_fields: ['distance', 'time'], distance_unit: 'm' } },
+      ]
+      const runSets = {
+        'se-4-1': { sessionExerciseId: 'se-4', distanceMeters: 5000, timeSeconds: 1200, setNumber: 1 },
+      }
+      const summary = buildWorkoutSummaryFromEndSession(session, [], runSets, runExercises, {
+        distanceUnitByExerciseId: { 4: 'km' },
+      })
+      expect(summary.exercises[0].bestSet).toContain('5km')
+    })
+
+    it('sin unidad del ejercicio ni override, cae a metros', () => {
+      const runExercises = [
+        { id: 'se-4', exercises: { id: 4, name: 'Cinta', tracked_fields: ['distance', 'time'] } },
+      ]
+      const runSets = {
+        'se-4-1': { sessionExerciseId: 'se-4', distanceMeters: 5000, timeSeconds: 1200, setNumber: 1 },
+      }
+      const summary = buildWorkoutSummaryFromEndSession(session, [], runSets, runExercises)
+      expect(summary.exercises[0].bestSet).toContain('5000m')
+    })
   })
 
   describe('buildWorkoutSummaryFromSession', () => {
@@ -205,6 +243,65 @@ describe('workoutSummary', () => {
       expect(summary.exercises[0].hasPR).toBe(true)
       expect(summary.prs).toHaveLength(1)
       expect(summary.prs[0].details).toHaveLength(2) // weight + 1rm
+    })
+
+    // La tarjeta de PR se lee pegada a la línea del ejercicio ("5km × 20:00"): si una dice km y la
+    // otra metros crudos, la misma cifra aparece en dos escalas una al lado de la otra.
+    it('el PR de distancia va en la unidad del ejercicio, no en metros crudos', () => {
+      const runSession = {
+        ...session,
+        exercises: [{
+          sessionExerciseId: 'se-run',
+          exercise: { id: 7, name: 'Carrera continua', tracked_fields: ['distance', 'time'], distance_unit: 'km' },
+          sets: [{ distance_meters: 5000, time_seconds: 1200, set_number: 1 }],
+        }],
+      }
+      const runPRs = [{ exercise_id: 7, is_pr_distance: true, best_distance_meters: 5000 }]
+
+      const summary = buildWorkoutSummaryFromSession(runSession, runPRs, {
+        previousBests: { 7: { bestDistanceMeters: 4000 } },
+      })
+
+      expect(summary.prs[0].details[0]).toMatchObject({
+        type: 'bestDistanceMeters', newValue: 5, oldValue: 4, unit: 'km',
+      })
+    })
+
+    it('el override del usuario manda también en el PR de distancia', () => {
+      const runSession = {
+        ...session,
+        exercises: [{
+          sessionExerciseId: 'se-run',
+          exercise: { id: 7, name: 'Carrera continua', tracked_fields: ['distance', 'time'], distance_unit: 'km' },
+          sets: [{ distance_meters: 5000, time_seconds: 1200, set_number: 1 }],
+        }],
+      }
+      const runPRs = [{ exercise_id: 7, is_pr_distance: true, best_distance_meters: 5000 }]
+
+      const summary = buildWorkoutSummaryFromSession(runSession, runPRs, {
+        distanceUnitByExerciseId: { 7: 'm' },
+      })
+
+      expect(summary.prs[0].details[0]).toMatchObject({ newValue: 5000, unit: 'm' })
+    })
+
+    // Falsy vs ausente: sin previousBests para este ejercicio, oldValue tiene que quedar null, NUNCA
+    // 0 (que se leería como "antes hacías 0km", un PR falso). metersToDistanceUnit(undefined, ...)
+    // devuelve 0 si se le llama sin guardarse antes contra null.
+    it('sin previousBests para el ejercicio, oldValue del PR de distancia queda null, no 0', () => {
+      const runSession = {
+        ...session,
+        exercises: [{
+          sessionExerciseId: 'se-run',
+          exercise: { id: 7, name: 'Carrera continua', tracked_fields: ['distance', 'time'], distance_unit: 'km' },
+          sets: [{ distance_meters: 5000, time_seconds: 1200, set_number: 1 }],
+        }],
+      }
+      const runPRs = [{ exercise_id: 7, is_pr_distance: true, best_distance_meters: 5000 }]
+
+      const summary = buildWorkoutSummaryFromSession(runSession, runPRs)
+
+      expect(summary.prs[0].details[0].oldValue).toBeNull()
     })
 
     it('retorna null si no hay session', () => {
@@ -262,6 +359,23 @@ describe('workoutSummary', () => {
     it('oldValue queda null si previousBests no se pasa', () => {
       const summary = buildWorkoutSummaryFromSession(session, sessionPRs)
       expect(summary.prs[0].details[0].oldValue).toBeNull()
+    })
+
+    it('formatea la distancia con distanceUnitByExerciseId, no en metros crudos', () => {
+      const sessionWithRun = {
+        ...session,
+        exercises: [
+          {
+            sessionExerciseId: 'se-run',
+            exercise: { id: 9, name: 'Cinta', tracked_fields: ['distance', 'time'] },
+            sets: [{ distance_meters: 5000, time_seconds: 1200, set_number: 1 }],
+          },
+        ],
+      }
+      const summary = buildWorkoutSummaryFromSession(sessionWithRun, [], {
+        distanceUnitByExerciseId: { 9: 'km' },
+      })
+      expect(summary.exercises[0].bestSet).toContain('5km')
     })
 
     it('incluye ejercicio con solo rep-PR (sin ningún is_pr_*) — regresión share desde histórico', () => {

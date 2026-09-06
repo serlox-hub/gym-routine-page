@@ -561,7 +561,7 @@ describe('workoutTransforms', () => {
         name: 'Principal',
         is_warmup: false,
         routine_exercises: [
-          { id: 201, sort_order: 1, series: 4, reps: '8', exercise: { id: 1, name: 'Press banca', gif_key: 'bench-press', is_system: true } },
+          { id: 201, sort_order: 1, series: 4, reps: '8', exercise: { id: 1, name: 'Press banca', gif_key: 'bench-press', is_system: true, distance_unit: 'km' } },
           { id: 202, sort_order: 2, exercise: { id: 2, name: 'Sentadilla' } },
         ],
       },
@@ -581,6 +581,12 @@ describe('workoutTransforms', () => {
       expect(result[1].exercise.gif_key).toBeNull()
     })
 
+    it('propaga la unidad de distancia: sin ella una sesión recién iniciada desde rutina pintaría metros', () => {
+      const result = buildSessionExercisesCache(sessionExercises, blocks)
+      expect(result[0].exercise.distance_unit).toBe('km')
+      expect(result[1].exercise.distance_unit).toBeNull()
+    })
+
     it('propaga is_system y lo normaliza a null cuando falta, igualando la forma de fetchSessionExercises', () => {
       const result = buildSessionExercisesCache(sessionExercises, blocks)
       expect(result[0].exercise.is_system).toBe(true)
@@ -592,7 +598,7 @@ describe('workoutTransforms', () => {
     it('produce exactamente las mismas claves de exercise que el select de fetchSessionExercises', () => {
       const result = buildSessionExercisesCache(sessionExercises, blocks)
       expect(Object.keys(result[0].exercise).sort()).toEqual([
-        'gif_key', 'id', 'instructions', 'is_system', 'muscle_group', 'name', 'name_en', 'tracked_fields',
+        'distance_unit', 'gif_key', 'id', 'instructions', 'is_system', 'muscle_group', 'name', 'name_en', 'tracked_fields',
       ])
     })
 

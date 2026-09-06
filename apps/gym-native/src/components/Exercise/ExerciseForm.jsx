@@ -8,15 +8,18 @@ import { colors, inputStyle } from '../../lib/styles'
 import {
   DEFAULT_TRACKED_FIELDS,
   isTrackedFieldsSelectionValid,
+  SetField,
   getMuscleGroupColor,
   getMuscleGroupName,
   normalizeTrackedFields,
 } from '@gym/shared'
 import TrackedFieldsPicker from './TrackedFieldsPicker'
+import DistanceUnitPicker from './DistanceUnitPicker'
 
 const DEFAULT_FORM = {
   name: '',
   tracked_fields: DEFAULT_TRACKED_FIELDS,
+  distance_unit: 'm',
   instructions: '',
 }
 
@@ -75,6 +78,7 @@ export default function ExerciseForm({
   const initialTrackedFieldsKey = initialData?.tracked_fields?.join(',')
   const initialInstructions = initialData?.instructions
   const initialMuscleGroupId = initialData?.muscle_group_id
+  const initialDistanceUnit = initialData?.distance_unit
   useEffect(() => {
     if (initialName === undefined && initialTrackedFieldsKey === undefined && initialInstructions === undefined && initialMuscleGroupId === undefined) {
       return
@@ -82,10 +86,11 @@ export default function ExerciseForm({
     setForm({
       name: initialName || '',
       tracked_fields: normalizeTrackedFields(initialTrackedFieldsKey?.split(',')),
+      distance_unit: initialDistanceUnit || 'm',
       instructions: initialInstructions || '',
     })
     setSelectedMuscleGroupId(initialMuscleGroupId || null)
-  }, [initialName, initialTrackedFieldsKey, initialInstructions, initialMuscleGroupId])
+  }, [initialName, initialTrackedFieldsKey, initialInstructions, initialMuscleGroupId, initialDistanceUnit])
 
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
@@ -146,6 +151,17 @@ export default function ExerciseForm({
           required={!minimal}
         />
       </View>
+
+      {/* Solo tiene sentido si el ejercicio mide distancia: para el resto la columna existe pero
+          no se usa. */}
+      {form.tracked_fields?.includes(SetField.DISTANCE) && (
+        <View className="mb-4">
+          <DistanceUnitPicker
+            value={form.distance_unit}
+            onChange={(unit) => handleChange('distance_unit', unit)}
+          />
+        </View>
+      )}
 
       <View className="mb-4">
         <Text className="text-primary text-sm font-medium mb-2">

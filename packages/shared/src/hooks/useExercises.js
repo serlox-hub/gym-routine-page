@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
-import { getExerciseName, getMuscleGroupName, getEquipmentName, localizeExercise, resolveWeightUnit } from '../lib/exerciseUtils.js'
+import { getExerciseName, getMuscleGroupName, getEquipmentName, localizeExercise, resolveDistanceUnit, resolveWeightUnit } from '../lib/exerciseUtils.js'
 import { usePreference } from './usePreferences.js'
 import {
   fetchExercisesWithMuscleGroup,
@@ -12,6 +12,7 @@ import {
   updateExercise,
   deleteExercise,
   fetchUserExerciseOverride,
+  fetchUserExerciseDistanceUnits,
   fetchUserExerciseGymUnit,
   fetchExerciseUnitsByGym,
   fetchAllUserExerciseGymUnits,
@@ -154,6 +155,26 @@ export function useResolvedWeightUnit(exerciseId, gymId) {
   return resolveWeightUnit(gymUnit, { weight_unit: globalWeightUnit })
 }
 
+// Overrides de unidad de distancia del usuario (mapa exercise_id -> unidad), en UNA query para
+// toda la app en vez de una por ejercicio: el historial pinta muchos ejercicios a la vez.
+// staleTime Infinity: solo cambia al guardar el override, que la invalida.
+export function useUserExerciseDistanceUnits() {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EXERCISES, 'distance-units'],
+    queryFn: fetchUserExerciseDistanceUnits,
+    staleTime: Infinity,
+  })
+}
+
+// Unidad de distancia efectiva para mostrar/introducir un ejercicio:
+// override del usuario > unidad del ejercicio > 'm'. Sin eje de gimnasio (a diferencia del peso):
+// una cinta se mide en km en todos los gimnasios. Recibe el ejercicio, no su id, porque la unidad
+// del catálogo viaja ya en él (`exercises.distance_unit`).
+export function useResolvedDistanceUnit(exercise) {
+  const { data: distanceUnits } = useUserExerciseDistanceUnits()
+  return resolveDistanceUnit(distanceUnits?.[exercise?.id], exercise)
+}
+
 export function useUserExerciseOverride(exerciseId) {
   return useQuery({
     queryKey: [QUERY_KEYS.EXERCISES, 'override', exerciseId],
@@ -170,6 +191,7 @@ export function useUpsertUserExerciseOverride() {
     mutationFn: (params) => upsertUserExerciseOverride({ userId, ...params }),
     onSuccess: (_, { exerciseId }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES, 'override', exerciseId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISES, 'distance-units'] })
     },
   })
 }

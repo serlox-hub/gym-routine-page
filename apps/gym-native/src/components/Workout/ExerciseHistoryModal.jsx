@@ -54,6 +54,7 @@ function ProgressTab({ sessions, stats, trackedFields, weightUnit, distanceUnit 
           sessions={sessions}
           trackedFields={trackedFields}
           weightUnit={weightUnit}
+          distanceUnit={distanceUnit}
           chartRows={chartRows}
           overlayGyms={overlayGyms}
           unitByGym={unitByGym}
@@ -349,6 +350,7 @@ export default function ExerciseHistoryModal({
               stats={stats}
               trackedFields={trackedFields}
               weightUnit={weightUnit}
+              distanceUnit={distanceUnit}
               chartRows={hasMultiple ? chartRows : undefined}
               overlayGyms={isOverlay ? overlayGyms : undefined}
               unitByGym={isOverlay ? unitByGym : undefined}

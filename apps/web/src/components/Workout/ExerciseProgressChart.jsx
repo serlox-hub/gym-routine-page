@@ -39,7 +39,7 @@ function statRowToPoint(row, displayUnit, unitByGym) {
   }
 }
 
-function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, trackedFields, weightUnit = 'kg' }) {
+function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, trackedFields, weightUnit = 'kg', distanceUnit = 'm' }) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
   const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
@@ -98,8 +98,8 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, tr
         .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate))
     }
     const filteredSessions = filterRecordsByRange(sessions, range, 'date')
-    return transformSessionsToChartData(filteredSessions, trackedFields, { weightUnit })
-  }, [isOverlay, isStatRows, chartRows, sessions, range, trackedFields, weightUnit])
+    return transformSessionsToChartData(filteredSessions, trackedFields, { weightUnit, distanceUnit })
+  }, [isOverlay, isStatRows, chartRows, sessions, range, trackedFields, weightUnit, distanceUnit])
 
   const chartData = isOverlay ? overlayData.data : singleData
   const enoughSource = isStatRows ? (chartRows?.length ?? 0) >= 2 : (sessions?.length ?? 0) >= 2

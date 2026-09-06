@@ -24,7 +24,7 @@ export async function fetchExercisesWithMuscleGroup() {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
-      id, name:name_es, name_en, tracked_fields,
+      id, name:name_es, name_en, tracked_fields, distance_unit,
       is_system, gif_key,
       muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
       equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
@@ -50,7 +50,7 @@ export async function fetchExercise(exerciseId) {
   const { data, error } = await getClient()
     .from('exercises')
     .select(`
-      id, name:name_es, name_en, tracked_fields,
+      id, name:name_es, name_en, tracked_fields, distance_unit,
       is_system, instructions, deleted_at, gif_key,
       muscle_group_id, muscle_group:muscle_groups!muscle_group_id(id, name:name_es, name_en),
       equipment_type:equipment_types!equipment_type_id(id, key, name:name_es, name_en)
@@ -69,6 +69,7 @@ export async function createExercise({ userId, exercise, muscleGroupId }) {
       name_es: exercise.name,
       instructions: exercise.instructions || null,
       tracked_fields: normalizeTrackedFields(exercise.tracked_fields),
+      distance_unit: exercise.distance_unit === 'km' ? 'km' : 'm',
       muscle_group_id: muscleGroupId || null,
       user_id: userId,
     })
@@ -86,6 +87,7 @@ export async function updateExercise({ exerciseId, exercise, muscleGroupId }) {
       name_es: exercise.name,
       instructions: exercise.instructions || null,
       tracked_fields: normalizeTrackedFields(exercise.tracked_fields),
+      distance_unit: exercise.distance_unit === 'km' ? 'km' : 'm',
       muscle_group_id: muscleGroupId || null,
     })
     .eq('id', exerciseId)
@@ -198,11 +200,26 @@ export async function upsertUserExerciseGymUnit({ userId, exerciseId, gymId, wei
   return data?.weight_unit ?? null
 }
 
-// user_exercise_overrides guarda solo notas (la unidad vive en user_exercise_gym_units).
+/**
+ * Overrides de unidad de distancia del usuario, en UNA consulta: mapa exercise_id -> unidad.
+ * Bulk y no una query por ejercicio porque el historial y la sesión pintan muchos a la vez.
+ */
+export async function fetchUserExerciseDistanceUnits() {
+  const { data, error } = await getClient()
+    .from('user_exercise_overrides')
+    .select('exercise_id, distance_unit')
+    .not('distance_unit', 'is', null)
+
+  if (error) throw error
+  return Object.fromEntries((data || []).map(row => [row.exercise_id, row.distance_unit]))
+}
+
+// user_exercise_overrides guarda notas y unidad de distancia (la de PESO vive en
+// user_exercise_gym_units, porque esa sí depende del gimnasio).
 export async function fetchUserExerciseOverride(exerciseId) {
   const { data, error } = await getClient()
     .from('user_exercise_overrides')
-    .select('notes')
+    .select('notes, distance_unit')
     .eq('exercise_id', exerciseId)
     .maybeSingle()
 
@@ -210,16 +227,22 @@ export async function fetchUserExerciseOverride(exerciseId) {
   return data
 }
 
-export async function upsertUserExerciseOverride({ userId, exerciseId, notes }) {
+/**
+ * `distanceUnit` solo viaja si la clave viene en los argumentos: quien guarda únicamente las notas
+ * no debe borrar la unidad ya elegida (el upsert reemplazaría la columna con null).
+ * null = hereda la del ejercicio.
+ */
+export async function upsertUserExerciseOverride({ userId, exerciseId, notes, ...rest }) {
   const { data, error } = await getClient()
     .from('user_exercise_overrides')
     .upsert({
       user_id: userId,
       exercise_id: exerciseId,
       notes: notes || null,
+      ...('distanceUnit' in rest ? { distance_unit: rest.distanceUnit || null } : {}),
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,exercise_id' })
-    .select('notes')
+    .select('notes, distance_unit')
     .single()
 
   if (error) throw error

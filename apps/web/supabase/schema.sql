@@ -793,7 +793,7 @@ CREATE TABLE IF NOT EXISTS "public"."completed_sets" (
     "weight" numeric(6,2),
     "reps_completed" smallint,
     "time_seconds" integer,
-    "distance_meters" numeric(6,2),
+    "distance_meters" numeric(8,2),
     "calories_burned" integer,
     "rir_actual" smallint,
     "completed" boolean DEFAULT false,
@@ -909,6 +909,8 @@ CREATE TABLE IF NOT EXISTS "public"."exercises" (
     "equipment_type_id" integer,
     "gif_key" "text",
     "tracked_fields" "public"."measurement_field"[] DEFAULT '{weight,reps}'::"public"."measurement_field"[] NOT NULL,
+    "distance_unit" "text" DEFAULT 'm'::"text" NOT NULL,
+    CONSTRAINT "exercises_distance_unit_check" CHECK (("distance_unit" = ANY (ARRAY['m'::"text", 'km'::"text"]))),
     CONSTRAINT "exercises_tracked_fields_len" CHECK ((("array_length"("tracked_fields", 1) >= 1) AND ("array_length"("tracked_fields", 1) <= 3)))
 );
 
@@ -925,6 +927,10 @@ COMMENT ON COLUMN "public"."exercises"."gif_key" IS 'Id de producto Gym Visual. 
 
 
 COMMENT ON COLUMN "public"."exercises"."tracked_fields" IS 'Campos que se registran en cada serie. La app los normaliza al leerlos (orden canónico), así que el orden guardado aquí es irrelevante.';
+
+
+
+COMMENT ON COLUMN "public"."exercises"."distance_unit" IS 'Unidad en la que se muestra y se teclea la distancia de este ejercicio. El almacenamiento sigue siendo siempre en metros.';
 
 
 
@@ -1169,11 +1175,17 @@ CREATE TABLE IF NOT EXISTS "public"."user_exercise_overrides" (
     "exercise_id" integer NOT NULL,
     "notes" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "distance_unit" "text",
+    CONSTRAINT "user_exercise_overrides_distance_unit_check" CHECK (("distance_unit" = ANY (ARRAY['m'::"text", 'km'::"text"])))
 );
 
 
 ALTER TABLE "public"."user_exercise_overrides" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."user_exercise_overrides"."distance_unit" IS 'Unidad de distancia elegida por el usuario para este ejercicio. NULL = hereda exercises.distance_unit.';
+
 
 
 CREATE SEQUENCE IF NOT EXISTS "public"."user_exercise_overrides_id_seq"

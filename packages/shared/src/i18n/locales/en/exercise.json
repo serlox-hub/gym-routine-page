@@ -36,6 +36,8 @@
   "weightUnitLb": "Pounds (lb)",
   "timeUnit": "Time unit",
   "distanceUnit": "Distance unit",
+  "distanceUnitHelp": "How distance is shown and typed in. Nothing you've already saved changes.",
+  "distanceUnitOverride": "Distance unit for this exercise",
   "noExercises": "You don't have any exercises yet",
   "noExercisesSearch": "No exercises found",
   "notFound": "Exercise not found",

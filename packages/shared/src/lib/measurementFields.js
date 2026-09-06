@@ -26,6 +26,23 @@ export const SetField = {
 }
 
 /**
+ * El ritmo se guarda y se lee SIEMPRE en segundos por kilómetro, sea cual sea la unidad en la que
+ * se teclee la distancia de ese ejercicio. No es una elección nueva: es lo que ya declaran las
+ * métricas y los PRs (`workoutCalculations.js` y `sessionStatsCalculation.js`, ambos con
+ * `unit: 's/km'`). Componerlo con la unidad de distancia daba "5:00/m", segundos por metro, que no
+ * es como nadie mide un ritmo. Un ritmo por 500 m (la convención del remo) sería otra unidad
+ * distinta, no una consecuencia de teclear la distancia en metros.
+ */
+export const PACE_DISTANCE_UNIT = 'km'
+
+/**
+ * Unidades en las que se puede leer y teclear una distancia. El almacenamiento es SIEMPRE en
+ * metros (`completed_sets.distance_meters`): la unidad es de presentación y entrada, y por eso
+ * cambiarla no convierte ni un solo dato guardado.
+ */
+export const DISTANCE_UNITS = ['m', 'km']
+
+/**
  * Orden canónico de las columnas de valor. Los campos se normalizan SIEMPRE a este orden al
  * leerlos, así que el orden con el que se guardaron en BD da igual.
  * Reproduce el orden que tenían los 12 tipos históricos: peso·reps, peso·tiempo, nivel·kcal,
@@ -200,6 +217,8 @@ export function formatTrackedFieldsLabel(fields) {
 /**
  * Cabecera de la columna en la fila de serie. Corta a propósito: la columna mide ~40-70px en
  * móvil. "MM:SS" además comunica el formato del input de duración (ver durationInput.js).
+ * El ritmo va por su NOMBRE, no por su unidad: esa la dicen `getFieldUnit` y el valor formateado
+ * (siempre por kilómetro, ver PACE_DISTANCE_UNIT).
  */
 export function getFieldHeader(field, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
   switch (field) {
@@ -227,10 +246,8 @@ export function getFieldUnit(field, { weightUnit = 'kg', distanceUnit = 'm' } = 
     case SetField.DISTANCE: return distanceUnit || 'm'
     case SetField.CALORIES: return 'kcal'
     case SetField.LEVEL: return t('workout:set.level').toLowerCase()
-    // El ritmo se teclea con el mismo input de duración que el tiempo, así que aquí la pista útil
-    // es el FORMATO. Nada de `min/${distanceUnit}`: con la unidad sin cablear (issue #24) salía
-    // "min/m", minutos por metro, que no es como nadie mide un ritmo.
-    case SetField.PACE: return 'mm:ss'
+    // Por kilómetro siempre, nunca `min/${distanceUnit}` (ver PACE_DISTANCE_UNIT).
+    case SetField.PACE: return `min/${PACE_DISTANCE_UNIT}`
     default: return ''
   }
 }
@@ -297,7 +314,7 @@ export function formatFieldValue(field, value, { weightUnit = 'kg', distanceUnit
     case SetField.LEVEL:
       return `${t('workout:set.levelShort')}${value}`
     case SetField.PACE:
-      return `${formatSecondsAsMMSS(value)}/${distanceUnit}`
+      return `${formatSecondsAsMMSS(value)}/${PACE_DISTANCE_UNIT}`
     default:
       return ''
   }

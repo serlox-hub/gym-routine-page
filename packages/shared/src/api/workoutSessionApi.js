@@ -219,6 +219,7 @@ export async function fetchSessionDetail(sessionId) {
           name:name_es,
           name_en,
           tracked_fields,
+          distance_unit,
           deleted_at,
           muscle_group:muscle_groups!muscle_group_id (
             id,

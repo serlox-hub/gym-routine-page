@@ -1,13 +1,13 @@
 # Import/export de rutinas (JSON) — detalle
 
-Referencia de consulta (no invariante). La invariante corta (dos archivos, versión 8, emparejar
+Referencia de consulta (no invariante). La invariante corta (dos archivos, versión 9, emparejar
 por clave estable, retrocompatibilidad) + puntero viven en `CLAUDE.md` → "Archivos críticos:
 import/export de rutinas (JSON)". Aquí el detalle completo, el rationale del emparejamiento y el
 checklist de "cuando cambie el modelo de datos".
 
 ## Los dos archivos (no confundir)
 
-- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 8**) y mapea BD ↔ JSON.
+- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 9**) y mapea BD ↔ JSON.
 - **`packages/shared/src/lib/routineIO.js`** — prompts de IA (`buildChatbotPrompt`, `buildAdaptRoutinePrompt`) y el doc del formato (`ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`). Puro, sin BD.
 
 ⚠️ **Tercer consumidor del shape del export:** `packages/shared/src/lib/routineTextFormat.js` (compartir rutina como texto) empareja `blocks[].exercises[].exercise_name` con `exercises[].name_es` para leer sus `tracked_fields`, que deciden la escala de esfuerzo. Si se recortan columnas del catálogo del export, **degrada en silencio** a la escala RIR (un RPE se pintaría `@4` en vez de "Muy duro"). Hay test de shape en `routineApi.test.js`.
@@ -32,6 +32,14 @@ tipos cerrados. `importRoutine` acepta las dos formas vía `importedTrackedField
 ⚠️ Ese mapa legacy es el **único** sitio de la app que conoce los 12 nombres antiguos, y no se
 borra al retirar el último dato v6: un usuario puede importar un JSON exportado hace meses.
 `legacyParity.test.js` congela la salida de los 12 tipos.
+
+## En qué unidad va la distancia: `distance_unit` (v9)
+
+Desde v9 el catálogo del export lleva `distance_unit` (`'m'` | `'km'`) por ejercicio: en qué unidad
+se muestra y se teclea su distancia (el almacenamiento sigue siendo en metros). Un JSON anterior no
+la trae y el ejercicio se crea en metros (`importedDistanceUnit()`), que es lo que hacía la app
+antes de cablearla. ⚠️ Al **actualizar** un ejercicio propio (`updateExercises`), la unidad solo se
+escribe si el JSON la declara: el default `'m'` pisaría el `'km'` que el usuario ya tuviera puesto.
 
 ## De qué habla el objetivo: `target_field` (v8) y el nivel prescrito
 

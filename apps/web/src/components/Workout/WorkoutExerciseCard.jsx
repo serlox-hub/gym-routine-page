@@ -12,7 +12,7 @@ import SetsList from './SetsList.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
-import { getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, resolveTrackedFields } from '@gym/shared'
+import { getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [], existingSupersets = [] }) {
@@ -32,6 +32,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   // la caché de query, así que su referencia es estable entre renders.
   const trackedFields = useMemo(() => resolveTrackedFields(exercise), [exercise])
   const weightUnit = useResolvedWeightUnit(exercise?.id, gymId)
+  const distanceUnit = useResolvedDistanceUnit(exercise)
   const exerciseKey = sessionExerciseId || id
 
   const { expanded, toggle: toggleExpanded } = useExpandedExercise(exerciseKey)
@@ -118,10 +119,10 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
               <ExerciseCardNotes exercise={exercise} notes={notes} />
             </div>
           )}
-          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} previousLoaded={previousFetched} progressionEnabled={progressionEnabled} trackedFields={trackedFields} weightUnit={weightUnit} rest_seconds={rest_seconds} reps={reps} targetField={target_field} levelTarget={level} effortTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
+          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} previousLoaded={previousFetched} progressionEnabled={progressionEnabled} trackedFields={trackedFields} weightUnit={weightUnit} distanceUnit={distanceUnit} rest_seconds={rest_seconds} reps={reps} targetField={target_field} levelTarget={level} effortTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
         </>
       )}
-      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} trackedFields={trackedFields} routineDayId={routineDayId} />
+      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} trackedFields={trackedFields} distanceUnit={distanceUnit} routineDayId={routineDayId} />
       <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
       <ConfirmModal isOpen={showRemoveConfirm} title={t('workout:exercise.removeFromSession')} message={t('workout:exercise.removeFromSessionConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
       <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />

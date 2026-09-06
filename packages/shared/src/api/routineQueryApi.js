@@ -75,6 +75,7 @@ export async function fetchRoutineDayExercises(dayId) {
         name:name_es,
         name_en,
         tracked_fields,
+        distance_unit,
         is_system,
         instructions,
         gif_key,
