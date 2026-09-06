@@ -10,6 +10,8 @@ import {
   fetchUserExerciseGymUnit,
   fetchExerciseUnitsByGym,
   fetchUserExerciseWeightUnits,
+  fetchUserExerciseDistanceUnits,
+  upsertUserExerciseOverride,
   fetchAllUserExerciseGymUnits,
   upsertUserExerciseGymUnit,
 } from './exerciseApi.js'
@@ -176,6 +178,22 @@ describe('createExercise', () => {
       createExercise({ userId: 'user-1', exercise: { name: 'Test' }, muscleGroupId: null })
     ).rejects.toThrow('insert failed')
   })
+
+  // distance_unit es NOT NULL en BD: solo 'km' se guarda tal cual, cualquier otra cosa (ausente,
+  // 'm', un valor corrupto) cae a 'm', el default de toda la vida.
+  it.each([
+    ['km', 'km'],
+    ['m', 'm'],
+    [undefined, 'm'],
+    ['millas', 'm'],
+  ])('sanea distance_unit: %s -> %s', async (input, expected) => {
+    const chain = makeQueryMock({ data: { id: 'ex-new' }, error: null })
+    getClient.mockReturnValue({ from: vi.fn(() => chain) })
+
+    await createExercise({ userId: 'user-1', exercise: { name: 'Cinta', distance_unit: input }, muscleGroupId: null })
+
+    expect(chain.insert.mock.calls[0][0].distance_unit).toBe(expected)
+  })
 })
 
 // ============================================
@@ -206,6 +224,19 @@ describe('updateExercise', () => {
     await expect(
       updateExercise({ exerciseId: 'ex-1', exercise: { name: 'X' }, muscleGroupId: null })
     ).rejects.toThrow('update failed')
+  })
+
+  it.each([
+    ['km', 'km'],
+    ['m', 'm'],
+    [undefined, 'm'],
+  ])('sanea distance_unit: %s -> %s', async (input, expected) => {
+    const chain = makeQueryMock({ data: { id: 'ex-1' }, error: null })
+    getClient.mockReturnValue({ from: vi.fn(() => chain) })
+
+    await updateExercise({ exerciseId: 'ex-1', exercise: { name: 'Cinta', distance_unit: input }, muscleGroupId: null })
+
+    expect(chain.update.mock.calls[0][0].distance_unit).toBe(expected)
   })
 })
 
@@ -321,6 +352,52 @@ describe('fetchUserExerciseWeightUnits', () => {
       ], error: null },
     }))
     expect(await fetchUserExerciseWeightUnits([1, 2], 5)).toEqual({ 1: 'lb', 2: 'kg' })
+  })
+})
+
+describe('fetchUserExerciseDistanceUnits', () => {
+  it('mapea exercise_id -> unidad de distancia', async () => {
+    getClient.mockReturnValue(makeClientMock({
+      user_exercise_overrides: { data: [
+        { exercise_id: 1, distance_unit: 'km' },
+        { exercise_id: 7, distance_unit: 'm' },
+      ], error: null },
+    }))
+    expect(await fetchUserExerciseDistanceUnits()).toEqual({ 1: 'km', 7: 'm' })
+  })
+
+  it('devuelve {} cuando no hay filas', async () => {
+    getClient.mockReturnValue(makeClientMock({ user_exercise_overrides: { data: null, error: null } }))
+    expect(await fetchUserExerciseDistanceUnits()).toEqual({})
+  })
+
+  it('lanza si Supabase devuelve error', async () => {
+    getClient.mockReturnValue(makeClientMock({ user_exercise_overrides: { data: null, error: new Error('boom') } }))
+    await expect(fetchUserExerciseDistanceUnits()).rejects.toThrow('boom')
+  })
+})
+
+describe('upsertUserExerciseOverride', () => {
+  function mockOverrides() {
+    const chain = makeQueryMock({ data: { notes: 'x', distance_unit: null }, error: null })
+    getClient.mockReturnValue({ from: vi.fn(() => chain) })
+    return chain
+  }
+
+  it('no toca distance_unit si no viene en los argumentos (guardar solo las notas)', async () => {
+    const chain = mockOverrides()
+    await upsertUserExerciseOverride({ userId: 'u1', exerciseId: 3, notes: 'ojo con la rodilla' })
+    expect(chain.upsert.mock.calls[0][0]).not.toHaveProperty('distance_unit')
+  })
+
+  it('guarda la unidad cuando viene, y null para volver a heredar la del ejercicio', async () => {
+    let chain = mockOverrides()
+    await upsertUserExerciseOverride({ userId: 'u1', exerciseId: 3, notes: '', distanceUnit: 'km' })
+    expect(chain.upsert.mock.calls[0][0].distance_unit).toBe('km')
+
+    chain = mockOverrides()
+    await upsertUserExerciseOverride({ userId: 'u1', exerciseId: 3, notes: '', distanceUnit: null })
+    expect(chain.upsert.mock.calls[0][0].distance_unit).toBeNull()
   })
 })
 

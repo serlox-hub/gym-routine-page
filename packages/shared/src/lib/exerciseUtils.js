@@ -78,6 +78,20 @@ export function resolveWeightUnit(exerciseGymUnit, userPreferences) {
 }
 
 /**
+ * Resolves the distance unit used to display and type this exercise's distance.
+ * Priority: user override for the exercise > exercise catalog unit > 'm'.
+ * There is no gym axis (unlike weight): a treadmill is in km at every gym.
+ * @param {string|null|undefined} overrideUnit - user_exercise_overrides.distance_unit, or null to inherit
+ * @param {{distance_unit?: string}|null|undefined} exercise
+ * @returns {'m'|'km'}
+ */
+export function resolveDistanceUnit(overrideUnit, exercise) {
+  return overrideUnit
+    || exercise?.distance_unit
+    || 'm'
+}
+
+/**
  * Returns the exercise instructions as a displayable string.
  * Handles both legacy TEXT format (user exercises) and new JSONB format (system exercises).
  */

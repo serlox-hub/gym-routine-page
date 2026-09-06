@@ -36,6 +36,8 @@
   "weightUnitLb": "Libras (lb)",
   "timeUnit": "Unidad de tiempo",
   "distanceUnit": "Unidad de distancia",
+  "distanceUnitHelp": "Cómo se muestra y se teclea la distancia. Lo ya guardado no cambia.",
+  "distanceUnitOverride": "Unidad de distancia para este ejercicio",
   "noExercises": "No tienes ejercicios todavía",
   "noExercisesSearch": "No se encontraron ejercicios",
   "notFound": "Ejercicio no encontrado",

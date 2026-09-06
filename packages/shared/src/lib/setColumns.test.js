@@ -48,8 +48,13 @@ describe('getSetColumns', () => {
 
   it('la unidad del tiempo es "min" (no "MM:SS"): dice en qué unidad está, no el formato', () => {
     expect(getSetColumns(['time'])[0].unit).toBe('min')
-    expect(getSetColumns(DISTANCE_PACE)[1].unit).toBe('mm:ss')
     expect(getSetColumns(WEIGHT_REPS, { weightUnit: 'lb' })[0].unit).toBe('lb')
+  })
+
+  it('el ritmo va por kilómetro, aunque la distancia se teclee en metros', () => {
+    expect(getSetColumns(DISTANCE_PACE, { distanceUnit: 'm' })[1].unit).toBe('min/km')
+    expect(getSetColumns(DISTANCE_PACE, { distanceUnit: 'm' })[1].label).toBe('RITMO')
+    expect(getSetColumns(DISTANCE_PACE, { distanceUnit: 'km' })[1].unit).toBe('min/km')
   })
 
   it('marca como decimales solo peso y distancia', () => {
@@ -101,5 +106,28 @@ describe('getSetFieldValues / buildSetFieldsPayload', () => {
   it('vacío → null (borrar el valor)', () => {
     expect(buildSetFieldsPayload({ time: '' }, getSetColumns(['time'])))
       .toEqual({ timeSeconds: null })
+    expect(buildSetFieldsPayload({ distance: '' }, getSetColumns(['distance'], { distanceUnit: 'km' })))
+      .toEqual({ distanceMeters: null })
+  })
+
+  // La distancia se guarda en metros pero se teclea en la unidad de la columna: si el rótulo dice
+  // KM y el input trae metros crudos, editar una serie del historial multiplica el valor por mil.
+  it('la distancia se lee en la unidad de su columna, no en metros crudos', () => {
+    expect(getSetFieldValues(row, getSetColumns(DISTANCE_PACE, { distanceUnit: 'km' })))
+      .toEqual({ distance: 5, pace: 300 })
+    expect(getSetFieldValues(row, getSetColumns(DISTANCE_PACE)))
+      .toEqual({ distance: 5000, pace: 300 })
+  })
+
+  it('la distancia vuelve a metros al guardar, se teclee en km o en m', () => {
+    expect(buildSetFieldsPayload({ distance: '5', pace: 300 }, getSetColumns(DISTANCE_PACE, { distanceUnit: 'km' })))
+      .toEqual({ distanceMeters: 5000, paceSeconds: 300 })
+    expect(buildSetFieldsPayload({ distance: '5000', pace: 300 }, getSetColumns(DISTANCE_PACE)))
+      .toEqual({ distanceMeters: 5000, paceSeconds: 300 })
+  })
+
+  it('ida y vuelta en km no altera lo guardado', () => {
+    const columns = getSetColumns(DISTANCE_PACE, { distanceUnit: 'km' })
+    expect(buildSetFieldsPayload(getSetFieldValues(row, columns), columns).distanceMeters).toBe(5000)
   })
 })

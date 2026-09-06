@@ -119,7 +119,7 @@ describe('exportRoutine', () => {
       notes: null, sort_order: 1, is_warmup: false,
       exercise: { id: 'ex-1', name: 'Cinta', tracked_fields: ['level', 'time'], instructions: null, muscle_group: { name: 'Cardio' } },
     }]
-    const fakeExercises = [{ name: 'Cinta', name_en: 'Treadmill', tracked_fields: ['level', 'time'], instructions: null, muscle_group: { name: 'Cardio' } }]
+    const fakeExercises = [{ name: 'Cinta', name_en: 'Treadmill', tracked_fields: ['level', 'time'], distance_unit: 'km', instructions: null, muscle_group: { name: 'Cardio' } }]
 
     getClient.mockImplementation(() => ({
       from: (table) => {
@@ -140,6 +140,9 @@ describe('exportRoutine', () => {
 
     // Sin tracked_fields en el catálogo el texto degrada a la escala RIR: "@4" en vez de "Muy duro"
     expect(exported.exercises[0]).toMatchObject({ name_es: 'Cinta', tracked_fields: ['level', 'time'] })
+    // La unidad de distancia viaja (v9): sin ella el ejercicio renacería en metros al importar,
+    // y un objetivo de "5km" se teclearía bajo una cabecera "M".
+    expect(exported.exercises[0].distance_unit).toBe('km')
     // El nombre del bloque es la clave del emparejamiento: debe salir de la misma columna
     expect(exported.routine.days[0].blocks[0].exercises[0].exercise_name).toBe('Cinta')
     // El objetivo viaja con SU CAMPO y con el nivel prescrito (esquema v8): sin ellos, un
@@ -449,6 +452,125 @@ describe('importRoutine', () => {
     await importRoutine(json, 'user-1', {})
 
     expect(insertCalls['routine_exercises'][0]).toMatchObject({ target_field: expected, reps: '20min', level: 8 })
+  })
+
+  // La unidad de distancia viaja desde v9. Un JSON anterior no dice nada de ella y el ejercicio
+  // nace en metros, que es lo que la app hacía antes de cablearla (issue #24).
+  it.each([
+    ['v9 respeta la unidad del JSON', 'km', 'km'],
+    ['un JSON sin unidad crea el ejercicio en metros', undefined, 'm'],
+  ])('%s', async (_name, exportedUnit, expected) => {
+    const exerciseInserts = []
+    const json = {
+      version: exportedUnit ? 9 : 8,
+      exercises: [
+        { name_es: 'Cinta de correr', tracked_fields: ['distance', 'time'], distance_unit: exportedUnit, muscle_group_name: 'Cardio' },
+      ],
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [
+              { exercise_name: 'Cinta de correr', series: 1, reps: '5km', target_field: 'distance' },
+            ] },
+          ] },
+        ],
+      },
+    }
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'exercises') {
+          const p = Promise.resolve({ data: [], error: null })
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            then: p.then.bind(p),
+            insert: vi.fn((record) => {
+              exerciseInserts.push(record)
+              return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'ex-run' }, error: null }) }
+            }),
+          }
+        }
+        if (table === 'muscle_groups') {
+          const p = Promise.resolve({ data: [{ id: 'mg-cardio', name_es: 'Cardio' }], error: null })
+          return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return { insert: vi.fn((record) => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) })) }
+        }
+        return { insert: vi.fn(() => Promise.resolve({ data: null, error: null })) }
+      },
+    }))
+
+    await importRoutine(json, 'user-1', {})
+
+    expect(exerciseInserts).toHaveLength(1)
+    expect(exerciseInserts[0].distance_unit).toBe(expected)
+  })
+
+  // Reimportar CON "actualizar ejercicios" sobre un custom ya existente: la unidad solo se pisa si
+  // el JSON la declara. Un export v8 no dice nada de ella, y escribir el default 'm' borraría el
+  // 'km' que el usuario hubiera elegido a mano en ese ejercicio.
+  it.each([
+    ['el JSON v9 la declara y se escribe', 'km', { distance_unit: 'km' }],
+    ['el JSON v8 no la trae y la columna ni se toca', undefined, {}],
+  ])('update de un ejercicio propio: %s', async (_name, exportedUnit, expectedUnitFields) => {
+    const updateCalls = []
+    const customRows = [{ id: 'ex-custom', name_es: 'Cinta de casa', name_en: null }]
+    const json = {
+      version: exportedUnit ? 9 : 8,
+      exercises: [
+        { name_es: 'Cinta de casa', tracked_fields: ['distance', 'time'], distance_unit: exportedUnit, muscle_group_name: 'Cardio', instructions: 'Trota' },
+      ],
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [
+              { exercise_name: 'Cinta de casa', series: 1, reps: '5km', target_field: 'distance' },
+            ] },
+          ] },
+        ],
+      },
+    }
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'exercises') {
+          // Las dos lecturas comparten cadena: la de customs es la que filtra por user_id.
+          let isCustomQuery = false
+          const chain = {
+            select: vi.fn(() => chain),
+            eq: vi.fn((column) => { if (column === 'user_id') isCustomQuery = true; return chain }),
+            is: vi.fn(() => chain),
+            then: (resolve) => resolve({ data: isCustomQuery ? customRows : [], error: null }),
+            update: vi.fn((record) => {
+              updateCalls.push(record)
+              return { eq: vi.fn().mockResolvedValue({ data: null, error: null }) }
+            }),
+            insert: vi.fn(() => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'ex-nuevo' }, error: null }) })),
+          }
+          return chain
+        }
+        if (table === 'muscle_groups') {
+          const p = Promise.resolve({ data: [{ id: 'mg-cardio', name_es: 'Cardio' }], error: null })
+          return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return { insert: vi.fn((record) => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) })) }
+        }
+        return { insert: vi.fn(() => Promise.resolve({ data: null, error: null })) }
+      },
+    }))
+
+    await importRoutine(json, 'user-1', { updateExercises: true })
+
+    // Se actualiza el custom que casó, no se crea uno nuevo
+    expect(updateCalls).toHaveLength(1)
+    expect(updateCalls[0]).toMatchObject({ tracked_fields: ['distance', 'time'], ...expectedUnitFields })
+    expect('distance_unit' in updateCalls[0]).toBe(exportedUnit !== undefined)
   })
 
   // El JSON es entrada NO confiable (la genera una IA o se edita a mano) y los CHECK de las

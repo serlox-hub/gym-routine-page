@@ -29,6 +29,7 @@ export async function fetchSessionExercises(sessionId) {
         instructions,
         gif_key,
         tracked_fields,
+        distance_unit,
         is_system,
         muscle_group:muscle_groups!muscle_group_id (
           id,
@@ -102,7 +103,8 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
         id,
         name:name_es,
         name_en,
-        tracked_fields
+        tracked_fields,
+        distance_unit
       )
     `)
     .single()

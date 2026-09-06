@@ -1,9 +1,10 @@
 import { formatSetValue } from './setUtils.js'
 import { buildPRsByExerciseMap } from './workoutCalculations.js'
-import { getExerciseName } from './exerciseUtils.js'
+import { getExerciseName, resolveDistanceUnit } from './exerciseUtils.js'
+import { metersToDistanceUnit } from './measurementFields.js'
 import { fetchSessionDetail } from '../api/workoutSessionApi.js'
 import { fetchSessionPRs, fetchExerciseBests } from '../api/exerciseStatsApi.js'
-import { fetchUserExerciseWeightUnits } from '../api/exerciseApi.js'
+import { fetchUserExerciseWeightUnits, fetchUserExerciseDistanceUnits } from '../api/exerciseApi.js'
 import { transformSessionDetailData } from './workoutTransforms.js'
 import { maxWeightAtRepsOrAbove } from './sessionStatsCalculation.js'
 import { t, getCurrentLocale } from '../i18n/index.js'
@@ -49,7 +50,7 @@ export function calculateSessionTotalSets(exercises) {
  * Encuentra la mejor serie de un ejercicio para mostrar en el resumen.
  * Retorna el string formateado de la serie con más volumen/reps.
  */
-function getBestSetFormatted(sets, exercise, weightUnit = 'kg') {
+function getBestSetFormatted(sets, exercise, weightUnit = 'kg', distanceUnit = 'm') {
   if (!sets?.length) return ''
 
   let best = sets[0]
@@ -67,7 +68,7 @@ function getBestSetFormatted(sets, exercise, weightUnit = 'kg') {
     }
   }
 
-  return formatSetValue({ ...best, weight_unit: weightUnit })
+  return formatSetValue({ ...best, weight_unit: weightUnit }, { distanceUnit })
 }
 
 /**
@@ -103,7 +104,7 @@ function formatShortDate(dateStr) {
  * @param {Object} completedSets - snapshot del store {key: {sessionExerciseId, weight, repsCompleted, ...}}
  * @param {Array} sessionExercises - del query cache [{id, exercise_id, exercises: {id, name, tracked_fields}, ...}]
  */
-export function buildWorkoutSummaryFromEndSession(session, detectedPRs, completedSets, sessionExercises, { weightUnit = 'kg' } = {}) {
+export function buildWorkoutSummaryFromEndSession(session, detectedPRs, completedSets, sessionExercises, { weightUnit = 'kg', distanceUnitByExerciseId = {} } = {}) {
   const prExerciseIds = new Set((detectedPRs || []).map(pr => pr.exerciseId))
 
   // Agrupar sets por sessionExerciseId
@@ -145,7 +146,7 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
     exercises.push({
       name: getExerciseName(exercise) || t('exercise:title'),
       setsCompleted: sets.length,
-      bestSet: getBestSetFormatted(sets, exercise, weightUnit),
+      bestSet: getBestSetFormatted(sets, exercise, weightUnit, resolveDistanceUnit(distanceUnitByExerciseId[exercise.id], exercise)),
       hasPR: prExerciseIds.has(exercise.id),
     })
   }
@@ -189,7 +190,7 @@ function buildPRDetail({ type, newValue, oldValue, unit, repCount }) {
  *                                 poblar oldValue en cada detail. Si se omite, los oldValue
  *                                 quedan a null.
  */
-export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit = 'kg', weightUnitByExerciseId = {}, previousBests = {} } = {}) {
+export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit = 'kg', weightUnitByExerciseId = {}, distanceUnitByExerciseId = {}, previousBests = {} } = {}) {
   if (!session) return null
 
   const prMap = buildPRsByExerciseMap(sessionPRs)
@@ -198,7 +199,7 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
   const exercises = (session.exercises || []).map(({ exercise, sets }) => ({
     name: getExerciseName(exercise) || t('exercise:title'),
     setsCompleted: sets?.length || 0,
-    bestSet: getBestSetFormatted(sets, exercise, getUnit(exercise?.id)),
+    bestSet: getBestSetFormatted(sets, exercise, getUnit(exercise?.id), resolveDistanceUnit(distanceUnitByExerciseId[exercise?.id], exercise)),
     hasPR: !!prMap[exercise?.id],
   }))
 
@@ -209,6 +210,7 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
     const pr = prMap[exercise?.id]
     if (!pr) continue
     const unit = getUnit(exercise?.id)
+    const distanceUnit = resolveDistanceUnit(distanceUnitByExerciseId[exercise?.id], exercise)
     const prevBests = previousBests[exercise?.id] || {}
     const details = []
 
@@ -228,7 +230,14 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
       details.push(buildPRDetail({ type: 'bestTimeSeconds', newValue: pr.best_time_seconds, oldValue: prevBests.bestTimeSeconds, unit: 's' }))
     }
     if (pr.is_pr_distance && pr.best_distance_meters) {
-      details.push(buildPRDetail({ type: 'bestDistanceMeters', newValue: pr.best_distance_meters, oldValue: prevBests.bestDistanceMeters, unit: 'm' }))
+      // En la unidad del ejercicio, no en metros crudos: esta tarjeta se lee JUNTO a la línea del
+      // ejercicio, que ya dice "5km". La marca y su etiqueta tienen que hablar de la misma escala.
+      details.push(buildPRDetail({
+        type: 'bestDistanceMeters',
+        newValue: metersToDistanceUnit(pr.best_distance_meters, distanceUnit),
+        oldValue: prevBests.bestDistanceMeters == null ? prevBests.bestDistanceMeters : metersToDistanceUnit(prevBests.bestDistanceMeters, distanceUnit),
+        unit: distanceUnit,
+      }))
     }
 
     if (Array.isArray(pr.pr_rep_counts) && pr.best_per_reps) {
@@ -289,14 +298,16 @@ export async function fetchWorkoutSummary(sessionId, { weightUnit = 'kg' } = {})
 
   // Bests históricos hasta justo antes de esta sesión, dentro del mismo gym, para
   // poblar oldValue en cada detail (línea "anterior · X" en las tarjetas de PR).
-  const [weightUnitByExerciseId, previousBests] = await Promise.all([
+  const [weightUnitByExerciseId, distanceUnitByExerciseId, previousBests] = await Promise.all([
     fetchUserExerciseWeightUnits(exerciseIds, gymId),
+    fetchUserExerciseDistanceUnits(),
     fetchExerciseBests(exerciseIds, { beforeDate: session.started_at, gymId }),
   ])
 
   return buildWorkoutSummaryFromSession(session, prs, {
     weightUnit,
     weightUnitByExerciseId,
+    distanceUnitByExerciseId,
     previousBests,
   })
 }

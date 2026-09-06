@@ -13,7 +13,7 @@ import {
   setMeasurementValuesChanged,
   formatSetTargetPlaceholder,
 } from '../lib/setUtils.js'
-import { SetField, getProgressableField, resolveTargetField } from '../lib/measurementFields.js'
+import { SetField, distanceToMeters, getProgressableField, metersToDistanceUnit, resolveTargetField } from '../lib/measurementFields.js'
 import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
 
 /**
@@ -138,6 +138,23 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     const converted = state.completedSets[setKey] ?? state.cachedSetData[setKey]
     if (converted?.weight != null) setWeight(converted.weight)
   }, [weightConversionNonce, setKey])
+
+  // Re-lee la distancia cuando cambia la unidad de DISPLAY. A diferencia del peso, esta unidad no
+  // está disponible en el primer render: sale de `useUserExerciseDistanceUnits`, que resuelve un
+  // tick después, y además el usuario puede cambiar el override con la tarjeta abierta. El input se
+  // siembra una sola vez, así que sin esto la fila pinta metros bajo una cabecera "KM" y, peor, el
+  // commit con debounce reinterpreta ESE número en la unidad nueva y escribe en BD el valor
+  // multiplicado (o dividido) por mil. Se convierte el valor LOCAL en vez de re-sembrar del store
+  // (lo que hace el nonce de peso) para no descartar una edición aún sin commitear.
+  const lastDistanceUnitRef = useRef(distanceUnit)
+  useEffect(() => {
+    const previousUnit = lastDistanceUnitRef.current
+    if (distanceUnit === previousUnit) return
+    lastDistanceUnitRef.current = distanceUnit
+    setDistance(current => (current === '' || current == null
+      ? current
+      : metersToDistanceUnit(distanceToMeters(current, previousUnit), distanceUnit)))
+  }, [distanceUnit])
 
   // Nivel prescrito por la rutina (`routine_exercises.level`): siembra la columna de nivel cuando
   // no hay nada más de donde sacarlo. Espera a que la referencia de la última vez esté resuelta

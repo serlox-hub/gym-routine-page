@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { initI18n } from '../i18n/index.js'
-import { getExerciseName, resolveWeightUnit, getExerciseInstructions, getStructuredInstructions, getMuscleGroupName, getEquipmentName, localizeExercise, localizeExercisesInList, hasExerciseNotes } from './exerciseUtils.js'
+import { getExerciseName, resolveDistanceUnit, resolveWeightUnit, getExerciseInstructions, getStructuredInstructions, getMuscleGroupName, getEquipmentName, localizeExercise, localizeExercisesInList, hasExerciseNotes } from './exerciseUtils.js'
 
 beforeAll(() => { initI18n() })
 
@@ -44,6 +44,24 @@ describe('resolveWeightUnit', () => {
     expect(resolveWeightUnit(null, {})).toBe('kg')
     expect(resolveWeightUnit(null, null)).toBe('kg')
     expect(resolveWeightUnit(undefined, undefined)).toBe('kg')
+  })
+})
+
+describe('resolveDistanceUnit', () => {
+  it('el override del usuario manda sobre la unidad del ejercicio', () => {
+    expect(resolveDistanceUnit('m', { distance_unit: 'km' })).toBe('m')
+    expect(resolveDistanceUnit('km', { distance_unit: 'm' })).toBe('km')
+  })
+
+  it('sin override usa la del ejercicio', () => {
+    expect(resolveDistanceUnit(null, { distance_unit: 'km' })).toBe('km')
+    expect(resolveDistanceUnit(undefined, { distance_unit: 'km' })).toBe('km')
+  })
+
+  it('cae a metros si no hay override ni unidad en el ejercicio', () => {
+    expect(resolveDistanceUnit(null, {})).toBe('m')
+    expect(resolveDistanceUnit(null, null)).toBe('m')
+    expect(resolveDistanceUnit(undefined, undefined)).toBe('m')
   })
 })
 

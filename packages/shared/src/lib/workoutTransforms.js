@@ -246,6 +246,7 @@ export function buildSessionExercisesCache(sessionExercises, blocks) {
         instructions: exercise.instructions || null,
         gif_key: exercise.gif_key ?? null,
         tracked_fields: resolveTrackedFields(exercise),
+        distance_unit: exercise.distance_unit ?? null,
         is_system: exercise.is_system ?? null,
         muscle_group: exercise.muscle_group || null,
       },

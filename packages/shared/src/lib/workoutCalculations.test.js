@@ -158,6 +158,16 @@ describe('workoutCalculations', () => {
       ]
       expect(getBestValueFromSets(sets, ['distance', 'time'])).toEqual({ value: 5000, unit: 'm' })
     })
+
+    // La distancia se guarda en metros: sin convertir, el punto de la gráfica pondría "5000 km".
+    it('convierte la distancia a la unidad recibida, no solo la etiqueta', () => {
+      const sets = [
+        { distance_meters: 3000, time_seconds: 900 },
+        { distance_meters: 5000, time_seconds: 1500 },
+      ]
+      expect(getBestValueFromSets(sets, ['distance', 'time'], { distanceUnit: 'km' }))
+        .toEqual({ value: 5, unit: 'km' })
+    })
   })
 
   describe('getBest1RMFromSets', () => {
@@ -215,6 +225,17 @@ describe('workoutCalculations', () => {
         unit: 'kg',
       })
       expect(result[0].e1rm).toBeGreaterThan(0)
+    })
+
+    it('propaga la unidad de distancia al punto de la gráfica', () => {
+      const sessions = [
+        {
+          date: '2024-01-15T10:00:00Z',
+          sets: [{ distance_meters: 5000, time_seconds: 1200 }],
+        },
+      ]
+      const result = transformSessionsToChartData(sessions, ['distance', 'time'], { distanceUnit: 'km' })
+      expect(result[0]).toMatchObject({ best: 5, unit: 'km' })
     })
   })
 
@@ -670,8 +691,9 @@ describe('getExerciseStatCards', () => {
     expect(values(['level', 'time'])).toEqual(['20:00', '15:00'])
   })
 
-  it('distancia: con la unidad recibida', () => {
-    expect(values(['distance'], { distanceUnit: 'km' })).toEqual(['5000 km', '4000 km'])
+  it('distancia: convertida a la unidad recibida, no solo etiquetada', () => {
+    expect(values(['distance'])).toEqual(['5000 m', '4000 m'])
+    expect(values(['distance'], { distanceUnit: 'km' })).toEqual(['5 km', '4 km'])
   })
 
   it('el tiempo manda sobre la distancia cuando el ejercicio mide los dos', () => {
@@ -688,8 +710,8 @@ describe('getExerciseStatCards', () => {
   })
 
   // Ramas de las combinaciones de un solo campo: antes se quedaban sin ninguna tarjeta.
-  it('el ritmo solo se pinta en mm:ss por unidad de distancia', () => {
-    expect(getExerciseStatCards({ bestPace: 270, avgPace: 300 }, ['pace'], { distanceUnit: 'km' }))
+  it('el ritmo se pinta en mm:ss por kilómetro, sea cual sea la unidad de distancia', () => {
+    expect(getExerciseStatCards({ bestPace: 270, avgPace: 300 }, ['pace'], { distanceUnit: 'm' }))
       .toEqual([
         { label: 'Mejor Ritmo', value: '4:30/km' },
         { label: 'Media Ritmo', value: '5:00/km' },

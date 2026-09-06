@@ -2,12 +2,13 @@ import { t, getCurrentLocale } from '../i18n/index.js'
 
 export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
-  "version": 8,
+  "version": 9,
   "exercises": [
     {
       "name_es": "Exercise name in Spanish",
       "name_en": "Exercise name in English (optional, improves catalog matching)",
       "tracked_fields": ["weight", "reps"],
+      "distance_unit": "m",
       "muscle_group_name": "Pecho",
       "instructions": "Exercise instructions (optional)"
     }
@@ -71,6 +72,7 @@ EXERCISE FIELDS (in "exercises"):
   farmer walk ["weight","distance"], stationary bike ["level","distance","time"],
   treadmill ["distance","time"], rowing machine ["level","calories"],
   running with target pace ["distance","pace"]
+- distance_unit: "m" or "km", the unit its distance is shown and typed in (optional, only for exercises that track "distance"; defaults to "m"). Pick the scale the exercise is actually measured in: a rowing machine in "m" (500, 2000), a treadmill or an outdoor run in "km". It must agree with the unit written in "reps" when the target is distance
 - muscle_group_name (REQUIRED, one of):
   - "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps"
   - "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas"

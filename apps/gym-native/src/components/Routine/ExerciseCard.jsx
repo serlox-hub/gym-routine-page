@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native'
 import { Modal, ReorderModal } from '../ui'
 import { ExerciseHistoryModal } from '../Workout'
 import { colors } from '../../lib/styles'
-import { SetField, formatEffortBadge, formatFieldValue, getExerciseName, resolveTrackedFields } from '@gym/shared'
+import { SetField, formatEffortBadge, formatFieldValue, getExerciseName, resolveTrackedFields, useResolvedDistanceUnit } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 
 export default function ExerciseCard({
@@ -33,6 +33,7 @@ export default function ExerciseCard({
   // Memoizado como en WorkoutExerciseCard: devuelve un array nuevo por render y viaja a los
   // useMemo de ExerciseHistoryModal. `exercise` viene de la caché de query (referencia estable).
   const trackedFields = useMemo(() => resolveTrackedFields(exercise), [exercise])
+  const distanceUnit = useResolvedDistanceUnit(exercise)
 
   const borderStyle = getMuscleGroupBorderStyle(exercise?.muscle_group?.name)
   const rnBorderStyle = {
@@ -92,6 +93,7 @@ export default function ExerciseCard({
           exerciseId={exercise?.id}
           exerciseName={getExerciseName(exercise)}
           trackedFields={trackedFields}
+          distanceUnit={distanceUnit}
           routineDayId={routineDayId}
           onSessionClick={(sessionId, date) => {
             setShowHistory(false)

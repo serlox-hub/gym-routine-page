@@ -26,7 +26,7 @@ import GymSelector from './GymSelector.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -54,6 +54,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const [showGymSelector, setShowGymSelector] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
   const { value: weightUnit } = usePreference('weight_unit')
+  const { data: distanceUnitByExerciseId } = useUserExerciseDistanceUnits()
 
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
@@ -141,7 +142,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           detectedPRs,
           completedSetsSnapshot,
           sessionExercises,
-          { weightUnit },
+          { weightUnit, distanceUnitByExerciseId },
         )
         setNavigateToOnEnd({ to: '/workout/summary', state: { summaryData } })
       }

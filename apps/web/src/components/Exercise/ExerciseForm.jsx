@@ -7,11 +7,13 @@ import { colors } from '../../lib/styles.js'
 import {
   DEFAULT_TRACKED_FIELDS,
   isTrackedFieldsSelectionValid,
+  SetField,
   getMuscleGroupColor,
   getMuscleGroupName,
   normalizeTrackedFields,
 } from '@gym/shared'
 import TrackedFieldsPicker from './TrackedFieldsPicker.jsx'
+import DistanceUnitPicker from './DistanceUnitPicker.jsx'
 
 function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
   const { t } = useTranslation()
@@ -64,6 +66,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
 const DEFAULT_FORM = {
   name: '',
   tracked_fields: DEFAULT_TRACKED_FIELDS,
+  distance_unit: 'm',
   instructions: '',
 }
 
@@ -107,6 +110,7 @@ function ExerciseForm({
   const initialTrackedFieldsKey = initialData?.tracked_fields?.join(',')
   const initialInstructions = initialData?.instructions
   const initialMuscleGroupId = initialData?.muscle_group_id
+  const initialDistanceUnit = initialData?.distance_unit
   useEffect(() => {
     if (initialName === undefined && initialTrackedFieldsKey === undefined && initialInstructions === undefined && initialMuscleGroupId === undefined) {
       return
@@ -114,10 +118,11 @@ function ExerciseForm({
     setForm({
       name: initialName || '',
       tracked_fields: normalizeTrackedFields(initialTrackedFieldsKey?.split(',')),
+      distance_unit: initialDistanceUnit || 'm',
       instructions: initialInstructions || '',
     })
     setSelectedMuscleGroupId(initialMuscleGroupId || null)
-  }, [initialName, initialTrackedFieldsKey, initialInstructions, initialMuscleGroupId])
+  }, [initialName, initialTrackedFieldsKey, initialInstructions, initialMuscleGroupId, initialDistanceUnit])
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -197,6 +202,17 @@ function ExerciseForm({
           required={!minimal}
         />
       </Wrapper>
+
+      {/* Solo tiene sentido si el ejercicio mide distancia: para el resto la columna existe pero
+          no se usa. */}
+      {form.tracked_fields?.includes(SetField.DISTANCE) && (
+        <Wrapper className={compact ? '' : 'p-4'}>
+          <DistanceUnitPicker
+            value={form.distance_unit}
+            onChange={(unit) => handleChange('distance_unit', unit)}
+          />
+        </Wrapper>
+      )}
 
 
       <Wrapper className={compact ? '' : 'p-4'}>

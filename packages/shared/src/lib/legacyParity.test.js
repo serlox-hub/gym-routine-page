@@ -136,7 +136,7 @@ const LEGACY = [
     targetLabel: 'Distancia',
     defaultTarget: '5km',
     set: { distanceMeters: 5000, paceSeconds: 300 },
-    formatted: '5000m @ 5:00/m',
+    formatted: '5000m @ 5:00/km',
   },
 ]
 

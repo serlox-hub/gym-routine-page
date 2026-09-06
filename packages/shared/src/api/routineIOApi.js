@@ -4,8 +4,8 @@ import { MAX_PRESCRIBED_LEVEL, isTargetField, normalizeTrackedFields, resolveTar
 import { t } from '../i18n/index.js'
 import { normalizeExerciseName, buildExerciseIndex, resolveExerciseId } from '../lib/exerciseMatch.js'
 
-/** Versión del esquema de export/import JSON. v8 añade `target_field` (de qué campo habla el objetivo) y `level` (nivel prescrito) por ejercicio del día; v7 sustituyó `measurement_type` por `tracked_fields`. */
-export const ROUTINE_EXPORT_VERSION = 8
+/** Versión del esquema de export/import JSON. v9 añade `distance_unit` por ejercicio (en qué unidad se lee y se teclea su distancia); v8 añadió `target_field` (de qué campo habla el objetivo) y `level` (nivel prescrito) por ejercicio del día; v7 sustituyó `measurement_type` por `tracked_fields`. */
+export const ROUTINE_EXPORT_VERSION = 9
 
 // Índice grupo-muscular por nombre normalizado (name_en + name_es) → id.
 // Solo se usa al CREAR ejercicios custom (cuando el ejercicio no está en el catálogo).
@@ -154,6 +154,7 @@ export async function exportRoutine(routineId) {
       name:name_es,
       name_en,
       tracked_fields,
+      distance_unit,
       instructions,
       muscle_group:muscle_groups!muscle_group_id(name:name_es)
     `)
@@ -168,6 +169,7 @@ export async function exportRoutine(routineId) {
       name_es: ex.name,
       name_en: ex.name_en,
       tracked_fields: ex.tracked_fields,
+      distance_unit: ex.distance_unit,
       instructions: ex.instructions,
       muscle_group_name: ex.muscle_group?.name,
     })),
@@ -192,6 +194,16 @@ function importedTrackedFields(exportedExercise) {
   return exportedExercise.tracked_fields
     ? normalizeTrackedFields(exportedExercise.tracked_fields)
     : trackedFieldsFromLegacyType(exportedExercise.measurement_type)
+}
+
+/**
+ * Unidad en la que se lee y se teclea la distancia de un ejercicio del JSON importado (v9+).
+ * Los JSON anteriores no la traen: metros, que es lo que la app hacía antes de cablearla.
+ * @param {{distance_unit?: string}} exportedExercise
+ * @returns {'m'|'km'}
+ */
+function importedDistanceUnit(exportedExercise) {
+  return exportedExercise.distance_unit === 'km' ? 'km' : 'm'
 }
 
 /**
@@ -294,6 +306,9 @@ export async function importRoutine(jsonData, userId, options = {}) {
             .from('exercises')
             .update({
               tracked_fields: importedTrackedFields(ex),
+              // Solo si el JSON la DECLARA (v9+): un export antiguo no dice nada de la unidad, y
+              // el default 'm' pisaría el 'km' que el usuario ya tuviera puesto.
+              ...(ex.distance_unit ? { distance_unit: importedDistanceUnit(ex) } : {}),
               instructions: ex.instructions,
               muscle_group_id: resolveMuscleGroupId(ex.muscle_group_name, await getMuscleGroupIndex()),
             })
@@ -305,6 +320,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
           .insert({
             name_es: exName,
             tracked_fields: importedTrackedFields(ex),
+            distance_unit: importedDistanceUnit(ex),
             instructions: ex.instructions,
             muscle_group_id: resolveMuscleGroupId(ex.muscle_group_name, await getMuscleGroupIndex()),
             user_id: userId,

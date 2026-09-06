@@ -58,6 +58,7 @@ export function ExerciseFormPanel({ exerciseId = null, isSystem, initialName = '
     ? {
       name: exercise.name,
       tracked_fields: exercise.tracked_fields,
+      distance_unit: exercise.distance_unit,
       instructions: getExerciseInstructions(exercise),
       muscle_group_id: exercise.muscle_group_id,
     }
