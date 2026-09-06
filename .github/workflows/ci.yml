@@ -10,6 +10,16 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # `supabase/config.toml` interpola el id y los puertos del stack (issue #63) y un `env()` de
+    # puerto sin definir NO cae a un default: revienta con ProjectConfigParseError. En local salen
+    # del `.env` de apps/web; aquí no hay ninguno, así que se declaran para todo el job — los
+    # necesitan tanto `supabase start` como el `db reset` con que empieza `test:e2e`.
+    env:
+      GYM_SUPABASE_PROJECT_ID: gym-routine-page
+      GYM_SUPABASE_API_PORT: 54321
+      GYM_SUPABASE_DB_PORT: 54322
+      GYM_SUPABASE_STUDIO_PORT: 54323
+      GYM_SUPABASE_INBUCKET_PORT: 54324
     steps:
       - uses: actions/checkout@v4
 

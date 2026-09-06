@@ -22,3 +22,21 @@ if (!/^https?:\/\/(127\.0\.0\.1|localhost)([:/]|$)/.test(url)) {
   )
   process.exit(1)
 }
+
+// Host local no basta desde que cada worktree levanta SU stack (issue #63): el `db reset` de abajo
+// reconstruye el stack que dice `config.toml` (GYM_SUPABASE_API_PORT), pero Playwright escribe
+// contra el que dice esta URL. Si no coinciden, reseteas tu BD vacía y ensucias la de OTRO
+// worktree, sin un solo error. Solo se comprueba si la variable está definida: sin ella no hay
+// stack propio que proteger.
+const apiPort = process.env.GYM_SUPABASE_API_PORT
+const urlPort = url.match(/^https?:\/\/[^:/]+:(\d+)/)?.[1]
+
+if (apiPort && urlPort && urlPort !== apiPort) {
+  console.error(
+    `\nVITE_SUPABASE_URL apunta al puerto ${urlPort}, pero el stack de este worktree es el ${apiPort}\n` +
+    `(GYM_SUPABASE_API_PORT). Los e2e resetearían el ${apiPort} y escribirían en el ${urlPort}, que es\n` +
+    'la BD de otro worktree. Pon el puerto de tu stack en VITE_SUPABASE_URL, en el mismo .env.local\n' +
+    'donde tienes las GYM_SUPABASE_*.\n'
+  )
+  process.exit(1)
+}

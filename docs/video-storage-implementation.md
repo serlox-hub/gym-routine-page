@@ -236,7 +236,7 @@ DOCKER_HOST="unix:///Users/sergio/.colima/default/docker.sock" npx supabase star
 DOCKER_HOST="unix:///Users/sergio/.colima/default/docker.sock" npx supabase functions serve --env-file supabase/functions/.env.local
 
 # Dar permisos a usuario local
-docker exec -i supabase_db_gym-routine-page psql -U postgres -d postgres -c \
+docker exec -i "supabase_db_${GYM_SUPABASE_PROJECT_ID}" psql -U postgres -d postgres -c \
   "INSERT INTO user_settings (user_id, key, value) SELECT id, 'can_upload_video', 'true' FROM auth.users WHERE email = 'tu@email.com';"
 ```
 
