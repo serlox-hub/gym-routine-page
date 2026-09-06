@@ -2,12 +2,21 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "gym-routine-page"
+# El id y los puertos salen de variables para que cada worktree levante SU stack: el id da nombre a
+# los contenedores, así que con un valor fijo los tres lanes comparten BD y un `db reset` de uno
+# (los e2e y `db:schema` empiezan por ahí) borra el trabajo de otro. Ver issue #63.
+# ⚠️ Un `env()` de puerto SIN definir NO cae a un default: revienta con ProjectConfigParseError y la
+# CLI no arranca. Los valores viven en `.env`/`.env.local` de apps/web (la CLI los lee) — copia
+# `.env.example` antes de tu primer `supabase start`. Solo se parametrizan los puertos de servicios
+# habilitados; pooler y analytics están en `enabled = false` y no bindean nada. `shadow_port` (abajo)
+# se queda literal a propósito: solo se levanta durante `db diff`, que no usa ningún script de este
+# repo, y parametrizarlo sería una quinta variable obligatoria.
+project_id = "env(GYM_SUPABASE_PROJECT_ID)"
 
 [api]
 enabled = true
 # Port to use for the API URL.
-port = 54321
+port = "env(GYM_SUPABASE_API_PORT)"
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
 schemas = ["public", "graphql_public"]
@@ -26,7 +35,7 @@ enabled = false
 
 [db]
 # Port to use for the local database URL.
-port = 54322
+port = "env(GYM_SUPABASE_DB_PORT)"
 # Port used by db diff command to initialize the shadow database.
 shadow_port = 54320
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
@@ -82,7 +91,7 @@ enabled = true
 [studio]
 enabled = true
 # Port to use for Supabase Studio.
-port = 54323
+port = "env(GYM_SUPABASE_STUDIO_PORT)"
 # External URL of the API server that frontend connects to.
 api_url = "http://127.0.0.1"
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
@@ -93,7 +102,7 @@ openai_api_key = "env(OPENAI_API_KEY)"
 [inbucket]
 enabled = true
 # Port to use for the email testing server web interface.
-port = 54324
+port = "env(GYM_SUPABASE_INBUCKET_PORT)"
 # Uncomment to expose additional ports for testing user applications that send emails.
 # smtp_port = 54325
 # pop3_port = 54326

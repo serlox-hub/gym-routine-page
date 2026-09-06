@@ -7,8 +7,7 @@
 // NO hace `db reset`. En CI la comparación significa algo porque el paso anterior acaba de crear la
 // BD desde las migraciones de la rama; aquí no hay esa precondición, así que se COMPRUEBA y, si no
 // se cumple, se sale sin comparar. Resetear sería lo único equivalente a CI, pero mete ~30s en cada
-// gate y el stack local es UNO SOLO para todos los worktrees (`project_id` fijo en config.toml), o
-// sea que borraría la BD con la que otra lane está trabajando.
+// gate que toque BD.
 //
 // Hueco conocido que `migration list` NO detecta: una migración EDITADA después de aplicarse (misma
 // versión, distinto contenido). Iterando pasa a menudo y solo un `db reset` lo cubre. CI sí lo caza.
@@ -44,13 +43,21 @@ const skip = (reason) => {
 }
 
 // `supabase status` sale distinto de 0 si el stack no está arriba. `db:dump` es `--local`.
-if (run('npx', ['supabase', 'status'], { cwd: WEB }).status !== 0) {
-  skip('el stack de Supabase local no está levantado, así que no hay BD contra la que comparar.\n' +
-       'Para comprobarlo aquí: `npx supabase start` desde apps/web.')
+const status = run('npx', ['supabase', 'status'], { cwd: WEB })
+if (status.status !== 0) {
+  // Sin las GYM_SUPABASE_* el config no interpola y la CLI falla por parseo, no porque el stack
+  // esté parado: decir "no está levantado" mandaría a levantar uno que ya está corriendo.
+  const salida = `${status.stdout ?? ''}${status.stderr ?? ''}`
+  skip(salida.includes('ProjectConfigParseError') || salida.includes('env_GYM_SUPABASE')
+    ? 'faltan las variables `GYM_SUPABASE_*` que interpola `supabase/config.toml` (issue #63).\n' +
+      'Cópialas de `apps/web/.env.example` a tu `.env` o `.env.local` de apps/web.'
+    : 'el stack de Supabase local no está levantado, así que no hay BD contra la que comparar.\n' +
+      'Para comprobarlo aquí: `npx supabase start` desde apps/web.')
 }
 
 // La comparación solo significa algo si la BD refleja EXACTAMENTE las migraciones del árbol.
-// `local` vacío = migración aplicada que no está en este árbol (otra lane, stack compartido).
+// `local` vacío = migración aplicada que no está en este árbol: rama anterior de ESTE worktree, o
+// un worktree al que no le diste su propio GYM_SUPABASE_PROJECT_ID y sigue con el de por defecto.
 // `remote` vacío = migración del árbol sin aplicar (la que acabas de escribir: el caso que importa).
 const listed = run('npx', ['supabase', 'migration', 'list', '--local', '--output-format', 'json'], { cwd: WEB })
 const json = listed.stdout.split('\n').find((line) => line.startsWith('{"migrations"'))
@@ -65,7 +72,7 @@ if (desincronizadas.length > 0) {
   skip(
     'la BD local no está al día con las migraciones, así que compararla no diría nada.' +
     (sinAplicar.length ? `\n  Sin aplicar (están en el árbol): ${sinAplicar.join(', ')}` : '') +
-    (ajenas.length ? `\n  Aplicadas pero ausentes del árbol: ${ajenas.join(', ')} (¿otra lane? el stack es compartido)` : '') +
+    (ajenas.length ? `\n  Aplicadas pero ausentes del árbol: ${ajenas.join(', ')} (¿rama anterior de este worktree, o un worktree sin su propio GYM_SUPABASE_PROJECT_ID?)` : '') +
     '\n  Para comprobarlo aquí: `npm run db:schema` desde apps/web (⚠️ hace `db reset`).'
   )
 }
