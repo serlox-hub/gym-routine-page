@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
+import DevAutoLogin from '@/components/Auth/DevAutoLogin'
 import { ActiveSessionBanner, LoadingSpinner } from './components/ui/index.js'
 import Toast from './components/ui/Toast.jsx'
 import BottomTabBar from './components/ui/BottomTabBar.jsx'
@@ -91,6 +92,7 @@ function App() {
   return (
     <BrowserRouter>
       <PasswordRecoveryRedirect>
+        {import.meta.env.DEV && <DevAutoLogin />}
         <LanguageSync />
         <SessionRestorer />
         <div className="min-h-screen bg-surface text-primary pb-16">
