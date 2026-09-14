@@ -26,6 +26,8 @@ const ghostStyle = { ...numericInputStyle, backgroundColor: 'transparent', borde
 // `suggested`: el valor todavía es la sugerencia sembrada de la última sesión, no un dato del
 // usuario (ver isSuggestedValue). Se atenúa el TEXTO, no la caja: la fila sigue siendo editable
 // y completable de un toque, solo deja de mentir sobre de dónde sale el número (issue #39).
+// Y al enfocar se selecciona entero: gris se lee como placeholder, así que lo tecleado lo
+// sustituye en vez de añadirse al final ("80" + "85" daba 8085, issue #67).
 function useFocusStyle(active = false, boxed = false, suggested = false) {
   const [focused, setFocused] = useState(false)
   const base = active
@@ -50,6 +52,7 @@ function NumberInput({ value, onChange, onCommit, disabled, inputMode = 'numeric
       onChangeText={handleChange}
       onFocus={onFocus}
       onBlur={(e) => { onBlur(e); onCommit?.() }}
+      selectTextOnFocus={suggested}
       editable={!disabled}
       keyboardType={inputMode === 'decimal' ? 'decimal-pad' : 'number-pad'}
       placeholder={placeholder}
@@ -80,6 +83,7 @@ function DurationInput({ seconds, onChange, onCommit, disabled, active = false, 
       onChangeText={setFromInput}
       onFocus={onFocus}
       onBlur={handleBlur}
+      selectTextOnFocus={suggested}
       editable={!disabled}
       keyboardType="number-pad"
       placeholder={placeholder}
