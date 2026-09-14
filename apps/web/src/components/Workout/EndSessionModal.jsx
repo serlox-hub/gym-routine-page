@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, AlertTriangle } from 'lucide-react'
-import { Button } from '../ui/index.js'
+import { Button, Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 
@@ -9,8 +9,6 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending, setsPending = 
   const { t } = useTranslation()
   const { value: showSessionNotes } = usePreference('show_session_notes')
   const [notes, setNotes] = useState('')
-
-  if (!isOpen) return null
 
   const handleConfirm = () => {
     onConfirm({
@@ -26,79 +24,66 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending, setsPending = 
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ backgroundColor: colors.overlay }}
-      onClick={handleClose}
-    >
-      <div
-        className="w-full max-w-lg rounded-t-2xl p-5 pb-8 animate-slide-up"
-        style={{
-          backgroundColor: colors.bgSecondary,
-          border: `1px solid ${colors.border}`,
-          borderBottom: 'none',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
-            {t('workout:session.end')}
-          </h3>
-          <button
-            onClick={handleClose}
-            disabled={isPending}
-            className="p-1.5 rounded hover:opacity-80 disabled:opacity-50"
-            style={{ backgroundColor: colors.bgTertiary }}
-          >
-            <X size={18} style={{ color: colors.textSecondary }} />
-          </button>
+    <Modal isOpen={isOpen} onClose={handleClose} position="bottom" maxWidth="max-w-lg"
+      className="p-5 pb-8 animate-slide-up" noBorder>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
+          {t('workout:session.end')}
+        </h3>
+        <button
+          onClick={handleClose}
+          disabled={isPending}
+          className="p-1.5 rounded hover:opacity-80 disabled:opacity-50"
+          style={{ backgroundColor: colors.bgTertiary }}
+        >
+          <X size={18} style={{ color: colors.textSecondary }} />
+        </button>
+      </div>
+
+      {setsPending > 0 && (
+        <div
+          className="flex items-start gap-2.5 mb-5 p-3 rounded-lg"
+          style={{ backgroundColor: colors.warningBg, border: `1px solid ${colors.warning}` }}
+        >
+          <AlertTriangle size={18} style={{ color: colors.warning, flexShrink: 0, marginTop: 1 }} />
+          <p className="text-sm" style={{ color: colors.textSecondary }}>
+            {t('workout:session.pendingSetsWarning', { count: setsPending })}
+          </p>
         </div>
+      )}
 
-        {setsPending > 0 && (
-          <div
-            className="flex items-start gap-2.5 mb-5 p-3 rounded-lg"
-            style={{ backgroundColor: colors.warningBg, border: `1px solid ${colors.warning}` }}
-          >
-            <AlertTriangle size={18} style={{ color: colors.warning, flexShrink: 0, marginTop: 1 }} />
-            <p className="text-sm" style={{ color: colors.textSecondary }}>
-              {t('workout:session.pendingSetsWarning', { count: setsPending })}
-            </p>
-          </div>
-        )}
-
-        {showSessionNotes && (
-          <div className="mb-5">
-            <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
-              {t('common:labels.notes')} ({t('common:labels.optional')})
-            </label>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder={t('workout:session.notesPlaceholder')}
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg text-sm resize-none"
-              style={{
-                backgroundColor: colors.bgTertiary,
-                border: `1px solid ${colors.border}`,
-                color: colors.textPrimary,
-              }}
-            />
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={handleClose} disabled={isPending}>
-            {t('common:buttons.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            className="flex-1"
-            onClick={handleConfirm}
-            disabled={isPending}
-          >
-            {isPending ? t('common:buttons.loading') : t('common:buttons.done')}
-          </Button>
+      {showSessionNotes && (
+        <div className="mb-5">
+          <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+            {t('common:labels.notes')} ({t('common:labels.optional')})
+          </label>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder={t('workout:session.notesPlaceholder')}
+            rows={3}
+            className="w-full px-3 py-2 rounded-lg text-sm resize-none"
+            style={{
+              backgroundColor: colors.bgTertiary,
+              border: `1px solid ${colors.border}`,
+              color: colors.textPrimary,
+            }}
+          />
         </div>
+      )}
+
+      <div className="flex gap-3">
+        <Button variant="secondary" className="flex-1" onClick={handleClose} disabled={isPending}>
+          {t('common:buttons.cancel')}
+        </Button>
+        <Button
+          variant="primary"
+          className="flex-1"
+          onClick={handleConfirm}
+          disabled={isPending}
+        >
+          {isPending ? t('common:buttons.loading') : t('common:buttons.done')}
+        </Button>
       </div>
 
       <style>{`
@@ -116,7 +101,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending, setsPending = 
           animation: slide-up 0.25s ease-out;
         }
       `}</style>
-    </div>
+    </Modal>
   )
 }
 

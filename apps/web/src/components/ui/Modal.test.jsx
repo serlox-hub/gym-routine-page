@@ -180,4 +180,31 @@ describe('Modal', () => {
       expect(content.style.border).toBe('')
     })
   })
+
+  describe('bloqueo de scroll del body', () => {
+    it('bloquea el scroll del body mientras el modal está abierto', () => {
+      render(
+        <Modal isOpen={true} onClose={() => {}}>
+          <div>Contenido</div>
+        </Modal>
+      )
+      expect(document.body.style.position).toBe('fixed')
+    })
+
+    it('restaura el scroll del body al cerrar el modal', () => {
+      const { rerender } = render(
+        <Modal isOpen={true} onClose={() => {}}>
+          <div>Contenido</div>
+        </Modal>
+      )
+      expect(document.body.style.position).toBe('fixed')
+
+      rerender(
+        <Modal isOpen={false} onClose={() => {}}>
+          <div>Contenido</div>
+        </Modal>
+      )
+      expect(document.body.style.position).toBe('')
+    })
+  })
 })
