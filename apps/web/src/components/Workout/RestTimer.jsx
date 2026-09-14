@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { ChevronDown, Maximize2, Timer } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
+import { lockBodyScroll, unlockBodyScroll } from '../../lib/bodyScrollLock.js'
 import { useRestTimer } from '../../hooks/useWorkout.js'
 import { useDraggable } from '../../hooks/useDrag.js'
 import { formatSecondsToMMSS } from '@gym/shared'
@@ -17,6 +19,15 @@ function RestTimer() {
   const minimized = useWorkoutStore(state => state.restTimerMinimized)
   const setMinimized = useWorkoutStore(state => state.setRestTimerMinimized)
   const { dragProps, dragStyle, wasDragged } = useDraggable()
+
+  // Vista a pantalla completa (no la píldora minimizada): es un overlay 'fixed inset-0' fuera
+  // de <Modal>, así que bloquea el body igual que Modal.jsx (ver lib/bodyScrollLock.js).
+  const isFullScreen = isActive && !minimized
+  useEffect(() => {
+    if (!isFullScreen) return
+    lockBodyScroll()
+    return unlockBodyScroll
+  }, [isFullScreen])
 
   if (!isActive) return null
 

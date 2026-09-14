@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { colors, modalOverlayStyle, modalContentStyle } from '../../lib/styles.js'
+import { lockBodyScroll, unlockBodyScroll } from '../../lib/bodyScrollLock.js'
 
 /**
  * Base modal component that handles overlay, positioning and close behavior
@@ -20,6 +22,14 @@ function Modal({
   className = '',
   noBorder = false,
 }) {
+  // Ver lib/bodyScrollLock.js: bloquea el body mientras el modal está abierto (con contador,
+  // porque los modales se apilan — p. ej. ExerciseHistoryModal → GymSelector).
+  useEffect(() => {
+    if (!isOpen) return
+    lockBodyScroll()
+    return unlockBodyScroll
+  }, [isOpen])
+
   if (!isOpen) return null
 
   const isBottom = position === 'bottom'
