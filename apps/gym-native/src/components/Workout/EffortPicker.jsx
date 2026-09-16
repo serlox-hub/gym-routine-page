@@ -1,6 +1,6 @@
 import { Text, Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { StickyNote, Video } from 'lucide-react-native'
+import { StickyNote, Video, SlidersHorizontal } from 'lucide-react-native'
 import { colors } from '../../lib/styles'
 import { getEffortLabel, formatEffortBadge, effortRendersAsWord } from '@gym/shared'
 
@@ -12,7 +12,7 @@ import { getEffortLabel, formatEffortBadge, effortRendersAsWord } from '@gym/sha
  * todo en la hoja — ver DECISIONS). Paridad con web. La celda del número sigue inerte.
  */
 export default function EffortPicker({
-  value, trackedFields, note, hasVideo = false, active = false, showEffortScale = true, onOpenDetails,
+  value, trackedFields, note, hasVideo = false, active = false, showEffortScale = true, showSetNotes = true, onOpenDetails,
 }) {
   const { t } = useTranslation()
 
@@ -26,8 +26,14 @@ export default function EffortPicker({
   // Siempre la etiqueta ("@2" en RIR, "Duro" en RPE): el número de RPE no dice nada al usuario.
   const compactValue = formatEffortBadge(value, trackedFields)
   // Vacío = guion, nunca la palabra "Esfuerzo": la columna mide 42-62px y la etiqueta ya está en
-  // la cabecera «NOTAS». El nombre completo va en el accessibilityLabel.
-  const chipLabel = showEffortScale ? getEffortLabel(trackedFields) : t('workout:set.notes')
+  // la cabecera «NOTAS». El nombre completo va en el accessibilityLabel. Con RIR y notas ambos
+  // apagados (solo queda vídeo y/o tipo de serie), "Notas" prometería una sección que la hoja no
+  // tiene — cae a una etiqueta genérica (issue de revisión rc-6).
+  const chipLabel = showEffortScale
+    ? getEffortLabel(trackedFields)
+    : showSetNotes
+      ? t('workout:set.notes')
+      : t('workout:set.detailsGeneric')
   // La escala RPE pinta palabras ("Moderado"); a 10px caben en su columna (ver COL_RIR_WORD).
   const isWordValue = primary === 'rir' && effortRendersAsWord(trackedFields, showEffortScale)
 
@@ -56,7 +62,9 @@ export default function EffortPicker({
       {primary === 'video' && <Video size={13} color={colors.textSecondary} />}
       {primary === 'empty' && (showEffortScale
         ? <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>–</Text>
-        : <StickyNote size={13} color={colors.textMuted} />)}
+        : showSetNotes
+          ? <StickyNote size={13} color={colors.textMuted} />
+          : <SlidersHorizontal size={13} color={colors.textMuted} />)}
       {/* Bolita «hay algo más» (nota/vídeo además del glifo principal). */}
       {hasMore && (
         <View style={{ position: 'absolute', top: -2, right: -2, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textLight }} />

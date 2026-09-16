@@ -59,8 +59,6 @@
     "videoOptional": "Opcional",
     "complete": "Completar serie",
     "unmark": "Desmarcar serie",
-    "markDropset": "Marcar como dropset",
-    "removeDropset": "Quitar dropset",
     "edit": "Editar serie",
     "delete": "Eliminar serie",
     "weight": "Peso",
@@ -87,6 +85,7 @@
     "weightConverter": "Conversor de peso",
     "setNumber": "Serie {{number}}",
     "detailsTitle": "SERIE {{number}} · DETALLES",
+    "detailsGeneric": "Detalles",
     "video": "Vídeo",
     "type": {
       "label": "Tipo de serie",

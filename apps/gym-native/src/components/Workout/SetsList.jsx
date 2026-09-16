@@ -87,9 +87,13 @@ function SetsList({
           {columns.map(col => (
             <Text key={col.field} numberOfLines={1} style={[HEADER_STYLE, { flex: 1 }]}>{col.label}</Text>
           ))}
+          {/* «Notas» es el rótulo por defecto (concesión ya aceptada: la columna es "anotación",
+              el RIR es su contenido más común). Si esa preferencia también está apagada (solo
+              queda vídeo y/o tipo de serie), "Notas" prometería una sección que la hoja no tiene
+              — cae a un rótulo genérico (issue de revisión rc-6). */}
           {annotationColumn && (
             <Text numberOfLines={1} style={[HEADER_STYLE, { width: effortWidth }]}>
-              {t('workout:set.notes').toUpperCase()}
+              {t((preferences?.show_set_notes ?? true) ? 'workout:set.notes' : 'workout:set.detailsGeneric').toUpperCase()}
             </Text>
           )}
           <View style={{ width: COL_CHECK }} />

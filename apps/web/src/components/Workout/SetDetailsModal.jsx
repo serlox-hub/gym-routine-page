@@ -49,10 +49,10 @@ function SetDetailsModal({
   showEffortScale = true,
   setType = 'normal',
   onSetTypeChange,
-  showSetType = true,
 }) {
   const { t } = useTranslation()
   const canUploadVideo = useCanUploadVideo()
+  const { value: showSetType } = usePreference('show_set_type')
   const { value: showSetNotes } = usePreference('show_set_notes')
   const { value: showVideoUpload } = usePreference('show_video_upload')
   // El vídeo se puede elegir aunque la serie aún no esté completada (issue #31): el archivo solo
@@ -69,15 +69,21 @@ function SetDetailsModal({
   const [videoError, setVideoError] = useState(null)
   const [hasChanges, setHasChanges] = useState(false)
   const fileInputRef = useRef(null)
+  const wasOpenRef = useRef(false)
 
+  // Sembrar SOLO en la transición cerrado→abierto, nunca mientras sigue abierta: initialVideoUrl
+  // cambia en vivo cuando el padre sube/quita un vídeo (onSelectVideo/onRemoveVideo persisten al
+  // instante y su prop se refresca tras el refetch) — sin este guard, ese cambio de prop reejecuta
+  // el efecto con la hoja abierta y pisa la nota que el usuario está escribiendo en ese momento.
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpenRef.current) {
       setNote(initialNote ?? '')
       setVideoUrl(initialVideoUrl ?? null)
       setVideoFile(null)
       setVideoError(null)
       setHasChanges(false)
     }
+    wasOpenRef.current = isOpen
   }, [isOpen, initialNote, initialVideoUrl])
 
   const handleNoteChange = (e) => {

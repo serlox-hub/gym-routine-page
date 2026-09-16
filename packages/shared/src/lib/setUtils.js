@@ -347,15 +347,19 @@ export function getSetsForExercise(completedSets, routineExerciseId) {
 
 /**
  * ¿Mostrar la columna «Notas» (esfuerzo/anotación) en la lista de series durante la sesión?
- * Presente si hay algo que anotar: RIR, notas o vídeo activados en preferencias. Fuente ÚNICA
- * para SetRow y SetsList (web+native) → cabecera y filas nunca se desincronizan. El gating fino
- * del vídeo (plan/canUploadVideo) vive en la hoja; aquí solo cuenta la preferencia. Los defaults
- * son `true` (columna visible salvo que el usuario apague las tres). Ver DECISIONS (SUPERSEDE #85).
- * @param {{show_rir_input?: boolean, show_set_notes?: boolean, show_video_upload?: boolean}} [preferences]
+ * Presente si hay algo que anotar: RIR, notas, vídeo o tipo de serie (dropset) activados en
+ * preferencias. Fuente ÚNICA para SetRow y SetsList (web+native) → cabecera y filas nunca se
+ * desincronizan. El gating fino del vídeo (plan/canUploadVideo) vive en la hoja; aquí solo cuenta
+ * la preferencia. Los defaults son `true` (columna visible salvo que el usuario apague las
+ * cuatro). Ver DECISIONS (SUPERSEDE #85 y la entrada de `show_set_type`): con las cuatro off la
+ * hoja de detalles queda sin ninguna sección, así que YA NO hace falta un respaldo en la celda
+ * SET — abrirla en ese caso no mostraría nada.
+ * @param {{show_rir_input?: boolean, show_set_notes?: boolean, show_video_upload?: boolean, show_set_type?: boolean}} [preferences]
  * @returns {boolean}
  */
 export function shouldShowAnnotationColumn(preferences) {
   return (preferences?.show_rir_input ?? true) ||
     (preferences?.show_set_notes ?? true) ||
-    (preferences?.show_video_upload ?? true)
+    (preferences?.show_video_upload ?? true) ||
+    (preferences?.show_set_type ?? true)
 }

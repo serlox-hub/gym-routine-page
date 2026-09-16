@@ -1,5 +1,6 @@
 import { useState, memo } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { CheckCircle2, AlertCircle, Trophy } from 'lucide-react-native'
 import { useIsPRSet } from './PRContext'
 import SetDetailsModal from './SetDetailsModal'
@@ -9,7 +10,6 @@ import SetRowMeta from './SetRowMeta'
 import {
   DEFAULT_TRACKED_FIELDS,
   buildCompletedSetData,
-  t,
   useSetInputs,
   useSetVideoUpload,
   shouldSuggestProgression,
@@ -28,11 +28,13 @@ import { LoadingSpinner } from '../ui'
 // `getSetColumns(trackedFields)` y su unidad va en la CABECERA (ver SetsList), no dentro de la
 // fila. Es lo que permite que la fila lleve solo inputs flexibles y no se salga de la card.
 // Ver docs/DECISIONS.md.
-// La celda SET (número / «D») es SIEMPRE inerte: la entrada a la anotación (RIR + nota + vídeo)
-// es el chip de la columna «Notas» (ver EffortPicker). La columna existe si hay algo que anotar
-// (RIR, notas o vídeo; ver shouldShowAnnotationColumn). La referencia de la última sesión NO es
-// columna: vive en la subfila SetRowMeta junto al aviso de progresión y al timer, siempre en el
-// mismo sitio (antes ocupaba 46px fijos, que con 3 columnas de valor dejaban los inputs a ~26px).
+// La celda SET (número / «D») es SIEMPRE inerte: la entrada a la hoja de detalles es el chip de
+// la columna «Notas» (ver EffortPicker). La columna existe si hay algo que anotar (RIR, notas,
+// vídeo o tipo de serie; ver shouldShowAnnotationColumn); se colapsa solo con las cuatro prefs
+// off — y en ese caso la hoja no tendría ninguna sección que mostrar, así que no hace falta
+// respaldo. Ver docs/DECISIONS.md. La referencia de la última sesión NO es columna: vive en
+// la subfila SetRowMeta junto al aviso de progresión y al timer, siempre en el mismo sitio (antes
+// ocupaba 46px fijos, que con 3 columnas de valor dejaban los inputs a ~26px).
 // Fuente única de anchos (SetsList importa estas constantes para su cabecera → sin desincronizar).
 // Afinados para móvil estrecho (360-390px): las fijas comen el hueco de los valores.
 export const COL_SET = 32
@@ -75,6 +77,7 @@ function SetRow({
   onComplete,
   onUncomplete,
 }) {
+  const { t } = useTranslation()
   const isPR = useIsPRSet(sessionExerciseId, setNumber)
 
   // Estado + persistencia de inputs (compartido web/native; ver useSetInputs)
@@ -109,8 +112,9 @@ function SetRow({
   } = useSetVideoUpload({ sessionExerciseId, setNumber, uploadVideo: (file, onProgress) => uploadVideo(file?.uri, onProgress) })
 
   const showRirInput = preferences?.show_rir_input ?? true
+  const showSetNotesInput = preferences?.show_set_notes ?? true
   // Columna «Notas» (entrada estable de anotación; el número nunca abre nada). Helper compartido
-  // con SetsList → cabecera y filas nunca se desincronizan. Se colapsa solo con las 3 prefs off.
+  // con SetsList → cabecera y filas nunca se desincronizan. Se colapsa solo con las cuatro prefs off.
   const annotationColumn = shouldShowAnnotationColumn(preferences)
 
   const handleRetryVideoUpload = () => retryVideoUpload({ isCompleted })
@@ -244,8 +248,11 @@ function SetRow({
   }
 
   // Celda SET: identidad de la serie (número / «D» dropset). SIEMPRE inerte — la entrada a la
-  // anotación es el chip de la columna «Notas» (ver EffortPicker), que lleva el glifo/punto de
-  // detalle. La celda solo absorbe el estado transitorio de subida de vídeo (%/reintento).
+  // hoja es el chip de la columna «Notas» (ver EffortPicker). Ya no necesita respaldo: el tipo de
+  // serie (dropset) tiene su propia preferencia (`show_set_type`) igual que RIR/notas/vídeo, así
+  // que si el chip no existe (annotationColumn false) es porque las CUATRO están apagadas y la
+  // hoja no tendría ninguna sección que mostrar. También absorbe el estado transitorio de subida
+  // de vídeo (%/reintento).
   const renderSetCell = () => {
     if (isUploadingVideo) {
       return <Text style={{ color: colors.purple, fontSize: 11, fontWeight: '600' }}>{uploadProgress}%</Text>
@@ -337,7 +344,7 @@ function SetRow({
           {annotationColumn && (
             <View style={{ width: getEffortColumnWidth(trackedFields, showRirInput), alignItems: 'center', justifyContent: 'center' }}>
               {showEffort && <EffortPicker value={rir} trackedFields={trackedFields} note={notes} hasVideo={hasVideo}
-                active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
+                active={isActive} showEffortScale={showRirInput} showSetNotes={showSetNotesInput} onOpenDetails={() => setShowModal(true)} />}
             </View>
           )}
           <View style={{ width: COL_CHECK, alignItems: 'center', justifyContent: 'center' }}>

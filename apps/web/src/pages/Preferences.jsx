@@ -268,6 +268,8 @@ function Preferences() {
               checked={preferences?.show_rir_input ?? true} onChange={(v) => handleChange('show_rir_input', v)} disabled={updatePreference.isPending} />
             <ToggleRow label={t('common:preferences.showSetNotes')} description={t('common:preferences.showSetNotesDesc')}
               checked={preferences?.show_set_notes ?? true} onChange={(v) => handleChange('show_set_notes', v)} disabled={updatePreference.isPending} />
+            <ToggleRow label={t('common:preferences.showSetType')} description={t('common:preferences.showSetTypeDesc')}
+              checked={preferences?.show_set_type ?? true} onChange={(v) => handleChange('show_set_type', v)} disabled={updatePreference.isPending} />
             <ToggleRow label={t('common:preferences.showSessionNotes')} description={t('common:preferences.showSessionNotesDesc')}
               checked={preferences?.show_session_notes ?? true} onChange={(v) => handleChange('show_session_notes', v)} disabled={updatePreference.isPending} />
             {canUploadVideo && (
