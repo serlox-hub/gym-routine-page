@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
-import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields } from '@gym/shared'
+import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
@@ -25,15 +25,12 @@ import {
   buildPRsByExerciseMap,
   buildEmptySetData,
   getSetColumns,
-  getSetFieldValues,
-  buildSetFieldsPayload,
   getExerciseName,
   getMuscleGroupName,
   getMuscleGroupColor,
   usePreference,
   useResolvedWeightUnit,
   useResolvedDistanceUnit,
-  getNotifier,
   formatEffortBadge,
   buildSessionExercisesFromSession,
 } from '@gym/shared'
@@ -48,79 +45,24 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
   const { t } = useTranslation()
   const trackedFields = resolveTrackedFields(exercise)
   const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
-
-  const [values, setValues] = useState(() => getSetFieldValues(set, columns))
-  const [setType, setSetType] = useState(set.set_type ?? 'normal')
   const [showDetails, setShowDetails] = useState(false)
-  const [isUploadingVideo, setIsUploadingVideo] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [videoUploadError, setVideoUploadError] = useState(false)
-  const [pendingVideoFile, setPendingVideoFile] = useState(null)
 
-  // Solo los campos del ejercicio: las columnas que no viajan en el payload no se tocan en el upsert.
-  const buildPayload = (overrides = {}) => ({
-    sessionId,
-    sessionExerciseId,
-    setNumber: set.set_number,
-    ...buildSetFieldsPayload(values, columns),
-    rirActual: set.rir_actual,
-    notes: set.notes,
-    videoUrl: set.video_url,
-    setType,
-    ...overrides,
+  // Estado + persistencia (compartido web/native; ver useHistorySetEditor). `showDetails` (si la
+  // hoja está abierta) es UI local: no forma parte de la edición de la serie en sí.
+  const {
+    values, setValues,
+    rir, setType, videoUrl, notes,
+    hasVideo, hasRir, hasNotes,
+    isUploadingVideo, uploadProgress, videoUploadError,
+    handleSave, handleRirChange, handleSetTypeChange,
+    handleSelectVideo, handleRetryVideoUpload, handleRemoveVideo, handleNotesSubmit,
+  } = useHistorySetEditor({
+    set, columns, distanceUnit, sessionId, sessionExerciseId, onUpsert, uploadVideo,
   })
 
-  // Solo escribe si el valor cambió: `onCommit` salta en CADA blur (incluido enfocar y salir sin
-  // tocar nada), y tabular por una sesión son decenas de upserts inútiles en red lenta. `set` llega
-  // fresco tras la invalidación, así que sirve de referencia de lo ya guardado.
-  // ⚠️ Comparar el payload YA parseado, no lo tecleado: "82.50" y 82.5 son el mismo dato guardado,
-  // pero como strings nunca coincidirían y cada blur repetiría la escritura para siempre.
-  const handleSave = () => {
-    const next = buildSetFieldsPayload(values, columns)
-    const stored = buildSetFieldsPayload(getSetFieldValues(set, columns), columns)
-    if (Object.keys(next).some(key => next[key] !== stored[key])) onUpsert(buildPayload())
-  }
-
-  const handleToggleDropset = () => {
-    const newType = setType === 'dropset' ? 'normal' : 'dropset'
-    setSetType(newType)
-    onUpsert(buildPayload({ setType: newType }))
-  }
-
-  const uploadVideoInBackground = async (file) => {
-    setIsUploadingVideo(true)
-    setUploadProgress(0)
-    setVideoUploadError(false)
-    setPendingVideoFile(file)
-    try {
-      const uploadedUrl = await uploadVideo(file, setUploadProgress)
-      onUpsert(buildPayload({ videoUrl: uploadedUrl }))
-      setPendingVideoFile(null)
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('Video upload failed:', err)
-      setVideoUploadError(true)
-      getNotifier()?.show(t('workout:set.videoUploadError'), 'error')
-    } finally {
-      setIsUploadingVideo(false)
-    }
-  }
-
-  const handleRetryVideoUpload = () => {
-    if (pendingVideoFile) {
-      uploadVideoInBackground(pendingVideoFile)
-    }
-  }
-
-  // En historial la hoja edita SOLO nota/vídeo (RIR y Tipo van ocultos ahí; se editan con el
-  // badge de RIR/toggle del número de la fila). Preservamos rir/tipo/peso/reps vía buildPayload
-  // en vez de pisarlos con undefined (antes se borraban al guardar — bug de #8).
-  const handleDetailsSubmit = ({ notes, videoUrl, videoFile }) => {
+  const handleNotesClose = (payload) => {
+    handleNotesSubmit(payload)
     setShowDetails(false)
-    onUpsert(buildPayload({ notes, videoUrl }))
-    if (videoFile) {
-      uploadVideoInBackground(videoFile)
-    }
   }
 
   const containerStyle = {
@@ -142,16 +84,19 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
     border: 'none',
   }
 
-  const hasVideo = !!set.video_url
-  const hasNotes = !!set.notes
-  const hasRir = set.rir_actual != null
-
+  // Vistazo, no botón: cada badge señala un dato distinto (nota/vídeo/RIR) y editarlo pasa por el
+  // menú «···» → Editar (única puerta a la hoja, siempre disponible). Antes cada badge también
+  // abría la hoja, pero la sección correspondiente podía estar oculta por preferencia (nota/vídeo)
+  // — un botón que abre una hoja donde no se ve lo que anuncia.
+  // `role="img"` + `aria-label`: son badges solo-icono; un `<span>` sin rol no expone `title` como
+  // nombre accesible (un `<button>` sí lo hacía de rebote), así que sin esto un lector de pantalla
+  // no anunciaría nada — paridad con native, que ya usa `accessible`+`accessibilityLabel`.
   const trailingBadges = (
     <>
       {hasNotes && (
-        <button onClick={() => setShowDetails(true)} style={badgeStyle} title={t('workout:set.notes')}>
+        <span style={{ ...badgeStyle, cursor: 'default' }} role="img" aria-label={t('workout:set.notes')} title={t('workout:set.notes')}>
           <FileText size={13} color={colors.textSecondary} />
-        </button>
+        </span>
       )}
       {videoUploadError && (
         <button onClick={handleRetryVideoUpload} style={{ ...badgeStyle, backgroundColor: colors.dangerBg }} title={t('common:buttons.retry')}>
@@ -164,16 +109,16 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
         </span>
       )}
       {hasVideo && !isUploadingVideo && !videoUploadError && (
-        <button onClick={() => setShowDetails(true)} style={badgeStyle} title={t('workout:set.addVideo')}>
+        <span style={{ ...badgeStyle, cursor: 'default' }} role="img" aria-label={t('workout:set.addVideo')} title={t('workout:set.addVideo')}>
           <Video size={13} color={colors.textSecondary} />
-        </button>
+        </span>
       )}
       {hasRir && (
-        <button onClick={() => setShowDetails(true)} style={{ ...badgeStyle, padding: '3px 7px' }} title={t('workout:set.rir')}>
+        <span style={{ ...badgeStyle, padding: '3px 7px', cursor: 'default' }} title={t('workout:set.rir')}>
           <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
-            {formatEffortBadge(set.rir_actual, trackedFields)}
+            {formatEffortBadge(rir, trackedFields)}
           </span>
-        </button>
+        </span>
       )}
     </>
   )
@@ -208,14 +153,15 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
   return (
     <>
       <div style={containerStyle}>
-        <button
-          onClick={handleToggleDropset}
+        {/* Identidad pura (número / «D» dropset), sin interacción: el menú «···» → Editar (más
+            abajo, siempre visible) ya es la puerta a la hoja donde se fija el tipo. Duplicarla
+            aquí con un tap sobre el número era una segunda entrada silenciosa a lo mismo. */}
+        <span
           className="shrink-0"
           style={{ color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted, fontSize: 12, textAlign: 'center', fontWeight: isSetPR || setType === 'dropset' ? 700 : 400 }}
-          title={setType === 'dropset' ? t('workout:set.removeDropset') : t('workout:set.markDropset')}
         >
           {setType === 'dropset' ? 'D' : set.set_number}
-        </button>
+        </span>
 
         {columns.map(({ field, decimal, unit }) => (
           <div key={field} className="flex items-center gap-1 min-w-0">
@@ -234,18 +180,24 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
         ))}
         {trailingActions}
       </div>
-      {/* En historial la hoja edita solo nota/vídeo: el RIR se ve/edita con su badge y el tipo
-          con el número de la fila. Ocultamos ahí la escala RIR y el toggle Tipo. */}
+      {/* Misma hoja que en sesión, con las 4 secciones (esfuerzo, tipo, nota, vídeo): sin
+          `onComplete` (la serie ya está completada, no hay nada que completar de una). */}
       <SetDetailsModal
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}
-        onSubmit={handleDetailsSubmit}
+        onSubmit={handleNotesClose}
         setNumber={set.set_number}
-        initialNote={set.notes}
-        initialVideoUrl={set.video_url}
+        isUploadingVideo={isUploadingVideo}
+        uploadProgress={uploadProgress}
+        onSelectVideo={handleSelectVideo}
+        onRemoveVideo={handleRemoveVideo}
+        initialNote={notes}
+        initialVideoUrl={videoUrl}
+        rir={rir}
+        onRirChange={handleRirChange}
         trackedFields={trackedFields}
-        showEffortScale={false}
-        showSetType={false}
+        setType={setType}
+        onSetTypeChange={handleSetTypeChange}
       />
     </>
   )

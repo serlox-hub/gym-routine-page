@@ -327,6 +327,8 @@ export default function PreferencesScreen({ navigation, route }) {
             checked={preferences?.show_rir_input ?? true} onChange={(v) => handleChange('show_rir_input', v)} disabled={updatePreference.isPending} />
           <ToggleRow label={t('common:preferences.showSetNotes')} description={t('common:preferences.showSetNotesDescription')}
             checked={preferences?.show_set_notes ?? true} onChange={(v) => handleChange('show_set_notes', v)} disabled={updatePreference.isPending} />
+          <ToggleRow label={t('common:preferences.showSetType')} description={t('common:preferences.showSetTypeDescription')}
+            checked={preferences?.show_set_type ?? true} onChange={(v) => handleChange('show_set_type', v)} disabled={updatePreference.isPending} />
           <ToggleRow label={t('common:preferences.showSessionNotes')} description={t('common:preferences.showSessionNotesDescription')}
             checked={preferences?.show_session_notes ?? true} onChange={(v) => handleChange('show_session_notes', v)} disabled={updatePreference.isPending} />
           {canUploadVideo && (

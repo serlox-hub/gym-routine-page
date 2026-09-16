@@ -59,8 +59,6 @@
     "addVideoTitle": "Add a video of this set",
     "addVideoSubtitle": "Record now or pick from library",
     "videoOptional": "Optional",
-    "markDropset": "Mark as dropset",
-    "removeDropset": "Remove dropset",
     "edit": "Edit set",
     "delete": "Delete set",
     "weight": "Weight",
@@ -87,6 +85,7 @@
     "weightConverter": "Weight converter",
     "setNumber": "Set {{number}}",
     "detailsTitle": "SET {{number}} · DETAILS",
+    "detailsGeneric": "Details",
     "video": "Video",
     "type": {
       "label": "Set type",

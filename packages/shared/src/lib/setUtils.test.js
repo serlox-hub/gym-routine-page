@@ -717,19 +717,28 @@ describe('setUtils', () => {
   })
 
   describe('shouldShowAnnotationColumn', () => {
-    it('true por defecto (sin preferencias → los 3 defaults son true)', () => {
+    it('true por defecto (sin preferencias → los 4 defaults son true)', () => {
       expect(shouldShowAnnotationColumn(undefined)).toBe(true)
       expect(shouldShowAnnotationColumn({})).toBe(true)
     })
 
-    it('false solo si RIR, notas y vídeo están las tres apagadas', () => {
-      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: false, show_video_upload: false })).toBe(false)
+    it('false solo si RIR, notas, vídeo y tipo de serie están las cuatro apagadas', () => {
+      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: false, show_video_upload: false, show_set_type: false })).toBe(false)
     })
 
-    it('true si alguna de las tres prefs está activada', () => {
-      expect(shouldShowAnnotationColumn({ show_rir_input: true, show_set_notes: false, show_video_upload: false })).toBe(true)
-      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: true, show_video_upload: false })).toBe(true)
-      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: false, show_video_upload: true })).toBe(true)
+    it('true si alguna de las cuatro prefs está activada', () => {
+      expect(shouldShowAnnotationColumn({ show_rir_input: true, show_set_notes: false, show_video_upload: false, show_set_type: false })).toBe(true)
+      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: true, show_video_upload: false, show_set_type: false })).toBe(true)
+      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: false, show_video_upload: true, show_set_type: false })).toBe(true)
+      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: false, show_video_upload: false, show_set_type: true })).toBe(true)
+    })
+
+    // `show_set_type` es la clave nueva: un objeto de preferencias guardado ANTES de que existiera
+    // (o cualquier lectura parcial) no la trae. Al faltar, `??` debe leerla como true, nunca como
+    // false — si no, una fila con las otras tres prefs apagadas perdería la columna de anotación
+    // sin que el usuario haya tocado nada.
+    it('show_set_type ausente (preferencias guardadas antes de que existiera la clave) cuenta como true, no como apagado', () => {
+      expect(shouldShowAnnotationColumn({ show_rir_input: false, show_set_notes: false, show_video_upload: false })).toBe(true)
     })
   })
 })

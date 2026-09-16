@@ -27,10 +27,11 @@ import { uploadVideo } from '../../lib/videoStorage.js'
 // `getSetColumns(trackedFields)` y su unidad va en la CABECERA (ver SetsList), no dentro de la
 // fila. Es lo que permite que la fila lleve solo inputs `w-full` en tracks `minmax(0,1fr)`, que
 // no pueden desbordar por construcción. Ver docs/DECISIONS.md.
-// La celda SET es la identidad de la serie (nº / «D» dropset) y es SIEMPRE inerte: la entrada a
-// la anotación (RIR + nota + vídeo) es el chip de la columna «Notas» (ver EffortPicker), que
-// lleva el glifo/punto de detalle. La columna «Notas» existe si hay algo que anotar (RIR, notas o
-// vídeo activados; ver shouldShowAnnotationColumn); se colapsa solo si se apagan las tres prefs.
+// La celda SET es la identidad de la serie (nº / «D» dropset) y SIEMPRE inerte: la entrada a la
+// hoja de detalles es el chip de la columna «Notas» (ver EffortPicker). La columna «Notas» existe
+// si hay algo que anotar (RIR, notas, vídeo O tipo de serie activados; ver
+// shouldShowAnnotationColumn); se colapsa solo si se apagan las cuatro prefs — y en ese caso la
+// hoja no tendría ninguna sección que mostrar, así que no hace falta respaldo. Ver docs/DECISIONS.md.
 // La referencia de la última sesión NO es columna: vive en la subfila SetRowMeta junto al aviso
 // de progresión y al timer, siempre en el mismo sitio (antes ocupaba 46px fijos, que con 3
 // columnas de valor dejaban los inputs a ~26px).
@@ -117,8 +118,9 @@ function SetRow({
   } = useSetVideoUpload({ sessionExerciseId, setNumber, uploadVideo })
 
   const showRirInput = preferences?.show_rir_input ?? true
+  const showSetNotesInput = preferences?.show_set_notes ?? true
   // Columna «Notas» (entrada estable de anotación; el número nunca abre nada). Helper compartido
-  // con SetsList → cabecera y filas nunca se desincronizan. Se colapsa solo con las 3 prefs off.
+  // con SetsList → cabecera y filas nunca se desincronizan. Se colapsa solo con las cuatro prefs off.
   const annotationColumn = shouldShowAnnotationColumn(preferences)
 
   const handleCheckClick = () => {
@@ -256,8 +258,11 @@ function SetRow({
   }
 
   // Celda SET: identidad de la serie (número / «D» dropset). SIEMPRE inerte — la entrada a la
-  // anotación es el chip de la columna «Notas» (ver EffortPicker), y el punto de nota/vídeo vive
-  // en el chip. La celda solo absorbe el estado transitorio de subida de vídeo (%/reintento).
+  // hoja es el chip de la columna «Notas» (ver EffortPicker). Ya no necesita respaldo: el tipo de
+  // serie (dropset) tiene su propia preferencia (`show_set_type`) igual que RIR/notas/vídeo, así
+  // que si el chip no existe (annotationColumn false) es porque las CUATRO están apagadas y la
+  // hoja no tendría ninguna sección que mostrar — abrirla no serviría de nada. Ver docs/DECISIONS.md.
+  // También absorbe el estado transitorio de subida de vídeo (%/reintento).
   const renderSetCell = () => {
     if (isUploadingVideo) {
       return <span style={{ color: colors.purple, fontSize: 11, fontWeight: 600 }}>{uploadProgress}%</span>
@@ -353,7 +358,7 @@ function SetRow({
           {annotationColumn && (
             <div className="flex items-center justify-center min-w-0">
               {showEffort && <EffortPicker value={rir} trackedFields={trackedFields} note={notes} hasVideo={hasVideo}
-                active={isActive} showEffortScale={showRirInput} onOpenDetails={() => setShowModal(true)} />}
+                active={isActive} showEffortScale={showRirInput} showSetNotes={showSetNotesInput} onOpenDetails={() => setShowModal(true)} />}
             </div>
           )}
           <div className="flex items-center justify-center">{renderCheckIndicator()}</div>
