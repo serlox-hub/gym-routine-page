@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { act } from '@testing-library/react'
 import { createJSONStorage } from 'zustand/middleware'
-import { createWorkoutStore } from './createWorkoutStore.js'
+import {
+  createWorkoutStore,
+  workoutPartialize,
+  buildSessionTransitionReset,
+  buildSessionSetDataReset,
+} from './createWorkoutStore.js'
 
 // Storage en memoria aislado por test (evita compartir el localStorage de jsdom bajo el
 // mismo `name` entre instancias). `raw` expone el JSON serializado para asertar el round-trip.
@@ -677,6 +682,127 @@ describe('createWorkoutStore', () => {
       expect(store.getState().sessionId).toBeNull()
       store.getState().startSession(1, 2)
       expect(store.getState().sessionId).toBe(1)
+    })
+  })
+
+  // These three exports are the single source of truth the RN store spreads instead of
+  // re-listing the fields (issue #74): the copy it used to keep drifted twice.
+  describe('exported reset shapes', () => {
+    beforeEach(() => {
+      useWorkoutStore = createWorkoutStore(makeMemStorage().storage)
+    })
+
+    it('the two reset shapes are disjoint (both are spread into the same set())', () => {
+      const transition = buildSessionTransitionReset()
+      const overlap = Object.keys(buildSessionSetDataReset())
+        .filter(k => k in transition)
+      expect(overlap).toEqual([])
+    })
+
+    it('startSession applies both shapes', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 80 })
+        useWorkoutStore.getState().setExerciseSetCount(1, 5)
+        useWorkoutStore.getState().addPendingSet(1, 1, { weight: 80 })
+        useWorkoutStore.getState().setPendingGymChange({ gymId: 3, weights: [] })
+        useWorkoutStore.getState().setExpandedExerciseKey('se-1')
+        useWorkoutStore.getState().startRestTimer(90, { setNumber: 1 })
+        useWorkoutStore.getState().setRestTimerMinimized(true)
+        useWorkoutStore.getState().clearExercise(1)
+      })
+
+      act(() => { useWorkoutStore.getState().startSession(7, 2, 3, 4) })
+
+      const state = useWorkoutStore.getState()
+      for (const [key, value] of Object.entries({ ...buildSessionSetDataReset(), ...buildSessionTransitionReset() })) {
+        expect(state[key]).toEqual(value)
+      }
+    })
+
+    it('endSession applies both shapes', () => {
+      act(() => {
+        useWorkoutStore.getState().startSession(7, 2, 3, 4)
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 80 })
+        useWorkoutStore.getState().setExpandedExerciseKey('se-1')
+        useWorkoutStore.getState().startRestTimer(90, { setNumber: 1 })
+        useWorkoutStore.getState().endSession()
+      })
+
+      const state = useWorkoutStore.getState()
+      for (const [key, value] of Object.entries({ ...buildSessionSetDataReset(), ...buildSessionTransitionReset() })) {
+        expect(state[key]).toEqual(value)
+      }
+    })
+
+    it('restoreSession applies only the transition shape (set data survives)', () => {
+      act(() => {
+        useWorkoutStore.getState().startSession(7, 2, 3, 4)
+        useWorkoutStore.getState().setExerciseSetCount(1, 5)
+        useWorkoutStore.getState().addPendingSet(1, 1, { weight: 80 })
+        useWorkoutStore.getState().setExpandedExerciseKey('se-1')
+        useWorkoutStore.getState().startRestTimer(90, { setNumber: 1 })
+        useWorkoutStore.getState().restoreSession({
+          sessionId: 7, routineDayId: 2, routineId: 3, gymId: 4,
+          startedAt: '2024-01-01T00:00:00Z',
+          completedSets: { '1-1': { sessionExerciseId: 1, setNumber: 1, weight: 80 } },
+          cachedSetData: {},
+        })
+      })
+
+      const state = useWorkoutStore.getState()
+      for (const [key, value] of Object.entries(buildSessionTransitionReset())) {
+        expect(state[key]).toEqual(value)
+      }
+      expect(state.expandedExerciseKey).toBe('se-1')
+      expect(state.exerciseSetCounts[1]).toBe(5)
+      expect(state.pendingSets['1-1']).toEqual({ weight: 80 })
+    })
+
+    it('each call returns fresh nested objects, so no two resets share a map', () => {
+      const a = buildSessionSetDataReset()
+      const b = buildSessionSetDataReset()
+      expect(a.completedSets).not.toBe(b.completedSets)
+      expect(buildSessionTransitionReset().exerciseResetNonces)
+        .not.toBe(buildSessionTransitionReset().exerciseResetNonces)
+
+      // Consequence that matters: two stores reset independently. If the maps were shared
+      // module-level literals, an in-place write in one store would leak into every later reset.
+      const other = createWorkoutStore(makeMemStorage().storage)
+      act(() => {
+        useWorkoutStore.getState().startSession(7, 2)
+        other.getState().startSession(8, 2)
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 80 })
+        useWorkoutStore.getState().setExerciseSetCount(1, 5)
+      })
+
+      expect(other.getState().completedSets).toEqual({})
+      expect(other.getState().exerciseSetCounts).toEqual({})
+      expect(buildSessionSetDataReset().completedSets).toEqual({})
+      expect(buildSessionSetDataReset().exerciseSetCounts).toEqual({})
+    })
+
+    it('workoutPartialize drops the transient fields and keeps the persisted ones', () => {
+      const persisted = workoutPartialize({
+        sessionId: 7,
+        gymId: 4,
+        completedSets: { '1-1': { weight: 80 } },
+        pendingGymChange: { gymId: 5, weights: [] },
+        expandedExerciseKey: 'se-1',
+        activeSessionSynced: true,
+        exerciseResetNonces: { 1: 2 },
+        restTimerActive: true,
+        restTimerEndTime: 123,
+        restTimeInitial: 90,
+        restTimerMinimized: true,
+      })
+
+      expect(persisted).toEqual({
+        sessionId: 7,
+        gymId: 4,
+        completedSets: { '1-1': { weight: 80 } },
+        pendingGymChange: { gymId: 5, weights: [] },
+        expandedExerciseKey: 'se-1',
+      })
     })
   })
 })

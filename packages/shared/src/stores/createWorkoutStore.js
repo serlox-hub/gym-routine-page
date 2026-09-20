@@ -2,6 +2,40 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 /**
+ * Fields cleared by EVERY session transition (start / end / restore).
+ * Shared so the RN store (which overrides those actions to also drive workoutVisible)
+ * spreads this list instead of re-typing it: two drift incidents came from the copy.
+ * Constructora y no constante a propósito: devolver objetos nuevos en cada transición
+ * evita que los mapas vacíos se compartan por referencia entre stores y entre resets.
+ */
+export function buildSessionTransitionReset() {
+  return {
+    weightConversionNonce: 0,
+    exerciseResetNonces: {},
+    pendingGymChange: null,
+    restTimerActive: false,
+    restTimerEndTime: null,
+    restTimeInitial: 0,
+    restTimerMinimized: false,
+  }
+}
+
+/**
+ * Additionally cleared by startSession/endSession — NOT by restoreSession, which runs on
+ * foreground/revisit/cold start over the SAME session and must keep its set data and its
+ * open accordion card.
+ */
+export function buildSessionSetDataReset() {
+  return {
+    completedSets: {},
+    cachedSetData: {},
+    exerciseSetCounts: {},
+    pendingSets: {},
+    expandedExerciseKey: undefined,
+  }
+}
+
+/**
  * Workout store state builder.
  * Exported for platforms that need to extend the state (e.g. RN adds workoutVisible).
  */
@@ -77,18 +111,8 @@ export function workoutStoreState(set, get) {
       routineId,
       gymId,
       startedAt: new Date().toISOString(),
-      completedSets: {},
-      cachedSetData: {},
-      exerciseSetCounts: {},
-      pendingSets: {},
-      weightConversionNonce: 0,
-      exerciseResetNonces: {},
-      pendingGymChange: null,
-      expandedExerciseKey: undefined,
-      restTimerActive: false,
-      restTimerEndTime: null,
-      restTimeInitial: 0,
-      restTimerMinimized: false,
+      ...buildSessionSetDataReset(),
+      ...buildSessionTransitionReset(),
     }),
 
     // Restore session from backend
@@ -102,13 +126,7 @@ export function workoutStoreState(set, get) {
       startedAt,
       completedSets,
       cachedSetData,
-      weightConversionNonce: 0,
-      exerciseResetNonces: {},
-      pendingGymChange: null,
-      restTimerActive: false,
-      restTimerEndTime: null,
-      restTimeInitial: 0,
-      restTimerMinimized: false,
+      ...buildSessionTransitionReset(),
     }),
 
     // Change the gym of the active session (quick change from the session header)
@@ -124,18 +142,8 @@ export function workoutStoreState(set, get) {
       routineId: null,
       gymId: null,
       startedAt: null,
-      completedSets: {},
-      cachedSetData: {},
-      exerciseSetCounts: {},
-      pendingSets: {},
-      weightConversionNonce: 0,
-      exerciseResetNonces: {},
-      pendingGymChange: null,
-      expandedExerciseKey: undefined,
-      restTimerActive: false,
-      restTimerEndTime: null,
-      restTimeInitial: 0,
-      restTimerMinimized: false,
+      ...buildSessionSetDataReset(),
+      ...buildSessionTransitionReset(),
     }),
 
     // Mark a set as completed (optimistic update)
@@ -422,6 +430,26 @@ export function workoutStoreState(set, get) {
 }
 
 /**
+ * The persisted shape of the workout store: everything except the transient fields.
+ * Exported so the RN store reuses this exclusion list and only wraps it to drop its
+ * RN-only workoutVisible.
+ */
+export function workoutPartialize(state) {
+  const {
+    restTimerActive: _rta, restTimerEndTime: _rte,
+    restTimeInitial: _rti, restTimerMinimized: _rtm,
+    // activeSessionSynced fuera: rehidratarlo a true daría por sabido lo que
+    // todavía no se ha preguntado, que es justo el bug que evita (issue #30).
+    activeSessionSynced: _ass,
+    // exerciseResetNonces fuera: es una señal intra-sesión. Rehidratarla haría que la primera
+    // lectura tras un cold start viera un nonce "nuevo" y reseteara filas intactas.
+    exerciseResetNonces: _ern,
+    ...rest
+  } = state
+  return rest
+}
+
+/**
  * Factory that creates a workout Zustand store with persist middleware.
  * @param {object} [storage] - Optional Zustand storage adapter. Omit for default. Pass custom adapter for other environments.
  * @returns {object} Zustand store instance
@@ -429,20 +457,7 @@ export function workoutStoreState(set, get) {
 export function createWorkoutStore(storage) {
   const persistOptions = {
     name: 'workout-session',
-    partialize: (state) => {
-      const {
-        restTimerActive: _rta, restTimerEndTime: _rte,
-        restTimeInitial: _rti, restTimerMinimized: _rtm,
-        // activeSessionSynced fuera: rehidratarlo a true daría por sabido lo que
-        // todavía no se ha preguntado, que es justo el bug que evita (issue #30).
-        activeSessionSynced: _ass,
-        // exerciseResetNonces fuera: es una señal intra-sesión. Rehidratarla haría que la primera
-        // lectura tras un cold start viera un nonce "nuevo" y reseteara filas intactas.
-        exerciseResetNonces: _ern,
-        ...rest
-      } = state
-      return rest
-    },
+    partialize: workoutPartialize,
   }
   if (storage) {
     persistOptions.storage = storage
