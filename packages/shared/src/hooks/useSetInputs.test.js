@@ -9,6 +9,7 @@ vi.mock('./_stores.js', () => {
     sessionId: 'session-123',
     completedSets: {},
     cachedSetData: {},
+    exerciseResetNonces: {},
     setCachedSetData: vi.fn(),
     updateCompletedSetValues: vi.fn(),
     updateSetDetails: vi.fn(),
@@ -484,5 +485,237 @@ describe('useSetInputs — objetivo y progresable', () => {
     const wr = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
     act(() => { wr.result.current.setWeight('80') })
     expect(wr.result.current.progressableValue).toBe('80')
+  })
+})
+
+// Reemplazar un ejercicio a mitad de sesión NO remonta sus filas (la key del SetRow cuelga del
+// sessionExerciseId, que no cambia), así que todo el estado local de aquí sobreviviría y la fila
+// seguiría enseñando los valores del ejercicio anterior. La señal es el nonce por fila del store
+// (issue #72). Ojo al orden: el `exerciseId` nuevo llega una vuelta de red DESPUÉS del bump.
+describe('useSetInputs — reemplazo del ejercicio de la fila (issue #72)', () => {
+  const OLD_PREVIOUS = { weight: 100, reps: 8 }
+  const NEW_PREVIOUS = { weight: 55, reps: 12 }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+    store.exerciseResetNonces = {}
+  })
+
+  // Lo que el store vacía al reemplazar, más el bump. Simula el clearExercise del onSuccess.
+  function replaceExercise(sessionExerciseId = 'ex-1') {
+    store.completedSets = {}
+    store.cachedSetData = {}
+    store.exerciseResetNonces = { ...store.exerciseResetNonces, [sessionExerciseId]: (store.exerciseResetNonces[sessionExerciseId] ?? 0) + 1 }
+  }
+
+  // Las escrituras de MEDICIONES (las de detalles llevan rirActual y van por otro camino).
+  function measurementCacheCalls() {
+    return store.setCachedSetData.mock.calls.filter(c => c[2] && !Object.prototype.hasOwnProperty.call(c[2], 'rirActual'))
+  }
+
+  it('I1: el bump vacía las mediciones y los detalles (rir, notas, tipo de serie)', async () => {
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: OLD_PREVIOUS },
+    })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+    act(() => { result.current.setRir(2) })
+    act(() => { result.current.saveDetails({ notes: 'buena técnica', setType: 'dropset' }) })
+
+    replaceExercise()
+    rerender({ ...PARAMS, previousSet: OLD_PREVIOUS })
+
+    await waitFor(() => expect(result.current.weight).toBe(''))
+    expect(result.current.reps).toBe('')
+    expect(result.current.rir).toBeNull()
+    expect(result.current.notes).toBeNull()
+    expect(result.current.setType).toBe('normal')
+  })
+
+  it('I4: el ejercicio nuevo sin historial deja la fila vacía, con el objetivo de placeholder', async () => {
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: OLD_PREVIOUS, target: '8-12' },
+    })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+
+    replaceExercise()
+    rerender({ ...PARAMS, previousSet: OLD_PREVIOUS, target: '8-12' })
+    await waitFor(() => expect(result.current.weight).toBe(''))
+
+    // Llega el refetch: exerciseId nuevo y "Anterior" que resuelve a nada
+    rerender({ ...PARAMS, exerciseId: 20, previousSet: undefined, target: '8-12' })
+    expect(result.current.weight).toBe('')
+    expect(result.current.reps).toBe('')
+    expect(result.current.targetPlaceholder).toBe('8-12')
+  })
+
+  it('I3: el bump y el "Anterior" del ejercicio nuevo en el MISMO commit acaban sembrando', async () => {
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: OLD_PREVIOUS },
+    })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+
+    // Query del "Anterior" ya caliente (staleTime 10min): reset y dato nuevo llegan juntos
+    replaceExercise()
+    rerender({ ...PARAMS, exerciseId: 20, previousSet: NEW_PREVIOUS })
+
+    await waitFor(() => expect(result.current.weight).toBe(55))
+    expect(result.current.reps).toBe(12)
+  })
+
+  it('I2: con el refetch lento, nada de lo que había se cuela en la caché (y luego siembra)', async () => {
+    store.cachedSetData = { [KEY]: { sessionExerciseId: 'ex-1', setNumber: 1, weight: 80 } }
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: OLD_PREVIOUS },
+    })
+    expect(result.current.weight).toBe(80)
+    store.setCachedSetData.mockClear()
+
+    replaceExercise()
+    rerender({ ...PARAMS, previousSet: OLD_PREVIOUS })
+    await waitFor(() => expect(result.current.weight).toBe(''))
+
+    // El vaciado de cachedSetData rearma el debounce con un commit que cierra sobre el 80 viejo
+    await new Promise(resolve => setTimeout(resolve, SET_EDIT_DEBOUNCE_MS + 100))
+    expect(measurementCacheCalls()).toHaveLength(0)
+    expect(workoutApi.upsertCompletedSet).not.toHaveBeenCalled()
+
+    // Y cuando por fin responde el refetch, la fila se siembra con el ejercicio NUEVO
+    rerender({ ...PARAMS, exerciseId: 20, previousSet: NEW_PREVIOUS })
+    await waitFor(() => expect(result.current.weight).toBe(55))
+  })
+
+  it('I2: la serie añadida a mano que se desmonta con el bump no deja entrada huérfana', async () => {
+    const { result, unmount } = renderHook(() => useSetInputs({ ...PARAMS, setNumber: 4 }), { wrapper: wrapper() })
+    act(() => { result.current.setWeight('80') })
+    store.setCachedSetData.mockClear()
+
+    // El bump y el desmontaje caen en el mismo commit (exerciseSetCounts vuelve a `series`), así
+    // que esta fila NO llega a correr su efecto de reset: solo su flush.
+    replaceExercise()
+    unmount()
+
+    expect(measurementCacheCalls()).toHaveLength(0)
+  })
+
+  it('sin bump, el flush de desmontaje SÍ guarda lo tecleado (control del caso de arriba)', () => {
+    const { result, unmount } = renderHook(() => useSetInputs({ ...PARAMS, setNumber: 4 }), { wrapper: wrapper() })
+    act(() => { result.current.setWeight('80') })
+    store.setCachedSetData.mockClear()
+
+    unmount()
+
+    expect(measurementCacheCalls().at(-1)).toEqual(['ex-1', 4, expect.objectContaining({ weight: 80 })])
+  })
+
+  it('tras el reset, lo que el usuario teclee vuelve a guardarse', async () => {
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: OLD_PREVIOUS },
+    })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+
+    replaceExercise()
+    rerender({ ...PARAMS, previousSet: OLD_PREVIOUS })
+    await waitFor(() => expect(result.current.weight).toBe(''))
+    store.setCachedSetData.mockClear()
+
+    act(() => { result.current.setWeight('60') })
+    await waitFor(() => expect(measurementCacheCalls().length).toBeGreaterThan(0))
+    expect(measurementCacheCalls().at(-1)).toEqual(['ex-1', 1, expect.objectContaining({ weight: 60 })])
+  })
+
+  it('I5: una fila reemplazada no vuelve a sembrar el nivel prescrito de la rutina', async () => {
+    const BIKE = { ...PARAMS, trackedFields: ['level', 'distance', 'time'], levelTarget: 8, previousLoaded: true }
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...BIKE },
+    })
+    await waitFor(() => expect(result.current.level).toBe(8))
+
+    replaceExercise()
+    rerender({ ...BIKE })
+    await waitFor(() => expect(result.current.level).toBe(''))
+
+    // session_exercises.level sigue siendo la prescripción del ejercicio VIEJO: no se resiembra
+    rerender({ ...BIKE, exerciseId: 20 })
+    expect(result.current.level).toBe('')
+  })
+
+  it('I5b: pero si el usuario prescribe un nivel NUEVO desde «Editar», ese sí se siembra', async () => {
+    const BIKE = { ...PARAMS, trackedFields: ['level', 'distance', 'time'], levelTarget: 8, previousLoaded: true }
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...BIKE },
+    })
+    await waitFor(() => expect(result.current.level).toBe(8))
+
+    replaceExercise()
+    rerender({ ...BIKE })
+    await waitFor(() => expect(result.current.level).toBe(''))
+
+    // El bloqueo guarda el VALOR heredado, no un booleano: un levelTarget distinto ya es del
+    // ejercicio nuevo y volver a ignorarlo se tragaría en silencio algo recién tecleado.
+    rerender({ ...BIKE, exerciseId: 20, levelTarget: 5 })
+    await waitFor(() => expect(result.current.level).toBe(5))
+  })
+
+  it('I6: al montar no hay reset, aunque la fila ya tenga nonce de un reemplazo anterior', () => {
+    store.exerciseResetNonces = { 'ex-1': 3 }
+    store.cachedSetData = { [KEY]: { sessionExerciseId: 'ex-1', setNumber: 1, weight: 80 } }
+    const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
+    expect(result.current.weight).toBe(80)
+  })
+
+  it('I7: el bump de OTRA fila no toca esta (el contador es por sessionExerciseId)', async () => {
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: OLD_PREVIOUS },
+    })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+
+    replaceExercise('ex-2')
+    rerender({ ...PARAMS, previousSet: OLD_PREVIOUS })
+
+    expect(result.current.weight).toBe(100)
+  })
+
+  // Dos reemplazos seguidos en la misma fila (A → B → C), el segundo antes de que el "Anterior"
+  // de B llegue a asentarse del todo: el ref que se bloquea en el segundo bump tiene que seguir
+  // siendo el correcto (el último que el prefill vio), no uno obsoleto del primer reemplazo.
+  it('I9: dos reemplazos encadenados de la misma fila acaban sembrando el del ÚLTIMO ejercicio', async () => {
+    const MID_PREVIOUS = { weight: 55, reps: 12 }
+    const FINAL_PREVIOUS = { weight: 33, reps: 15 }
+    const { result, rerender } = renderHook((props) => useSetInputs(props), {
+      wrapper: wrapper(),
+      initialProps: { ...PARAMS, previousSet: OLD_PREVIOUS },
+    })
+    await waitFor(() => expect(result.current.weight).toBe(100))
+
+    // Primer reemplazo (A → B): la query del "Anterior" sigue devolviendo A durante un tick
+    replaceExercise()
+    rerender({ ...PARAMS, previousSet: OLD_PREVIOUS })
+    await waitFor(() => expect(result.current.weight).toBe(''))
+
+    // Llega el refetch de B, en el mismo commit que el reset (como I3)
+    rerender({ ...PARAMS, exerciseId: 20, previousSet: MID_PREVIOUS })
+    await waitFor(() => expect(result.current.weight).toBe(55))
+    expect(result.current.reps).toBe(12)
+
+    // Segundo reemplazo (B → C), antes de que nada más cambie: la query sigue devolviendo B
+    replaceExercise()
+    rerender({ ...PARAMS, exerciseId: 20, previousSet: MID_PREVIOUS })
+    await waitFor(() => expect(result.current.weight).toBe(''))
+    expect(result.current.reps).toBe('')
+
+    // Llega el refetch de C
+    rerender({ ...PARAMS, exerciseId: 30, previousSet: FINAL_PREVIOUS })
+    await waitFor(() => expect(result.current.weight).toBe(33))
+    expect(result.current.reps).toBe(15)
   })
 })

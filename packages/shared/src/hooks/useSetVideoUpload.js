@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useWorkoutStore } from './_stores.js'
 import { useUpdateSetVideo } from './useCompletedSets.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
@@ -24,6 +25,7 @@ import { t } from '../i18n/index.js'
  */
 export function useSetVideoUpload({ sessionExerciseId, setNumber, uploadVideo }) {
   const { mutate: updateSetVideo } = useUpdateSetVideo()
+  const exerciseResetNonce = useWorkoutStore(state => state.exerciseResetNonces[sessionExerciseId] ?? 0)
   const [isUploading, setIsUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [hasError, setHasError] = useState(false)
@@ -82,6 +84,17 @@ export function useSetVideoUpload({ sessionExerciseId, setNumber, uploadVideo })
     reset()
     updateSetVideo({ sessionExerciseId, setNumber, videoUrl: null })
   }, [reset, updateSetVideo, sessionExerciseId, setNumber])
+
+  // Reemplazo del ejercicio de la fila (issue #72): la fila NO se remonta, así que un vídeo
+  // grabado para el ejercicio anterior y todavía sin adjuntar (`preCompleteUrl`) viajaría en el
+  // upsert de la primera serie del ejercicio NUEVO. Misma señal por fila que usa useSetInputs, y
+  // `reset()` invalida además el token, así que tampoco puede escribir una subida en vuelo.
+  const lastExerciseResetNonceRef = useRef(exerciseResetNonce)
+  useEffect(() => {
+    if (exerciseResetNonce === lastExerciseResetNonceRef.current) return
+    lastExerciseResetNonceRef.current = exerciseResetNonce
+    reset()
+  }, [exerciseResetNonce, reset])
 
   return { isUploading, progress, hasError, preCompleteUrl, upload, retry, reset, removeVideo }
 }

@@ -21,7 +21,7 @@ const useWorkoutStore = create(
         startedAt: new Date().toISOString(),
         completedSets: {}, cachedSetData: {},
         exerciseSetCounts: {}, pendingSets: {},
-        weightConversionNonce: 0, pendingGymChange: null,
+        weightConversionNonce: 0, exerciseResetNonces: {}, pendingGymChange: null,
         expandedExerciseKey: undefined,
         restTimerActive: false, restTimerEndTime: null,
         restTimeInitial: 0, restTimerMinimized: false,
@@ -31,7 +31,7 @@ const useWorkoutStore = create(
         sessionId: null, routineDayId: null, routineId: null, gymId: null,
         startedAt: null, completedSets: {}, cachedSetData: {},
         exerciseSetCounts: {}, pendingSets: {},
-        weightConversionNonce: 0, pendingGymChange: null,
+        weightConversionNonce: 0, exerciseResetNonces: {}, pendingGymChange: null,
         expandedExerciseKey: undefined,
         restTimerActive: false, restTimerEndTime: null,
         restTimeInitial: 0, restTimerMinimized: false,
@@ -39,7 +39,7 @@ const useWorkoutStore = create(
       }),
       restoreSession: ({ sessionId, routineDayId, routineId, gymId = null, startedAt, completedSets, cachedSetData }) => set({
         sessionId, routineDayId, routineId, gymId, startedAt, completedSets, cachedSetData,
-        weightConversionNonce: 0, pendingGymChange: null,
+        weightConversionNonce: 0, exerciseResetNonces: {}, pendingGymChange: null,
         restTimerActive: false, restTimerEndTime: null,
         restTimeInitial: 0, restTimerMinimized: false,
         workoutVisible: false,
@@ -53,6 +53,8 @@ const useWorkoutStore = create(
           workoutVisible: _wv, showWorkout: _sw, hideWorkout: _hw,
           restTimerActive: _rta, restTimerEndTime: _rte,
           restTimeInitial: _rti, restTimerMinimized: _rtm,
+          // exerciseResetNonces fuera, igual que en createWorkoutStore: señal intra-sesión
+          exerciseResetNonces: _ern,
           ...rest
         } = state
         return rest

@@ -17,6 +17,18 @@ import { SetField, distanceToMeters, getProgressableField, metersToDistanceUnit,
 import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
 
 /**
+ * Envuelve un setter de input para que CUALQUIER edición del usuario saque la fila del estado
+ * "pristine" (ver el reemplazo de ejercicio en useSetInputs). Los efectos de siembra usan el
+ * setter crudo a propósito: sembrar una sugerencia no es teclear.
+ */
+function useUserEditedSetter(setState, pristineRef) {
+  return useCallback((value) => {
+    pristineRef.current = false
+    setState(value)
+  }, [setState, pristineRef])
+}
+
+/**
  * Estado y persistencia de los inputs de una serie durante la sesión activa.
  * Platform-agnostic (solo store inyectado + utils/mutaciones compartidas) → ÚNICA fuente
  * para web y native (regla DRY del CLAUDE.md). Los SetRow solo consumen y renderizan.
@@ -28,6 +40,8 @@ import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
  *   o completar en otro orden
  * - flush en unmount: guarda ediciones pendientes dentro de la ventana del debounce
  *   (commit idempotente vía setMeasurementValuesChanged → timer + unmount no duplican)
+ * - reset al REEMPLAZAR el ejercicio de la fila: la fila no se remonta, así que el estado local
+ *   se tira a mano con la señal del store (issue #72)
  *
  * @param {{sessionExerciseId: string|number, setNumber: number, exerciseId: number,
  *   trackedFields: string[], weightUnit?: string, distanceUnit?: string,
@@ -40,6 +54,9 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
   const isCompleted = useWorkoutStore(state => !!state.completedSets[setKey])
   const setData = useWorkoutStore(state => state.completedSets[setKey])
   const weightConversionNonce = useWorkoutStore(state => state.weightConversionNonce)
+  // Nonce de reemplazo de ESTA fila (ver el efecto de reset más abajo). `?? 0` porque el mapa
+  // solo tiene entrada para las filas cuyo ejercicio se ha sustituido alguna vez.
+  const exerciseResetNonce = useWorkoutStore(state => state.exerciseResetNonces[sessionExerciseId] ?? 0)
   const cachedData = useWorkoutStore(state => state.cachedSetData[setKey])
   const setCachedSetData = useWorkoutStore(state => state.setCachedSetData)
   const { mutate: updateCompletedSet } = useUpdateCompletedSet()
@@ -47,13 +64,16 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
 
   // Valores iniciales de los inputs: caché de edición > datos completados (una vez, al montar)
   const [initValues] = useState(() => getSetInitialInputValues({ setData, cachedData, distanceUnit }))
-  const [weight, setWeight] = useState(initValues.weight)
-  const [reps, setReps] = useState(initValues.reps)
-  const [time, setTime] = useState(initValues.time)
-  const [distance, setDistance] = useState(initValues.distance)
-  const [calories, setCalories] = useState(initValues.calories)
-  const [level, setLevel] = useState(initValues.level)
-  const [pace, setPace] = useState(initValues.pace)
+  // Los setters CRUDOS (`*State`) los usan los efectos de siembra de este archivo; el consumidor
+  // recibe los envueltos de más abajo, que además marcan la fila como editada (mismo patrón que
+  // `setRirState` / `setRir`).
+  const [weight, setWeightState] = useState(initValues.weight)
+  const [reps, setRepsState] = useState(initValues.reps)
+  const [time, setTimeState] = useState(initValues.time)
+  const [distance, setDistanceState] = useState(initValues.distance)
+  const [calories, setCaloriesState] = useState(initValues.calories)
+  const [level, setLevelState] = useState(initValues.level)
+  const [pace, setPaceState] = useState(initValues.pace)
 
   // Detalles de la serie (esfuerzo, notas, tipo): grupo que se persiste junto (la API
   // updateSetDetails reescribe rir_actual + notes + set_type). Estado local para feedback
@@ -65,10 +85,32 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
   const [notes, setNotesState] = useState(() => cachedData?.notes ?? setData?.notes ?? null)
   const [setType, setSetTypeState] = useState(() => cachedData?.setType ?? setData?.setType ?? 'normal')
 
+  // Estado de la fila frente a un REEMPLAZO del ejercicio (issue #72); el efecto que lo mueve
+  // todo está más abajo, declarado antes del prefill porque el orden importa.
+  // - `pristineRef`: la fila acaba de quedar en blanco y todavía no tiene nada que guardar.
+  // - `discardedPreviousRef`: `{ ref }` con el "Anterior" que dejó de aplicar (null = nada bloqueado).
+  // - `blockedLevelTargetRef`: `{ value }` con el nivel prescrito que dejó de aplicar (null = nada
+  //   bloqueado). Valor y no booleano: el bloqueo caduca en cuanto la prescripción CAMBIA, porque
+  //   entonces ya es la del ejercicio nuevo.
+  const previousSetRef = useRef(null)
+  const lastExerciseResetNonceRef = useRef(exerciseResetNonce)
+  const pristineRef = useRef(false)
+  const discardedPreviousRef = useRef(null)
+  const blockedLevelTargetRef = useRef(null)
+
+  const setWeight = useUserEditedSetter(setWeightState, pristineRef)
+  const setReps = useUserEditedSetter(setRepsState, pristineRef)
+  const setTime = useUserEditedSetter(setTimeState, pristineRef)
+  const setDistance = useUserEditedSetter(setDistanceState, pristineRef)
+  const setCalories = useUserEditedSetter(setCaloriesState, pristineRef)
+  const setLevel = useUserEditedSetter(setLevelState, pristineRef)
+  const setPace = useUserEditedSetter(setPaceState, pristineRef)
+
   // Persiste el grupo de detalles: completada → updateSetDetails (in situ, sin desmarcar y
   // sin videoUrl → la API preserva el vídeo); no completada → caché en el store (merge, no
   // pisa mediciones porque setMeasurementValuesChanged solo compara claves de medición).
   const persistDetails = useCallback((group) => {
+    pristineRef.current = false
     if (isCompleted) {
       updateSetDetails({ sessionExerciseId, setNumber, rirActual: group.rir, notes: group.notes, setType: group.setType })
     } else {
@@ -95,17 +137,53 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     persistDetails({ rir, notes, setType: value })
   }, [persistDetails, rir, notes])
 
+  // Reemplazo del ejercicio de la fila (issue #72). Sustituir un ejercicio en sesión NO remonta
+  // sus filas —la key de cada SetRow cuelga del sessionExerciseId, que no cambia—, así que sin
+  // esto todo el estado local de arriba sobrevive y la fila sigue enseñando el peso, el RIR y las
+  // notas del ejercicio anterior. La señal es el nonce por fila que el store bumpea DENTRO del
+  // mismo set() que vacía sus datos: el `exerciseId` nuevo no llega hasta que responde el refetch,
+  // una vuelta de red más tarde, y para entonces el commit con debounce ya habría cacheado los
+  // valores viejos.
+  //
+  // ⚠️ Este efecto se declara ANTES del prefill y del nivel prescrito a propósito: React corre los
+  // efectos en orden de declaración y, con la query del "Anterior" ya caliente, el reset y el
+  // "Anterior" del ejercicio nuevo pueden llegar en el MISMO commit. Declarado después, el reset
+  // borraría la siembra recién hecha y `previousSet` ya no volvería a cambiar nunca.
+  useEffect(() => {
+    if (exerciseResetNonce === lastExerciseResetNonceRef.current) return
+    lastExerciseResetNonceRef.current = exerciseResetNonce
+    pristineRef.current = true
+    blockedLevelTargetRef.current = { value: levelTarget }
+    // Se bloquea la referencia que el prefill VIO por última vez, no la prop de este render: si el
+    // "Anterior" del ejercicio nuevo ha llegado en este mismo commit, la prop ya es otra y tiene
+    // que sembrarse.
+    discardedPreviousRef.current = { ref: previousSetRef.current }
+    setWeightState(''); setRepsState(''); setTimeState(''); setDistanceState('')
+    setCaloriesState(''); setLevelState(''); setPaceState('')
+    setRirState(null); setNotesState(null); setSetTypeState('normal')
+    // `levelTarget` en las deps solo por exhaustive-deps: el cuerpo sale antes si el nonce no ha
+    // cambiado, así que el valor que se bloquea sigue siendo el del render del bump.
+  }, [exerciseResetNonce, levelTarget])
+
   // Prefill de la sesión anterior. Llega asíncrono. Al montar rellena solo los campos vacíos;
   // y cuando `previousSet` CAMBIA (p. ej. cambio de gym a mitad de sesión → se re-consulta el
   // "Anterior" del gym nuevo) re-prellena las series aún no tocadas con ese último entreno del
   // gym nuevo, sobrescribiendo la sugerencia vieja. Nunca pisa lo ya completado (setData) ni lo
   // que el usuario haya guardado (cachedData).
-  const previousSetRef = useRef(null)
   useEffect(() => {
     // NO tocar el ref mientras previousSet está transitoriamente vacío: al cambiar de gym, la
     // query del "Anterior" (key con gymId, sin keepPreviousData) pasa por undefined mientras
     // recarga. Conservar el último real permite detectar el cambio cuando llega el del gym nuevo.
     if (!previousSet) return
+    // Tras un reemplazo, la query sigue devolviendo el histórico del ejercicio VIEJO hasta que el
+    // refetch trae el exerciseId nuevo: sembrarlo repintaría justo lo que el reset acaba de borrar.
+    // Se desbloquea con la primera referencia distinta, que ya es la del ejercicio nuevo.
+    const discarded = discardedPreviousRef.current
+    if (discarded) {
+      if (previousSet === discarded.ref) return
+      discardedPreviousRef.current = null
+      previousSetRef.current = null // lo primero del ejercicio nuevo es una PRIMERA siembra
+    }
     if (setData || cachedData) { previousSetRef.current = previousSet; return }
     const changed = previousSetRef.current != null && previousSetRef.current !== previousSet
     previousSetRef.current = previousSet
@@ -118,11 +196,13 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     // efecto deja de mandar y el 8 de la rutina sustituye en silencio a tu 9.
     const seed = getSuggestedSetValues(previousSet, { distanceUnit })
     const setters = {
-      [SetField.WEIGHT]: setWeight, [SetField.REPS]: setReps, [SetField.TIME]: setTime,
-      [SetField.DISTANCE]: setDistance, [SetField.CALORIES]: setCalories,
-      [SetField.LEVEL]: setLevel, [SetField.PACE]: setPace,
+      [SetField.WEIGHT]: setWeightState, [SetField.REPS]: setRepsState, [SetField.TIME]: setTimeState,
+      [SetField.DISTANCE]: setDistanceState, [SetField.CALORIES]: setCaloriesState,
+      [SetField.LEVEL]: setLevelState, [SetField.PACE]: setPaceState,
     }
     for (const [field, next] of Object.entries(seed)) setters[field](current => pick(current, next))
+    // Ya hay algo que la fila puede guardar: la sugerencia sembrada (ver pristineRef).
+    pristineRef.current = false
   }, [previousSet, setData, cachedData, distanceUnit])
 
   // Re-siembra el peso cuando una conversión de unidad (cambio de gym a mitad de sesión)
@@ -136,7 +216,7 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     lastNonceRef.current = weightConversionNonce
     const state = getWorkoutStore().getState()
     const converted = state.completedSets[setKey] ?? state.cachedSetData[setKey]
-    if (converted?.weight != null) setWeight(converted.weight)
+    if (converted?.weight != null) setWeightState(converted.weight)
   }, [weightConversionNonce, setKey])
 
   // Re-lee la distancia cuando cambia la unidad de DISPLAY. A diferencia del peso, esta unidad no
@@ -151,7 +231,7 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     const previousUnit = lastDistanceUnitRef.current
     if (distanceUnit === previousUnit) return
     lastDistanceUnitRef.current = distanceUnit
-    setDistance(current => (current === '' || current == null
+    setDistanceState(current => (current === '' || current == null
       ? current
       : metersToDistanceUnit(distanceToMeters(current, previousUnit), distanceUnit)))
   }, [distanceUnit])
@@ -164,10 +244,20 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
   // El `previousSet?.level != null` NO es redundante aunque hoy el updater funcional lo cubra: hace
   // que la precedencia no dependa del ORDEN de los efectos. Si este efecto pasara a declararse
   // antes que el prefill, sin esa condición sembraría el 8 y el prefill ya vería la casilla llena.
+  // Una fila REEMPLAZADA deja de sembrar ESA prescripción: `session_exercises.level` sigue siendo
+  // la del ejercicio viejo (la mutación solo toca exercise_id/rir/notes) y un "nivel 8" es la
+  // escala de OTRA máquina. El bloqueo guarda el VALOR, no un booleano: en cuanto la prescripción
+  // cambia ya es del ejercicio nuevo (el usuario la ha reconfigurado desde «Editar») y volver a
+  // ignorarla sería tragarse en silencio algo que acaba de teclear. Ver docs/DECISIONS.md (#72).
   useEffect(() => {
+    const blockedLevel = blockedLevelTargetRef.current
+    if (blockedLevel) {
+      if (levelTarget === blockedLevel.value) return
+      blockedLevelTargetRef.current = null
+    }
     if (levelTarget == null || !previousLoaded) return
     if (setData || cachedData || previousSet?.level != null) return
-    setLevel(current => (current === '' ? levelTarget : current))
+    setLevelState(current => (current === '' ? levelTarget : current))
   }, [levelTarget, previousLoaded, previousSet, setData, cachedData])
 
   const isValid = () => isSetDataValid(trackedFields, { weight, reps, time, distance, calories, level, pace })
@@ -195,7 +285,19 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     suggestedFields[field] = isSuggestedValue({ value, suggestion: suggestions[field], isCompleted })
   }
 
+  // Dos guardas, porque son dos caminos distintos por los que los valores del ejercicio VIEJO
+  // podrían colarse en el store después del reemplazo:
+  // - `pristineRef`: la fila sigue montada y ya se reseteó, pero el timer del debounce puede estar
+  //   armado con un `commit` que cierra sobre los valores de antes (el vaciado de cachedSetData
+  //   cambia la identidad de `commit` y REARMA el timer justo con ellos).
+  // - nonce vivo: la fila se desmonta en el MISMO commit que el clearExercise (al vaciarse
+  //   exerciseSetCounts, una serie añadida a mano desaparece). Ahí el efecto de reset ya no corre,
+  //   solo el flush de desmontaje, así que hay que preguntárselo al store VIVO; sin esto escribiría
+  //   una entrada huérfana en cachedSetData bajo un número de serie que nadie va a revisitar.
   const commit = useCallback(() => {
+    if (pristineRef.current) return
+    const liveNonce = getWorkoutStore().getState().exerciseResetNonces[sessionExerciseId] ?? 0
+    if (liveNonce !== lastExerciseResetNonceRef.current) return
     const formData = { weight, reps, time, distance, calories, level, pace }
     if (isCompleted) {
       if (!isSetDataValid(trackedFields, formData)) return

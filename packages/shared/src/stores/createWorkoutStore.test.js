@@ -577,6 +577,86 @@ describe('createWorkoutStore', () => {
     })
   })
 
+  // Reemplazar un ejercicio a mitad de sesión no remonta sus filas, así que el vaciado tiene que
+  // ir acompañado de una señal observable: el nonce por fila (issue #72).
+  describe('clearExercise / exerciseResetNonces', () => {
+    beforeEach(() => {
+      useWorkoutStore = createWorkoutStore(makeMemStorage().storage)
+    })
+
+    it('vacía los datos del ejercicio y bumpea SOLO el nonce de esa fila', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 80 })
+        useWorkoutStore.getState().setCachedSetData(1, 2, { weight: 85 })
+        useWorkoutStore.getState().setExerciseSetCount(1, 4)
+        useWorkoutStore.getState().completeSet(2, 1, { weight: 50 })
+      })
+
+      act(() => { useWorkoutStore.getState().clearExercise(1) })
+
+      const state = useWorkoutStore.getState()
+      expect(state.completedSets['1-1']).toBeUndefined()
+      expect(state.cachedSetData['1-2']).toBeUndefined()
+      expect(state.exerciseSetCounts[1]).toBeUndefined()
+      expect(state.exerciseResetNonces[1]).toBe(1)
+      // El otro ejercicio de la sesión no se entera: por eso el contador es por fila y no global
+      expect(state.completedSets['2-1'].weight).toBe(50)
+      expect(state.exerciseResetNonces[2]).toBeUndefined()
+    })
+
+    it('vacía también la cola offline de esa fila (la que llega a BD)', () => {
+      act(() => {
+        useWorkoutStore.getState().addPendingSet(1, 1, { sessionExerciseId: 1, setNumber: 1, weight: 100 })
+        useWorkoutStore.getState().addPendingSet(2, 1, { sessionExerciseId: 2, setNumber: 1, weight: 50 })
+      })
+
+      act(() => { useWorkoutStore.getState().clearExercise(1) })
+
+      const { pendingSets } = useWorkoutStore.getState()
+      // Sin esto, useSyncPendingSets reinsertaría la serie del ejercicio VIEJO bajo el
+      // session_exercise_id que ahora es del NUEVO: invisible en pantalla, visible en historial.
+      expect(pendingSets['1-1']).toBeUndefined()
+      expect(pendingSets['2-1'].weight).toBe(50)
+    })
+
+    it('cada reemplazo de la misma fila incrementa su contador', () => {
+      act(() => { useWorkoutStore.getState().clearExercise(7) })
+      act(() => { useWorkoutStore.getState().clearExercise(7) })
+      expect(useWorkoutStore.getState().exerciseResetNonces[7]).toBe(2)
+    })
+
+    it('startSession, restoreSession y endSession lo dejan vacío', () => {
+      const reset = () => { act(() => { useWorkoutStore.getState().clearExercise(1) }) }
+
+      reset()
+      act(() => { useWorkoutStore.getState().startSession(1, 2) })
+      expect(useWorkoutStore.getState().exerciseResetNonces).toEqual({})
+
+      reset()
+      act(() => {
+        useWorkoutStore.getState().restoreSession({
+          sessionId: 1, routineDayId: 2, routineId: 3, startedAt: 'now', completedSets: {}, cachedSetData: {},
+        })
+      })
+      expect(useWorkoutStore.getState().exerciseResetNonces).toEqual({})
+
+      reset()
+      act(() => { useWorkoutStore.getState().endSession() })
+      expect(useWorkoutStore.getState().exerciseResetNonces).toEqual({})
+    })
+
+    it('NO se persiste: rehidratarlo dispararía un reset de filas intactas al restaurar', () => {
+      const mem = makeMemStorage()
+      const s1 = createWorkoutStore(mem.storage)
+
+      act(() => { s1.getState().clearExercise(1) })
+      expect(s1.getState().exerciseResetNonces[1]).toBe(1)
+
+      expect(mem.raw.get('workout-session')).not.toContain('exerciseResetNonces')
+      expect(createWorkoutStore(mem.storage).getState().exerciseResetNonces).toEqual({})
+    })
+  })
+
   describe('Factory', () => {
     it('creates independent store instances', () => {
       const store1 = createWorkoutStore()
