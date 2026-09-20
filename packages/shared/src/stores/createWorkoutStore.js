@@ -38,6 +38,15 @@ export function workoutStoreState(set, get) {
     // número en la unidad vieja y el commit con debounce lo reescribiría encima.
     weightConversionNonce: 0,
 
+    // Contador POR FILA (sessionExerciseId -> entero) que `clearExercise` incrementa: la señal de
+    // "el ejercicio que había en esta fila ya no es el mismo" (reemplazo a mitad de sesión, issue
+    // #72). Las filas NO se remontan al reemplazar (su key cuelga del sessionExerciseId, que no
+    // cambia), así que sin esta señal el estado local de useSetInputs/useSetVideoUpload sobrevive y
+    // la fila sigue enseñando el peso, el RIR o el vídeo del ejercicio anterior.
+    // Por fila y no global (a diferencia de weightConversionNonce): un contador único reiniciaría
+    // todas las filas de la sesión. NO se persiste: rehidratarlo dispararía un reset al restaurar.
+    exerciseResetNonces: {},
+
     // Cambio de gym pendiente de persistir en BD (UI optimista). Se aplica ya en local y se
     // encola aquí; useSyncPendingGymChange lo reintenta hasta persistirlo con el RPC atómico.
     // Persistido → sobrevive a cierres de app offline. { gymId, weights: [{sessionExerciseId, setNumber, weight}] }
@@ -73,6 +82,7 @@ export function workoutStoreState(set, get) {
       exerciseSetCounts: {},
       pendingSets: {},
       weightConversionNonce: 0,
+      exerciseResetNonces: {},
       pendingGymChange: null,
       expandedExerciseKey: undefined,
       restTimerActive: false,
@@ -93,6 +103,7 @@ export function workoutStoreState(set, get) {
       completedSets,
       cachedSetData,
       weightConversionNonce: 0,
+      exerciseResetNonces: {},
       pendingGymChange: null,
       restTimerActive: false,
       restTimerEndTime: null,
@@ -118,6 +129,7 @@ export function workoutStoreState(set, get) {
       exerciseSetCounts: {},
       pendingSets: {},
       weightConversionNonce: 0,
+      exerciseResetNonces: {},
       pendingGymChange: null,
       expandedExerciseKey: undefined,
       restTimerActive: false,
@@ -382,8 +394,29 @@ export function workoutStoreState(set, get) {
       for (const [key, val] of Object.entries(state.cachedSetData)) {
         if (val.sessionExerciseId !== sessionExerciseId) newCached[key] = val
       }
+      // La cola offline también, y es la que más duele: se PERSISTE y lleva el payload completo
+      // de upsert indexado por `${sessionExerciseId}-${setNumber}`, clave que sobrevive al
+      // reemplazo porque el session_exercise_id no cambia. Sin vaciarla, el reintento de
+      // useSyncPendingSets reinserta en BD una serie del ejercicio VIEJO atribuida al NUEVO
+      // (invisible en pantalla, visible en historial y PRs); y viniendo de useRemoveSessionExercise
+      // el upsert choca contra la FK de un session_exercises ya borrado y reintenta cada 10 s.
+      const newPending = {}
+      for (const [key, val] of Object.entries(state.pendingSets)) {
+        if (val.sessionExerciseId !== sessionExerciseId) newPending[key] = val
+      }
       const { [sessionExerciseId]: _, ...newCounts } = state.exerciseSetCounts
-      return { completedSets: newCompleted, cachedSetData: newCached, exerciseSetCounts: newCounts }
+      // El bump viaja en el MISMO set() que el vaciado: quien lo observe encuentra el store ya
+      // limpio, y la señal llega con el clearExercise en vez de una vuelta de red más tarde.
+      return {
+        completedSets: newCompleted,
+        cachedSetData: newCached,
+        pendingSets: newPending,
+        exerciseSetCounts: newCounts,
+        exerciseResetNonces: {
+          ...state.exerciseResetNonces,
+          [sessionExerciseId]: (state.exerciseResetNonces[sessionExerciseId] ?? 0) + 1,
+        },
+      }
     }),
   }
 }
@@ -403,6 +436,9 @@ export function createWorkoutStore(storage) {
         // activeSessionSynced fuera: rehidratarlo a true daría por sabido lo que
         // todavía no se ha preguntado, que es justo el bug que evita (issue #30).
         activeSessionSynced: _ass,
+        // exerciseResetNonces fuera: es una señal intra-sesión. Rehidratarla haría que la primera
+        // lectura tras un cold start viera un nonce "nuevo" y reseteara filas intactas.
+        exerciseResetNonces: _ern,
         ...rest
       } = state
       return rest

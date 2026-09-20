@@ -11,7 +11,18 @@ vi.mock('../notifications.js', () => ({
   getNotifier: () => ({ show: showNotifier }),
 }))
 
+// Store mockeado y mutable: los tests del reemplazo fijan el nonce de la fila antes de rerenderizar.
+vi.mock('./_stores.js', () => {
+  const mockStore = { exerciseResetNonces: {} }
+  const useWorkoutStore = vi.fn((selector) => (selector ? selector(mockStore) : mockStore))
+  useWorkoutStore._mockStore = mockStore
+  return { useWorkoutStore }
+})
+
 import { useSetVideoUpload } from './useSetVideoUpload.js'
+import { useWorkoutStore } from './_stores.js'
+
+const store = useWorkoutStore._mockStore
 
 function deferred() {
   let resolve, reject
@@ -22,6 +33,7 @@ function deferred() {
 describe('useSetVideoUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    store.exerciseResetNonces = {}
   })
 
   it('serie completada: al terminar la subida llama a updateSetVideo (UPDATE directo)', async () => {
@@ -165,5 +177,66 @@ describe('useSetVideoUpload', () => {
 
     expect(result.current.preCompleteUrl).toBeNull()
     expect(updateSetVideoMutate).not.toHaveBeenCalled()
+  })
+})
+
+// Reemplazar el ejercicio de la fila no la remonta, así que un vídeo grabado para el ejercicio
+// anterior seguiría en memoria y se adjuntaría a la primera serie del nuevo (issue #72).
+describe('useSetVideoUpload — reemplazo del ejercicio de la fila (issue #72)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.exerciseResetNonces = {}
+  })
+
+  it('I8: el bump tira el vídeo grabado y aún sin adjuntar', async () => {
+    const uploadVideo = vi.fn().mockResolvedValue('video-key-1')
+    const { result, rerender } = renderHook(() => useSetVideoUpload({ sessionExerciseId: 1, setNumber: 1, uploadVideo }))
+
+    act(() => { result.current.upload({ name: 'a.mp4' }, { isCompleted: false }) })
+    await waitFor(() => expect(result.current.preCompleteUrl).toBe('video-key-1'))
+
+    store.exerciseResetNonces = { 1: 1 }
+    rerender()
+
+    await waitFor(() => expect(result.current.preCompleteUrl).toBeNull())
+    expect(result.current.hasError).toBe(false)
+    expect(result.current.progress).toBe(0)
+  })
+
+  it('I8: una subida en vuelo cuando llega el bump ya no puede escribir en la fila', async () => {
+    const pending = deferred()
+    const uploadVideo = vi.fn().mockReturnValue(pending.promise)
+    const { result, rerender } = renderHook(() => useSetVideoUpload({ sessionExerciseId: 1, setNumber: 1, uploadVideo }))
+
+    act(() => { result.current.upload({ name: 'a.mp4' }, { isCompleted: true }) })
+    store.exerciseResetNonces = { 1: 1 }
+    rerender()
+
+    await act(async () => { pending.resolve('key-late') })
+
+    expect(result.current.preCompleteUrl).toBeNull()
+    expect(updateSetVideoMutate).not.toHaveBeenCalled()
+  })
+
+  it('al montar no hay reset, aunque la fila ya tenga nonce de un reemplazo anterior', async () => {
+    store.exerciseResetNonces = { 1: 3 }
+    const uploadVideo = vi.fn().mockResolvedValue('video-key-1')
+    const { result } = renderHook(() => useSetVideoUpload({ sessionExerciseId: 1, setNumber: 1, uploadVideo }))
+
+    act(() => { result.current.upload({ name: 'a.mp4' }, { isCompleted: false }) })
+    await waitFor(() => expect(result.current.preCompleteUrl).toBe('video-key-1'))
+  })
+
+  it('el bump de OTRA fila no toca esta', async () => {
+    const uploadVideo = vi.fn().mockResolvedValue('video-key-1')
+    const { result, rerender } = renderHook(() => useSetVideoUpload({ sessionExerciseId: 1, setNumber: 1, uploadVideo }))
+
+    act(() => { result.current.upload({ name: 'a.mp4' }, { isCompleted: false }) })
+    await waitFor(() => expect(result.current.preCompleteUrl).toBe('video-key-1'))
+
+    store.exerciseResetNonces = { 2: 1 }
+    rerender()
+
+    expect(result.current.preCompleteUrl).toBe('video-key-1')
   })
 })
