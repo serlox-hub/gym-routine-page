@@ -64,7 +64,7 @@ export { initApi } from './api/_client.js'
 export { queryClient } from './lib/queryClient.js'
 
 // Store factories
-export { createWorkoutStore, workoutStoreState } from './stores/createWorkoutStore.js'
+export { createWorkoutStore, workoutStoreState, workoutPartialize, buildSessionTransitionReset, buildSessionSetDataReset } from './stores/createWorkoutStore.js'
 export { createAuthStore } from './stores/createAuthStore.js'
 
 // Notifications
