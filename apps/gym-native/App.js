@@ -43,6 +43,7 @@ initHaptics({
   onSetComplete: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
   onExerciseComplete: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
   onPRDetected: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+  onSwipeThresholdCross: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
 })
 
 setupNotificationHandler()

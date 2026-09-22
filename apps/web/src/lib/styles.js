@@ -46,6 +46,18 @@ export const design = {
   slideAnimDuration: 150,
   swipeThreshold: 60,
 
+  // Gestos de fila (swipe para borrar de una tarjeta de ejercicio)
+  // `gestureActivationDistance` nombra el 5 que ya se repetía en los RestTimer/ActiveSessionBanner
+  // de NATIVE. En web no existe ese 5: el arrastre equivalente vive en `hooks/useDrag.js` y usa 3,
+  // que es otro gesto (reposición libre) y no debe unificarse con este.
+  // El borrado tiene umbral PROPIO en vez de reusar `swipeThreshold` (paginación del chart de
+  // StreakCard): son gestos distintos, y compartir el número haría que afinar uno retunease el
+  // otro en silencio. `swipeDeleteMaxTravel > swipeDeleteThreshold` es obligatorio: con el
+  // recorrido por debajo del disparo la fila nunca podría llegar a borrarse.
+  gestureActivationDistance: 5,
+  swipeDeleteThreshold: 72,
+  swipeDeleteMaxTravel: 96,
+
   // Routine card
   routineCardRadius: 16,
   routineCardPadding: 16,
