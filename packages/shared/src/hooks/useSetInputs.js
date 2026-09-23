@@ -248,7 +248,7 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
   // la del ejercicio viejo (la mutación solo toca exercise_id/rir/notes) y un "nivel 8" es la
   // escala de OTRA máquina. El bloqueo guarda el VALOR, no un booleano: en cuanto la prescripción
   // cambia ya es del ejercicio nuevo (el usuario la ha reconfigurado desde «Editar») y volver a
-  // ignorarla sería tragarse en silencio algo que acaba de teclear. Ver docs/DECISIONS.md (#72).
+  // ignorarla sería tragarse en silencio algo que acaba de teclear.
   useEffect(() => {
     const blockedLevel = blockedLevelTargetRef.current
     if (blockedLevel) {
