@@ -45,7 +45,7 @@ export const baseConfig = [
           selector: 'Literal[value=/#[0-9a-fA-F]{3,8}/]',
           message: 'No hardcodees un hex de color en componentes: usa un token de `colors` (styles.js).',
         },
-        // Inputs numéricos (DECISIONS 2026-07): el navegador decide el separador decimal por SU
+        // Inputs numéricos (DECISIONS, issue #26): el navegador decide el separador decimal por SU
         // locale, así que `<input type="number">` con locale de punto guarda 825 al teclear "82,5".
         // Al targetear el `input` en minúscula (elemento DOM), el `<Input type="number">` de ui/
         // queda exento por construcción: ese wrapper ya delega en CaretEndInput.
