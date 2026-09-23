@@ -74,7 +74,7 @@ jobs:
           echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
 
       # `supabase/schema.sql` es la fuente de verdad declarada para "qué existe HOY" en la BD
-      # (CLAUDE.md § Database Schema) y hasta ahora nada comprobaba que lo fuera: el guard A7 solo
+      # (CLAUDE.md § Database Schema) y hasta ahora nada comprobaba que lo fuera: la revisión de `/gate` (eje «Migración sin snapshot») solo
       # mira que el archivo esté en el diff, no su contenido. Ya mintió — le faltaba la RPC
       # `duplicate_routine_day` de la 059, que la app llama en producción (ver docs/DECISIONS.md).
       # Aquí sale gratis porque la BD que acaba de levantar el paso anterior ES "las migraciones de
