@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronDown, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react'
-import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, Modal } from '../ui/index.js'
+import { Card, ConfirmModal, DragHandle, DropdownMenu, LoadingSpinner, Modal } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { getExistingSupersetIds, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced }) {
+function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced, dragHandleProps = null, isDragging = false }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { id, name } = day
@@ -119,6 +119,8 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
       style={{
         borderRadius: 14,
         padding: isEditing ? 16 : '12px 14px',
+        // Mientras viaja con el dedo se despega del resto de la lista.
+        boxShadow: isDragging ? `0 8px 24px ${colors.shadow}` : undefined,
       }}
     >
         <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={handleClick}>
@@ -147,6 +149,9 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   : <Play size={20} style={{ color: colors.success }} />
                 }
               </button>
+            )}
+            {isEditing && (
+              <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
             )}
             {isEditing && (
               <DropdownMenu

@@ -11,6 +11,7 @@ Monorepo with web (React + Vite) and mobile (Expo + NativeWind) apps sharing bus
 - Zustand (local state) — synced version across apps
 - Tailwind CSS (web) / NativeWind v4 (mobile)
 - React Router DOM (web) / React Navigation (mobile)
+- `@dnd-kit/core` + `@dnd-kit/sortable` (web) / `react-native-gesture-handler` + `react-native-reanimated` (mobile) — arrastre para reordenar. Las dos nativas son módulos nativos: tocarlas obliga a reconstruir el dev client. ⚠️ `react-native-reanimated` va clavada en **4.2.2**, no en la 4.2.1 que pide el SDK 55: la 4.2.1 resuelve `react-native-worklets` 0.13, que exige RN ≥0.86 y aquí hay 0.83.2, así que `npm install` muere. `npx expo-doctor` la marca como desajuste de patch (como ya hace con `expo-*` y `react-native`); no la "arregles" sin subir antes React Native
 - `@gym/shared` — shared business logic package
 - i18next + react-i18next (internationalization)
 
@@ -182,6 +183,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 ### Styling
 - Use Tailwind CSS classes (web) / NativeWind classes (mobile)
 - Use style objects from `lib/styles.js` for consistency
+- **`className` NO funciona sobre componentes animados (native)**: NativeWind aplica `className` sustituyendo el TIPO del componente por su versión interoperada, y solo tiene registrados los de `react-native`. Un `Animated.ScrollView`/`Animated.View` de Reanimated no está en ese mapa (y Reanimated renderiza el componente interno con el jsx-runtime de React, no con el de NativeWind), así que el `className` llega como prop desconocida y se descarta **sin aviso ni error**: el elemento se queda sin estilo y nada lo caza (`apps/gym-native` no tiene runner). En cualquier `Animated.*`, usar `style`. Ver `RoutineDetailScreen.jsx`.
 - **Safe Area (native)**: Todo contenido visible debe respetar el safe area (notch, Dynamic Island, home indicator). Usar `SafeAreaView` de `react-native-safe-area-context` para layouts, o `useSafeAreaInsets()` para elementos con `position: 'absolute'` que necesitan offset manual. Nunca usar valores fijos de `top`/`bottom` sin sumar el inset correspondiente.
 - **Contenedor con scroll que contiene inputs (web)**: el padding horizontal va en el propio elemento con `overflow-*-auto`, nunca delegado al padre o al hijo. `overflow-y-auto` recorta también en el eje X, y el ring de foco de `Input`/`Select`/`Textarea` (`focus:ring-1`) es un `box-shadow` que pinta 1px FUERA de la caja: sin padding propio queda cortado a izquierda y derecha. Si no se quiere cambiar la métrica visual, `px-1 -mx-1` en la caja de scroll.
 - **Charts de recharts (web)**: la altura va en el propio `ResponsiveContainer` como número (`height={180}`), nunca en un div padre con `height="100%"` en el container. Recharts arranca midiendo -1x-1 y avisa por consola en cada montaje (también en el build de producción).
@@ -394,6 +396,7 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ Asumir que lo que se progresa es el peso ("Sube el peso" fijo, `currentWeight`, exigir peso + reps). El progresable lo decide `getProgressableField()`: peso si el ejercicio lo mide, NIVEL si no (en un cardio el nivel juega el papel del peso). Ver `docs/DECISIONS.md`
 - ❌ Comparar un esfuerzo real con el prescrito a mano (`real >= objetivo`). La escala invierte el sentido (RIR: más alto = más fácil; RPE: más alto = más duro) → `metEffortTarget(real, objetivo, trackedFields)`
 - ❌ Meter en la fila de serie nada que no sea un dato de la serie (referencia de la última vez, aviso de progresión, timer). Van a la subfila `SetRowMeta`, siempre en el mismo sitio, o roban ancho a los inputs. Ver `docs/DECISIONS.md`
+- ❌ Reordenar una lista con un arrastre cableado a mano en la pantalla. El arrastre vive en `ui/SortableList.jsx` (web, `@dnd-kit`) y `ui/DraggableList.jsx` (native, RNGH + Reanimated), con la misma API (`items`/`renderItem`/`onReorder(from,to)`/`disabled`; native además recibe el `scrollRef`). El arrastre **siempre arranca en un asa** (`ui/DragHandle.jsx`), nunca en la fila entera: es lo que deja intactas la pulsación de la tarjeta, el menú de dentro de la cabecera y el scroll con el dedo. La fila recibe `dragHandleProps` opaco y no importa nada de la librería de gestos. **El menú de posiciones se queda**: es el único camino con lector de pantalla. La aritmética (dónde cae, cuánto se aparta el vecino, velocidad de auto-scroll) está en `lib/dragReorder.js`; sus funciones llevan `'worklet'` porque native las llama desde el hilo de UI (`babel-preset-expo` ya configura el plugin de worklets; el de Reanimated 3 NO se añade, ver el comentario en `babel.config.js`)
 - ❌ Reimplementar por plataforma las reglas de un gesto de fila. Cuándo un movimiento cuenta como swipe (dominancia 2:1 sobre el eje vertical, distancia medida solo en `dx`) y cuánto se mueve la fila viven en `lib/swipeGesture.js` (`shouldClaimSwipe`/`clampSwipeOffset`), y `blocked` entra en la DECISIÓN de reclamar, no después, para que el futuro arrastre-para-reordenar pueda impedirlo. Lo que sí se duplica a propósito es recordar en qué quedó el gesto: native tiene que clasificarlo dentro de `onMoveShouldSetPanResponder`, un predicado síncrono que no puede consultar estado compartido. Ver `docs/DECISIONS.md` (issue #78)
 - ❌ Differences between web and native — all screens must have the same appearance, section order, and functionality on both platforms unless technically impossible
 
@@ -452,6 +455,7 @@ Extract when logic:
 | Prompts IA / formato JSON rutinas | `routineIO.js` | `buildChatbotPrompt()`, `ROUTINE_JSON_FORMAT` |
 | Matching ejercicio→catálogo (import) | `exerciseMatch.js` | `normalizeExerciseName()`, `buildExerciseIndex()`, `resolveExerciseId()` |
 | Gesto de fila (swipe para borrar) | `swipeGesture.js` | `shouldClaimSwipe()`, `clampSwipeOffset()` |
+| Aritmética del arrastre-para-reordenar | `dragReorder.js` | `getDropIndex()`, `getDragShift()`, `getAutoScrollSpeed()` |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
 
 All these files live in `packages/shared/src/lib/` and are exported via `@gym/shared`.

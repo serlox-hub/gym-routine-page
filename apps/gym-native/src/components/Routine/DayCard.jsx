@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronDown, ChevronRight, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react-native'
-import { Card, ConfirmModal, DropdownMenu, LoadingSpinner, Modal, ReorderModal } from '../ui'
+import { Card, ConfirmModal, DragHandle, DropdownMenu, LoadingSpinner, Modal, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
@@ -31,6 +31,9 @@ export default function DayCard({
   hasActiveSession,
   activeRoutineDayId,
   activeSessionSynced,
+  isReorderingDays = false,
+  dragHandleProps = null,
+  isDragging = false,
   navigation: _navigation,
 }) {
   const { t } = useTranslation()
@@ -124,7 +127,13 @@ export default function DayCard({
   return (
     <Card
       className="mb-2"
-      style={{ borderRadius: 14, padding: 12, paddingHorizontal: 14 }}
+      style={{
+        borderRadius: 14,
+        padding: 12,
+        paddingHorizontal: 14,
+        // Mientras viaja con el dedo se despega del resto de la lista.
+        ...(isDragging ? { shadowColor: colors.shadow, shadowOpacity: 1, shadowRadius: 12, shadowOffset: { width: 0, height: 8 } } : null),
+      }}
       onPress={handleClick}
     >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -155,6 +164,9 @@ export default function DayCard({
               </Pressable>
             )}
             {isEditing && (
+              <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
+            )}
+            {isEditing && (
               <DropdownMenu
                 items={[
                   {
@@ -169,6 +181,7 @@ export default function DayCard({
                   ...(totalDays > 1 ? [{
                     icon: ArrowUpDown,
                     label: t('routine:reorder'),
+                    disabled: isReorderingDays,
                     onClick: () => setShowReorderDay(true),
                   }] : []),
                   { icon: Trash2, label: t('common:buttons.delete'), onClick: () => onDelete(id), danger: true },

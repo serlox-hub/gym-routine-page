@@ -36,8 +36,9 @@ vi.mock('./useAuth.js', () => ({
 }))
 
 // Mock notifications
+const notify = vi.fn()
 vi.mock('../notifications.js', () => ({
-  getNotifier: vi.fn(() => ({ show: vi.fn() })),
+  getNotifier: vi.fn(() => ({ show: notify })),
 }))
 
 import {
@@ -53,7 +54,11 @@ import {
   addExerciseToDay,
   duplicateRoutineDay,
   duplicateRoutine,
+  reorderRoutineDays,
 } from '../api/routineApi.js'
+
+import { QUERY_KEYS } from '../lib/constants.js'
+import { t } from '../i18n/index.js'
 
 import {
   useRoutines,
@@ -68,15 +73,19 @@ import {
   useAddExerciseToDay,
   useDuplicateRoutine,
   useDuplicateRoutineDay,
+  useReorderRoutineDays,
 } from './useRoutines.js'
 
-function createWrapper() {
-  const queryClient = new QueryClient({
+function createQueryClient() {
+  return new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   })
+}
+
+function createWrapper(queryClient = createQueryClient()) {
   return ({ children }) => React.createElement(QueryClientProvider, { client: queryClient }, children)
 }
 
@@ -303,5 +312,73 @@ describe('useRoutines — mutations', () => {
     })
 
     expect(duplicateRoutineDay).toHaveBeenCalledWith({ dayId: 'day-1', newName: 'Día 1 (copia)' })
+  })
+})
+
+describe('useReorderRoutineDays — actualización optimista', () => {
+  const ROUTINE_ID = 'routine-1'
+  const QUERY_KEY = [QUERY_KEYS.ROUTINE_DAYS, ROUTINE_ID]
+  const CACHED_DAYS = [
+    { id: 'day-1', name: 'Empuje', sort_order: 1 },
+    { id: 'day-2', name: 'Tirón', sort_order: 2 },
+    { id: 'day-3', name: 'Pierna', sort_order: 3 },
+  ]
+  // Lo que produciría `moveItemToPosition` al mover «Pierna» a la primera posición.
+  const REORDERED = [CACHED_DAYS[2], CACHED_DAYS[0], CACHED_DAYS[1]]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('escribe el orden nuevo en la caché con sort_order renumerado 1..n antes de que responda la API', async () => {
+    let resolveApi
+    reorderRoutineDays.mockReturnValueOnce(new Promise((resolve) => { resolveApi = resolve }))
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(QUERY_KEY, CACHED_DAYS)
+
+    const { result } = renderHook(() => useReorderRoutineDays(), { wrapper: createWrapper(queryClient) })
+
+    act(() => {
+      result.current.mutate({ routineId: ROUTINE_ID, days: REORDERED })
+    })
+
+    await waitFor(() => expect(queryClient.getQueryData(QUERY_KEY)).toEqual([
+      { id: 'day-3', name: 'Pierna', sort_order: 1 },
+      { id: 'day-1', name: 'Empuje', sort_order: 2 },
+      { id: 'day-2', name: 'Tirón', sort_order: 3 },
+    ]))
+
+    resolveApi()
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  })
+
+  it('restaura la caché y avisa si la API falla', async () => {
+    reorderRoutineDays.mockRejectedValueOnce(new Error('network down'))
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(QUERY_KEY, CACHED_DAYS)
+
+    const { result } = renderHook(() => useReorderRoutineDays(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ routineId: ROUTINE_ID, days: REORDERED }).catch(() => {})
+    })
+
+    expect(queryClient.getQueryData(QUERY_KEY)).toEqual(CACHED_DAYS)
+    expect(notify).toHaveBeenCalledWith(t('routine:day.reorderFailed'), 'error')
+  })
+
+  it('normaliza el routineId a String para dar con la caché registrada por la query', async () => {
+    reorderRoutineDays.mockResolvedValueOnce(undefined)
+    const queryClient = createQueryClient()
+    queryClient.setQueryData([QUERY_KEYS.ROUTINE_DAYS, '7'], CACHED_DAYS)
+
+    const { result } = renderHook(() => useReorderRoutineDays(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ routineId: 7, days: REORDERED })
+    })
+
+    expect(queryClient.getQueryData([QUERY_KEYS.ROUTINE_DAYS, '7']).map(d => d.id))
+      .toEqual(['day-3', 'day-1', 'day-2'])
   })
 })

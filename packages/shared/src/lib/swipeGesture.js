@@ -14,7 +14,7 @@
  * lista dejaría de scrollear; un arrastre horizontal deliberado sí clasifica de inmediato.
  *
  * `blocked` entra en la decisión de reclamar, no en una etapa posterior, para que el futuro
- * arrastre-para-reordenar (long press + vertical sobre esta misma fila) pueda impedir el
+ * arrastre-para-reordenar de la fila (desde un asa, como el de los días) pueda impedir el
  * swipe en el único momento en que native puede consultarlo.
  *
  * @param {number} dx - Desplazamiento horizontal acumulado del gesto
