@@ -166,6 +166,7 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **`checkJs` no se adopta:** 71 errores para 1 bug real. Se usó una vez como caza-bugs.
 - **Exenciones por construcción:** la regla de `<input type="number">` mira `input` en minúscula (no `<Input>`) y la native mira `TextInput` (no `NumberTextInput`).
 - **`/gate` activa `build`** (~2s aquí, y es lo único que caza un export que falta en el barrel) y `schemaDrift`.
+- **Los e2e no son gate de `/gate`, solo corren en CI:** exigen Docker y el stack levantado, y empiezan por `db reset`, así que en cada `/gate` costarían decenas de segundos y borrarían la BD local. Un e2e roto se ve al pushear, no antes.
 - **Pendiente: lintear `packages/shared`.** Hoy el lint no lo ve. Medido: 41 avisos de color, todos en `lib/volumeConstants.js` (necesita la exención de `styles.js`), y 7 `no-unused-vars`. Desbloquearía una regla de `queryKey` literal.
 - **Native lintea sus imports con `import-x`** (#76), solo `named` y `no-unresolved`: Metro empaqueta sin quejarse un named import inexistente. `extensions` con `.jsx` es obligatorio. `default`/`namespace` dan falsos positivos con Flow.
 - ⚠️ **Tripwire:** `import-x/named` se salta en silencio lo que no sabe parsear. Si `@gym/shared` adopta sintaxis que el parser no lea, el gate deja de protegerlo sin error. Re-verificar inyectando `import { thisDoesNotExist } from '@gym/shared'`.

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 
 // Paridad de keys es ↔ en: cada namespace debe tener EXACTAMENTE las mismas claves en ambos
 // idiomas (regla del CLAUDE.md: nunca añadir una key a un solo idioma). Antes esto solo lo
-// cazaba un grep del agente en /pre-commit; aquí es determinista y corre en CI (issue #20, G1).
+// cazaba un grep de la revisión manual; aquí es determinista y corre en CI (issue #20, G1).
 // Auto-descubre namespaces leyendo el directorio → una key/namespace nuevo queda cubierto sin
 // tocar este test.
 const localesDir = join(dirname(fileURLToPath(import.meta.url)), 'locales')
