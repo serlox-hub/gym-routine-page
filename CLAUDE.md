@@ -394,6 +394,7 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ❌ Asumir que lo que se progresa es el peso ("Sube el peso" fijo, `currentWeight`, exigir peso + reps). El progresable lo decide `getProgressableField()`: peso si el ejercicio lo mide, NIVEL si no (en un cardio el nivel juega el papel del peso). Ver `docs/DECISIONS.md`
 - ❌ Comparar un esfuerzo real con el prescrito a mano (`real >= objetivo`). La escala invierte el sentido (RIR: más alto = más fácil; RPE: más alto = más duro) → `metEffortTarget(real, objetivo, trackedFields)`
 - ❌ Meter en la fila de serie nada que no sea un dato de la serie (referencia de la última vez, aviso de progresión, timer). Van a la subfila `SetRowMeta`, siempre en el mismo sitio, o roban ancho a los inputs. Ver `docs/DECISIONS.md`
+- ❌ Reimplementar por plataforma las reglas de un gesto de fila. Cuándo un movimiento cuenta como swipe (dominancia 2:1 sobre el eje vertical, distancia medida solo en `dx`) y cuánto se mueve la fila viven en `lib/swipeGesture.js` (`shouldClaimSwipe`/`clampSwipeOffset`), y `blocked` entra en la DECISIÓN de reclamar, no después, para que el futuro arrastre-para-reordenar pueda impedirlo. Lo que sí se duplica a propósito es recordar en qué quedó el gesto: native tiene que clasificarlo dentro de `onMoveShouldSetPanResponder`, un predicado síncrono que no puede consultar estado compartido. Ver `docs/DECISIONS.md` (issue #78)
 - ❌ Differences between web and native — all screens must have the same appearance, section order, and functionality on both platforms unless technically impossible
 
 ## What TO Do
@@ -450,6 +451,7 @@ Extract when logic:
 | Form de override de ejercicio del sistema (notas + unidad) | `exerciseOverrideForm.js` | `buildExerciseOverrideForm()` |
 | Prompts IA / formato JSON rutinas | `routineIO.js` | `buildChatbotPrompt()`, `ROUTINE_JSON_FORMAT` |
 | Matching ejercicio→catálogo (import) | `exerciseMatch.js` | `normalizeExerciseName()`, `buildExerciseIndex()`, `resolveExerciseId()` |
+| Gesto de fila (swipe para borrar) | `swipeGesture.js` | `shouldClaimSwipe()`, `clampSwipeOffset()` |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
 
 All these files live in `packages/shared/src/lib/` and are exported via `@gym/shared`.
