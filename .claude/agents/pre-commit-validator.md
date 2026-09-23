@@ -134,7 +134,8 @@ Cada cambio debe dejar **en el repositorio** (no en memorias externas) lo necesa
 
 ## C1. Dónde va cada tipo de contexto
 - **Convenciones / arquitectura / patrones nuevos o cambiados** → `CLAUDE.md` actualizado (p. ej. nueva categoría de token, nuevo archivo crítico en `lib/`, nueva convención de tamaños). Si el diff cambia una convención y `CLAUDE.md` no se tocó → hallazgo.
-- **Decisiones no obvias y "cómo se implementó X" a nivel feature** → entrada en `docs/DECISIONS.md` (log append-only: fecha, qué cambió, **por qué**, cómo, alternativas descartadas, gotchas). Ej.: por qué una subcarpeta concreta en un bucket, por qué una dependencia nativa concreta, por qué un esquema/versión.
+- **Decisiones no obvias y "cómo se implementó X" a nivel feature** → entrada en `docs/DECISIONS.md` (fecha, qué cambió, **por qué**, alternativas descartadas, gotchas), solo si una sesión futura leyendo el código podría deshacerlo. La mayoría de los cambios no producen entrada. Ej.: por qué una subcarpeta concreta en un bucket, por qué una dependencia nativa concreta, por qué un esquema/versión.
+- **Poda de `DECISIONS.md`**: si el diff borra, revierte o cambia el comportamiento que describe una entrada, la entrada se borra o se reescribe a lo vigente en el mismo cambio (nunca un parche "SUPERADO"). Si no se tocó → hallazgo.
 - **"Porqué" local no evidente** → comentario inline junto al código (el *por qué*, no el *qué*). Un valor mágico, un workaround, un orden que importa → merece comentario.
 - **Env vars / config nuevas** → `.env.example` (ambas apps) + descripción.
 - **Cambios de esquema / versión** → nota de versión y, si aplica, `routineIO` (Paso R).

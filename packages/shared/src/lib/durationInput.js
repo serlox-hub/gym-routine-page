@@ -2,7 +2,7 @@
  * Entrada de duración por dígitos (patrón de cronómetro): se teclean números y se rellenan
  * desde la derecha — "3" → 0:03, "130" → 1:30, "2000" → 20:00, "32400" → 3:24:00. Es lo que permite
  * meter una duración en UN solo input estrecho (la fila de serie no tiene ancho para dos cajas
- * mm + ss; ver docs/DECISIONS.md), y evita la ambigüedad de "¿30 es medio minuto o media hora?".
+ * mm + ss), y evita la ambigüedad de "¿30 es medio minuto o media hora?".
  *
  * Los dígitos son el estado que teclea el usuario; el valor real siempre son SEGUNDOS.
  * Durante el tecleo se admite un `ss` > 59 ("0:75"); al salir del campo se normaliza
