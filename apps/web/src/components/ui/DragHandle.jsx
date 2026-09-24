@@ -25,7 +25,10 @@ function DragHandle({ dragHandleProps, disabled = false, size = 16 }) {
       style={{
         ...handleStyle,
         display: 'flex',
-        padding: 4,
+        // 44px de zona táctil (lo mínimo cómodo para un dedo) sin mover el icono: el margen negativo
+        // devuelve al layout el tamaño de antes (16 + 2*4).
+        padding: 14,
+        margin: -10,
         opacity: disabled ? 0.4 : 1,
         cursor: disabled ? 'default' : handleStyle?.cursor,
       }}

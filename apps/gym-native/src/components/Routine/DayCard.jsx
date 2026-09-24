@@ -138,6 +138,9 @@ export default function DayCard({
     >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+            {isEditing && (
+              <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
+            )}
             {isExpanded
               ? <ChevronDown size={16} color={colors.textSecondary} />
               : <ChevronRight size={16} color={colors.textSecondary} />
@@ -162,9 +165,6 @@ export default function DayCard({
                   : <Play size={20} color={colors.success} />
                 }
               </Pressable>
-            )}
-            {isEditing && (
-              <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
             )}
             {isEditing && (
               <DropdownMenu

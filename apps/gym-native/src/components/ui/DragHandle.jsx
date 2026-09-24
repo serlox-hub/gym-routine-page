@@ -13,14 +13,16 @@ export default function DragHandle({ dragHandleProps, disabled = false, size = 1
   return (
     <GestureDetector gesture={dragHandleProps.gesture}>
       <View
-        hitSlop={8}
         // El asa reclama el toque para que el `Pressable` de la `Card` que la contiene no lo
         // reciba: sin esto, tocar el asa (o mantenerla pulsada sin llegar a mover) pliega la
         // tarjeta, porque RNGH solo cancela ese toque cuando el pan ACTIVA, y eso pide recorrido.
         // No afecta al pan: vive fuera del sistema de responder de RN. Equivale al
         // `stopPropagation` del asa de web.
         onStartShouldSetResponder={() => true}
-        style={{ padding: 4, opacity: disabled ? 0.4 : 1 }}
+        // 44px de zona táctil sin mover el icono: el margen negativo devuelve al layout el tamaño de
+        // antes (16 + 2*4). Con tamaño real y no con `hitSlop`, porque el pan de RNGH mide la caja
+        // de la vista y no está verificado que respete el `hitSlop` de RN.
+        style={{ padding: 14, margin: -10, opacity: disabled ? 0.4 : 1 }}
       >
         <GripVertical size={size} color={colors.textSecondary} />
       </View>

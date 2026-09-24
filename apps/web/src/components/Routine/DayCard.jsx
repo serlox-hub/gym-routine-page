@@ -125,6 +125,9 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
     >
         <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={handleClick}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            {isEditing && (
+              <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
+            )}
             <ChevronDown
               size={16}
               color={colors.textSecondary}
@@ -149,9 +152,6 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   : <Play size={20} style={{ color: colors.success }} />
                 }
               </button>
-            )}
-            {isEditing && (
-              <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
             )}
             {isEditing && (
               <DropdownMenu
