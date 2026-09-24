@@ -5,7 +5,7 @@ import { design as nativeDesign } from '../../../gym-native/src/lib/styles.js'
 // Los tokens de gesto los consumen las DOS apps y viven duplicados en sus `styles.js`. Si uno
 // deriva, el swipe se siente distinto en cada plataforma y nada lo caza: `apps/gym-native` no
 // tiene runner, así que la comprobación vive en la suite de web, como `envExample.test.js`.
-const GESTURE_TOKENS = ['gestureActivationDistance', 'swipeDeleteThreshold', 'swipeDeleteMaxTravel']
+const GESTURE_TOKENS = ['gestureActivationDistance', 'swipeDeleteThreshold', 'swipeDeleteMaxTravel', 'dragAutoScrollEdge']
 
 describe('tokens de gesto de fila (design)', () => {
   for (const token of GESTURE_TOKENS) {

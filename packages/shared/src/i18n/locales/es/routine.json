@@ -53,6 +53,7 @@
     "delete": "Eliminar día",
     "duplicate": "Duplicar día",
     "duplicated": "Día duplicado",
+    "reorderFailed": "No se pudo reordenar el día. Inténtalo de nuevo.",
     "deleteConfirm": "¿Eliminar este día y todos sus ejercicios?",
     "noDays": "Aún no hay días en esta rutina",
     "noDaysHint": "Empieza añadiendo tu primer día de entrenamiento",

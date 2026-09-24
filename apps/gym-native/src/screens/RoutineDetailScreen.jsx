@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native'
+import { View, Text, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Animated, { useAnimatedRef } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, Pencil, Repeat, Layers, CalendarDays } from 'lucide-react-native'
 import {
@@ -10,7 +11,7 @@ import {
   useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay,
   useSetFavoriteRoutine,
 } from '../hooks/useRoutines'
-import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, ConfirmModal, DraggableList } from '../components/ui'
 import {
   DayCard, RoutineHeader, RoutineEditForm, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal, VolumeSummary,
@@ -23,6 +24,9 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const { t } = useTranslation()
   const { routineId, startEditing } = route.params
   const [isEditing, setIsEditing] = useState(!!startEditing)
+  // `Animated.ScrollView` + ref animada, no un `ScrollView` a secas: el auto-scroll del arrastre
+  // lo conduce `scrollTo` desde el hilo de UI, y sobre un ScrollView normal no hace nada ni avisa.
+  const scrollRef = useAnimatedRef()
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
   const activeSessionSynced = useWorkoutStore(state => state.activeSessionSynced)
@@ -95,6 +99,8 @@ export default function RoutineDetailScreen({ route, navigation }) {
     } catch { /* handled by TanStack Query */ }
   }
 
+  // El arrastre y la lista de posiciones del ReorderModal entran por aquí: un solo camino a
+  // `moveItemToPosition` y a la mutación.
   const handleReorderDay = async (dayId, newIndex) => {
     if (!days) return
     const newDays = moveItemToPosition(days, dayId, newIndex)
@@ -102,6 +108,15 @@ export default function RoutineDetailScreen({ route, navigation }) {
     try {
       await reorderDays.mutateAsync({ routineId, days: newDays })
     } catch { /* handled by TanStack Query */ }
+  }
+
+  // Soltar el día donde estaba no es una reordenación. Hace falta comprobarlo aquí porque
+  // `moveItemToPosition` devuelve el array de entrada (truthy) cuando no hay movimiento, así que
+  // el `if (!newDays)` de `handleReorderDay` no lo caza; el ReorderModal no puede producir este
+  // caso porque deshabilita la posición actual.
+  const handleReorderByDrag = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return
+    handleReorderDay(days[fromIndex].id, toIndex)
   }
 
   const handleDuplicateDay = async (dayId) => {
@@ -134,7 +149,12 @@ export default function RoutineDetailScreen({ route, navigation }) {
         navigation={navigation}
       />
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 40 }}>
+      {/* `style`, NO `className`: NativeWind sustituye el TIPO del componente por su versión
+          interoperada, y solo conoce los de `react-native`. `Animated.ScrollView` no está en ese
+          mapa (y Reanimated renderiza el ScrollView interno con el jsx-runtime de React, no con el
+          de NativeWind), así que el `className` llegaría como prop desconocida y se perdería sin
+          aviso: la pantalla se quedaría sin `px-6` y sin `flex-1`. 24 = `px-6`. */}
+      <Animated.ScrollView ref={scrollRef} style={{ flex: 1, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Info Section (view mode) */}
         {!isEditing && (
           <View style={{ gap: 8, marginBottom: 24 }}>
@@ -245,58 +265,66 @@ export default function RoutineDetailScreen({ route, navigation }) {
             )}
           </View>
         ) : (
-          days?.map((day, index) => (
-            <DayCard
-              key={day.id}
-              day={day}
-              routineId={routineId}
-              routineName={routine?.name}
-              isEditing={isEditing}
-              onAddExercise={(dayId, supersets) => {
-                setAddExerciseDayId(dayId)
-                setAddExerciseSupersets(supersets)
-                setAddExerciseIsWarmup(false)
-                setShowAddExercise(true)
-              }}
-              onAddWarmup={(dayId, supersets) => {
-                setAddExerciseDayId(dayId)
-                setAddExerciseSupersets(supersets)
-                setAddExerciseIsWarmup(true)
-                setShowAddExercise(true)
-              }}
-              onEditExercise={(re, dayId, supersets) => {
-                setEditingExercise(re)
-                setEditExerciseDayId(dayId)
-                setEditExerciseSupersets(supersets)
-                setIsReplacingExercise(false)
-                setShowEditExercise(true)
-              }}
-              onReplaceExercise={(re, dayId) => {
-                setEditingExercise(re)
-                setEditExerciseDayId(dayId)
-                setEditExerciseSupersets([])
-                setIsReplacingExercise(true)
-                setShowEditExercise(true)
-              }}
-              onDuplicateExercise={async (re, dayId) => {
-                try {
-                  await duplicateExercise.mutateAsync({ routineExercise: re, dayId })
-                } catch { /* handled by TanStack Query */ }
-              }}
-              onMoveExerciseToDay={handleOpenMoveModal}
-              onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
-              onDuplicate={handleDuplicateDay}
-              isDuplicatingDay={duplicateDay.isPending}
-              onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
-              currentIndex={index}
-              totalDays={days.length}
-              dayNames={days.map(d => d.name)}
-              hasActiveSession={hasActiveSession}
-              activeRoutineDayId={activeRoutineDayId}
-              activeSessionSynced={activeSessionSynced}
-              navigation={navigation}
-            />
-          ))
+          <DraggableList
+            items={days}
+            scrollRef={scrollRef}
+            disabled={!isEditing || reorderDays.isPending}
+            onReorder={handleReorderByDrag}
+            renderItem={(day, { dragHandleProps, isDragging, index }) => (
+              <DayCard
+                day={day}
+                routineId={routineId}
+                routineName={routine?.name}
+                isEditing={isEditing}
+                onAddExercise={(dayId, supersets) => {
+                  setAddExerciseDayId(dayId)
+                  setAddExerciseSupersets(supersets)
+                  setAddExerciseIsWarmup(false)
+                  setShowAddExercise(true)
+                }}
+                onAddWarmup={(dayId, supersets) => {
+                  setAddExerciseDayId(dayId)
+                  setAddExerciseSupersets(supersets)
+                  setAddExerciseIsWarmup(true)
+                  setShowAddExercise(true)
+                }}
+                onEditExercise={(re, dayId, supersets) => {
+                  setEditingExercise(re)
+                  setEditExerciseDayId(dayId)
+                  setEditExerciseSupersets(supersets)
+                  setIsReplacingExercise(false)
+                  setShowEditExercise(true)
+                }}
+                onReplaceExercise={(re, dayId) => {
+                  setEditingExercise(re)
+                  setEditExerciseDayId(dayId)
+                  setEditExerciseSupersets([])
+                  setIsReplacingExercise(true)
+                  setShowEditExercise(true)
+                }}
+                onDuplicateExercise={async (re, dayId) => {
+                  try {
+                    await duplicateExercise.mutateAsync({ routineExercise: re, dayId })
+                  } catch { /* handled by TanStack Query */ }
+                }}
+                onMoveExerciseToDay={handleOpenMoveModal}
+                onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
+                onDuplicate={handleDuplicateDay}
+                isDuplicatingDay={duplicateDay.isPending}
+                onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
+                currentIndex={index}
+                totalDays={days.length}
+                dayNames={days.map(d => d.name)}
+                isReorderingDays={reorderDays.isPending}
+                hasActiveSession={hasActiveSession}
+                activeRoutineDayId={activeRoutineDayId}
+                activeSessionSynced={activeSessionSynced}
+                dragHandleProps={dragHandleProps}
+                isDragging={isDragging}
+                navigation={navigation}
+              />
+            )}
+          />
         )}
 
         {isEditing && (
@@ -310,7 +338,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
         {days?.length > 0 && (
           <VolumeSummary days={days} />
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
 
       <ConfirmModal

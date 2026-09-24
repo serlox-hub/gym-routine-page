@@ -250,12 +250,28 @@ export function useDuplicateRoutineDay() {
   })
 }
 
+// Optimista como `useReorderSessionExercises`: el arrastre suelta la tarjeta donde el dedo la
+// deja, así que sin escribir la caché en `onMutate` la lista volvería al orden viejo hasta que
+// aterrizase el refetch.
 export function useReorderRoutineDays() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ days }) => apiReorderRoutineDays(days),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ routineId, days }) => {
+      const queryKey = [QUERY_KEYS.ROUTINE_DAYS, String(routineId)]
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData(queryKey)
+      // `sort_order` se renumera 1..n igual que la RPC: de esta caché sale el número con el que
+      // se nombra el siguiente día, y dejarla con el orden viejo daría nombres repetidos.
+      queryClient.setQueryData(queryKey, days.map((day, index) => ({ ...day, sort_order: index + 1 })))
+      return { queryKey, previous }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(context.queryKey, context.previous)
+      getNotifier()?.show(t('routine:day.reorderFailed'), 'error')
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
     },
   })

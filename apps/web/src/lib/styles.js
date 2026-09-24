@@ -58,6 +58,12 @@ export const design = {
   swipeDeleteThreshold: 72,
   swipeDeleteMaxTravel: 96,
 
+  // Arrastre para reordenar: distancia al borde del viewport a la que empieza el auto-scroll.
+  // Solo se comparte la DISTANCIA, no la velocidad: dnd-kit acelera con un par umbral/aceleración
+  // y el bucle de Reanimated avanza px por frame, así que igualar los números sería una parity
+  // test que pasa mientras las dos plataformas se sienten distintas.
+  dragAutoScrollEdge: 96,
+
   // Routine card
   routineCardRadius: 16,
   routineCardPadding: 16,

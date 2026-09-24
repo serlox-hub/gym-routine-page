@@ -1,4 +1,6 @@
 import "./global.css"
+// Antes que nada: react-native-gesture-handler pide ser el primer import del entry point.
+import 'react-native-gesture-handler'
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
 import * as SplashScreen from 'expo-splash-screen'
@@ -6,6 +8,7 @@ import * as Sentry from '@sentry/react-native'
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import Toast from 'react-native-toast-message'
 import RootNavigator from './src/navigation/RootNavigator'
@@ -44,6 +47,9 @@ initHaptics({
   onExerciseComplete: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
   onPRDetected: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
   onSwipeThresholdCross: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+  // Sin esto, levantar una tarjeta para arrastrarla se siente muerto al lado del swipe de la
+  // misma pantalla, que sí vibra.
+  onDragLift: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
 })
 
 setupNotificationHandler()
@@ -67,6 +73,8 @@ function LanguageSync() {
 
 export default function App() {
   return (
+    // RNGH necesita su root view por encima de todo o los gestos no llegan en Android.
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -94,5 +102,6 @@ export default function App() {
       </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }

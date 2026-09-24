@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, Pencil, Repeat, Layers, CalendarDays } from 'lucide-react'
 import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
-import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, ConfirmModal, SortableList } from '../components/ui/index.js'
 import { DayCard, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, RoutineEditForm, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
 import { moveItemToPosition } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -181,6 +181,8 @@ function RoutineDetail() {
     }
   }
 
+  // El arrastre y la lista de posiciones del menú entran por aquí: un solo camino a
+  // `moveItemToPosition` y a la mutación.
   const handleReorderDay = async (dayId, newIndex) => {
     if (!days) return
 
@@ -192,6 +194,15 @@ function RoutineDetail() {
     } catch {
       // Error handled by TanStack Query
     }
+  }
+
+  // Soltar el día donde estaba no es una reordenación. Hace falta comprobarlo aquí porque
+  // `moveItemToPosition` devuelve el array de entrada (truthy) cuando no hay movimiento, así que
+  // el `if (!newDays)` de `handleReorderDay` no lo caza; el menú no puede producir este caso
+  // porque deshabilita la posición actual.
+  const handleReorderByDrag = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return
+    handleReorderDay(days[fromIndex].id, toIndex)
   }
 
   const handleDuplicateExercise = async (routineExercise, dayId) => {
@@ -351,32 +362,38 @@ function RoutineDetail() {
               )}
             </div>
           ) : (
-            days?.map((day, index) => (
-              <DayCard
-                key={day.id}
-                day={day}
-                routineId={routineId}
-                routineName={routine?.name}
-                isEditing={isEditing}
-                onAddExercise={handleOpenAddExercise}
-                onAddWarmup={handleOpenAddWarmup}
-                onEditExercise={handleOpenEditExercise}
-                onReplaceExercise={handleOpenReplaceExercise}
-                onDuplicateExercise={handleDuplicateExercise}
-                onMoveExerciseToDay={handleOpenMoveModal}
-                onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
-                onDuplicate={handleDuplicateDay}
-                isDuplicatingDay={duplicateDay.isPending}
-                onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
-                currentIndex={index}
-                totalDays={days.length}
-                dayNames={days.map(d => d.name)}
-                isReorderingDays={reorderDays.isPending}
-                hasActiveSession={hasActiveSession}
-                activeRoutineDayId={activeRoutineDayId}
-                activeSessionSynced={activeSessionSynced}
-              />
-            ))
+            <SortableList
+              items={days}
+              disabled={!isEditing || reorderDays.isPending}
+              onReorder={handleReorderByDrag}
+              renderItem={(day, { dragHandleProps, isDragging, index }) => (
+                <DayCard
+                  day={day}
+                  routineId={routineId}
+                  routineName={routine?.name}
+                  isEditing={isEditing}
+                  onAddExercise={handleOpenAddExercise}
+                  onAddWarmup={handleOpenAddWarmup}
+                  onEditExercise={handleOpenEditExercise}
+                  onReplaceExercise={handleOpenReplaceExercise}
+                  onDuplicateExercise={handleDuplicateExercise}
+                  onMoveExerciseToDay={handleOpenMoveModal}
+                  onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
+                  onDuplicate={handleDuplicateDay}
+                  isDuplicatingDay={duplicateDay.isPending}
+                  onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
+                  currentIndex={index}
+                  totalDays={days.length}
+                  dayNames={days.map(d => d.name)}
+                  isReorderingDays={reorderDays.isPending}
+                  hasActiveSession={hasActiveSession}
+                  activeRoutineDayId={activeRoutineDayId}
+                  activeSessionSynced={activeSessionSynced}
+                  dragHandleProps={dragHandleProps}
+                  isDragging={isDragging}
+                />
+              )}
+            />
           )}
           {isEditing && (
             <button
