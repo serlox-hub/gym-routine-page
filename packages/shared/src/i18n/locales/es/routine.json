@@ -5,7 +5,7 @@
   "allRoutines": "Todas las rutinas",
   "workoutDays": "Días de entrenamiento",
   "create": "Crear rutina",
-  "edit": "Editar rutina",
+  "editDetails": "Editar nombre y descripción",
   "delete": "Eliminar rutina",
   "deleteConfirm": "¿Seguro que quieres eliminar \"{{name}}\"?",
   "deleted": "Rutina eliminada",
@@ -70,6 +70,7 @@
     "noExercises": "Sin ejercicios"
   },
   "exercise": {
+    "viewHistory": "Ver historial",
     "config": "En rutina",
     "series": "Series",
     "targetField": "Objetivo en",

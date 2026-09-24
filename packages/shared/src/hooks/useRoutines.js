@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import {
@@ -32,6 +32,7 @@ import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 import { getTemplateImportData } from '../lib/routineTemplates.js'
+import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
 
 export function useRoutines() {
   return useQuery({
@@ -365,45 +366,49 @@ export function useMoveRoutineExerciseToDay() {
 // HELPERS
 // ============================================
 
-const DEBOUNCE_MS = 500
-
-export function useRoutineEditForm(routine, routineId) {
-  const [editForm, setEditForm] = useState({ name: '', description: '' })
-  const debounceRef = useRef(null)
+/**
+ * Form del modal de nombre y descripción de una rutina.
+ *
+ * Guarda solo al pulsar Guardar: el autoguardado con debounce que había antes perdía la última
+ * edición si la pantalla se desmontaba dentro de su ventana, y en un modal con botones explícitos
+ * sorprende. `form` se siembra UNA vez al montar; el modal solo monta el form mientras está
+ * abierto, así que un refetch de `routine` de fondo no pisa lo que se está escribiendo.
+ *
+ * @param {object|null} routine - Rutina de la que se siembra el form
+ * @param {string|number} routineId
+ * @returns {{ form: object, setField: function, error: string|null, submit: function, isSaving: boolean }}
+ */
+export function useRoutineDetailsForm(routine, routineId) {
+  const [form, setForm] = useState(() => ({
+    name: routine?.name || '',
+    description: routine?.description || '',
+  }))
+  const [error, setError] = useState(null)
   const updateRoutine = useUpdateRoutine()
 
-  useEffect(() => {
-    if (routine) {
-      setEditForm({
-        name: routine.name || '',
-        description: routine.description || '',
-      })
-    }
-  }, [routine])
-
-  const saveChanges = useCallback((formData) => {
-    if (!formData.name.trim()) return
-    updateRoutine.mutate({
-      routineId: parseInt(routineId),
-      data: {
-        name: formData.name.trim(),
-        description: formData.description.trim() || null,
-      },
-    })
-  }, [routineId, updateRoutine])
-
-  const handleFieldChange = (field, value) => {
-    const newForm = { ...editForm, [field]: value }
-    setEditForm(newForm)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => saveChanges(newForm), DEBOUNCE_MS)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
+  const setField = useCallback((field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+    setError(null)
   }, [])
 
-  return { editForm, handleFieldChange }
+  // Nunca rechaza: quien llama solo decide si cerrar el modal. Los errores se pintan inline.
+  const submit = useCallback(async () => {
+    const validation = validateRoutineForm(form)
+    if (!validation.valid) {
+      setError(validation.error)
+      return false
+    }
+    try {
+      await updateRoutine.mutateAsync({
+        routineId: parseInt(routineId),
+        data: prepareRoutineData(form),
+      })
+      return true
+    } catch {
+      setError(t('common:errors.generic'))
+      return false
+    }
+  }, [form, routineId, updateRoutine])
+
+  return { form, setField, error, submit, isSaving: updateRoutine.isPending }
 }

@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus, Pin, Pencil, Repeat, Layers, CalendarDays } from 'lucide-react'
+import { Plus, Pin, Repeat, Layers, CalendarDays } from 'lucide-react'
 import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, ConfirmModal, SortableList } from '../components/ui/index.js'
-import { DayCard, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, RoutineEditForm, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
+import { DayCard, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
 import { moveItemToPosition } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
 import { colors } from '../lib/styles.js'
@@ -15,7 +15,9 @@ function RoutineDetail() {
   const location = useLocation()
   const { t } = useTranslation()
 
-  const isEditing = location.pathname.endsWith('/edit')
+  // La señal de "abre el modal de nombre y descripción" se lee UNA vez y se limpia: el state del
+  // historial sobrevive a recargas y a atrás/adelante, y si no volvería a abrirse cada vez.
+  const [openDetails] = useState(() => location.state?.openDetails === true)
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
   const activeSessionSynced = useWorkoutStore(state => state.activeSessionSynced)
@@ -32,6 +34,10 @@ function RoutineDetail() {
   const [exerciseToMove, setExerciseToMove] = useState(null)
   const [movingFromDayId, setMovingFromDayId] = useState(null)
   const [descExpanded, setDescExpanded] = useState(false)
+
+  useEffect(() => {
+    if (location.state?.openDetails) navigate(location.pathname, { replace: true, state: null })
+  }, [location.state, location.pathname, navigate])
 
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
@@ -55,16 +61,6 @@ function RoutineDetail() {
 
   const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
   const nextDayNumber = maxDayNumber + 1
-
-  const handleStartEdit = () => navigate(`/routine/${routineId}/edit`, { state: { cameFromView: true } })
-
-  const handleEndEdit = () => {
-    // Si entramos a edición desde la vista, retrocedemos en el historial para no
-    // dejar una entrada duplicada (evita el bucle vista↔edición al pulsar «atrás»).
-    // Si entramos directos (rutina recién creada), reemplazamos por la vista.
-    if (location.state?.cameFromView) navigate(-1)
-    else navigate(`/routine/${routineId}`, { replace: true })
-  }
 
   const handleAddDay = async () => {
     try {
@@ -244,167 +240,135 @@ function RoutineDetail() {
       <RoutineHeader
         routine={routine}
         routineId={routineId}
-        isEditing={isEditing}
-        onEditStart={handleStartEdit}
-        onEditEnd={handleEndEdit}
+        initialDetailsOpen={openDetails}
         onDelete={() => setShowDeleteConfirm(true)}
       />
 
-      {/* Info Section (view mode) */}
-      {!isEditing && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
-          <h2 style={{ color: colors.textPrimary, fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
-            {routine?.name}
-          </h2>
-          {routine?.description && (
-            <div>
-              <p style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 1.4 }}
-                className={descExpanded ? '' : 'line-clamp-2'}
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+        <h2 style={{ color: colors.textPrimary, fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
+          {routine?.name}
+        </h2>
+        {routine?.description && (
+          <div>
+            <p style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 1.4 }}
+              className={descExpanded ? '' : 'line-clamp-2'}
+            >
+              {routine.description}
+            </p>
+            {descNeedsTruncation && (
+              <button
+                onClick={() => setDescExpanded(!descExpanded)}
+                style={{ color: colors.success, fontSize: 13, fontWeight: 500, marginTop: 2 }}
               >
-                {routine.description}
-              </p>
-              {descNeedsTruncation && (
-                <button
-                  onClick={() => setDescExpanded(!descExpanded)}
-                  style={{ color: colors.success, fontSize: 13, fontWeight: 500, marginTop: 2 }}
-                >
-                  {descExpanded ? t('common:buttons.seeLess') : t('common:buttons.seeMore')}
-                </button>
-              )}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <span className="inline-flex items-center gap-1"
-              style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '5px 10px', color: colors.textSecondary, fontSize: 11, fontWeight: 500 }}>
-              <Repeat size={12} />
-              {t('common:home.nDays', { count: daysCount })}
-            </span>
-            <span className="inline-flex items-center gap-1"
-              style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '5px 10px', color: colors.textSecondary, fontSize: 11, fontWeight: 500 }}>
-              <Layers size={12} />
-              {t('common:home.nExercises', { count: exerciseCount })}
-            </span>
+                {descExpanded ? t('common:buttons.seeLess') : t('common:buttons.seeMore')}
+              </button>
+            )}
           </div>
-        </section>
-      )}
-
-      {/* Pin toggle (view mode) */}
-      {!isEditing && (
-        <div
-          className="flex items-center justify-between cursor-pointer"
-          style={{
-            backgroundColor: colors.bgSecondary,
-            border: `1px solid ${colors.border}`,
-            borderRadius: 14,
-            padding: '14px 16px',
-            marginBottom: 24,
-          }}
-          onClick={() => setFavoriteMutation.mutate({ routineId: parseInt(routineId), isFavorite: !routine?.is_favorite })}
-        >
-          <div className="flex items-center gap-2.5">
-            <Pin size={18} style={{ color: colors.success }} />
-            <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>
-              {t('common:home.pinnedToHome')}
-            </span>
-          </div>
-          <div
-            style={{
-              width: 44, height: 26, borderRadius: 13,
-              backgroundColor: routine?.is_favorite ? colors.success : colors.border,
-              position: 'relative', transition: 'background-color 0.2s',
-            }}
-          >
-            <div style={{
-              width: 22, height: 22, borderRadius: 11,
-              backgroundColor: colors.bgPrimary,
-              position: 'absolute', top: 2,
-              left: routine?.is_favorite ? 20 : 2,
-              transition: 'left 0.2s',
-            }} />
-          </div>
+        )}
+        <div className="flex gap-2">
+          <span className="inline-flex items-center gap-1"
+            style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '5px 10px', color: colors.textSecondary, fontSize: 11, fontWeight: 500 }}>
+            <Repeat size={12} />
+            {t('common:home.nDays', { count: daysCount })}
+          </span>
+          <span className="inline-flex items-center gap-1"
+            style={{ backgroundColor: colors.bgAlt, borderRadius: 8, padding: '5px 10px', color: colors.textSecondary, fontSize: 11, fontWeight: 500 }}>
+            <Layers size={12} />
+            {t('common:home.nExercises', { count: exerciseCount })}
+          </span>
         </div>
-      )}
+      </section>
+
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        style={{
+          backgroundColor: colors.bgSecondary,
+          border: `1px solid ${colors.border}`,
+          borderRadius: 14,
+          padding: '14px 16px',
+          marginBottom: 24,
+        }}
+        onClick={() => setFavoriteMutation.mutate({ routineId: parseInt(routineId), isFavorite: !routine?.is_favorite })}
+      >
+        <div className="flex items-center gap-2.5">
+          <Pin size={18} style={{ color: colors.success }} />
+          <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>
+            {t('common:home.pinnedToHome')}
+          </span>
+        </div>
+        <div
+          style={{
+            width: 44, height: 26, borderRadius: 13,
+            backgroundColor: routine?.is_favorite ? colors.success : colors.border,
+            position: 'relative', transition: 'background-color 0.2s',
+          }}
+        >
+          <div style={{
+            width: 22, height: 22, borderRadius: 11,
+            backgroundColor: colors.bgPrimary,
+            position: 'absolute', top: 2,
+            left: routine?.is_favorite ? 20 : 2,
+            transition: 'left 0.2s',
+          }} />
+        </div>
+      </div>
 
       <main style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {isEditing && (
-            <RoutineEditForm routine={routine} routineId={routineId} />
-          )}
+        {days?.length > 0 && (
+          <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600, letterSpacing: 0.5 }}>
+            {t('routine:workoutDays')}
+          </span>
+        )}
 
-          {/* Workout Days label */}
-          {isEditing ? (
-            <div className="flex items-center justify-between">
-              <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 700 }}>
-                {t('routine:workoutDays')}
-              </span>
-              <span style={{ color: colors.textSecondary, fontSize: 13 }}>
-                {t('common:home.nDays', { count: daysCount })}
-              </span>
-            </div>
-          ) : days?.length > 0 ? (
-            <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600, letterSpacing: 0.5 }}>
-              {t('routine:workoutDays')}
-            </span>
-          ) : null}
+        {days?.length === 0 ? (
+          <div className="flex flex-col items-center py-8" style={{ gap: 12 }}>
+            <CalendarDays size={32} color={colors.textMuted} />
+            <p className="text-sm" style={{ color: colors.textMuted }}>{t('routine:day.noDays')}</p>
+          </div>
+        ) : (
+          <SortableList
+            items={days}
+            disabled={days.length < 2 || reorderDays.isPending}
+            onReorder={handleReorderByDrag}
+            // Con un solo día no hay nada que reordenar: sin asa, la cabecera no gasta ancho en
+            // un gesto que no lleva a ninguna parte (`DragHandle` con null no pinta nada).
+            renderItem={(day, { dragHandleProps, isDragging, index }) => (
+              <DayCard
+                day={day}
+                routineId={routineId}
+                routineName={routine?.name}
+                onAddExercise={handleOpenAddExercise}
+                onAddWarmup={handleOpenAddWarmup}
+                onEditExercise={handleOpenEditExercise}
+                onReplaceExercise={handleOpenReplaceExercise}
+                onDuplicateExercise={handleDuplicateExercise}
+                onMoveExerciseToDay={handleOpenMoveModal}
+                onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
+                onDuplicate={handleDuplicateDay}
+                isDuplicatingDay={duplicateDay.isPending}
+                onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
+                currentIndex={index}
+                totalDays={days.length}
+                dayNames={days.map(d => d.name)}
+                isReorderingDays={reorderDays.isPending}
+                hasActiveSession={hasActiveSession}
+                activeRoutineDayId={activeRoutineDayId}
+                activeSessionSynced={activeSessionSynced}
+                dragHandleProps={days.length >= 2 ? dragHandleProps : null}
+                isDragging={isDragging}
+              />
+            )}
+          />
+        )}
 
-          {days?.length === 0 ? (
-            <div className="flex flex-col items-center py-8" style={{ gap: 12 }}>
-              <CalendarDays size={32} color={colors.textMuted} />
-              <p className="text-sm" style={{ color: colors.textMuted }}>{t('routine:day.noDays')}</p>
-              {!isEditing && (
-                <button
-                  onClick={handleStartEdit}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mt-2"
-                  style={{ border: `1px solid ${colors.success}`, color: colors.success, backgroundColor: 'transparent' }}
-                >
-                  <Pencil size={16} />
-                  <span className="text-sm font-medium">{t('routine:edit')}</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <SortableList
-              items={days}
-              disabled={!isEditing || reorderDays.isPending}
-              onReorder={handleReorderByDrag}
-              renderItem={(day, { dragHandleProps, isDragging, index }) => (
-                <DayCard
-                  day={day}
-                  routineId={routineId}
-                  routineName={routine?.name}
-                  isEditing={isEditing}
-                  onAddExercise={handleOpenAddExercise}
-                  onAddWarmup={handleOpenAddWarmup}
-                  onEditExercise={handleOpenEditExercise}
-                  onReplaceExercise={handleOpenReplaceExercise}
-                  onDuplicateExercise={handleDuplicateExercise}
-                  onMoveExerciseToDay={handleOpenMoveModal}
-                  onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
-                  onDuplicate={handleDuplicateDay}
-                  isDuplicatingDay={duplicateDay.isPending}
-                  onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
-                  currentIndex={index}
-                  totalDays={days.length}
-                  dayNames={days.map(d => d.name)}
-                  isReorderingDays={reorderDays.isPending}
-                  hasActiveSession={hasActiveSession}
-                  activeRoutineDayId={activeRoutineDayId}
-                  activeSessionSynced={activeSessionSynced}
-                  dragHandleProps={dragHandleProps}
-                  isDragging={isDragging}
-                />
-              )}
-            />
-          )}
-          {isEditing && (
-            <button
-              onClick={handleAddDay}
-              className="w-full flex items-center gap-2 justify-center py-3 rounded-xl"
-              style={{ border: `1px dashed ${colors.border}`, color: colors.success, backgroundColor: 'transparent' }}
-            >
-              <Plus size={18} />
-              <span className="text-sm font-medium">{t('routine:day.add')}</span>
-            </button>
-          )}
+        <button
+          onClick={handleAddDay}
+          className="w-full flex items-center gap-2 justify-center py-3 rounded-xl"
+          style={{ border: `1px dashed ${colors.border}`, color: colors.success, backgroundColor: 'transparent' }}
+        >
+          <Plus size={18} />
+          <span className="text-sm font-medium">{t('routine:day.add')}</span>
+        </button>
       </main>
 
       {days?.length > 0 && (

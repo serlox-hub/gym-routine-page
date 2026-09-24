@@ -1,138 +1,161 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Crear rutina desde template', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/routines')
-  })
+// Crea una rutina vacía desde el flujo de "Nueva rutina" y deja la página en su detalle, con el
+// modal de nombre y descripción todavía abierto (es lo que hace el flujo, ver issue #85).
+async function createEmptyRoutine(page) {
+  await page.goto('/routines')
+  await page.getByText(/nueva rutina/i).first().click()
+  const createManually = page.getByText(/crear manualmente/i)
+  await expect(createManually).toBeVisible({ timeout: 5000 })
+  await createManually.click()
+  await expect(page).toHaveURL(/\/routine\/\d+$/, { timeout: 10000 })
+}
 
+// Abre la rutina sembrada por `testData.setup.js` (un día, un ejercicio).
+async function openSeededRoutine(page) {
+  await page.goto('/routines')
+  const card = page.getByText('Rutina E2E Test', { exact: true }).first()
+  await expect(card).toBeVisible({ timeout: 10000 })
+  await card.click()
+  await expect(page).toHaveURL(/\/routine\/\d+$/)
+}
+
+test.describe('Nueva rutina', () => {
   test('puede abrir modal de nueva rutina', async ({ page }) => {
-    // Buscar botón/card de nueva rutina
+    await page.goto('/routines')
     const newRoutineButton = page.getByText(/nueva rutina/i).first()
 
     await expect(newRoutineButton).toBeVisible({ timeout: 5000 })
     await newRoutineButton.click()
 
-    // Verificar que se abre el modal con opciones
     await expect(page.getByText(/rutinas predefinidas/i)).toBeVisible({ timeout: 3000 })
     await expect(page.getByText(/crear manualmente/i)).toBeVisible()
     await expect(page.getByText(/importar rutina/i)).toBeVisible()
   })
 
-  test('puede ver templates disponibles', async ({ page }) => {
-    const newRoutineButton = page.getByText(/nueva rutina/i).first()
-    await newRoutineButton.click()
-
-    // Click en rutinas predefinidas
+  test('puede crear rutina desde una plantilla predefinida', async ({ page }) => {
+    await page.goto('/routines')
+    await page.getByText(/nueva rutina/i).first().click()
     await page.getByText(/rutinas predefinidas/i).click()
 
-    // Verificar que se muestran los templates
-    await expect(page.getByText(/ppl|push.*pull.*legs/i).first()).toBeVisible({ timeout: 5000 })
+    await page.getByText('Push Pull Legs (3 días)').click()
+    await page.getByRole('button', { name: /usar esta plantilla/i }).click()
+
+    await expect(page.getByText('Push Pull Legs (3 días)').first()).toBeVisible({ timeout: 15000 })
   })
 
-  test('puede crear rutina desde template PPL', async ({ page }) => {
-    const newRoutineButton = page.getByText(/nueva rutina/i).first()
-    await newRoutineButton.click()
+  test('crear manualmente aterriza en el detalle con el modal de nombre y descripción abierto', async ({ page }) => {
+    await createEmptyRoutine(page)
 
-    await page.getByText(/rutinas predefinidas/i).click()
-
-    // Buscar y seleccionar PPL
-    const pplTemplate = page.getByText(/ppl|push.*pull.*legs/i).first()
-
-    if (!await pplTemplate.isVisible({ timeout: 5000 }).catch(() => false)) {
-      test.skip()
-      return
-    }
-
-    await pplTemplate.click()
-
-    // Esperar modal de opciones de importación
-    const importButton = page.getByRole('button', { name: /usar esta plantilla/i })
-
-    if (await importButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await importButton.click()
-
-      // Verificar que la rutina PPL aparece en la lista
-      await expect(page.getByText(/push pull legs/i).first()).toBeVisible({ timeout: 10000 })
-    }
+    await expect(page.getByRole('heading', { name: 'Editar nombre y descripción' })).toBeVisible()
+    // La pantalla de detrás ya es la editable: no hay paso intermedio de "Editar".
+    await expect(page.getByRole('button', { name: /añadir día/i })).toBeVisible()
   })
 
-  test('puede crear rutina manualmente', async ({ page }) => {
-    const newRoutineButton = page.getByText(/nueva rutina/i).first()
-    await newRoutineButton.click()
+  test('la URL vieja /routine/:id/edit redirige al detalle', async ({ page }) => {
+    await createEmptyRoutine(page)
+    const detailPath = new URL(page.url()).pathname
 
-    // Click en crear manualmente
-    await page.getByText(/crear manualmente/i).click()
+    await page.goto(`${detailPath}/edit`)
 
-    // Verificar que crea la rutina y navega al detalle en modo edición
-    await expect(page).toHaveURL(/\/routine\/\d+\/edit/, { timeout: 10000 })
+    await expect(page).toHaveURL(new RegExp(`${detailPath}$`))
+    await expect(page.getByRole('button', { name: /añadir día/i })).toBeVisible()
   })
-
 })
 
-test.describe('Editar rutina existente', () => {
-  // Helper para navegar a la rutina de test
-  async function navigateToTestRoutine(page) {
-    await page.waitForLoadState('networkidle')
+test.describe('Detalle de rutina sin modo edición', () => {
+  test('las acciones de edición están desde el primer momento', async ({ page }) => {
+    await openSeededRoutine(page)
 
-    const routineCard = page.locator('text=Rutina E2E Test').first()
+    await expect(page.getByRole('button', { name: /añadir día/i })).toBeVisible()
 
-    if (!await routineCard.isVisible({ timeout: 5000 }).catch(() => false)) {
-      return false
-    }
+    await page.getByRole('heading', { name: 'Día Test' }).click()
 
-    await routineCard.click()
-    await expect(page).toHaveURL(/\/routine\/\d+/)
-    return true
-  }
-
-  test('puede añadir día a rutina en modo edición', async ({ page }) => {
-    await page.goto('/routines')
-
-    if (!await navigateToTestRoutine(page)) {
-      test.skip()
-      return
-    }
-
-    // Abrir menú (icono de 3 puntos verticales)
-    const menuButton = page.locator('button').filter({ has: page.locator('svg') }).last()
-    await menuButton.click()
-
-    // Entrar en modo edición desde el menú
-    const editOption = page.getByText('Editar').first()
-
-    if (!await editOption.isVisible({ timeout: 3000 }).catch(() => false)) {
-      test.skip()
-      return
-    }
-
-    await editOption.click()
-
-    // Buscar botón de añadir día (solo visible en modo edición)
-    const addDayButton = page.getByText(/añadir día/i).first()
-    await expect(addDayButton).toBeVisible({ timeout: 5000 })
-
-    await addDayButton.click()
-
-    // Verificar que se abre el modal (placeholder: "Ej: Pecho y tríceps")
-    await expect(page.getByPlaceholder(/pecho y tríceps/i)).toBeVisible({ timeout: 3000 })
+    await expect(page.getByRole('button', { name: /añadir ejercicio/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /añadir a calentamiento/i })).toBeVisible()
   })
 
-  test('puede expandir día y ver ejercicios', async ({ page }) => {
-    await page.goto('/routines')
+  test('tocar un ejercicio abre el menú de acciones con "Ver historial" primero', async ({ page }) => {
+    await openSeededRoutine(page)
+    await page.getByRole('heading', { name: 'Día Test' }).click()
 
-    if (!await navigateToTestRoutine(page)) {
-      test.skip()
-      return
-    }
+    // El único h4 de la pantalla es el nombre del ejercicio dentro del día desplegado.
+    await page.locator('h4').first().click()
 
-    // Click en el día para expandirlo
-    const dayCard = page.getByText(/día test/i).first()
+    const sheet = page.locator('div.rounded-t-2xl').last()
+    await expect(sheet.getByRole('button').first()).toHaveText('Ver historial')
+    await expect(sheet.getByRole('button', { name: 'Eliminar' })).toBeVisible()
+  })
 
-    if (await dayCard.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await dayCard.click()
+  test('"Ver historial" abre el historial del ejercicio', async ({ page }) => {
+    await openSeededRoutine(page)
+    await page.getByRole('heading', { name: 'Día Test' }).click()
 
-      // Verificar que se expande y muestra botón de entrenar
-      await expect(page.getByRole('button', { name: /iniciar entrenamiento/i }).first()).toBeVisible({ timeout: 5000 })
-    }
+    // El ejercicio sembrado es el primero del catálogo, así que su nombre no es fijo: se lee de
+    // la fila para poder reconocerlo luego en la cabecera del historial.
+    const exerciseRow = page.locator('h4').first()
+    const exerciseName = (await exerciseRow.textContent()).trim()
+    await exerciseRow.click()
+
+    const sheet = page.locator('div.rounded-t-2xl').last()
+    await sheet.getByRole('button', { name: 'Ver historial' }).click()
+
+    // El historial se monta solo al abrirlo: si el menú dejara de encenderlo, aquí no habría nada.
+    await expect(page.getByRole('heading', { name: exerciseName, level: 3 })).toBeVisible({ timeout: 10000 })
+    // Se abre con `routineDayId`, así que ofrece los dos ámbitos.
+    await expect(page.getByRole('button', { name: 'Rutina' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Global' })).toBeVisible()
+  })
+
+  test('el asa de arrastre solo se pinta a partir de dos días', async ({ page }) => {
+    await createEmptyRoutine(page)
+    await page.getByRole('button', { name: 'Cancelar' }).click()
+
+    const addDay = page.getByRole('button', { name: /añadir día/i })
+
+    await addDay.click()
+    await expect(page.getByRole('heading', { name: 'Día 1' })).toBeVisible()
+    await expect(page.locator('svg.lucide-grip-vertical')).toHaveCount(0)
+
+    await addDay.click()
+    await expect(page.getByRole('heading', { name: 'Día 2' })).toBeVisible()
+    await expect(page.locator('svg.lucide-grip-vertical')).toHaveCount(2)
+  })
+})
+
+test.describe('Editar nombre y descripción', () => {
+  test('un nombre vacío deja el error inline y el modal abierto; uno válido guarda y persiste', async ({ page }) => {
+    await createEmptyRoutine(page)
+
+    const nameInput = page.getByPlaceholder('Ej: Push Pull Legs')
+    const saveButton = page.getByRole('button', { name: 'Guardar' })
+
+    await nameInput.fill('   ')
+    await saveButton.click()
+
+    await expect(page.getByText('El nombre es obligatorio')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Editar nombre y descripción' })).toBeVisible()
+
+    await nameInput.fill('Rutina renombrada E2E')
+    await saveButton.click()
+
+    await expect(page.getByRole('heading', { name: 'Editar nombre y descripción' })).toBeHidden()
+    await expect(page.getByRole('heading', { name: 'Rutina renombrada E2E' })).toBeVisible()
+
+    // Al recargar sigue el nombre nuevo y el modal NO se reabre: la señal de apertura se
+    // consume una vez y se limpia del state del historial.
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Rutina renombrada E2E' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Editar nombre y descripción' })).toBeHidden()
+  })
+
+  test('cancelar descarta los cambios', async ({ page }) => {
+    await createEmptyRoutine(page)
+
+    await page.getByPlaceholder('Ej: Push Pull Legs').fill('Nombre descartado E2E')
+    await page.getByRole('button', { name: 'Cancelar' }).click()
+
+    await expect(page.getByRole('heading', { name: 'Editar nombre y descripción' })).toBeHidden()
+    await expect(page.getByRole('heading', { name: 'Mi rutina' })).toBeVisible()
   })
 })

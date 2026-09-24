@@ -1,3 +1,4 @@
+export { default as AddExerciseButton } from './AddExerciseButton'
 export { default as ExerciseCard } from './ExerciseCard'
 export { default as BlockSection } from './BlockSection'
 export { default as DayCard } from './DayCard'

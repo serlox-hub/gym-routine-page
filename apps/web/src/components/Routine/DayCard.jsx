@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronDown, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react'
+import { Trash2, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react'
 import { Card, ConfirmModal, DragHandle, DropdownMenu, LoadingSpinner, Modal } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
-import { getExistingSupersetIds, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
+import { getExistingSupersetIds, getRoutineDayLayout, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
+import AddExerciseButton from './AddExerciseButton.jsx'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced, dragHandleProps = null, isDragging = false }) {
+function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced, dragHandleProps = null, isDragging = false }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { id, name } = day
@@ -26,11 +27,10 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
   const [renameValue, setRenameValue] = useState('')
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
 
-  const warmupBlock = blocks?.find(b => b.name === 'Calentamiento')
-  const mainBlock = blocks?.find(b => b.name === 'Principal')
-  const warmupExercises = warmupBlock?.routine_exercises || []
-  const mainExercises = mainBlock?.routine_exercises || []
-  const allExercises = [...warmupExercises, ...mainExercises]
+  const {
+    warmupBlock, mainBlock, warmupExercises, mainExercises, allExercises,
+    showWarmupSection, showMainSection, showEmptyMessage,
+  } = getRoutineDayLayout(blocks)
 
   const existingSupersets = getExistingSupersetIds(allExercises)
 
@@ -118,68 +118,54 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
       noHover
       style={{
         borderRadius: 14,
-        padding: isEditing ? 16 : '12px 14px',
+        padding: '12px 14px',
         // Mientras viaja con el dedo se despega del resto de la lista.
         boxShadow: isDragging ? `0 8px 24px ${colors.shadow}` : undefined,
       }}
     >
         <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={handleClick}>
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            {isEditing && (
-              <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
-            )}
-            <ChevronDown
-              size={16}
-              color={colors.textSecondary}
-              className="shrink-0 transition-transform"
-              style={{
-                transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
-              }}
-            />
+            <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
             <h3 className="font-bold truncate" style={{ color: colors.textPrimary, fontSize: 15 }}>{name}</h3>
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-2">
-            {!isEditing && (
-              <button
-                onClick={handleStartPress}
-                disabled={isBusy}
-                className="p-1 rounded hover:opacity-80 disabled:opacity-40"
-                style={{ opacity: dayAction === WORKOUT_START_ACTION.BLOCKED ? 0.4 : undefined }}
-              >
-                {/* BUSY es transitorio: se pinta cargando, no como un play que no responde. */}
-                {isBusy
-                  ? <LoadingSpinner inline />
-                  : <Play size={20} style={{ color: colors.success }} />
-                }
-              </button>
-            )}
-            {isEditing && (
-              <DropdownMenu
-                items={[
-                  {
-                    icon: Pencil,
-                    label: t('common:buttons.edit'),
-                    onClick: () => {
-                      setRenameValue(name)
-                      setShowRenameModal(true)
-                    }
-                  },
-                  { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
-                  totalDays > 1 && {
-                    icon: ArrowUpDown,
-                    label: t('routine:reorder'),
-                    disabled: isReorderingDays,
-                    children: Array.from({ length: totalDays }, (_, i) => ({
-                      label: `${i + 1}. ${dayNames[i] || ''}`,
-                      onClick: () => onReorderToPosition(i),
-                      active: i === currentIndex,
-                      disabled: i === currentIndex || isReorderingDays,
-                    })),
-                  },
-                  { icon: Trash2, label: t('common:buttons.delete'), onClick: () => onDelete(id), danger: true },
-                ]}
-              />
-            )}
+            <button
+              onClick={handleStartPress}
+              disabled={isBusy}
+              className="p-1 rounded hover:opacity-80 disabled:opacity-40"
+              style={{ opacity: dayAction === WORKOUT_START_ACTION.BLOCKED ? 0.4 : undefined }}
+            >
+              {/* BUSY es transitorio: se pinta cargando, no como un play que no responde. */}
+              {isBusy
+                ? <LoadingSpinner inline />
+                : <Play size={20} style={{ color: colors.success }} />
+              }
+            </button>
+            <DropdownMenu
+              items={[
+                {
+                  icon: Pencil,
+                  label: t('common:buttons.edit'),
+                  onClick: () => {
+                    setRenameValue(name)
+                    setShowRenameModal(true)
+                  }
+                },
+                { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
+                totalDays > 1 && {
+                  icon: ArrowUpDown,
+                  label: t('routine:reorder'),
+                  disabled: isReorderingDays,
+                  children: Array.from({ length: totalDays }, (_, i) => ({
+                    label: `${i + 1}. ${dayNames[i] || ''}`,
+                    onClick: () => onReorderToPosition(i),
+                    active: i === currentIndex,
+                    disabled: i === currentIndex || isReorderingDays,
+                  })),
+                },
+                { icon: Trash2, label: t('common:buttons.delete'), onClick: () => onDelete(id), danger: true },
+              ]}
+            />
           </div>
         </div>
 
@@ -187,13 +173,14 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
         <div className="mt-3 space-y-4">
           {loadingBlocks ? (
             <LoadingSpinner />
-          ) : isEditing ? (
+          ) : (
             <>
-              {warmupBlock && (
+              {/* Un bloque vacío se queda en su fila de añadir: una sección con "(0)" haría
+                  parecer roto un día al que solo le falta el calentamiento. */}
+              {showWarmupSection ? (
                 <BlockSection
                   block={warmupBlock}
                   routineDayId={id}
-                  isEditing
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
@@ -203,20 +190,13 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                 />
+              ) : (
+                <AddExerciseButton isWarmup onClick={() => onAddWarmup(id, existingSupersets)} />
               )}
-              {!warmupBlock && (
-                <BlockSection
-                  block={{ name: 'Calentamiento', routine_exercises: [] }}
-                  routineDayId={id}
-                  isEditing
-                  onAddExercise={() => onAddWarmup(id, existingSupersets)}
-                />
-              )}
-              {mainBlock && (
+              {showMainSection ? (
                 <BlockSection
                   block={mainBlock}
                   routineDayId={id}
-                  isEditing
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
@@ -226,24 +206,13 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                 />
-              )}
-              {!mainBlock && (
-                <BlockSection
-                  block={{ name: 'Principal', routine_exercises: [] }}
-                  routineDayId={id}
-                  isEditing
-                  onAddExercise={() => onAddExercise(id, existingSupersets)}
-                />
-              )}
-            </>
-          ) : (
-            <>
-              {blocks?.length === 0 ? (
-                <p className="text-secondary text-sm">{t('routine:block.noExercises')}</p>
               ) : (
-                blocks?.filter(block => block.routine_exercises?.length > 0).map(block => (
-                  <BlockSection key={block.name} block={block} routineDayId={id} />
-                ))
+                <>
+                  {showEmptyMessage && (
+                    <p className="text-secondary text-sm">{t('routine:block.noExercises')}</p>
+                  )}
+                  <AddExerciseButton onClick={() => onAddExercise(id, existingSupersets)} />
+                </>
               )}
             </>
           )}
@@ -253,7 +222,7 @@ function DayCard({ day, routineId, routineName, isEditing, onAddExercise, onAddW
       <ConfirmModal
         isOpen={!!exerciseToDelete}
         title={t('routine:exercise.removeFromRoutine')}
-        message={t('routine:exercise.removeFromRoutine', { name: exerciseToDelete?.exercise?.name })}
+        message={t('routine:exercise.removeConfirm', { name: exerciseToDelete?.exercise?.name })}
         confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteExercise}
         onCancel={() => setExerciseToDelete(null)}

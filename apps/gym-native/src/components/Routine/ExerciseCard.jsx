@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from 'react'
 import { View, Text, Pressable, Animated, PanResponder } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
+import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import { Modal, ReorderModal } from '../ui'
 import { ExerciseHistoryModal } from '../Workout'
@@ -12,7 +12,6 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 export default function ExerciseCard({
   routineExercise,
   routineDayId,
-  isEditing = false,
   isReordering: _isReordering = false,
   onEdit,
   onDelete,
@@ -35,7 +34,7 @@ export default function ExerciseCard({
   const trackedFields = useMemo(() => resolveTrackedFields(exercise), [exercise])
   const distanceUnit = useResolvedDistanceUnit(exercise)
 
-  // --- Swipe para borrar (solo modo edición) -------------------------------------------------
+  // --- Swipe para borrar -------------------------------------------------
   // `onDelete` se lee por ref: el PanResponder se crea una sola vez y sus closures se quedarían
   // con la prop del primer render.
   const onDeleteRef = useRef(onDelete)
@@ -135,6 +134,7 @@ export default function ExerciseCard({
   }
 
   const menuItems = [
+    { icon: History, label: t('routine:exercise.viewHistory'), onPress: () => setShowHistory(true) },
     { icon: Pencil, label: t('common:buttons.edit'), onPress: onEdit },
     { icon: Repeat2, label: t('routine:exercise.replace'), onPress: onReplace },
     { icon: Copy, label: t('routine:exercise.duplicateExercise'), onPress: onDuplicate },
@@ -142,60 +142,6 @@ export default function ExerciseCard({
     onReorderToPosition && totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onPress: () => setShowReorder(true) },
     { icon: Trash2, label: t('common:buttons.delete'), onPress: onDelete, danger: true },
   ].filter(Boolean)
-
-  // Vista mode — card clickable con historial
-  if (!isEditing) {
-    return (
-      <>
-        <Pressable
-          onPress={() => setShowHistory(true)}
-          className="active:opacity-70"
-          style={{
-            backgroundColor: colors.bgTertiary,
-            borderRadius: 8,
-            paddingVertical: 10,
-            paddingHorizontal: 14,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            ...rnBorderStyle,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
-              {getExerciseName(exercise)}
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
-              {level != null && (
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</Text>
-              )}
-              {rir !== null && rir !== undefined && (
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
-              )}
-              {rest_seconds > 0 && (
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</Text>
-              )}
-            </View>
-          </View>
-          <ChevronRight size={16} color={colors.textMuted} />
-        </Pressable>
-        <ExerciseHistoryModal
-          isOpen={showHistory}
-          onClose={() => setShowHistory(false)}
-          exerciseId={exercise?.id}
-          exerciseName={getExerciseName(exercise)}
-          trackedFields={trackedFields}
-          distanceUnit={distanceUnit}
-          routineDayId={routineDayId}
-          onSessionClick={(sessionId, date) => {
-            setShowHistory(false)
-            navigation.navigate('MainTabs', { screen: 'History', params: { sessionId, date } })
-          }}
-        />
-      </>
-    )
-  }
 
   const handleMenuAction = (action) => {
     setShowMenu(false)
@@ -209,8 +155,8 @@ export default function ExerciseCard({
       style={{
         backgroundColor: colors.bgTertiary,
         borderRadius: 8,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
@@ -218,19 +164,19 @@ export default function ExerciseCard({
       }}
     >
       <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }} numberOfLines={1}>
+        <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
           {getExerciseName(exercise)}
         </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
           <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
           {level != null && (
             <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</Text>
           )}
           {rir !== null && rir !== undefined && (
-            <Text style={{ color: colors.purple, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
           )}
           {rest_seconds > 0 && (
-            <Text style={{ color: colors.warning, fontSize: 12 }}>{rest_seconds}s</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</Text>
           )}
         </View>
       </View>
@@ -275,6 +221,23 @@ export default function ExerciseCard({
           ))}
         </View>
       </Modal>
+      {/* Montado solo al abrirlo: sus queries de historial corren aunque el modal esté cerrado,
+          y esta fila se repite por cada ejercicio de la rutina. */}
+      {showHistory && (
+        <ExerciseHistoryModal
+          isOpen
+          onClose={() => setShowHistory(false)}
+          exerciseId={exercise?.id}
+          exerciseName={getExerciseName(exercise)}
+          trackedFields={trackedFields}
+          distanceUnit={distanceUnit}
+          routineDayId={routineDayId}
+          onSessionClick={(sessionId, date) => {
+            setShowHistory(false)
+            navigation.navigate('MainTabs', { screen: 'History', params: { sessionId, date } })
+          }}
+        />
+      )}
       {showReorder && (
         <ReorderModal
           visible

@@ -1,6 +1,6 @@
-import { View, Text, Pressable } from 'react-native'
-import { useTranslation } from 'react-i18next'
-import { Link2, Plus } from 'lucide-react-native'
+import { View, Text } from 'react-native'
+import { Link2 } from 'lucide-react-native'
+import AddExerciseButton from './AddExerciseButton'
 import ExerciseCard from './ExerciseCard'
 import { Card } from '../ui'
 import { colors } from '../../lib/styles'
@@ -9,7 +9,6 @@ import { formatSupersetLabel, groupExercisesBySupersetId, translateBlockName } f
 export default function BlockSection({
   block,
   routineDayId,
-  isEditing = false,
   isReordering = false,
   onAddExercise,
   onEditExercise,
@@ -19,13 +18,10 @@ export default function BlockSection({
   onMoveExerciseToDay,
   onReorderExercise,
 }) {
-  const { t } = useTranslation()
   const { name, duration_min, routine_exercises } = block
   const isWarmup = block.is_warmup || name.toLowerCase() === 'calentamiento'
   const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
   const positionLabels = routine_exercises.map(re => re.exercise?.name)
-
-  const accentColor = isWarmup ? colors.warning : colors.purple
 
   return (
     <View className="gap-2">
@@ -45,7 +41,6 @@ export default function BlockSection({
               key={group.exercise.id}
               routineExercise={group.exercise}
               routineDayId={routineDayId}
-              isEditing={isEditing}
               isReordering={isReordering}
               onEdit={() => onEditExercise?.(group.exercise)}
               onReplace={() => onReplaceExercise?.(group.exercise)}
@@ -85,7 +80,6 @@ export default function BlockSection({
                 key={exercise.id}
                 routineExercise={exercise}
                 routineDayId={routineDayId}
-                isEditing={isEditing}
                 isReordering={isReordering}
                 onEdit={() => onEditExercise?.(exercise)}
                 onReplace={() => onReplaceExercise?.(exercise)}
@@ -102,18 +96,7 @@ export default function BlockSection({
         )
       })}
 
-      {isEditing && (
-        <Pressable
-          onPress={onAddExercise}
-          className="w-full py-3 rounded-xl flex-row items-center justify-center gap-2 active:opacity-70"
-          style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}
-        >
-          <Plus size={14} color={accentColor} />
-          <Text style={{ color: accentColor, fontSize: 13 }}>
-            {isWarmup ? t('routine:block.addToWarmup') : t('routine:block.addExercise')}
-          </Text>
-        </Pressable>
-      )}
+      <AddExerciseButton isWarmup={isWarmup} onPress={onAddExercise} />
     </View>
   )
 }

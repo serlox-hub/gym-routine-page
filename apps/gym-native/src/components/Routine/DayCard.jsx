@@ -1,20 +1,20 @@
 import { useState } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronDown, ChevronRight, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react-native'
+import { Trash2, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react-native'
 import { Card, ConfirmModal, DragHandle, DropdownMenu, LoadingSpinner, Modal, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
-import { getExistingSupersetIds, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
+import { getExistingSupersetIds, getRoutineDayLayout, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
+import AddExerciseButton from './AddExerciseButton'
 import BlockSection from './BlockSection'
 
 export default function DayCard({
   day,
   routineId,
   routineName,
-  isEditing,
   onAddExercise,
   onAddWarmup,
   onEditExercise,
@@ -51,11 +51,10 @@ export default function DayCard({
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
   const [showReorderDay, setShowReorderDay] = useState(false)
 
-  const warmupBlock = blocks?.find(b => b.name === 'Calentamiento')
-  const mainBlock = blocks?.find(b => b.name === 'Principal')
-  const warmupExercises = warmupBlock?.routine_exercises || []
-  const mainExercises = mainBlock?.routine_exercises || []
-  const allExercises = [...warmupExercises, ...mainExercises]
+  const {
+    warmupBlock, mainBlock, warmupExercises, mainExercises, allExercises,
+    showWarmupSection, showMainSection, showEmptyMessage,
+  } = getRoutineDayLayout(blocks)
   const existingSupersets = getExistingSupersetIds(allExercises)
 
   const dayAction = getRoutineDayAction({
@@ -138,56 +137,46 @@ export default function DayCard({
     >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-            {isEditing && (
-              <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
-            )}
-            {isExpanded
-              ? <ChevronDown size={16} color={colors.textSecondary} />
-              : <ChevronRight size={16} color={colors.textSecondary} />
-            }
+            <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
             <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{name}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 }}>
-            {!isEditing && (
-              <Pressable
-                onPress={handleStartPress}
-                disabled={isBusy}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={{
-                  padding: 4,
-                  // El 0.4 de BLOCKED es la convención "no disponible, pero responde"; BUSY se
-                  // atenúa igual que en web porque en native `disabled` no atenúa por sí solo.
-                  opacity: dayAction === WORKOUT_START_ACTION.BLOCKED || isBusy ? 0.4 : 1,
-                }}
-              >
-                {isBusy
-                  ? <LoadingSpinner inline />
-                  : <Play size={20} color={colors.success} />
-                }
-              </Pressable>
-            )}
-            {isEditing && (
-              <DropdownMenu
-                items={[
-                  {
-                    icon: Pencil,
-                    label: t('common:buttons.edit'),
-                    onClick: () => {
-                      setRenameValue(name)
-                      setShowRenameModal(true)
-                    },
+            <Pressable
+              onPress={handleStartPress}
+              disabled={isBusy}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={{
+                padding: 4,
+                // El 0.4 de BLOCKED es la convención "no disponible, pero responde"; BUSY se
+                // atenúa igual que en web porque en native `disabled` no atenúa por sí solo.
+                opacity: dayAction === WORKOUT_START_ACTION.BLOCKED || isBusy ? 0.4 : 1,
+              }}
+            >
+              {isBusy
+                ? <LoadingSpinner inline />
+                : <Play size={20} color={colors.success} />
+              }
+            </Pressable>
+            <DropdownMenu
+              items={[
+                {
+                  icon: Pencil,
+                  label: t('common:buttons.edit'),
+                  onClick: () => {
+                    setRenameValue(name)
+                    setShowRenameModal(true)
                   },
-                  { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
-                  ...(totalDays > 1 ? [{
-                    icon: ArrowUpDown,
-                    label: t('routine:reorder'),
-                    disabled: isReorderingDays,
-                    onClick: () => setShowReorderDay(true),
-                  }] : []),
-                  { icon: Trash2, label: t('common:buttons.delete'), onClick: () => onDelete(id), danger: true },
-                ]}
-              />
-            )}
+                },
+                { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
+                ...(totalDays > 1 ? [{
+                  icon: ArrowUpDown,
+                  label: t('routine:reorder'),
+                  disabled: isReorderingDays,
+                  onClick: () => setShowReorderDay(true),
+                }] : []),
+                { icon: Trash2, label: t('common:buttons.delete'), onClick: () => onDelete(id), danger: true },
+              ]}
+            />
           </View>
         </View>
 
@@ -195,12 +184,14 @@ export default function DayCard({
         <View style={{ marginTop: 12, gap: 16 }}>
           {loadingBlocks ? (
             <LoadingSpinner fullScreen={false} />
-          ) : isEditing ? (
+          ) : (
             <>
-              <BlockSection
-                  block={warmupBlock || { name: 'Calentamiento', routine_exercises: [] }}
+              {/* Un bloque vacío se queda en su fila de añadir: una sección con "(0)" haría
+                  parecer roto un día al que solo le falta el calentamiento. */}
+              {showWarmupSection ? (
+                <BlockSection
+                  block={warmupBlock}
                   routineDayId={id}
-                  isEditing
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddWarmup(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
@@ -210,10 +201,13 @@ export default function DayCard({
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                 />
-              <BlockSection
-                  block={mainBlock || { name: 'Principal', routine_exercises: [] }}
+              ) : (
+                <AddExerciseButton isWarmup onPress={() => onAddWarmup(id, existingSupersets)} />
+              )}
+              {showMainSection ? (
+                <BlockSection
+                  block={mainBlock}
                   routineDayId={id}
-                  isEditing
                   isReordering={reorderExercises.isPending}
                   onAddExercise={() => onAddExercise(id, existingSupersets)}
                   onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
@@ -223,15 +217,13 @@ export default function DayCard({
                   onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                   onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                 />
-            </>
-          ) : (
-            <>
-              {blocks?.length === 0 ? (
-                <Text className="text-secondary text-sm">{t('routine:block.noExercises')}</Text>
               ) : (
-                blocks?.filter(b => b.routine_exercises?.length > 0).map(block => (
-                  <BlockSection key={block.name} block={block} routineDayId={id} />
-                ))
+                <>
+                  {showEmptyMessage && (
+                    <Text className="text-secondary text-sm">{t('routine:block.noExercises')}</Text>
+                  )}
+                  <AddExerciseButton onPress={() => onAddExercise(id, existingSupersets)} />
+                </>
               )}
             </>
           )}

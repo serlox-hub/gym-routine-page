@@ -631,7 +631,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
     try {
       const newRoutine = await createRoutine.mutateAsync({ name: t('routine:defaultName') })
       handleClose()
-      navigate(`/routine/${newRoutine.id}/edit`)
+      navigate(`/routine/${newRoutine.id}`, { state: { openDetails: true } })
     } catch { /* error handled by mutation */ }
   }
 

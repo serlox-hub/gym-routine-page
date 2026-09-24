@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, Pressable, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Animated, { useAnimatedRef } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
-import { Plus, Pin, Pencil, Repeat, Layers, CalendarDays } from 'lucide-react-native'
+import { Plus, Pin, Repeat, Layers, CalendarDays } from 'lucide-react-native'
 import {
   useRoutine, useRoutineDays, useRoutineAllExercises,
   useCreateRoutineDay, useDeleteRoutine, useDeleteRoutineDay,
@@ -13,7 +13,7 @@ import {
 } from '../hooks/useRoutines'
 import { LoadingSpinner, ErrorMessage, ConfirmModal, DraggableList } from '../components/ui'
 import {
-  DayCard, RoutineHeader, RoutineEditForm, MoveToDayModal,
+  DayCard, RoutineHeader, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal, VolumeSummary,
 } from '../components/Routine'
 import { moveItemToPosition } from '@gym/shared'
@@ -22,8 +22,10 @@ import { colors } from '../lib/styles'
 
 export default function RoutineDetailScreen({ route, navigation }) {
   const { t } = useTranslation()
-  const { routineId, startEditing } = route.params
-  const [isEditing, setIsEditing] = useState(!!startEditing)
+  const { routineId, openDetails } = route.params
+  // La señal de "abre el modal de nombre y descripción" se lee UNA vez y se limpia: el param
+  // sobrevive al volver a la pantalla, y si no volvería a abrirse cada vez.
+  const [initialDetailsOpen] = useState(!!openDetails)
   // `Animated.ScrollView` + ref animada, no un `ScrollView` a secas: el auto-scroll del arrastre
   // lo conduce `scrollTo` desde el hilo de UI, y sobre un ScrollView normal no hace nada ni avisa.
   const scrollRef = useAnimatedRef()
@@ -62,6 +64,10 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const moveExercise = useMoveRoutineExerciseToDay()
   const setFavoriteMutation = useSetFavoriteRoutine()
   const [descExpanded, setDescExpanded] = useState(false)
+
+  useEffect(() => {
+    if (openDetails) navigation.setParams({ openDetails: undefined })
+  }, [openDetails, navigation])
 
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
@@ -142,9 +148,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
       <RoutineHeader
         routine={routine}
         routineId={routineId}
-        isEditing={isEditing}
-        onEditStart={() => setIsEditing(true)}
-        onEditEnd={() => setIsEditing(false)}
+        initialDetailsOpen={initialDetailsOpen}
         onDelete={() => setShowDeleteConfirm(true)}
         navigation={navigation}
       />
@@ -155,127 +159,101 @@ export default function RoutineDetailScreen({ route, navigation }) {
           de NativeWind), así que el `className` llegaría como prop desconocida y se perdería sin
           aviso: la pantalla se quedaría sin `px-6` y sin `flex-1`. 24 = `px-6`. */}
       <Animated.ScrollView ref={scrollRef} style={{ flex: 1, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Info Section (view mode) */}
-        {!isEditing && (
-          <View style={{ gap: 8, marginBottom: 24 }}>
-            <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: '800', letterSpacing: -0.5 }}>
-              {routine?.name}
-            </Text>
-            {routine?.description ? (
-              <View>
-                <Text
-                  numberOfLines={descExpanded ? undefined : 2}
-                  style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}
-                >
-                  {routine.description}
-                </Text>
-                {routine.description.length > 100 && (
-                  <Pressable onPress={() => setDescExpanded(!descExpanded)}>
-                    <Text style={{ color: colors.success, fontSize: 13, fontWeight: '500', marginTop: 2 }}>
-                      {descExpanded ? t('common:buttons.seeLess') : t('common:buttons.seeMore')}
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            ) : null}
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10 }}>
-                <Repeat size={12} color={colors.textSecondary} />
-                <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500' }}>
-                  {t('common:home.nDays', { count: days?.length || 0 })}
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10 }}>
-                <Layers size={12} color={colors.textSecondary} />
-                <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500' }}>
-                  {t('common:home.nExercises', { count: allRoutineExercises?.length || 0 })}
-                </Text>
-              </View>
+        <View style={{ gap: 8, marginBottom: 24 }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: '800', letterSpacing: -0.5 }}>
+            {routine?.name}
+          </Text>
+          {routine?.description ? (
+            <View>
+              <Text
+                numberOfLines={descExpanded ? undefined : 2}
+                style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}
+              >
+                {routine.description}
+              </Text>
+              {routine.description.length > 100 && (
+                <Pressable onPress={() => setDescExpanded(!descExpanded)}>
+                  <Text style={{ color: colors.success, fontSize: 13, fontWeight: '500', marginTop: 2 }}>
+                    {descExpanded ? t('common:buttons.seeLess') : t('common:buttons.seeMore')}
+                  </Text>
+                </Pressable>
+              )}
             </View>
-          </View>
-        )}
-
-        {/* Pin toggle (view mode) */}
-        {!isEditing && (
-          <Pressable
-            onPress={() => setFavoriteMutation.mutate({ routineId: parseInt(routineId), isFavorite: !routine?.is_favorite })}
-            style={{
-              backgroundColor: colors.bgSecondary,
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 14,
-              paddingVertical: 14,
-              paddingHorizontal: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 24,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Pin size={18} color={colors.success} />
-              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
-                {t('common:home.pinnedToHome')}
+          ) : null}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10 }}>
+              <Repeat size={12} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500' }}>
+                {t('common:home.nDays', { count: daysCount })}
               </Text>
             </View>
-            <View style={{
-              width: 44, height: 26, borderRadius: 13,
-              backgroundColor: routine?.is_favorite ? colors.success : colors.border,
-            }}>
-              <View style={{
-                width: 22, height: 22, borderRadius: 11,
-                backgroundColor: colors.bgPrimary,
-                position: 'absolute', top: 2,
-                left: routine?.is_favorite ? 20 : 2,
-              }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.bgAlt, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10 }}>
+              <Layers size={12} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500' }}>
+                {t('common:home.nExercises', { count: allRoutineExercises?.length || 0 })}
+              </Text>
             </View>
-          </Pressable>
-        )}
+          </View>
+        </View>
 
-        {isEditing && (
-          <RoutineEditForm routine={routine} routineId={routineId} />
-        )}
-
-        {/* Workout Days label */}
-        {isEditing ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '700' }}>
-              {t('routine:workoutDays')}
-            </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              {t('common:home.nDays', { count: daysCount })}
+        <Pressable
+          onPress={() => setFavoriteMutation.mutate({ routineId: parseInt(routineId), isFavorite: !routine?.is_favorite })}
+          style={{
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 14,
+            paddingVertical: 14,
+            paddingHorizontal: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Pin size={18} color={colors.success} />
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
+              {t('common:home.pinnedToHome')}
             </Text>
           </View>
-        ) : days?.length > 0 ? (
+          <View style={{
+            width: 44, height: 26, borderRadius: 13,
+            backgroundColor: routine?.is_favorite ? colors.success : colors.border,
+          }}>
+            <View style={{
+              width: 22, height: 22, borderRadius: 11,
+              backgroundColor: colors.bgPrimary,
+              position: 'absolute', top: 2,
+              left: routine?.is_favorite ? 20 : 2,
+            }} />
+          </View>
+        </Pressable>
+
+        {days?.length > 0 && (
           <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginBottom: 10 }}>
             {t('routine:workoutDays')}
           </Text>
-        ) : null}
+        )}
 
         {days?.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 32, gap: 12 }}>
             <CalendarDays size={32} color={colors.textMuted} />
             <Text style={{ color: colors.textMuted, fontSize: 14 }}>{t('routine:day.noDays')}</Text>
-            {!isEditing && (
-              <Pressable onPress={() => setIsEditing(true)}
-                style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.success, marginTop: 8 }}>
-                <Pencil size={16} color={colors.success} />
-                <Text style={{ color: colors.success, fontSize: 14, fontWeight: '500' }}>{t('routine:edit')}</Text>
-              </Pressable>
-            )}
           </View>
         ) : (
           <DraggableList
             items={days}
             scrollRef={scrollRef}
-            disabled={!isEditing || reorderDays.isPending}
+            disabled={days.length < 2 || reorderDays.isPending}
             onReorder={handleReorderByDrag}
+            // Con un solo día no hay nada que reordenar: sin asa, la cabecera no gasta ancho en
+            // un gesto que no lleva a ninguna parte (`DragHandle` con null no pinta nada).
             renderItem={(day, { dragHandleProps, isDragging, index }) => (
               <DayCard
                 day={day}
                 routineId={routineId}
                 routineName={routine?.name}
-                isEditing={isEditing}
                 onAddExercise={(dayId, supersets) => {
                   setAddExerciseDayId(dayId)
                   setAddExerciseSupersets(supersets)
@@ -319,7 +297,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
                 hasActiveSession={hasActiveSession}
                 activeRoutineDayId={activeRoutineDayId}
                 activeSessionSynced={activeSessionSynced}
-                dragHandleProps={dragHandleProps}
+                dragHandleProps={days.length >= 2 ? dragHandleProps : null}
                 isDragging={isDragging}
                 navigation={navigation}
               />
@@ -327,13 +305,11 @@ export default function RoutineDetailScreen({ route, navigation }) {
           />
         )}
 
-        {isEditing && (
-          <Pressable onPress={handleAddDay}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}>
-            <Plus size={18} color={colors.success} />
-            <Text style={{ color: colors.success, fontSize: 14, fontWeight: '500' }}>{t('routine:day.add')}</Text>
-          </Pressable>
-        )}
+        <Pressable onPress={handleAddDay}
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}>
+          <Plus size={18} color={colors.success} />
+          <Text style={{ color: colors.success, fontSize: 14, fontWeight: '500' }}>{t('routine:day.add')}</Text>
+        </Pressable>
 
         {days?.length > 0 && (
           <VolumeSummary days={days} />

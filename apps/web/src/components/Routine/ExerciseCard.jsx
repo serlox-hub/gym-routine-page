@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
+import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
 import { Modal, ReorderModal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors, design } from '../../lib/styles.js'
@@ -10,7 +10,6 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 function ExerciseCard({
   routineExercise,
   routineDayId,
-  isEditing = false,
   isReordering = false,
   onEdit,
   onDelete,
@@ -47,6 +46,7 @@ function ExerciseCard({
   const swipeBlocked = useRef(false)
 
   const menuItems = [
+    { icon: History, label: t('routine:exercise.viewHistory'), onClick: () => setShowHistory(true) },
     { icon: Pencil, label: t('common:buttons.edit'), onClick: onEdit },
     { icon: Repeat2, label: t('routine:exercise.replace'), onClick: onReplace },
     { icon: Copy, label: t('routine:exercise.duplicateExercise'), onClick: onDuplicate },
@@ -54,51 +54,6 @@ function ExerciseCard({
     totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onClick: () => setShowReorder(true), disabled: isReordering },
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ].filter(Boolean)
-
-  if (!isEditing) {
-    return (
-      <>
-        <div
-          className="rounded-lg cursor-pointer transition-colors"
-          style={{
-            backgroundColor: colors.bgTertiary,
-            padding: '10px 14px',
-            ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
-          }}
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowHistory(true)
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bgAlt}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bgTertiary}
-        >
-          <div className="flex items-center gap-2">
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold truncate" style={{ color: colors.textPrimary, fontSize: 14 }}>
-                {getExerciseName(exercise)}
-              </h4>
-              <div className="flex flex-wrap gap-3 mt-1">
-                <span style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</span>
-                {level != null && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</span>}
-                {rir !== null && rir !== undefined && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</span>}
-                {rest_seconds > 0 && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</span>}
-              </div>
-            </div>
-            <ChevronRight size={16} color={colors.textMuted} className="shrink-0" />
-          </div>
-        </div>
-        <ExerciseHistoryModal
-          isOpen={showHistory}
-          onClose={() => setShowHistory(false)}
-          exerciseId={exercise.id}
-          exerciseName={getExerciseName(exercise)}
-          trackedFields={trackedFields}
-          distanceUnit={distanceUnit}
-          routineDayId={routineDayId}
-        />
-      </>
-    )
-  }
 
   const paintRow = (offset, animated) => {
     const row = rowRef.current
@@ -199,7 +154,7 @@ function ExerciseCard({
           className="relative rounded-lg cursor-pointer"
           style={{
             backgroundColor: colors.bgTertiary,
-            padding: '8px 12px',
+            padding: '10px 14px',
             // Sin `pan-y` el navegador móvil se queda el toque para su propio paneo y entrega
             // un pointercancel en vez de los moves: el swipe funcionaría con ratón y no en móvil.
             touchAction: 'pan-y',
@@ -214,12 +169,14 @@ function ExerciseCard({
         >
           <div className="flex items-center gap-2">
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm truncate">{getExerciseName(exercise)}</h4>
-              <div className="flex flex-wrap gap-2 mt-1">
-                <span className="text-xs" style={{ color: colors.textSecondary }}>{series}×{reps}</span>
-                {level != null && <span className="text-xs" style={{ color: colors.textSecondary }}>{formatFieldValue(SetField.LEVEL, level)}</span>}
-                {rir !== null && rir !== undefined && <span className="text-xs" style={{ color: colors.purple }}>{formatEffortBadge(rir, trackedFields)}</span>}
-                {rest_seconds > 0 && <span className="text-xs" style={{ color: colors.warning }}>{rest_seconds}s</span>}
+              <h4 className="font-semibold truncate" style={{ color: colors.textPrimary, fontSize: 14 }}>
+                {getExerciseName(exercise)}
+              </h4>
+              <div className="flex flex-wrap gap-3 mt-1">
+                <span style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</span>
+                {level != null && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</span>}
+                {rir !== null && rir !== undefined && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</span>}
+                {rest_seconds > 0 && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</span>}
               </div>
             </div>
             <ChevronRight size={16} color={colors.textMuted} className="shrink-0" />
@@ -238,6 +195,19 @@ function ExerciseCard({
           ))}
         </div>
       </Modal>
+      {/* Montado solo al abrirlo: sus cuatro queries de historial corren aunque el modal esté
+          cerrado, y esta fila se repite por cada ejercicio de la rutina. */}
+      {showHistory && (
+        <ExerciseHistoryModal
+          isOpen
+          onClose={() => setShowHistory(false)}
+          exerciseId={exercise.id}
+          exerciseName={getExerciseName(exercise)}
+          trackedFields={trackedFields}
+          distanceUnit={distanceUnit}
+          routineDayId={routineDayId}
+        />
+      )}
       <ReorderModal
         isOpen={showReorder}
         onClose={() => setShowReorder(false)}
