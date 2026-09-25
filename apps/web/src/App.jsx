@@ -14,6 +14,7 @@ import { useLanguageSync } from '@gym/shared'
 const Landing = lazy(() => import('./pages/Landing.jsx'))
 const Home = lazy(() => import('./pages/Home.jsx'))
 const RoutineDetail = lazy(() => import('./pages/RoutineDetail.jsx'))
+const RoutineEditRedirect = lazy(() => import('./pages/RoutineEditRedirect.jsx'))
 const WorkoutSession = lazy(() => import('./pages/WorkoutSession.jsx'))
 const FreeWorkoutSession = lazy(() => import('./pages/FreeWorkoutSession.jsx'))
 const WorkoutSummary = lazy(() => import('./pages/WorkoutSummary.jsx'))
@@ -108,8 +109,8 @@ function App() {
 
             {/* Protected routes */}
             <Route path="/" element={<HomeOrLanding />} />
-<Route path="/routine/:routineId" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
-            <Route path="/routine/:routineId/edit" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
+            <Route path="/routine/:routineId" element={<PrivateRoute><RoutineDetail /></PrivateRoute>} />
+            <Route path="/routine/:routineId/edit" element={<PrivateRoute><RoutineEditRedirect /></PrivateRoute>} />
             <Route path="/routine/:routineId/day/:dayId/workout" element={<PrivateRoute><WorkoutSession /></PrivateRoute>} />
             <Route path="/workout/free" element={<PrivateRoute><FreeWorkoutSession /></PrivateRoute>} />
             <Route path="/workout/summary" element={<PrivateRoute><WorkoutSummary /></PrivateRoute>} />

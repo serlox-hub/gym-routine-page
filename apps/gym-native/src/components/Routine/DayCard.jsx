@@ -1,20 +1,21 @@
 import { useState } from 'react'
-import { View, Text, TextInput, Pressable, ScrollView } from 'react-native'
+import { View, Text, TextInput, Pressable, ScrollView, Animated } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronDown, ChevronRight, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react-native'
+import { Trash2, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react-native'
 import { Card, ConfirmModal, DragHandle, DropdownMenu, LoadingSpinner, Modal, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
-import { getExistingSupersetIds, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
+import { useSwipeToDelete } from '../../hooks/useSwipeToDelete'
+import { getExistingSupersetIds, getRoutineDayLayout, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
+import AddExerciseButton from './AddExerciseButton'
 import BlockSection from './BlockSection'
 
 export default function DayCard({
   day,
   routineId,
   routineName,
-  isEditing,
   onAddExercise,
   onAddWarmup,
   onEditExercise,
@@ -51,11 +52,10 @@ export default function DayCard({
   const [exerciseToDelete, setExerciseToDelete] = useState(null)
   const [showReorderDay, setShowReorderDay] = useState(false)
 
-  const warmupBlock = blocks?.find(b => b.name === 'Calentamiento')
-  const mainBlock = blocks?.find(b => b.name === 'Principal')
-  const warmupExercises = warmupBlock?.routine_exercises || []
-  const mainExercises = mainBlock?.routine_exercises || []
-  const allExercises = [...warmupExercises, ...mainExercises]
+  const {
+    warmupBlock, mainBlock, warmupExercises, mainExercises, allExercises, totalSets,
+    showWarmupSection, showMainSection, showEmptyMessage,
+  } = getRoutineDayLayout(blocks)
   const existingSupersets = getExistingSupersetIds(allExercises)
 
   const dayAction = getRoutineDayAction({
@@ -68,7 +68,12 @@ export default function DayCard({
   })
   const isBusy = dayAction === WORKOUT_START_ACTION.BUSY
 
+  // Se escucha solo la cabecera (el cuerpo tiene los swipes de sus ejercicios), pero se desliza
+  // la tarjeta entera. El asa queda fuera de la zona para que el arrastre no compita con el swipe.
+  const swipe = useSwipeToDelete({ onDelete: () => onDelete(id) })
+
   const handleClick = () => {
+    if (swipe.consumePress()) return
     setIsExpanded(!isExpanded)
   }
 
@@ -125,118 +130,150 @@ export default function DayCard({
   }
 
   return (
-    <Card
-      className="mb-2"
-      style={{
-        borderRadius: 14,
-        padding: 12,
-        paddingHorizontal: 14,
-        // Mientras viaja con el dedo se despega del resto de la lista.
-        ...(isDragging ? { shadowColor: colors.shadow, shadowOpacity: 1, shadowRadius: 12, shadowOffset: { width: 0, height: 8 } } : null),
-      }}
-      onPress={handleClick}
-    >
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-            {isEditing && (
+    <>
+      {/* `overflow` recorta la tarjeta mientras se desliza, pero se suelta al arrastrar para no
+          cortar la sombra que la despega de la lista (iOS la recorta con `overflow: hidden`). */}
+      <View style={{ marginBottom: 8, borderRadius: 14, overflow: isDragging ? 'visible' : 'hidden' }}>
+        {/* Afordancia de borrado: invisible en reposo, aparece con el recorrido del dedo */}
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: colors.danger,
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            paddingHorizontal: 16,
+            opacity: swipe.affordanceOpacity,
+          }}
+        >
+          <Trash2 size={18} color={colors.white} />
+        </Animated.View>
+        <Animated.View style={{ transform: [{ translateX: swipe.translateX }] }}>
+          <Card
+            style={{
+              borderRadius: 14,
+              padding: 12,
+              paddingHorizontal: 14,
+              // Mientras viaja con el dedo se despega del resto de la lista.
+              ...(isDragging ? { shadowColor: colors.shadow, shadowOpacity: 1, shadowRadius: 12, shadowOffset: { width: 0, height: 8 } } : null),
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <DragHandle dragHandleProps={dragHandleProps} disabled={isReorderingDays} />
-            )}
-            {isExpanded
-              ? <ChevronDown size={16} color={colors.textSecondary} />
-              : <ChevronRight size={16} color={colors.textSecondary} />
-            }
-            <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{name}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 }}>
-            {!isEditing && (
-              <Pressable
-                onPress={handleStartPress}
-                disabled={isBusy}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={{
-                  padding: 4,
-                  // El 0.4 de BLOCKED es la convención "no disponible, pero responde"; BUSY se
-                  // atenúa igual que en web porque en native `disabled` no atenúa por sí solo.
-                  opacity: dayAction === WORKOUT_START_ACTION.BLOCKED || isBusy ? 0.4 : 1,
-                }}
+              <View
+                style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+                {...swipe.panHandlers}
               >
-                {isBusy
-                  ? <LoadingSpinner inline />
-                  : <Play size={20} color={colors.success} />
-                }
-              </Pressable>
-            )}
-            {isEditing && (
-              <DropdownMenu
-                items={[
-                  {
-                    icon: Pencil,
-                    label: t('common:buttons.edit'),
-                    onClick: () => {
-                      setRenameValue(name)
-                      setShowRenameModal(true)
-                    },
-                  },
-                  { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
-                  ...(totalDays > 1 ? [{
-                    icon: ArrowUpDown,
-                    label: t('routine:reorder'),
-                    disabled: isReorderingDays,
-                    onClick: () => setShowReorderDay(true),
-                  }] : []),
-                  { icon: Trash2, label: t('common:buttons.delete'), onClick: () => onDelete(id), danger: true },
-                ]}
-              />
-            )}
-          </View>
-        </View>
+                {/* La pulsación va DENTRO de la zona del swipe, no en la tarjeta: con el Pressable
+                    fuera, él se queda el responder al tocar y RN nunca pregunta a sus descendientes
+                    si quieren el movimiento, así que el swipe no arrancaría (igual que en ExerciseCard). */}
+                <Pressable onPress={handleClick} className="active:opacity-80" style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{name}</Text>
+                  {/* Dice que hay contenido dentro sin gastar un icono (el chevron) en la cabecera. */}
+                  {!loadingBlocks && (
+                    <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                      {t('common:home.nExercises', { count: allExercises.length })}
+                      {totalSets > 0 && ` · ${t('common:home.nSets', { count: totalSets })}`}
+                    </Text>
+                  )}
+                </Pressable>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 }}>
+                  <Pressable
+                    onPress={handleStartPress}
+                    disabled={isBusy}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={{
+                      padding: 4,
+                      // El 0.4 de BLOCKED es la convención "no disponible, pero responde"; BUSY se
+                      // atenúa igual que en web porque en native `disabled` no atenúa por sí solo.
+                      opacity: dayAction === WORKOUT_START_ACTION.BLOCKED || isBusy ? 0.4 : 1,
+                    }}
+                  >
+                    {isBusy
+                      ? <LoadingSpinner inline />
+                      : <Play size={20} color={colors.success} />
+                    }
+                  </Pressable>
+                  <DropdownMenu
+                    items={[
+                      {
+                        icon: Pencil,
+                        label: t('routine:day.rename'),
+                        onClick: () => {
+                          setRenameValue(name)
+                          setShowRenameModal(true)
+                        },
+                      },
+                      { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
+                      ...(totalDays > 1 ? [{
+                        icon: ArrowUpDown,
+                        label: t('routine:reorder'),
+                        disabled: isReorderingDays,
+                        onClick: () => setShowReorderDay(true),
+                      }] : []),
+                      { icon: Trash2, label: t('common:buttons.delete'), onClick: () => onDelete(id), danger: true },
+                    ]}
+                  />
+                </View>
+              </View>
+            </View>
 
-      {isExpanded && (
-        <View style={{ marginTop: 12, gap: 16 }}>
-          {loadingBlocks ? (
-            <LoadingSpinner fullScreen={false} />
-          ) : isEditing ? (
-            <>
-              <BlockSection
-                  block={warmupBlock || { name: 'Calentamiento', routine_exercises: [] }}
-                  routineDayId={id}
-                  isEditing
-                  isReordering={reorderExercises.isPending}
-                  onAddExercise={() => onAddWarmup(id, existingSupersets)}
-                  onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
-                  onReplaceExercise={(re) => onReplaceExercise(re, id)}
-                  onReorderExercise={handleReorderWarmup}
-                  onDeleteExercise={(re) => setExerciseToDelete(re)}
-                  onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
-                  onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
-                />
-              <BlockSection
-                  block={mainBlock || { name: 'Principal', routine_exercises: [] }}
-                  routineDayId={id}
-                  isEditing
-                  isReordering={reorderExercises.isPending}
-                  onAddExercise={() => onAddExercise(id, existingSupersets)}
-                  onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
-                  onReplaceExercise={(re) => onReplaceExercise(re, id)}
-                  onReorderExercise={handleReorderMain}
-                  onDeleteExercise={(re) => setExerciseToDelete(re)}
-                  onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
-                  onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
-                />
-            </>
-          ) : (
-            <>
-              {blocks?.length === 0 ? (
-                <Text className="text-secondary text-sm">{t('routine:block.noExercises')}</Text>
-              ) : (
-                blocks?.filter(b => b.routine_exercises?.length > 0).map(block => (
-                  <BlockSection key={block.name} block={block} routineDayId={id} />
-                ))
-              )}
-            </>
-          )}
-        </View>
-      )}
+            {isExpanded && (
+              <View style={{ marginTop: 12, gap: 16 }}>
+                {loadingBlocks ? (
+                  <LoadingSpinner fullScreen={false} />
+                ) : (
+                  <>
+                    {/* Un bloque vacío se queda en su fila de añadir: una sección con "(0)" haría
+                        parecer roto un día al que solo le falta el calentamiento. */}
+                    {showWarmupSection ? (
+                      <BlockSection
+                        block={warmupBlock}
+                        routineDayId={id}
+                        isReordering={reorderExercises.isPending}
+                        onAddExercise={() => onAddWarmup(id, existingSupersets)}
+                        onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
+                        onReplaceExercise={(re) => onReplaceExercise(re, id)}
+                        onReorderExercise={handleReorderWarmup}
+                        onDeleteExercise={(re) => setExerciseToDelete(re)}
+                        onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
+                        onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
+                      />
+                    ) : (
+                      <AddExerciseButton isWarmup onPress={() => onAddWarmup(id, existingSupersets)} />
+                    )}
+                    {showMainSection ? (
+                      <BlockSection
+                        block={mainBlock}
+                        routineDayId={id}
+                        isReordering={reorderExercises.isPending}
+                        onAddExercise={() => onAddExercise(id, existingSupersets)}
+                        onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
+                        onReplaceExercise={(re) => onReplaceExercise(re, id)}
+                        onReorderExercise={handleReorderMain}
+                        onDeleteExercise={(re) => setExerciseToDelete(re)}
+                        onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
+                        onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
+                      />
+                    ) : (
+                      <>
+                        {showEmptyMessage && (
+                          <Text className="text-secondary text-sm">{t('routine:block.noExercises')}</Text>
+                        )}
+                        <AddExerciseButton onPress={() => onAddExercise(id, existingSupersets)} />
+                      </>
+                    )}
+                  </>
+                )}
+              </View>
+            )}
+          </Card>
+        </Animated.View>
+      </View>
 
       <ConfirmModal
         isOpen={!!exerciseToDelete}
@@ -262,7 +299,7 @@ export default function DayCard({
       <Modal isOpen={showRenameModal} onClose={() => setShowRenameModal(false)} position="bottom">
         <ScrollView keyboardShouldPersistTaps="handled">
           <View style={{ padding: 20, gap: 16 }}>
-            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('routine:day.edit')}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('routine:day.rename')}</Text>
             <View>
               <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>{t('routine:day.name')}</Text>
               <TextInput value={renameValue} onChangeText={setRenameValue}
@@ -277,6 +314,6 @@ export default function DayCard({
           </View>
         </ScrollView>
       </Modal>
-    </Card>
+    </>
   )
 }

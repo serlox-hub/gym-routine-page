@@ -1,54 +1,82 @@
-import { View, Text, TextInput } from 'react-native'
+import { useState } from 'react'
+import { View, Text, TextInput, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Download, Trash2, Copy, ClipboardCopy } from 'lucide-react-native'
 import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import * as Clipboard from 'expo-clipboard'
 import Toast from 'react-native-toast-message'
-import { useDuplicateRoutine, useRoutineEditForm } from '../../hooks/useRoutines'
+import { useDuplicateRoutine, useRoutineDetailsForm } from '../../hooks/useRoutines'
 import { sanitizeFilename, exportRoutine, formatRoutineAsText } from '@gym/shared'
 import { colors } from '../../lib/styles'
-import { PageHeader } from '../ui'
+import { ErrorMessage, Modal, PageHeader } from '../ui'
 
-export function RoutineEditForm({ routine, routineId }) {
+export function RoutineEditForm({ routine, routineId, onClose }) {
   const { t } = useTranslation()
-  const { editForm, handleFieldChange } = useRoutineEditForm(routine, routineId)
+  const { form, setField, error, submit, isSaving } = useRoutineDetailsForm(routine, routineId)
+
+  const handleSave = async () => {
+    if (await submit()) onClose?.()
+  }
 
   return (
-    <View style={{ gap: 16, marginBottom: 16 }}>
-      <View>
-        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>
-          {t('routine:name')}
-        </Text>
-        <TextInput
-          value={editForm.name}
-          onChangeText={(v) => handleFieldChange('name', v)}
-          placeholder={t('routine:namePlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          autoFocus
-          style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }}
-        />
+    <ScrollView keyboardShouldPersistTaps="handled">
+      <View style={{ padding: 20, gap: 16 }}>
+        <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('routine:editDetails')}</Text>
+        <View>
+          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>
+            {t('routine:name')}
+          </Text>
+          <TextInput
+            value={form.name}
+            onChangeText={(v) => setField('name', v)}
+            placeholder={t('routine:namePlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            autoFocus
+            style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }}
+          />
+        </View>
+        <View>
+          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>
+            {t('routine:description')}
+          </Text>
+          <TextInput
+            value={form.description}
+            onChangeText={(v) => setField('description', v)}
+            placeholder={t('routine:descriptionPlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            multiline numberOfLines={2}
+            style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14, textAlignVertical: 'top', minHeight: 60 }}
+          />
+        </View>
+        {error ? <ErrorMessage message={error} /> : null}
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Pressable
+            onPress={onClose}
+            style={{ flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+          >
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.cancel')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={handleSave} disabled={isSaving}
+            style={{ flex: 1, backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', opacity: isSaving ? 0.4 : 1 }}
+          >
+            <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>
+              {isSaving ? t('common:buttons.loading') : t('common:buttons.save')}
+            </Text>
+          </Pressable>
+        </View>
       </View>
-      <View>
-        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>
-          {t('routine:description')}
-        </Text>
-        <TextInput
-          value={editForm.description}
-          onChangeText={(v) => handleFieldChange('description', v)}
-          placeholder={t('routine:descriptionPlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          multiline numberOfLines={2}
-          style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14, textAlignVertical: 'top', minHeight: 60 }}
-        />
-      </View>
-    </View>
+    </ScrollView>
   )
 }
 
-export default function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, onDelete, navigation }) {
+export default function RoutineHeader({ routine, routineId, navigation, onDelete, initialDetailsOpen = false }) {
   const { t } = useTranslation()
   const duplicateRoutine = useDuplicateRoutine()
+  // Una rutina recién creada llega con el nombre por defecto: se abre el modal para que no pase
+  // desapercibido. Solo el valor inicial, que la pantalla limpia la señal en cuanto la lee.
+  const [showDetails, setShowDetails] = useState(initialDetailsOpen)
 
   const handleDuplicate = async () => {
     // Sin guard, un segundo tap durante la espera (importRoutine carga el catálogo
@@ -88,17 +116,8 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
     }
   }
 
-  if (isEditing) {
-    return (
-      <PageHeader
-        title={routine?.name || t('routine:new')}
-        onBack={onEditEnd}
-      />
-    )
-  }
-
   const menuItems = [
-    { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart },
+    { icon: Pencil, label: t('routine:editDetails'), onClick: () => setShowDetails(true) },
     { icon: Copy, label: t('routine:duplicate'), onClick: handleDuplicate },
     { icon: ClipboardCopy, label: t('routine:copyAsText'), onClick: handleCopyAsText },
     { icon: Download, label: t('common:buttons.export'), onClick: handleExport },
@@ -106,9 +125,16 @@ export default function RoutineHeader({ routine, routineId, isEditing, onEditSta
   ]
 
   return (
-    <PageHeader
-      title=""
-      menuItems={menuItems}
-    />
+    <>
+      <PageHeader
+        title=""
+        menuItems={menuItems}
+      />
+      {/* El form se monta solo mientras el modal está abierto: así se siembra una vez por
+          apertura y un refetch de `routine` de fondo no pisa lo que se está escribiendo. */}
+      <Modal isOpen={showDetails} onClose={() => setShowDetails(false)} position="bottom">
+        <RoutineEditForm routine={routine} routineId={routineId} onClose={() => setShowDetails(false)} />
+      </Modal>
+    </>
   )
 }

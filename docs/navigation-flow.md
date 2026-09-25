@@ -40,14 +40,14 @@ flowchart LR
     %% ============ ROUTINE DETAIL ============
     ROUTINE_DETAIL["Routine Detail"]:::page
     ROUTINE_DETAIL -->|"play"| WORKOUT_SESSION
-    ROUTINE_DETAIL -->|"exercise"| EXERCISE_HISTORY_MODAL
-    ROUTINE_DETAIL -->|"edit"| ROUTINE_EDIT["Routine Edit Mode"]:::page
+    ROUTINE_DETAIL -->|"exercise"| EXERCISE_ACTIONS["Exercise action sheet"]:::modal
+    EXERCISE_ACTIONS --> EXERCISE_HISTORY_MODAL
+    ROUTINE_DETAIL --> ROUTINE_DETAILS_FORM["Routine details modal · RoutineEditForm"]:::modal
     ROUTINE_DETAIL --> CONFIRM_MODAL
 
-    ROUTINE_EDIT --> ADD_EXERCISE_MODAL["AddExerciseModal"]:::modal
-    ROUTINE_EDIT --> EDIT_RE["EditRoutineExerciseModal"]:::modal
-    ROUTINE_EDIT --> MOVE_DAY["MoveToDayModal"]:::modal
-    ROUTINE_EDIT --> CONFIRM_MODAL
+    ROUTINE_DETAIL --> ADD_EXERCISE_MODAL["AddExerciseModal"]:::modal
+    ROUTINE_DETAIL --> EDIT_RE["EditRoutineExerciseModal"]:::modal
+    ROUTINE_DETAIL --> MOVE_DAY["MoveToDayModal"]:::modal
     ADD_EXERCISE_MODAL --> EXERCISE_PICKER["ExercisePickerModal"]:::modal
 
     %% ============ WORKOUT SESSION ============
@@ -93,13 +93,13 @@ These are used from **multiple screens**:
 | **ExerciseHistoryModal** | Routine Detail, Workout Session, Session Detail |
 | **NewRoutineFlow** | Home, Routines |
 | **Workout Session** | Home (free), Routine Detail (play) |
-| **ConfirmModal** | Routine Detail, Routine Edit, Workout Session, Session Detail, Preferences |
+| **ConfirmModal** | Routine Detail, Workout Session, Session Detail, Preferences |
 | **WorkoutSummaryModal** | Workout Session (end), Session Detail (share) |
-| **AddExerciseModal** | Routine Edit, Workout Session |
+| **AddExerciseModal** | Routine Detail, Workout Session |
 
 ## Stats
 
 - **4 tabs** — Home, History, Routines, Body Metrics
 - **8 pages** — Routine Detail, Preferences, Admin, Session Detail, etc.
-- **23 modals** across the app
+- **24 modals** across the app
 - **1 overlay** — Workout Session

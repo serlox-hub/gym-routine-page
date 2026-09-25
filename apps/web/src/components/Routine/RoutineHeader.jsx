@@ -1,26 +1,32 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Download, Trash2, Copy, ClipboardCopy } from 'lucide-react'
-import { useDuplicateRoutine, useRoutineEditForm } from '../../hooks/useRoutines.js'
+import { useDuplicateRoutine, useRoutineDetailsForm } from '../../hooks/useRoutines.js'
 import { sanitizeFilename, exportRoutine, formatRoutineAsText, getNotifier } from '@gym/shared'
 import { downloadRoutineAsJson } from '../../lib/routineIO.js'
-import { PageHeader } from '../ui/index.js'
+import { ErrorMessage, Modal, PageHeader } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
-export function RoutineEditForm({ routine, routineId }) {
+export function RoutineEditForm({ routine, routineId, onClose }) {
   const { t } = useTranslation()
-  const { editForm, handleFieldChange } = useRoutineEditForm(routine, routineId)
+  const { form, setField, error, submit, isSaving } = useRoutineDetailsForm(routine, routineId)
+
+  const handleSave = async () => {
+    if (await submit()) onClose?.()
+  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h3 style={{ color: colors.textPrimary, fontSize: 18, fontWeight: 700 }}>{t('routine:editDetails')}</h3>
       <div>
         <label className="block text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
           {t('routine:name')}
         </label>
         <input
-          type="text" value={editForm.name}
-          onChange={(e) => handleFieldChange('name', e.target.value)}
-          placeholder={t('routine:name')} autoFocus
+          type="text" value={form.name}
+          onChange={(e) => setField('name', e.target.value)}
+          placeholder={t('routine:namePlaceholder')} autoFocus
           className="w-full px-4 py-3 rounded-xl text-sm outline-none"
           style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
         />
@@ -30,21 +36,41 @@ export function RoutineEditForm({ routine, routineId }) {
           {t('routine:description')}
         </label>
         <textarea
-          value={editForm.description}
-          onChange={(e) => handleFieldChange('description', e.target.value)}
-          placeholder={`${t('routine:description')}...`} rows={2}
+          value={form.description}
+          onChange={(e) => setField('description', e.target.value)}
+          placeholder={t('routine:descriptionPlaceholder')} rows={2}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
           style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
         />
+      </div>
+      {error && <ErrorMessage message={error} />}
+      <div className="flex gap-3">
+        <button
+          onClick={onClose}
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+          style={{ border: `1px solid ${colors.border}`, color: colors.textPrimary }}
+        >
+          {t('common:buttons.cancel')}
+        </button>
+        <button
+          onClick={handleSave} disabled={isSaving}
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+          style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
+        >
+          {isSaving ? t('common:buttons.loading') : t('common:buttons.save')}
+        </button>
       </div>
     </div>
   )
 }
 
-function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, onDelete }) {
+function RoutineHeader({ routine, routineId, onDelete, initialDetailsOpen = false }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const duplicateRoutine = useDuplicateRoutine()
+  // Una rutina recién creada llega con el nombre por defecto: se abre el modal para que no pase
+  // desapercibido. Solo el valor inicial, que la pantalla limpia la señal en cuanto la lee.
+  const [showDetails, setShowDetails] = useState(initialDetailsOpen)
 
   const handleExport = async () => {
     try {
@@ -84,17 +110,8 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
     }
   }
 
-  if (isEditing) {
-    return (
-      <PageHeader
-        title={routine?.name || t('routine:new')}
-        onBack={() => onEditEnd?.()}
-      />
-    )
-  }
-
   const menuItems = [
-    { icon: Pencil, label: t('common:buttons.edit'), onClick: onEditStart },
+    { icon: Pencil, label: t('routine:editDetails'), onClick: () => setShowDetails(true) },
     { icon: Copy, label: t('routine:duplicate'), onClick: handleDuplicate },
     { icon: ClipboardCopy, label: t('routine:copyAsText'), onClick: handleCopyAsText },
     { icon: Download, label: t('common:buttons.export'), onClick: handleExport },
@@ -102,11 +119,18 @@ function RoutineHeader({ routine, routineId, isEditing, onEditStart, onEditEnd, 
   ]
 
   return (
-    <PageHeader
-      title=""
-      onBack={() => navigate(-1)}
-      menuItems={menuItems}
-    />
+    <>
+      <PageHeader
+        title=""
+        onBack={() => navigate(-1)}
+        menuItems={menuItems}
+      />
+      {/* El form se monta solo mientras el modal está abierto: así se siembra una vez por
+          apertura y un refetch de `routine` de fondo no pisa lo que se está escribiendo. */}
+      <Modal isOpen={showDetails} onClose={() => setShowDetails(false)} position="bottom" maxWidth="max-w-lg">
+        <RoutineEditForm routine={routine} routineId={routineId} onClose={() => setShowDetails(false)} />
+      </Modal>
+    </>
   )
 }
 

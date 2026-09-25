@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next'
-import { Link2, Plus } from 'lucide-react'
+import { Link2 } from 'lucide-react'
+import AddExerciseButton from './AddExerciseButton.jsx'
 import ExerciseCard from './ExerciseCard.jsx'
 import { Card } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
@@ -8,7 +8,6 @@ import { formatSupersetLabel, groupExercisesBySupersetId, getExerciseName, trans
 function BlockSection({
   block,
   routineDayId,
-  isEditing = false,
   isReordering = false,
   onAddExercise,
   onEditExercise,
@@ -18,7 +17,6 @@ function BlockSection({
   onDuplicateExercise,
   onMoveExerciseToDay,
 }) {
-  const { t } = useTranslation()
   const { name, duration_min, routine_exercises } = block
   const isWarmup = block.is_warmup || name.toLowerCase() === 'calentamiento'
   const exerciseGroups = groupExercisesBySupersetId(routine_exercises, name)
@@ -49,7 +47,6 @@ function BlockSection({
                 key={group.exercise.id}
                 routineExercise={group.exercise}
                 routineDayId={routineDayId}
-                isEditing={isEditing}
                 isReordering={isReordering}
                 onEdit={() => onEditExercise?.(group.exercise)}
                 onReplace={() => onReplaceExercise?.(group.exercise)}
@@ -93,7 +90,6 @@ function BlockSection({
                       <ExerciseCard
                         routineExercise={exercise}
                         routineDayId={routineDayId}
-                        isEditing={isEditing}
                         isReordering={isReordering}
                         onEdit={() => onEditExercise?.(exercise)}
                         onReplace={() => onReplaceExercise?.(exercise)}
@@ -112,16 +108,7 @@ function BlockSection({
             </Card>
           )
         })}
-        {isEditing && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddExercise?.() }}
-            className="w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-            style={{ border: `1px dashed ${colors.border}`, color: isWarmup ? colors.warning : colors.purple }}
-          >
-            <Plus size={14} />
-            {isWarmup ? t('routine:block.addToWarmup') : t('routine:block.addExercise')}
-          </button>
-        )}
+        <AddExerciseButton isWarmup={isWarmup} onClick={onAddExercise} />
       </div>
     </section>
   )

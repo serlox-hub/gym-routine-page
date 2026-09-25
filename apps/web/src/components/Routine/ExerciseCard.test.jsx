@@ -29,7 +29,6 @@ function renderCard(props) {
     <ExerciseCard
       routineExercise={ROUTINE_EXERCISE}
       routineDayId={1}
-      isEditing
       onEdit={vi.fn()}
       onDelete={vi.fn()}
       onDuplicate={vi.fn()}
@@ -51,7 +50,7 @@ function swipe(row, { dx, dy = 0 }) {
   fireEvent.pointerUp(row, { pointerId: 1, clientX: dx, clientY: dy, pointerType: 'touch' })
 }
 
-describe('ExerciseCard — swipe para borrar (modo edición)', () => {
+describe('ExerciseCard — swipe para borrar', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -166,8 +165,29 @@ describe('ExerciseCard — multitouch y reposo tras abandonar el swipe (rc-2)', 
 
     expect(onDelete).not.toHaveBeenCalled()
     // `endGesture` repinta a 0 en TODA ruta con offset !== 0, no solo cuando el gesto se
-    // convierte en borrado: antes de este fix la fila se quedaba encallada abierta.
-    expect(row.style.transform).toBe('translateX(0px)')
+    // convierte en borrado: antes de este fix la fila se quedaba encallada abierta. En reposo
+    // no queda ningún transform (ver `paintRow` en hooks/useSwipeToDelete.js).
+    expect(row.style.transform).toBe('')
     expect(affordance.style.opacity).toBe('0')
+  })
+})
+
+describe('ExerciseCard — menú de acciones', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('"Ver historial" es la primera acción del menú', () => {
+    renderCard()
+    const row = screen.getByText('Press banca').closest('[class*="cursor-pointer"]')
+
+    fireEvent.click(row)
+
+    const labels = screen.getAllByRole('button')
+      .map(b => b.textContent.trim())
+      .filter(Boolean)
+    expect(labels[0]).toBe('Ver historial')
+    expect(labels).toContain('Editar')
+    expect(labels).toContain('Eliminar')
   })
 })

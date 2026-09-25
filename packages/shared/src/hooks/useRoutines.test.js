@@ -55,6 +55,7 @@ import {
   duplicateRoutineDay,
   duplicateRoutine,
   reorderRoutineDays,
+  updateRoutine,
 } from '../api/routineApi.js'
 
 import { QUERY_KEYS } from '../lib/constants.js'
@@ -74,6 +75,7 @@ import {
   useDuplicateRoutine,
   useDuplicateRoutineDay,
   useReorderRoutineDays,
+  useRoutineDetailsForm,
 } from './useRoutines.js'
 
 function createQueryClient() {
@@ -380,5 +382,108 @@ describe('useReorderRoutineDays — actualización optimista', () => {
 
     expect(queryClient.getQueryData([QUERY_KEYS.ROUTINE_DAYS, '7']).map(d => d.id))
       .toEqual(['day-3', 'day-1', 'day-2'])
+  })
+})
+
+describe('useRoutineDetailsForm', () => {
+  const ROUTINE = { id: 7, name: 'PPL', description: 'Push pull legs' }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  function renderForm(routine = ROUTINE) {
+    return renderHook(() => useRoutineDetailsForm(routine, 7), { wrapper: createWrapper() })
+  }
+
+  it('siembra el form desde la rutina', () => {
+    const { result } = renderForm()
+
+    expect(result.current.form).toEqual({ name: 'PPL', description: 'Push pull legs' })
+    expect(result.current.error).toBeNull()
+  })
+
+  it('una rutina todavía sin cargar siembra campos vacíos', () => {
+    const { result } = renderForm(null)
+
+    expect(result.current.form).toEqual({ name: '', description: '' })
+  })
+
+  it('un nombre vacío no llega a la API: deja el error de validación y resuelve false', async () => {
+    const { result } = renderForm()
+
+    act(() => { result.current.setField('name', '   ') })
+
+    let ok
+    await act(async () => { ok = await result.current.submit() })
+
+    expect(ok).toBe(false)
+    expect(updateRoutine).not.toHaveBeenCalled()
+    expect(result.current.error).toBe(t('validation:nameRequired'))
+  })
+
+  it('un fallo de la mutación deja error genérico y resuelve false, sin rechazar', async () => {
+    updateRoutine.mockRejectedValueOnce(new Error('network down'))
+    const { result } = renderForm()
+
+    let ok
+    await act(async () => { ok = await result.current.submit() })
+
+    expect(ok).toBe(false)
+    expect(result.current.error).toBe(t('common:errors.generic'))
+  })
+
+  it('guarda el nombre y la descripción recortados y resuelve true', async () => {
+    updateRoutine.mockResolvedValueOnce({ id: 7 })
+    const { result } = renderForm()
+
+    act(() => { result.current.setField('name', '  Full body  ') })
+    act(() => { result.current.setField('description', '  3 días  ') })
+
+    let ok
+    await act(async () => { ok = await result.current.submit() })
+
+    expect(ok).toBe(true)
+    expect(updateRoutine).toHaveBeenCalledWith({
+      routineId: 7,
+      data: { name: 'Full body', description: '3 días' },
+    })
+    expect(result.current.error).toBeNull()
+  })
+
+  it('una descripción vacía se guarda como null', async () => {
+    updateRoutine.mockResolvedValueOnce({ id: 7 })
+    const { result } = renderForm()
+
+    act(() => { result.current.setField('description', '   ') })
+    await act(async () => { await result.current.submit() })
+
+    expect(updateRoutine).toHaveBeenCalledWith({
+      routineId: 7,
+      data: { name: 'PPL', description: null },
+    })
+  })
+
+  it('setField limpia el error anterior', async () => {
+    const { result } = renderForm()
+
+    act(() => { result.current.setField('name', '') })
+    await act(async () => { await result.current.submit() })
+    expect(result.current.error).not.toBeNull()
+
+    act(() => { result.current.setField('name', 'Otra') })
+    expect(result.current.error).toBeNull()
+  })
+
+  it('no vuelve a sembrarse cuando cambia `routine`: un refetch de fondo no pisa lo tecleado', () => {
+    const { result, rerender } = renderHook(
+      ({ routine }) => useRoutineDetailsForm(routine, 7),
+      { wrapper: createWrapper(), initialProps: { routine: ROUTINE } }
+    )
+
+    act(() => { result.current.setField('name', 'A medio escribir') })
+    rerender({ routine: { ...ROUTINE, name: 'Nombre del servidor' } })
+
+    expect(result.current.form.name).toBe('A medio escribir')
   })
 })
