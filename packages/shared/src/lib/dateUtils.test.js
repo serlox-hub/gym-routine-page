@@ -8,8 +8,12 @@ import {
   getDateKey,
   parseDateInput,
   resolveSessionEnd,
+  resolveSessionStart,
+  getSessionStartBounds,
+  isSameTimestamp,
   formatDateTimeLocal,
 } from './dateUtils.js'
+import { MAX_SESSION_DURATION_MINUTES } from './constants.js'
 
 describe('dateUtils', () => {
   describe('formatFullDate', () => {
@@ -159,6 +163,130 @@ describe('dateUtils', () => {
     it('acepta instancias Date', () => {
       const { durationMinutes } = resolveSessionEnd(new Date('2024-06-15T11:00:00Z'), new Date(started), new Date(now))
       expect(durationMinutes).toBe(60)
+    })
+  })
+
+  describe('isSameTimestamp', () => {
+    it('compara por instante, no por cadena', () => {
+      expect(isSameTimestamp('2024-06-15T10:00:00+00:00', '2024-06-15T10:00:00.000Z')).toBe(true)
+      expect(isSameTimestamp('2024-06-15T10:00:00Z', new Date('2024-06-15T10:00:00Z'))).toBe(true)
+    })
+
+    it('es false con instantes distintos, nulos o inválidos', () => {
+      expect(isSameTimestamp('2024-06-15T10:00:00Z', '2024-06-15T10:01:00Z')).toBe(false)
+      expect(isSameTimestamp(null, '2024-06-15T10:00:00Z')).toBe(false)
+      expect(isSameTimestamp('no-date', 'no-date')).toBe(false)
+    })
+  })
+
+  describe('getSessionStartBounds', () => {
+    const now = '2024-06-16T20:00:00Z'
+
+    it('acota por el fin cuando la sesión lo tiene', () => {
+      const { minDate, maxDate } = getSessionStartBounds(
+        { startedAt: '2024-06-15T10:00:00Z', completedAt: '2024-06-15T11:00:00Z' },
+        now
+      )
+      expect(maxDate.toISOString()).toBe('2024-06-15T11:00:00.000Z')
+      expect(maxDate.getTime() - minDate.getTime()).toBe(MAX_SESSION_DURATION_MINUTES * 60000)
+    })
+
+    it('acota por "ahora" cuando no hay fin', () => {
+      const { maxDate } = getSessionStartBounds(
+        { startedAt: '2024-06-15T10:00:00Z', completedAt: null },
+        now
+      )
+      expect(maxDate.toISOString()).toBe('2024-06-16T20:00:00.000Z')
+    })
+
+    it('un fin futuro no puede empujar la cota por encima de "ahora"', () => {
+      const { maxDate } = getSessionStartBounds(
+        { startedAt: '2024-06-15T10:00:00Z', completedAt: '2024-06-20T10:00:00Z' },
+        now
+      )
+      expect(maxDate.toISOString()).toBe('2024-06-16T20:00:00.000Z')
+    })
+
+    it('un reloj atrasado no baja la cota por debajo del inicio actual (clock skew)', () => {
+      const { maxDate } = getSessionStartBounds(
+        { startedAt: '2024-06-15T10:00:00Z', completedAt: null },
+        '2024-06-14T00:00:00Z'
+      )
+      expect(maxDate.toISOString()).toBe('2024-06-15T10:00:00.000Z')
+    })
+  })
+
+  describe('resolveSessionStart', () => {
+    const session = { startedAt: '2024-06-15T10:00:00Z', completedAt: '2024-06-15T11:30:00Z' }
+    const now = '2024-06-16T20:00:00Z'
+
+    it('acepta un inicio válido anterior y recalcula la duración como fin - inicio', () => {
+      const { startedAtISO, durationMinutes } = resolveSessionStart('2024-06-14T18:00:00Z', session, now)
+      expect(startedAtISO).toBe('2024-06-14T18:00:00.000Z')
+      // 17h 30m
+      expect(durationMinutes).toBe(1050)
+    })
+
+    it('acota al fin si el inicio propuesto es posterior', () => {
+      const { startedAtISO, durationMinutes } = resolveSessionStart('2024-06-15T12:00:00Z', session, now)
+      expect(startedAtISO).toBe('2024-06-15T11:30:00.000Z')
+      expect(durationMinutes).toBe(0)
+    })
+
+    it('acota a "ahora" si no hay fin y el inicio propuesto es futuro', () => {
+      const { startedAtISO, durationMinutes } = resolveSessionStart(
+        '2024-06-18T10:00:00Z',
+        { startedAt: '2024-06-15T10:00:00Z', completedAt: null },
+        now
+      )
+      expect(startedAtISO).toBe('2024-06-16T20:00:00.000Z')
+      expect(durationMinutes).toBeNull()
+    })
+
+    it('acota por la cota inferior: nunca más de MAX_SESSION_DURATION_MINUTES antes del fin', () => {
+      const { startedAtISO, durationMinutes } = resolveSessionStart('2000-01-01T00:00:00Z', session, now)
+      const expected = new Date(new Date(session.completedAt).getTime() - MAX_SESSION_DURATION_MINUTES * 60000)
+      expect(startedAtISO).toBe(expected.toISOString())
+      expect(durationMinutes).toBe(MAX_SESSION_DURATION_MINUTES)
+    })
+
+    it('entrada inválida o vacía es un no-op: devuelve el inicio actual y su duración', () => {
+      for (const proposed of ['no-date', '', null, undefined]) {
+        const { startedAtISO, durationMinutes } = resolveSessionStart(proposed, session, now)
+        expect(startedAtISO).toBe('2024-06-15T10:00:00.000Z')
+        expect(durationMinutes).toBe(90)
+      }
+    })
+
+    it('sin fin, la duración es null (nunca now - inicio)', () => {
+      const { startedAtISO, durationMinutes } = resolveSessionStart(
+        '2024-06-14T10:00:00Z',
+        { startedAt: '2024-06-15T10:00:00Z', completedAt: null },
+        now
+      )
+      expect(startedAtISO).toBe('2024-06-14T10:00:00.000Z')
+      expect(durationMinutes).toBeNull()
+    })
+
+    it('con un reloj atrasado, reproponer el inicio actual no lo mueve (clock skew)', () => {
+      const noEnd = { startedAt: '2024-06-15T10:00:00Z', completedAt: null }
+      const { startedAtISO } = resolveSessionStart(noEnd.startedAt, noEnd, '2024-06-14T00:00:00Z')
+      expect(startedAtISO).toBe('2024-06-15T10:00:00.000Z')
+    })
+
+    it('devuelve null si el inicio actual no es una fecha válida', () => {
+      const { startedAtISO, durationMinutes } = resolveSessionStart('2024-06-14T10:00:00Z', { startedAt: null, completedAt: null }, now)
+      expect(startedAtISO).toBeNull()
+      expect(durationMinutes).toBeNull()
+    })
+
+    it('acepta instancias Date', () => {
+      const { startedAtISO } = resolveSessionStart(
+        new Date('2024-06-15T09:00:00Z'),
+        { startedAt: new Date(session.startedAt), completedAt: new Date(session.completedAt) },
+        new Date(now)
+      )
+      expect(startedAtISO).toBe('2024-06-15T09:00:00.000Z')
     })
   })
 

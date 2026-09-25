@@ -7,6 +7,7 @@ import {
   fetchExerciseHistory,
   fetchPreviousWorkout,
   updateSessionMetadata,
+  rescheduleSession,
   deleteWorkoutSession,
   fetchCompletedSessionCount,
   upsertCompletedSet,
@@ -190,6 +191,35 @@ export function useUpdateSessionMetadata() {
     onSuccess: (_, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS] })
+      // Mover el fin puede cruzar de semana: lo que se agrega por `completed_at` también queda stale.
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_SESSION_STATS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PR_COUNT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.LAST_SESSION_FOR_ROUTINE] })
+    },
+  })
+}
+
+/**
+ * Mueve una sesión terminada a otro inicio. Invalida todo lo que se ordena, agrupa o
+ * cuenta por `started_at` o por `duration_minutes`.
+ */
+export function useRescheduleSession() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ sessionId, startedAt, durationMinutes }) => {
+      return rescheduleSession({ sessionId, startedAt, durationMinutes })
+    },
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, 'prs', sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PR_COUNT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.LAST_SESSION_FOR_ROUTINE] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_SESSION_STATS] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS] })
     },
   })

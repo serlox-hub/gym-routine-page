@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react'
-import { useWorkoutHistory, formatTime, groupSessionsByDate, parseDateInput } from '@gym/shared'
+import { useWorkoutHistory, useSelectedDaySessions, formatTime, getSessionsForDateKey, parseDateInput } from '@gym/shared'
 import { LoadingSpinner, ErrorMessage } from '../components/ui/index.js'
 import { MonthlyCalendar } from '../components/History/index.js'
 import SessionInlineDetail from '../components/History/SessionInlineDetail.jsx'
@@ -13,9 +13,15 @@ function History() {
   const location = useLocation()
   const [currentDate, setCurrentDate] = useState(new Date())
   const { data: sessions, isLoading, error } = useWorkoutHistory(currentDate)
-  const [selectedSessions, setSelectedSessions] = useState(null)
-  const [selectedSessionId, setSelectedSessionId] = useState(null)
-  const [selectedDateKey, setSelectedDateKey] = useState(null)
+  // Día y sesión seleccionados: las sesiones del día se derivan de la query, y si la sesión
+  // abierta se mueve de fecha la selección la sigue (ver `useSelectedDaySessions`).
+  const {
+    selectedDateKey,
+    setSelectedDateKey,
+    selectedSessionId,
+    setSelectedSessionId,
+    selectedSessions,
+  } = useSelectedDaySessions(sessions)
   const autoSelectedRef = useRef(null)
 
   // Navegar a un día (con sesión opcional) si viene por location.state.
@@ -33,15 +39,14 @@ function History() {
 
     if (!sessions || sessions.length === 0) return
     const dateKey = target.toDateString()
-    const daySessions = groupSessionsByDate(sessions).get(dateKey) ?? []
+    const daySessions = getSessionsForDateKey(sessions, dateKey)
     const sessionToOpen = (incomingSessionId && daySessions.find(s => s.id === incomingSessionId)) || daySessions[0]
 
     setSelectedDateKey(dateKey)
-    setSelectedSessions(daySessions.length ? daySessions : null)
     setSelectedSessionId(sessionToOpen?.id ?? null)
     autoSelectedRef.current = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
     window.history.replaceState({}, '')
-  }, [incomingDate, incomingSessionId, sessions, currentDate])
+  }, [incomingDate, incomingSessionId, sessions, currentDate, setSelectedDateKey, setSelectedSessionId])
 
   // Auto-seleccionar día de hoy al cargar (skip si hay incoming)
   useEffect(() => {
@@ -52,30 +57,18 @@ function History() {
     autoSelectedRef.current = monthKey
 
     const todayKey = new Date().toDateString()
-    const todaySessions = groupSessionsByDate(sessions).get(todayKey)
+    const todaySessions = getSessionsForDateKey(sessions, todayKey)
 
     setSelectedDateKey(todayKey)
-    if (todaySessions) {
-      setSelectedSessions(todaySessions)
-      setSelectedSessionId(todaySessions[0].id)
-    } else {
-      setSelectedSessions(null)
-      setSelectedSessionId(null)
-    }
-  }, [incomingDate, sessions, currentDate])
+    setSelectedSessionId(todaySessions[0]?.id ?? null)
+  }, [incomingDate, sessions, currentDate, setSelectedDateKey, setSelectedSessionId])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   const handleDayClick = (dayData) => {
     setSelectedDateKey(dayData.dateKey)
-    if (dayData.sessions && dayData.sessions.length > 0) {
-      setSelectedSessions(dayData.sessions)
-      setSelectedSessionId(dayData.sessions[0].id)
-    } else {
-      setSelectedSessions(null)
-      setSelectedSessionId(null)
-    }
+    setSelectedSessionId(dayData.sessions?.[0]?.id ?? null)
   }
 
   return (
@@ -96,7 +89,7 @@ function History() {
       ) : (
         <>
           {/* Session selector (when multiple sessions on same day) */}
-          {selectedSessions && selectedSessions.length > 1 && (
+          {selectedSessions.length > 1 && (
             <div className="flex gap-2 mt-4 mb-2 overflow-x-auto">
               {selectedSessions.map(session => (
                 <button
@@ -120,14 +113,8 @@ function History() {
           {selectedSessionId ? (
             <div className="mt-4">
               <SessionInlineDetail key={selectedSessionId} sessionId={selectedSessionId} onSessionDeleted={() => {
-                const remaining = selectedSessions?.filter(s => s.id !== selectedSessionId)
-                if (remaining?.length > 0) {
-                  setSelectedSessions(remaining)
-                  setSelectedSessionId(remaining[0].id)
-                } else {
-                  setSelectedSessions(null)
-                  setSelectedSessionId(null)
-                }
+                const remaining = selectedSessions.filter(s => s.id !== selectedSessionId)
+                setSelectedSessionId(remaining[0]?.id ?? null)
               }} />
             </div>
           ) : (

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Calendar } from 'lucide-react-native'
-import { useWorkoutHistory, formatTime, groupSessionsByDate, parseDateInput } from '@gym/shared'
+import { useWorkoutHistory, useSelectedDaySessions, formatTime, getSessionsForDateKey, parseDateInput } from '@gym/shared'
 import { LoadingSpinner, ErrorMessage } from '../components/ui'
 import { MonthlyCalendar } from '../components/History'
 import SessionInlineDetail from '../components/History/SessionInlineDetail'
@@ -13,10 +13,16 @@ export default function HistoryScreen({ navigation, route }) {
   const { t } = useTranslation()
   const [currentDate, setCurrentDate] = useState(new Date())
   const { data: sessions, isLoading, error, refetch } = useWorkoutHistory(currentDate)
-  const [selectedSessions, setSelectedSessions] = useState(null)
-  const [selectedSessionId, setSelectedSessionId] = useState(null)
-  const [selectedDateKey, setSelectedDateKey] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  // Día y sesión seleccionados: las sesiones del día se derivan de la query, y si la sesión
+  // abierta se mueve de fecha la selección la sigue (ver `useSelectedDaySessions`).
+  const {
+    selectedDateKey,
+    setSelectedDateKey,
+    selectedSessionId,
+    setSelectedSessionId,
+    selectedSessions,
+  } = useSelectedDaySessions(sessions)
   const autoSelectedRef = useRef(null)
 
   const handleRefresh = useCallback(async () => {
@@ -39,15 +45,14 @@ export default function HistoryScreen({ navigation, route }) {
 
     if (!sessions || sessions.length === 0) return
     const dateKey = target.toDateString()
-    const daySessions = groupSessionsByDate(sessions).get(dateKey) ?? []
+    const daySessions = getSessionsForDateKey(sessions, dateKey)
     const sessionToOpen = (incomingSessionId && daySessions.find(s => s.id === incomingSessionId)) || daySessions[0]
 
     setSelectedDateKey(dateKey)
-    setSelectedSessions(daySessions.length ? daySessions : null)
     setSelectedSessionId(sessionToOpen?.id ?? null)
     autoSelectedRef.current = `${currentDate.getFullYear()}-${currentDate.getMonth()}`
     navigation.setParams({ date: undefined, sessionId: undefined })
-  }, [incomingDate, incomingSessionId, sessions, currentDate, navigation])
+  }, [incomingDate, incomingSessionId, sessions, currentDate, navigation, setSelectedDateKey, setSelectedSessionId])
 
   // Auto-seleccionar día de hoy al cargar (skip si hay incoming)
   useEffect(() => {
@@ -58,30 +63,18 @@ export default function HistoryScreen({ navigation, route }) {
     autoSelectedRef.current = monthKey
 
     const todayKey = new Date().toDateString()
-    const todaySessions = groupSessionsByDate(sessions).get(todayKey)
+    const todaySessions = getSessionsForDateKey(sessions, todayKey)
 
     setSelectedDateKey(todayKey)
-    if (todaySessions) {
-      setSelectedSessions(todaySessions)
-      setSelectedSessionId(todaySessions[0].id)
-    } else {
-      setSelectedSessions(null)
-      setSelectedSessionId(null)
-    }
-  }, [incomingDate, sessions, currentDate])
+    setSelectedSessionId(todaySessions[0]?.id ?? null)
+  }, [incomingDate, sessions, currentDate, setSelectedDateKey, setSelectedSessionId])
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} className="m-4" />
 
   const handleDayPress = (dayData) => {
     setSelectedDateKey(dayData.dateKey)
-    if (dayData.sessions && dayData.sessions.length > 0) {
-      setSelectedSessions(dayData.sessions)
-      setSelectedSessionId(dayData.sessions[0].id)
-    } else {
-      setSelectedSessions(null)
-      setSelectedSessionId(null)
-    }
+    setSelectedSessionId(dayData.sessions?.[0]?.id ?? null)
   }
 
   return (
@@ -108,7 +101,7 @@ export default function HistoryScreen({ navigation, route }) {
         ) : (
           <>
             {/* Session selector */}
-            {selectedSessions && selectedSessions.length > 1 && (
+            {selectedSessions.length > 1 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4 mb-2">
                 <View className="flex-row gap-2">
                   {selectedSessions.map(session => (
@@ -137,14 +130,8 @@ export default function HistoryScreen({ navigation, route }) {
             {selectedSessionId ? (
               <View className="mt-4">
                 <SessionInlineDetail key={selectedSessionId} sessionId={selectedSessionId} navigation={navigation} onSessionDeleted={() => {
-                  const remaining = selectedSessions?.filter(s => s.id !== selectedSessionId)
-                  if (remaining?.length > 0) {
-                    setSelectedSessions(remaining)
-                    setSelectedSessionId(remaining[0].id)
-                  } else {
-                    setSelectedSessions(null)
-                    setSelectedSessionId(null)
-                  }
+                  const remaining = selectedSessions.filter(s => s.id !== selectedSessionId)
+                  setSelectedSessionId(remaining[0]?.id ?? null)
                 }} />
               </View>
             ) : (

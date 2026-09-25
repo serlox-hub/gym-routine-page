@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react'
-import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
+import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useRescheduleSession, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
@@ -18,6 +18,10 @@ import {
   formatSetValue,
   formatTime,
   resolveSessionEnd,
+  resolveSessionStart,
+  getSessionStartBounds,
+  isSameTimestamp,
+  MAX_SESSION_DURATION_DAYS,
   formatDateTimeLocal,
   getSensationColor,
   findPRSetNumbers,
@@ -320,6 +324,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
   const { data: sessionPRs } = useSessionPRs(sessionId)
   const deleteSession = useDeleteSession()
   const updateMetadata = useUpdateSessionMetadata()
+  const rescheduleSession = useRescheduleSession()
   const upsertSet = useUpsertCompletedSet()
   const deleteSet = useDeleteCompletedSet()
   const startSessionMutation = useStartSession()
@@ -335,6 +340,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editCompletedAt, setEditCompletedAt] = useState('')
+  const [editStartedAt, setEditStartedAt] = useState('')
   const { value: globalWeightUnit } = usePreference('weight_unit')
 
   const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRs), [sessionPRs])
@@ -355,6 +361,24 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
     setIsEditing(true)
     setEditNotes(session.notes || '')
     setEditCompletedAt(session.completed_at || '')
+    setEditStartedAt(session.started_at || '')
+  }
+
+  const startBounds = getSessionStartBounds({ startedAt: session.started_at, completedAt: session.completed_at })
+
+  const handleStartDateTimeChange = (localValue) => {
+    const { startedAtISO } = resolveSessionStart(localValue, { startedAt: session.started_at, completedAt: session.completed_at })
+    setEditStartedAt(startedAtISO ?? session.started_at)
+  }
+
+  const handleSaveStart = () => {
+    const { startedAtISO, durationMinutes } = resolveSessionStart(editStartedAt, {
+      startedAt: session.started_at,
+      completedAt: session.completed_at,
+    })
+    // Sin guardia, cada blur dispara una recalculación de PRs por ejercicio de la sesión.
+    if (!startedAtISO || isSameTimestamp(startedAtISO, session.started_at)) return
+    rescheduleSession.mutate({ sessionId, startedAt: startedAtISO, durationMinutes })
   }
 
   const handleSaveTime = () => {
@@ -464,6 +488,26 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
 
       {isEditing ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+          <div>
+            <div style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.startDateTime')}</div>
+            <input
+              type="datetime-local"
+              value={formatDateTimeLocal(editStartedAt || session.started_at)}
+              min={formatDateTimeLocal(startBounds.minDate)}
+              max={formatDateTimeLocal(startBounds.maxDate)}
+              onChange={e => handleStartDateTimeChange(e.target.value)}
+              onBlur={handleSaveStart}
+              className="w-full px-2 py-1 rounded text-xs"
+              style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}`, colorScheme: 'dark' }}
+            />
+            {/* El clamp no puede ser mudo: sin esto el picker rechaza fechas anteriores sin decir por qué. */}
+            <div style={{ color: colors.textMuted, fontSize: 10, marginTop: 4 }}>
+              {t('workout:history.startDateTimeHint', { days: MAX_SESSION_DURATION_DAYS })}
+            </div>
+            {rescheduleSession.isError && (
+              <ErrorMessage message={rescheduleSession.error.message} />
+            )}
+          </div>
           <div>
             <div style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endDateTime')}</div>
             <input

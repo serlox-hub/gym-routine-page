@@ -4,6 +4,12 @@ import { makeQueryMock, makeClientMock } from './_testUtils.js'
 vi.mock('./_client.js', () => ({ getClient: vi.fn() }))
 import { getClient } from './_client.js'
 
+vi.mock('./exerciseStatsApi.js', () => ({
+  recalculateSessionStats: vi.fn(),
+  recalculateExercisePRs: vi.fn(),
+}))
+import { recalculateSessionStats, recalculateExercisePRs } from './exerciseStatsApi.js'
+
 import {
   fetchActiveSession,
   fetchCompletedSetsForSession,
@@ -18,6 +24,7 @@ import {
   fetchExerciseHistory,
   fetchPreviousWorkout,
   fetchCompletedSessionCount,
+  rescheduleSession,
 } from './workoutSessionApi.js'
 
 beforeEach(() => {
@@ -527,5 +534,116 @@ describe('fetchPreviousWorkout', () => {
     const mock = makeQueryMock({ data: null, error: new Error('query failed') })
     getClient.mockReturnValue({ from: () => mock })
     await expect(fetchPreviousWorkout({ exerciseId: 'ex-1' })).rejects.toThrow('query failed')
+  })
+})
+
+// ============================================
+// rescheduleSession
+// ============================================
+
+describe('rescheduleSession', () => {
+  const OLD_START = '2026-03-10T18:00:00Z'
+
+  // Un único chain compartido: permite inspeccionar el update sobre workout_sessions.
+  function mockClient(session) {
+    const chain = makeQueryMock({ data: session, error: null })
+    getClient.mockReturnValue({ from: vi.fn(() => chain), rpc: vi.fn() })
+    return chain
+  }
+
+  beforeEach(() => {
+    recalculateSessionStats.mockResolvedValue({ affectedExerciseIds: [7, 9], gymId: 'gym-1' })
+    recalculateExercisePRs.mockResolvedValue(undefined)
+  })
+
+  it('rechaza una sesión que no está terminada', async () => {
+    const chain = mockClient({ started_at: OLD_START, gym_id: 'gym-1', status: 'in_progress' })
+    await expect(
+      rescheduleSession({ sessionId: 's-1', startedAt: '2026-03-09T18:00:00Z', durationMinutes: 60 })
+    ).rejects.toThrow()
+    expect(chain.update).not.toHaveBeenCalled()
+    expect(recalculateSessionStats).not.toHaveBeenCalled()
+  })
+
+  it('es un no-op cuando el inicio propuesto es el mismo instante', async () => {
+    const chain = mockClient({ started_at: OLD_START, gym_id: 'gym-1', status: 'completed' })
+    const result = await rescheduleSession({
+      sessionId: 's-1',
+      startedAt: '2026-03-10T18:00:00.000Z',
+      durationMinutes: 60,
+    })
+    expect(result).toEqual({ affectedExerciseIds: [], movedForward: false, statsSynced: true })
+    expect(chain.update).not.toHaveBeenCalled()
+    expect(recalculateSessionStats).not.toHaveBeenCalled()
+  })
+
+  it('escribe inicio y duración y resincroniza session_date vía recalculateSessionStats', async () => {
+    const chain = mockClient({ started_at: OLD_START, gym_id: 'gym-1', status: 'completed' })
+    const result = await rescheduleSession({
+      sessionId: 's-1',
+      startedAt: '2026-03-09T18:00:00.000Z',
+      durationMinutes: 75,
+    })
+    expect(chain.update).toHaveBeenCalledWith({
+      started_at: '2026-03-09T18:00:00.000Z',
+      duration_minutes: 75,
+    })
+    expect(recalculateSessionStats).toHaveBeenCalledWith('s-1')
+    expect(result).toEqual({ affectedExerciseIds: [7, 9], movedForward: false, statsSynced: true })
+  })
+
+  it('al mover hacia atrás no recalcula desde la fecha vieja', async () => {
+    mockClient({ started_at: OLD_START, gym_id: 'gym-1', status: 'completed' })
+    await rescheduleSession({ sessionId: 's-1', startedAt: '2026-03-09T18:00:00.000Z', durationMinutes: 60 })
+    expect(recalculateExercisePRs).not.toHaveBeenCalled()
+  })
+
+  it('al mover hacia adelante recalcula además la posición que la sesión deja libre', async () => {
+    mockClient({ started_at: OLD_START, gym_id: 'gym-1', status: 'completed' })
+    const result = await rescheduleSession({
+      sessionId: 's-1',
+      startedAt: '2026-03-12T18:00:00.000Z',
+      durationMinutes: 60,
+    })
+    expect(result.movedForward).toBe(true)
+    expect(recalculateExercisePRs).toHaveBeenCalledTimes(2)
+    expect(recalculateExercisePRs).toHaveBeenCalledWith(7, OLD_START, 'gym-1')
+    expect(recalculateExercisePRs).toHaveBeenCalledWith(9, OLD_START, 'gym-1')
+  })
+
+  it('si falla la resincronización de stats la mutación resuelve con statsSynced:false y el UPDATE sigue en pie', async () => {
+    recalculateSessionStats.mockRejectedValue(new Error('resync failed'))
+    const chain = mockClient({ started_at: OLD_START, gym_id: 'gym-1', status: 'completed' })
+    const result = await rescheduleSession({
+      sessionId: 's-1',
+      startedAt: '2026-03-09T18:00:00.000Z',
+      durationMinutes: 60,
+    })
+    expect(chain.update).toHaveBeenCalledWith({
+      started_at: '2026-03-09T18:00:00.000Z',
+      duration_minutes: 60,
+    })
+    expect(result).toEqual({ affectedExerciseIds: [], movedForward: false, statsSynced: false })
+    expect(recalculateExercisePRs).not.toHaveBeenCalled()
+  })
+
+  it('si falla el recálculo de PRs (movimiento hacia adelante) la mutación resuelve con statsSynced:false', async () => {
+    recalculateExercisePRs.mockRejectedValue(new Error('pr recalculation failed'))
+    const chain = mockClient({ started_at: OLD_START, gym_id: 'gym-1', status: 'completed' })
+    const result = await rescheduleSession({
+      sessionId: 's-1',
+      startedAt: '2026-03-12T18:00:00.000Z',
+      durationMinutes: 60,
+    })
+    expect(chain.update).toHaveBeenCalled()
+    expect(result.movedForward).toBe(true)
+    expect(result.statsSynced).toBe(false)
+  })
+
+  it('propaga el error si falla la lectura de la sesión', async () => {
+    getClient.mockReturnValue({ from: () => makeQueryMock({ data: null, error: new Error('read failed') }) })
+    await expect(
+      rescheduleSession({ sessionId: 's-1', startedAt: '2026-03-09T18:00:00Z', durationMinutes: 60 })
+    ).rejects.toThrow('read failed')
   })
 })
