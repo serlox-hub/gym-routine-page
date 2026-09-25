@@ -69,3 +69,20 @@ describe('getRoutineDayLayout', () => {
     expect(layout.showEmptyMessage).toBe(true)
   })
 })
+
+describe('getRoutineDayLayout — totalSets', () => {
+  it('suma las series de calentamiento y principal', () => {
+    const layout = getRoutineDayLayout([warmup([{ id: 1, series: 2 }]), main([{ id: 2, series: 4 }, { id: 3, series: 3 }])])
+
+    expect(layout.totalSets).toBe(9)
+  })
+
+  it('un día sin bloques tiene 0 series', () => {
+    expect(getRoutineDayLayout([]).totalSets).toBe(0)
+    expect(getRoutineDayLayout(null).totalSets).toBe(0)
+  })
+
+  it('una fila sin series no rompe la suma', () => {
+    expect(getRoutineDayLayout([main([{ id: 1, series: 3 }, { id: 2 }])]).totalSets).toBe(3)
+  })
+})

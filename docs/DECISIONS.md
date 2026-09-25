@@ -268,6 +268,6 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **Descartado de momento envolver las acciones compartidas:** parte cada transición en dos `set()` y native no tiene runner para verificarlo.
 - **No hay test de paridad de native:** uno que replicaba su `partialize` se borró porque asertaba contra su propia copia.
 
-## 2026-09 · Swipe para borrar un ejercicio de la rutina (issue #78)
+## 2026-09 · Swipe para borrar ejercicios y días de la rutina (issues #78, #85)
 - **Swipe en vez de un botón de borrar en la fila:** no ahorra acciones (tres → dos en ambos casos), solo ergonomía. Se le planteó al usuario el botón (que además es la opción accesible) y eligió el gesto. Por eso el `Eliminar` del menú «···» **se queda**: es el único camino con lector de pantalla, y no debe retirarse "porque ya está el swipe".
 - **`blocked` no es código muerto:** hoy no lo escribe nadie. Está cableado y testeado como punto de entrada del futuro arrastre-para-reordenar de la fila (que arranca desde un asa, como el de los días en la issue #83), y es el único momento en que native puede impedir el swipe. Borrarlo por "no tiene consumidores" obliga a rehacer el gesto entero.

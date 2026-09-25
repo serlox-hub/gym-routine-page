@@ -165,8 +165,9 @@ describe('ExerciseCard — multitouch y reposo tras abandonar el swipe (rc-2)', 
 
     expect(onDelete).not.toHaveBeenCalled()
     // `endGesture` repinta a 0 en TODA ruta con offset !== 0, no solo cuando el gesto se
-    // convierte en borrado: antes de este fix la fila se quedaba encallada abierta.
-    expect(row.style.transform).toBe('translateX(0px)')
+    // convierte en borrado: antes de este fix la fila se quedaba encallada abierta. En reposo
+    // no queda ningún transform (ver `paintRow` en hooks/useSwipeToDelete.js).
+    expect(row.style.transform).toBe('')
     expect(affordance.style.opacity).toBe('0')
   })
 })

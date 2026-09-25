@@ -15,7 +15,7 @@ import { BLOCK_NAMES } from './constants.js'
  * @param {Array|null|undefined} blocks - Blocks of the day as returned by `useRoutineBlocks`
  * @returns {{
  *   warmupBlock: object|null, mainBlock: object|null,
- *   warmupExercises: Array, mainExercises: Array, allExercises: Array,
+ *   warmupExercises: Array, mainExercises: Array, allExercises: Array, totalSets: number,
  *   showWarmupSection: boolean, showMainSection: boolean, showEmptyMessage: boolean
  * }}
  */
@@ -24,13 +24,16 @@ export function getRoutineDayLayout(blocks) {
   const mainBlock = blocks?.find(b => b.name === BLOCK_NAMES.MAIN) || null
   const warmupExercises = warmupBlock?.routine_exercises || []
   const mainExercises = mainBlock?.routine_exercises || []
+  const allExercises = [...warmupExercises, ...mainExercises]
 
   return {
     warmupBlock,
     mainBlock,
     warmupExercises,
     mainExercises,
-    allExercises: [...warmupExercises, ...mainExercises],
+    allExercises,
+    // Incluye las del calentamiento: es lo que se va a hacer ese día, no solo el trabajo efectivo.
+    totalSets: allExercises.reduce((sum, re) => sum + (re.series || 0), 0),
     showWarmupSection: warmupExercises.length > 0,
     showMainSection: mainExercises.length > 0,
     showEmptyMessage: warmupExercises.length === 0 && mainExercises.length === 0,
