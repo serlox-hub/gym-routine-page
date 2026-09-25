@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
-import { useExerciseHistory, useExerciseHistorySummary, usePreviousWorkout } from './useWorkoutHistory.js'
+import { useExerciseHistory, useExerciseHistorySummary, usePreviousWorkout, useRescheduleSession, useUpdateSessionMetadata } from './useWorkoutHistory.js'
 
 // Mock the workoutApi module
 vi.mock('../api/workoutApi.js', () => ({
@@ -12,9 +12,14 @@ vi.mock('../api/workoutApi.js', () => ({
   fetchExerciseHistory: vi.fn(),
   fetchPreviousWorkout: vi.fn(),
   deleteWorkoutSession: vi.fn(),
+  updateSessionMetadata: vi.fn(),
+  rescheduleSession: vi.fn(),
+  upsertCompletedSet: vi.fn(),
+  deleteCompletedSet: vi.fn(),
+  fetchCompletedSessionCount: vi.fn(),
 }))
 
-import { fetchExerciseHistory, fetchExerciseHistorySummary, fetchPreviousWorkout } from '../api/workoutApi.js'
+import { fetchExerciseHistory, fetchExerciseHistorySummary, fetchPreviousWorkout, rescheduleSession, updateSessionMetadata } from '../api/workoutApi.js'
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -285,5 +290,55 @@ describe('usePreviousWorkout', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(fetchPreviousWorkout).toHaveBeenCalledWith({ exerciseId: 'exercise-123', gymId: null, routineDayId: null })
+  })
+})
+
+// Mover una sesión (o su fin) cambia lo que devuelven queries agregadas por semana o por
+// fecha: si no se invalidan, la app sigue pintando los totales de antes sin refrescar.
+describe('invalidaciones al mover una sesión en el tiempo', () => {
+  function renderWithSpy(useHook) {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const spy = vi.spyOn(queryClient, 'invalidateQueries')
+    const wrapper = ({ children }) => React.createElement(QueryClientProvider, { client: queryClient }, children)
+    const { result } = renderHook(useHook, { wrapper })
+    return { result, spy }
+  }
+
+  const invalidatedKeys = (spy) => spy.mock.calls.map(([arg]) => arg.queryKey[0])
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('useRescheduleSession invalida todo lo que se ordena o agrega por fecha y duración', async () => {
+    rescheduleSession.mockResolvedValue({ affectedExerciseIds: [1], movedForward: false })
+    const { result, spy } = renderWithSpy(() => useRescheduleSession())
+
+    result.current.mutate({ sessionId: 's-1', startedAt: '2026-03-09T18:00:00.000Z', durationMinutes: 60 })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(new Set(invalidatedKeys(spy))).toEqual(new Set([
+      'session-detail',
+      'workout-history',
+      'exercise-history',
+      'previous-workout',
+      'weekly-pr-count',
+      'last-session-for-routine',
+      'weekly-session-stats',
+      'training-goal-sessions',
+    ]))
+  })
+
+  it('useUpdateSessionMetadata invalida también las agregadas por semana (mover el fin cruza de semana)', async () => {
+    updateSessionMetadata.mockResolvedValue({ id: 's-1' })
+    const { result, spy } = renderWithSpy(() => useUpdateSessionMetadata())
+
+    result.current.mutate({ sessionId: 's-1', completedAt: '2026-03-09T19:00:00.000Z', durationMinutes: 60 })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    const keys = invalidatedKeys(spy)
+    expect(keys).toContain('weekly-session-stats')
+    expect(keys).toContain('weekly-pr-count')
+    expect(keys).toContain('last-session-for-routine')
   })
 })

@@ -8,6 +8,7 @@ export {
   useSessionPRs,
   usePreviousWorkout,
   useUpdateSessionMetadata,
+  useRescheduleSession,
   useUpsertCompletedSet,
   useDeleteCompletedSet,
   useDeleteSession,

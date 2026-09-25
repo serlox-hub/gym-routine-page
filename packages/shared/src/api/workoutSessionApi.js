@@ -1,4 +1,8 @@
 import { getClient } from './_client.js'
+import { recalculateSessionStats, recalculateExercisePRs } from './exerciseStatsApi.js'
+import { SESSION_STATUS } from '../lib/constants.js'
+import { isSameTimestamp } from '../lib/dateUtils.js'
+import { t } from '../i18n/index.js'
 
 // ============================================
 // SESSION - RESTORE
@@ -97,6 +101,72 @@ export async function updateSessionMetadata({ sessionId, completedAt, durationMi
 
   if (error) throw error
   return data
+}
+
+/**
+ * Mueve una sesión terminada en el tiempo: escribe `started_at` + `duration_minutes` y
+ * resincroniza los stats derivados. No toca `completed_at` (se edita aparte).
+ *
+ * Las escrituras son secuenciales, no transaccionales (mismo patrón que `reassignSessionGym`).
+ * Es idempotente: `recalculateSessionStats` re-deriva `session_date` de la fila de la sesión,
+ * así que repetir la operación (o cualquier edición posterior de una serie) repara la
+ * desnormalización si el paso 2 falla.
+ * @param {{ sessionId: string, startedAt: string, durationMinutes: number|null }} params
+ * @returns {Promise<{ affectedExerciseIds: Array, movedForward: boolean, statsSynced: boolean }>}
+ *   `statsSynced` es false si la resincronización de stats falló tras mover la sesión.
+ */
+export async function rescheduleSession({ sessionId, startedAt, durationMinutes }) {
+  const client = getClient()
+
+  const { data: session, error: sErr } = await client
+    .from('workout_sessions')
+    .select('started_at, gym_id, status')
+    .eq('id', sessionId)
+    .single()
+  if (sErr) throw sErr
+
+  // Reprogramar es una operación de historial: la sesión en curso es la sesión activa.
+  if (session.status !== SESSION_STATUS.COMPLETED) {
+    throw new Error(t('workout:history.rescheduleNotCompleted'))
+  }
+
+  const oldStartedAt = session.started_at
+  if (isSameTimestamp(oldStartedAt, startedAt)) {
+    return { affectedExerciseIds: [], movedForward: false, statsSynced: true }
+  }
+
+  const { error: updErr } = await client
+    .from('workout_sessions')
+    .update({ started_at: startedAt, duration_minutes: durationMinutes })
+    .eq('id', sessionId)
+  if (updErr) throw updErr
+
+  const movedForward = new Date(startedAt).getTime() > new Date(oldStartedAt).getTime()
+
+  // La sesión YA está movida. Si la resincronización de los derivados falla, el error no
+  // puede tumbar la mutación: eso dejaría la caché sin invalidar y la pantalla pintando la
+  // fecha vieja sobre una fila que ya cambió. Mismo trato que en `useUpsertCompletedSet` /
+  // `useDeleteCompletedSet`, y la desnormalización la repara la siguiente edición (ver arriba).
+  let affectedExerciseIds = []
+  let statsSynced = true
+  try {
+    // Reescribe `exercise_session_stats.session_date` con el nuevo inicio y recalcula los
+    // PRs desde ahí.
+    ;({ affectedExerciseIds = [] } = await recalculateSessionStats(sessionId))
+
+    // Al mover hacia adelante, la recalculación desde la fecha NUEVA no cubre la posición
+    // cronológica que la sesión acaba de dejar libre. Hacia atrás no hace falta: la RPC
+    // recalcula todo lo que va desde la fecha dada, y la nueva ya es la más temprana.
+    if (movedForward && affectedExerciseIds.length > 0) {
+      await Promise.all(
+        affectedExerciseIds.map(eid => recalculateExercisePRs(eid, oldStartedAt, session.gym_id))
+      )
+    }
+  } catch {
+    statsSynced = false
+  }
+
+  return { affectedExerciseIds, movedForward, statsSynced }
 }
 
 export async function deleteWorkoutSession(sessionId) {

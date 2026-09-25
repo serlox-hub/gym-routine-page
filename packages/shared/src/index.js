@@ -81,6 +81,7 @@ export { initI18n, i18n, t, getCurrentLocale } from './i18n/index.js'
 
 // Hooks
 export * from './hooks/useWorkoutHistory.js'
+export * from './hooks/useSelectedDaySessions.js'
 export * from './hooks/useAdmin.js'
 export * from './hooks/useFeedback.js'
 export * from './hooks/useReminders.js'

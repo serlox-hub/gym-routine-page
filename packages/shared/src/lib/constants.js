@@ -19,6 +19,16 @@ export const SYNC_RETRY_INTERVAL_MS = 10000
 // Sesión activa: cuánto se muestra el toast de PR antes de auto-ocultarse.
 export const PR_NOTIFICATION_DURATION_MS = 4000
 
+// Tope de duración de una sesión al reprogramar su inicio o su fin desde el historial.
+// `workout_sessions.duration_minutes` es smallint (máx 32767): sin cota, un inicio muy
+// atrás desborda la columna y el UPDATE muere con un error de rango de Postgres.
+// 21 días es lo máximo que cabe dejando margen bajo ese techo duro, y es lo que decide el
+// tope: mover una sesión semanas atrás (te das cuenta tarde) tiene que caber, y el estado
+// intermedio de mover inicio y fin por separado ocupa bastante menos.
+export const MAX_SESSION_DURATION_MINUTES = 30240
+// El mismo tope en días, para el texto que lo explica en pantalla (que así no se desincroniza).
+export const MAX_SESSION_DURATION_DAYS = MAX_SESSION_DURATION_MINUTES / (24 * 60)
+
 // Block names (DB identifiers — always Spanish in the database)
 export const BLOCK_NAMES = {
   WARMUP: 'Calentamiento',

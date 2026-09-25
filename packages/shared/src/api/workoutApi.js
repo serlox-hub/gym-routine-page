@@ -9,6 +9,7 @@ export {
   deleteSessionExercisesWithoutSets,
   completeWorkoutSession,
   updateSessionMetadata,
+  rescheduleSession,
   deleteWorkoutSession,
   fetchWorkoutHistory,
   fetchSessionDetail,

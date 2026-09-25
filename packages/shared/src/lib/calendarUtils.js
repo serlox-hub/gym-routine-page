@@ -39,6 +39,32 @@ export function groupSessionsByDate(sessions) {
 }
 
 /**
+ * Sesiones de un día concreto, derivadas de la lista viva del mes. El historial las
+ * DERIVA en cada render en vez de guardarse una copia al pulsar el día: una copia
+ * sigue pintando la sesión donde estaba después de moverla de fecha.
+ * @param {Array} sessions - sesiones del mes (con started_at)
+ * @param {string|null} dateKey - clave de día (`Date.toDateString()`)
+ * @returns {Array} vacío si no hay día seleccionado o el día no tiene sesiones
+ */
+export function getSessionsForDateKey(sessions, dateKey) {
+  if (!dateKey) return []
+  return groupSessionsByDate(sessions).get(dateKey) ?? []
+}
+
+/**
+ * Día (clave `Date.toDateString()`) en el que cae una sesión dentro de la lista del mes.
+ * Es lo que permite SEGUIR a una sesión que se acaba de mover de fecha en vez de soltarla.
+ * @param {Array} sessions - sesiones del mes (con started_at)
+ * @param {string|number|null} sessionId
+ * @returns {string|null} null si la sesión no está en la lista (se fue a otro mes)
+ */
+export function findSessionDateKey(sessions, sessionId) {
+  if (!sessions || sessionId == null) return null
+  const session = sessions.find(s => String(s.id) === String(sessionId))
+  return session ? new Date(session.started_at).toDateString() : null
+}
+
+/**
  * Extrae grupos musculares únicos de las sesiones de un día
  * @param {Array} sessions - Sesiones del día
  * @returns {Array} Array de nombres de grupos musculares

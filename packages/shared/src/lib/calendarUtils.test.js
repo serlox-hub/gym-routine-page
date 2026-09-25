@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   getAdjustedDayOfWeek,
   groupSessionsByDate,
+  getSessionsForDateKey,
+  findSessionDateKey,
   extractMuscleGroupsFromSessions,
   generateCalendarDays,
   getMonthName,
@@ -56,6 +58,60 @@ describe('calendarUtils', () => {
       const result = groupSessionsByDate(sessions)
       const dayKey = new Date('2024-01-15T10:00:00Z').toDateString()
       expect(result.get(dayKey)).toHaveLength(2)
+    })
+  })
+
+  describe('getSessionsForDateKey', () => {
+    const sessions = [
+      { id: 1, started_at: '2024-01-15T10:00:00Z' },
+      { id: 2, started_at: '2024-01-15T18:00:00Z' },
+      { id: 3, started_at: '2024-01-16T10:00:00Z' },
+    ]
+
+    it('devuelve las sesiones del día pedido', () => {
+      const dayKey = new Date('2024-01-15T10:00:00Z').toDateString()
+      expect(getSessionsForDateKey(sessions, dayKey).map(s => s.id)).toEqual([1, 2])
+    })
+
+    it('devuelve vacío sin día seleccionado', () => {
+      expect(getSessionsForDateKey(sessions, null)).toEqual([])
+    })
+
+    it('devuelve vacío para un día sin sesiones o sin lista cargada', () => {
+      expect(getSessionsForDateKey(sessions, new Date('2024-01-17T10:00:00Z').toDateString())).toEqual([])
+      expect(getSessionsForDateKey(undefined, new Date('2024-01-15T10:00:00Z').toDateString())).toEqual([])
+    })
+
+    it('deja de devolver una sesión que se movió a otro día', () => {
+      const dayKey = new Date('2024-01-15T10:00:00Z').toDateString()
+      const moved = sessions.map(s => (s.id === 1 ? { ...s, started_at: '2024-01-20T10:00:00Z' } : s))
+      expect(getSessionsForDateKey(moved, dayKey).map(s => s.id)).toEqual([2])
+    })
+  })
+
+  describe('findSessionDateKey', () => {
+    const sessions = [
+      { id: 1, started_at: '2024-01-15T10:00:00Z' },
+      { id: '2', started_at: '2024-01-16T10:00:00Z' },
+    ]
+
+    it('devuelve la clave de día en la que cae la sesión', () => {
+      expect(findSessionDateKey(sessions, 1)).toBe(new Date('2024-01-15T10:00:00Z').toDateString())
+    })
+
+    it('compara el id normalizado con String() (número vs string)', () => {
+      expect(findSessionDateKey(sessions, '1')).toBe(new Date('2024-01-15T10:00:00Z').toDateString())
+      expect(findSessionDateKey(sessions, 2)).toBe(new Date('2024-01-16T10:00:00Z').toDateString())
+    })
+
+    it('devuelve null si la sesión no está en la lista (se fue a otro mes)', () => {
+      expect(findSessionDateKey(sessions, 999)).toBeNull()
+    })
+
+    it('devuelve null sin lista o sin id', () => {
+      expect(findSessionDateKey(null, 1)).toBeNull()
+      expect(findSessionDateKey(sessions, null)).toBeNull()
+      expect(findSessionDateKey(undefined, undefined)).toBeNull()
     })
   })
 
