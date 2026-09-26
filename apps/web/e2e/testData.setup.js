@@ -48,6 +48,7 @@ setup('create test data', async () => {
 
     if (existingRoutines && existingRoutines.length > 0) {
       console.log('✅ Datos de test ya existen, saltando creación')
+      await seedSupersetRoutine(supabase, userId)
       return
     }
 
@@ -133,6 +134,8 @@ setup('create test data', async () => {
 
     if (routineExerciseError) throw routineExerciseError
 
+    await seedSupersetRoutine(supabase, userId)
+
     console.log('✅ Datos de prueba creados correctamente')
     console.log(`   - Rutina: ${routine.name} (id: ${routine.id})`)
     console.log(`   - Día: ${day.name}`)
@@ -144,3 +147,91 @@ setup('create test data', async () => {
     await supabase.auth.signOut()
   }
 })
+
+// Nombres del día con superserie, en el orden en el que se siembran. El arrastre se verifica
+// leyendo el orden de las filas, así que tienen que ser reconocibles y estables. No se exportan:
+// importar este archivo desde un spec volvería a registrar su setup, así que `reorderExercises.spec.js`
+// los repite a mano.
+const SUPERSET_ROUTINE_NAME = 'Rutina Superset E2E'
+const SUPERSET_DAY_NAME = 'Día Superset E2E'
+const SUPERSET_EXERCISE_NAMES = ['E2E Uno', 'E2E Dos', 'E2E Tres', 'E2E Cuatro']
+
+/**
+ * Rutina aparte (no la base) con un día de cuatro ejercicios: uno individual, una superserie de
+ * dos y otro individual. Es lo que necesita el arrastre de ejercicios de la issue #88, y va en su
+ * propia rutina para no mover los locators de los tests que usan la rutina base.
+ */
+async function seedSupersetRoutine(supabase, userId) {
+  const { data: existing } = await supabase
+    .from('routines')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('name', SUPERSET_ROUTINE_NAME)
+    .limit(1)
+
+  if (existing && existing.length > 0) return
+
+  const { data: muscleGroups } = await supabase.from('muscle_groups').select('id').limit(1)
+  if (!muscleGroups || muscleGroups.length === 0) throw new Error('No hay grupos musculares en la BD')
+
+  const exerciseIds = []
+  for (const name of SUPERSET_EXERCISE_NAMES) {
+    const { data: found } = await supabase
+      .from('exercises')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('name_es', name)
+      .is('deleted_at', null)
+      .limit(1)
+
+    if (found && found.length > 0) {
+      exerciseIds.push(found[0].id)
+      continue
+    }
+
+    const { data: created, error } = await supabase
+      .from('exercises')
+      .insert({
+        name_es: name,
+        tracked_fields: ['weight', 'reps'],
+        muscle_group_id: muscleGroups[0].id,
+        user_id: userId,
+      })
+      .select()
+      .single()
+    if (error) throw error
+    exerciseIds.push(created.id)
+  }
+
+  const { data: routine, error: routineError } = await supabase
+    .from('routines')
+    .insert({ name: SUPERSET_ROUTINE_NAME, description: 'Día con superserie para los e2e de arrastre', user_id: userId })
+    .select()
+    .single()
+  if (routineError) throw routineError
+
+  const { data: day, error: dayError } = await supabase
+    .from('routine_days')
+    .insert({ routine_id: routine.id, name: SUPERSET_DAY_NAME, sort_order: 1 })
+    .select()
+    .single()
+  if (dayError) throw dayError
+
+  // Uno · (Dos + Tres en superserie) · Cuatro
+  const supersetGroups = [null, 1, 1, null]
+  const { error: exercisesError } = await supabase
+    .from('routine_exercises')
+    .insert(exerciseIds.map((exerciseId, index) => ({
+      routine_day_id: day.id,
+      exercise_id: exerciseId,
+      series: 3,
+      reps: '10',
+      rest_seconds: 90,
+      sort_order: index + 1,
+      is_warmup: false,
+      superset_group: supersetGroups[index],
+    })))
+  if (exercisesError) throw exercisesError
+
+  console.log(`   - Rutina: ${SUPERSET_ROUTINE_NAME} (día con superserie)`)
+}

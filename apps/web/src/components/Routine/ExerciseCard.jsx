@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
-import { Modal, ReorderModal } from '../ui/index.js'
+import { DragHandle, Modal, ReorderModal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete.js'
@@ -21,6 +21,8 @@ function ExerciseCard({
   currentIndex = 0,
   totalExercises = 1,
   positionLabels = [],
+  dragHandleProps = null,
+  isDragging = false,
 }) {
   const { t } = useTranslation()
   const { exercise, series, reps, level, rir, rest_seconds } = routineExercise
@@ -58,8 +60,10 @@ function ExerciseCard({
   return (
     <>
       {/* hover en el envoltorio, no en la fila: sobre la fila el 80% de opacidad dejaría
-          translucir la afordancia roja que tiene detrás */}
-      <div className="relative rounded-lg overflow-hidden hover:opacity-80">
+          translucir la afordancia roja que tiene detrás.
+          `overflow` recorta la fila mientras se desliza, pero se suelta al arrastrar para no
+          cortar la sombra que la despega de la lista (igual que en DayCard). */}
+      <div className="relative rounded-lg hover:opacity-80" style={{ overflow: isDragging ? 'visible' : 'hidden' }}>
         {/* Afordancia de borrado: invisible en reposo, aparece con el recorrido del dedo */}
         <div
           ref={swipe.affordanceRef}
@@ -79,12 +83,24 @@ function ExerciseCard({
             // un pointercancel en vez de los moves: el swipe funcionaría con ratón y no en móvil.
             touchAction: 'pan-y',
             userSelect: 'none',
+            // Mientras viaja con el dedo se despega del resto de la lista.
+            boxShadow: isDragging ? `0 8px 24px ${colors.shadow}` : undefined,
             ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
           }}
           {...swipe.handlers}
           onClick={handleCardClick}
         >
           <div className="flex items-center gap-2">
+            {/* El asa bloquea el swipe al TOCARLA, no al activarse el arrastre: el swipe se
+                clasifica en el primer `pointermove`, antes de que dnd-kit haya recorrido su
+                distancia de activación. */}
+            <DragHandle
+              dragHandleProps={dragHandleProps}
+              disabled={isReordering}
+              size={14}
+              onPressStart={() => { swipe.blockedRef.current = true }}
+              onPressEnd={() => { swipe.blockedRef.current = false }}
+            />
             <div className="flex-1 min-w-0">
               <h4 className="font-semibold truncate" style={{ color: colors.textPrimary, fontSize: 14 }}>
                 {getExerciseName(exercise)}

@@ -8,7 +8,7 @@ import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
 import { colors } from '../../lib/styles'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete'
-import { getExistingSupersetIds, getRoutineDayLayout, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
+import { getExistingSupersetIds, getRoutineDayLayout, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import AddExerciseButton from './AddExerciseButton'
 import BlockSection from './BlockSection'
 
@@ -35,6 +35,9 @@ export default function DayCard({
   isReorderingDays = false,
   dragHandleProps = null,
   isDragging = false,
+  // El mismo `useAnimatedRef` del ScrollView de la pantalla que usa la lista de días: la lista de
+  // ejercicios de dentro lo necesita para su propio auto-scroll (ver `DraggableList`).
+  scrollRef,
   navigation: _navigation,
 }) {
   const { t } = useTranslation()
@@ -105,15 +108,18 @@ export default function DayCard({
     }
   }
 
-  const handleReorderWarmup = (exerciseId, newIndex) => {
-    const newExercises = moveItemToPosition(warmupExercises, exerciseId, newIndex)
-    if (newExercises) reorderExercises.mutate({ dayId: id, exercises: [...newExercises, ...mainExercises] })
+  // El arrastre y el menú dan el orden nuevo de UN bloque (las reglas son de
+  // `lib/exerciseOrder.js`); la RPC renumera el día entero, así que se recompone con el otro
+  // bloque, calentamiento primero.
+  const reorderDay = (warmupIds, mainIds) => {
+    reorderExercises.mutate({
+      dayId: id,
+      exercises: [...warmupIds, ...mainIds].map(exerciseId => ({ id: exerciseId })),
+    })
   }
 
-  const handleReorderMain = (exerciseId, newIndex) => {
-    const newExercises = moveItemToPosition(mainExercises, exerciseId, newIndex)
-    if (newExercises) reorderExercises.mutate({ dayId: id, exercises: [...warmupExercises, ...newExercises] })
-  }
+  const handleReorderWarmupBlock = (ids) => reorderDay(ids, mainExercises.map(re => re.id))
+  const handleReorderMainBlock = (ids) => reorderDay(warmupExercises.map(re => re.id), ids)
 
   const handleDeleteExercise = () => {
     if (!exerciseToDelete) return
@@ -238,7 +244,8 @@ export default function DayCard({
                         onAddExercise={() => onAddWarmup(id, existingSupersets)}
                         onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                         onReplaceExercise={(re) => onReplaceExercise(re, id)}
-                        onReorderExercise={handleReorderWarmup}
+                        onReorderBlock={handleReorderWarmupBlock}
+                        scrollRef={scrollRef}
                         onDeleteExercise={(re) => setExerciseToDelete(re)}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
@@ -254,7 +261,8 @@ export default function DayCard({
                         onAddExercise={() => onAddExercise(id, existingSupersets)}
                         onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                         onReplaceExercise={(re) => onReplaceExercise(re, id)}
-                        onReorderExercise={handleReorderMain}
+                        onReorderBlock={handleReorderMainBlock}
+                        scrollRef={scrollRef}
                         onDeleteExercise={(re) => setExerciseToDelete(re)}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}

@@ -190,4 +190,53 @@ describe('ExerciseCard — menú de acciones', () => {
     expect(labels).toContain('Editar')
     expect(labels).toContain('Eliminar')
   })
+
+  it('con un solo ejercicio en su ámbito el menú no ofrece "Reordenar"', () => {
+    renderCard({ totalExercises: 1 })
+    const row = screen.getByText('Press banca').closest('[class*="cursor-pointer"]')
+
+    fireEvent.click(row)
+
+    expect(screen.queryByRole('button', { name: 'Reordenar' })).not.toBeInTheDocument()
+  })
+
+  it('con más de un ejercicio en su ámbito "Reordenar" está deshabilitado mientras isReordering', () => {
+    renderCard({ totalExercises: 2, isReordering: true })
+    const row = screen.getByText('Press banca').closest('[class*="cursor-pointer"]')
+
+    fireEvent.click(row)
+
+    expect(screen.getByRole('button', { name: 'Reordenar' })).toBeDisabled()
+  })
+})
+
+describe('ExerciseCard — asa de arrastre y swipe', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('sin dragHandleProps no pinta asa', () => {
+    const { container } = renderCard()
+    expect(container.querySelector('svg.lucide-grip-vertical')).toBeNull()
+  })
+
+  it('un gesto que empieza en el asa no reclama el swipe, y al soltarlo la fila vuelve a reclamarlo', () => {
+    const onDelete = vi.fn()
+    const { container } = renderCard({ onDelete, dragHandleProps: {} })
+    const row = screen.getByText('Press banca').closest('[class*="cursor-pointer"]')
+    const handle = container.querySelector('svg.lucide-grip-vertical').closest('button')
+
+    // El pointerdown del asa burbujea hasta la fila, así que el swipe sí empieza a clasificar:
+    // lo que lo impide es la bandera que pone el asa ANTES, en ese mismo pointerdown.
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 0, clientY: 0, pointerType: 'touch' })
+    fireEvent.pointerMove(row, { pointerId: 1, clientX: -100, clientY: 0, pointerType: 'touch' })
+    fireEvent.pointerUp(row, { pointerId: 1, clientX: -100, clientY: 0, pointerType: 'touch' })
+
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(row.style.transform).toBe('')
+
+    // Soltar el asa quita el bloqueo: un swipe normal después sí borra.
+    swipe(row, { dx: -100 })
+    expect(onDelete).toHaveBeenCalledTimes(1)
+  })
 })

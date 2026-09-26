@@ -291,6 +291,28 @@ describe('reorderRoutineExercises', () => {
     })
   })
 
+  // El arrastre para reordenar NO cambia la pertenencia a un superset (issue #88): la RPC solo
+  // recibe id y posición, así que ninguna fila puede perder su `superset_group` por reordenarse.
+  it('no manda superset_group aunque las filas lo lleven', async () => {
+    const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: null }) }
+    getClient.mockReturnValue(clientMock)
+    const exercises = [
+      { id: 40, superset_group: 1, sort_order: 3 },
+      { id: 41, superset_group: 1, sort_order: 4 },
+      { id: 42, superset_group: null, sort_order: 1 },
+    ]
+
+    await reorderRoutineExercises(exercises)
+
+    const payload = clientMock.rpc.mock.calls[0][1].exercise_orders
+    expect(payload).toEqual([
+      { id: 40, sort_order: 1 },
+      { id: 41, sort_order: 2 },
+      { id: 42, sort_order: 3 },
+    ])
+    expect(payload.every(row => Object.keys(row).length === 2)).toBe(true)
+  })
+
   it('throws when rpc returns error', async () => {
     const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: new Error('rpc failed') }) }
     getClient.mockReturnValue(clientMock)

@@ -34,7 +34,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/.*\.setup\.js/, /(workout|completeSet|createRoutine|routineIO|exercises|bodyWeight|session)\.spec\.js/],
+      testIgnore: [/.*\.setup\.js/, /(workout|completeSet|createRoutine|reorderExercises|routineIO|exercises|bodyWeight|session)\.spec\.js/],
     },
     // Tests que SÍ requieren autenticación
     {
@@ -45,7 +45,7 @@ export default defineConfig({
         storageState: '.auth/user.json',
       },
       dependencies: ['data-setup'],
-      testMatch: /(workout|completeSet|createRoutine|routineIO|exercises|bodyWeight|session)\.spec\.js/,
+      testMatch: /(workout|completeSet|createRoutine|reorderExercises|routineIO|exercises|bodyWeight|session)\.spec\.js/,
     },
   ],
   webServer: {

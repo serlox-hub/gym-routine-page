@@ -7,7 +7,7 @@ import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise,
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete.js'
-import { getExistingSupersetIds, getRoutineDayLayout, moveItemToPosition, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
+import { getExistingSupersetIds, getRoutineDayLayout, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import AddExerciseButton from './AddExerciseButton.jsx'
 import BlockSection from './BlockSection.jsx'
 
@@ -88,21 +88,18 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
     }
   }
 
-  const handleReorderWarmup = (exerciseId, newIndex) => {
-    const newExercises = moveItemToPosition(warmupExercises, exerciseId, newIndex)
-    if (newExercises) {
-      // Combinar con main exercises para enviar todo el día
-      reorderExercises.mutate({ dayId: id, exercises: [...newExercises, ...mainExercises] })
-    }
+  // El arrastre y el menú dan el orden nuevo de UN bloque (las reglas son de
+  // `lib/exerciseOrder.js`); la RPC renumera el día entero, así que se recompone con el otro
+  // bloque, calentamiento primero.
+  const reorderDay = (warmupIds, mainIds) => {
+    reorderExercises.mutate({
+      dayId: id,
+      exercises: [...warmupIds, ...mainIds].map(exerciseId => ({ id: exerciseId })),
+    })
   }
 
-  const handleReorderMain = (exerciseId, newIndex) => {
-    const newExercises = moveItemToPosition(mainExercises, exerciseId, newIndex)
-    if (newExercises) {
-      // Combinar con warmup exercises para enviar todo el día
-      reorderExercises.mutate({ dayId: id, exercises: [...warmupExercises, ...newExercises] })
-    }
-  }
+  const handleReorderWarmupBlock = (ids) => reorderDay(ids, mainExercises.map(re => re.id))
+  const handleReorderMainBlock = (ids) => reorderDay(warmupExercises.map(re => re.id), ids)
 
   const handleDeleteExercise = () => {
     if (!exerciseToDelete) return
@@ -220,7 +217,7 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
                         onAddExercise={() => onAddWarmup(id, existingSupersets)}
                         onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                         onReplaceExercise={(re) => onReplaceExercise(re, id)}
-                        onReorderExercise={handleReorderWarmup}
+                        onReorderBlock={handleReorderWarmupBlock}
                         onDeleteExercise={(re) => setExerciseToDelete(re)}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
@@ -236,7 +233,7 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
                         onAddExercise={() => onAddExercise(id, existingSupersets)}
                         onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                         onReplaceExercise={(re) => onReplaceExercise(re, id)}
-                        onReorderExercise={handleReorderMain}
+                        onReorderBlock={handleReorderMainBlock}
                         onDeleteExercise={(re) => setExerciseToDelete(re)}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}

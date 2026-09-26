@@ -55,6 +55,7 @@ import {
   duplicateRoutineDay,
   duplicateRoutine,
   reorderRoutineDays,
+  reorderRoutineExercises,
   updateRoutine,
 } from '../api/routineApi.js'
 
@@ -75,6 +76,7 @@ import {
   useDuplicateRoutine,
   useDuplicateRoutineDay,
   useReorderRoutineDays,
+  useReorderRoutineExercises,
   useRoutineDetailsForm,
 } from './useRoutines.js'
 
@@ -382,6 +384,81 @@ describe('useReorderRoutineDays — actualización optimista', () => {
 
     expect(queryClient.getQueryData([QUERY_KEYS.ROUTINE_DAYS, '7']).map(d => d.id))
       .toEqual(['day-3', 'day-1', 'day-2'])
+  })
+})
+
+describe('useReorderRoutineExercises — actualización optimista', () => {
+  const DAY_ID = 'day-1'
+  const QUERY_KEY = [QUERY_KEYS.ROUTINE_BLOCKS, DAY_ID]
+  const CACHED_BLOCKS = [
+    { name: 'Calentamiento', is_warmup: true, routine_exercises: [{ id: 10, sort_order: 1 }] },
+    {
+      name: 'Principal',
+      is_warmup: false,
+      routine_exercises: [
+        { id: 20, sort_order: 2, superset_group: null },
+        { id: 21, sort_order: 3, superset_group: 1 },
+        { id: 22, sort_order: 4, superset_group: 1 },
+      ],
+    },
+  ]
+  // El día entero, calentamiento primero: la superserie (21, 22) pasa delante del individual.
+  const REORDERED = [{ id: 10 }, { id: 21 }, { id: 22 }, { id: 20 }]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('escribe el orden nuevo en la caché antes de que responda la API, sin tocar superset_group', async () => {
+    let resolveApi
+    reorderRoutineExercises.mockReturnValueOnce(new Promise((resolve) => { resolveApi = resolve }))
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(QUERY_KEY, CACHED_BLOCKS)
+
+    const { result } = renderHook(() => useReorderRoutineExercises(), { wrapper: createWrapper(queryClient) })
+
+    act(() => {
+      result.current.mutate({ dayId: DAY_ID, exercises: REORDERED })
+    })
+
+    await waitFor(() => expect(queryClient.getQueryData(QUERY_KEY)[1].routine_exercises).toEqual([
+      { id: 21, sort_order: 2, superset_group: 1 },
+      { id: 22, sort_order: 3, superset_group: 1 },
+      { id: 20, sort_order: 4, superset_group: null },
+    ]))
+
+    resolveApi()
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  })
+
+  it('restaura la caché y avisa si la API falla', async () => {
+    reorderRoutineExercises.mockRejectedValueOnce(new Error('network down'))
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(QUERY_KEY, CACHED_BLOCKS)
+
+    const { result } = renderHook(() => useReorderRoutineExercises(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ dayId: DAY_ID, exercises: REORDERED }).catch(() => {})
+    })
+
+    expect(queryClient.getQueryData(QUERY_KEY)).toEqual(CACHED_BLOCKS)
+    expect(notify).toHaveBeenCalledWith(t('routine:exercise.reorderFailed'), 'error')
+  })
+
+  it('normaliza el dayId a String para dar con la caché registrada por la query', async () => {
+    reorderRoutineExercises.mockResolvedValueOnce(undefined)
+    const queryClient = createQueryClient()
+    queryClient.setQueryData([QUERY_KEYS.ROUTINE_BLOCKS, '7'], CACHED_BLOCKS)
+
+    const { result } = renderHook(() => useReorderRoutineExercises(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ dayId: 7, exercises: REORDERED })
+    })
+
+    expect(queryClient.getQueryData([QUERY_KEYS.ROUTINE_BLOCKS, '7'])[1].routine_exercises.map(re => re.id))
+      .toEqual([21, 22, 20])
   })
 })
 

@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
-import { Modal, ReorderModal } from '../ui'
+import { DragHandle, Modal, ReorderModal } from '../ui'
 import { ExerciseHistoryModal } from '../Workout'
 import { colors } from '../../lib/styles'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete'
@@ -13,7 +13,7 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 export default function ExerciseCard({
   routineExercise,
   routineDayId,
-  isReordering: _isReordering = false,
+  isReordering = false,
   onEdit,
   onDelete,
   onDuplicate,
@@ -23,6 +23,8 @@ export default function ExerciseCard({
   currentIndex = 0,
   totalExercises = 1,
   positionLabels = [],
+  dragHandleProps = null,
+  isDragging = false,
 }) {
   const { t } = useTranslation()
   const navigation = useNavigation()
@@ -54,7 +56,7 @@ export default function ExerciseCard({
     { icon: Repeat2, label: t('routine:exercise.replace'), onPress: onReplace },
     { icon: Copy, label: t('routine:exercise.duplicateExercise'), onPress: onDuplicate },
     { icon: FolderInput, label: t('routine:exercise.moveToDay'), onPress: onMoveToDay },
-    onReorderToPosition && totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onPress: () => setShowReorder(true) },
+    onReorderToPosition && totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onPress: () => setShowReorder(true), disabled: isReordering },
     { icon: Trash2, label: t('common:buttons.delete'), onPress: onDelete, danger: true },
   ].filter(Boolean)
 
@@ -64,9 +66,7 @@ export default function ExerciseCard({
   }
 
   const cardContent = (
-    <Pressable
-      onPress={handleCardPress}
-      className="active:opacity-70"
+    <View
       style={{
         backgroundColor: colors.bgTertiary,
         borderRadius: 8,
@@ -75,33 +75,52 @@ export default function ExerciseCard({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
+        // Mientras viaja con el dedo se despega del resto de la lista.
+        ...(isDragging ? { shadowColor: colors.shadow, shadowOpacity: 1, shadowRadius: 12, shadowOffset: { width: 0, height: 8 } } : null),
         ...rnBorderStyle,
       }}
     >
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
-          {getExerciseName(exercise)}
-        </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
-          {level != null && (
-            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</Text>
-          )}
-          {rir !== null && rir !== undefined && (
-            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
-          )}
-          {rest_seconds > 0 && (
-            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</Text>
-          )}
+      {/* El asa bloquea el swipe al TOCARLA, no al activarse el arrastre: el swipe se clasifica
+          dentro de `onMoveShouldSetPanResponder`, que es síncrono y no podría consultar un aviso
+          que llegase desde el hilo de UI. */}
+      <DragHandle
+        dragHandleProps={dragHandleProps}
+        disabled={isReordering}
+        size={14}
+        onPressStart={() => { swipe.blockedRef.current = true }}
+        onPressEnd={() => { swipe.blockedRef.current = false }}
+      />
+      {/* La pulsación va DENTRO de la zona del swipe y hermana del asa (igual que en DayCard):
+          envolviendo la fila entera, el Pressable se queda el responder al tocar y RN nunca
+          pregunta a sus descendientes si quieren el movimiento, así que el swipe no arrancaría. */}
+      <Pressable onPress={handleCardPress} className="active:opacity-70" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
+            {getExerciseName(exercise)}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
+            {level != null && (
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</Text>
+            )}
+            {rir !== null && rir !== undefined && (
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{formatEffortBadge(rir, trackedFields)}</Text>
+            )}
+            {rest_seconds > 0 && (
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</Text>
+            )}
+          </View>
         </View>
-      </View>
-      <ChevronRight size={16} color={colors.textMuted} />
-    </Pressable>
+        <ChevronRight size={16} color={colors.textMuted} />
+      </Pressable>
+    </View>
   )
 
   return (
     <>
-      <View style={{ borderRadius: 8, overflow: 'hidden' }} {...swipe.panHandlers}>
+      {/* `overflow` recorta la fila mientras se desliza, pero se suelta al arrastrar para no
+          cortar la sombra que la despega de la lista (iOS la recorta con `overflow: hidden`). */}
+      <View style={{ borderRadius: 8, overflow: isDragging ? 'visible' : 'hidden' }} {...swipe.panHandlers}>
         {/* Afordancia de borrado: invisible en reposo, aparece con el recorrido del dedo */}
         <Animated.View
           pointerEvents="none"
@@ -128,7 +147,8 @@ export default function ExerciseCard({
         <View style={{ paddingVertical: 8, paddingBottom: 24 }}>
           {menuItems.map((item, i) => (
             <Pressable key={i} onPress={() => handleMenuAction(item.onPress)}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 14 }}
+              disabled={item.disabled}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 14, opacity: item.disabled ? 0.4 : 1 }}
               className="active:opacity-70">
               {item.icon && <item.icon size={18} color={item.danger ? colors.danger : colors.textSecondary} />}
               <Text style={{ color: item.danger ? colors.danger : colors.textPrimary, fontSize: 14 }}>{item.label}</Text>

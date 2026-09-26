@@ -32,9 +32,9 @@ export function useSwipeToDelete({ onDelete }) {
   // El click llega DESPUÉS del pointerup: sin esta bandera, un swipe abandonado antes del umbral
   // volvería a su sitio y además dispararía la pulsación de la fila.
   const suppressClick = useRef(false)
-  // Seam para el arrastre-para-reordenar (long press + vertical sobre esta misma fila): mientras
-  // su pulsación esté pendiente o activa pondrá esto a true y el swipe no reclamará el gesto.
-  // Hoy nadie lo escribe. Ver docs/DECISIONS.md (issue #78).
+  // Lo escribe el asa de arrastre de la fila (`DragHandle`, `onPressStart`/`onPressEnd`): mientras
+  // el dedo esté sobre ella el swipe no reclama el gesto. Se pone al TOCAR el asa, no al activarse
+  // el arrastre, porque la clasificación del swipe ocurre antes (issues #78, #88).
   const blockedRef = useRef(false)
 
   const paintRow = (offset, animated) => {
