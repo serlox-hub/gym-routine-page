@@ -20,6 +20,7 @@ import {
   deleteRoutineExercise as apiDeleteRoutineExercise,
   updateRoutineExercise as apiUpdateRoutineExercise,
   reorderRoutineExercises as apiReorderRoutineExercises,
+  setRoutineExerciseSupersetGroup as apiSetRoutineExerciseSupersetGroup,
   addExerciseToDay as apiAddExerciseToDay,
   duplicateRoutineExercise as apiDuplicateRoutineExercise,
   duplicateRoutineDay as apiDuplicateRoutineDay,
@@ -32,7 +33,7 @@ import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 import { getTemplateImportData } from '../lib/routineTemplates.js'
-import { applyExerciseOrderToBlocks } from '../lib/routineDayLayout.js'
+import { applyExerciseOrderToBlocks, placeInSupersetForDay } from '../lib/routineDayLayout.js'
 import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
 
 export function useRoutines() {
@@ -301,9 +302,10 @@ export function useUpdateRoutineExercise() {
   })
 }
 
-// Optimista como `useReorderRoutineDays`: el arrastre suelta la fila donde el dedo la deja, así
-// que sin escribir la caché en `onMutate` la lista volvería al orden viejo hasta que aterrizase el
-// refetch. `exercises` es el día entero, calentamiento primero, y de él solo se lee el `id`.
+// Optimistic like `useReorderRoutineDays`: the drag drops the row where the finger leaves it, so
+// without writing the cache in `onMutate` the list would snap back to the old order until the
+// refetch landed. `exercises` is the whole day, warm-up first, as `{ id, supersetGroup? }`:
+// membership is applied too, or a row joining a superset would show outside its card until then.
 export function useReorderRoutineExercises() {
   const queryClient = useQueryClient()
 
@@ -314,13 +316,40 @@ export function useReorderRoutineExercises() {
       await queryClient.cancelQueries({ queryKey })
       const previous = queryClient.getQueryData(queryKey)
       if (previous) {
-        queryClient.setQueryData(queryKey, applyExerciseOrderToBlocks(previous, exercises.map(e => e.id)))
+        queryClient.setQueryData(queryKey, applyExerciseOrderToBlocks(previous, exercises))
       }
       return { queryKey, previous }
     },
     onError: (_err, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(context.queryKey, context.previous)
       getNotifier()?.show(t('routine:exercise.reorderFailed'), 'error')
+    },
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
+    },
+  })
+}
+
+// Non-drag entry point (the action sheet) to join or leave a superset, with the default placement.
+// Optimistic with the SAME rule as the API (`placeInSupersetForDay`), applied to the day's cache.
+export function useSetRoutineExerciseSupersetGroup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (params) => apiSetRoutineExerciseSupersetGroup(params),
+    onMutate: async (params) => {
+      const queryKey = [QUERY_KEYS.ROUTINE_BLOCKS, String(params.dayId)]
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData(queryKey)
+      const items = previous
+        ? placeInSupersetForDay(previous.flatMap(block => block.routine_exercises || []), params)
+        : null
+      if (items) queryClient.setQueryData(queryKey, applyExerciseOrderToBlocks(previous, items))
+      return { queryKey, previous }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(context.queryKey, context.previous)
+      getNotifier()?.show(t('routine:exercise.supersetMoveFailed'), 'error')
     },
     onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })

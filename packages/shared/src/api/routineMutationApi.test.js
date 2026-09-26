@@ -17,6 +17,7 @@ import {
   deleteRoutineExercise,
   updateRoutineExercise,
   reorderRoutineExercises,
+  setRoutineExerciseSupersetGroup,
   addExerciseToDay,
   duplicateRoutineExercise,
   duplicateRoutineDay,
@@ -313,10 +314,96 @@ describe('reorderRoutineExercises', () => {
     expect(payload.every(row => Object.keys(row).length === 2)).toBe(true)
   })
 
+  // Issue #89: membership travels ONLY on items that carry the camelCase `supersetGroup` key,
+  // also when it is null (leaving the superset).
+  it('sends superset_group only for items carrying supersetGroup', async () => {
+    const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: null }) }
+    getClient.mockReturnValue(clientMock)
+
+    await reorderRoutineExercises([{ id: 40 }, { id: 41, supersetGroup: 2 }, { id: 42, supersetGroup: null }])
+
+    expect(clientMock.rpc.mock.calls[0][1].exercise_orders).toEqual([
+      { id: 40, sort_order: 1 },
+      { id: 41, sort_order: 2, superset_group: 2 },
+      { id: 42, sort_order: 3, superset_group: null },
+    ])
+  })
+
   it('throws when rpc returns error', async () => {
     const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: new Error('rpc failed') }) }
     getClient.mockReturnValue(clientMock)
     await expect(reorderRoutineExercises([{ id: 1 }])).rejects.toThrow('rpc failed')
+  })
+})
+
+// ============================================
+// setRoutineExerciseSupersetGroup (composed)
+// ============================================
+
+describe('setRoutineExerciseSupersetGroup', () => {
+  // Warm-up: 10. Main: 20 · [21, 22] in group 1 · 23.
+  const dayRows = [
+    { id: 10, sort_order: 1, superset_group: null, is_warmup: true },
+    { id: 20, sort_order: 2, superset_group: null, is_warmup: false },
+    { id: 21, sort_order: 3, superset_group: 1, is_warmup: false },
+    { id: 22, sort_order: 4, superset_group: 1, is_warmup: false },
+    { id: 23, sort_order: 5, superset_group: null, is_warmup: false },
+  ]
+
+  function mockDay(response) {
+    const query = makeQueryMock(response)
+    const clientMock = { from: vi.fn(() => query), rpc: vi.fn().mockResolvedValue({ data: null, error: null }) }
+    getClient.mockReturnValue(clientMock)
+    return { query, clientMock }
+  }
+
+  it('reads the day and writes order and membership in a single RPC, warm-up first', async () => {
+    const { query, clientMock } = mockDay({ data: dayRows, error: null })
+
+    await setRoutineExerciseSupersetGroup({ dayId: 7, routineExerciseId: 21, supersetGroup: null })
+
+    expect(clientMock.from).toHaveBeenCalledWith('routine_exercises')
+    expect(query.eq).toHaveBeenCalledWith('routine_day_id', 7)
+    expect(clientMock.rpc).toHaveBeenCalledTimes(1)
+    // It leaves and lands right after the run it leaves.
+    expect(clientMock.rpc).toHaveBeenCalledWith('reorder_routine_exercises', {
+      exercise_orders: [
+        { id: 10, sort_order: 1 },
+        { id: 20, sort_order: 2 },
+        { id: 22, sort_order: 3 },
+        { id: 21, sort_order: 4, superset_group: null },
+        { id: 23, sort_order: 5 },
+      ],
+    })
+  })
+
+  it('passes the explicit position and run to the placement rule', async () => {
+    const { clientMock } = mockDay({ data: dayRows, error: null })
+
+    await setRoutineExerciseSupersetGroup({ dayId: 7, routineExerciseId: 23, supersetGroup: 1, targetIndex: 0, firstMemberId: 21 })
+
+    expect(clientMock.rpc.mock.calls[0][1].exercise_orders.map(item => item.id)).toEqual([10, 20, 23, 21, 22])
+  })
+
+  it('writes nothing when there is no change', async () => {
+    const { clientMock } = mockDay({ data: dayRows, error: null })
+
+    await expect(setRoutineExerciseSupersetGroup({ dayId: 7, routineExerciseId: 20, supersetGroup: null })).resolves.toBeNull()
+    expect(clientMock.rpc).not.toHaveBeenCalled()
+  })
+
+  it('throws when reading the day fails', async () => {
+    const { clientMock } = mockDay({ data: null, error: new Error('read failed') })
+
+    await expect(setRoutineExerciseSupersetGroup({ dayId: 7, routineExerciseId: 21, supersetGroup: null })).rejects.toThrow('read failed')
+    expect(clientMock.rpc).not.toHaveBeenCalled()
+  })
+
+  it('throws when the rpc fails', async () => {
+    const { clientMock } = mockDay({ data: dayRows, error: null })
+    clientMock.rpc.mockResolvedValue({ data: null, error: new Error('rpc failed') })
+
+    await expect(setRoutineExerciseSupersetGroup({ dayId: 7, routineExerciseId: 21, supersetGroup: null })).rejects.toThrow('rpc failed')
   })
 })
 

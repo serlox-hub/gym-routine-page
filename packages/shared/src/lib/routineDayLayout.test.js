@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getRoutineDayLayout, applyExerciseOrderToBlocks } from './routineDayLayout.js'
+import { getRoutineDayLayout, applyExerciseOrderToBlocks, placeInSupersetForDay } from './routineDayLayout.js'
 
 const warmup = (exercises) => ({ name: 'Calentamiento', routine_exercises: exercises })
 const main = (exercises) => ({ name: 'Principal', routine_exercises: exercises })
@@ -125,5 +125,71 @@ describe('applyExerciseOrderToBlocks', () => {
     expect(applyExerciseOrderToBlocks(null, [1])).toBeNull()
     expect(applyExerciseOrderToBlocks(blocks, null)).toBe(blocks)
     expect(applyExerciseOrderToBlocks([], [])).toEqual([])
+  })
+})
+
+describe('applyExerciseOrderToBlocks — with membership', () => {
+  const blocks = [
+    warmup([{ id: 10, sort_order: 1 }]),
+    main([
+      { id: 20, sort_order: 2, superset_group: null },
+      { id: 21, sort_order: 3, superset_group: 1 },
+      { id: 22, sort_order: 4, superset_group: 1 },
+    ]),
+  ]
+
+  it('sets superset_group only on the items that carry supersetGroup', () => {
+    const result = applyExerciseOrderToBlocks(blocks, [{ id: 10 }, { id: 21 }, { id: 20, supersetGroup: 1 }, { id: 22 }])
+
+    expect(result[1].routine_exercises).toEqual([
+      { id: 21, sort_order: 2, superset_group: 1 },
+      { id: 20, sort_order: 3, superset_group: 1 },
+      { id: 22, sort_order: 4, superset_group: 1 },
+    ])
+  })
+
+  it('supersetGroup null takes the row out of the superset', () => {
+    const result = applyExerciseOrderToBlocks(blocks, [{ id: 10 }, { id: 20 }, { id: 22 }, { id: 21, supersetGroup: null }])
+    expect(result[1].routine_exercises.map(re => [re.id, re.superset_group])).toEqual([[20, null], [22, 1], [21, null]])
+  })
+
+  it('returns the blocks unchanged if the items do not name the same exercises', () => {
+    expect(applyExerciseOrderToBlocks(blocks, [{ id: 10 }, { id: 20, supersetGroup: 1 }])).toBe(blocks)
+  })
+})
+
+describe('placeInSupersetForDay', () => {
+  const day = [
+    { id: 11, sort_order: 2, is_warmup: true, superset_group: null },
+    { id: 10, sort_order: 1, is_warmup: true, superset_group: null },
+    { id: 20, sort_order: 3, is_warmup: false, superset_group: null },
+    { id: 21, sort_order: 4, is_warmup: false, superset_group: 1 },
+    { id: 22, sort_order: 5, is_warmup: false, superset_group: 1 },
+    { id: 23, sort_order: 6, is_warmup: false, superset_group: null },
+  ]
+
+  it('takes a main-block member out and returns the whole day, warm-up first', () => {
+    expect(placeInSupersetForDay(day, { routineExerciseId: 21, supersetGroup: null })).toEqual([
+      { id: 10 }, { id: 11 }, { id: 20 }, { id: 22 }, { id: 21, supersetGroup: null }, { id: 23 },
+    ])
+  })
+
+  it('joins an individual at an explicit position in the chosen run', () => {
+    expect(placeInSupersetForDay(day, { routineExerciseId: 23, supersetGroup: 1, targetIndex: 0, firstMemberId: 21 })).toEqual([
+      { id: 10 }, { id: 11 }, { id: 20 }, { id: 23, supersetGroup: 1 }, { id: 21 }, { id: 22 },
+    ])
+  })
+
+  it('applies the rule to the exercise\'s own block only: the main block\'s group does not count in the warm-up', () => {
+    // Group 1 has no members in the warm-up: it is set in place.
+    expect(placeInSupersetForDay(day, { routineExerciseId: 11, supersetGroup: 1 })).toEqual([
+      { id: 10 }, { id: 11, supersetGroup: 1 }, { id: 20 }, { id: 21 }, { id: 22 }, { id: 23 },
+    ])
+  })
+
+  it('returns null if there is nothing to write or the exercise is not in the day', () => {
+    expect(placeInSupersetForDay(day, { routineExerciseId: 20, supersetGroup: null })).toBeNull()
+    expect(placeInSupersetForDay(day, { routineExerciseId: 99, supersetGroup: null })).toBeNull()
+    expect(placeInSupersetForDay(null, { routineExerciseId: 21, supersetGroup: null })).toBeNull()
   })
 })

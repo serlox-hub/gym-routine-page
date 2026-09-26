@@ -8,11 +8,14 @@ import { colors } from '../../lib/styles'
 import {
   applyRowDrop,
   buildExerciseRows,
+  canDragExerciseRow,
   collapseForDrag,
   formatSupersetLabel,
   getBlockUnits,
   getExerciseName,
   getExerciseReorderScope,
+  getMembershipDropPreview,
+  idsToOrderItems,
   moveExercise,
   moveSuperset,
   resolveRowDrop,
@@ -21,26 +24,51 @@ import {
 
 // Los ejercicios de un bloque se pintan como una lista PLANA de filas (una cabecera por
 // superserie más una fila por ejercicio), no como listas anidadas: es lo que permite que el
-// arrastre mueva una superserie entera, un miembro dentro de la suya y un individual entre
-// unidades con un único modelo, el de `lib/exerciseOrder.js`, compartido con web y con el menú.
+// arrastre mueva una superserie entera y un ejercicio a cualquier hueco, con la pertenencia que
+// decide el hueco (`resolveMembershipDrop`), con un único modelo, el de `lib/exerciseOrder.js`,
+// compartido con web y con el menú.
 //
 // Como no hay una vista que envuelva a los miembros, la tarjeta morada se pinta POR FILA: la
-// cabecera el borde de arriba, cada miembro los laterales, el último también el de abajo. El
+// cabecera el borde de arriba, cada miembro los laterales y el pie el de abajo. El
 // relleno de la tarjeta y el hueco entre filas van DENTRO del alto de cada fila, porque la
 // aritmética del arrastre suma altos de fila (`lib/dragReorder.js`) y un margen por fuera
 // descuadraría el hueco que se abre.
 const ROW_GAP = 8
 const CARD_PADDING = 8
 
-/** Hueco sobre la fila: entre unidades sí, entre la cabecera y sus miembros no (lo da el relleno). */
-function getRowGap(row, index) {
-  if (index === 0) return 0
-  return row.kind === 'exercise' && row.group != null ? 0 : ROW_GAP
+// Dragging in this list can change superset membership. The list previews with this and
+// `getMembershipDropPreview`, and `applyRowDrop` saves with the same flag: with it on for the save
+// and off for the preview, a member would be shown clamped back into its run and saved outside it.
+// A worklet because `DraggableList` calls it from the UI thread.
+function resolveExerciseRowDrop(rows, activeRowId, index) {
+  'worklet'
+  return resolveRowDrop(rows, activeRowId, index, true)
 }
 
-/** Trozo de borde morado y relleno interior que pinta cada fila de una superserie. */
+const isMemberRow = (row) => row.kind === 'exercise' && row.group != null
+const isFooterRow = (row) => row.kind === 'supersetFooter'
+
+/** Hueco sobre la fila: entre unidades sí, dentro de la tarjeta no (lo da el relleno). */
+function getRowGap(row, index) {
+  if (index === 0) return 0
+  return isMemberRow(row) || isFooterRow(row) ? 0 : ROW_GAP
+}
+
+/** Trozo de borde morado y relleno interior que pinta cada miembro y el pie de una superserie. */
 function getSegmentStyle(row) {
-  if (row.kind !== 'exercise' || row.group == null) return null
+  if (isFooterRow(row)) {
+    return {
+      backgroundColor: colors.bgSecondary,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: colors.purple,
+      paddingBottom: CARD_PADDING,
+      borderBottomLeftRadius: 8,
+      borderBottomRightRadius: 8,
+    }
+  }
+  if (!isMemberRow(row)) return null
   return {
     backgroundColor: colors.bgSecondary,
     borderLeftWidth: 1,
@@ -48,13 +76,32 @@ function getSegmentStyle(row) {
     borderColor: colors.purple,
     paddingHorizontal: CARD_PADDING,
     paddingTop: CARD_PADDING,
-    ...(row.segment === 'end' ? {
-      borderBottomWidth: 1,
-      paddingBottom: CARD_PADDING,
-      borderBottomLeftRadius: 8,
-      borderBottomRightRadius: 8,
-    } : null),
   }
+}
+
+/**
+ * The gap the dragged row would drop into (`DraggableList` with `withDropSlot`): a slice of the
+ * purple card when it would land in a superset, so the card's sides stay continuous around the gap,
+ * and empty otherwise. The list gives it the row's height; the slot only fills it.
+ */
+function getDropSlotStyle(dragPreview) {
+  if (dragPreview !== 'superset') return { flex: 1 }
+  return {
+    flex: 1,
+    backgroundColor: colors.bgSecondary,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.purple,
+  }
+}
+
+/**
+ * The row in flight: always flush, without the card's sides (it never lines up with them; the slot
+ * draws them). Same vertical space as at rest, because `DraggableList` opens the gap with the
+ * height measured at lift, and a row that grew or shrank mid-drag would push every row below it.
+ */
+function getFloatingStyle(row, index) {
+  return { paddingTop: getRowGap(row, index) + (isMemberRow(row) ? CARD_PADDING : 0) }
 }
 
 export default function BlockSection({
@@ -67,6 +114,7 @@ export default function BlockSection({
   onDeleteExercise,
   onDuplicateExercise,
   onMoveExerciseToDay,
+  onRemoveExerciseFromSuperset,
   onReorderBlock,
   scrollRef,
 }) {
@@ -100,18 +148,18 @@ export default function BlockSection({
   })), [routine_exercises, exerciseById, unitLabels])
 
   const handleDrop = (_fromIndex, toIndex, activeRowId) => {
-    const ids = applyRowDrop(routine_exercises, rows, activeRowId, toIndex)
-    if (ids) onReorderBlock?.(ids)
+    const items = applyRowDrop(routine_exercises, rows, activeRowId, toIndex)
+    if (items) onReorderBlock?.(items)
   }
 
   const handleReorderExercise = (exerciseId, index) => {
     const ids = moveExercise(routine_exercises, exerciseId, index)
-    if (ids) onReorderBlock?.(ids)
+    if (ids) onReorderBlock?.(idsToOrderItems(ids))
   }
 
   const handleReorderSuperset = (row, unitIndex) => {
     const ids = moveSuperset(routine_exercises, row.group, unitIndex, row.firstMemberId)
-    if (ids) onReorderBlock?.(ids)
+    if (ids) onReorderBlock?.(idsToOrderItems(ids))
   }
 
   return (
@@ -129,23 +177,26 @@ export default function BlockSection({
         <DraggableList
           items={rows}
           scrollRef={scrollRef}
-          // Con una sola unidad no hay nada que reordenar: sin asa, la fila no gasta ancho en un
-          // gesto que no lleva a ninguna parte (`DragHandle` con null no pinta nada).
-          disabled={units.length < 2 || isReordering}
+          disabled={isReordering}
           collapseForDrag={collapseForDrag}
-          resolveDrop={resolveRowDrop}
+          resolveDrop={resolveExerciseRowDrop}
+          getDragPreview={getMembershipDropPreview}
           onReorder={handleDrop}
-          renderItem={(row, { dragHandleProps, isDragging, index }) => {
-            // Una tirada de un solo miembro no da asa a su miembro: la cabecera de encima ya
-            // arrastra esa misma tirada, y un arrastre de la fila la separaría de su cabecera.
-            const canDrag = units.length >= 2 && !(row.kind === 'exercise' && row.runSize === 1)
-            const handleProps = canDrag ? dragHandleProps : null
+          withDropSlot
+          animateShift={false}
+          renderItem={(row, { dragHandleProps, isDragging, index, dragPreview, isDropSlot }) => {
+            if (isFooterRow(row)) return <View style={getSegmentStyle(row)} />
+            if (isDropSlot) return <View style={getDropSlotStyle(dragPreview)} />
+
+            // Which rows get a handle is a shared rule; a row without one does not spend width on
+            // a gesture that leads nowhere (`DragHandle` with null paints nothing).
+            const handleProps = canDragExerciseRow(row, units.length) ? dragHandleProps : null
             const routineExercise = exerciseById.get(row.exerciseId)
             const reorderScope = reorderScopeById.get(row.exerciseId) ?? { labels: [], index: 0 }
 
             return (
-              <View style={{ paddingTop: getRowGap(row, index) }}>
-                <View style={getSegmentStyle(row)}>
+              <View style={isDragging ? getFloatingStyle(row, index) : { paddingTop: getRowGap(row, index) }}>
+                <View style={isDragging ? null : getSegmentStyle(row)}>
                   {row.kind === 'supersetHeader' ? (
                     <SupersetHeaderRow
                       label={formatSupersetLabel(row.group)}
@@ -165,6 +216,8 @@ export default function BlockSection({
                       onDelete={() => onDeleteExercise?.(routineExercise)}
                       onDuplicate={() => onDuplicateExercise?.(routineExercise)}
                       onMoveToDay={() => onMoveExerciseToDay?.(routineExercise)}
+                      // Also for a single member: that row does not drag, so the menu is its way out.
+                      onRemoveFromSuperset={row.group != null ? () => onRemoveExerciseFromSuperset?.(routineExercise) : undefined}
                       onReorderToPosition={(newIndex) => handleReorderExercise(row.exerciseId, newIndex)}
                       currentIndex={reorderScope.index}
                       totalExercises={reorderScope.labels.length}

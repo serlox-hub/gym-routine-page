@@ -1,6 +1,7 @@
 import { test as setup } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import '../scripts/loadEnv.js'
+import { SUPERSET_ROUTINES } from './supersetRoutines.js'
 
 /**
  * Setup que crea datos de prueba para los tests e2e.
@@ -48,7 +49,7 @@ setup('create test data', async () => {
 
     if (existingRoutines && existingRoutines.length > 0) {
       console.log('✅ Datos de test ya existen, saltando creación')
-      await seedSupersetRoutine(supabase, userId)
+      await seedSupersetRoutines(supabase, userId)
       return
     }
 
@@ -134,7 +135,7 @@ setup('create test data', async () => {
 
     if (routineExerciseError) throw routineExerciseError
 
-    await seedSupersetRoutine(supabase, userId)
+    await seedSupersetRoutines(supabase, userId)
 
     console.log('✅ Datos de prueba creados correctamente')
     console.log(`   - Rutina: ${routine.name} (id: ${routine.id})`)
@@ -148,25 +149,38 @@ setup('create test data', async () => {
   }
 })
 
-// Nombres del día con superserie, en el orden en el que se siembran. El arrastre se verifica
-// leyendo el orden de las filas, así que tienen que ser reconocibles y estables. No se exportan:
-// importar este archivo desde un spec volvería a registrar su setup, así que `reorderExercises.spec.js`
-// los repite a mano.
-const SUPERSET_ROUTINE_NAME = 'Rutina Superset E2E'
-const SUPERSET_DAY_NAME = 'Día Superset E2E'
-const SUPERSET_EXERCISE_NAMES = ['E2E Uno', 'E2E Dos', 'E2E Tres', 'E2E Cuatro']
+async function seedSupersetRoutines(supabase, userId) {
+  for (const routine of SUPERSET_ROUTINES) await seedRoutine(supabase, userId, routine)
+}
 
-/**
- * Rutina aparte (no la base) con un día de cuatro ejercicios: uno individual, una superserie de
- * dos y otro individual. Es lo que necesita el arrastre de ejercicios de la issue #88, y va en su
- * propia rutina para no mover los locators de los tests que usan la rutina base.
- */
-async function seedSupersetRoutine(supabase, userId) {
+/** Id of the user's exercise with that name, creating it if it does not exist. */
+async function findOrCreateExercise(supabase, userId, name, muscleGroupId) {
+  const { data: found } = await supabase
+    .from('exercises')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('name_es', name)
+    .is('deleted_at', null)
+    .limit(1)
+
+  if (found && found.length > 0) return found[0].id
+
+  const { data: created, error } = await supabase
+    .from('exercises')
+    .insert({ name_es: name, tracked_fields: ['weight', 'reps'], muscle_group_id: muscleGroupId, user_id: userId })
+    .select()
+    .single()
+  if (error) throw error
+  return created.id
+}
+
+/** Routine with its days and exercises (`[name, superset_group]`, in order). No-op if it already exists. */
+async function seedRoutine(supabase, userId, { name, description, days }) {
   const { data: existing } = await supabase
     .from('routines')
     .select('id')
     .eq('user_id', userId)
-    .eq('name', SUPERSET_ROUTINE_NAME)
+    .eq('name', name)
     .limit(1)
 
   if (existing && existing.length > 0) return
@@ -174,64 +188,37 @@ async function seedSupersetRoutine(supabase, userId) {
   const { data: muscleGroups } = await supabase.from('muscle_groups').select('id').limit(1)
   if (!muscleGroups || muscleGroups.length === 0) throw new Error('No hay grupos musculares en la BD')
 
-  const exerciseIds = []
-  for (const name of SUPERSET_EXERCISE_NAMES) {
-    const { data: found } = await supabase
-      .from('exercises')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('name_es', name)
-      .is('deleted_at', null)
-      .limit(1)
-
-    if (found && found.length > 0) {
-      exerciseIds.push(found[0].id)
-      continue
-    }
-
-    const { data: created, error } = await supabase
-      .from('exercises')
-      .insert({
-        name_es: name,
-        tracked_fields: ['weight', 'reps'],
-        muscle_group_id: muscleGroups[0].id,
-        user_id: userId,
-      })
-      .select()
-      .single()
-    if (error) throw error
-    exerciseIds.push(created.id)
-  }
-
   const { data: routine, error: routineError } = await supabase
     .from('routines')
-    .insert({ name: SUPERSET_ROUTINE_NAME, description: 'Día con superserie para los e2e de arrastre', user_id: userId })
+    .insert({ name, description, user_id: userId })
     .select()
     .single()
   if (routineError) throw routineError
 
-  const { data: day, error: dayError } = await supabase
-    .from('routine_days')
-    .insert({ routine_id: routine.id, name: SUPERSET_DAY_NAME, sort_order: 1 })
-    .select()
-    .single()
-  if (dayError) throw dayError
+  for (const [dayIndex, day] of days.entries()) {
+    const { data: createdDay, error: dayError } = await supabase
+      .from('routine_days')
+      .insert({ routine_id: routine.id, name: day.name, sort_order: dayIndex + 1 })
+      .select()
+      .single()
+    if (dayError) throw dayError
 
-  // Uno · (Dos + Tres en superserie) · Cuatro
-  const supersetGroups = [null, 1, 1, null]
-  const { error: exercisesError } = await supabase
-    .from('routine_exercises')
-    .insert(exerciseIds.map((exerciseId, index) => ({
-      routine_day_id: day.id,
-      exercise_id: exerciseId,
-      series: 3,
-      reps: '10',
-      rest_seconds: 90,
-      sort_order: index + 1,
-      is_warmup: false,
-      superset_group: supersetGroups[index],
-    })))
-  if (exercisesError) throw exercisesError
+    const rows = []
+    for (const [index, [exerciseName, supersetGroup]] of day.exercises.entries()) {
+      rows.push({
+        routine_day_id: createdDay.id,
+        exercise_id: await findOrCreateExercise(supabase, userId, exerciseName, muscleGroups[0].id),
+        series: 3,
+        reps: '10',
+        rest_seconds: 90,
+        sort_order: index + 1,
+        is_warmup: false,
+        superset_group: supersetGroup,
+      })
+    }
+    const { error: exercisesError } = await supabase.from('routine_exercises').insert(rows)
+    if (exercisesError) throw exercisesError
+  }
 
-  console.log(`   - Rutina: ${SUPERSET_ROUTINE_NAME} (día con superserie)`)
+  console.log(`   - Rutina: ${name}`)
 }

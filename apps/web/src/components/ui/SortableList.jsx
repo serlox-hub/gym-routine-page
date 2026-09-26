@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
-import { DndContext, MeasuringStrategy, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { DndContext, DragOverlay, MeasuringStrategy, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { design } from '../../lib/styles.js'
 
@@ -10,8 +10,8 @@ import { design } from '../../lib/styles.js'
 //
 // El camino accesible sigue siendo la lista de posiciones del menú de cada fila, no esto.
 //
-// Dos props opcionales cubren las listas cuyas filas no son todas intercambiables (los ejercicios
-// de un día: una superserie viaja entera y un miembro no sale de la suya). Las dos son funciones
+// Tres props opcionales cubren las listas cuyas filas no son todas intercambiables (los ejercicios
+// de un día: una superserie viaja entera y un ejercicio puede entrar o salir de una). Son funciones
 // PURAS de `@gym/shared`; aquí no vive ninguna regla:
 // - `collapseForDrag(items, activeId)`: la lista que se pinta mientras se arrastra (una superserie
 //   pliega sus miembros para que viaje solo su cabecera).
@@ -19,19 +19,41 @@ import { design } from '../../lib/styles.js'
 //   cosas: dejar fuera de la detección de colisión las filas cuya posición no es válida, para que
 //   la vista previa abra el hueco donde de verdad se va a caer y no uno imposible, y validar el
 //   índice con el que se suelta.
+// - `getDragPreview(items, activeId, index)`: how the dragged row should look if dropped at the
+//   vetted position, as a primitive value (a row about to join a superset is painted as a member of
+//   it). The list only computes it and hands it to `renderItem` as `dragPreview` (null on every
+//   other row); what it looks like is the caller's.
+//
+// `withDropSlot` splits the dragged row in two: a floating copy follows the pointer (`renderItem`
+// with `isDragging`), and the row itself stays in the list, in the gap it would drop into, drawn by
+// `renderItem` with `isDropSlot` (and `dragPreview`) at the height it had. That is what lets a
+// superset card keep its purple sides continuous around the gap: the floating copy can never line
+// up with them. Same prop and flags as native `DraggableList`.
+//
+// `animateShift={false}` makes the rows jump to their new place instead of sliding. A list whose
+// rows draw one card between them needs it: rows slide at different moments (only the one the
+// pointer crosses moves), so mid-slide the card has holes where no row is yet.
 
 // dnd-kit no renderiza contenedor propio: las filas quedan como hijas directas del layout que
 // envuelve a la lista, así que el `gap` del padre sigue separándolas.
-function SortableRow({ id, index, disabled, renderItem, item }) {
+function SortableRow({ id, index, disabled, renderItem, item, dragPreview = null, withDropSlot = false, animateShift = true }) {
   const {
     attributes,
     listeners,
     setNodeRef,
     setActivatorNodeRef,
+    node,
     transform,
     transition,
     isDragging,
-  } = useSortable({ id, disabled })
+  } = useSortable({ id, disabled, transition: animateShift ? undefined : null })
+
+  // Height at rest, for the drop slot. Measured here and not taken from the drag start event:
+  // dnd-kit has not measured the row yet when `onDragStart` fires.
+  const restingHeight = useRef(null)
+  useLayoutEffect(() => {
+    if (!isDragging && node.current) restingHeight.current = node.current.offsetHeight
+  })
 
   // Solo el eje Y. Ignorar `transform.x` deja el bloqueo de eje gratis, sin `@dnd-kit/modifiers`.
   const style = {
@@ -52,14 +74,26 @@ function SortableRow({ id, index, disabled, renderItem, item }) {
     style: { touchAction: 'none', cursor: isDragging ? 'grabbing' : 'grab' },
   }
 
+  // As a drop slot the row keeps its height but not its content, so nothing below it moves.
+  if (isDragging && withDropSlot && restingHeight.current != null) {
+    return (
+      <div ref={setNodeRef} style={{ ...style, height: restingHeight.current }}>
+        {renderItem(item, { dragHandleProps, isDragging: false, index, dragPreview, isDropSlot: true })}
+      </div>
+    )
+  }
+
   return (
     <div ref={setNodeRef} style={style}>
-      {renderItem(item, { dragHandleProps, isDragging, index })}
+      {renderItem(item, { dragHandleProps, isDragging, index, dragPreview, isDropSlot: false })}
     </div>
   )
 }
 
-function SortableList({ items = [], renderItem, onReorder, disabled = false, collapseForDrag, resolveDrop }) {
+// What the floating copy gets instead of the real handle: it only has to look grabbed.
+const OVERLAY_HANDLE_PROPS = { style: { touchAction: 'none', cursor: 'grabbing' } }
+
+function SortableList({ items = [], renderItem, onReorder, disabled = false, collapseForDrag, resolveDrop, getDragPreview, withDropSlot = false, animateShift = true }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       // Un toque corto sobre el asa sigue siendo un toque: el arrastre pide recorrido.
@@ -68,6 +102,8 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
   )
 
   const [activeId, setActiveId] = useState(null)
+  // Preview of the dragged row, recomputed only when `over` changes.
+  const [dragPreview, setDragPreview] = useState(null)
 
   // La lista plegada es la que se pinta Y la que cuenta los índices: quien recibe `onReorder` la
   // reconstruye con la misma función pura, así que los dos lados hablan de las mismas posiciones.
@@ -76,6 +112,7 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
     [items, activeId, collapseForDrag]
   )
   const ids = useMemo(() => rows.map(row => row.id), [rows])
+  const activeIndex = activeId == null ? -1 : ids.indexOf(activeId)
 
   // dnd-kit expresa el umbral de auto-scroll como RATIO del viewport, no en px; el token es una
   // distancia, así que se convierte aquí. Se acota a 0.5 para que en una ventana muy baja las dos
@@ -119,14 +156,27 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
     return closestCenter({ ...args, droppableContainers: validContainers.length > 0 ? validContainers : args.droppableContainers })
   }, [resolveDrop, rows, ids])
 
+  // Vetted final position of the current `over`, or -1. Preview and drop both compute it here, the
+  // same way, so what is saved is what was seen.
+  const getTargetIndex = (active, over) => {
+    if (!over) return -1
+    const rawIndex = ids.indexOf(over.id)
+    if (rawIndex === -1) return -1
+    return resolveDrop ? resolveDrop(rows, active.id, rawIndex) : rawIndex
+  }
+
+  const updateDragPreview = ({ active, over }) => {
+    if (!getDragPreview) return
+    const toIndex = getTargetIndex(active, over)
+    setDragPreview(toIndex === -1 ? null : getDragPreview(rows, active.id, toIndex))
+  }
+
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null)
-    if (!over) return
+    setDragPreview(null)
     const fromIndex = ids.indexOf(active.id)
-    const rawIndex = ids.indexOf(over.id)
-    if (fromIndex === -1 || rawIndex === -1) return
-    const toIndex = resolveDrop ? resolveDrop(rows, active.id, rawIndex) : rawIndex
-    if (toIndex === fromIndex) return
+    const toIndex = getTargetIndex(active, over)
+    if (fromIndex === -1 || toIndex === -1 || toIndex === fromIndex) return
     onReorder(fromIndex, toIndex, active.id)
   }
 
@@ -138,7 +188,11 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
       accessibility={accessibility}
       measuring={measuring}
       onDragStart={({ active }) => setActiveId(active.id)}
-      onDragCancel={() => setActiveId(null)}
+      onDragOver={updateDragPreview}
+      onDragCancel={() => {
+        setActiveId(null)
+        setDragPreview(null)
+      }}
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -150,9 +204,25 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
             index={index}
             disabled={disabled}
             renderItem={renderItem}
+            dragPreview={item.id === activeId ? dragPreview : null}
+            withDropSlot={withDropSlot}
+            animateShift={animateShift}
           />
         ))}
       </SortableContext>
+      {withDropSlot && (
+        // No drop animation: the list reorders as soon as it is dropped, and animating the copy
+        // towards the slot would land it where the row no longer is.
+        <DragOverlay dropAnimation={null}>
+          {activeIndex === -1 ? null : renderItem(rows[activeIndex], {
+            dragHandleProps: OVERLAY_HANDLE_PROPS,
+            isDragging: true,
+            index: activeIndex,
+            dragPreview: null,
+            isDropSlot: false,
+          })}
+        </DragOverlay>
+      )}
     </DndContext>
   )
 }

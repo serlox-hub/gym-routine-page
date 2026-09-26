@@ -63,20 +63,32 @@ describe('BlockSection — filas planas y tarjeta morada por fila', () => {
     expect(screen.getAllByText('Superset A')).toHaveLength(2)
   })
 
-  it('solo el último miembro de la tirada cierra la tarjeta por abajo', () => {
+  it('los miembros pintan solo los laterales y el pie cierra la tarjeta por abajo', () => {
     const { container } = renderBlock([row(1, 1, null, 'Sentadilla'), row(2, 2, 1, 'Press'), row(3, 3, 1, 'Remo')])
 
-    // Las filas de miembro pintan SOLO los laterales; la cabecera pinta el borde entero.
+    // La cabecera pinta el borde entero; los dos miembros y el pie, desde los laterales.
     const borderedRows = [...container.querySelectorAll('div')]
       .filter(div => div.style.borderLeftStyle === 'solid' && div.style.borderTopStyle !== 'solid')
-    expect(borderedRows).toHaveLength(2)
+    expect(borderedRows).toHaveLength(3)
     expect(borderedRows[0].style.borderBottomWidth).toBe('')
-    expect(borderedRows[1].style.borderBottomWidth).toBe('1px')
+    expect(borderedRows[1].style.borderBottomWidth).toBe('')
+    expect(borderedRows[2].style.borderBottomWidth).toBe('1px')
+    expect(borderedRows[2].textContent).toBe('')
   })
 
   it('con una sola unidad no hay asas: no hay nada que reordenar', () => {
     const { container } = renderBlock([row(1, 1, null, 'Sentadilla')])
     expect(container.querySelector('svg.lucide-grip-vertical')).toBeNull()
+  })
+
+  it('con una superserie de dos como única unidad, las asas van en los miembros, no en la cabecera', () => {
+    // Un miembro de una tirada de más de uno arrastra siempre (puede moverse dentro o salir), aunque
+    // esa tirada sea la única unidad del bloque; la cabecera solo arrastra si hay otra unidad.
+    const { container } = renderBlock([row(1, 1, 1, 'Press'), row(2, 2, 1, 'Remo')])
+
+    expect(container.querySelectorAll('svg.lucide-grip-vertical')).toHaveLength(2)
+    const header = screen.getByText('Superset A').closest('div')
+    expect(header.querySelector('svg.lucide-grip-vertical')).toBeNull()
   })
 
   it('el miembro de una tirada de uno no lleva asa, pero su cabecera sí', () => {
@@ -97,7 +109,7 @@ describe('BlockSection — filas planas y tarjeta morada por fila', () => {
     // Posiciones de UNIDAD: 1. Sentadilla, 2. Superset A (la actual).
     fireEvent.click(screen.getByRole('button', { name: /1\. Sentadilla/ }))
 
-    expect(onReorderBlock).toHaveBeenCalledWith([2, 3, 1])
+    expect(onReorderBlock).toHaveBeenCalledWith([{ id: 2 }, { id: 3 }, { id: 1 }])
   })
 
   it('el menú «···» de un individual ofrece posiciones de UNIDAD: la superserie es una sola entrada', () => {
@@ -121,7 +133,7 @@ describe('BlockSection — filas planas y tarjeta morada por fila', () => {
     fireEvent.click(screen.getByRole('button', { name: /2\. Superset A/ }))
 
     // El individual pasa detrás de la superserie SIN partirla: Press y Remo siguen consecutivos.
-    expect(onReorderBlock).toHaveBeenCalledWith([2, 3, 1])
+    expect(onReorderBlock).toHaveBeenCalledWith([{ id: 2 }, { id: 3 }, { id: 1 }])
   })
 
   it('el menú «···» de un miembro de superserie solo ofrece las posiciones de SU tirada', () => {
@@ -151,6 +163,27 @@ describe('BlockSection — filas planas y tarjeta morada por fila', () => {
     fireEvent.click(screen.getByRole('button', { name: /1\. Press/ }))
 
     // Remo pasa delante de Press dentro de la tirada; Sentadilla y el orden del bloque no se tocan.
-    expect(onReorderBlock).toHaveBeenCalledWith([1, 3, 2, 4])
+    expect(onReorderBlock).toHaveBeenCalledWith([{ id: 1 }, { id: 3 }, { id: 2 }, { id: 4 }])
+  })
+
+  it('the «···» menu of a member offers «Sacar del superset», also for a single member', () => {
+    const onRemoveExerciseFromSuperset = vi.fn()
+    renderBlock(
+      [row(1, 1, null, 'Sentadilla'), row(2, 2, 1, 'Press')],
+      { onRemoveExerciseFromSuperset }
+    )
+
+    fireEvent.click(screen.getByText('Press').closest('[class*="cursor-pointer"]'))
+    fireEvent.click(screen.getByRole('button', { name: 'Sacar del superset' }))
+
+    expect(onRemoveExerciseFromSuperset).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }))
+  })
+
+  it('the «···» menu of an individual does not offer «Sacar del superset»', () => {
+    renderBlock([row(1, 1, null, 'Sentadilla'), row(2, 2, 1, 'Press')])
+
+    fireEvent.click(screen.getByText('Sentadilla').closest('[class*="cursor-pointer"]'))
+
+    expect(screen.queryByRole('button', { name: 'Sacar del superset' })).not.toBeInTheDocument()
   })
 })

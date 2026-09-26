@@ -23,6 +23,7 @@ vi.mock('../api/routineApi.js', () => ({
   deleteRoutineExercise: vi.fn(),
   updateRoutineExercise: vi.fn(),
   reorderRoutineExercises: vi.fn(),
+  setRoutineExerciseSupersetGroup: vi.fn(),
   addExerciseToDay: vi.fn(),
   duplicateRoutineExercise: vi.fn(),
   duplicateRoutineDay: vi.fn(),
@@ -56,6 +57,7 @@ import {
   duplicateRoutine,
   reorderRoutineDays,
   reorderRoutineExercises,
+  setRoutineExerciseSupersetGroup,
   updateRoutine,
 } from '../api/routineApi.js'
 
@@ -77,6 +79,7 @@ import {
   useDuplicateRoutineDay,
   useReorderRoutineDays,
   useReorderRoutineExercises,
+  useSetRoutineExerciseSupersetGroup,
   useRoutineDetailsForm,
 } from './useRoutines.js'
 
@@ -459,6 +462,99 @@ describe('useReorderRoutineExercises — actualización optimista', () => {
 
     expect(queryClient.getQueryData([QUERY_KEYS.ROUTINE_BLOCKS, '7'])[1].routine_exercises.map(re => re.id))
       .toEqual([21, 22, 20])
+  })
+
+  it('also applies the membership of items carrying supersetGroup', async () => {
+    let resolveApi
+    reorderRoutineExercises.mockReturnValueOnce(new Promise((resolve) => { resolveApi = resolve }))
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(QUERY_KEY, CACHED_BLOCKS)
+
+    const { result } = renderHook(() => useReorderRoutineExercises(), { wrapper: createWrapper(queryClient) })
+
+    // Individual 20 joins the superset between its two members.
+    act(() => {
+      result.current.mutate({ dayId: DAY_ID, exercises: [{ id: 10 }, { id: 21 }, { id: 20, supersetGroup: 1 }, { id: 22 }] })
+    })
+
+    await waitFor(() => expect(queryClient.getQueryData(QUERY_KEY)[1].routine_exercises).toEqual([
+      { id: 21, sort_order: 2, superset_group: 1 },
+      { id: 20, sort_order: 3, superset_group: 1 },
+      { id: 22, sort_order: 4, superset_group: 1 },
+    ]))
+
+    resolveApi()
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  })
+})
+
+describe('useSetRoutineExerciseSupersetGroup — optimistic update', () => {
+  const DAY_ID = 'day-1'
+  const QUERY_KEY = [QUERY_KEYS.ROUTINE_BLOCKS, DAY_ID]
+  const CACHED_BLOCKS = [
+    { name: 'Calentamiento', is_warmup: true, routine_exercises: [{ id: 10, sort_order: 1, is_warmup: true, superset_group: null }] },
+    {
+      name: 'Principal',
+      is_warmup: false,
+      routine_exercises: [
+        { id: 21, sort_order: 2, is_warmup: false, superset_group: 1 },
+        { id: 22, sort_order: 3, is_warmup: false, superset_group: 1 },
+        { id: 20, sort_order: 4, is_warmup: false, superset_group: null },
+      ],
+    },
+  ]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('takes the exercise out in the cache before the API answers, right after its run', async () => {
+    let resolveApi
+    setRoutineExerciseSupersetGroup.mockReturnValueOnce(new Promise((resolve) => { resolveApi = resolve }))
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(QUERY_KEY, CACHED_BLOCKS)
+
+    const { result } = renderHook(() => useSetRoutineExerciseSupersetGroup(), { wrapper: createWrapper(queryClient) })
+
+    act(() => {
+      result.current.mutate({ dayId: DAY_ID, routineExerciseId: 21, supersetGroup: null })
+    })
+
+    await waitFor(() => expect(queryClient.getQueryData(QUERY_KEY)[1].routine_exercises.map(re => [re.id, re.superset_group]))
+      .toEqual([[22, 1], [21, null], [20, null]]))
+    expect(setRoutineExerciseSupersetGroup).toHaveBeenCalledWith({ dayId: DAY_ID, routineExerciseId: 21, supersetGroup: null })
+
+    resolveApi(null)
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  })
+
+  it('restores the cache and notifies if the API fails', async () => {
+    setRoutineExerciseSupersetGroup.mockRejectedValueOnce(new Error('network down'))
+    const queryClient = createQueryClient()
+    queryClient.setQueryData(QUERY_KEY, CACHED_BLOCKS)
+
+    const { result } = renderHook(() => useSetRoutineExerciseSupersetGroup(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ dayId: DAY_ID, routineExerciseId: 21, supersetGroup: null }).catch(() => {})
+    })
+
+    expect(queryClient.getQueryData(QUERY_KEY)).toEqual(CACHED_BLOCKS)
+    expect(notify).toHaveBeenCalledWith(t('routine:exercise.supersetMoveFailed'), 'error')
+  })
+
+  it('invalidates the day\'s blocks when settled, with dayId normalized to String', async () => {
+    setRoutineExerciseSupersetGroup.mockResolvedValueOnce(null)
+    const queryClient = createQueryClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+    const { result } = renderHook(() => useSetRoutineExerciseSupersetGroup(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ dayId: 7, routineExerciseId: 21, supersetGroup: null })
+    })
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, '7'] })
   })
 })
 
