@@ -32,6 +32,7 @@ import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 import { getTemplateImportData } from '../lib/routineTemplates.js'
+import { applyExerciseOrderToBlocks } from '../lib/routineDayLayout.js'
 import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
 
 export function useRoutines() {
@@ -300,12 +301,28 @@ export function useUpdateRoutineExercise() {
   })
 }
 
+// Optimista como `useReorderRoutineDays`: el arrastre suelta la fila donde el dedo la deja, así
+// que sin escribir la caché en `onMutate` la lista volvería al orden viejo hasta que aterrizase el
+// refetch. `exercises` es el día entero, calentamiento primero, y de él solo se lee el `id`.
 export function useReorderRoutineExercises() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ exercises }) => apiReorderRoutineExercises(exercises),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ dayId, exercises }) => {
+      const queryKey = [QUERY_KEYS.ROUTINE_BLOCKS, String(dayId)]
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData(queryKey)
+      if (previous) {
+        queryClient.setQueryData(queryKey, applyExerciseOrderToBlocks(previous, exercises.map(e => e.id)))
+      }
+      return { queryKey, previous }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(context.queryKey, context.previous)
+      getNotifier()?.show(t('routine:exercise.reorderFailed'), 'error')
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
     },
   })

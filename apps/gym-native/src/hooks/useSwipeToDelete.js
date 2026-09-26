@@ -33,9 +33,9 @@ export function useSwipeToDelete({ onDelete }) {
   // que es lo que hace que el háptico suene una vez POR GESTO y no una vez por montaje.
   const gesture = useRef({ phase: 'idle', crossed: false })
   const suppressPress = useRef(false)
-  // Seam para el arrastre-para-reordenar (long press + vertical sobre esta misma fila): mientras
-  // su pulsación esté pendiente o activa pondrá esto a true y el swipe no reclamará el gesto.
-  // Hoy nadie lo escribe. Ver docs/DECISIONS.md (issue #78).
+  // Lo escribe el asa de arrastre de la fila (`DragHandle`, `onPressStart`/`onPressEnd`): mientras
+  // el dedo esté sobre ella el swipe no reclama el gesto. Se pone al TOCAR el asa, no al activarse
+  // el arrastre, porque la clasificación del swipe ocurre antes (issues #78, #88).
   const blockedRef = useRef(false)
 
   const panResponder = useRef(

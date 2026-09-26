@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getRoutineDayLayout } from './routineDayLayout.js'
+import { getRoutineDayLayout, applyExerciseOrderToBlocks } from './routineDayLayout.js'
 
 const warmup = (exercises) => ({ name: 'Calentamiento', routine_exercises: exercises })
 const main = (exercises) => ({ name: 'Principal', routine_exercises: exercises })
@@ -84,5 +84,46 @@ describe('getRoutineDayLayout — totalSets', () => {
 
   it('una fila sin series no rompe la suma', () => {
     expect(getRoutineDayLayout([main([{ id: 1, series: 3 }, { id: 2 }])]).totalSets).toBe(3)
+  })
+})
+
+describe('applyExerciseOrderToBlocks', () => {
+  const blocks = [
+    warmup([{ id: 10, sort_order: 1 }, { id: 11, sort_order: 2 }]),
+    main([{ id: 20, sort_order: 3 }, { id: 21, sort_order: 4, superset_group: 1 }]),
+  ]
+
+  it('recoloca cada ejercicio en su bloque y renumera sort_order 1..n', () => {
+    const result = applyExerciseOrderToBlocks(blocks, [11, 10, 21, 20])
+
+    expect(result[0].routine_exercises).toEqual([
+      { id: 11, sort_order: 1 },
+      { id: 10, sort_order: 2 },
+    ])
+    expect(result[1].routine_exercises).toEqual([
+      { id: 21, sort_order: 3, superset_group: 1 },
+      { id: 20, sort_order: 4 },
+    ])
+  })
+
+  it('no toca superset_group ni el resto de campos de la fila', () => {
+    const result = applyExerciseOrderToBlocks(blocks, [10, 11, 21, 20])
+    expect(result[1].routine_exercises.map(re => re.superset_group)).toEqual([1, undefined])
+  })
+
+  it('no muta los bloques de entrada', () => {
+    applyExerciseOrderToBlocks(blocks, [11, 10, 21, 20])
+    expect(blocks[0].routine_exercises.map(re => re.id)).toEqual([10, 11])
+  })
+
+  it('devuelve los bloques tal cual si el orden no nombra a los mismos ejercicios', () => {
+    expect(applyExerciseOrderToBlocks(blocks, [11, 10, 21])).toBe(blocks)
+    expect(applyExerciseOrderToBlocks(blocks, [11, 10, 21, 99])).toBe(blocks)
+  })
+
+  it('tolera bloques u orden ausentes', () => {
+    expect(applyExerciseOrderToBlocks(null, [1])).toBeNull()
+    expect(applyExerciseOrderToBlocks(blocks, null)).toBe(blocks)
+    expect(applyExerciseOrderToBlocks([], [])).toEqual([])
   })
 })

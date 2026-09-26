@@ -89,7 +89,8 @@
     "removeFromRoutine": "Remove from routine",
     "removeConfirm": "Remove \"{{name}}\" from the routine?",
     "replace": "Replace exercise",
-    "replacing": "Replacing"
+    "replacing": "Replacing",
+    "reorderFailed": "Couldn't change the order"
   },
   "superset": {
     "title": "Superset",
@@ -97,7 +98,8 @@
     "noSuperset": "No superset",
     "group": "Group {{letter}}",
     "exerciseCount_one": "{{count}} exercise",
-    "exerciseCount_other": "{{count}} exercises"
+    "exerciseCount_other": "{{count}} exercises",
+    "reorder": "Reorder superset"
   },
   "templates": {
     "title": "Predefined routines",

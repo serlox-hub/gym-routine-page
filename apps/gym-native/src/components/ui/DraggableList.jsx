@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View } from 'react-native'
 import { Gesture } from 'react-native-gesture-handler'
 import Animated, {
@@ -23,9 +23,21 @@ import { design } from '../../lib/styles'
 //
 // El camino accesible sigue siendo la lista de posiciones del menú de cada fila, no esto.
 //
+// Dos props opcionales cubren las listas cuyas filas no son todas intercambiables (los ejercicios
+// de un día: una superserie viaja entera y un miembro no sale de la suya). Las dos son funciones
+// PURAS y WORKLETIZADAS de `@gym/shared` (aquí no vive ninguna regla), porque se llaman desde el
+// hilo de UI: `collapseForDrag(items, activeId)` da la lista que se pinta mientras se arrastra (una
+// superserie pliega sus miembros para que viaje solo su cabecera) y
+// `resolveDrop(items, activeId, index)` valida el índice destino, para que la vista previa abra el
+// hueco donde de verdad se va a caer y no uno imposible.
+//
 // ⚠️ `scrollRef` tiene que ser un `useAnimatedRef` apuntando a un `Animated.ScrollView`: el
 // auto-scroll lo conduce `scrollTo` desde el hilo de UI, y sobre un `ScrollView` normal no hace
-// nada NI AVISA (el arrastre simplemente nunca scrollea).
+// nada NI AVISA (el arrastre simplemente nunca scrollea). Dos listas anidadas pueden compartir el
+// mismo `scrollRef`: cada `useScrollViewOffset` registra su propio handler para el mismo tag y el
+// registro de eventos de Reanimated los invoca TODOS (`EventHandlerRegistry::processEvent` recorre
+// el mapa de handlers de ese par tag+evento), así que la lista de días y la de ejercicios de dentro
+// reciben las dos el offset.
 
 // px por frame en el borde mismo (≈720 px/s a 60fps). Deliberadamente NO compartido con web: ver
 // el comentario de `dragAutoScrollEdge` en `lib/styles.js`.
@@ -62,11 +74,11 @@ function DraggableRow({ index, item, renderItem, state, gesture, isDragging }) {
   })
 
   const handleLayout = useCallback(
-    (event) => onMeasure(index, event.nativeEvent.layout.height),
-    [onMeasure, index]
+    (event) => onMeasure(item.id, event.nativeEvent.layout.height),
+    [onMeasure, item.id]
   )
 
-  const dragHandleProps = useMemo(() => ({ gesture: gesture(index) }), [gesture, index])
+  const dragHandleProps = useMemo(() => ({ gesture: gesture(index, item.id) }), [gesture, index, item.id])
 
   return (
     <Animated.View onLayout={handleLayout} style={animatedStyle}>
@@ -75,7 +87,7 @@ function DraggableRow({ index, item, renderItem, state, gesture, isDragging }) {
   )
 }
 
-export default function DraggableList({ items = [], renderItem, onReorder, disabled = false, scrollRef }) {
+export default function DraggableList({ items = [], renderItem, onReorder, disabled = false, scrollRef, collapseForDrag, resolveDrop }) {
   const activeIndex = useSharedValue(-1)
   const targetIndex = useSharedValue(-1)
   const panY = useSharedValue(0)
@@ -83,11 +95,35 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
   // px que el auto-scroll ha movido el contenido bajo el dedo durante este arrastre: sin sumarlos
   // la tarjeta se quedaría atrás en cuanto la lista empieza a correr sola.
   const scrollComp = useSharedValue(0)
+  // Alto medido de cada fila POR ID, no por índice: con el plegado la misma fila cambia de índice a
+  // mitad de gesto, y una tabla por índice se desalinearía sin que nada lo notase.
+  const heightsById = useSharedValue({})
+  // Altos de la lista EN VUELO, por índice de la lista (ya plegada) que se arrastra. Se congela al
+  // levantar: mientras el dedo viaja no entra ni sale ninguna fila.
   const heights = useSharedValue([])
+  // Copia de las filas y de la que se arrastra en el hilo de UI: `collapseForDrag` y `resolveDrop`
+  // se llaman desde los worklets del gesto, donde no se puede leer una prop de React.
+  const rowsSource = useSharedValue([])
+  const draggedRows = useSharedValue([])
+  const draggedRowId = useSharedValue(null)
   const dragY = useDerivedValue(() => panY.value + scrollComp.value)
-  // Espejo en el hilo de JS del índice en vuelo, solo para que la fila pueda pintarse distinta
-  // mientras se arrastra. Cambia dos veces por arrastre (al levantar y al soltar), no por frame.
-  const [draggingIndex, setDraggingIndex] = useState(-1)
+  // Espejo en el hilo de JS de la fila en vuelo, para que pueda pintarse distinta mientras se
+  // arrastra y para plegar la lista. Cambia dos veces por arrastre, no por frame.
+  const [draggingId, setDraggingId] = useState(null)
+
+  // Copia superficial a propósito: Reanimated congela en desarrollo los objetos que viajan a una
+  // shared value, y los de `items` pueden venir de la caché de query (los días), que no puede
+  // quedarse congelada.
+  useEffect(() => {
+    rowsSource.value = items.map(item => ({ ...item }))
+  }, [items, rowsSource])
+
+  // Mientras se arrastra una superserie, sus miembros no se pintan: la cabecera viaja sola y los
+  // vecinos se apartan el alto de la cabecera, no el de la tarjeta entera.
+  const rows = useMemo(
+    () => (draggingId != null && collapseForDrag ? collapseForDrag(items, draggingId) : items),
+    [items, draggingId, collapseForDrag]
+  )
 
   const canAutoScroll = !!scrollRef
   const scrollOffset = useScrollViewOffset(scrollRef ?? null)
@@ -99,19 +135,17 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
   const viewportTop = useSharedValue(0)
   const viewportHeight = useSharedValue(0)
 
-  const itemCount = items.length
-  const onMeasure = useCallback((index, height) => {
-    if (heights.value[index] === height && heights.value.length === itemCount) return
-    const next = []
-    for (let i = 0; i < itemCount; i++) next[i] = i === index ? height : (heights.value[i] || 0)
-    heights.value = next
-  }, [heights, itemCount])
+  const onMeasure = useCallback((id, height) => {
+    if (heightsById.value[id] === height) return
+    heightsById.value = { ...heightsById.value, [id]: height }
+  }, [heightsById])
 
   useAnimatedReaction(
     () => dragY.value,
     (y) => {
       if (activeIndex.value < 0) return
-      targetIndex.value = getDropIndex(activeIndex.value, y, heights.value)
+      const raw = getDropIndex(activeIndex.value, y, heights.value)
+      targetIndex.value = resolveDrop ? resolveDrop(draggedRows.value, draggedRowId.value, raw) : raw
     }
   )
 
@@ -133,18 +167,18 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
     scrollTo(scrollRef, 0, Math.max(0, scrollOffset.value + speed), false)
   }, false)
 
-  const handleLift = useCallback((index) => {
+  const handleLift = useCallback((id) => {
     getHaptics()?.onDragLift?.()
-    setDraggingIndex(index)
+    setDraggingId(id)
     autoScroll.setActive(true)
   }, [autoScroll])
 
   const handleRelease = useCallback(() => {
-    setDraggingIndex(-1)
+    setDraggingId(null)
     autoScroll.setActive(false)
   }, [autoScroll])
 
-  const gestureFor = useCallback((index) => {
+  const gestureFor = useCallback((index, id) => {
     const pan = Gesture.Pan()
       // Se crea también con la lista deshabilitada, solo que inerte: así la fila puede seguir
       // pintando el asa atenuada en vez de hacerla desaparecer a mitad de mutación.
@@ -160,30 +194,46 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
           viewportTop.value = rect ? rect.pageY : 0
           viewportHeight.value = rect ? rect.height : 0
         }
-        activeIndex.value = index
-        targetIndex.value = index
+
+        // La lista en vuelo se calcula aquí, en el hilo de UI, con la MISMA función pura con la que
+        // el render la pliega unos frames después: así los altos y el índice activo no dependen de
+        // que el re-render haya aterrizado ya.
+        const inFlight = collapseForDrag ? collapseForDrag(rowsSource.value, id) : rowsSource.value
+        const inFlightHeights = []
+        let activeInFlight = index
+        for (let i = 0; i < inFlight.length; i++) {
+          inFlightHeights.push(heightsById.value[inFlight[i].id] || 0)
+          if (inFlight[i].id === id) activeInFlight = i
+        }
+        heights.value = inFlightHeights
+        draggedRows.value = inFlight
+        draggedRowId.value = id
+
+        activeIndex.value = activeInFlight
+        targetIndex.value = activeInFlight
         panY.value = 0
         scrollComp.value = 0
-        runOnJS(handleLift)(index)
+        runOnJS(handleLift)(id)
       })
       .onUpdate((event) => {
         panY.value = event.translationY
         pointerY.value = event.absoluteY
       })
       .onEnd(() => {
-        runOnJS(onReorder)(index, targetIndex.value)
+        runOnJS(onReorder)(activeIndex.value, targetIndex.value, id)
       })
       .onFinalize(() => {
         activeIndex.value = -1
         targetIndex.value = -1
         panY.value = 0
         scrollComp.value = 0
+        draggedRowId.value = null
         runOnJS(handleRelease)()
       })
     // Relación declarada con el contenedor con scroll en vez de confiar en el arbitraje por
     // defecto, que es quien decide a cuál de los dos se le concede el dedo.
     return scrollRef ? pan.blocksExternalGesture(scrollRef) : pan
-  }, [disabled, scrollRef, activeIndex, targetIndex, panY, pointerY, scrollComp, viewportTop, viewportHeight, handleLift, handleRelease, onReorder])
+  }, [disabled, scrollRef, collapseForDrag, rowsSource, draggedRows, draggedRowId, heights, heightsById, activeIndex, targetIndex, panY, pointerY, scrollComp, viewportTop, viewportHeight, handleLift, handleRelease, onReorder])
 
   const state = useMemo(
     () => ({ activeIndex, targetIndex, dragY, heights, onMeasure }),
@@ -192,7 +242,7 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
 
   return (
     <View>
-      {items.map((item, index) => (
+      {rows.map((item, index) => (
         <DraggableRow
           key={item.id}
           index={index}
@@ -200,7 +250,7 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
           renderItem={renderItem}
           state={state}
           gesture={gestureFor}
-          isDragging={draggingIndex === index}
+          isDragging={draggingId === item.id}
         />
       ))}
     </View>

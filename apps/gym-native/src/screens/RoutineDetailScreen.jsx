@@ -299,6 +299,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
                 activeSessionSynced={activeSessionSynced}
                 dragHandleProps={days.length >= 2 ? dragHandleProps : null}
                 isDragging={isDragging}
+                scrollRef={scrollRef}
                 navigation={navigation}
               />
             )}

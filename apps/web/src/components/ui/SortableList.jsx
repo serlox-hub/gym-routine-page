@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import { useCallback, useMemo, useState } from 'react'
+import { DndContext, MeasuringStrategy, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { design } from '../../lib/styles.js'
 
@@ -9,6 +9,16 @@ import { design } from '../../lib/styles.js'
 // nada de `@dnd-kit`.
 //
 // El camino accesible sigue siendo la lista de posiciones del menú de cada fila, no esto.
+//
+// Dos props opcionales cubren las listas cuyas filas no son todas intercambiables (los ejercicios
+// de un día: una superserie viaja entera y un miembro no sale de la suya). Las dos son funciones
+// PURAS de `@gym/shared`; aquí no vive ninguna regla:
+// - `collapseForDrag(items, activeId)`: la lista que se pinta mientras se arrastra (una superserie
+//   pliega sus miembros para que viaje solo su cabecera).
+// - `resolveDrop(items, activeId, index)`: la posición final válida más cercana. Se usa para DOS
+//   cosas: dejar fuera de la detección de colisión las filas cuya posición no es válida, para que
+//   la vista previa abra el hueco donde de verdad se va a caer y no uno imposible, y validar el
+//   índice con el que se suelta.
 
 // dnd-kit no renderiza contenedor propio: las filas quedan como hijas directas del layout que
 // envuelve a la lista, así que el `gap` del padre sigue separándolas.
@@ -49,7 +59,7 @@ function SortableRow({ id, index, disabled, renderItem, item }) {
   )
 }
 
-function SortableList({ items = [], renderItem, onReorder, disabled = false }) {
+function SortableList({ items = [], renderItem, onReorder, disabled = false, collapseForDrag, resolveDrop }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       // Un toque corto sobre el asa sigue siendo un toque: el arrastre pide recorrido.
@@ -57,7 +67,15 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false }) {
     })
   )
 
-  const ids = useMemo(() => items.map(item => item.id), [items])
+  const [activeId, setActiveId] = useState(null)
+
+  // La lista plegada es la que se pinta Y la que cuenta los índices: quien recibe `onReorder` la
+  // reconstruye con la misma función pura, así que los dos lados hablan de las mismas posiciones.
+  const rows = useMemo(
+    () => (activeId != null && collapseForDrag ? collapseForDrag(items, activeId) : items),
+    [items, activeId, collapseForDrag]
+  )
+  const ids = useMemo(() => rows.map(row => row.id), [rows])
 
   // dnd-kit expresa el umbral de auto-scroll como RATIO del viewport, no en px; el token es una
   // distancia, así que se convierte aquí. Se acota a 0.5 para que en una ventana muy baja las dos
@@ -68,6 +86,13 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false }) {
       y: Math.min(0.5, design.dragAutoScrollEdge / (window.innerHeight || design.dragAutoScrollEdge)),
     },
   }), [])
+
+  // Al plegar cambian los rects de todas las filas: sin remedir, dnd-kit seguiría colocando el
+  // hueco con las medidas de antes del arrastre.
+  const measuring = useMemo(
+    () => (collapseForDrag ? { droppable: { strategy: MeasuringStrategy.Always } } : undefined),
+    [collapseForDrag]
+  )
 
   // Los anuncios por defecto de dnd-kit son cadenas en inglés fuera de i18n. Como el arrastre no
   // es el camino accesible (lo es la lista de posiciones del menú), se silencian en vez de
@@ -83,24 +108,41 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false }) {
     screenReaderInstructions: { draggable: '' },
   }), [])
 
+  const collisionDetection = useCallback((args) => {
+    if (!resolveDrop || !args.active) return closestCenter(args)
+    const validContainers = args.droppableContainers.filter(container => {
+      const index = ids.indexOf(container.id)
+      return index !== -1 && resolveDrop(rows, args.active.id, index) === index
+    })
+    // Sin ninguna fila válida se deja la detección normal: la validación del índice al soltar es
+    // la que manda, y quedarse sin `over` cancelaría el arrastre en vez de no mover nada.
+    return closestCenter({ ...args, droppableContainers: validContainers.length > 0 ? validContainers : args.droppableContainers })
+  }, [resolveDrop, rows, ids])
+
   const handleDragEnd = ({ active, over }) => {
+    setActiveId(null)
     if (!over) return
     const fromIndex = ids.indexOf(active.id)
-    const toIndex = ids.indexOf(over.id)
-    if (fromIndex === -1 || toIndex === -1) return
-    onReorder(fromIndex, toIndex)
+    const rawIndex = ids.indexOf(over.id)
+    if (fromIndex === -1 || rawIndex === -1) return
+    const toIndex = resolveDrop ? resolveDrop(rows, active.id, rawIndex) : rawIndex
+    if (toIndex === fromIndex) return
+    onReorder(fromIndex, toIndex, active.id)
   }
 
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collisionDetection}
       autoScroll={autoScroll}
       accessibility={accessibility}
+      measuring={measuring}
+      onDragStart={({ active }) => setActiveId(active.id)}
+      onDragCancel={() => setActiveId(null)}
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        {items.map((item, index) => (
+        {rows.map((item, index) => (
           <SortableRow
             key={item.id}
             id={item.id}
