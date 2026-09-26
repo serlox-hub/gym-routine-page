@@ -10,8 +10,8 @@ import { design } from '../../lib/styles.js'
 //
 // El camino accesible sigue siendo la lista de posiciones del menú de cada fila, no esto.
 //
-// Dos props opcionales cubren las listas cuyas filas no son todas intercambiables (los ejercicios
-// de un día: una superserie viaja entera y un miembro no sale de la suya). Las dos son funciones
+// Tres props opcionales cubren las listas cuyas filas no son todas intercambiables (los ejercicios
+// de un día: una superserie viaja entera y un ejercicio puede entrar o salir de una). Son funciones
 // PURAS de `@gym/shared`; aquí no vive ninguna regla:
 // - `collapseForDrag(items, activeId)`: la lista que se pinta mientras se arrastra (una superserie
 //   pliega sus miembros para que viaje solo su cabecera).
@@ -19,10 +19,18 @@ import { design } from '../../lib/styles.js'
 //   cosas: dejar fuera de la detección de colisión las filas cuya posición no es válida, para que
 //   la vista previa abra el hueco donde de verdad se va a caer y no uno imposible, y validar el
 //   índice con el que se suelta.
+// - `getDragPreview(items, activeId, index, offsetX)`: how the dragged row should look if dropped
+//   at the vetted position, as a primitive value (a row about to join a superset is painted as a
+//   member of it). The list only computes it and hands it to `renderItem` as `dragPreview` (null on
+//   every other row); what it looks like is the caller's.
+//
+// `onReorder(fromIndex, toIndex, activeId, offsetX)` is also called with `toIndex === fromIndex`:
+// shifting the row horizontally without moving it can change its membership. Callers that only
+// reorder discard that case.
 
 // dnd-kit no renderiza contenedor propio: las filas quedan como hijas directas del layout que
 // envuelve a la lista, así que el `gap` del padre sigue separándolas.
-function SortableRow({ id, index, disabled, renderItem, item }) {
+function SortableRow({ id, index, disabled, renderItem, item, dragPreview = null }) {
   const {
     attributes,
     listeners,
@@ -54,12 +62,12 @@ function SortableRow({ id, index, disabled, renderItem, item }) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      {renderItem(item, { dragHandleProps, isDragging, index })}
+      {renderItem(item, { dragHandleProps, isDragging, index, dragPreview })}
     </div>
   )
 }
 
-function SortableList({ items = [], renderItem, onReorder, disabled = false, collapseForDrag, resolveDrop }) {
+function SortableList({ items = [], renderItem, onReorder, disabled = false, collapseForDrag, resolveDrop, getDragPreview }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       // Un toque corto sobre el asa sigue siendo un toque: el arrastre pide recorrido.
@@ -68,6 +76,9 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
   )
 
   const [activeId, setActiveId] = useState(null)
+  // Preview of the dragged row. It stores the resolved value, not the offset: moving the pointer
+  // without changing the result does not re-render the list.
+  const [dragPreview, setDragPreview] = useState(null)
 
   // La lista plegada es la que se pinta Y la que cuenta los índices: quien recibe `onReorder` la
   // reconstruye con la misma función pura, así que los dos lados hablan de las mismas posiciones.
@@ -119,15 +130,30 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
     return closestCenter({ ...args, droppableContainers: validContainers.length > 0 ? validContainers : args.droppableContainers })
   }, [resolveDrop, rows, ids])
 
-  const handleDragEnd = ({ active, over }) => {
-    setActiveId(null)
-    if (!over) return
-    const fromIndex = ids.indexOf(active.id)
+  // Vetted final position of the current `over`, or -1. Preview and drop both compute it here, the
+  // same way, so what is saved is what was seen.
+  const getTargetIndex = (active, over) => {
+    if (!over) return -1
     const rawIndex = ids.indexOf(over.id)
-    if (fromIndex === -1 || rawIndex === -1) return
-    const toIndex = resolveDrop ? resolveDrop(rows, active.id, rawIndex) : rawIndex
-    if (toIndex === fromIndex) return
-    onReorder(fromIndex, toIndex, active.id)
+    if (rawIndex === -1) return -1
+    return resolveDrop ? resolveDrop(rows, active.id, rawIndex) : rawIndex
+  }
+
+  // `onDragMove` brings the new offset with the previous frame's `over`, and `onDragOver` the new
+  // `over`: recomputing on both keeps the preview from lagging one step behind.
+  const updateDragPreview = ({ active, over, delta }) => {
+    if (!getDragPreview) return
+    const toIndex = getTargetIndex(active, over)
+    setDragPreview(toIndex === -1 ? null : getDragPreview(rows, active.id, toIndex, delta.x))
+  }
+
+  const handleDragEnd = ({ active, over, delta }) => {
+    setActiveId(null)
+    setDragPreview(null)
+    const fromIndex = ids.indexOf(active.id)
+    const toIndex = getTargetIndex(active, over)
+    if (fromIndex === -1 || toIndex === -1) return
+    onReorder(fromIndex, toIndex, active.id, delta.x)
   }
 
   return (
@@ -138,7 +164,12 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
       accessibility={accessibility}
       measuring={measuring}
       onDragStart={({ active }) => setActiveId(active.id)}
-      onDragCancel={() => setActiveId(null)}
+      onDragMove={updateDragPreview}
+      onDragOver={updateDragPreview}
+      onDragCancel={() => {
+        setActiveId(null)
+        setDragPreview(null)
+      }}
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -150,6 +181,7 @@ function SortableList({ items = [], renderItem, onReorder, disabled = false, col
             index={index}
             disabled={disabled}
             renderItem={renderItem}
+            dragPreview={item.id === activeId ? dragPreview : null}
           />
         ))}
       </SortableContext>

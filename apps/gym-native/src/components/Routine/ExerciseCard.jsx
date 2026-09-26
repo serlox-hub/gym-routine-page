@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { View, Text, Pressable, Animated } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown } from 'lucide-react-native'
+import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown, Link2Off } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import { DragHandle, Modal, ReorderModal } from '../ui'
 import { ExerciseHistoryModal } from '../Workout'
@@ -19,6 +19,7 @@ export default function ExerciseCard({
   onDuplicate,
   onMoveToDay,
   onReplace,
+  onRemoveFromSuperset,
   onReorderToPosition,
   currentIndex = 0,
   totalExercises = 1,
@@ -57,6 +58,8 @@ export default function ExerciseCard({
     { icon: Copy, label: t('routine:exercise.duplicateExercise'), onPress: onDuplicate },
     { icon: FolderInput, label: t('routine:exercise.moveToDay'), onPress: onMoveToDay },
     onReorderToPosition && totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onPress: () => setShowReorder(true), disabled: isReordering },
+    // Superset members only (whoever renders the row decides whether to pass it).
+    onRemoveFromSuperset && { icon: Link2Off, label: t('routine:superset.removeFrom'), onPress: onRemoveFromSuperset, disabled: isReordering },
     { icon: Trash2, label: t('common:buttons.delete'), onPress: onDelete, danger: true },
   ].filter(Boolean)
 

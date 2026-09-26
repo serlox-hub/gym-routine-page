@@ -3,16 +3,28 @@ import {
   getBlockUnits,
   moveExercise,
   moveSuperset,
+  placeInSuperset,
   getExerciseReorderScope,
   buildExerciseRows,
   collapseForDrag,
   resolveRowDrop,
   rowDropToMove,
+  resolveMembershipDrop,
+  getMembershipDropPreview,
+  canDragExerciseRow,
+  membershipDropToPlacement,
   applyRowDrop,
+  idsToOrderItems,
 } from './exerciseOrder.js'
 
 // Ejercicios de un bloque: `superset_group` null = individual.
 const ex = (id, sortOrder, supersetGroup = null) => ({ id, sort_order: sortOrder, superset_group: supersetGroup })
+
+// A block's order as `reorderRoutineExercises` items: `[1, [2, 1]]` = 1 with no membership change,
+// 2 moves to group 1.
+const items = (...entries) => entries.map(entry => (Array.isArray(entry) ? { id: entry[0], supersetGroup: entry[1] } : { id: entry }))
+
+const INDENT = 12
 
 // A(1) · B(2)+C(3) del grupo 1 · D(4)
 const blockWithRun = [ex(1, 1), ex(2, 2, 1), ex(3, 3, 1), ex(4, 4)]
@@ -305,30 +317,353 @@ describe('rowDropToMove', () => {
   })
 })
 
+
+// A(1) · [B(2), C(3), E(5)] in group 1 · D(4)
+const blockWithLongRun = [ex(1, 1), ex(2, 2, 1), ex(3, 3, 1), ex(5, 4, 1), ex(4, 5)]
+// Group 1 split with something in between: [B(2)] · X(6) · [C(3)] · A(1)
+const splitWithSingles = [ex(2, 1, 1), ex(6, 2), ex(3, 3, 1), ex(1, 4)]
+
+describe('placeInSuperset — join', () => {
+  it('by default goes right after the last member of the run', () => {
+    expect(placeInSuperset(blockWithRun, 1, 1)).toEqual(items(2, 3, [1, 1], 4))
+  })
+
+  it('with an explicit position lands there within the run', () => {
+    expect(placeInSuperset(blockWithRun, 4, 1, 0)).toEqual(items(1, [4, 1], 2, 3))
+    expect(placeInSuperset(blockWithRun, 4, 1, 1)).toEqual(items(1, 2, [4, 1], 3))
+    expect(placeInSuperset(blockWithRun, 4, 1, 2)).toEqual(items(1, 2, 3, [4, 1]))
+  })
+
+  it('a group with no members in the block is set in place, without moving the row', () => {
+    expect(placeInSuperset(blockWithRun, 1, 7)).toEqual(items([1, 7], 2, 3, 4))
+    expect(placeInSuperset(blockWithRun, 1, 7, 0)).toEqual(items([1, 7], 2, 3, 4))
+  })
+
+  it('a group with no members, from the middle of another run: out of that run first, so it does not split', () => {
+    // [B(2), C(3), E(5)] in group 1: set in place, C would leave B | C | E as three cards.
+    expect(placeInSuperset(blockWithLongRun, 3, 7)).toEqual(items(1, 2, 5, [3, 7], 4))
+    // The last member is already at the edge: its position does not change.
+    expect(placeInSuperset(blockWithLongRun, 5, 7)).toEqual(items(1, 2, 3, [5, 7], 4))
+    // The only member of a run: nothing to split, set in place.
+    expect(placeInSuperset([ex(1, 1), ex(2, 2, 1), ex(4, 3)], 2, 7)).toEqual(items(1, [2, 7], 4))
+  })
+
+  it('with a split group, firstMemberId picks the run; without it, the last one', () => {
+    expect(placeInSuperset(splitWithSingles, 1, 1, 1, 2)).toEqual(items(2, [1, 1], 6, 3))
+    expect(placeInSuperset(splitWithSingles, 1, 1)).toEqual(items(2, 6, 3, [1, 1]))
+  })
+
+  it('a member of another group changes group even when the order does not change', () => {
+    // [B(2), C(3)] in group 1 · [E(5), F(6)] in group 2: E joins group 1 at the end.
+    const twoRuns = [ex(2, 1, 1), ex(3, 2, 1), ex(5, 3, 2), ex(6, 4, 2)]
+    expect(placeInSuperset(twoRuns, 5, 1)).toEqual(items(2, 3, [5, 1], 6))
+  })
+
+  it('moving to the other run of its own group moves the row without touching its group', () => {
+    // [B(2), B2(7)] · X(6) · [C(3)], all in group 1 except X.
+    const split = [ex(2, 1, 1), ex(7, 2, 1), ex(6, 3), ex(3, 4, 1)]
+    expect(placeInSuperset(split, 7, 1, 0, 3)).toEqual(items(2, 6, 7, 3))
+  })
+})
+
+describe('placeInSuperset — leave', () => {
+  it('by default goes right after the run it leaves, also from the middle', () => {
+    expect(placeInSuperset(blockWithLongRun, 3, null)).toEqual(items(1, 2, 5, [3, null], 4))
+  })
+
+  it('with an explicit position lands at that unit', () => {
+    // Units without C: [A] · [B, E] · [D] → C to the first and to the last position.
+    expect(placeInSuperset(blockWithLongRun, 3, null, 0)).toEqual(items([3, null], 1, 2, 5, 4))
+    expect(placeInSuperset(blockWithLongRun, 3, null, 3)).toEqual(items(1, 2, 5, 4, [3, null]))
+  })
+
+  it('the only member of a run stays where it was, now individual', () => {
+    expect(placeInSuperset([ex(1, 1), ex(2, 2, 1), ex(4, 3)], 2, null)).toEqual(items(1, [2, null], 4))
+  })
+})
+
+describe('placeInSuperset — nothing to write', () => {
+  it('returns null for an unknown id', () => {
+    expect(placeInSuperset(blockWithRun, 99, 1)).toBeNull()
+    expect(placeInSuperset([], 1, 1)).toBeNull()
+  })
+
+  it('returns null when joining its own group or its own run', () => {
+    expect(placeInSuperset(blockWithRun, 2, 1)).toBeNull()
+    expect(placeInSuperset(blockWithRun, 3, 1, 0, 2)).toBeNull()
+  })
+
+  it('returns null when taking an individual out', () => {
+    expect(placeInSuperset(blockWithRun, 1, null)).toBeNull()
+  })
+
+  it('returns null for an out-of-range position', () => {
+    expect(placeInSuperset(blockWithRun, 1, 1, 3)).toBeNull()
+    expect(placeInSuperset(blockWithRun, 1, 1, -1)).toBeNull()
+    expect(placeInSuperset(blockWithLongRun, 3, null, 4)).toBeNull()
+    expect(placeInSuperset(blockWithLongRun, 3, null, -1)).toBeNull()
+    // A group with no members only has position 0.
+    expect(placeInSuperset(blockWithRun, 1, 7, 1)).toBeNull()
+  })
+
+  it('returns null if firstMemberId starts no run of the group', () => {
+    expect(placeInSuperset(blockWithRun, 1, 1, 0, 3)).toBeNull()
+    expect(placeInSuperset(blockWithRun, 1, 7, 0, 2)).toBeNull()
+  })
+})
+
+describe('resolveRowDrop — with membership change allowed', () => {
+  const rows = buildExerciseRows(blockWithRun)
+
+  it('an individual can land inside a run', () => {
+    expect(resolveRowDrop(rows, 'ex-1', 1, true)).toBe(1)
+    expect(resolveRowDrop(rows, 'ex-1', 2, true)).toBe(2)
+  })
+
+  it('a member can leave its run', () => {
+    expect(resolveRowDrop(rows, 'ex-2', 0, true)).toBe(0)
+    expect(resolveRowDrop(rows, 'ex-2', 4, true)).toBe(4)
+  })
+
+  it('does not affect a header: it still lands only between units', () => {
+    const splitRows = buildExerciseRows(splitWithSingles)
+    // Rows: [ss-1-2, ex-2, ex-6, ss-1-3, ex-3, ex-1]; C's run cannot land inside B's.
+    const collapsed = collapseForDrag(splitRows, 'ss-1-3')
+    expect(resolveRowDrop(collapsed, 'ss-1-3', 1, true)).toBe(resolveRowDrop(collapsed, 'ss-1-3', 1))
+  })
+
+  it('the member of a run of one still stays where it is', () => {
+    const single = buildExerciseRows([ex(1, 1), ex(2, 2, 1)])
+    expect(resolveRowDrop(single, 'ex-2', 0, true)).toBe(2)
+  })
+})
+
+describe('resolveMembershipDrop — slot table', () => {
+  // Rows: [ex-1, ss-1-2, ex-2, ex-3, ex-4]. D (ex-4) is dragged; without it: [ex-1, ss-1-2, ex-2, ex-3].
+  const rows = buildExerciseRows(blockWithRun)
+  const drop = (index, offsetX = 0, activeRowId = 'ex-4') => resolveMembershipDrop(rows, activeRowId, index, offsetX, INDENT)
+
+  it('header of G | member of G: joins at the start', () => {
+    expect(drop(2)).toEqual({ index: 2, group: 1, firstMemberId: 2, kind: 'join' })
+  })
+
+  it('member of G | member of G: joins', () => {
+    expect(drop(3)).toEqual({ index: 3, group: 1, firstMemberId: 2, kind: 'join' })
+  })
+
+  it('last member of G | end of block: edge, decided by the offset', () => {
+    expect(drop(4)).toEqual({ index: 4, group: null, firstMemberId: null, kind: 'edge-single' })
+    expect(drop(4, INDENT - 1)).toMatchObject({ kind: 'edge-single' })
+    expect(drop(4, INDENT)).toEqual({ index: 4, group: 1, firstMemberId: 2, kind: 'edge-join' })
+  })
+
+  it('last member of G | individual: edge', () => {
+    // A is dragged; without it: [ss-1-2, ex-2, ex-3, ex-4]. Slot 3 is between C and D.
+    expect(resolveMembershipDrop(rows, 'ex-1', 3, 0, INDENT)).toMatchObject({ kind: 'edge-single', group: null })
+    expect(resolveMembershipDrop(rows, 'ex-1', 3, INDENT, INDENT)).toMatchObject({ kind: 'edge-join', group: 1 })
+  })
+
+  it('last member of A | header of B: edge of A, and right below B\'s header joins B', () => {
+    // [A1(1), A2(2)] in group 1 · [B1(3), B2(4)] in group 2 · X(5)
+    const adjacent = buildExerciseRows([ex(1, 1, 1), ex(2, 2, 1), ex(3, 3, 2), ex(4, 4, 2), ex(5, 5)])
+    // Without X: [ss-1-1, ex-1, ex-2, ss-2-3, ex-3, ex-4]
+    expect(resolveMembershipDrop(adjacent, 'ex-5', 3, 0, INDENT)).toMatchObject({ kind: 'edge-single', group: null })
+    expect(resolveMembershipDrop(adjacent, 'ex-5', 3, INDENT, INDENT)).toEqual({ index: 3, group: 1, firstMemberId: 1, kind: 'edge-join' })
+    expect(resolveMembershipDrop(adjacent, 'ex-5', 4, 0, INDENT)).toEqual({ index: 4, group: 2, firstMemberId: 3, kind: 'join' })
+  })
+
+  it('any other slot: individual', () => {
+    // Start of the block, and individual | header.
+    expect(drop(0)).toEqual({ index: 0, group: null, firstMemberId: null, kind: 'single' })
+    expect(drop(1, INDENT)).toEqual({ index: 1, group: null, firstMemberId: null, kind: 'single' })
+  })
+
+  it('at the edge of ITS run, a member stays in unless dragged to the left', () => {
+    // B is dragged; without it: [ex-1, ss-1-2, ex-3, ex-4]. Slot 3 is the edge after C.
+    expect(resolveMembershipDrop(rows, 'ex-2', 3, 0, INDENT)).toMatchObject({ kind: 'edge-join', group: 1 })
+    expect(resolveMembershipDrop(rows, 'ex-2', 3, -INDENT + 1, INDENT)).toMatchObject({ kind: 'edge-join' })
+    expect(resolveMembershipDrop(rows, 'ex-2', 3, -INDENT, INDENT)).toMatchObject({ kind: 'edge-single', group: null })
+  })
+
+  it('at the edge of ANOTHER run, a member ends up individual unless dragged to the right', () => {
+    // [B(2), C(3)] in group 1 · [E(5), F(6)] in group 2. B is dragged after F.
+    const twoRuns = buildExerciseRows([ex(2, 1, 1), ex(3, 2, 1), ex(5, 3, 2), ex(6, 4, 2)])
+    expect(resolveMembershipDrop(twoRuns, 'ex-2', 5, 0, INDENT)).toMatchObject({ kind: 'edge-single', group: null })
+    expect(resolveMembershipDrop(twoRuns, 'ex-2', 5, INDENT, INDENT)).toMatchObject({ kind: 'edge-join', group: 2, firstMemberId: 5 })
+  })
+
+  it('without a valid indent, the edge keeps the row at the depth it was', () => {
+    expect(resolveMembershipDrop(rows, 'ex-4', 4, 100, 0)).toMatchObject({ kind: 'edge-single' })
+    expect(resolveMembershipDrop(rows, 'ex-2', 3, -100, undefined)).toMatchObject({ kind: 'edge-join' })
+  })
+
+  it('returns null for what cannot change superset', () => {
+    // The header, the member of a run of one, an unknown id and an empty list.
+    expect(resolveMembershipDrop(collapseForDrag(rows, 'ss-1-2'), 'ss-1-2', 0, 0, INDENT)).toBeNull()
+    expect(resolveMembershipDrop(buildExerciseRows([ex(1, 1), ex(2, 2, 1)]), 'ex-2', 0, 0, INDENT)).toBeNull()
+    expect(resolveMembershipDrop(rows, 'ex-99', 0, 0, INDENT)).toBeNull()
+    expect(resolveMembershipDrop([], 'ex-1', 0, 0, INDENT)).toBeNull()
+    expect(resolveMembershipDrop(null, 'ex-1', 0, 0, INDENT)).toBeNull()
+  })
+})
+
+describe('getMembershipDropPreview', () => {
+  const rows = buildExerciseRows(blockWithRun)
+
+  it('an individual about to join is painted as a member', () => {
+    expect(getMembershipDropPreview(rows, 'ex-4', 3, 0, INDENT)).toBe('superset')
+    expect(getMembershipDropPreview(rows, 'ex-4', 4, INDENT, INDENT)).toBe('superset')
+  })
+
+  it('an individual that stays individual is painted flush', () => {
+    expect(getMembershipDropPreview(rows, 'ex-4', 4, 0, INDENT)).toBe('single')
+  })
+
+  it('a member about to become individual is painted flush', () => {
+    expect(getMembershipDropPreview(rows, 'ex-2', 0, 0, INDENT)).toBe('single')
+    expect(getMembershipDropPreview(rows, 'ex-2', 3, -INDENT, INDENT)).toBe('single')
+  })
+
+  it('a member that stays in a superset is painted as a member', () => {
+    expect(getMembershipDropPreview(rows, 'ex-2', 3, 0, INDENT)).toBe('superset')
+  })
+
+  it('without a valid indent, the edge keeps the depth the row had', () => {
+    expect(getMembershipDropPreview(rows, 'ex-4', 4, 100, 0)).toBe('single')
+  })
+
+  it('a header, the member of a run of one or an unknown id: null (resting look)', () => {
+    expect(getMembershipDropPreview(collapseForDrag(rows, 'ss-1-2'), 'ss-1-2', 0, 0, INDENT)).toBeNull()
+    expect(getMembershipDropPreview(buildExerciseRows([ex(1, 1), ex(2, 2, 1)]), 'ex-2', 0, 0, INDENT)).toBeNull()
+    expect(getMembershipDropPreview(rows, 'ex-99', 0, 0, INDENT)).toBeNull()
+  })
+
+  it('matches what applyRowDrop saves at the same slot and offset', () => {
+    // Edge after C, dragging D: flush saves D individual; indented saves it into group 1.
+    expect(getMembershipDropPreview(rows, 'ex-4', 4, 0, INDENT)).toBe('single')
+    expect(applyRowDrop(blockWithRun, rows, 'ex-4', 4, 0, INDENT)).toBeNull()
+    expect(getMembershipDropPreview(rows, 'ex-4', 4, INDENT, INDENT)).toBe('superset')
+    expect(applyRowDrop(blockWithRun, rows, 'ex-4', 4, INDENT, INDENT)).toEqual(items(1, 2, 3, [4, 1]))
+  })
+})
+
+describe('canDragExerciseRow', () => {
+  it('a member of a run of more than one has a handle, even when the run is the only unit', () => {
+    const rows = buildExerciseRows([ex(2, 1, 1), ex(3, 2, 1)])
+    expect(canDragExerciseRow(rows[1], 1)).toBe(true)
+    expect(canDragExerciseRow(rows[2], 1)).toBe(true)
+  })
+
+  it('a header or an individual only when there is another unit', () => {
+    const rows = buildExerciseRows(blockWithRun)
+    expect(canDragExerciseRow(rows[0], 3)).toBe(true)
+    expect(canDragExerciseRow(rows[1], 3)).toBe(true)
+    expect(canDragExerciseRow(rows[0], 1)).toBe(false)
+    expect(canDragExerciseRow(rows[1], 1)).toBe(false)
+  })
+
+  it('the member of a run of one never has one', () => {
+    const rows = buildExerciseRows([ex(1, 1), ex(2, 2, 1)])
+    expect(canDragExerciseRow(rows[2], 2)).toBe(false)
+  })
+
+  it('without a row: false', () => {
+    expect(canDragExerciseRow(null, 2)).toBe(false)
+    expect(canDragExerciseRow(undefined, 2)).toBe(false)
+  })
+})
+
+describe('membershipDropToPlacement', () => {
+  const rows = buildExerciseRows(blockWithRun)
+  const placement = (activeRowId, index, offsetX = 0) =>
+    membershipDropToPlacement(rows, activeRowId, resolveMembershipDrop(rows, activeRowId, index, offsetX, INDENT))
+
+  it('joining translates to a position within the target run', () => {
+    // Without A: [ss-1-2, ex-2, ex-3, ex-4]
+    expect(placement('ex-1', 1)).toEqual({ exerciseId: 1, group: 1, targetIndex: 0, firstMemberId: 2, changesMembership: true })
+    expect(placement('ex-1', 2)).toEqual({ exerciseId: 1, group: 1, targetIndex: 1, firstMemberId: 2, changesMembership: true })
+    expect(placement('ex-1', 3, INDENT)).toEqual({ exerciseId: 1, group: 1, targetIndex: 2, firstMemberId: 2, changesMembership: true })
+  })
+
+  it('moving within its own run does not change membership', () => {
+    expect(placement('ex-3', 2)).toEqual({ exerciseId: 3, group: 1, targetIndex: 0, firstMemberId: 2, changesMembership: false })
+  })
+
+  it('ending up individual translates to a unit position', () => {
+    // A member leaving: without B, [ex-1, ss-1-2, ex-3, ex-4] → slot 4 is the third unit.
+    expect(placement('ex-2', 4)).toEqual({ exerciseId: 2, group: null, targetIndex: 3, firstMemberId: null, changesMembership: true })
+    // An individual that stays individual.
+    expect(placement('ex-1', 3)).toEqual({ exerciseId: 1, group: null, targetIndex: 1, firstMemberId: null, changesMembership: false })
+  })
+
+  it('returns null without a drop, for a header or for a run that does not exist', () => {
+    expect(membershipDropToPlacement(rows, 'ex-1', null)).toBeNull()
+    expect(membershipDropToPlacement(rows, 'ss-1-2', { index: 0, group: null, firstMemberId: null })).toBeNull()
+    expect(membershipDropToPlacement(rows, 'ex-1', { index: 1, group: 1, firstMemberId: 99 })).toBeNull()
+    expect(membershipDropToPlacement([], 'ex-1', { index: 0, group: null, firstMemberId: null })).toBeNull()
+  })
+})
+
 describe('applyRowDrop', () => {
   const rows = buildExerciseRows(blockWithRun)
 
-  it('mueve un individual detrás de la superserie completa', () => {
-    // Filas: [ex-1, ss-1-2, ex-2, ex-3, ex-4]; soltar ex-1 en la última posición.
-    expect(applyRowDrop(blockWithRun, rows, 'ex-1', 4)).toEqual([2, 3, 4, 1])
+  it('moves an individual after the whole superset', () => {
+    // Rows: [ex-1, ss-1-2, ex-2, ex-3, ex-4]; drop ex-1 at the last position.
+    expect(applyRowDrop(blockWithRun, rows, 'ex-1', 4, 0, INDENT)).toEqual(items(2, 3, 4, 1))
   })
 
-  it('mueve la superserie completa desde su cabecera', () => {
-    expect(applyRowDrop(blockWithRun, rows, 'ss-1-2', 0)).toEqual([2, 3, 1, 4])
+  it('moves the whole superset from its header, without touching membership', () => {
+    expect(applyRowDrop(blockWithRun, rows, 'ss-1-2', 0, INDENT, INDENT)).toEqual(items(2, 3, 1, 4))
   })
 
-  it('un miembro soltado fuera de su tarjeta se queda dentro de su tirada', () => {
-    expect(applyRowDrop(blockWithRun, rows, 'ex-2', 99)).toEqual([1, 3, 2, 4])
+  it('an individual dropped between two members, or right below the header, joins', () => {
+    expect(applyRowDrop(blockWithRun, rows, 'ex-1', 2, 0, INDENT)).toEqual(items(2, [1, 1], 3, 4))
+    // Right below the header the order does not change: only membership.
+    expect(applyRowDrop(blockWithRun, rows, 'ex-1', 1, 0, INDENT)).toEqual(items([1, 1], 2, 3, 4))
   })
 
-  it('con el grupo partido mueve solo la tirada arrastrada', () => {
+  it('a member dropped between two individuals leaves the superset', () => {
+    // A · [B, C] · D · E; B between D and E.
+    const block = [ex(1, 1), ex(2, 2, 1), ex(3, 3, 1), ex(4, 4), ex(5, 5)]
+    expect(applyRowDrop(block, buildExerciseRows(block), 'ex-2', 4, 0, INDENT)).toEqual(items(1, 3, 4, [2, null], 5))
+  })
+
+  it('after the last member: indented joins, flush stays individual', () => {
+    // D in the slot right after C (its own place): flush changes nothing, indented joins in place.
+    expect(applyRowDrop(blockWithRun, rows, 'ex-4', 4, 0, INDENT)).toBeNull()
+    expect(applyRowDrop(blockWithRun, rows, 'ex-4', 4, INDENT, INDENT)).toEqual(items(1, 2, 3, [4, 1]))
+  })
+
+  it('a member reorders within its run without changing group', () => {
+    expect(applyRowDrop(blockWithRun, rows, 'ex-2', 3, 0, INDENT)).toEqual(items(1, 3, 2, 4))
+  })
+
+  it('with a split group, dropping into the FIRST run joins that one', () => {
+    const splitRows = buildExerciseRows(splitWithSingles)
+    // Rows: [ss-1-2, ex-2, ex-6, ss-1-3, ex-3, ex-1]; A at the edge after B, indented.
+    expect(applyRowDrop(splitWithSingles, splitRows, 'ex-1', 2, INDENT, INDENT)).toEqual(items(2, [1, 1], 6, 3))
+  })
+
+  it('with a split group moves only the dragged run', () => {
     const splitRows = buildExerciseRows(splitBlock)
-    // Filas: [ss-1-2, ex-2, ex-1, ss-1-3, ex-3]; la segunda tirada (C) a la primera posición.
-    expect(applyRowDrop(splitBlock, splitRows, 'ss-1-3', 0)).toEqual([3, 2, 1])
+    // Rows: [ss-1-2, ex-2, ex-1, ss-1-3, ex-3]; the second run (C) to the first position.
+    expect(applyRowDrop(splitBlock, splitRows, 'ss-1-3', 0)).toEqual(items(3, 2, 1))
   })
 
-  it('devuelve null si la fila se queda donde estaba o no existe', () => {
-    expect(applyRowDrop(blockWithRun, rows, 'ex-1', 0)).toBeNull()
-    expect(applyRowDrop(blockWithRun, rows, 'ex-99', 1)).toBeNull()
+  it('returns null if the row stays where it was (including the last member, flush) or does not exist', () => {
+    expect(applyRowDrop(blockWithRun, rows, 'ex-1', 0, 0, INDENT)).toBeNull()
+    expect(applyRowDrop(blockWithRun, rows, 'ex-3', 3, 0, INDENT)).toBeNull()
+    expect(applyRowDrop(blockWithRun, rows, 'ex-99', 1, 0, INDENT)).toBeNull()
+  })
+})
+
+describe('idsToOrderItems', () => {
+  it('turns ids into items with no membership change', () => {
+    expect(idsToOrderItems([3, 1])).toEqual([{ id: 3 }, { id: 1 }])
+    expect(idsToOrderItems([])).toEqual([])
+  })
+
+  it('keeps null as null (nothing to write)', () => {
+    expect(idsToOrderItems(null)).toBeNull()
   })
 })

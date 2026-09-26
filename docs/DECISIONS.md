@@ -276,3 +276,6 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ## 2026-09 · Swipe para borrar ejercicios y días de la rutina (issues #78, #85)
 - **Swipe en vez de un botón de borrar en la fila:** no ahorra acciones (tres → dos en ambos casos), solo ergonomía. Se le planteó al usuario el botón (que además es la opción accesible) y eligió el gesto. Por eso el `Eliminar` del menú «···» **se queda**: es el único camino con lector de pantalla, y no debe retirarse "porque ya está el swipe".
+
+## 2026-09 · Entrar y salir de una superserie arrastrando (issue #89)
+- **El borde de una superserie (justo detrás de su último miembro) lo decide el desplazamiento horizontal** (`resolveMembershipDrop`, el patrón de "profundidad proyectada" de las listas en árbol). Descartado soltar dentro de los límites de la tarjeta: el relleno y el hueco son de ~8px, poco para un pulgar, y los límites se mueven mientras las filas se apartan. Descartado un hueco explícito «suelta aquí» al final de cada tarjeta: se descubre mejor, pero redimensiona cada superserie a mitad del gesto y choca con la animación. Es el plan B si la regla del desplazamiento sale mal en dispositivo.

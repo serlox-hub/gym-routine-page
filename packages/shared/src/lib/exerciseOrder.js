@@ -9,8 +9,12 @@
 // El modelo es la UNIDAD: un ejercicio individual, o una tirada consecutiva de un grupo. Un grupo
 // ya partido en dos tiradas sigue siendo dos unidades; nada se junta ni se cura a espaldas del
 // usuario, así que el menú, el arrastre y el render comparten modelo y ningún movimiento reordena
-// ejercicios que el usuario no ha tocado. Arreglar el partido es otra issue (#87): aquí NADA
-// escribe `superset_group`.
+// ejercicios que el usuario no ha tocado.
+//
+// Membership only changes through `placeInSuperset`, which places the row and sets its group in
+// the SAME result: that is what keeps a write from leaving a superset split into two cards. Drag
+// reaches it through `resolveMembershipDrop` + `membershipDropToPlacement`; the position menu still
+// never changes membership (a member only moves within its own run).
 //
 // ⚠️ Todas las funciones llevan la directiva `'worklet'` y el módulo NO tiene imports, igual que
 // `lib/dragReorder.js`: native llama a estas desde el HILO DE UI durante el arrastre, y un worklet
@@ -75,6 +79,39 @@ function flattenUnits(units) {
     for (let j = 0; j < units[i].ids.length; j++) ids.push(units[i].ids[j])
   }
   return ids
+}
+
+/** Copy of `array` without the element at `index`. */
+function removeAt(array, index) {
+  'worklet'
+  const result = []
+  for (let i = 0; i < array.length; i++) {
+    if (i !== index) result.push(array[i])
+  }
+  return result
+}
+
+/**
+ * A block's order as `reorderRoutineExercises` items. Only the moved one carries `supersetGroup`,
+ * and only when it is passed (`undefined` = its membership does not change).
+ */
+function toOrderItems(ids, movedId, supersetGroup) {
+  'worklet'
+  const items = []
+  for (let i = 0; i < ids.length; i++) {
+    if (ids[i] === movedId && supersetGroup !== undefined) items.push({ id: ids[i], supersetGroup })
+    else items.push({ id: ids[i] })
+  }
+  return items
+}
+
+/**
+ * `null` → `null`; an array of ids → `reorderRoutineExercises` items with no membership change.
+ * The position menus (`moveExercise`, `moveSuperset`) produce ids; the reorder path takes items.
+ */
+export function idsToOrderItems(ids) {
+  'worklet'
+  return ids ? toOrderItems(ids, null, undefined) : null
 }
 
 /**
@@ -204,6 +241,112 @@ export function moveSuperset(exercises, group, targetUnitIndex, firstMemberId) {
 }
 
 /**
+ * Joins an exercise to a superset (`group`) or takes it out (`null`), and PLACES it in the same
+ * result. Writing the group without placing the row next to its run would render the superset as
+ * two purple cards with the same label.
+ *
+ * - Join: by default it goes right after the last member of the group's LAST run in the block;
+ *   `targetIndex` is the final position within that run. If the group has no members in the
+ *   block, there is no run to join: an individual takes the group where it is, and a member of a
+ *   run of more than one goes right after that run first (set in place in the middle, it would
+ *   split it).
+ * - Leave: by default it goes right after the run it leaves; `targetIndex` is the final position
+ *   among the block's units (counted without the exercise, which comes back as its own unit).
+ *
+ * `firstMemberId` picks WHICH run of the group when it is split in two, with the same tiebreaker
+ * (and for the same reason) as `moveSuperset`. Joining the OTHER run of the group it already
+ * belongs to is a real move (with no `supersetGroup` change); joining its own run is nothing.
+ *
+ * @param {Array} exercises - One block's exercises
+ * @param {number} exerciseId
+ * @param {number|null} group - Group to join, or null to leave
+ * @param {number} [targetIndex] - Explicit final position (see above)
+ * @param {number} [firstMemberId] - First member of the target run
+ * @returns {Array<{ id: number, supersetGroup?: number|null }>|null} The whole block in its new
+ *   order (only the moved one carries `supersetGroup`, and only if it changes), or null if there
+ *   is nothing to write
+ */
+export function placeInSuperset(exercises, exerciseId, group, targetIndex, firstMemberId) {
+  'worklet'
+  const units = getBlockUnits(exercises)
+  const ownIndex = findUnitIndex(units, exerciseId)
+  if (ownIndex === -1) return null
+  if (targetIndex != null && !(targetIndex >= 0)) return null
+
+  const ownUnit = units[ownIndex]
+  const currentGroup = ownUnit.kind === 'superset' ? ownUnit.group : null
+  const nextGroup = group == null ? null : group
+
+  if (nextGroup == null) {
+    if (currentGroup == null) return null
+
+    // The units without the exercise. Its own unit disappears if it was the only member.
+    const rest = []
+    let defaultIndex = 0
+    for (let i = 0; i < units.length; i++) {
+      if (i !== ownIndex) {
+        rest.push(units[i])
+        continue
+      }
+      const remaining = []
+      for (let j = 0; j < ownUnit.ids.length; j++) {
+        if (ownUnit.ids[j] !== exerciseId) remaining.push(ownUnit.ids[j])
+      }
+      if (remaining.length > 0) rest.push({ kind: 'superset', group: ownUnit.group, ids: remaining })
+      // Right after the run it leaves; if it was the only member, where the run was.
+      defaultIndex = rest.length
+    }
+
+    const insertAt = targetIndex == null ? defaultIndex : targetIndex
+    if (insertAt > rest.length) return null
+    rest.splice(insertAt, 0, { kind: 'single', ids: [exerciseId] })
+    return toOrderItems(flattenUnits(rest), exerciseId, null)
+  }
+
+  if (nextGroup === currentGroup && (firstMemberId == null || ownUnit.ids[0] === firstMemberId)) return null
+
+  // Target run: the one starting at `firstMemberId`, or the group's last one. Its own run cannot
+  // come up here: its group is the current one, and that case already returned above.
+  let targetUnit = -1
+  for (let i = 0; i < units.length; i++) {
+    const unit = units[i]
+    if (i === ownIndex || unit.kind !== 'superset' || unit.group !== nextGroup) continue
+    if (firstMemberId == null) {
+      targetUnit = i
+    } else if (unit.ids[0] === firstMemberId) {
+      targetUnit = i
+      break
+    }
+  }
+
+  const changedGroup = nextGroup !== currentGroup ? nextGroup : undefined
+  const ids = flattenUnits(units)
+
+  if (targetUnit === -1) {
+    if (firstMemberId != null || (targetIndex != null && targetIndex !== 0)) return null
+    if (ownUnit.ids.length === 1) return toOrderItems(ids, exerciseId, changedGroup)
+    // Out of its run first, right after it, as leaving does.
+    const rest = removeAt(ids, ids.indexOf(exerciseId))
+    const ownLast = ownUnit.ids[ownUnit.ids.length - 1] === exerciseId
+      ? ownUnit.ids[ownUnit.ids.length - 2]
+      : ownUnit.ids[ownUnit.ids.length - 1]
+    rest.splice(rest.indexOf(ownLast) + 1, 0, exerciseId)
+    return toOrderItems(rest, exerciseId, changedGroup)
+  }
+
+  const members = units[targetUnit].ids
+  const position = targetIndex == null ? members.length : targetIndex
+  if (position > members.length) return null
+
+  const flat = removeAt(ids, ids.indexOf(exerciseId))
+  const insertAt = position < members.length
+    ? flat.indexOf(members[position])
+    : flat.indexOf(members[members.length - 1]) + 1
+  flat.splice(insertAt, 0, exerciseId)
+  return toOrderItems(flat, exerciseId, changedGroup)
+}
+
+/**
  * @typedef {object} ExerciseRow
  * @property {string} id - `'ex-<exerciseId>'` | `'ss-<group>-<firstMemberId>'` (único por tirada:
  *   un grupo ya partido pinta dos cabeceras)
@@ -270,6 +413,23 @@ export function buildExerciseRows(exercises) {
   return rows
 }
 
+/**
+ * Whether a row gets a drag handle. A member of a run of more than one always does, even when that
+ * run is the block's only unit: it can move within the run or leave it. A header or an individual
+ * only when the block has another unit to move past. The member of a run of ONE never does: the
+ * header above it already drags that same run.
+ *
+ * @param {ExerciseRow} row
+ * @param {number} unitCount - Units in the block (`getBlockUnits(...).length`)
+ * @returns {boolean}
+ */
+export function canDragExerciseRow(row, unitCount) {
+  'worklet'
+  if (!row) return false
+  if (row.kind === 'exercise' && row.group != null) return row.runSize > 1
+  return unitCount >= 2
+}
+
 /** Último índice de la tirada que empieza en la cabecera `headerIndex`. */
 function findRunEnd(rows, headerIndex) {
   'worklet'
@@ -294,6 +454,24 @@ function findRunHeaderIndex(rows, index) {
 function isUnitStart(row) {
   'worklet'
   return row.kind === 'supersetHeader' || row.group == null
+}
+
+/** Index of the header of the run that starts at `firstMemberId`, or -1. */
+function findHeaderIndexByFirstMember(rows, firstMemberId) {
+  'worklet'
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].kind === 'supersetHeader' && rows[i].firstMemberId === firstMemberId) return i
+  }
+  return -1
+}
+
+/**
+ * Rows whose superset a drag can change: an individual, or a member of a run of more than one. A
+ * header moves its whole run, and the member of a run of ONE does not drag.
+ */
+function canChangeMembership(row) {
+  'worklet'
+  return row.kind === 'exercise' && (row.group == null || row.runSize > 1)
 }
 
 /**
@@ -360,12 +538,19 @@ function getValidDropIndices(rows, activeIndex) {
  * cercana, que es la que tienen que previsualizar las dos apps: soltar en un hueco imposible
  * (dentro de otra tirada, o fuera de la propia) aterriza en el borde válido más próximo.
  *
+ * With `allowMembershipChange`, an exercise can land in ANY slot: inside a run it joins it, and
+ * between units it stays individual or joins at the edge (`resolveMembershipDrop`). It does not
+ * affect a header, which moves its whole run. The list and the save must use the SAME value: with
+ * the flag on only for the save, the preview would clamp the member back into its run and the save
+ * would put it outside.
+ *
  * @param {ExerciseRow[]} collapsedRows - Filas tal y como están durante el arrastre
  * @param {string} activeRowId
  * @param {number} rawIndex - Posición final que propone el gesto
+ * @param {boolean} [allowMembershipChange] - The drag may change membership
  * @returns {number} Posición final válida
  */
-export function resolveRowDrop(collapsedRows, activeRowId, rawIndex) {
+export function resolveRowDrop(collapsedRows, activeRowId, rawIndex, allowMembershipChange) {
   'worklet'
   if (!collapsedRows || collapsedRows.length === 0) return 0
 
@@ -376,10 +561,12 @@ export function resolveRowDrop(collapsedRows, activeRowId, rawIndex) {
   const active = collapsedRows[activeIndex]
   if (active.kind === 'exercise' && active.group != null && active.runSize === 1) return activeIndex
 
+  const target = rawIndex == null ? activeIndex : Math.max(0, Math.min(collapsedRows.length - 1, rawIndex))
+  if (allowMembershipChange && active.kind === 'exercise') return target
+
   const valid = getValidDropIndices(collapsedRows, activeIndex)
   if (valid.length === 0) return activeIndex
 
-  const target = rawIndex == null ? activeIndex : Math.max(0, Math.min(collapsedRows.length - 1, rawIndex))
   let best = valid[0]
   let bestDistance = Math.abs(valid[0] - target)
   for (let i = 1; i < valid.length; i++) {
@@ -435,24 +622,182 @@ export function rowDropToMove(collapsedRows, activeRowId, index) {
 }
 
 /**
- * Nuevo orden de ids del bloque tras soltar una fila en `index`: pliega, valida, traduce y mueve.
+ * What happens to membership if the dragged row lands at `index`, from its two neighbours in the
+ * list without it:
  *
- * Es el único camino que usan las dos apps al soltar, para que el arrastre no pueda resolverse de
- * dos maneras. Revalida el índice a propósito (es idempotente sobre uno ya válido): así la regla
- * se cumple aunque la lista de una plataforma se olvide de validar mientras previsualiza.
+ * | Previous row          | Next row                               | Result               |
+ * |-----------------------|----------------------------------------|----------------------|
+ * | Header of G           | Member of G                            | `join` (at the start)|
+ * | Member of G           | Member of G                            | `join`               |
+ * | Last member of G      | Header, individual or end of the block | edge, by `offsetX`   |
+ * | Anything else         |                                        | `single`             |
  *
- * @param {Array} exercises - Ejercicios del bloque
- * @param {ExerciseRow[]} rows - Filas del bloque SIN plegar (`buildExerciseRows`)
+ * At an EDGE the horizontal offset decides, counted from the depth the row is at (the "projected
+ * depth" pattern of tree lists): an individual, or a member of ANOTHER run, joins G when dragged at
+ * least `indent` to the right; a member of G itself stays in it unless dragged `indent` to the
+ * left. That way grabbing the last member and dropping it where it was does not take it out.
+ *
+ * @param {ExerciseRow[]} collapsedRows - Rows as they are during the drag
  * @param {string} activeRowId
- * @param {number} index - Posición final donde se ha soltado, contada en la lista plegada
- * @returns {number[]|null} El nuevo orden de ids del bloque, o null si no hay nada que escribir
+ * @param {number} index - Final position already vetted by `resolveRowDrop` with membership allowed
+ * @param {number} offsetX - Horizontal drag offset in px (positive = to the right)
+ * @param {number} indent - Distance that decides the edge (`design.supersetIndent`)
+ * @returns {{ index: number, group: number|null, firstMemberId: number|null,
+ *   kind: 'join'|'edge-join'|'edge-single'|'single' }|null} null when the row cannot change
+ *   superset (a header, the member of a run of one, or an unknown id)
  */
-export function applyRowDrop(exercises, rows, activeRowId, index) {
+export function resolveMembershipDrop(collapsedRows, activeRowId, index, offsetX, indent) {
+  'worklet'
+  if (!collapsedRows || collapsedRows.length === 0) return null
+
+  const activeIndex = findRowIndex(collapsedRows, activeRowId)
+  if (activeIndex === -1 || !canChangeMembership(collapsedRows[activeIndex])) return null
+
+  const active = collapsedRows[activeIndex]
+  const remainder = removeAt(collapsedRows, activeIndex)
+  const position = index == null ? activeIndex : Math.max(0, Math.min(remainder.length, index))
+  const previous = position > 0 ? remainder[position - 1] : null
+  const next = position < remainder.length ? remainder[position] : null
+  const previousIsMember = previous != null && previous.kind === 'exercise' && previous.group != null
+  const nextIsMember = next != null && next.kind === 'exercise' && next.group != null
+
+  // Header of the previous row's run. A member can only follow its header or another member of
+  // ITS run (every run starts with its header), so the next member is enough to tell which run.
+  let headerIndex = -1
+  if (previous != null && previous.kind === 'supersetHeader') headerIndex = position - 1
+  else if (previousIsMember) headerIndex = findRunHeaderIndex(remainder, position - 1)
+  const header = headerIndex === -1 ? null : remainder[headerIndex]
+
+  if (header && nextIsMember) {
+    return { index: position, group: header.group, firstMemberId: header.firstMemberId, kind: 'join' }
+  }
+
+  if (header && previousIsMember) {
+    const ownHeaderIndex = active.group != null ? findRunHeaderIndex(collapsedRows, activeIndex) : -1
+    const isOwnRun = ownHeaderIndex !== -1 && collapsedRows[ownHeaderIndex].id === header.id
+    const dx = offsetX || 0
+    let joins = isOwnRun
+    if (indent > 0) joins = isOwnRun ? dx > -indent : dx >= indent
+    return joins
+      ? { index: position, group: header.group, firstMemberId: header.firstMemberId, kind: 'edge-join' }
+      : { index: position, group: null, firstMemberId: null, kind: 'edge-single' }
+  }
+
+  return { index: position, group: null, firstMemberId: null, kind: 'single' }
+}
+
+/**
+ * How the list paints the dragged row, so the preview shows where it will end up: as a member of
+ * the purple card if dropping it here keeps it in or joins a superset, flush if it ends up
+ * individual. A string and not an object: native passes it from the UI thread to React and only
+ * re-renders when it changes.
+ *
+ * @param {ExerciseRow[]} collapsedRows
+ * @param {string} activeRowId
+ * @param {number} index - Final position, already vetted
+ * @param {number} offsetX
+ * @param {number} indent
+ * @returns {'superset'|'single'|null} null when the row cannot change superset (it keeps its
+ *   resting look)
+ */
+export function getMembershipDropPreview(collapsedRows, activeRowId, index, offsetX, indent) {
+  'worklet'
+  const drop = resolveMembershipDrop(collapsedRows, activeRowId, index, offsetX, indent)
+  if (!drop) return null
+  return drop.group != null ? 'superset' : 'single'
+}
+
+/**
+ * Translates what `resolveMembershipDrop` returns into `placeInSuperset` arguments (membership
+ * changes) or `moveExercise` arguments (it does not): the row position becomes a position within
+ * the target run when joining, or a unit position when ending up individual.
+ *
+ * Moving within its OWN run does not change membership; moving to the other run of an already
+ * split group does (it is another card), even though the group is the same.
+ *
+ * @param {ExerciseRow[]} collapsedRows
+ * @param {string} activeRowId
+ * @param {{ index: number, group: number|null, firstMemberId: number|null }} drop
+ * @returns {{ exerciseId: number, group: number|null, targetIndex: number,
+ *   firstMemberId: number|null, changesMembership: boolean }|null}
+ */
+export function membershipDropToPlacement(collapsedRows, activeRowId, drop) {
+  'worklet'
+  if (!drop || !collapsedRows || collapsedRows.length === 0) return null
+
+  const activeIndex = findRowIndex(collapsedRows, activeRowId)
+  if (activeIndex === -1 || !canChangeMembership(collapsedRows[activeIndex])) return null
+
+  const active = collapsedRows[activeIndex]
+  const remainder = removeAt(collapsedRows, activeIndex)
+
+  if (drop.group != null) {
+    const headerIndex = findHeaderIndexByFirstMember(remainder, drop.firstMemberId)
+    if (headerIndex === -1) return null
+    // The own header comes before the dragged member: its index is the same with and without it.
+    const ownHeaderIndex = active.group != null ? findRunHeaderIndex(collapsedRows, activeIndex) : -1
+    const isOwnRun = ownHeaderIndex !== -1 && collapsedRows[ownHeaderIndex].id === remainder[headerIndex].id
+    return {
+      exerciseId: active.exerciseId,
+      group: drop.group,
+      targetIndex: drop.index - headerIndex - 1,
+      firstMemberId: drop.firstMemberId,
+      changesMembership: !isOwnRun,
+    }
+  }
+
+  let targetUnitIndex = 0
+  for (let i = 0; i < drop.index && i < remainder.length; i++) {
+    if (isUnitStart(remainder[i])) targetUnitIndex++
+  }
+  return {
+    exerciseId: active.exerciseId,
+    group: null,
+    targetIndex: targetUnitIndex,
+    firstMemberId: null,
+    changesMembership: active.group != null,
+  }
+}
+
+/**
+ * The block's new order after dropping a row at `index`: collapses, vets, resolves membership and
+ * places.
+ *
+ * It is the only path both apps use on drop, so a drag cannot resolve in two ways. It re-vets the
+ * index on purpose (idempotent on an already valid one): the rule holds even if one platform's list
+ * forgets to vet while previewing. An exercise may change superset (`placeInSuperset` with the
+ * dropped position, not the default one: what is saved is exactly what was previewed); a header
+ * moves its run and never changes it.
+ *
+ * @param {Array} exercises - The block's exercises
+ * @param {ExerciseRow[]} rows - The block's rows, NOT collapsed (`buildExerciseRows`)
+ * @param {string} activeRowId
+ * @param {number} index - Final position where it was dropped, counted in the collapsed list
+ * @param {number} [offsetX] - Horizontal drag offset in px
+ * @param {number} [indent] - `design.supersetIndent`
+ * @returns {Array<{ id: number, supersetGroup?: number|null }>|null} The block in its new order,
+ *   or null if there is nothing to write
+ */
+export function applyRowDrop(exercises, rows, activeRowId, index, offsetX, indent) {
   'worklet'
   const collapsed = collapseForDrag(rows, activeRowId)
+  const activeIndex = findRowIndex(collapsed, activeRowId)
+  if (activeIndex === -1) return null
+
+  if (canChangeMembership(collapsed[activeIndex])) {
+    const vetted = resolveRowDrop(collapsed, activeRowId, index, true)
+    const drop = resolveMembershipDrop(collapsed, activeRowId, vetted, offsetX, indent)
+    const placement = membershipDropToPlacement(collapsed, activeRowId, drop)
+    if (!placement) return null
+    if (placement.changesMembership) {
+      return placeInSuperset(exercises, placement.exerciseId, placement.group, placement.targetIndex, placement.firstMemberId)
+    }
+    return idsToOrderItems(moveExercise(exercises, placement.exerciseId, placement.targetIndex))
+  }
+
   const move = rowDropToMove(collapsed, activeRowId, resolveRowDrop(collapsed, activeRowId, index))
   if (!move) return null
 
-  if (move.exerciseId != null) return moveExercise(exercises, move.exerciseId, move.targetIndex)
-  return moveSuperset(exercises, move.group, move.targetUnitIndex, move.firstMemberId)
+  if (move.exerciseId != null) return idsToOrderItems(moveExercise(exercises, move.exerciseId, move.targetIndex))
+  return idsToOrderItems(moveSuperset(exercises, move.group, move.targetUnitIndex, move.firstMemberId))
 }

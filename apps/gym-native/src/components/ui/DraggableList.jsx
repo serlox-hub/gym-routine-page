@@ -24,12 +24,22 @@ import { design } from '../../lib/styles'
 // El camino accesible sigue siendo la lista de posiciones del menú de cada fila, no esto.
 //
 // Dos props opcionales cubren las listas cuyas filas no son todas intercambiables (los ejercicios
-// de un día: una superserie viaja entera y un miembro no sale de la suya). Las dos son funciones
-// PURAS y WORKLETIZADAS de `@gym/shared` (aquí no vive ninguna regla), porque se llaman desde el
-// hilo de UI: `collapseForDrag(items, activeId)` da la lista que se pinta mientras se arrastra (una
-// superserie pliega sus miembros para que viaje solo su cabecera) y
+// de un día: una superserie viaja entera y un ejercicio puede entrar o salir de una). Las dos son
+// funciones PURAS y WORKLETIZADAS de `@gym/shared` (aquí no vive ninguna regla), porque se llaman
+// desde el hilo de UI: `collapseForDrag(items, activeId)` da la lista que se pinta mientras se
+// arrastra (una superserie pliega sus miembros para que viaje solo su cabecera) y
 // `resolveDrop(items, activeId, index)` valida el índice destino, para que la vista previa abra el
 // hueco donde de verdad se va a caer y no uno imposible.
+//
+// A third optional prop, `getDragPreview(items, activeId, index, offsetX)`, returns how the dragged
+// row should look if dropped at the vetted position, as a primitive value (a row about to join a
+// superset is painted as a member of it). It is a worklet too. The list mirrors it to React only
+// when it changes and hands it to `renderItem` as `dragPreview` (null on every other row); what it
+// looks like is the caller's.
+//
+// `onReorder(fromIndex, toIndex, activeId, offsetX)` is also called with `toIndex === fromIndex`:
+// shifting the row horizontally without moving it can change its membership. Callers that only
+// reorder discard that case.
 //
 // ⚠️ `scrollRef` tiene que ser un `useAnimatedRef` apuntando a un `Animated.ScrollView`: el
 // auto-scroll lo conduce `scrollTo` desde el hilo de UI, y sobre un `ScrollView` normal no hace
@@ -43,7 +53,7 @@ import { design } from '../../lib/styles'
 // el comentario de `dragAutoScrollEdge` en `lib/styles.js`.
 const AUTO_SCROLL_MAX_SPEED = 12
 
-function DraggableRow({ index, item, renderItem, state, gesture, isDragging }) {
+function DraggableRow({ index, item, renderItem, state, gesture, isDragging, dragPreview }) {
   const { activeIndex, targetIndex, dragY, heights, onMeasure } = state
 
   // El desplazamiento del vecino vive en su propia shared value en vez de calcularse dentro del
@@ -82,15 +92,17 @@ function DraggableRow({ index, item, renderItem, state, gesture, isDragging }) {
 
   return (
     <Animated.View onLayout={handleLayout} style={animatedStyle}>
-      {renderItem(item, { dragHandleProps, isDragging, index })}
+      {renderItem(item, { dragHandleProps, isDragging, index, dragPreview })}
     </Animated.View>
   )
 }
 
-export default function DraggableList({ items = [], renderItem, onReorder, disabled = false, scrollRef, collapseForDrag, resolveDrop }) {
+export default function DraggableList({ items = [], renderItem, onReorder, disabled = false, scrollRef, collapseForDrag, resolveDrop, getDragPreview }) {
   const activeIndex = useSharedValue(-1)
   const targetIndex = useSharedValue(-1)
   const panY = useSharedValue(0)
+  const panX = useSharedValue(0)
+  const preview = useSharedValue(null)
   const pointerY = useSharedValue(0)
   // px que el auto-scroll ha movido el contenido bajo el dedo durante este arrastre: sin sumarlos
   // la tarjeta se quedaría atrás en cuanto la lista empieza a correr sola.
@@ -110,6 +122,8 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
   // Espejo en el hilo de JS de la fila en vuelo, para que pueda pintarse distinta mientras se
   // arrastra y para plegar la lista. Cambia dos veces por arrastre, no por frame.
   const [draggingId, setDraggingId] = useState(null)
+  // Same for `preview`: it changes when the landing slot changes how the row looks, not per frame.
+  const [dragPreview, setDragPreview] = useState(null)
 
   // Copia superficial a propósito: Reanimated congela en desarrollo los objetos que viajan a una
   // shared value, y los de `items` pueden venir de la caché de query (los días), que no puede
@@ -140,12 +154,25 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
     heightsById.value = { ...heightsById.value, [id]: height }
   }, [heightsById])
 
+  // The preview (gap and look) comes from the same index and offset handed over on drop, so what
+  // is saved is what was seen.
   useAnimatedReaction(
-    () => dragY.value,
-    (y) => {
+    () => ({ y: dragY.value, x: panX.value }),
+    ({ y, x }) => {
       if (activeIndex.value < 0) return
       const raw = getDropIndex(activeIndex.value, y, heights.value)
-      targetIndex.value = resolveDrop ? resolveDrop(draggedRows.value, draggedRowId.value, raw) : raw
+      const target = resolveDrop ? resolveDrop(draggedRows.value, draggedRowId.value, raw) : raw
+      targetIndex.value = target
+      if (!getDragPreview) return
+      const next = getDragPreview(draggedRows.value, draggedRowId.value, target, x)
+      if (next !== preview.value) preview.value = next
+    }
+  )
+
+  useAnimatedReaction(
+    () => preview.value,
+    (next, previous) => {
+      if (next !== previous) runOnJS(setDragPreview)(next)
     }
   )
 
@@ -212,20 +239,25 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
         activeIndex.value = activeInFlight
         targetIndex.value = activeInFlight
         panY.value = 0
+        panX.value = 0
+        preview.value = null
         scrollComp.value = 0
         runOnJS(handleLift)(id)
       })
       .onUpdate((event) => {
         panY.value = event.translationY
+        panX.value = event.translationX
         pointerY.value = event.absoluteY
       })
       .onEnd(() => {
-        runOnJS(onReorder)(activeIndex.value, targetIndex.value, id)
+        runOnJS(onReorder)(activeIndex.value, targetIndex.value, id, panX.value)
       })
       .onFinalize(() => {
         activeIndex.value = -1
         targetIndex.value = -1
         panY.value = 0
+        panX.value = 0
+        preview.value = null
         scrollComp.value = 0
         draggedRowId.value = null
         runOnJS(handleRelease)()
@@ -233,7 +265,7 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
     // Relación declarada con el contenedor con scroll en vez de confiar en el arbitraje por
     // defecto, que es quien decide a cuál de los dos se le concede el dedo.
     return scrollRef ? pan.blocksExternalGesture(scrollRef) : pan
-  }, [disabled, scrollRef, collapseForDrag, rowsSource, draggedRows, draggedRowId, heights, heightsById, activeIndex, targetIndex, panY, pointerY, scrollComp, viewportTop, viewportHeight, handleLift, handleRelease, onReorder])
+  }, [disabled, scrollRef, collapseForDrag, rowsSource, draggedRows, draggedRowId, heights, heightsById, activeIndex, targetIndex, panY, panX, preview, pointerY, scrollComp, viewportTop, viewportHeight, handleLift, handleRelease, onReorder])
 
   const state = useMemo(
     () => ({ activeIndex, targetIndex, dragY, heights, onMeasure }),
@@ -251,6 +283,7 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
           state={state}
           gesture={gestureFor}
           isDragging={draggingId === item.id}
+          dragPreview={draggingId === item.id ? dragPreview : null}
         />
       ))}
     </View>

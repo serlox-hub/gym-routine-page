@@ -24,6 +24,7 @@ export {
   deleteRoutineExercise,
   updateRoutineExercise,
   reorderRoutineExercises,
+  setRoutineExerciseSupersetGroup,
   addExerciseToDay,
   duplicateRoutineExercise,
   duplicateRoutineDay,

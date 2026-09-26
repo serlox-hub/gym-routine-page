@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2 } from 'lucide-react'
+import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2, Link2Off } from 'lucide-react'
 import { DragHandle, Modal, ReorderModal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
@@ -17,6 +17,7 @@ function ExerciseCard({
   onDuplicate,
   onMoveToDay,
   onReplace,
+  onRemoveFromSuperset,
   onReorderToPosition,
   currentIndex = 0,
   totalExercises = 1,
@@ -44,6 +45,8 @@ function ExerciseCard({
     { icon: Copy, label: t('routine:exercise.duplicateExercise'), onClick: onDuplicate },
     { icon: FolderInput, label: t('routine:exercise.moveToDay'), onClick: onMoveToDay },
     totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onClick: () => setShowReorder(true), disabled: isReordering },
+    // Superset members only (whoever renders the row decides whether to pass it).
+    onRemoveFromSuperset && { icon: Link2Off, label: t('routine:superset.removeFrom'), onClick: onRemoveFromSuperset, disabled: isReordering },
     { icon: Trash2, label: t('common:buttons.delete'), onClick: onDelete, danger: true },
   ].filter(Boolean)
 

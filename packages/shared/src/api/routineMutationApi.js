@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { placeInSupersetForDay } from '../lib/routineDayLayout.js'
 
 // ============================================
 // MUTATIONS
@@ -132,10 +133,23 @@ export async function updateRoutineExercise({ exerciseId, data }) {
   if (error) throw error
 }
 
-export async function reorderRoutineExercises(exercises) {
-  const exerciseOrders = exercises.map((exercise, index) => ({
-    id: exercise.id,
-    sort_order: index + 1
+/**
+ * Reorders the WHOLE day (warm-up first) in one atomic write, and changes the superset membership
+ * of the items that carry it. Together with `setRoutineExerciseSupersetGroup`, it is the only path
+ * that writes `superset_group` from the list: so the row is always placed next to its run in the
+ * same write.
+ *
+ * `superset_group` is sent ONLY when the item has the `supersetGroup` key (camelCase on purpose:
+ * it is a shape only `lib/exerciseOrder.js` builds). A cached DB row carries snake_case
+ * `superset_group`; forwarding it as is cannot rewrite the day's membership.
+ *
+ * @param {Array<{ id: number, supersetGroup?: number|null }>} items
+ */
+export async function reorderRoutineExercises(items) {
+  const exerciseOrders = items.map((item, index) => ({
+    id: item.id,
+    sort_order: index + 1,
+    ...('supersetGroup' in item ? { superset_group: item.supersetGroup } : null),
   }))
 
   const { error } = await getClient().rpc('reorder_routine_exercises', {
@@ -143,6 +157,29 @@ export async function reorderRoutineExercises(exercises) {
   })
 
   if (error) throw error
+}
+
+/**
+ * Joins a routine exercise to a superset or takes it out (`supersetGroup: null`), PLACING it next
+ * to its run in the same write (`placeInSupersetForDay` + `reorderRoutineExercises`). Without an
+ * explicit position: joining goes after the last member, leaving goes right after the old run.
+ *
+ * @returns {Promise<Array|null>} What was written, or null if there was nothing to write
+ */
+export async function setRoutineExerciseSupersetGroup({ dayId, routineExerciseId, supersetGroup, targetIndex, firstMemberId }) {
+  const { data, error } = await getClient()
+    .from('routine_exercises')
+    .select('id, sort_order, superset_group, is_warmup')
+    .eq('routine_day_id', dayId)
+    .order('sort_order')
+
+  if (error) throw error
+
+  const items = placeInSupersetForDay(data || [], { routineExerciseId, supersetGroup, targetIndex, firstMemberId })
+  if (!items) return null
+
+  await reorderRoutineExercises(items)
+  return items
 }
 
 export async function addExerciseToDay({ dayId, exerciseId, series, target_field, reps, level, rir, rest_seconds, notes, esCalentamiento = false, superset_group }) {

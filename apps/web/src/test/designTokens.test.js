@@ -5,7 +5,7 @@ import { design as nativeDesign } from '../../../gym-native/src/lib/styles.js'
 // Los tokens de gesto los consumen las DOS apps y viven duplicados en sus `styles.js`. Si uno
 // deriva, el swipe se siente distinto en cada plataforma y nada lo caza: `apps/gym-native` no
 // tiene runner, así que la comprobación vive en la suite de web, como `envExample.test.js`.
-const GESTURE_TOKENS = ['gestureActivationDistance', 'swipeDeleteThreshold', 'swipeDeleteMaxTravel', 'dragAutoScrollEdge']
+const GESTURE_TOKENS = ['gestureActivationDistance', 'swipeDeleteThreshold', 'swipeDeleteMaxTravel', 'dragAutoScrollEdge', 'supersetIndent']
 
 describe('tokens de gesto de fila (design)', () => {
   for (const token of GESTURE_TOKENS) {
@@ -17,5 +17,9 @@ describe('tokens de gesto de fila (design)', () => {
 
   it('el recorrido máximo supera al umbral de borrado, o la fila no podría borrarse nunca', () => {
     expect(webDesign.swipeDeleteMaxTravel).toBeGreaterThan(webDesign.swipeDeleteThreshold)
+  })
+
+  it('supersetIndent is positive: without it, a drag at a superset edge could neither join nor leave', () => {
+    expect(webDesign.supersetIndent).toBeGreaterThan(0)
   })
 })

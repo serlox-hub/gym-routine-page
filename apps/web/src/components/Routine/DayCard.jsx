@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react'
 import { Card, ConfirmModal, DragHandle, DropdownMenu, LoadingSpinner, Modal } from '../ui/index.js'
-import { useRoutineBlocks, useReorderRoutineExercises, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
+import { useRoutineBlocks, useReorderRoutineExercises, useSetRoutineExerciseSupersetGroup, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete.js'
@@ -22,6 +22,7 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
   const { gymId } = useSelectedGym()
   const startSessionMutation = useStartSession()
   const reorderExercises = useReorderRoutineExercises()
+  const setSupersetGroup = useSetRoutineExerciseSupersetGroup()
   const deleteExercise = useDeleteRoutineExercise()
   const updateDay = useUpdateRoutineDay()
   const [showRenameModal, setShowRenameModal] = useState(false)
@@ -88,18 +89,23 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
     }
   }
 
-  // El arrastre y el menú dan el orden nuevo de UN bloque (las reglas son de
-  // `lib/exerciseOrder.js`); la RPC renumera el día entero, así que se recompone con el otro
-  // bloque, calentamiento primero.
-  const reorderDay = (warmupIds, mainIds) => {
-    reorderExercises.mutate({
-      dayId: id,
-      exercises: [...warmupIds, ...mainIds].map(exerciseId => ({ id: exerciseId })),
-    })
+  // Drag and menu produce the new order of ONE block as `{ id, supersetGroup? }` (the rules live in
+  // `lib/exerciseOrder.js`); the RPC renumbers the whole day, so it is recomposed with the other
+  // block, warm-up first. The untouched block goes with its ids ONLY: forwarding the cached row
+  // could not rewrite its membership anyway (see `reorderRoutineExercises`).
+  const reorderDay = (warmupItems, mainItems) => {
+    reorderExercises.mutate({ dayId: id, exercises: [...warmupItems, ...mainItems] })
   }
 
-  const handleReorderWarmupBlock = (ids) => reorderDay(ids, mainExercises.map(re => re.id))
-  const handleReorderMainBlock = (ids) => reorderDay(warmupExercises.map(re => re.id), ids)
+  const handleReorderWarmupBlock = (items) => reorderDay(items, mainExercises.map(re => ({ id: re.id })))
+  const handleReorderMainBlock = (items) => reorderDay(warmupExercises.map(re => ({ id: re.id })), items)
+
+  const handleRemoveFromSuperset = (routineExercise) => {
+    setSupersetGroup.mutate({ dayId: id, routineExerciseId: routineExercise.id, supersetGroup: null })
+  }
+
+  // Both writes renumber the whole day: while one is in flight, no drag and no menu.
+  const isReorderingExercises = reorderExercises.isPending || setSupersetGroup.isPending
 
   const handleDeleteExercise = () => {
     if (!exerciseToDelete) return
@@ -213,11 +219,12 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
                       <BlockSection
                         block={warmupBlock}
                         routineDayId={id}
-                        isReordering={reorderExercises.isPending}
+                        isReordering={isReorderingExercises}
                         onAddExercise={() => onAddWarmup(id, existingSupersets)}
                         onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                         onReplaceExercise={(re) => onReplaceExercise(re, id)}
                         onReorderBlock={handleReorderWarmupBlock}
+                        onRemoveExerciseFromSuperset={handleRemoveFromSuperset}
                         onDeleteExercise={(re) => setExerciseToDelete(re)}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
@@ -229,11 +236,12 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
                       <BlockSection
                         block={mainBlock}
                         routineDayId={id}
-                        isReordering={reorderExercises.isPending}
+                        isReordering={isReorderingExercises}
                         onAddExercise={() => onAddExercise(id, existingSupersets)}
                         onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
                         onReplaceExercise={(re) => onReplaceExercise(re, id)}
                         onReorderBlock={handleReorderMainBlock}
+                        onRemoveExerciseFromSuperset={handleRemoveFromSuperset}
                         onDeleteExercise={(re) => setExerciseToDelete(re)}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}

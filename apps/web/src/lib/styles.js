@@ -64,6 +64,12 @@ export const design = {
   // test que pasa mientras las dos plataformas se sienten distintas.
   dragAutoScrollEdge: 96,
 
+  // Dragging an exercise at the edge of a superset (right after its last member): how far it must
+  // be dragged horizontally to change depth (join, or leave if already a member). It is ONLY that
+  // threshold, so it can be tuned on device freely: the preview does not shift the card by this
+  // much, it paints it with the purple card's own side padding (`BlockSection`).
+  supersetIndent: 12,
+
   // Routine card
   routineCardRadius: 16,
   routineCardPadding: 16,
