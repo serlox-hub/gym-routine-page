@@ -63,15 +63,17 @@ describe('BlockSection — filas planas y tarjeta morada por fila', () => {
     expect(screen.getAllByText('Superset A')).toHaveLength(2)
   })
 
-  it('solo el último miembro de la tirada cierra la tarjeta por abajo', () => {
+  it('los miembros pintan solo los laterales y el pie cierra la tarjeta por abajo', () => {
     const { container } = renderBlock([row(1, 1, null, 'Sentadilla'), row(2, 2, 1, 'Press'), row(3, 3, 1, 'Remo')])
 
-    // Las filas de miembro pintan SOLO los laterales; la cabecera pinta el borde entero.
+    // La cabecera pinta el borde entero; los dos miembros y el pie, desde los laterales.
     const borderedRows = [...container.querySelectorAll('div')]
       .filter(div => div.style.borderLeftStyle === 'solid' && div.style.borderTopStyle !== 'solid')
-    expect(borderedRows).toHaveLength(2)
+    expect(borderedRows).toHaveLength(3)
     expect(borderedRows[0].style.borderBottomWidth).toBe('')
-    expect(borderedRows[1].style.borderBottomWidth).toBe('1px')
+    expect(borderedRows[1].style.borderBottomWidth).toBe('')
+    expect(borderedRows[2].style.borderBottomWidth).toBe('1px')
+    expect(borderedRows[2].textContent).toBe('')
   })
 
   it('con una sola unidad no hay asas: no hay nada que reordenar', () => {

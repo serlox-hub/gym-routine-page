@@ -13,7 +13,7 @@ import Animated, {
   runOnJS,
   withTiming,
 } from 'react-native-reanimated'
-import { getDropIndex, getDragShift, getAutoScrollSpeed, getHaptics } from '@gym/shared'
+import { getDropIndex, getDragShift, getDropSlotOffset, getAutoScrollSpeed, getHaptics } from '@gym/shared'
 import { design } from '../../lib/styles'
 
 // Lista vertical reordenable por arrastre. El arrastre SIEMPRE empieza en un asa: quien pinta
@@ -31,15 +31,21 @@ import { design } from '../../lib/styles'
 // `resolveDrop(items, activeId, index)` valida el índice destino, para que la vista previa abra el
 // hueco donde de verdad se va a caer y no uno imposible.
 //
-// A third optional prop, `getDragPreview(items, activeId, index, offsetX)`, returns how the dragged
-// row should look if dropped at the vetted position, as a primitive value (a row about to join a
+// A third optional prop, `getDragPreview(items, activeId, index)`, returns how the dragged row
+// should look if dropped at the vetted position, as a primitive value (a row about to join a
 // superset is painted as a member of it). It is a worklet too. The list mirrors it to React only
 // when it changes and hands it to `renderItem` as `dragPreview` (null on every other row); what it
 // looks like is the caller's.
 //
-// `onReorder(fromIndex, toIndex, activeId, offsetX)` is also called with `toIndex === fromIndex`:
-// shifting the row horizontally without moving it can change its membership. Callers that only
-// reorder discard that case.
+// `withDropSlot` paints, behind the rows, what fills the gap the dragged row would drop into:
+// `renderItem` with `isDropSlot` (and `dragPreview`), at the dragged row's height. The row itself
+// keeps following the finger. That is what lets a superset card keep its purple sides continuous
+// around the gap: the row in flight can never line up with them. Same prop and flags as web
+// `SortableList`.
+//
+// `animateShift={false}` makes the rows (and the slot) jump to their new place instead of sliding.
+// A list whose rows draw one card between them needs it: rows slide at different moments (only the
+// one the finger crosses moves), so mid-slide the card has holes where no row is yet.
 //
 // ⚠️ `scrollRef` tiene que ser un `useAnimatedRef` apuntando a un `Animated.ScrollView`: el
 // auto-scroll lo conduce `scrollTo` desde el hilo de UI, y sobre un `ScrollView` normal no hace
@@ -54,7 +60,7 @@ import { design } from '../../lib/styles'
 const AUTO_SCROLL_MAX_SPEED = 12
 
 function DraggableRow({ index, item, renderItem, state, gesture, isDragging, dragPreview }) {
-  const { activeIndex, targetIndex, dragY, heights, onMeasure } = state
+  const { activeIndex, targetIndex, dragY, heights, onMeasure, animateShift } = state
 
   // El desplazamiento del vecino vive en su propia shared value en vez de calcularse dentro del
   // `useAnimatedStyle`: allí `dragY` estaría en el closure y el worklet correría cada frame,
@@ -68,7 +74,7 @@ function DraggableRow({ index, item, renderItem, state, gesture, isDragging, dra
       // reposo desliza al vecino hacia donde YA va a estar y se ve saltar cuando aterriza el
       // re-render. Durante el arrastre sí se anima: ahí el hueco se abre en vivo.
       if (activeIndex.value < 0) shift.value = 0
-      else if (next !== previous) shift.value = withTiming(next, { duration: design.slideAnimDuration })
+      else if (next !== previous) shift.value = animateShift ? withTiming(next, { duration: design.slideAnimDuration }) : next
     }
   )
 
@@ -92,16 +98,15 @@ function DraggableRow({ index, item, renderItem, state, gesture, isDragging, dra
 
   return (
     <Animated.View onLayout={handleLayout} style={animatedStyle}>
-      {renderItem(item, { dragHandleProps, isDragging, index, dragPreview })}
+      {renderItem(item, { dragHandleProps, isDragging, index, dragPreview, isDropSlot: false })}
     </Animated.View>
   )
 }
 
-export default function DraggableList({ items = [], renderItem, onReorder, disabled = false, scrollRef, collapseForDrag, resolveDrop, getDragPreview }) {
+export default function DraggableList({ items = [], renderItem, onReorder, disabled = false, scrollRef, collapseForDrag, resolveDrop, getDragPreview, withDropSlot = false, animateShift = true }) {
   const activeIndex = useSharedValue(-1)
   const targetIndex = useSharedValue(-1)
   const panY = useSharedValue(0)
-  const panX = useSharedValue(0)
   const preview = useSharedValue(null)
   const pointerY = useSharedValue(0)
   // px que el auto-scroll ha movido el contenido bajo el dedo durante este arrastre: sin sumarlos
@@ -154,20 +159,35 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
     heightsById.value = { ...heightsById.value, [id]: height }
   }, [heightsById])
 
-  // The preview (gap and look) comes from the same index and offset handed over on drop, so what
-  // is saved is what was seen.
+  // The preview (gap and look) comes from the same index handed over on drop, so what is saved is
+  // what was seen.
   useAnimatedReaction(
-    () => ({ y: dragY.value, x: panX.value }),
-    ({ y, x }) => {
+    () => dragY.value,
+    (y) => {
       if (activeIndex.value < 0) return
       const raw = getDropIndex(activeIndex.value, y, heights.value)
       const target = resolveDrop ? resolveDrop(draggedRows.value, draggedRowId.value, raw) : raw
       targetIndex.value = target
       if (!getDragPreview) return
-      const next = getDragPreview(draggedRows.value, draggedRowId.value, target, x)
+      const next = getDragPreview(draggedRows.value, draggedRowId.value, target)
       if (next !== preview.value) preview.value = next
     }
   )
+
+  // Top of the gap, moving with the same timing as the rows that open it; on lift it jumps there.
+  const slotTop = useSharedValue(0)
+  useAnimatedReaction(
+    () => (activeIndex.value < 0 ? -1 : targetIndex.value),
+    (target, previous) => {
+      if (!withDropSlot || target < 0) return
+      const top = getDropSlotOffset(activeIndex.value, target, heights.value)
+      slotTop.value = !animateShift || previous == null || previous < 0 ? top : withTiming(top, { duration: design.slideAnimDuration })
+    }
+  )
+  const slotStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: slotTop.value }],
+    height: activeIndex.value < 0 ? 0 : heights.value[activeIndex.value] || 0,
+  }))
 
   useAnimatedReaction(
     () => preview.value,
@@ -239,24 +259,21 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
         activeIndex.value = activeInFlight
         targetIndex.value = activeInFlight
         panY.value = 0
-        panX.value = 0
         preview.value = null
         scrollComp.value = 0
         runOnJS(handleLift)(id)
       })
       .onUpdate((event) => {
         panY.value = event.translationY
-        panX.value = event.translationX
         pointerY.value = event.absoluteY
       })
       .onEnd(() => {
-        runOnJS(onReorder)(activeIndex.value, targetIndex.value, id, panX.value)
+        runOnJS(onReorder)(activeIndex.value, targetIndex.value, id)
       })
       .onFinalize(() => {
         activeIndex.value = -1
         targetIndex.value = -1
         panY.value = 0
-        panX.value = 0
         preview.value = null
         scrollComp.value = 0
         draggedRowId.value = null
@@ -265,15 +282,23 @@ export default function DraggableList({ items = [], renderItem, onReorder, disab
     // Relación declarada con el contenedor con scroll en vez de confiar en el arbitraje por
     // defecto, que es quien decide a cuál de los dos se le concede el dedo.
     return scrollRef ? pan.blocksExternalGesture(scrollRef) : pan
-  }, [disabled, scrollRef, collapseForDrag, rowsSource, draggedRows, draggedRowId, heights, heightsById, activeIndex, targetIndex, panY, panX, preview, pointerY, scrollComp, viewportTop, viewportHeight, handleLift, handleRelease, onReorder])
+  }, [disabled, scrollRef, collapseForDrag, rowsSource, draggedRows, draggedRowId, heights, heightsById, activeIndex, targetIndex, panY, preview, pointerY, scrollComp, viewportTop, viewportHeight, handleLift, handleRelease, onReorder])
 
   const state = useMemo(
-    () => ({ activeIndex, targetIndex, dragY, heights, onMeasure }),
-    [activeIndex, targetIndex, dragY, heights, onMeasure]
+    () => ({ activeIndex, targetIndex, dragY, heights, onMeasure, animateShift }),
+    [activeIndex, targetIndex, dragY, heights, onMeasure, animateShift]
   )
+
+  const draggingIndex = draggingId == null ? -1 : rows.findIndex(row => row.id === draggingId)
 
   return (
     <View>
+      {withDropSlot && draggingIndex !== -1 && (
+        // First child, so every row paints over it: it only shows through the gap.
+        <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, right: 0 }, slotStyle]}>
+          {renderItem(rows[draggingIndex], { dragHandleProps: null, isDragging: false, index: draggingIndex, dragPreview, isDropSlot: true })}
+        </Animated.View>
+      )}
       {rows.map((item, index) => (
         <DraggableRow
           key={item.id}

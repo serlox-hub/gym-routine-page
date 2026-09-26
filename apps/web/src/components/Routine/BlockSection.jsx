@@ -3,7 +3,7 @@ import AddExerciseButton from './AddExerciseButton.jsx'
 import ExerciseCard from './ExerciseCard.jsx'
 import SupersetHeaderRow from './SupersetHeaderRow.jsx'
 import { SortableList } from '../ui/index.js'
-import { colors, design } from '../../lib/styles.js'
+import { colors } from '../../lib/styles.js'
 import {
   applyRowDrop,
   buildExerciseRows,
@@ -28,73 +28,76 @@ import {
 // compartido con native y con el menú.
 //
 // Como no hay una vista que envuelva a los miembros, la tarjeta morada se pinta POR FILA: la
-// cabecera el borde de arriba, cada miembro los laterales, el último también el de abajo. El
+// cabecera el borde de arriba, cada miembro los laterales y el pie el de abajo. El
 // relleno de la tarjeta y el hueco entre filas van DENTRO del alto de cada fila, porque la
 // aritmética del arrastre suma altos de fila (`lib/dragReorder.js`) y un margen por fuera
 // descuadraría el hueco que se abre.
 const ROW_GAP = 8
 const CARD_PADDING = 8
 
-// Dragging in this list can change superset membership. The list previews with these two
-// functions and `applyRowDrop` saves with the same arguments: with the flag on for the save and off
-// for the preview, a member would be shown clamped back into its run and saved outside it.
+// Dragging in this list can change superset membership. The list previews with this and
+// `getMembershipDropPreview`, and `applyRowDrop` saves with the same flag: with it on for the save
+// and off for the preview, a member would be shown clamped back into its run and saved outside it.
 function resolveExerciseRowDrop(rows, activeRowId, index) {
   return resolveRowDrop(rows, activeRowId, index, true)
 }
 
-function getExerciseDragPreview(rows, activeRowId, index, offsetX) {
-  return getMembershipDropPreview(rows, activeRowId, index, offsetX, design.supersetIndent)
-}
+const isMemberRow = (row) => row.kind === 'exercise' && row.group != null
+const isFooterRow = (row) => row.kind === 'supersetFooter'
 
-/** Hueco sobre la fila: entre unidades sí, entre la cabecera y sus miembros no (lo da el relleno). */
+/** Hueco sobre la fila: entre unidades sí, dentro de la tarjeta no (lo da el relleno). */
 function getRowGap(row, index) {
   if (index === 0) return 0
-  return row.kind === 'exercise' && row.group != null ? 0 : ROW_GAP
+  return isMemberRow(row) || isFooterRow(row) ? 0 : ROW_GAP
 }
 
-const isMemberRow = (row) => row.kind === 'exercise' && row.group != null
-
-/** Trozo de borde morado y relleno interior que pinta cada fila de una superserie. */
+/** Trozo de borde morado y relleno interior que pinta cada miembro y el pie de una superserie. */
 function getSegmentStyle(row) {
-  if (!isMemberRow(row)) return undefined
   const border = `1px solid ${colors.purple}`
+  if (isFooterRow(row)) {
+    return {
+      backgroundColor: colors.bgSecondary,
+      borderLeft: border,
+      borderRight: border,
+      borderBottom: border,
+      paddingBottom: CARD_PADDING,
+      borderBottomLeftRadius: 8,
+      borderBottomRightRadius: 8,
+    }
+  }
+  if (!isMemberRow(row)) return undefined
   return {
     backgroundColor: colors.bgSecondary,
     borderLeft: border,
     borderRight: border,
     padding: `${CARD_PADDING}px ${CARD_PADDING}px 0`,
-    ...(row.segment === 'end' ? {
-      borderBottom: border,
-      paddingBottom: CARD_PADDING,
-      borderBottomLeftRadius: 8,
-      borderBottomRightRadius: 8,
-    } : null),
   }
 }
 
 /**
- * The dragged row, painted as it will look once dropped: a slice of the purple card
- * (`dragPreview === 'superset'`) or flush. The card's own side padding is the indent, so nothing
- * is translated sideways. Only the sides change: the vertical space stays the resting one, because
- * a row that grew or shrank mid-drag would push every row below it.
+ * The gap the dragged row would drop into (`SortableList` with `withDropSlot`): a slice of the
+ * purple card when it would land in a superset, so the card's sides stay continuous around the gap,
+ * and empty otherwise. The list gives it the row's height; the slot only fills it.
  */
-function getDragPreviewStyle(row, index, dragPreview) {
-  const member = isMemberRow(row)
-  const style = {
-    paddingTop: getRowGap(row, index) + (member ? CARD_PADDING : 0),
-    // The resting last member closes the card: its bottom padding plus the 1px border.
-    paddingBottom: member && row.segment === 'end' ? CARD_PADDING + 1 : 0,
-  }
-  if (dragPreview !== 'superset') return style
+function getDropSlotStyle(dragPreview) {
+  if (dragPreview !== 'superset') return { height: '100%' }
   const border = `1px solid ${colors.purple}`
   return {
-    ...style,
+    height: '100%',
+    boxSizing: 'border-box',
     backgroundColor: colors.bgSecondary,
     borderLeft: border,
     borderRight: border,
-    paddingLeft: CARD_PADDING,
-    paddingRight: CARD_PADDING,
   }
+}
+
+/**
+ * The floating copy that follows the pointer: always flush, without the card's sides (it never
+ * lines up with them; the slot draws them). Same vertical space as at rest, so it does not jump
+ * away from the pointer when lifted.
+ */
+function getFloatingStyle(row, index) {
+  return { paddingTop: getRowGap(row, index) + (isMemberRow(row) ? CARD_PADDING : 0) }
 }
 
 function BlockSection({
@@ -139,8 +142,8 @@ function BlockSection({
     return [re.id, { labels, index: scope.index }]
   })), [routine_exercises, exerciseById, unitLabels])
 
-  const handleDrop = (_fromIndex, toIndex, activeRowId, offsetX) => {
-    const items = applyRowDrop(routine_exercises, rows, activeRowId, toIndex, offsetX, design.supersetIndent)
+  const handleDrop = (_fromIndex, toIndex, activeRowId) => {
+    const items = applyRowDrop(routine_exercises, rows, activeRowId, toIndex)
     if (items) onReorderBlock?.(items)
   }
 
@@ -176,19 +179,23 @@ function BlockSection({
           disabled={isReordering}
           collapseForDrag={collapseForDrag}
           resolveDrop={resolveExerciseRowDrop}
-          getDragPreview={getExerciseDragPreview}
+          getDragPreview={getMembershipDropPreview}
           onReorder={handleDrop}
-          renderItem={(row, { dragHandleProps, isDragging, index, dragPreview }) => {
+          withDropSlot
+          animateShift={false}
+          renderItem={(row, { dragHandleProps, isDragging, index, dragPreview, isDropSlot }) => {
+            if (isFooterRow(row)) return <div style={getSegmentStyle(row)} />
+            if (isDropSlot) return <div style={getDropSlotStyle(dragPreview)} />
+
             // Which rows get a handle is a shared rule; a row without one does not spend width on
             // a gesture that leads nowhere (`DragHandle` with null paints nothing).
             const handleProps = canDragExerciseRow(row, units.length) ? dragHandleProps : null
             const routineExercise = exerciseById.get(row.exerciseId)
             const reorderScope = reorderScopeById.get(row.exerciseId) ?? { labels: [], index: 0 }
-            const previewing = dragPreview != null
 
             return (
-              <div style={previewing ? getDragPreviewStyle(row, index, dragPreview) : { paddingTop: getRowGap(row, index) }}>
-                <div style={previewing ? undefined : getSegmentStyle(row)}>
+              <div style={isDragging ? getFloatingStyle(row, index) : { paddingTop: getRowGap(row, index) }}>
+                <div style={isDragging ? undefined : getSegmentStyle(row)}>
                   {row.kind === 'supersetHeader' ? (
                     <SupersetHeaderRow
                       label={formatSupersetLabel(row.group)}

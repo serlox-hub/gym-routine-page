@@ -16,10 +16,11 @@
 /**
  * Índice en el que caería el elemento arrastrado, dado cuánto se ha movido en vertical.
  *
- * Avanza mientras el arrastre supera la MITAD del alto del siguiente vecino, que es el punto en
- * el que el elemento ya tapa más de ese vecino que de su propio hueco. Se recorre vecino a
- * vecino en vez de dividir por un alto fijo porque las filas miden distinto (una tarjeta de día
- * desplegada es varias veces más alta que una plegada).
+ * Es el del elemento cuyo centro (en la disposición de antes del arrastre) queda más cerca del
+ * centro del arrastrado: la misma regla que `closestCenter` de `@dnd-kit` en web, para que un
+ * gesto caiga igual en las dos apps. Con "cruzar la mitad del vecino", una fila fina (el pie de
+ * una superserie, ~9px) se cruzaba con 5px de temblor; así hace falta la mitad de la suma de los
+ * dos semialtos. En un empate se queda donde está, y entre dos vecinos gana el de arriba.
  *
  * @param {number} fromIndex - Índice de partida del elemento arrastrado
  * @param {number} offsetY - Desplazamiento vertical acumulado (positivo = hacia abajo)
@@ -29,28 +30,50 @@
 export function getDropIndex(fromIndex, offsetY, itemHeights) {
   'worklet'
   if (!itemHeights || itemHeights.length === 0) return fromIndex
-  const lastIndex = itemHeights.length - 1
-  if (fromIndex < 0 || fromIndex > lastIndex) return fromIndex
+  if (fromIndex < 0 || fromIndex > itemHeights.length - 1) return fromIndex
 
+  const centers = []
+  let top = 0
+  for (let i = 0; i < itemHeights.length; i++) {
+    const height = itemHeights[i] || 0
+    centers.push(top + height / 2)
+    top += height
+  }
+
+  const dragged = centers[fromIndex] + offsetY
   let target = fromIndex
-  if (offsetY > 0) {
-    let remaining = offsetY
-    for (let i = fromIndex + 1; i <= lastIndex; i++) {
-      const height = itemHeights[i] || 0
-      if (remaining <= height / 2) break
+  let best = Math.abs(dragged - centers[fromIndex])
+  for (let i = 0; i < centers.length; i++) {
+    const distance = Math.abs(dragged - centers[i])
+    if (distance < best) {
       target = i
-      remaining -= height
-    }
-  } else if (offsetY < 0) {
-    let remaining = -offsetY
-    for (let i = fromIndex - 1; i >= 0; i--) {
-      const height = itemHeights[i] || 0
-      if (remaining <= height / 2) break
-      target = i
-      remaining -= height
+      best = distance
     }
   }
   return target
+}
+
+/**
+ * Distancia desde el principio de la lista hasta el hueco que abre el arrastrado en `toIndex`: la
+ * suma de los altos de los elementos que quedan por encima una vez colocado. Es donde se pinta lo
+ * que ocupa el hueco mientras la tarjeta viaja con el dedo.
+ *
+ * @param {number} fromIndex - Índice de partida del arrastrado
+ * @param {number} toIndex - Índice destino actual del arrastrado
+ * @param {number[]} itemHeights - Alto de cada elemento
+ * @returns {number} Desplazamiento en px desde arriba de la lista
+ */
+export function getDropSlotOffset(fromIndex, toIndex, itemHeights) {
+  'worklet'
+  if (!itemHeights || toIndex < 0) return 0
+  let offset = 0
+  let above = 0
+  for (let i = 0; i < itemHeights.length && above < toIndex; i++) {
+    if (i === fromIndex) continue
+    offset += itemHeights[i] || 0
+    above++
+  }
+  return offset
 }
 
 /**

@@ -140,6 +140,9 @@ test.describe('Join and leave a superset by drag', () => {
   // mid-drag moves the landing slot by one row, and here one row is the difference between leaving
   // the superset and landing somewhere else.
   test.use({ viewport: { width: 1280, height: 1000 } })
+  // Every test here edits the same seeded routine: in parallel (`fullyParallel`, the local default)
+  // one test's drag lands in the other's list.
+  test.describe.configure({ mode: 'serial' })
   test.beforeEach(() => restore(MEMBERSHIP_ROUTINE_NAME))
 
   test('an individual dropped between two members joins, and a member dropped between individuals leaves', async ({ page }) => {
@@ -169,6 +172,33 @@ test.describe('Join and leave a superset by drag', () => {
     await page.reload()
     await expandDay(page, MEMBERSHIP_DAY_NAME)
     await expect(exerciseNames(page)).toHaveText(left)
+    await expect(page.getByText('Superset A')).toHaveCount(1)
+  })
+
+  test('dropped on the last member it joins at the end, and the last member dragged past the footer leaves', async ({ page }) => {
+    const supabase = await signedInClient()
+    const { rows } = (await findSeededRoutine(supabase, MEMBERSHIP_ROUTINE_NAME))[MEMBERSHIP_DAY_NAME]
+    const groupOf = async (rowId) => {
+      const { data } = await supabase.from('routine_exercises').select('superset_group').eq('id', rowId).single()
+      return data.superset_group
+    }
+
+    await openDay(page, MEMBERSHIP_ROUTINE_NAME, MEMBERSHIP_DAY_NAME)
+
+    // Uno onto Tres, the last member: it lands right above the footer, last in the superset.
+    await dragHandleTo(page, exerciseHandle(page, 'E2E Uno'), await rowCenter(page, 'E2E Tres'))
+    const joinedAtEnd = ['E2E Dos', 'E2E Tres', 'E2E Uno', 'E2E Cuatro', 'E2E Cinco']
+    await expect(exerciseNames(page)).toHaveText(joinedAtEnd)
+    await expect.poll(() => groupOf(rows['E2E Uno'])).toBe(1)
+
+    // Uno, now the last member, moved just past the footer (a vertical move only): same order, out
+    // of the superset. The footer is the only thing between it and Cuatro.
+    const handleBox = await exerciseHandle(page, 'E2E Uno').boundingBox()
+    const unoBox = await exerciseRow(page, 'E2E Uno').boundingBox()
+    const handleY = handleBox.y + handleBox.height / 2
+    await dragHandleTo(page, exerciseHandle(page, 'E2E Uno'), handleY + (unoBox.y + unoBox.height + 5) - (unoBox.y + unoBox.height / 2))
+    await expect.poll(() => groupOf(rows['E2E Uno'])).toBeNull()
+    await expect(exerciseNames(page)).toHaveText(joinedAtEnd)
     await expect(page.getByText('Superset A')).toHaveCount(1)
   })
 })

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getDropIndex, getDragShift, getAutoScrollSpeed } from './dragReorder.js'
+import { getDropIndex, getDragShift, getDropSlotOffset, getAutoScrollSpeed } from './dragReorder.js'
 
 const HEIGHTS = [100, 100, 100, 100]
 
@@ -8,15 +8,15 @@ describe('getDropIndex', () => {
     expect(getDropIndex(1, 0, HEIGHTS)).toBe(1)
   })
 
-  it('no avanza mientras no se supere la mitad del vecino de abajo', () => {
+  it('no avanza mientras siga más cerca de su propio centro (empate incluido)', () => {
     expect(getDropIndex(1, 50, HEIGHTS)).toBe(1)
   })
 
-  it('avanza una posición al superar la mitad del vecino de abajo', () => {
+  it('avanza una posición al quedar más cerca del centro del vecino de abajo', () => {
     expect(getDropIndex(1, 51, HEIGHTS)).toBe(2)
   })
 
-  it('avanza dos posiciones al superar también la mitad del siguiente', () => {
+  it('avanza dos posiciones al quedar más cerca del centro del siguiente', () => {
     expect(getDropIndex(1, 151, HEIGHTS)).toBe(3)
   })
 
@@ -24,11 +24,11 @@ describe('getDropIndex', () => {
     expect(getDropIndex(1, 10000, HEIGHTS)).toBe(3)
   })
 
-  it('retrocede al superar la mitad del vecino de arriba', () => {
+  it('retrocede al quedar más cerca del centro del vecino de arriba', () => {
     expect(getDropIndex(2, -51, HEIGHTS)).toBe(1)
   })
 
-  it('no retrocede si no llega a la mitad del vecino de arriba', () => {
+  it('no retrocede en el empate con el vecino de arriba', () => {
     expect(getDropIndex(2, -50, HEIGHTS)).toBe(2)
   })
 
@@ -37,10 +37,19 @@ describe('getDropIndex', () => {
   })
 
   it('usa el alto real de cada vecino, no uno fijo', () => {
-    // El vecino de abajo mide 300: hace falta cruzar 150, no 50.
+    // El vecino de abajo mide 300: su centro está a 200 del propio, así que cambia pasado 100.
     const heights = [100, 100, 300, 100]
-    expect(getDropIndex(1, 140, heights)).toBe(1)
-    expect(getDropIndex(1, 160, heights)).toBe(2)
+    expect(getDropIndex(1, 99, heights)).toBe(1)
+    expect(getDropIndex(1, 101, heights)).toBe(2)
+  })
+
+  it('una fila fina no se cruza con un temblor', () => {
+    // El pie de una superserie (~9px) bajo una tarjeta de 72: con 5px sigue en su sitio, y hace
+    // falta pasar de (72 + 9) / 4 ≈ 20px.
+    const heights = [72, 9, 72]
+    expect(getDropIndex(0, 5, heights)).toBe(0)
+    expect(getDropIndex(0, 19, heights)).toBe(0)
+    expect(getDropIndex(0, 21, heights)).toBe(1)
   })
 
   it('devuelve el índice de partida con la lista vacía o sin alturas', () => {
@@ -55,8 +64,10 @@ describe('getDropIndex', () => {
   })
 
   it('trata como 0 el alto de un elemento todavía sin medir', () => {
+    // Sin alto, su centro es el borde entre 1 y 3 (200): cerca de ahí gana él.
     const heights = [100, 100, undefined, 100]
-    expect(getDropIndex(1, 10, heights)).toBe(2)
+    expect(getDropIndex(1, 10, heights)).toBe(1)
+    expect(getDropIndex(1, 30, heights)).toBe(2)
   })
 })
 
@@ -98,6 +109,30 @@ describe('getDragShift', () => {
   it('no se desplaza nada si el propio arrastrado todavía no tiene alto medido', () => {
     const heights = [100, undefined, 100, 100]
     expect(getDragShift(2, 1, 3, heights)).toBe(0)
+  })
+})
+
+describe('getDropSlotOffset', () => {
+  const heights = [10, 20, 30, 40]
+
+  it('sin moverse, el hueco es el sitio de partida', () => {
+    expect(getDropSlotOffset(0, 0, heights)).toBe(0)
+    expect(getDropSlotOffset(2, 2, heights)).toBe(30)
+  })
+
+  it('hacia abajo, el hueco queda bajo los que pasa (sin contar su propio alto)', () => {
+    // Desde 1 hasta 3: por encima quedan 0, 2 y 3.
+    expect(getDropSlotOffset(1, 3, heights)).toBe(10 + 30 + 40)
+  })
+
+  it('hacia arriba, el hueco queda bajo los que siguen por encima', () => {
+    expect(getDropSlotOffset(3, 1, heights)).toBe(10)
+    expect(getDropSlotOffset(3, 0, heights)).toBe(0)
+  })
+
+  it('sin altos o con destino negativo: 0', () => {
+    expect(getDropSlotOffset(0, 2, null)).toBe(0)
+    expect(getDropSlotOffset(0, -1, heights)).toBe(0)
   })
 })
 

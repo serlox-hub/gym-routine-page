@@ -348,22 +348,24 @@ export function placeInSuperset(exercises, exerciseId, group, targetIndex, first
 
 /**
  * @typedef {object} ExerciseRow
- * @property {string} id - `'ex-<exerciseId>'` | `'ss-<group>-<firstMemberId>'` (único por tirada:
- *   un grupo ya partido pinta dos cabeceras)
- * @property {'exercise'|'supersetHeader'} kind
+ * @property {string} id - `'ex-<exerciseId>'` | `'ss-<group>-<firstMemberId>'` |
+ *   `'sf-<group>-<firstMemberId>'` (cabecera y pie, únicos por tirada: un grupo ya partido pinta dos)
+ * @property {'exercise'|'supersetHeader'|'supersetFooter'} kind
  * @property {number|null} exerciseId
  * @property {number|null} group - `superset_group` de la fila (null en un individual)
- * @property {'start'|'middle'|'end'|null} segment - Trozo de tarjeta morada que pinta la fila:
- *   la cabecera el borde de arriba, cada miembro los laterales, el último también el de abajo
  * @property {number} runSize - Miembros de su tirada (0 en un individual). Una tirada de UNO no
  *   pinta asa en su miembro: la cabecera de encima ya arrastra la tirada entera, que es ese mismo
  *   ejercicio, y así no hay un arrastre que separe la fila de su cabecera
- * @property {number|null} firstMemberId - Solo en la cabecera: desempata tiradas del mismo grupo
+ * @property {number|null} firstMemberId - Solo en la cabecera y el pie: desempata tiradas del mismo grupo
  */
 
 /**
- * Filas de un bloque, desde `getBlockUnits`: una cabecera por tirada consecutiva (como se pinta)
- * más una fila por ejercicio.
+ * Filas de un bloque, desde `getBlockUnits`: una cabecera y un pie por tirada consecutiva (como se
+ * pinta) más una fila por ejercicio.
+ *
+ * The footer is what lets a drag tell "last member of the superset" from "first row after it" with
+ * a vertical move only: without it both are the same slot. Dropped above the footer joins the run,
+ * below it stays out.
  *
  * @param {Array} exercises - Ejercicios de un bloque
  * @returns {ExerciseRow[]}
@@ -381,7 +383,6 @@ export function buildExerciseRows(exercises) {
         kind: 'exercise',
         exerciseId: unit.ids[0],
         group: null,
-        segment: null,
         runSize: 0,
         firstMemberId: null,
       })
@@ -393,7 +394,6 @@ export function buildExerciseRows(exercises) {
       kind: 'supersetHeader',
       exerciseId: null,
       group: unit.group,
-      segment: 'start',
       runSize: unit.ids.length,
       firstMemberId: unit.ids[0],
     })
@@ -403,11 +403,18 @@ export function buildExerciseRows(exercises) {
         kind: 'exercise',
         exerciseId: unit.ids[j],
         group: unit.group,
-        segment: j === unit.ids.length - 1 ? 'end' : 'middle',
         runSize: unit.ids.length,
         firstMemberId: null,
       })
     }
+    rows.push({
+      id: 'sf-' + unit.group + '-' + unit.ids[0],
+      kind: 'supersetFooter',
+      exerciseId: null,
+      group: unit.group,
+      runSize: unit.ids.length,
+      firstMemberId: unit.ids[0],
+    })
   }
 
   return rows
@@ -417,7 +424,7 @@ export function buildExerciseRows(exercises) {
  * Whether a row gets a drag handle. A member of a run of more than one always does, even when that
  * run is the block's only unit: it can move within the run or leave it. A header or an individual
  * only when the block has another unit to move past. The member of a run of ONE never does: the
- * header above it already drags that same run.
+ * header above it already drags that same run. A footer never does: it only closes the card.
  *
  * @param {ExerciseRow} row
  * @param {number} unitCount - Units in the block (`getBlockUnits(...).length`)
@@ -425,7 +432,7 @@ export function buildExerciseRows(exercises) {
  */
 export function canDragExerciseRow(row, unitCount) {
   'worklet'
-  if (!row) return false
+  if (!row || row.kind === 'supersetFooter') return false
   if (row.kind === 'exercise' && row.group != null) return row.runSize > 1
   return unitCount >= 2
 }
@@ -477,9 +484,9 @@ function canChangeMembership(row) {
 /**
  * Lista de filas durante un arrastre: la unidad arrastrada se pliega a su cabecera.
  *
- * Solo la cabecera pliega. Un individual y un miembro ya son una fila, así que la lista viaja
- * igual. El plegado nunca cambia el índice de la cabecera arrastrada (sus miembros van detrás),
- * y eso es lo que permite plegar a mitad de gesto sin reconstruirlo.
+ * Solo la cabecera pliega, con sus miembros y su pie. Un individual y un miembro ya son una fila,
+ * así que la lista viaja igual. El plegado nunca cambia el índice de la cabecera arrastrada (sus
+ * miembros van detrás), y eso es lo que permite plegar a mitad de gesto sin reconstruirlo.
  *
  * @param {ExerciseRow[]} rows
  * @param {string} activeRowId
@@ -492,7 +499,8 @@ export function collapseForDrag(rows, activeRowId) {
   const activeIndex = findRowIndex(rows, activeRowId)
   if (activeIndex === -1 || rows[activeIndex].kind !== 'supersetHeader') return rows.slice()
 
-  const runEnd = findRunEnd(rows, activeIndex)
+  let runEnd = findRunEnd(rows, activeIndex)
+  if (runEnd + 1 < rows.length && rows[runEnd + 1].kind === 'supersetFooter') runEnd++
   const result = []
   for (let i = 0; i < rows.length; i++) {
     if (i > activeIndex && i <= runEnd) continue
@@ -538,8 +546,8 @@ function getValidDropIndices(rows, activeIndex) {
  * cercana, que es la que tienen que previsualizar las dos apps: soltar en un hueco imposible
  * (dentro de otra tirada, o fuera de la propia) aterriza en el borde válido más próximo.
  *
- * With `allowMembershipChange`, an exercise can land in ANY slot: inside a run it joins it, and
- * between units it stays individual or joins at the edge (`resolveMembershipDrop`). It does not
+ * With `allowMembershipChange`, an exercise can land in ANY slot: inside a run (above its footer)
+ * it joins it, and between units it stays individual (`resolveMembershipDrop`). It does not
  * affect a header, which moves its whole run. The list and the save must use the SAME value: with
  * the flag on only for the save, the preview would clamp the member back into its run and the save
  * would put it outside.
@@ -622,68 +630,45 @@ export function rowDropToMove(collapsedRows, activeRowId, index) {
 }
 
 /**
- * What happens to membership if the dragged row lands at `index`, from its two neighbours in the
- * list without it:
+ * What happens to membership if the dragged row lands at `index`, from the row right above it in
+ * the list without it:
  *
- * | Previous row          | Next row                               | Result               |
- * |-----------------------|----------------------------------------|----------------------|
- * | Header of G           | Member of G                            | `join` (at the start)|
- * | Member of G           | Member of G                            | `join`               |
- * | Last member of G      | Header, individual or end of the block | edge, by `offsetX`   |
- * | Anything else         |                                        | `single`             |
+ * | Row above                      | Result                            |
+ * |--------------------------------|-----------------------------------|
+ * | Header of G, or a member of G  | `join` G (above G's footer)       |
+ * | Footer, individual, or nothing | `single`                          |
  *
- * At an EDGE the horizontal offset decides, counted from the depth the row is at (the "projected
- * depth" pattern of tree lists): an individual, or a member of ANOTHER run, joins G when dragged at
- * least `indent` to the right; a member of G itself stays in it unless dragged `indent` to the
- * left. That way grabbing the last member and dropping it where it was does not take it out.
+ * Only the vertical position decides. The footer is what separates "last in the superset" from
+ * "first after it", so a member leaves by being dropped below its footer, also when the superset
+ * is the last unit of the block.
  *
  * @param {ExerciseRow[]} collapsedRows - Rows as they are during the drag
  * @param {string} activeRowId
  * @param {number} index - Final position already vetted by `resolveRowDrop` with membership allowed
- * @param {number} offsetX - Horizontal drag offset in px (positive = to the right)
- * @param {number} indent - Distance that decides the edge (`design.supersetIndent`)
  * @returns {{ index: number, group: number|null, firstMemberId: number|null,
- *   kind: 'join'|'edge-join'|'edge-single'|'single' }|null} null when the row cannot change
- *   superset (a header, the member of a run of one, or an unknown id)
+ *   kind: 'join'|'single' }|null} null when the row cannot change superset (a header, the member of
+ *   a run of one, or an unknown id)
  */
-export function resolveMembershipDrop(collapsedRows, activeRowId, index, offsetX, indent) {
+export function resolveMembershipDrop(collapsedRows, activeRowId, index) {
   'worklet'
   if (!collapsedRows || collapsedRows.length === 0) return null
 
   const activeIndex = findRowIndex(collapsedRows, activeRowId)
   if (activeIndex === -1 || !canChangeMembership(collapsedRows[activeIndex])) return null
 
-  const active = collapsedRows[activeIndex]
   const remainder = removeAt(collapsedRows, activeIndex)
   const position = index == null ? activeIndex : Math.max(0, Math.min(remainder.length, index))
   const previous = position > 0 ? remainder[position - 1] : null
-  const next = position < remainder.length ? remainder[position] : null
-  const previousIsMember = previous != null && previous.kind === 'exercise' && previous.group != null
-  const nextIsMember = next != null && next.kind === 'exercise' && next.group != null
 
-  // Header of the previous row's run. A member can only follow its header or another member of
-  // ITS run (every run starts with its header), so the next member is enough to tell which run.
+  // A member can only follow its header or another member of ITS run (every run starts with its
+  // header), so walking back to the first header finds the run.
   let headerIndex = -1
   if (previous != null && previous.kind === 'supersetHeader') headerIndex = position - 1
-  else if (previousIsMember) headerIndex = findRunHeaderIndex(remainder, position - 1)
-  const header = headerIndex === -1 ? null : remainder[headerIndex]
+  else if (previous != null && previous.kind === 'exercise' && previous.group != null) headerIndex = findRunHeaderIndex(remainder, position - 1)
 
-  if (header && nextIsMember) {
-    return { index: position, group: header.group, firstMemberId: header.firstMemberId, kind: 'join' }
-  }
-
-  if (header && previousIsMember) {
-    const ownHeaderIndex = active.group != null ? findRunHeaderIndex(collapsedRows, activeIndex) : -1
-    const isOwnRun = ownHeaderIndex !== -1 && collapsedRows[ownHeaderIndex].id === header.id
-    const dx = offsetX || 0
-    let joins = isOwnRun
-    if (indent > 0) joins = isOwnRun ? dx > -indent : dx >= indent
-    return joins
-      ? { index: position, group: header.group, firstMemberId: header.firstMemberId, kind: 'edge-join' }
-      : { index: position, group: null, firstMemberId: null, kind: 'edge-single' }
-  }
-
-  return { index: position, group: null, firstMemberId: null, kind: 'single' }
+  if (headerIndex === -1) return { index: position, group: null, firstMemberId: null, kind: 'single' }
+  const header = remainder[headerIndex]
+  return { index: position, group: header.group, firstMemberId: header.firstMemberId, kind: 'join' }
 }
 
 /**
@@ -695,14 +680,12 @@ export function resolveMembershipDrop(collapsedRows, activeRowId, index, offsetX
  * @param {ExerciseRow[]} collapsedRows
  * @param {string} activeRowId
  * @param {number} index - Final position, already vetted
- * @param {number} offsetX
- * @param {number} indent
  * @returns {'superset'|'single'|null} null when the row cannot change superset (it keeps its
  *   resting look)
  */
-export function getMembershipDropPreview(collapsedRows, activeRowId, index, offsetX, indent) {
+export function getMembershipDropPreview(collapsedRows, activeRowId, index) {
   'worklet'
-  const drop = resolveMembershipDrop(collapsedRows, activeRowId, index, offsetX, indent)
+  const drop = resolveMembershipDrop(collapsedRows, activeRowId, index)
   if (!drop) return null
   return drop.group != null ? 'superset' : 'single'
 }
@@ -773,12 +756,10 @@ export function membershipDropToPlacement(collapsedRows, activeRowId, drop) {
  * @param {ExerciseRow[]} rows - The block's rows, NOT collapsed (`buildExerciseRows`)
  * @param {string} activeRowId
  * @param {number} index - Final position where it was dropped, counted in the collapsed list
- * @param {number} [offsetX] - Horizontal drag offset in px
- * @param {number} [indent] - `design.supersetIndent`
  * @returns {Array<{ id: number, supersetGroup?: number|null }>|null} The block in its new order,
  *   or null if there is nothing to write
  */
-export function applyRowDrop(exercises, rows, activeRowId, index, offsetX, indent) {
+export function applyRowDrop(exercises, rows, activeRowId, index) {
   'worklet'
   const collapsed = collapseForDrag(rows, activeRowId)
   const activeIndex = findRowIndex(collapsed, activeRowId)
@@ -786,7 +767,7 @@ export function applyRowDrop(exercises, rows, activeRowId, index, offsetX, inden
 
   if (canChangeMembership(collapsed[activeIndex])) {
     const vetted = resolveRowDrop(collapsed, activeRowId, index, true)
-    const drop = resolveMembershipDrop(collapsed, activeRowId, vetted, offsetX, indent)
+    const drop = resolveMembershipDrop(collapsed, activeRowId, vetted)
     const placement = membershipDropToPlacement(collapsed, activeRowId, drop)
     if (!placement) return null
     if (placement.changesMembership) {
