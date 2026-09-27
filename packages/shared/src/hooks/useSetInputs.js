@@ -3,6 +3,7 @@ import { useWorkoutStore, getWorkoutStore } from './_stores.js'
 import { useUpdateCompletedSet, useUpdateSetDetails } from './useCompletedSets.js'
 import {
   createSetKey,
+  getMissingSetFields,
   isSetDataValid,
   buildCompletedSetData,
   getSetInitialInputValues,
@@ -260,7 +261,8 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     setLevelState(current => (current === '' ? levelTarget : current))
   }, [levelTarget, previousLoaded, previousSet, setData, cachedData])
 
-  const isValid = () => isSetDataValid(trackedFields, { weight, reps, time, distance, calories, level, pace })
+  const getMissingFields = () => getMissingSetFields(trackedFields, { weight, reps, time, distance, calories, level, pace })
+  const isValid = () => getMissingFields().length === 0
   // El objetivo de la rutina se pinta como placeholder de SU columna (la del campo objetivo), no
   // solo en la de reps: en un cardio "20min" es la pista de la columna de tiempo.
   const targetPlaceholder = formatSetTargetPlaceholder(target)
@@ -341,6 +343,7 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     setData,
     cachedData,
     isValid,
+    getMissingFields,
     targetPlaceholder,
     targetField: resolvedTargetField,
     progressableValue,

@@ -44,6 +44,7 @@
   },
   "set": {
     "complete": "Complete set",
+    "fillToComplete": "Enter {{fields}} to complete the set",
     "unmark": "Unmark set",
     "logSet": "LOG SET {{number}}",
     "removeLast": "Remove last",

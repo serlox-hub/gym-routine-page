@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import PrivateRoute from '@/components/Auth/PrivateRoute'
 import DevAutoLogin from '@/components/Auth/DevAutoLogin'
 import { ActiveSessionBanner, LoadingSpinner } from './components/ui/index.js'
@@ -7,6 +7,7 @@ import Toast from './components/ui/Toast.jsx'
 import BottomTabBar from './components/ui/BottomTabBar.jsx'
 import OfflineBanner from './components/ui/OfflineBanner.jsx'
 import { useAuth } from './hooks/useAuth.js'
+import { useIsTabBarVisible } from './hooks/useTabBar.js'
 import { colors } from './lib/styles.js'
 import { useRestoreActiveSession, useSyncPendingSets, useSyncPendingGymChange, useTimerEngine } from './hooks/useWorkout.js'
 import { useLanguageSync } from '@gym/shared'
@@ -77,16 +78,8 @@ function SessionRestorer() {
   return null
 }
 
-const HIDE_TAB_BAR_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/workout', '/preferences', '/gyms', '/admin', '/routine/']
-
 function ConditionalTabBar() {
-  const { isAuthenticated } = useAuth()
-  const location = useLocation()
-
-  if (!isAuthenticated) return null
-  if (HIDE_TAB_BAR_PATHS.some(p => location.pathname.startsWith(p))) return null
-
-  return <BottomTabBar />
+  return useIsTabBarVisible() ? <BottomTabBar /> : null
 }
 
 function App() {
