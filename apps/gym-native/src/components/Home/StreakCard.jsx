@@ -68,7 +68,7 @@ function PaginationDots({ current, min, max }) {
 }
 
 function StreakCard({ onScrubbingChange }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { width: screenWidth } = useWindowDimensions()
   const navigation = useNavigation()
   const goal = useTrainingGoal()
@@ -126,7 +126,7 @@ function StreakCard({ onScrubbingChange }) {
   }
 
   const { streak } = goal
-  const { chartData, chartMax, emptyBarValue, dateRangeLabel, progress, isRest, toggleViewedRest } = useViewedTrainingCycle(goal, cycleOffset)
+  const { chartData, chartMax, emptyBarValue, dateRangeLabel, progress, isRest, toggleViewedRest } = useViewedTrainingCycle(goal, cycleOffset, { translate: t, locale: i18n.language })
 
   const barIndexFromX = (x) => {
     const w = chartWidthRef.current

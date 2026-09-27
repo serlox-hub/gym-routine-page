@@ -1,9 +1,12 @@
 import { t, getCurrentLocale } from '../i18n/index.js'
 import { MAX_SESSION_DURATION_MINUTES } from './constants.js'
 
+export function toDateLocale(language) {
+  return language === 'en' ? 'en-US' : 'es-ES'
+}
+
 function getDateLocale() {
-  const lang = getCurrentLocale()
-  return lang === 'en' ? 'en-US' : 'es-ES'
+  return toDateLocale(getCurrentLocale())
 }
 
 export function formatFullDate(dateStr, locale) {

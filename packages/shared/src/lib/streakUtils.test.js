@@ -15,7 +15,13 @@ import {
   getCurrentCycleKey,
   getCurrentCycleDays,
   getCycleDateRange,
+  getWeekdayInitials,
 } from './streakUtils.js'
+import { i18n, initI18n } from '../i18n/index.js'
+
+initI18n()
+
+const LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
 // ============================================
 // LEGACY (semanas ISO)
@@ -356,12 +362,12 @@ describe('getCurrentCycleDays', () => {
   const now = new Date(2026, 2, 19, 12, 0) // jueves 19 marzo 2026
 
   it('devuelve 7 dias para cycleLength=7', () => {
-    const days = getCurrentCycleDays([], 7, now)
+    const days = getCurrentCycleDays([], 7, now, 'monday', new Date(), LABELS)
     expect(days).toHaveLength(7)
   })
 
   it('devuelve 10 dias para cycleLength=10', () => {
-    const days = getCurrentCycleDays([], 10, now)
+    const days = getCurrentCycleDays([], 10, now, 'monday', new Date(), LABELS)
     expect(days).toHaveLength(10)
   })
 
@@ -370,7 +376,7 @@ describe('getCurrentCycleDays', () => {
       { id: 's1', completed_at: '2026-03-16T10:00:00Z' }, // lunes
       { id: 's2', completed_at: '2026-03-19T10:00:00Z' }, // jueves (hoy)
     ]
-    const days = getCurrentCycleDays(sessions, 7, now, 'monday', now)
+    const days = getCurrentCycleDays(sessions, 7, now, 'monday', now, LABELS)
 
     expect(days[0].hasSession).toBe(true) // lunes
     expect(days[0].sessions[0].id).toBe('s1')
@@ -380,21 +386,23 @@ describe('getCurrentCycleDays', () => {
   })
 
   it('marca dias pasados y futuros', () => {
-    const days = getCurrentCycleDays([], 7, now, 'monday', now)
+    const days = getCurrentCycleDays([], 7, now, 'monday', now, LABELS)
     expect(days[0].isPast).toBe(true) // lunes
     expect(days[3].isToday).toBe(true) // jueves
     expect(days[3].isPast).toBe(false)
     expect(days[6].isPast).toBe(false) // domingo
   })
 
-  it('incluye labels de dia de la semana', () => {
-    const days = getCurrentCycleDays([], 7, now)
-    expect(days[0].label).toBe('L') // lunes
-    expect(days[6].label).toBe('D') // domingo
+  it('etiqueta cada dia con la inicial que le toca segun su dia de la semana', () => {
+    const labels = ['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sa']
+    const monday = getCurrentCycleDays([], 7, now, 'monday', now, labels)
+    const sunday = getCurrentCycleDays([], 7, now, 'sunday', now, labels)
+    expect(monday.map(d => d.label)).toEqual(['lu', 'ma', 'mi', 'ju', 'vi', 'sa', 'do'])
+    expect(sunday.map(d => d.label)).toEqual(['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sa'])
   })
 
   it('devuelve array vacio sin sesiones', () => {
-    const days = getCurrentCycleDays([], 7, now)
+    const days = getCurrentCycleDays([], 7, now, 'monday', new Date(), LABELS)
     expect(days.every(d => !d.hasSession)).toBe(true)
   })
 })
@@ -412,5 +420,15 @@ describe('getCycleDateRange', () => {
     const { start, end } = getCycleDateRange(7, now, 'sunday')
     expect(start.getDay()).toBe(0) // domingo
     expect(end.getDay()).toBe(6) // sabado
+  })
+})
+
+describe('getWeekdayInitials', () => {
+  it('en español, indexadas como Date.getDay() (0 = domingo)', () => {
+    expect(getWeekdayInitials(i18n.getFixedT('es'))).toEqual(['D', 'L', 'M', 'X', 'J', 'V', 'S'])
+  })
+
+  it('en inglés', () => {
+    expect(getWeekdayInitials(i18n.getFixedT('en'))).toEqual(['S', 'M', 'T', 'W', 'T', 'F', 'S'])
   })
 })

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { fetchCompletedSessionDates } from '../api/trainingGoalsApi.js'
-import { STREAK_CYCLE_LENGTH, countSessionsByCycle, calculateStreak, toggleRestCycle } from '../lib/streakUtils.js'
+import { STREAK_CYCLE_LENGTH, countSessionsByCycle, calculateStreak, toggleRestCycle, getWeekdayInitials } from '../lib/streakUtils.js'
 import { getViewedCycle } from '../lib/homeUtils.js'
 import { usePreference, useUpdatePreference } from './usePreferences.js'
 import { useUserId } from './useAuth.js'
@@ -111,14 +111,18 @@ export function useTrainingGoal() {
  * y la acción de marcarlo o desmarcarlo como descanso.
  * @param {ReturnType<typeof useTrainingGoal>} goal
  * @param {number} cycleOffset
+ * @param {{ translate: Function, locale: string }} i18n - `t` e `i18n.language` de useTranslation()
  */
-export function useViewedTrainingCycle(goal, cycleOffset) {
+export function useViewedTrainingCycle(goal, cycleOffset, { translate, locale }) {
   const updatePreference = useUpdatePreference()
   const { sessions, restCycles, daysPerCycle, weekStartDay } = goal
 
+  // `locale` en las deps: Home no se desmonta al cambiar de idioma, y sin él el
+  // widget seguiría en el anterior hasta que cambiase otra dependencia
+  const dayLabels = useMemo(() => getWeekdayInitials(translate), [translate, locale])
   const cycle = useMemo(
-    () => getViewedCycle({ sessions, restCycles, daysPerCycle, weekStartDay }, cycleOffset),
-    [sessions, restCycles, daysPerCycle, weekStartDay, cycleOffset]
+    () => getViewedCycle({ sessions, restCycles, daysPerCycle, weekStartDay }, cycleOffset, new Date(), { dayLabels, locale }),
+    [sessions, restCycles, daysPerCycle, weekStartDay, cycleOffset, dayLabels, locale]
   )
 
   const toggleViewedRest = () => {
