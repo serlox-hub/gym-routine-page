@@ -84,7 +84,8 @@
     "copySuccess": "Copied to clipboard",
     "somethingWrong": "Something went wrong",
     "unexpected": "An unexpected error occurred",
-    "videoLoad": "Error loading video"
+    "videoLoad": "Error loading video",
+    "preferenceSave": "Couldn't save the change"
   },
   "daysShort": [
     "Mon",

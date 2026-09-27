@@ -9,8 +9,15 @@ vi.mock('./useAuth.js', () => ({ useUserId: () => 'user-1' }))
 import { fetchPreferences, upsertPreference } from '../api/preferencesApi.js'
 import { usePreference, useUpdatePreference } from './usePreferences.js'
 import { QUERY_KEYS } from '../lib/constants.js'
+import { initNotifications } from '../notifications.js'
 
 const QUERY_KEY = [QUERY_KEYS.USER_PREFERENCES, 'user-1']
+
+function deferred() {
+  let resolve, reject
+  const promise = new Promise((res, rej) => { resolve = res; reject = rej })
+  return { promise, resolve, reject }
+}
 
 function setup() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -71,5 +78,156 @@ describe('useUpdatePreference', () => {
 
     expect(queryClient.getQueryData(QUERY_KEY)).toBeUndefined()
     expect(invalidate).toHaveBeenCalledWith({ queryKey: QUERY_KEY })
+  })
+})
+
+describe('useUpdatePreference — cola y update optimista (issue #99)', () => {
+  const showToast = vi.fn()
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    initNotifications(showToast)
+  })
+
+  // Lo mismo que el botón de descanso: lee la lista de la caché y guarda la lista entera
+  function renderRestWeeks(wrapper) {
+    return renderHook(() => ({
+      restWeeks: usePreference('training_rest_weeks').value,
+      update: useUpdatePreference(),
+    }), { wrapper })
+  }
+
+  function seed(queryClient, restWeeks) {
+    queryClient.setQueryData(QUERY_KEY, { training_rest_weeks: restWeeks })
+    fetchPreferences.mockResolvedValue([{ key: 'training_rest_weeks', value: restWeeks }])
+  }
+
+  it('cambia la caché al instante, antes de que responda el servidor', async () => {
+    const { queryClient, wrapper } = setup()
+    seed(queryClient, [])
+    const request = deferred()
+    upsertPreference.mockReturnValueOnce(request.promise)
+
+    const { result } = renderRestWeeks(wrapper)
+    act(() => { result.current.update.mutate({ key: 'training_rest_weeks', value: ['w1'] }) })
+
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['w1']))
+    await act(async () => { request.resolve({ key: 'training_rest_weeks', value: ['w1'] }) })
+  })
+
+  it('dos toques seguidos con la primera en vuelo: la segunda sale después y lleva las dos semanas', async () => {
+    const { queryClient, wrapper } = setup()
+    seed(queryClient, [])
+    const first = deferred()
+    const second = deferred()
+    upsertPreference.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+
+    const { result } = renderRestWeeks(wrapper)
+    act(() => { result.current.update.mutate({ key: 'training_rest_weeks', value: [...result.current.restWeeks, 'w1'] }) })
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['w1']))
+    act(() => { result.current.update.mutate({ key: 'training_rest_weeks', value: [...result.current.restWeeks, 'w2'] }) })
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['w1', 'w2']))
+
+    // En cola: la segunda no llega al servidor hasta que responde la primera
+    expect(upsertPreference).toHaveBeenCalledTimes(1)
+    fetchPreferences.mockResolvedValue([{ key: 'training_rest_weeks', value: ['w1', 'w2'] }])
+    await act(async () => { first.resolve({ key: 'training_rest_weeks', value: ['w1'] }) })
+    await waitFor(() => expect(upsertPreference).toHaveBeenCalledTimes(2))
+    expect(upsertPreference).toHaveBeenLastCalledWith({ userId: 'user-1', key: 'training_rest_weeks', value: ['w1', 'w2'] })
+    // El éxito de la primera no pisa el optimista de la segunda
+    expect(result.current.restWeeks).toEqual(['w1', 'w2'])
+
+    await act(async () => { second.resolve({ key: 'training_rest_weeks', value: ['w1', 'w2'] }) })
+    await waitFor(() => expect(result.current.update.isPending).toBe(false))
+    expect(result.current.restWeeks).toEqual(['w1', 'w2'])
+  })
+
+  it('si falla, la caché vuelve al valor anterior y avisa con un toast', async () => {
+    const { queryClient, wrapper } = setup()
+    seed(queryClient, ['w0'])
+    upsertPreference.mockRejectedValueOnce(new Error('network'))
+    // La recarga final no responde: lo que se comprueba es el rollback, no lo que trae el servidor
+    fetchPreferences.mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderRestWeeks(wrapper)
+    await act(async () => {
+      await result.current.update.mutateAsync({ key: 'training_rest_weeks', value: ['w0', 'w1'] }).catch(() => {})
+    })
+
+    expect(queryClient.getQueryData(QUERY_KEY).training_rest_weeks).toEqual(['w0'])
+    expect(showToast).toHaveBeenCalledWith('No se ha podido guardar el cambio', 'error')
+  })
+
+  it('sin caché, si falla la escritura no intenta deshacer nada pero sí avisa y recarga', async () => {
+    const { queryClient, wrapper } = setup()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    upsertPreference.mockRejectedValueOnce(new Error('network'))
+    fetchPreferences.mockResolvedValue([{ key: 'training_rest_weeks', value: ['servidor'] }])
+
+    const { result } = renderHook(() => useUpdatePreference(), { wrapper })
+    await act(async () => {
+      await result.current.mutateAsync({ key: 'training_rest_weeks', value: ['w1'] }).catch(() => {})
+    })
+
+    expect(queryClient.getQueryData(QUERY_KEY)).toBeUndefined()
+    expect(showToast).toHaveBeenCalledWith('No se ha podido guardar el cambio', 'error')
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: QUERY_KEY })
+  })
+
+  it('si falla la primera con la segunda ya pintada, el rollback no pisa la segunda', async () => {
+    const { queryClient, wrapper } = setup()
+    seed(queryClient, [])
+    const first = deferred()
+    const second = deferred()
+    upsertPreference.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+
+    const { result } = renderRestWeeks(wrapper)
+    act(() => { result.current.update.mutate({ key: 'training_rest_weeks', value: ['w1'] }) })
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['w1']))
+    act(() => { result.current.update.mutate({ key: 'training_rest_weeks', value: ['w1', 'w2'] }) })
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['w1', 'w2']))
+
+    // Con la segunda aún en vuelo no hay recarga que tape un rollback equivocado
+    await act(async () => { first.reject(new Error('network')) })
+    await waitFor(() => expect(showToast).toHaveBeenCalledTimes(1))
+    expect(result.current.restWeeks).toEqual(['w1', 'w2'])
+
+    fetchPreferences.mockResolvedValue([{ key: 'training_rest_weeks', value: ['w1', 'w2'] }])
+    await act(async () => { second.resolve({}) })
+  })
+
+  it('si falla la última de la cola, deshace su lista aunque haya otra escritura antes', async () => {
+    const { queryClient, wrapper } = setup()
+    seed(queryClient, [])
+    const first = deferred()
+    const second = deferred()
+    upsertPreference.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+
+    const { result } = renderRestWeeks(wrapper)
+    act(() => { result.current.update.mutate({ key: 'training_rest_weeks', value: ['w1'] }) })
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['w1']))
+    act(() => { result.current.update.mutate({ key: 'training_rest_weeks', value: ['w1', 'w2'] }) })
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['w1', 'w2']))
+
+    fetchPreferences.mockReturnValue(new Promise(() => {}))
+    await act(async () => { first.resolve({}) })
+    await waitFor(() => expect(upsertPreference).toHaveBeenCalledTimes(2))
+    await act(async () => { second.reject(new Error('network')) })
+
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['w1']))
+  })
+
+  it('al acabar la última escritura de la cola vuelve a pedir las preferencias al servidor', async () => {
+    const { queryClient, wrapper } = setup()
+    seed(queryClient, [])
+    upsertPreference.mockRejectedValueOnce(new Error('network'))
+    fetchPreferences.mockResolvedValue([{ key: 'training_rest_weeks', value: ['servidor'] }])
+
+    const { result } = renderRestWeeks(wrapper)
+    await act(async () => {
+      await result.current.update.mutateAsync({ key: 'training_rest_weeks', value: ['w1'] }).catch(() => {})
+    })
+
+    await waitFor(() => expect(result.current.restWeeks).toEqual(['servidor']))
   })
 })
