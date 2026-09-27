@@ -11,7 +11,7 @@ import {
   countSessionsByCycle,
   calculateStreak,
   getCurrentCycleProgress,
-  isCurrentCycleRest,
+  toggleRestCycle,
   getCurrentCycleKey,
   getCurrentCycleDays,
   getCycleDateRange,
@@ -325,20 +325,23 @@ describe('getCurrentCycleProgress', () => {
   })
 })
 
-describe('isCurrentCycleRest', () => {
-  const now = new Date('2026-03-19T12:00:00Z')
-  const key = getCycleKey(now, 7)
-
-  it('devuelve true si el ciclo esta marcado', () => {
-    expect(isCurrentCycleRest([key], 7, now)).toBe(true)
+describe('toggleRestCycle', () => {
+  it('añade el ciclo si no estaba marcado', () => {
+    expect(toggleRestCycle(['2026-03-09'], '2026-03-16')).toEqual(['2026-03-09', '2026-03-16'])
   })
 
-  it('devuelve false si no esta marcado', () => {
-    expect(isCurrentCycleRest(['2026-03-09'], 7, now)).toBe(false)
+  it('quita el ciclo si ya estaba marcado', () => {
+    expect(toggleRestCycle(['2026-03-09', '2026-03-16'], '2026-03-16')).toEqual(['2026-03-09'])
   })
 
-  it('devuelve false con array vacio', () => {
-    expect(isCurrentCycleRest([], 7, now)).toBe(false)
+  it('acepta null como lista vacía', () => {
+    expect(toggleRestCycle(null, '2026-03-16')).toEqual(['2026-03-16'])
+  })
+
+  it('no muta la lista de entrada', () => {
+    const input = ['2026-03-09']
+    toggleRestCycle(input, '2026-03-16')
+    expect(input).toEqual(['2026-03-09'])
   })
 })
 

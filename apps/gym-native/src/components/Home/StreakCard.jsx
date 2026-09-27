@@ -6,17 +6,11 @@ import LinearGradient from 'react-native-linear-gradient'
 import { Zap, Pause, X, Target, ChevronRight, Timer } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import {
-  useTrainingGoal, useUpdateTrainingGoal,
-  getCurrentCycleDays, getCurrentCycleProgress, getCurrentCycleKey,
-  countSessionsByCycle, getCycleDateRange, formatShortDate,
-  transformSessionsToCycleDurationChart,
-  calculateChartMetrics, getTodayDateStr,
+  useTrainingGoal, useViewedTrainingCycle, getTodayDateStr, getPaginationDots, STREAK_MAX_BACK,
 } from '@gym/shared'
 import { Card, Skeleton } from '../ui'
 import { colors, gradients, design } from '../../lib/styles'
 
-const CYCLE_LENGTH = 7
-const MAX_BACK = -12
 const SWIPE_THRESHOLD = design.swipeThreshold
 const LONG_PRESS_DELAY_MS = 250
 const TAP_MAX_DISTANCE_PX = 10
@@ -51,34 +45,10 @@ function SetupBanner() {
     </Pressable>
   )
 }
-const MAX_DOTS = 5
-
 function PaginationDots({ current, min, max }) {
-  const total = max - min + 1
-  const index = current - min
-
-  let windowStart
-  if (total <= MAX_DOTS) {
-    windowStart = 0
-  } else if (index <= 1) {
-    windowStart = 0
-  } else if (index >= total - 2) {
-    windowStart = total - MAX_DOTS
-  } else {
-    windowStart = index - 2
-  }
-
-  const visibleCount = Math.min(total, MAX_DOTS)
-
   return (
     <View className="flex-row items-center justify-center gap-1.5 mt-3">
-      {[...Array(visibleCount)].map((_, i) => {
-        const dotIndex = windowStart + i
-        const isActive = dotIndex === index
-        const distFromEdge = Math.min(i, visibleCount - 1 - i)
-        const isEdge = total > MAX_DOTS && distFromEdge === 0 && !isActive
-        const size = isActive ? 8 : isEdge ? 4 : 6
-
+      {getPaginationDots(current, min, max).map(({ dotIndex, isActive, isEdge, size }) => {
         return (
           <View
             key={dotIndex}
@@ -101,7 +71,6 @@ function StreakCard({ onScrubbingChange }) {
   const { width: screenWidth } = useWindowDimensions()
   const navigation = useNavigation()
   const goal = useTrainingGoal()
-  const updatePreference = useUpdateTrainingGoal()
   const [cycleOffset, setCycleOffset] = useState(0)
   const [focusedBarIndex, setFocusedBarIndex] = useState(-1)
   const translateX = useRef(new Animated.Value(0)).current
@@ -126,7 +95,7 @@ function StreakCard({ onScrubbingChange }) {
 
   const triggerSwipe = useCallback((direction) => {
     const newOffset = offsetRef.current + direction
-    if (newOffset < MAX_BACK || newOffset > 0) return
+    if (newOffset < STREAK_MAX_BACK || newOffset > 0) return
     isAnimating.current = true
     const slideOut = direction > 0 ? -screenWidth : screenWidth
     Animated.timing(translateX, { toValue: slideOut, duration: design.slideAnimDuration, useNativeDriver: true }).start(() => {
@@ -155,32 +124,8 @@ function StreakCard({ onScrubbingChange }) {
     triggerSwipe(diff > 0 ? -1 : 1)
   }
 
-  const { streak, restCycles = [], sessions = [], daysPerCycle, weekStartDay = 'monday' } = goal.isConfigured ? goal : {}
-  const referenceDate = useMemo(() => {
-    const d = new Date()
-    d.setDate(d.getDate() + cycleOffset * CYCLE_LENGTH)
-    return d
-  }, [cycleOffset])
-
-  const sessionsByCycle = useMemo(
-    () => sessions.length ? countSessionsByCycle(sessions, CYCLE_LENGTH, weekStartDay) : {},
-    [sessions, weekStartDay]
-  )
-
-  const viewedCycleDays = useMemo(
-    () => getCurrentCycleDays(sessions, CYCLE_LENGTH, referenceDate, weekStartDay),
-    [sessions, referenceDate, weekStartDay]
-  )
-
-  const chartData = useMemo(
-    () => transformSessionsToCycleDurationChart(viewedCycleDays, sessions),
-    [viewedCycleDays, sessions]
-  )
-
-  const dateRangeLabel = useMemo(() => {
-    const { start, end } = getCycleDateRange(CYCLE_LENGTH, referenceDate, weekStartDay)
-    return `${formatShortDate(start)} – ${formatShortDate(end)}`
-  }, [referenceDate, weekStartDay])
+  const { streak } = goal
+  const { chartData, chartMax, emptyBarValue, dateRangeLabel, progress, isRest, toggleViewedRest } = useViewedTrainingCycle(goal, cycleOffset)
 
   const barIndexFromX = (x) => {
     const w = chartWidthRef.current
@@ -265,22 +210,10 @@ function StreakCard({ onScrubbingChange }) {
   }
   const showStreakInfo = goal.isConfigured && goal.showWidget
 
-  const viewedCycleKey = getCurrentCycleKey(CYCLE_LENGTH, referenceDate, weekStartDay)
-  const viewedProgress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, CYCLE_LENGTH, referenceDate, weekStartDay)
-  const viewedIsRest = restCycles.includes(viewedCycleKey)
-
-  const handleToggleRestCycle = () => {
-    const newRestCycles = viewedIsRest
-      ? restCycles.filter(k => k !== viewedCycleKey)
-      : [...restCycles, viewedCycleKey]
-    updatePreference.mutate({ key: 'training_rest_weeks', value: newRestCycles })
-  }
-
   const todayStr = getTodayDateStr()
-  const { chartMax, emptyBarValue } = calculateChartMetrics(chartData)
 
   const barData = chartData.map(d => {
-    const showLime = !viewedIsRest && d.durationMinutes > 0
+    const showLime = !isRest && d.durationMinutes > 0
     return {
       value: d.durationMinutes > 0 ? d.durationMinutes : emptyBarValue,
       label: d.label,
@@ -317,16 +250,16 @@ function StreakCard({ onScrubbingChange }) {
               </Text>
             </View>
             <Pressable
-              onPress={handleToggleRestCycle}
+              onPress={toggleViewedRest}
               className="flex-row items-center gap-1 px-3 py-1.5 rounded-full"
               style={{ borderWidth: 1, borderColor: colors.border }}
             >
-              {viewedIsRest
+              {isRest
                 ? <X size={12} color={colors.textSecondary} />
                 : <Pause size={12} color={colors.textSecondary} />
               }
               <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-                {viewedIsRest ? t('common:preferences.removeRest') : t('common:preferences.rest')}
+                {isRest ? t('common:preferences.removeRest') : t('common:preferences.rest')}
               </Text>
             </Pressable>
           </View>
@@ -341,11 +274,11 @@ function StreakCard({ onScrubbingChange }) {
           {showStreakInfo && (<>
           {/* Progress */}
           <View className="flex-row items-center gap-3 mb-3">
-            <Text style={{ color: viewedIsRest ? colors.textMuted : colors.textPrimary, fontSize: design.progressLabelSize, fontWeight: '800', letterSpacing: -1 }}>
-              {viewedIsRest ? '—' : `${viewedProgress.completed}/${viewedProgress.target}`}
+            <Text style={{ color: isRest ? colors.textMuted : colors.textPrimary, fontSize: design.progressLabelSize, fontWeight: '800', letterSpacing: -1 }}>
+              {isRest ? '—' : `${progress.completed}/${progress.target}`}
             </Text>
             <View className="flex-1 rounded-full overflow-hidden" style={{ backgroundColor: colors.borderSubtle, height: design.progressBarHeight }}>
-              {!viewedIsRest && (
+              {!isRest && (
                 <LinearGradient
                   colors={gradients.lime}
                   start={{ x: 0, y: 0 }}
@@ -353,13 +286,13 @@ function StreakCard({ onScrubbingChange }) {
                   style={{
                     height: '100%',
                     borderRadius: 999,
-                    width: `${Math.min((viewedProgress.completed / viewedProgress.target) * 100, 100)}%`,
+                    width: `${progress.percent}%`,
                   }}
                 />
               )}
             </View>
             <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500' }}>
-              {viewedIsRest ? t('common:home.paused') : t('common:home.days')}
+              {isRest ? t('common:home.paused') : t('common:home.days')}
             </Text>
           </View>
           </>)}
@@ -400,7 +333,7 @@ function StreakCard({ onScrubbingChange }) {
               hideRules
               noOfSections={3}
               adjustToWidth
-              showGradient={!viewedIsRest}
+              showGradient={!isRest}
               focusedBarIndex={focusedBarIndex}
               renderTooltip={(item) => {
                 if (!item.durationMinutes) return null
@@ -415,7 +348,7 @@ function StreakCard({ onScrubbingChange }) {
         </Animated.View>
 
         {/* Dot pagination */}
-        <PaginationDots current={cycleOffset} min={MAX_BACK} max={0} />
+        <PaginationDots current={cycleOffset} min={STREAK_MAX_BACK} max={0} />
       </Card>
     </View>
   )

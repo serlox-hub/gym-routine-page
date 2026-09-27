@@ -2,6 +2,12 @@
  * Utilidades para la pantalla Home rediseñada.
  */
 
+import {
+  STREAK_CYCLE_LENGTH, countSessionsByCycle, getCurrentCycleDays, getCurrentCycleKey,
+  getCurrentCycleProgress, getCycleDateRange,
+} from './streakUtils.js'
+import { formatShortDate } from './dateUtils.js'
+
 // ============================================
 // GREETING
 // ============================================
@@ -72,6 +78,82 @@ export function transformSessionsToCycleDurationChart(cycleDays, sessions) {
     dateStr: day.dateStr,
     hasSession: day.hasSession,
   }))
+}
+
+// ============================================
+// STREAK CARD
+// ============================================
+
+// Cuántos ciclos hacia atrás deja deslizar el widget de racha
+export const STREAK_MAX_BACK = -12
+
+/**
+ * Datos del ciclo que muestra el widget de racha, desplazado `cycleOffset` ciclos
+ * desde el actual (negativo = pasado). Web y native lo pintan igual; cada app solo
+ * pone el estilo de las barras.
+ *
+ * @param {{ sessions?: Array, restCycles?: string[], daysPerCycle?: number|null, weekStartDay?: string }} goal - De useTrainingGoal()
+ * @param {number} [cycleOffset]
+ * @param {Date} [now]
+ * @returns {{ cycleKey: string, chartData: Array, chartMax: number, emptyBarValue: number, dateRangeLabel: string, progress: { completed: number, target: number|null|undefined, isComplete: boolean, percent: number }, isRest: boolean }}
+ */
+export function getViewedCycle(goal, cycleOffset = 0, now = new Date()) {
+  const sessions = goal.sessions ?? []
+  const restCycles = goal.restCycles ?? []
+  const weekStartDay = goal.weekStartDay ?? 'monday'
+  const { daysPerCycle } = goal
+  const referenceDate = new Date(now)
+  referenceDate.setDate(referenceDate.getDate() + cycleOffset * STREAK_CYCLE_LENGTH)
+
+  const cycleKey = getCurrentCycleKey(STREAK_CYCLE_LENGTH, referenceDate, weekStartDay)
+  const cycleDays = getCurrentCycleDays(sessions, STREAK_CYCLE_LENGTH, referenceDate, weekStartDay, now)
+  const chartData = transformSessionsToCycleDurationChart(cycleDays, sessions)
+  const sessionsByCycle = countSessionsByCycle(sessions, STREAK_CYCLE_LENGTH, weekStartDay)
+  const { start, end } = getCycleDateRange(STREAK_CYCLE_LENGTH, referenceDate, weekStartDay)
+  const progress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, STREAK_CYCLE_LENGTH, referenceDate, weekStartDay)
+
+  return {
+    cycleKey,
+    chartData,
+    ...calculateChartMetrics(chartData),
+    dateRangeLabel: `${formatShortDate(start)} – ${formatShortDate(end)}`,
+    progress: { ...progress, percent: daysPerCycle ? Math.min((progress.completed / daysPerCycle) * 100, 100) : 0 },
+    isRest: restCycles.includes(cycleKey),
+  }
+}
+
+/**
+ * Puntos de paginación del widget de racha: como mucho `maxDots` visibles, en una
+ * ventana que sigue al punto activo; los extremos se encogen si hay más fuera.
+ *
+ * @param {number} current - Ciclo visto (entre min y max)
+ * @param {number} min
+ * @param {number} max
+ * @param {number} [maxDots]
+ * @returns {Array<{ dotIndex: number, isActive: boolean, isEdge: boolean, size: number }>}
+ */
+export function getPaginationDots(current, min, max, maxDots = 5) {
+  const total = max - min + 1
+  const index = current - min
+
+  let windowStart
+  if (total <= maxDots || index <= 1) {
+    windowStart = 0
+  } else if (index >= total - 2) {
+    windowStart = total - maxDots
+  } else {
+    windowStart = index - 2
+  }
+
+  const visibleCount = Math.min(total, maxDots)
+
+  return Array.from({ length: visibleCount }, (_, i) => {
+    const dotIndex = windowStart + i
+    const isActive = dotIndex === index
+    const distFromEdge = Math.min(i, visibleCount - 1 - i)
+    const isEdge = total > maxDots && distFromEdge === 0 && !isActive
+    return { dotIndex, isActive, isEdge, size: isActive ? 8 : isEdge ? 4 : 6 }
+  })
 }
 
 // ============================================
