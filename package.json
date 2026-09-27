@@ -1,6 +1,6 @@
 {
   "name": "gym-tracker-monorepo",
-  "version": "1.73.6",
+  "version": "1.73.7",
   "private": true,
   "workspaces": [
     "apps/*",
