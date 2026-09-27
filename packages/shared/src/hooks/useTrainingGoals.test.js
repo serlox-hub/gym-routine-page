@@ -7,14 +7,16 @@ vi.mock('../api/trainingGoalsApi.js', () => ({ fetchCompletedSessionDates: vi.fn
 vi.mock('./useAuth.js', () => ({ useUserId: () => 'user-1' }))
 vi.mock('./usePreferences.js', () => {
   const prefs = {}
-  const state = { loading: false }
+  const state = { loading: false, error: false }
   const mutate = vi.fn()
+  const refetch = vi.fn()
   return {
-    usePreference: (key) => ({ value: prefs[key] ?? null, isLoading: state.loading }),
+    usePreference: (key) => ({ value: prefs[key] ?? null, isLoading: state.loading, isError: state.error, refetch }),
     useUpdatePreference: () => ({ mutate }),
     _prefs: prefs,
     _state: state,
     _mutate: mutate,
+    _refetch: refetch,
   }
 })
 
@@ -34,6 +36,8 @@ describe('useTrainingGoal', () => {
     vi.clearAllMocks()
     for (const key of Object.keys(prefsMock._prefs)) delete prefsMock._prefs[key]
     prefsMock._state.loading = false
+    prefsMock._state.error = false
+    prefsMock._state.fetching = false
     fetchCompletedSessionDates.mockResolvedValue(SESSIONS)
   })
 
@@ -76,6 +80,76 @@ describe('useTrainingGoal', () => {
 
     await waitFor(() => expect(result.current.sessions).toEqual(SESSIONS))
     expect(result.current.isLoading).toBe(true)
+  })
+
+  // Issue #98: un fallo de red no se puede pintar como "sin objetivo" ni como "sin sesiones".
+  it('con error en preferencias no decide si hay objetivo, pero sigue dando las sesiones', async () => {
+    prefsMock._state.error = true
+
+    const { result } = renderHook(() => useTrainingGoal(), { wrapper: wrapper() })
+
+    await waitFor(() => expect(result.current.sessions).toEqual(SESSIONS))
+    expect(result.current.isConfigured).toBeNull()
+    expect(result.current.preferencesError).toBe(true)
+    expect(result.current.sessionsError).toBe(false)
+    expect(result.current.streak).toBeUndefined()
+
+    result.current.retry()
+    expect(prefsMock._refetch).toHaveBeenCalled()
+    // Las sesiones no fallaron: reintentar no las vuelve a pedir.
+    expect(fetchCompletedSessionDates).toHaveBeenCalledTimes(1)
+  })
+
+  it('con error en sesiones lo expone, y reintentar vuelve a pedirlas', async () => {
+    prefsMock._prefs.training_days_per_week = 3
+    fetchCompletedSessionDates.mockRejectedValueOnce(new Error('network'))
+
+    const { result } = renderHook(() => useTrainingGoal(), { wrapper: wrapper() })
+
+    await waitFor(() => expect(result.current.sessionsError).toBe(true))
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.isConfigured).toBe(true)
+    expect(result.current.preferencesError).toBe(false)
+
+    result.current.retry()
+    await waitFor(() => expect(result.current.sessionsError).toBe(false))
+    expect(result.current.sessions).toEqual(SESSIONS)
+    expect(fetchCompletedSessionDates).toHaveBeenCalledTimes(2)
+    expect(prefsMock._refetch).not.toHaveBeenCalled()
+  })
+
+  // El feedback de «Reintentar»: sin datos, TanStack v5 vuelve la query a `pending` al reintentar,
+  // así que la tarjeta pinta su skeleton en vez de quedarse igual.
+  it('mientras reintenta las sesiones, vuelve a estar cargando y ya no en error', async () => {
+    prefsMock._prefs.training_days_per_week = 3
+    fetchCompletedSessionDates.mockRejectedValueOnce(new Error('network'))
+
+    const { result } = renderHook(() => useTrainingGoal(), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.sessionsError).toBe(true))
+
+    let resolve
+    fetchCompletedSessionDates.mockReturnValueOnce(new Promise(r => { resolve = r }))
+    result.current.retry()
+
+    await waitFor(() => expect(result.current.isLoading).toBe(true))
+    expect(result.current.sessionsError).toBe(false)
+
+    resolve(SESSIONS)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.sessions).toEqual(SESSIONS)
+  })
+
+  it('si ya hay sesiones en caché, un refresco fallido no cuenta como error', async () => {
+    prefsMock._prefs.training_days_per_week = 3
+    fetchCompletedSessionDates.mockResolvedValueOnce(SESSIONS).mockRejectedValueOnce(new Error('network'))
+
+    const { result } = renderHook(() => useTrainingGoal(), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.sessions).toEqual(SESSIONS))
+
+    await result.current.refetchSessions()
+    await waitFor(() => expect(fetchCompletedSessionDates).toHaveBeenCalledTimes(2))
+    expect(result.current.sessionsError).toBe(false)
+    expect(result.current.sessions).toEqual(SESSIONS)
   })
 })
 
