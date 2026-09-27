@@ -3,6 +3,7 @@ import {
   buildExerciseConfigForm,
   buildExerciseConfigFormFromRow,
   buildReplaceExerciseForm,
+  getReplacedTarget,
   buildTargetFieldChangeForm,
   parseExerciseConfigForm,
   validateExerciseConfigForm,
@@ -217,12 +218,40 @@ describe('buildReplaceExerciseForm', () => {
     expect(buildReplaceExerciseForm(withLevel, ['level', 'time'], ['level', 'time']).level).toBe('8')
   })
 
+  it('con un ejercicio de solo peso conserva el objetivo y el formulario sigue siendo válido', () => {
+    const result = buildReplaceExerciseForm(fullForm, ['weight'], ['weight', 'reps'])
+    expect(result.reps).toBe('10-12')
+    expect(validateExerciseConfigForm(result, ['weight']).valid).toBe(true)
+  })
+
   it('limpia esfuerzo y notas del ejercicio saliente y conserva series y superserie', () => {
     const result = buildReplaceExerciseForm(fullForm, ['level', 'time'], ['weight', 'reps'])
     expect(result.rir).toBe('')
     expect(result.notes).toBe('')
     expect(result.series).toBe('4')
     expect(result.superset_group).toBe('1')
+  })
+})
+
+describe('getReplacedTarget', () => {
+  it('mismo tipo: conserva campo, valor y nivel', () => {
+    expect(getReplacedTarget({ targetField: 'time', reps: '20min' }, ['level', 'time'], ['level', 'time']))
+      .toEqual({ targetField: 'time', reps: '20min', keepLevel: true })
+  })
+
+  it('cambia lo que mide: default del nuevo y sin nivel', () => {
+    expect(getReplacedTarget({ targetField: 'reps', reps: '8-12' }, ['level', 'time'], ['weight', 'reps']))
+      .toEqual({ targetField: 'time', reps: '30s', keepLevel: false })
+  })
+
+  it('sin campo prescribible (solo peso) conserva el objetivo anterior, nunca vacío', () => {
+    const result = getReplacedTarget({ targetField: 'reps', reps: '8-12' }, ['weight'], ['weight', 'reps'])
+    expect(result.targetField).toBeNull()
+    expect(result.reps).toBe('8-12')
+  })
+
+  it('sin campos antiguos conocidos cuenta como cambio', () => {
+    expect(getReplacedTarget({ targetField: 'reps', reps: '8-12' }, ['level', 'time'], undefined).reps).toBe('30s')
   })
 })
 

@@ -13,7 +13,7 @@ import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
-import { getHaptics, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields } from '@gym/shared'
+import { getHaptics, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields, canApplyToRoutine } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 import { colors } from '../../lib/styles'
 
@@ -23,6 +23,8 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const [showHistory, setShowHistory] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [showReplace, setShowReplace] = useState(false)
+  // Ejercicio elegido para sustituir, a la espera de "solo hoy" / "también en la rutina".
+  const [pendingReplacement, setPendingReplacement] = useState(null)
   const [showReorder, setShowReorder] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
 
@@ -76,6 +78,18 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
     prevCompletedRef.current = isCompleted
   }, [isCompleted])
 
+  // Sin fila de rutina (extra, o su fila se borró) no hay nada que preguntar: solo la sesión.
+  // Cerrar el diálogo aborta: el reemplazo borra las series hechas y no se puede deshacer.
+  const handlePickReplacement = (newExercise) => {
+    setShowReplace(false)
+    if (canApplyToRoutine(sessionExercise)) setPendingReplacement(newExercise)
+    else onReplace(exerciseKey, newExercise, false)
+  }
+  const confirmReplacement = (applyToRoutine) => {
+    onReplace(exerciseKey, pendingReplacement, applyToRoutine)
+    setPendingReplacement(null)
+  }
+
   const menuItems = [
     { label: t('workout:history.title'), icon: Info, onPress: () => setShowHistory(true) },
     { label: t('common:buttons.edit'), icon: Pencil, onPress: () => setShowEdit(true) },
@@ -124,7 +138,8 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       )}
       <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} trackedFields={trackedFields} distanceUnit={distanceUnit} routineDayId={routineDayId} />
       <ConfirmModal isOpen={showRemoveConfirm} title={t('workout:exercise.removeFromSession')} message={t('workout:exercise.removeFromSessionConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
-      <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={(newExercise) => { setShowReplace(false); onReplace(exerciseKey, newExercise.id) }} />
+      <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={handlePickReplacement} />
+      <ConfirmModal isOpen={!!pendingReplacement} title={t('workout:exercise.replaceScopeTitle')} message={t('workout:exercise.replaceScopeMessage', { name: getExerciseName(exercise) })} cancelText={t('workout:exercise.replaceOnlyToday')} confirmText={t('workout:exercise.replaceAlsoRoutine')} variant="primary" onCancel={() => confirmReplacement(false)} onConfirm={() => confirmReplacement(true)} onDismiss={() => setPendingReplacement(null)} />
       {showReorder && <ReorderModal visible onClose={() => setShowReorder(false)} totalItems={reorder.labels.length} currentIndex={reorder.index} positionLabels={reorder.labels} onSelect={(i) => { reorder.onReorderTo(i); setShowReorder(false) }} />}
       <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />
     </>

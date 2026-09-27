@@ -23,8 +23,7 @@ vi.mock('../api/workoutApi.js', () => ({
   fetchSessionExerciseBlockName: vi.fn(),
   updateSessionExerciseSortOrder: vi.fn(),
   insertSessionExercise: vi.fn(),
-  deleteCompletedSetsByExercise: vi.fn(),
-  updateSessionExerciseExerciseId: vi.fn(),
+  replaceSessionExercise: vi.fn(),
   updateSessionExerciseFields: vi.fn(),
   deleteSessionExercise: vi.fn(),
   reorderSessionExercises: vi.fn(),
@@ -46,6 +45,7 @@ import {
   deleteSessionExercise,
   reorderSessionExercises,
   updateSessionExerciseFields,
+  replaceSessionExercise,
 } from '../api/workoutApi.js'
 import * as notificationsMock from '../notifications.js'
 import { QUERY_KEYS } from '../lib/constants.js'
@@ -56,6 +56,7 @@ import {
   useRemoveSessionExercise,
   useReorderSessionExercises,
   useUpdateSessionExerciseFields,
+  useReplaceSessionExercise,
 } from './useSessionExercises.js'
 
 function createWrapperWithClient() {
@@ -224,6 +225,20 @@ describe('useSessionExercises — mutations', () => {
     expect(notificationsMock._notifierShow).toHaveBeenCalledWith(expect.any(String), 'error')
   })
 
+  it('useUpdateSessionExerciseFields: refresca también los ejercicios de la rutina (ROUTINE_BLOCKS)', async () => {
+    updateSessionExerciseFields.mockResolvedValue(undefined)
+    const { wrapper, queryClient } = createWrapperWithClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const { result } = renderHook(() => useUpdateSessionExerciseFields(), { wrapper })
+
+    await act(async () => {
+      await result.current.mutateAsync({ sessionExerciseId: 'se-1', fields: { reps: '6-8' } })
+    })
+
+    const keys = invalidate.mock.calls.map(([arg]) => arg.queryKey[0])
+    expect(keys).toEqual(expect.arrayContaining([QUERY_KEYS.ROUTINE_BLOCKS, QUERY_KEYS.ROUTINE_DAY, QUERY_KEYS.ROUTINE_DAYS, QUERY_KEYS.ROUTINE_ALL_EXERCISES]))
+  })
+
   it('useReorderSessionExercises: aplica el orden al cache de forma optimista', async () => {
     const { wrapper, queryClient } = createWrapperWithClient()
     queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'], FAKE_SESSION_EXERCISES)
@@ -257,5 +272,83 @@ describe('useSessionExercises — mutations', () => {
     const cached = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])
     expect(cached.map(e => e.id)).toEqual(['se-1', 'se-2'])
     expect(notificationsMock._notifierShow).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+})
+
+describe('useReplaceSessionExercise', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const BENCH_ROW = {
+    id: 7, exercise_id: 1, routine_exercise_id: 30, is_extra: false,
+    target_field: 'reps', reps: '8-12', level: null, rir: 2, notes: 'codos',
+    exercise: { id: 1, tracked_fields: ['weight', 'reps'] },
+  }
+  const TREADMILL = { id: 2, tracked_fields: ['distance', 'time'] }
+
+  function seedSession(queryClient) {
+    queryClient.setQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'], [BENCH_ROW])
+  }
+
+  it('adapta el objetivo al ejercicio nuevo y manda el alcance al RPC', async () => {
+    replaceSessionExercise.mockResolvedValue(undefined)
+    const { wrapper, queryClient } = createWrapperWithClient()
+    seedSession(queryClient)
+    const { result } = renderHook(() => useReplaceSessionExercise(), { wrapper })
+
+    await act(async () => {
+      await result.current.mutateAsync({ sessionExerciseId: '7', newExercise: TREADMILL, applyToRoutine: false })
+    })
+
+    expect(replaceSessionExercise).toHaveBeenCalledWith({
+      sessionExerciseId: '7',
+      newExerciseId: 2,
+      fields: expect.objectContaining({ target_field: 'distance', reps: '5km', rir: null, notes: null, level: null }),
+      applyToRoutine: false,
+    })
+  })
+
+  it('con "también en la rutina" invalida las queries de la rutina', async () => {
+    replaceSessionExercise.mockResolvedValue(undefined)
+    const { wrapper, queryClient } = createWrapperWithClient()
+    seedSession(queryClient)
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const { result } = renderHook(() => useReplaceSessionExercise(), { wrapper })
+
+    await act(async () => {
+      await result.current.mutateAsync({ sessionExerciseId: 7, newExercise: TREADMILL, applyToRoutine: true })
+    })
+
+    const keys = invalidate.mock.calls.map(([arg]) => arg.queryKey[0])
+    expect(keys).toEqual(expect.arrayContaining([QUERY_KEYS.ROUTINE_BLOCKS, QUERY_KEYS.ROUTINE_DAY, QUERY_KEYS.ROUTINE_DAYS, QUERY_KEYS.ROUTINE_ALL_EXERCISES]))
+  })
+
+  it('con "solo hoy" no invalida la rutina', async () => {
+    replaceSessionExercise.mockResolvedValue(undefined)
+    const { wrapper, queryClient } = createWrapperWithClient()
+    seedSession(queryClient)
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const { result } = renderHook(() => useReplaceSessionExercise(), { wrapper })
+
+    await act(async () => {
+      await result.current.mutateAsync({ sessionExerciseId: 7, newExercise: TREADMILL, applyToRoutine: false })
+    })
+
+    const keys = invalidate.mock.calls.map(([arg]) => arg.queryKey[0])
+    expect(keys).not.toContain(QUERY_KEYS.ROUTINE_BLOCKS)
+    expect(keys).not.toContain(QUERY_KEYS.ROUTINE_DAY)
+  })
+
+  it('avisa si falla y no llama al RPC sin la fila en caché', async () => {
+    const { wrapper } = createWrapperWithClient()
+    const { result } = renderHook(() => useReplaceSessionExercise(), { wrapper })
+
+    await act(async () => {
+      await result.current.mutateAsync({ sessionExerciseId: 7, newExercise: TREADMILL, applyToRoutine: false }).catch(() => {})
+    })
+
+    expect(replaceSessionExercise).not.toHaveBeenCalled()
+    await waitFor(() => expect(notificationsMock._notifierShow).toHaveBeenCalledWith(expect.any(String), 'error'))
   })
 })

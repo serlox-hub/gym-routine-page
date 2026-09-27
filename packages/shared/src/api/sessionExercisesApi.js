@@ -117,26 +117,20 @@ export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, 
 // SESSION EXERCISES - MUTATIONS
 // ============================================
 
-export async function deleteCompletedSetsByExercise({ sessionId, sessionExerciseId }) {
-  const { error } = await getClient()
-    .from('completed_sets')
-    .delete()
-    .eq('session_id', sessionId)
-    .eq('session_exercise_id', sessionExerciseId)
+/**
+ * Sustituye el ejercicio de una fila de sesión en una sola transacción: borra sus series, cambia el
+ * ejercicio (también en su fila de rutina si `applyToRoutine`) y aplica el parche `fields`
+ * (`buildReplaceSessionExerciseFields`). Ver migración 064.
+ */
+export async function replaceSessionExercise({ sessionExerciseId, newExerciseId, fields, applyToRoutine }) {
+  const { error } = await getClient().rpc('replace_session_exercise', {
+    p_session_exercise_id: sessionExerciseId,
+    p_new_exercise_id: newExerciseId,
+    p_fields: fields,
+    p_apply_to_routine: applyToRoutine,
+  })
 
   if (error) throw error
-}
-
-export async function updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId }) {
-  const { data, error } = await getClient()
-    .from('session_exercises')
-    .update({ exercise_id: newExerciseId })
-    .eq('id', sessionExerciseId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
 }
 
 export async function addSessionExercise({ sessionId, exercise, series, target_field, reps, level, rir, rest_seconds, notes, superset_group }) {

@@ -9,8 +9,7 @@ import {
   fetchSessionExercisesSortOrder,
   updateSessionExerciseSortOrder,
   insertSessionExercise,
-  deleteCompletedSetsByExercise,
-  updateSessionExerciseExerciseId,
+  replaceSessionExercise,
   addSessionExercise,
   deleteSessionExercise,
   reorderSessionExercises,
@@ -194,53 +193,30 @@ describe('insertSessionExercise', () => {
 })
 
 // ============================================
-// deleteCompletedSetsByExercise
+// replaceSessionExercise
 // ============================================
 
-describe('deleteCompletedSetsByExercise', () => {
-  it('completes without throwing on success', async () => {
-    const mock = makeQueryMock({ data: null, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    await expect(deleteCompletedSetsByExercise({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-    })).resolves.toBeUndefined()
-  })
-
-  it('throws when Supabase returns error', async () => {
-    const mock = makeQueryMock({ data: null, error: new Error('delete sets failed') })
-    getClient.mockReturnValue({ from: () => mock })
-    await expect(deleteCompletedSetsByExercise({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-    })).rejects.toThrow('delete sets failed')
-  })
-})
-
-// ============================================
-// updateSessionExerciseExerciseId
-// ============================================
-
-describe('updateSessionExerciseExerciseId', () => {
-  it('returns updated record on success', async () => {
-    const updated = { id: 'se-1', exercise_id: 'ex-new' }
-    const mock = makeQueryMock({ data: updated, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    const result = await updateSessionExerciseExerciseId({
-      sessionExerciseId: 'se-1',
-      newExerciseId: 'ex-new',
+describe('replaceSessionExercise', () => {
+  it('llama al RPC atómico con el parche y el alcance', async () => {
+    const clientMock = makeClientMock()
+    getClient.mockReturnValue(clientMock)
+    const fields = { target_field: 'time', reps: '30s', level: null, rir: null, notes: null }
+    await replaceSessionExercise({ sessionExerciseId: 5, newExerciseId: 9, fields, applyToRoutine: true })
+    expect(clientMock.rpc).toHaveBeenCalledWith('replace_session_exercise', {
+      p_session_exercise_id: 5,
+      p_new_exercise_id: 9,
+      p_fields: fields,
+      p_apply_to_routine: true,
     })
-    expect(result).toEqual(updated)
-    expect(result.exercise_id).toBe('ex-new')
+    expect(clientMock.from).not.toHaveBeenCalled()
   })
 
-  it('throws when Supabase returns error', async () => {
-    const mock = makeQueryMock({ data: null, error: new Error('update exercise id failed') })
-    getClient.mockReturnValue({ from: () => mock })
-    await expect(updateSessionExerciseExerciseId({
-      sessionExerciseId: 'se-1',
-      newExerciseId: 'ex-new',
-    })).rejects.toThrow('update exercise id failed')
+  it('lanza si el RPC falla', async () => {
+    const clientMock = makeClientMock()
+    clientMock.rpc.mockResolvedValue({ data: null, error: new Error('exercise_not_available') })
+    getClient.mockReturnValue(clientMock)
+    await expect(replaceSessionExercise({ sessionExerciseId: 5, newExerciseId: 9, fields: {}, applyToRoutine: false }))
+      .rejects.toThrow('exercise_not_available')
   })
 })
 

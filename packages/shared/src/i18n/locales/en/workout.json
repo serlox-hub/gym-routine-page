@@ -121,7 +121,12 @@
     "removeFromSession": "Remove from session",
     "removeFromSessionConfirm": "Remove \"{{name}}\" from this session? It will still be available in the routine.",
     "updateFailed": "Could not save the exercise. Try again.",
-    "reorderFailed": "Could not reorder the exercise. Try again."
+    "reorderFailed": "Could not reorder the exercise. Try again.",
+    "replaceScopeTitle": "Just today or in the routine too?",
+    "replaceScopeMessage": "You can change \"{{name}}\" for this workout only, or keep the change in the routine.",
+    "replaceOnlyToday": "Just today",
+    "replaceAlsoRoutine": "In the routine too",
+    "replaceFailed": "Could not replace the exercise. Try again."
   },
   "summary": {
     "title": "Summary",
