@@ -196,31 +196,22 @@ export async function addSessionExercise({ sessionId, exercise, series, target_f
 export async function updateSessionExerciseFields(sessionExerciseId, fields, { propagateToRoutine = false } = {}) {
   const client = getClient()
 
-  if (!propagateToRoutine) {
-    const { error } = await client
-      .from('session_exercises')
-      .update(fields)
-      .eq('id', sessionExerciseId)
+  if (propagateToRoutine) {
+    // Sesión y rutina en una sola transacción: dos UPDATE sueltos dejaban la sesión editada y
+    // la rutina no si fallaba el segundo. Ver migración 063.
+    const { error } = await client.rpc('update_session_exercise_with_routine', {
+      p_session_exercise_id: sessionExerciseId,
+      p_fields: fields,
+    })
     if (error) throw error
     return
   }
 
-  const { data, error } = await client
+  const { error } = await client
     .from('session_exercises')
     .update(fields)
     .eq('id', sessionExerciseId)
-    .select('routine_exercise_id, is_extra')
-    .single()
-
   if (error) throw error
-
-  if (data?.routine_exercise_id && !data?.is_extra) {
-    const { error: routineErr } = await client
-      .from('routine_exercises')
-      .update(fields)
-      .eq('id', data.routine_exercise_id)
-    if (routineErr) throw routineErr
-  }
 }
 
 export async function deleteSessionExercise(sessionExerciseId) {

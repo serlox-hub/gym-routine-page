@@ -14,6 +14,7 @@ import {
   addSessionExercise,
   deleteSessionExercise,
   reorderSessionExercises,
+  updateSessionExerciseFields,
 } from './sessionExercisesApi.js'
 
 beforeEach(() => {
@@ -354,5 +355,43 @@ describe('reorderSessionExercises', () => {
     const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: new Error('rpc failed') }) }
     getClient.mockReturnValue(clientMock)
     await expect(reorderSessionExercises([{ id: 1 }, { id: 2 }])).rejects.toThrow('rpc failed')
+  })
+})
+
+// ============================================
+// updateSessionExerciseFields
+// ============================================
+
+describe('updateSessionExerciseFields', () => {
+  it('without propagation updates only session_exercises', async () => {
+    const clientMock = makeClientMock()
+    getClient.mockReturnValue(clientMock)
+    await updateSessionExerciseFields('se-1', { rir: null })
+    expect(clientMock.from).toHaveBeenCalledWith('session_exercises')
+    expect(clientMock.from).not.toHaveBeenCalledWith('routine_exercises')
+    expect(clientMock.rpc).not.toHaveBeenCalled()
+  })
+
+  it('with propagation goes through the atomic RPC and never writes tables directly', async () => {
+    const clientMock = makeClientMock()
+    getClient.mockReturnValue(clientMock)
+    await updateSessionExerciseFields('se-1', { reps: '8-10', notes: null }, { propagateToRoutine: true })
+    expect(clientMock.rpc).toHaveBeenCalledWith('update_session_exercise_with_routine', {
+      p_session_exercise_id: 'se-1',
+      p_fields: { reps: '8-10', notes: null },
+    })
+    expect(clientMock.from).not.toHaveBeenCalled()
+  })
+
+  it('throws when the RPC fails', async () => {
+    const clientMock = makeClientMock()
+    clientMock.rpc.mockResolvedValue({ data: null, error: new Error('rpc failed') })
+    getClient.mockReturnValue(clientMock)
+    await expect(updateSessionExerciseFields('se-1', { series: 4 }, { propagateToRoutine: true })).rejects.toThrow('rpc failed')
+  })
+
+  it('throws when the plain update fails', async () => {
+    getClient.mockReturnValue(makeClientMock({ session_exercises: { data: null, error: new Error('update failed') } }))
+    await expect(updateSessionExerciseFields('se-1', { series: 4 })).rejects.toThrow('update failed')
   })
 })
