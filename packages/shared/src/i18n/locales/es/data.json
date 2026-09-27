@@ -49,5 +49,14 @@
     "mev": "Mínimo efectivo",
     "mav": "Máximo adaptativo",
     "mrv": "Máximo recuperable"
+  },
+  "weekdayInitial": {
+    "0": "D",
+    "1": "L",
+    "2": "M",
+    "3": "X",
+    "4": "J",
+    "5": "V",
+    "6": "S"
   }
 }

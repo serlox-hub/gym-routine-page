@@ -6,7 +6,7 @@ import {
   STREAK_CYCLE_LENGTH, countSessionsByCycle, getCurrentCycleDays, getCurrentCycleKey,
   getCurrentCycleProgress, getCycleDateRange,
 } from './streakUtils.js'
-import { formatShortDate } from './dateUtils.js'
+import { formatShortDate, toDateLocale } from './dateUtils.js'
 
 // ============================================
 // GREETING
@@ -95,9 +95,10 @@ export const STREAK_MAX_BACK = -12
  * @param {{ sessions?: Array, restCycles?: string[], daysPerCycle?: number|null, weekStartDay?: string }} goal - De useTrainingGoal()
  * @param {number} [cycleOffset]
  * @param {Date} [now]
+ * @param {{ dayLabels: string[], locale: string }} format - Iniciales (getWeekdayInitials) e idioma de la app (`i18n.language`) para el rango de fechas
  * @returns {{ cycleKey: string, chartData: Array, chartMax: number, emptyBarValue: number, dateRangeLabel: string, progress: { completed: number, target: number|null|undefined, isComplete: boolean, percent: number }, isRest: boolean }}
  */
-export function getViewedCycle(goal, cycleOffset = 0, now = new Date()) {
+export function getViewedCycle(goal, cycleOffset = 0, now = new Date(), { dayLabels, locale }) {
   const sessions = goal.sessions ?? []
   const restCycles = goal.restCycles ?? []
   const weekStartDay = goal.weekStartDay ?? 'monday'
@@ -106,7 +107,7 @@ export function getViewedCycle(goal, cycleOffset = 0, now = new Date()) {
   referenceDate.setDate(referenceDate.getDate() + cycleOffset * STREAK_CYCLE_LENGTH)
 
   const cycleKey = getCurrentCycleKey(STREAK_CYCLE_LENGTH, referenceDate, weekStartDay)
-  const cycleDays = getCurrentCycleDays(sessions, STREAK_CYCLE_LENGTH, referenceDate, weekStartDay, now)
+  const cycleDays = getCurrentCycleDays(sessions, STREAK_CYCLE_LENGTH, referenceDate, weekStartDay, now, dayLabels)
   const chartData = transformSessionsToCycleDurationChart(cycleDays, sessions)
   const sessionsByCycle = countSessionsByCycle(sessions, STREAK_CYCLE_LENGTH, weekStartDay)
   const { start, end } = getCycleDateRange(STREAK_CYCLE_LENGTH, referenceDate, weekStartDay)
@@ -116,7 +117,7 @@ export function getViewedCycle(goal, cycleOffset = 0, now = new Date()) {
     cycleKey,
     chartData,
     ...calculateChartMetrics(chartData),
-    dateRangeLabel: `${formatShortDate(start)} – ${formatShortDate(end)}`,
+    dateRangeLabel: `${formatShortDate(start, toDateLocale(locale))} – ${formatShortDate(end, toDateLocale(locale))}`,
     progress: { ...progress, percent: daysPerCycle ? Math.min((progress.completed / daysPerCycle) * 100, 100) : 0 },
     isRest: restCycles.includes(cycleKey),
   }

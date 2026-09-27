@@ -23,6 +23,12 @@ vi.mock('./usePreferences.js', () => {
 import { fetchCompletedSessionDates } from '../api/trainingGoalsApi.js'
 import * as prefsMock from './usePreferences.js'
 import { useTrainingGoal, useViewedTrainingCycle } from './useTrainingGoals.js'
+import { i18n, initI18n } from '../i18n/index.js'
+
+initI18n()
+
+const ES = { translate: i18n.getFixedT('es'), locale: 'es' }
+const EN = { translate: i18n.getFixedT('en'), locale: 'en' }
 
 const SESSIONS = [{ id: 1, completed_at: '2026-09-21T10:00:00Z', duration_minutes: 60 }]
 
@@ -159,7 +165,7 @@ describe('useViewedTrainingCycle', () => {
   it('marcar descanso añade el ciclo visto a los que ya había', () => {
     const goal = { sessions: [], restCycles: ['2020-01-06'], daysPerCycle: 3, weekStartDay: 'monday' }
 
-    const { result } = renderHook(() => useViewedTrainingCycle(goal, 0))
+    const { result } = renderHook(() => useViewedTrainingCycle(goal, 0, ES))
     result.current.toggleViewedRest()
 
     expect(prefsMock._mutate).toHaveBeenCalledWith({
@@ -170,14 +176,26 @@ describe('useViewedTrainingCycle', () => {
 
   it('desmarcar descanso quita solo el ciclo visto', () => {
     const base = { sessions: [], restCycles: [], daysPerCycle: 3, weekStartDay: 'monday' }
-    const { result: probe } = renderHook(() => useViewedTrainingCycle(base, -1))
+    const { result: probe } = renderHook(() => useViewedTrainingCycle(base, -1, ES))
     const viewedKey = probe.current.cycleKey
     const goal = { ...base, restCycles: ['2020-01-06', viewedKey] }
 
-    const { result } = renderHook(() => useViewedTrainingCycle(goal, -1))
+    const { result } = renderHook(() => useViewedTrainingCycle(goal, -1, ES))
     expect(result.current.isRest).toBe(true)
     result.current.toggleViewedRest()
 
     expect(prefsMock._mutate).toHaveBeenLastCalledWith({ key: 'training_rest_weeks', value: ['2020-01-06'] })
+  })
+
+  it('al cambiar de idioma sin desmontar, cambian las iniciales y el rango de fechas', () => {
+    const goal = { sessions: [], restCycles: [], daysPerCycle: 3, weekStartDay: 'monday' }
+    const { result, rerender } = renderHook(({ lang }) => useViewedTrainingCycle(goal, 0, lang), { initialProps: { lang: ES } })
+    const spanishRange = result.current.dateRangeLabel
+    expect(result.current.chartData.map(d => d.label)).toEqual(['L', 'M', 'X', 'J', 'V', 'S', 'D'])
+
+    rerender({ lang: EN })
+
+    expect(result.current.chartData.map(d => d.label)).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S'])
+    expect(result.current.dateRangeLabel).not.toBe(spanishRange)
   })
 })

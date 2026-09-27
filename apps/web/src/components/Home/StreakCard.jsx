@@ -63,7 +63,7 @@ function PaginationDots({ current, min, max }) {
 }
 
 function StreakCard() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const goal = useTrainingGoal()
   const [cycleOffset, setCycleOffset] = useState(0)
@@ -127,7 +127,7 @@ function StreakCard() {
   }
 
   const { streak } = goal
-  const { chartData, chartMax, emptyBarValue, dateRangeLabel, progress, isRest, toggleViewedRest } = useViewedTrainingCycle(goal, cycleOffset)
+  const { chartData, chartMax, emptyBarValue, dateRangeLabel, progress, isRest, toggleViewedRest } = useViewedTrainingCycle(goal, cycleOffset, { translate: t, locale: i18n.language })
 
   if (goal.isLoading) {
     return (

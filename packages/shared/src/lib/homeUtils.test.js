@@ -9,6 +9,8 @@ import {
   formatDurationHoursMinutes,
 } from './homeUtils.js'
 
+const FORMAT = { dayLabels: ['D', 'L', 'M', 'X', 'J', 'V', 'S'], locale: 'es' }
+
 // ============================================
 // getGreetingKey
 // ============================================
@@ -145,7 +147,7 @@ describe('getViewedCycle', () => {
       ],
       weekStartDay: 'monday',
     }
-    const result = getViewedCycle(goal, 0, now)
+    const result = getViewedCycle(goal, 0, now, FORMAT)
 
     expect(result.cycleKey).toBe('2026-03-16')
     const monday = result.chartData.find(d => d.dateStr === '2026-03-16')
@@ -161,8 +163,8 @@ describe('getViewedCycle', () => {
       ],
       weekStartDay: 'monday',
     }
-    const current = getViewedCycle(goal, 0, now)
-    const previous = getViewedCycle(goal, -1, now)
+    const current = getViewedCycle(goal, 0, now, FORMAT)
+    const previous = getViewedCycle(goal, -1, now, FORMAT)
 
     expect(previous.cycleKey).toBe('2026-03-09')
     expect(previous.chartData.find(d => d.dateStr === '2026-03-09').durationMinutes).toBe(45)
@@ -172,8 +174,8 @@ describe('getViewedCycle', () => {
 
   it('weekStartDay "sunday" desplaza los límites de la semana frente a "monday"', () => {
     const base = { sessions: [], weekStartDay: 'monday' }
-    const monday = getViewedCycle(base, 0, now)
-    const sunday = getViewedCycle({ ...base, weekStartDay: 'sunday' }, 0, now)
+    const monday = getViewedCycle(base, 0, now, FORMAT)
+    const sunday = getViewedCycle({ ...base, weekStartDay: 'sunday' }, 0, now, FORMAT)
 
     expect(monday.cycleKey).toBe('2026-03-16')
     expect(monday.chartData[0].dateStr).toBe('2026-03-16')
@@ -184,14 +186,23 @@ describe('getViewedCycle', () => {
     expect(sunday.chartData[6].dateStr).toBe('2026-03-21')
   })
 
+  it('usa las iniciales y el idioma del rango que le pasan', () => {
+    const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+    const result = getViewedCycle({ weekStartDay: 'monday' }, 0, now, { dayLabels: labels, locale: 'en' })
+
+    expect(result.chartData.map(d => d.label)).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S'])
+    expect(result.dateRangeLabel).toBe(`${new Date(2026, 2, 16).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} – ${new Date(2026, 2, 22).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}`)
+    expect(result.dateRangeLabel).not.toBe(getViewedCycle({ weekStartDay: 'monday' }, 0, now, FORMAT).dateRangeLabel)
+  })
+
   it('isRest es true solo si la clave del ciclo visible está en restCycles', () => {
     const goal = {
       sessions: [],
       restCycles: ['2026-03-16'], // clave del ciclo actual
       weekStartDay: 'monday',
     }
-    expect(getViewedCycle(goal, 0, now).isRest).toBe(true)
-    expect(getViewedCycle(goal, -1, now).isRest).toBe(false) // ciclo anterior: 2026-03-09
+    expect(getViewedCycle(goal, 0, now, FORMAT).isRest).toBe(true)
+    expect(getViewedCycle(goal, -1, now, FORMAT).isRest).toBe(false) // ciclo anterior: 2026-03-09
   })
 
   it('progress.completed cuenta solo las sesiones del ciclo visible', () => {
@@ -204,8 +215,8 @@ describe('getViewedCycle', () => {
       daysPerCycle: 3,
       weekStartDay: 'monday',
     }
-    expect(getViewedCycle(goal, 0, now).progress).toMatchObject({ completed: 2, target: 3, isComplete: false })
-    expect(getViewedCycle(goal, -1, now).progress.completed).toBe(1)
+    expect(getViewedCycle(goal, 0, now, FORMAT).progress).toMatchObject({ completed: 2, target: 3, isComplete: false })
+    expect(getViewedCycle(goal, -1, now, FORMAT).progress.completed).toBe(1)
   })
 
   it('un objetivo sin configurar (sin daysPerCycle ni restCycles) no lanza y devuelve datos de gráfica', () => {
@@ -213,18 +224,18 @@ describe('getViewedCycle', () => {
       sessions: [{ completed_at: '2026-03-16T10:00:00Z', duration_minutes: 20 }],
       weekStartDay: 'monday',
     }
-    expect(() => getViewedCycle(goal, 0, now)).not.toThrow()
+    expect(() => getViewedCycle(goal, 0, now, FORMAT)).not.toThrow()
 
-    const result = getViewedCycle(goal, 0, now)
+    const result = getViewedCycle(goal, 0, now, FORMAT)
     expect(result.chartData).toHaveLength(7)
     expect(result.isRest).toBe(false)
     expect(result.progress.target).toBeUndefined()
   })
 
   it('sin sesiones (goal vacío) todas las barras quedan a cero', () => {
-    expect(() => getViewedCycle({}, 0, now)).not.toThrow()
+    expect(() => getViewedCycle({}, 0, now, FORMAT)).not.toThrow()
 
-    const result = getViewedCycle({}, 0, now)
+    const result = getViewedCycle({}, 0, now, FORMAT)
     expect(result.chartData).toHaveLength(7)
     expect(result.chartData.every(d => d.durationMinutes === 0)).toBe(true)
     expect(result.progress.completed).toBe(0)
@@ -296,22 +307,22 @@ describe('getViewedCycle (porcentaje y null)', () => {
   ]
 
   it('calcula el porcentaje de progreso sobre el objetivo', () => {
-    const { progress } = getViewedCycle({ sessions: twoSessions, daysPerCycle: 4 }, 0, now)
+    const { progress } = getViewedCycle({ sessions: twoSessions, daysPerCycle: 4 }, 0, now, FORMAT)
     expect(progress.percent).toBe(50)
   })
 
   it('el porcentaje no pasa de 100 si se supera el objetivo', () => {
-    const { progress } = getViewedCycle({ sessions: twoSessions, daysPerCycle: 1 }, 0, now)
+    const { progress } = getViewedCycle({ sessions: twoSessions, daysPerCycle: 1 }, 0, now, FORMAT)
     expect(progress.percent).toBe(100)
   })
 
   it('sin objetivo el porcentaje es 0', () => {
-    const { progress } = getViewedCycle({ sessions: twoSessions }, 0, now)
+    const { progress } = getViewedCycle({ sessions: twoSessions }, 0, now, FORMAT)
     expect(progress.percent).toBe(0)
   })
 
   it('acepta sessions, restCycles y weekStartDay en null', () => {
-    const result = getViewedCycle({ sessions: null, restCycles: null, weekStartDay: null, daysPerCycle: 3 }, 0, now)
+    const result = getViewedCycle({ sessions: null, restCycles: null, weekStartDay: null, daysPerCycle: 3 }, 0, now, FORMAT)
     expect(result.chartData).toHaveLength(7)
     expect(result.chartData.every(d => d.durationMinutes === 0)).toBe(true)
     expect(result.isRest).toBe(false)

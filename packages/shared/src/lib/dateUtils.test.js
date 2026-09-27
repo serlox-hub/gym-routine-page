@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   formatFullDate,
   formatShortDate,
+  toDateLocale,
   formatTime,
   formatRelativeDate,
   getDaysDifference,
@@ -21,6 +22,18 @@ describe('dateUtils', () => {
       const result = formatFullDate('2024-01-15T10:00:00Z')
       expect(result).toMatch(/15/)
       expect(result).toMatch(/2024/)
+    })
+  })
+
+  describe('toDateLocale', () => {
+    it('traduce el idioma de la app al locale de fechas', () => {
+      expect(toDateLocale('en')).toBe('en-US')
+      expect(toDateLocale('es')).toBe('es-ES')
+    })
+
+    it('cae a español con un idioma desconocido o ausente', () => {
+      expect(toDateLocale('fr')).toBe('es-ES')
+      expect(toDateLocale(undefined)).toBe('es-ES')
     })
   })
 

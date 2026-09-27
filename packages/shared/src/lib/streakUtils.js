@@ -13,9 +13,6 @@
 // Duración del ciclo del objetivo semanal: racha, progreso y gráfica deben contar el mismo
 export const STREAK_CYCLE_LENGTH = 7
 
-const DAY_LABELS_MONDAY = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
-const DAY_LABELS_SUNDAY = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
-
 // Anclas para calcular ciclos según inicio de semana
 const ANCHOR_MONDAY = new Date(2024, 0, 1) // Lunes 1 ene 2024
 ANCHOR_MONDAY.setHours(0, 0, 0, 0)
@@ -43,12 +40,17 @@ function daysBetween(a, b) {
   return Math.floor((msB - msA) / 86400000)
 }
 
-function getDayLabel(date, weekStartDay = 'monday') {
-  const labels = weekStartDay === 'sunday' ? DAY_LABELS_SUNDAY : DAY_LABELS_MONDAY
-  const jsDay = date.getDay() // 0=Sun, 6=Sat
-  if (weekStartDay === 'sunday') return labels[jsDay]
-  // monday start: Mon=0, Tue=1, ..., Sun=6
-  return labels[jsDay === 0 ? 6 : jsDay - 1]
+const WEEKDAY_INDEXES = [0, 1, 2, 3, 4, 5, 6]
+
+/**
+ * Iniciales de los días de la semana, indexadas como `Date.getDay()` (0 = domingo).
+ * Recibe el `t` de `useTranslation()` y no usa el `t` estático de este paquete: ese
+ * no se resuscribe al cambio de idioma y las iniciales se quedarían en el anterior.
+ * @param {(key: string) => string} translate
+ * @returns {string[]}
+ */
+export function getWeekdayInitials(translate) {
+  return WEEKDAY_INDEXES.map(day => translate(`data:weekdayInitial.${day}`))
 }
 
 // ============================================
@@ -182,9 +184,12 @@ export function getCurrentCycleKey(cycleLength = 7, now = new Date(), weekStartD
  * @param {Array<{id: string, completed_at: string}>} sessions
  * @param {number} cycleLength
  * @param {Date} [now]
+ * @param {string} [weekStartDay]
+ * @param {Date} [today]
+ * @param {string[]} dayLabels - De getWeekdayInitials(). Obligatorio: sin él las barras se quedan sin inicial
  * @returns {Array<{label: string, date: Date, dateStr: string, sessions: Array, hasSession: boolean, isToday: boolean, isPast: boolean}>}
  */
-export function getCurrentCycleDays(sessions, cycleLength = 7, now = new Date(), weekStartDay = 'monday', today = new Date()) {
+export function getCurrentCycleDays(sessions, cycleLength = 7, now = new Date(), weekStartDay = 'monday', today = new Date(), dayLabels) {
   const start = getCycleStart(now, cycleLength, weekStartDay)
   const todayStr = toDateStr(today)
   const days = []
@@ -199,7 +204,7 @@ export function getCurrentCycleDays(sessions, cycleLength = 7, now = new Date(),
     )
 
     days.push({
-      label: getDayLabel(date, weekStartDay),
+      label: dayLabels[date.getDay()],
       date,
       dateStr,
       sessions: daySessions,
@@ -310,8 +315,4 @@ export function isCurrentWeekRest(restWeeks, now = new Date()) {
 
 export function getCurrentWeekKey(now = new Date()) {
   return getISOWeekKey(now)
-}
-
-export function getCurrentWeekDays(sessions, now) {
-  return getCurrentCycleDays(sessions, 7, now)
 }
