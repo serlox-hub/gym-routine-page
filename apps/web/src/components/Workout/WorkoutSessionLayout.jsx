@@ -174,8 +174,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     removeSessionExerciseMutation.mutate(sessionExerciseId)
   }
 
-  const handleReplaceExercise = (sessionExerciseId, newExerciseId) => {
-    replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExerciseId })
+  const handleReplaceExercise = (sessionExerciseId, newExercise, applyToRoutine) => {
+    replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExercise, applyToRoutine })
   }
 
   // Cambio de gym optimista (ver useChangeSessionGym): si la unidad cambia en el gym destino,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { diffSessionExerciseFields, buildEmptySetData } from './sessionExerciseUtils.js'
+import { diffSessionExerciseFields, buildEmptySetData, canApplyToRoutine, buildReplaceSessionExerciseFields } from './sessionExerciseUtils.js'
 
 describe('diffSessionExerciseFields', () => {
   const original = {
@@ -165,5 +165,58 @@ describe('buildEmptySetData', () => {
   it('usa peso × reps por defecto si el ejercicio no declara campos', () => {
     expect(build(undefined)).toEqual({ ...base, weight: 0, repsCompleted: 0, rirActual: null, notes: null, videoUrl: null })
     expect(build(null)).toEqual({ ...base, weight: 0, repsCompleted: 0, rirActual: null, notes: null, videoUrl: null })
+  })
+})
+
+describe('canApplyToRoutine', () => {
+  it('true si viene de la rutina y no es extra', () => {
+    expect(canApplyToRoutine({ routine_exercise_id: 30, is_extra: false })).toBe(true)
+  })
+
+  it('false para un extra de la sesión', () => {
+    expect(canApplyToRoutine({ routine_exercise_id: null, is_extra: true })).toBe(false)
+  })
+
+  it('false si su fila de rutina se borró (enlace a null)', () => {
+    expect(canApplyToRoutine({ routine_exercise_id: null, is_extra: false })).toBe(false)
+  })
+
+  it('un id 0 sigue siendo un enlace', () => {
+    expect(canApplyToRoutine({ routine_exercise_id: 0, is_extra: false })).toBe(true)
+  })
+
+  it('false sin fila', () => {
+    expect(canApplyToRoutine(undefined)).toBe(false)
+  })
+})
+
+describe('buildReplaceSessionExerciseFields', () => {
+  const bench = { target_field: 'reps', reps: '8-12', level: null, rir: 2, notes: 'codos' }
+
+  it('press banca → cinta: objetivo al default del nuevo, sin esfuerzo ni notas', () => {
+    expect(buildReplaceSessionExerciseFields(bench, ['distance', 'time'], ['weight', 'reps']))
+      .toEqual({ target_field: 'distance', reps: '5km', level: null, rir: null, notes: null })
+  })
+
+  it('mismo tipo: conserva objetivo y nivel', () => {
+    const bike = { target_field: 'time', reps: '20min', level: 8 }
+    expect(buildReplaceSessionExerciseFields(bike, ['level', 'time'], ['level', 'time']))
+      .toMatchObject({ target_field: 'time', reps: '20min', level: 8 })
+  })
+
+  it('un nivel 0 se conserva, no se lee como vacío', () => {
+    const bike = { target_field: 'time', reps: '20min', level: 0 }
+    expect(buildReplaceSessionExerciseFields(bike, ['level', 'time'], ['level', 'time']).level).toBe(0)
+  })
+
+  it('solo peso: conserva reps (NOT NULL) y deja el campo objetivo a null, nunca ""', () => {
+    const result = buildReplaceSessionExerciseFields(bench, ['weight'], ['weight', 'reps'])
+    expect(result.reps).toBe('8-12')
+    expect(result.target_field).toBeNull()
+  })
+
+  it('sin target_field guardado (fila antigua) lo resuelve con los campos', () => {
+    const old = { target_field: undefined, reps: '10', level: null }
+    expect(buildReplaceSessionExerciseFields(old, ['weight', 'reps'], ['weight', 'reps']).target_field).toBe('reps')
   })
 })

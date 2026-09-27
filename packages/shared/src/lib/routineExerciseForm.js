@@ -74,26 +74,47 @@ export function buildTargetFieldChangeForm(form, targetField, trackedFields) {
 }
 
 /**
- * Formulario a enviar al reemplazar un ejercicio por otro.
- * Limpia lo que es propio del ejercicio saliente (esfuerzo y notas) y, si lo que se mide
- * cambia, también el objetivo (campo + valor) y el nivel prescrito: conservar "8-12" al
- * reemplazar un peso × reps por un nivel × tiempo dejaría "Tiempo: 8-12" en la rutina.
+ * Objetivo tras reemplazar un ejercicio por otro. Regla ÚNICA de las dos sustituciones (en la
+ * rutina, `buildReplaceExerciseForm`, y en la sesión, `buildReplaceSessionExerciseFields`), para que
+ * adapten igual. Si lo que se mide cambia, objetivo (campo + valor) al default del ejercicio nuevo y
+ * sin nivel: conservar "8-12" al pasar de peso × reps a nivel × tiempo dejaría "Tiempo: 8-12".
+ * @param {{ targetField: string|null, reps: string }} current - objetivo del ejercicio saliente
+ * @param {string[]} newTrackedFields
+ * @param {string[]} [oldTrackedFields]
+ * @returns {{ targetField: string|null, reps: string, keepLevel: boolean }}
+ */
+export function getReplacedTarget({ targetField, reps }, newTrackedFields, oldTrackedFields) {
+  // Comparación por VALOR: son arrays, y `!==` daría siempre "cambió" aunque midan lo mismo.
+  const fieldsChanged = !sameTrackedFields(newTrackedFields, oldTrackedFields)
+  const newTargetField = fieldsChanged
+    ? getDefaultTargetField(newTrackedFields)
+    : resolveTargetField(targetField, newTrackedFields)
+  const newReps = fieldsChanged ? getDefaultTarget(newTargetField, newTrackedFields) : reps
+  return {
+    targetField: newTargetField ?? null,
+    // Sin campo prescribible (p. ej. solo peso) el default es '': `reps` es NOT NULL y el editor
+    // rechaza vacío, así que escribirlo dejaría una fila inválida. Se conserva el anterior.
+    reps: newReps || reps,
+    keepLevel: tracksLevel(newTrackedFields) && !fieldsChanged,
+  }
+}
+
+/**
+ * Formulario a enviar al reemplazar un ejercicio por otro en la rutina.
+ * Limpia lo que es propio del ejercicio saliente (esfuerzo y notas) y adapta objetivo y nivel
+ * con `getReplacedTarget`.
  * @param {object} form
  * @param {string[]} newTrackedFields
  * @param {string[]} [oldTrackedFields]
  * @returns {object}
  */
 export function buildReplaceExerciseForm(form, newTrackedFields, oldTrackedFields) {
-  // Comparación por VALOR: son arrays, y `!==` daría siempre "cambió" aunque midan lo mismo.
-  const fieldsChanged = !sameTrackedFields(newTrackedFields, oldTrackedFields)
-  const targetField = fieldsChanged
-    ? getDefaultTargetField(newTrackedFields)
-    : resolveTargetField(form.target_field, newTrackedFields)
+  const target = getReplacedTarget({ targetField: form.target_field, reps: form.reps }, newTrackedFields, oldTrackedFields)
   return {
     ...form,
-    target_field: targetField ?? '',
-    reps: fieldsChanged ? getDefaultTarget(targetField, newTrackedFields) : form.reps,
-    level: tracksLevel(newTrackedFields) && !fieldsChanged ? form.level : '',
+    target_field: target.targetField ?? '',
+    reps: target.reps,
+    level: target.keepLevel ? form.level : '',
     rir: '',
     notes: '',
   }

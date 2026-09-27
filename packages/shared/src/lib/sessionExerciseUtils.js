@@ -1,4 +1,5 @@
 import { resolveTrackedFields } from './measurementFields.js'
+import { getReplacedTarget } from './routineExerciseForm.js'
 import { getSetColumns, buildSetFieldsPayload } from './setColumns.js'
 
 /**
@@ -69,5 +70,39 @@ export function buildEmptySetData({ sessionId, sessionExerciseId, setNumber, exe
     rirActual: null,
     notes: null,
     videoUrl: null,
+  }
+}
+
+/**
+ * ¿Tiene esta fila de sesión una fila de rutina a la que llevar un cambio? No la tienen los extras
+ * añadidos en la sesión ni las filas cuya fila de rutina se borró (FK ON DELETE SET NULL).
+ * @param {{ routine_exercise_id?: number|null, is_extra?: boolean }} sessionExercise
+ * @returns {boolean}
+ */
+export function canApplyToRoutine(sessionExercise) {
+  return sessionExercise?.routine_exercise_id != null && !sessionExercise.is_extra
+}
+
+/**
+ * Parche de columnas al reemplazar el ejercicio de una fila de sesión (contrato de
+ * `replace_session_exercise`). Valores de COLUMNA, nunca strings de formulario: '' rompe el cast
+ * a SMALLINT y el CHECK de `target_field`. Misma adaptación que en la rutina (`getReplacedTarget`).
+ * @param {{ target_field: string|null, reps: string, level: number|null }} sessionExercise
+ * @param {string[]} newTrackedFields
+ * @param {string[]} oldTrackedFields
+ * @returns {{ target_field: string|null, reps: string, level: number|null, rir: null, notes: null }}
+ */
+export function buildReplaceSessionExerciseFields(sessionExercise, newTrackedFields, oldTrackedFields) {
+  const target = getReplacedTarget(
+    { targetField: sessionExercise.target_field ?? null, reps: sessionExercise.reps },
+    newTrackedFields,
+    oldTrackedFields
+  )
+  return {
+    target_field: target.targetField,
+    reps: target.reps,
+    level: target.keepLevel ? (sessionExercise.level ?? null) : null,
+    rir: null,
+    notes: null,
   }
 }

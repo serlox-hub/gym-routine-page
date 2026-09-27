@@ -320,6 +320,18 @@ describe('workoutTransforms', () => {
       expect(result.flatExercises[0].type).toBe('extra')
     })
 
+    // Sin el enlace la tarjeta no sabe si hay fila de rutina a la que llevar un reemplazo (#105).
+    it('conserva routine_exercise_id en las dos proyecciones', () => {
+      const exercises = [
+        { id: 1, sort_order: 1, routine_exercise_id: 30, is_extra: false, is_warmup: false, exercise: { id: 1, name: 'A' }, series: 3, reps: '10' },
+        { id: 2, sort_order: 2, is_extra: true, is_warmup: false, exercise: { id: 2, name: 'B' }, series: 3, reps: '10' },
+      ]
+      const result = transformSessionExercises(exercises)
+
+      expect(result.flatExercises.map(e => e.routine_exercise_id)).toEqual([30, null])
+      expect(result.exercisesByBlock[0].exerciseGroups[0].exercise.routine_exercise_id).toBe(30)
+    })
+
     it('usa "Principal" como bloque por defecto si is_warmup es false/null', () => {
       const exercises = [
         { id: 1, sort_order: 1, is_warmup: null, exercise: { id: 1, name: 'Test' }, series: 3, reps: '10' },

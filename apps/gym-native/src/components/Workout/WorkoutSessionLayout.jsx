@@ -120,8 +120,8 @@ export default function WorkoutSessionLayout({ title }) {
     onRemove: (sessionExerciseId) => {
       removeSessionExerciseMutation.mutate(sessionExerciseId)
     },
-    onReplace: (sessionExerciseId, newExerciseId) => {
-      replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExerciseId })
+    onReplace: (sessionExerciseId, newExercise, applyToRoutine) => {
+      replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExercise, applyToRoutine })
     },
     onReorderBlock: (isWarmup, blockItems) => {
       reorderSessionExercisesMutation.mutate(mergeBlockOrder(flatExercises, isWarmup, blockItems))

@@ -12,6 +12,9 @@ function ConfirmModal({
   loadingText,
   onConfirm,
   onCancel,
+  // Tocar el fondo y atrás de Android. Por defecto = cancelar; se separa cuando cancelar es una
+  // opción más ("Solo hoy") y cerrar debe abortar sin elegir ninguna.
+  onDismiss,
   variant = 'danger',
   isLoading = false,
 }) {
@@ -22,7 +25,7 @@ function ConfirmModal({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={isLoading ? undefined : onCancel}
+      onClose={isLoading ? undefined : (onDismiss ?? onCancel)}
       className="p-6"
     >
       <h3 className="text-lg font-semibold mb-2" style={{ color: colors.textPrimary }}>

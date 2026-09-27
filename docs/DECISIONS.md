@@ -16,9 +16,11 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **La web sale después de la BD, y solo desde aquí:** con el auto-deploy de Vercel la web podía publicarse antes que su migración y llamar a una RPC que en prod no existe. Por eso `git.deploymentEnabled.main: false` en `vercel.json`: no reactivarlo.
 - **Tras el CI de `main`, no con el push:** `main` no exige rama al día, y dos PRs verdes pueden traer migraciones que chocan. El CI de `main` las prueba juntas. Descartado migrar en el push: acorta la ventana pero pierde esa protección.
 
-## 2026-09 · Editar en sesión cambia la rutina (#105)
+## 2026-09 · Editar o reemplazar en sesión y la rutina (#105)
 - **Propaga sin preguntar, a propósito:** el uso normal es ajustar la rutina desde el gym. Descartado un interruptor "aplicar también a la rutina": añade fricción a cada edición para un caso que no ha pasado.
 - **Solo si sigue siendo el mismo ejercicio** (063): tras sustituir solo en la sesión, el enlace se conserva y sin esa condición la edición caería en la fila del ejercicio viejo.
+- **Reemplazar sí pregunta ("Solo hoy" / "También en la rutina"), y cerrar el diálogo aborta:** reemplazar borra las series hechas y no se puede deshacer, así que el gesto de "me equivoqué" no puede ejecutarlo. Por eso `ConfirmModal` tiene `onDismiss`. Descartado propagar siempre: los cambios temporales (máquina ocupada) son el caso común.
+- **"Solo hoy" suelta el enlace mientras aplica el parche** (064): la condición de la 063 no basta al volver al ejercicio de la rutina, porque los ids coinciden otra vez y machacaría la fila con los defaults. Detalle en la migración.
 
 ## 2026-07 · GIFs de ejercicios (issue #6)
 - **Ruta con subcarpeta `gif/` obligatoria** (sin ella, 404): `.../public/exercise-gifs/gif/<gif_key>_<180|360|720>.gif`. Tamaño por superficie para ahorrar egress: 180 listas, 360 sesión, 720 pantalla completa.

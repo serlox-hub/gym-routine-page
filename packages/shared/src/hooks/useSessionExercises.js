@@ -5,8 +5,7 @@ import {
   fetchSessionExercisesSortOrder,
   updateSessionExerciseSortOrder,
   insertSessionExercise,
-  deleteCompletedSetsByExercise,
-  updateSessionExerciseExerciseId,
+  replaceSessionExercise,
   updateSessionExerciseFields,
   deleteSessionExercise,
   reorderSessionExercises,
@@ -15,12 +14,24 @@ import { getClient } from '../api/_client.js'
 import { useWorkoutStore } from './_stores.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 import { applyExerciseOrder } from '../lib/routineDayLayout.js'
+import { buildReplaceSessionExerciseFields } from '../lib/sessionExerciseUtils.js'
+import { resolveTrackedFields } from '../lib/measurementFields.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 
 // ============================================
 // SESSION EXERCISES QUERIES & MUTATIONS
 // ============================================
+
+// Cachés de rutina que cambian cuando la sesión escribe en su fila de rutina (editar propaga,
+// reemplazar "también en la rutina"). Una sola lista: copiada en cada hook, se olvidó
+// ROUTINE_BLOCKS (los ejercicios de cada día) y el detalle de la rutina se quedaba viejo.
+function invalidateRoutineExerciseCaches(queryClient) {
+  queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS] })
+  queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAY] })
+  queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS] })
+  queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES] })
+}
 
 export function useSessionExercises(sessionId) {
   return useQuery({
@@ -106,18 +117,27 @@ export function useReplaceSessionExercise() {
   const clearExercise = useWorkoutStore(state => state.clearExercise)
 
   return useMutation({
-    mutationFn: async ({ sessionExerciseId, newExerciseId }) => {
-      // Eliminar series completadas del ejercicio anterior
-      await deleteCompletedSetsByExercise({ sessionId, sessionExerciseId })
+    mutationFn: async ({ sessionExerciseId, newExercise, applyToRoutine }) => {
+      // La fila saliente se lee de la caché de la sesión: de ella sale el objetivo a adaptar.
+      const rows = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, sessionId]) ?? []
+      const current = rows.find(row => String(row.id) === String(sessionExerciseId))
+      if (!current) throw new Error('session_exercise_not_found')
 
-      // Actualizar el exercise_id y limpiar campos específicos del anterior
-      await updateSessionExerciseExerciseId({ sessionExerciseId, newExerciseId })
-      return updateSessionExerciseFields(sessionExerciseId, { rir: null, notes: null })
+      const fields = buildReplaceSessionExerciseFields(
+        current,
+        resolveTrackedFields(newExercise),
+        resolveTrackedFields(current.exercise)
+      )
+      await replaceSessionExercise({ sessionExerciseId, newExerciseId: newExercise.id, fields, applyToRoutine })
     },
-    onSuccess: (_, { sessionExerciseId }) => {
+    onSuccess: (_, { sessionExerciseId, applyToRoutine }) => {
       clearExercise(sessionExerciseId)
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+      if (applyToRoutine) invalidateRoutineExerciseCaches(queryClient)
+    },
+    onError: () => {
+      getNotifier()?.show(t('workout:exercise.replaceFailed'), 'error')
     },
   })
 }
@@ -166,9 +186,7 @@ export function useUpdateSessionExerciseFields() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAY] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES] })
+      invalidateRoutineExerciseCaches(queryClient)
     },
   })
 }

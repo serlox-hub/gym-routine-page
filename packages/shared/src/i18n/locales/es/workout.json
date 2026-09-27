@@ -121,7 +121,12 @@
     "removeFromSession": "Quitar de la sesión",
     "removeFromSessionConfirm": "¿Quitar \"{{name}}\" de esta sesión? Seguirá disponible en la rutina.",
     "updateFailed": "No se pudo guardar el ejercicio. Inténtalo de nuevo.",
-    "reorderFailed": "No se pudo reordenar el ejercicio. Inténtalo de nuevo."
+    "reorderFailed": "No se pudo reordenar el ejercicio. Inténtalo de nuevo.",
+    "replaceScopeTitle": "¿Solo hoy o también en la rutina?",
+    "replaceScopeMessage": "Puedes cambiar \"{{name}}\" solo en este entrenamiento o dejarlo cambiado en la rutina.",
+    "replaceOnlyToday": "Solo hoy",
+    "replaceAlsoRoutine": "También en la rutina",
+    "replaceFailed": "No se pudo reemplazar el ejercicio. Inténtalo de nuevo."
   },
   "summary": {
     "title": "Resumen",

@@ -692,6 +692,56 @@ COMMENT ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "json
 
 
 
+CREATE OR REPLACE FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) RETURNS "void"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+  v_routine_exercise_id INTEGER;
+  v_is_extra BOOLEAN;
+BEGIN
+  -- La FK no pasa por RLS: sin esta comprobación se podría apuntar la fila a un ejercicio privado
+  -- de otro usuario, o a uno borrado (soft delete).
+  PERFORM 1 FROM exercises WHERE id = p_new_exercise_id AND deleted_at IS NULL;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'exercise_not_available' USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT routine_exercise_id, is_extra INTO v_routine_exercise_id, v_is_extra
+  FROM session_exercises
+  WHERE id = p_session_exercise_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'session_exercise_not_found' USING ERRCODE = 'P0002';
+  END IF;
+
+  DELETE FROM completed_sets WHERE session_exercise_id = p_session_exercise_id;
+
+  -- Una fila sin enlace o añadida en la sesión no tiene rutina a la que propagar: no es error.
+  IF p_apply_to_routine AND v_routine_exercise_id IS NOT NULL AND NOT COALESCE(v_is_extra, FALSE) THEN
+    UPDATE routine_exercises SET exercise_id = p_new_exercise_id WHERE id = v_routine_exercise_id;
+  END IF;
+
+  IF p_apply_to_routine THEN
+    UPDATE session_exercises SET exercise_id = p_new_exercise_id WHERE id = p_session_exercise_id;
+    PERFORM update_session_exercise_with_routine(p_session_exercise_id, p_fields);
+  ELSE
+    UPDATE session_exercises SET exercise_id = p_new_exercise_id, routine_exercise_id = NULL
+    WHERE id = p_session_exercise_id;
+    PERFORM update_session_exercise_with_routine(p_session_exercise_id, p_fields);
+    UPDATE session_exercises SET routine_exercise_id = v_routine_exercise_id WHERE id = p_session_exercise_id;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) IS 'Sustituye el ejercicio de una fila de sesión (borra sus series) y, con p_apply_to_routine, también en su routine_exercise, en una sola transacción. El parche p_fields lo aplica update_session_exercise_with_routine. SECURITY INVOKER a propósito: la protege RLS.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."set_routine_block_user_id"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -2278,6 +2328,11 @@ GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_facto
 GRANT ALL ON TABLE "public"."routine_days" TO "anon";
 GRANT ALL ON TABLE "public"."routine_days" TO "authenticated";
 GRANT ALL ON TABLE "public"."routine_days" TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) TO "authenticated";
 
 
 
