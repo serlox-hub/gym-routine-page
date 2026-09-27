@@ -84,7 +84,8 @@
     "copySuccess": "Copiado al portapapeles",
     "somethingWrong": "Algo salió mal",
     "unexpected": "Ha ocurrido un error inesperado",
-    "videoLoad": "Error al cargar video"
+    "videoLoad": "Error al cargar video",
+    "preferenceSave": "No se ha podido guardar el cambio"
   },
   "daysShort": [
     "Lun",
