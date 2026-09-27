@@ -133,8 +133,7 @@ docker exec -i "supabase_db_${GYM_SUPABASE_PROJECT_ID}" psql -U postgres -d post
 npx supabase functions deploy video-upload
 npx supabase functions deploy video-url
 
-# Ejecutar migraciones en producción
-npx supabase db push
+# Las migraciones de prod las aplica deploy.yml al pasar el CI de main (ver README § Web)
 ```
 
 ## Configuración de dominio

@@ -34,7 +34,13 @@ npm run check         # lint + tests + build
 
 ### Web
 
-La app web se despliega en Vercel. Cualquier push a `main` genera un deploy automatico.
+La app web se despliega en Vercel, pero no desde Vercel: el workflow `deploy.yml` corre cuando el CI de `main` pasa, aplica primero las migraciones pendientes en la Supabase de producción (`supabase db push`) y después despliega la web con la CLI de Vercel. Las previews de PR siguen siendo automáticas.
+
+Secrets del repo que necesita, y que tienen que existir antes de fusionar (sin ellos `main` deja de desplegarse):
+- `SUPABASE_DB_URL`: la cadena del **Session pooler** (puerto 5432) del dashboard de Supabase, con la contraseña URL-encoded. La conexión directa solo tiene IPv6 sin el add-on de IPv4, y los runners de GitHub no llegan.
+- `VERCEL_TOKEN`, `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID`.
+
+Se puede relanzar a mano desde Actions (`workflow_dispatch`), solo sobre `main`.
 
 ### Debug vs Release local
 
