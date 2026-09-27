@@ -4,6 +4,7 @@
 export {
   fetchActiveSession,
   fetchCompletedSetsForSession,
+  fetchLastSetPerformedAt,
   startWorkoutSession,
   fetchExerciseIdsWithSets,
   deleteSessionExercisesWithoutSets,

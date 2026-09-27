@@ -9,7 +9,7 @@ import { getClient } from './_client.js'
 // depende `buildSetFieldsPayload` (setColumns.js), que solo manda los campos del measurement type.
 // NO pongas defaults (`weight = null`) en este destructuring: convertiría cada edición parcial en
 // un borrado de las columnas de los otros tipos. Pineado en completedSetsApi.test.js.
-export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumber, weight, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) {
+export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumber, weight, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType, performedAt }) {
   const { data, error } = await getClient()
     .from('completed_sets')
     .upsert({
@@ -27,6 +27,10 @@ export async function upsertCompletedSet({ sessionId, sessionExerciseId, setNumb
       notes,
       video_url: videoUrl,
       set_type: setType ?? 'normal',
+      // La hora real de la serie (su `completedAt` del store). Sin ella la fija `DEFAULT now()`
+      // al llegar, que en un reintento offline es la del sync. Ausente (serie restaurada del
+      // servidor, sin hora local) no viaja y el ON CONFLICT deja la guardada.
+      performed_at: performedAt,
       completed: true,
     }, {
       onConflict: 'session_id,session_exercise_id,set_number',

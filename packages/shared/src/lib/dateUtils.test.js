@@ -13,8 +13,13 @@ import {
   getSessionStartBounds,
   isSameTimestamp,
   formatDateTimeLocal,
+  pickLatestTimestamp,
+  getLastSetCompletedAt,
+  shouldWarnIdleSession,
+  isSameLocalDay,
+  getLastSetEndChoice,
 } from './dateUtils.js'
-import { MAX_SESSION_DURATION_MINUTES } from './constants.js'
+import { MAX_SESSION_DURATION_MINUTES, IDLE_SESSION_WARNING_MINUTES } from './constants.js'
 
 describe('dateUtils', () => {
   describe('formatFullDate', () => {
@@ -176,6 +181,105 @@ describe('dateUtils', () => {
     it('acepta instancias Date', () => {
       const { durationMinutes } = resolveSessionEnd(new Date('2024-06-15T11:00:00Z'), new Date(started), new Date(now))
       expect(durationMinutes).toBe(60)
+    })
+
+    // duration_minutes es smallint: sin el tope, cerrar "ahora" una sesión olvidada semanas
+    // atrás hacía morir el UPDATE por rango
+    it('acota al tope de duración aunque "ahora" quede más lejos', () => {
+      const farNow = new Date(new Date(started).getTime() + (MAX_SESSION_DURATION_MINUTES + 600) * 60000)
+      const { durationMinutes } = resolveSessionEnd(farNow, started, farNow)
+      expect(durationMinutes).toBe(MAX_SESSION_DURATION_MINUTES)
+    })
+  })
+
+  describe('pickLatestTimestamp', () => {
+    it('devuelve el más reciente como ISO', () => {
+      expect(pickLatestTimestamp('2024-06-15T10:00:00Z', '2024-06-15T12:00:00+00:00', new Date('2024-06-15T11:00:00Z')))
+        .toBe('2024-06-15T12:00:00.000Z')
+    })
+
+    it('ignora null, undefined, vacío e inválidos', () => {
+      expect(pickLatestTimestamp(null, undefined, '', 'no-date', '2024-06-15T10:00:00Z')).toBe('2024-06-15T10:00:00.000Z')
+    })
+
+    it('devuelve null si ninguno es válido o no hay argumentos', () => {
+      expect(pickLatestTimestamp(null, 'no-date')).toBeNull()
+      expect(pickLatestTimestamp()).toBeNull()
+    })
+  })
+
+  describe('getLastSetCompletedAt', () => {
+    it('devuelve la hora de la serie más reciente', () => {
+      const sets = {
+        'a-1': { completedAt: '2024-06-15T10:00:00Z' },
+        'a-2': { completedAt: '2024-06-15T10:05:00Z' },
+        'b-1': { completedAt: '2024-06-15T10:02:00Z' },
+      }
+      expect(getLastSetCompletedAt(sets)).toBe('2024-06-15T10:05:00.000Z')
+    })
+
+    it('ignora series sin hora (restauradas del servidor)', () => {
+      expect(getLastSetCompletedAt({ 'a-1': {}, 'a-2': { completedAt: '2024-06-15T10:00:00Z' } }))
+        .toBe('2024-06-15T10:00:00.000Z')
+    })
+
+    it('devuelve null sin series o con null', () => {
+      expect(getLastSetCompletedAt({})).toBeNull()
+      expect(getLastSetCompletedAt(null)).toBeNull()
+      expect(getLastSetCompletedAt({ 'a-1': {} })).toBeNull()
+    })
+  })
+
+  describe('shouldWarnIdleSession', () => {
+    const last = '2024-06-15T10:00:00Z'
+    const minutesAfter = (m) => new Date(new Date(last).getTime() + m * 60000)
+
+    it('avisa si han pasado más minutos que el umbral', () => {
+      expect(shouldWarnIdleSession(last, minutesAfter(IDLE_SESSION_WARNING_MINUTES + 1))).toBe(true)
+    })
+
+    it('no avisa justo en el umbral ni por debajo', () => {
+      expect(shouldWarnIdleSession(last, minutesAfter(IDLE_SESSION_WARNING_MINUTES))).toBe(false)
+      expect(shouldWarnIdleSession(last, minutesAfter(5))).toBe(false)
+    })
+
+    it('respeta un umbral explícito', () => {
+      expect(shouldWarnIdleSession(last, minutesAfter(11), 10)).toBe(true)
+    })
+
+    it('no avisa sin última serie o con fechas inválidas', () => {
+      expect(shouldWarnIdleSession(null, minutesAfter(500))).toBe(false)
+      expect(shouldWarnIdleSession('no-date', minutesAfter(500))).toBe(false)
+      expect(shouldWarnIdleSession(last, 'no-date')).toBe(false)
+    })
+  })
+
+  describe('isSameLocalDay', () => {
+    it('compara por día de calendario local', () => {
+      expect(isSameLocalDay(new Date(2024, 5, 15, 0, 5), new Date(2024, 5, 15, 23, 55))).toBe(true)
+      expect(isSameLocalDay(new Date(2024, 5, 14, 23, 55), new Date(2024, 5, 15, 0, 5))).toBe(false)
+    })
+
+    it('devuelve false con entradas inválidas', () => {
+      expect(isSameLocalDay(null, new Date())).toBe(false)
+      expect(isSameLocalDay('no-date', new Date())).toBe(false)
+    })
+  })
+
+  describe('getLastSetEndChoice', () => {
+    it('solo la hora si la serie es de hoy', () => {
+      const last = new Date(2024, 5, 15, 19, 42)
+      const choice = getLastSetEndChoice(last, new Date(2024, 5, 15, 22, 0))
+      expect(choice.key).toBe('workout:session.endAtLastSet')
+      expect(choice.params.time).toBe(formatTime(last))
+      expect(choice.params).not.toHaveProperty('date')
+    })
+
+    it('hora y fecha si la serie es de otro día', () => {
+      const last = new Date(2024, 5, 14, 19, 42)
+      const choice = getLastSetEndChoice(last, new Date(2024, 5, 15, 9, 0))
+      expect(choice.key).toBe('workout:session.endAtLastSetOtherDay')
+      expect(choice.params).toEqual({ time: formatTime(last), date: formatShortDate(last) })
     })
   })
 

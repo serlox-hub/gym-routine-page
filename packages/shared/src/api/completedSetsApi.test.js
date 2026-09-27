@@ -38,6 +38,21 @@ describe('upsertCompletedSet', () => {
     expect(body).not.toHaveProperty('reps_completed')
     expect(body).not.toHaveProperty('time_seconds')
     expect(body).toMatchObject({ level: 5, calories_burned: 200 })
+    // Sin hora local no viaja: el ON CONFLICT conserva la performed_at guardada
+    expect(body).not.toHaveProperty('performed_at')
+  })
+
+  it('manda performedAt como performed_at cuando viene', async () => {
+    const mock = makeQueryMock({ data: {}, error: null })
+    getClient.mockReturnValue({ from: () => mock })
+
+    await upsertCompletedSet({
+      sessionId: 'session-1', sessionExerciseId: 'se-1', setNumber: 1,
+      weight: 100, performedAt: '2026-01-01T10:00:00.000Z',
+    })
+
+    const body = JSON.parse(JSON.stringify(mock.upsert.mock.calls[0][0]))
+    expect(body.performed_at).toBe('2026-01-01T10:00:00.000Z')
   })
 
 

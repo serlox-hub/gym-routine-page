@@ -29,6 +29,11 @@ export const MAX_SESSION_DURATION_MINUTES = 30240
 // El mismo tope en días, para el texto que lo explica en pantalla (que así no se desincroniza).
 export const MAX_SESSION_DURATION_DAYS = MAX_SESSION_DURATION_MINUTES / (24 * 60)
 
+// Al finalizar, minutos sin registrar ninguna serie a partir de los cuales se asume que la
+// sesión se quedó abierta por olvido y se ofrece cerrarla a la hora de la última serie.
+// Muy por encima de cualquier descanso real, para no molestar en una sesión larga de verdad.
+export const IDLE_SESSION_WARNING_MINUTES = 60
+
 // Block names (DB identifiers — always Spanish in the database)
 export const BLOCK_NAMES = {
   WARMUP: 'Calentamiento',
@@ -88,6 +93,7 @@ export const QUERY_KEYS = {
   ROUTINE_ALL_EXERCISES: 'routine-all-exercises',
   EXERCISES: 'exercises',
   WORKOUT_SESSION: 'workout-session',
+  LAST_SET_PERFORMED_AT: 'last-set-performed-at',
   SESSION_EXERCISES: 'session-exercises',
   COMPLETED_SETS: 'completed-sets',
   PREVIOUS_WORKOUT: 'previous-workout',

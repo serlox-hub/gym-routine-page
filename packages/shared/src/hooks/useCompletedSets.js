@@ -9,10 +9,15 @@ import {
 } from '../api/workoutApi.js'
 import { useWorkoutStore, getWorkoutStore } from './_stores.js'
 import { getHaptics } from '../haptics.js'
+import { createSetKey } from '../lib/setUtils.js'
 
 // ============================================
 // SET MUTATIONS
 // ============================================
+
+function getSetCompletedAt(sessionExerciseId, setNumber) {
+  return getWorkoutStore().getState().completedSets?.[createSetKey(sessionExerciseId, setNumber)]?.completedAt
+}
 
 export function useCompleteSet() {
   const queryClient = useQueryClient()
@@ -24,6 +29,8 @@ export function useCompleteSet() {
   return useMutation({
     mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) => {
       return upsertCompletedSet({
+        // onMutate ya marcó la serie en el store con su hora: es la que se guarda como performed_at
+        performedAt: getSetCompletedAt(sessionExerciseId, setNumber),
         sessionId,
         sessionExerciseId,
         setNumber,
@@ -96,6 +103,7 @@ export function useCompleteSet() {
           notes: variables.notes,
           videoUrl: variables.videoUrl,
           setType: variables.setType,
+          performedAt: getSetCompletedAt(variables.sessionExerciseId, variables.setNumber),
         })
       } catch {
         // No bloquear si falla encolar el pending set
@@ -134,6 +142,7 @@ export function useSyncPendingSets({ onVisibilityChange, onConnectivityChange } 
           notes: payload.notes,
           videoUrl: payload.videoUrl,
           setType: payload.setType,
+          performedAt: payload.performedAt,
         })
 
         updateSetDbId(payload.sessionExerciseId, payload.setNumber, data.id)
@@ -185,6 +194,10 @@ export function useUpdateCompletedSet() {
   return useMutation({
     mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) => {
       return upsertCompletedSet({
+        // La misma hora que el insert (editar la conserva en el store). Hace falta mandarla:
+        // si el insert sigue pendiente offline, esta edición lo sustituye en la cola y sería
+        // la que inserte la fila.
+        performedAt: getSetCompletedAt(sessionExerciseId, setNumber),
         sessionId,
         sessionExerciseId,
         setNumber,
@@ -243,6 +256,7 @@ export function useUpdateCompletedSet() {
           notes: variables.notes,
           videoUrl: variables.videoUrl,
           setType: variables.setType,
+          performedAt: getSetCompletedAt(variables.sessionExerciseId, variables.setNumber),
         })
       } catch {
         // No bloquear si falla encolar el pending set

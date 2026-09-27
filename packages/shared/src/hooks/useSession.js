@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS, SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
 import { resolveTrackedFields } from '../lib/measurementFields.js'
 import { planSessionWeightConversion, resolveUnitsForExercises, buildGymChangeJob, pickGymUnitOverrides } from '../lib/sessionGymChange.js'
@@ -21,6 +21,7 @@ import {
   deleteSessionExercisesWithoutSets,
   completeWorkoutSession,
   deleteWorkoutSession,
+  fetchLastSetPerformedAt,
 } from '../api/workoutApi.js'
 import {
   fetchExerciseBests,
@@ -34,6 +35,7 @@ import { usePreference } from './usePreferences.js'
 import { useSetSelectedGym } from './useGyms.js'
 import { useAllUserExerciseGymUnits } from './useExercises.js'
 import { isSessionAlreadyInProgressError } from '../lib/workoutStartAction.js'
+import { resolveSessionEnd, getLastSetCompletedAt, pickLatestTimestamp } from '../lib/dateUtils.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 
@@ -169,6 +171,31 @@ export function useStartSession({ onStartError } = {}) {
   })
 }
 
+/**
+ * Hora de la última serie de la sesión activa: la más reciente entre el servidor (series de
+ * otros dispositivos) y el store (series offline que aún no han llegado).
+ * `isResolved` distingue "aún preguntando" de "no hay": hasta que el servidor responde (o
+ * falla) no se sabe si hay una serie más reciente, y decidir antes podría recortar la sesión.
+ * @returns {{ lastSetAt: string|null, isResolved: boolean }}
+ */
+export function useLastSetAt({ enabled = true } = {}) {
+  const sessionId = useWorkoutStore(state => state.sessionId)
+  const completedSets = useWorkoutStore(state => state.completedSets)
+  const query = useQuery({
+    queryKey: [QUERY_KEYS.LAST_SET_PERFORMED_AT, String(sessionId)],
+    queryFn: () => fetchLastSetPerformedAt(sessionId),
+    enabled: enabled && sessionId != null,
+    staleTime: 0,
+    retry: false,
+  })
+  return {
+    lastSetAt: pickLatestTimestamp(query.data, getLastSetCompletedAt(completedSets)),
+    // Sin `!isFetching`, al reabrir el modal la respuesta de la apertura anterior contaría como
+    // resuelta mientras se vuelve a preguntar (otro dispositivo pudo registrar series entretanto).
+    isResolved: (query.isSuccess || query.isError) && !query.isFetching,
+  }
+}
+
 export function useEndSession({ onSuccess: onSuccessCb } = {}) {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
@@ -178,7 +205,7 @@ export function useEndSession({ onSuccess: onSuccessCb } = {}) {
   const userId = useUserId()
 
   return useMutation({
-    mutationFn: async ({ overallFeeling, notes }) => {
+    mutationFn: async ({ overallFeeling, notes, completedAt }) => {
       // Capturar sets del store antes de que se limpie
       const completedSets = getWorkoutStore().getState().completedSets
 
@@ -189,13 +216,11 @@ export function useEndSession({ onSuccess: onSuccessCb } = {}) {
         await deleteSessionExercisesWithoutSets(sessionId, exerciseIdsWithSets)
       }
 
-      const completedAt = new Date()
-      const startedAtDate = new Date(startedAt)
-      const durationMinutes = Math.round((completedAt - startedAtDate) / 60000)
+      const { completedAtISO, durationMinutes } = resolveSessionEnd(completedAt ?? new Date(), startedAt)
 
       const sessionData = await completeWorkoutSession({
         sessionId,
-        completedAt: completedAt.toISOString(),
+        completedAt: completedAtISO,
         durationMinutes,
         overallFeeling,
         notes,

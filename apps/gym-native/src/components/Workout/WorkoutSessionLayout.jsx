@@ -19,7 +19,7 @@ import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
 import { usePreference } from '../../hooks/usePreferences'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
@@ -53,6 +53,7 @@ export default function WorkoutSessionLayout({ title }) {
   const { prSets, prNotification, dismissPR } = useSessionPRDetection()
   const { value: weightUnit } = usePreference('weight_unit')
   const { data: distanceUnitByExerciseId } = useUserExerciseDistanceUnits()
+  const { lastSetAt, isResolved: isLastSetResolved } = useLastSetAt({ enabled: showEndModal })
   const endSessionMutation = useEndSession({
     onSuccess: ({ session, detectedPRs }) => {
       if (!navigationRef.isReady()) return
@@ -146,8 +147,8 @@ export default function WorkoutSessionLayout({ title }) {
     )
   }
 
-  const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    endSessionMutation.mutate({ overallFeeling, notes })
+  const handleConfirmEnd = ({ overallFeeling, notes, completedAt }) => {
+    endSessionMutation.mutate({ overallFeeling, notes, completedAt })
   }
 
   const handleAbandonWorkout = () => {
@@ -308,6 +309,8 @@ export default function WorkoutSessionLayout({ title }) {
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
         setsPending={progress.setsPending}
+        lastSetAt={lastSetAt}
+        isLastSetResolved={isLastSetResolved}
       />
 
       <WeightConverterModal

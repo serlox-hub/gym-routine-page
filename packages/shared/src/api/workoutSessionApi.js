@@ -31,6 +31,22 @@ export async function fetchCompletedSetsForSession(sessionId) {
   return data || []
 }
 
+/**
+ * Hora de la última serie registrada en la sesión, desde cualquier dispositivo.
+ * @returns {Promise<string|null>}
+ */
+export async function fetchLastSetPerformedAt(sessionId) {
+  const { data, error } = await getClient()
+    .from('completed_sets')
+    .select('performed_at')
+    .eq('session_id', sessionId)
+    .order('performed_at', { ascending: false })
+    .limit(1)
+
+  if (error) throw error
+  return data?.[0]?.performed_at ?? null
+}
+
 // ============================================
 // SESSION - MUTATIONS
 // ============================================

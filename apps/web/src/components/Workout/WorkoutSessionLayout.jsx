@@ -26,7 +26,7 @@ import GymSelector from './GymSelector.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, usePreference, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -59,6 +59,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const completeSetMutation = useCompleteSet()
   const uncompleteSetMutation = useUncompleteSet()
   const { prSets, prNotification, dismissPR } = useSessionPRDetection()
+  const { lastSetAt, isResolved: isLastSetResolved } = useLastSetAt({ enabled: showEndModal })
   const endSessionMutation = useEndSession()
   const abandonSessionMutation = useAbandonSession()
   const addSessionExerciseMutation = useAddSessionExercise()
@@ -133,8 +134,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     setShowEndModal(true)
   }
 
-  const handleConfirmEnd = ({ overallFeeling, notes }) => {
-    endSessionMutation.mutate({ overallFeeling, notes }, {
+  const handleConfirmEnd = ({ overallFeeling, notes, completedAt }) => {
+    endSessionMutation.mutate({ overallFeeling, notes, completedAt }, {
       onSuccess: ({ session, detectedPRs }) => {
         const completedSetsSnapshot = useWorkoutStore.getState().completedSets
         const summaryData = buildWorkoutSummaryFromEndSession(
@@ -315,6 +316,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
         setsPending={progress.setsPending}
+        lastSetAt={lastSetAt}
+        isLastSetResolved={isLastSetResolved}
       />
 
       <WeightConverterModal
