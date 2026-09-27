@@ -91,38 +91,6 @@ export function moveItemToPosition(array, id, newIndex) {
 }
 
 /**
- * Encuentra el índice de un ejercicio por sessionExerciseId o id
- * @param {Array} exercises - Array de ejercicios
- * @param {Object} exercise - Ejercicio a buscar
- * @returns {number} Índice del ejercicio o -1 si no se encuentra
- */
-export function findExerciseIndex(exercises, exercise) {
-  if (!exercises || !exercise) return -1
-  const key = exercise.sessionExerciseId || exercise.id
-  return exercises.findIndex(e => (e.sessionExerciseId || e.id) === key)
-}
-
-/**
- * Genera props de reordenamiento para un ejercicio en una lista
- * @param {Array} exercises - Array de ejercicios
- * @param {Object} exercise - Ejercicio actual
- * @param {Function} onReorder - Callback (currentIndex, newIndex) => void
- * @returns {Object} Props { onReorderToPosition, currentIndex, totalExercises } o {}
- */
-export function getReorderProps(exercises, exercise, onReorder) {
-  if (!onReorder || !exercises?.length) return {}
-
-  const index = findExerciseIndex(exercises, exercise)
-  if (index === -1) return {}
-
-  return {
-    onReorderToPosition: (newIndex) => onReorder(index, newIndex),
-    currentIndex: index,
-    totalExercises: exercises.length,
-  }
-}
-
-/**
  * Filtra y ordena ejercicios para el buscador: búsqueda flexible por
  * subsecuencia (case- y tilde-insensitive) + filtros de músculo/equipo/origen +
  * ranking por relevancia. Lógica única compartida por web y native (paridad por

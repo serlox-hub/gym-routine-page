@@ -174,18 +174,18 @@ describe('useSessionExercises — mutations', () => {
     expect(deleteSessionExercise).toHaveBeenCalledWith('se-1')
   })
 
-  it('useReorderSessionExercises: llama a reorderSessionExercises con los ids ordenados', async () => {
+  it('useReorderSessionExercises: llama a reorderSessionExercises con los items ordenados', async () => {
     reorderSessionExercises.mockResolvedValueOnce(undefined)
 
     const { result } = renderHook(() => useReorderSessionExercises(), { wrapper: createWrapper() })
 
-    const orderedIds = ['se-2', 'se-1', 'se-3']
+    const items = [{ id: 'se-2' }, { id: 'se-1', supersetGroup: null }, { id: 'se-3' }]
 
     await act(async () => {
-      await result.current.mutateAsync(orderedIds)
+      await result.current.mutateAsync(items)
     })
 
-    expect(reorderSessionExercises).toHaveBeenCalledWith(orderedIds)
+    expect(reorderSessionExercises).toHaveBeenCalledWith(items)
   })
 
   it('useUpdateSessionExerciseFields: aplica el cambio al cache de forma optimista antes del servidor', async () => {
@@ -232,11 +232,12 @@ describe('useSessionExercises — mutations', () => {
 
     const { result } = renderHook(() => useReorderSessionExercises(), { wrapper })
 
-    act(() => { result.current.mutate(['se-2', 'se-1']) })
+    act(() => { result.current.mutate([{ id: 'se-2', supersetGroup: 7 }, { id: 'se-1' }]) })
 
     await waitFor(() => {
       const cached = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])
       expect(cached.map(e => e.id)).toEqual(['se-2', 'se-1'])
+      expect(cached[0].superset_group).toBe(7)
     })
 
     await act(async () => { resolveReorder() })
@@ -250,7 +251,7 @@ describe('useSessionExercises — mutations', () => {
     const { result } = renderHook(() => useReorderSessionExercises(), { wrapper })
 
     await act(async () => {
-      await result.current.mutateAsync(['se-2', 'se-1']).catch(() => {})
+      await result.current.mutateAsync([{ id: 'se-2' }, { id: 'se-1' }]).catch(() => {})
     })
 
     const cached = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])

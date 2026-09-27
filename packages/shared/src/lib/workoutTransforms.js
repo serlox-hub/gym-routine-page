@@ -107,6 +107,7 @@ export function transformSessionExercises(sessionExercises) {
   const flatExercises = sorted.map(se => ({
     id: se.id,
     sessionExerciseId: se.id,
+    sort_order: se.sort_order,
     exercise: se.exercise,
     exercise_id: se.exercise_id,
     series: se.series,

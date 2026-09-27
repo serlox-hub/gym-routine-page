@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getRoutineDayLayout, applyExerciseOrderToBlocks, placeInSupersetForDay } from './routineDayLayout.js'
+import { getRoutineDayLayout, applyExerciseOrder, mergeBlockOrder, applyExerciseOrderToBlocks, placeInSupersetForBlocks } from './routineDayLayout.js'
 
 const warmup = (exercises) => ({ name: 'Calentamiento', routine_exercises: exercises })
 const main = (exercises) => ({ name: 'Principal', routine_exercises: exercises })
@@ -158,7 +158,7 @@ describe('applyExerciseOrderToBlocks — with membership', () => {
   })
 })
 
-describe('placeInSupersetForDay', () => {
+describe('placeInSupersetForBlocks', () => {
   const day = [
     { id: 11, sort_order: 2, is_warmup: true, superset_group: null },
     { id: 10, sort_order: 1, is_warmup: true, superset_group: null },
@@ -169,27 +169,101 @@ describe('placeInSupersetForDay', () => {
   ]
 
   it('takes a main-block member out and returns the whole day, warm-up first', () => {
-    expect(placeInSupersetForDay(day, { routineExerciseId: 21, supersetGroup: null })).toEqual([
+    expect(placeInSupersetForBlocks(day, { exerciseId: 21, supersetGroup: null })).toEqual([
       { id: 10 }, { id: 11 }, { id: 20 }, { id: 22 }, { id: 21, supersetGroup: null }, { id: 23 },
     ])
   })
 
   it('joins an individual at an explicit position in the chosen run', () => {
-    expect(placeInSupersetForDay(day, { routineExerciseId: 23, supersetGroup: 1, targetIndex: 0, firstMemberId: 21 })).toEqual([
+    expect(placeInSupersetForBlocks(day, { exerciseId: 23, supersetGroup: 1, targetIndex: 0, firstMemberId: 21 })).toEqual([
       { id: 10 }, { id: 11 }, { id: 20 }, { id: 23, supersetGroup: 1 }, { id: 21 }, { id: 22 },
     ])
   })
 
   it('applies the rule to the exercise\'s own block only: the main block\'s group does not count in the warm-up', () => {
     // Group 1 has no members in the warm-up: it is set in place.
-    expect(placeInSupersetForDay(day, { routineExerciseId: 11, supersetGroup: 1 })).toEqual([
+    expect(placeInSupersetForBlocks(day, { exerciseId: 11, supersetGroup: 1 })).toEqual([
       { id: 10 }, { id: 11, supersetGroup: 1 }, { id: 20 }, { id: 21 }, { id: 22 }, { id: 23 },
     ])
   })
 
   it('returns null if there is nothing to write or the exercise is not in the day', () => {
-    expect(placeInSupersetForDay(day, { routineExerciseId: 20, supersetGroup: null })).toBeNull()
-    expect(placeInSupersetForDay(day, { routineExerciseId: 99, supersetGroup: null })).toBeNull()
-    expect(placeInSupersetForDay(null, { routineExerciseId: 21, supersetGroup: null })).toBeNull()
+    expect(placeInSupersetForBlocks(day, { exerciseId: 20, supersetGroup: null })).toBeNull()
+    expect(placeInSupersetForBlocks(day, { exerciseId: 99, supersetGroup: null })).toBeNull()
+    expect(placeInSupersetForBlocks(null, { exerciseId: 21, supersetGroup: null })).toBeNull()
+  })
+})
+
+describe('applyExerciseOrder', () => {
+  const rows = [
+    { id: 1, sort_order: 1, superset_group: null, name: 'a' },
+    { id: 2, sort_order: 2, superset_group: 5, name: 'b' },
+    { id: 3, sort_order: 3, superset_group: 5, name: 'c' },
+  ]
+
+  it('returns the rows in the new order, renumbered 1..n, keeping their other fields', () => {
+    expect(applyExerciseOrder(rows, [3, 1, 2])).toEqual([
+      { id: 3, sort_order: 1, superset_group: 5, name: 'c' },
+      { id: 1, sort_order: 2, superset_group: null, name: 'a' },
+      { id: 2, sort_order: 3, superset_group: 5, name: 'b' },
+    ])
+  })
+
+  it('writes membership only for the items that carry supersetGroup', () => {
+    const result = applyExerciseOrder(rows, [{ id: 2 }, { id: 3, supersetGroup: null }, { id: 1, supersetGroup: 5 }])
+    expect(result.map(row => [row.id, row.superset_group])).toEqual([[2, 5], [3, null], [1, 5]])
+  })
+
+  it('does not mutate the input rows', () => {
+    applyExerciseOrder(rows, [{ id: 3, supersetGroup: null }, { id: 1 }, { id: 2 }])
+    expect(rows[2]).toEqual({ id: 3, sort_order: 3, superset_group: 5, name: 'c' })
+  })
+
+  it('returns the rows unchanged when the ids do not match', () => {
+    expect(applyExerciseOrder(rows, [1, 2])).toBe(rows)
+    expect(applyExerciseOrder(rows, [1, 2, 99])).toBe(rows)
+    expect(applyExerciseOrder(null, [1])).toBeNull()
+    expect(applyExerciseOrder(rows, null)).toBe(rows)
+  })
+})
+
+describe('placeInSupersetForBlocks — session rows', () => {
+  // Session rows carry more than a routine row (the joined exercise, is_extra...); the rule only
+  // reads id, sort_order, is_warmup and superset_group.
+  const session = [
+    { id: 101, sort_order: 1, is_warmup: true, superset_group: null, is_extra: false, exercise: { id: 7 } },
+    { id: 102, sort_order: 2, is_warmup: false, superset_group: 3, is_extra: false, exercise: { id: 8 } },
+    { id: 103, sort_order: 3, is_warmup: false, superset_group: 3, is_extra: true, exercise: { id: 9 } },
+    { id: 104, sort_order: 4, is_warmup: false, superset_group: null, is_extra: false, exercise: { id: 10 } },
+  ]
+
+  it('takes a member out right after its old superset, whole session warm-up first', () => {
+    expect(placeInSupersetForBlocks(session, { exerciseId: 102, supersetGroup: null })).toEqual([
+      { id: 101 }, { id: 103 }, { id: 102, supersetGroup: null }, { id: 104 },
+    ])
+  })
+})
+
+describe('mergeBlockOrder', () => {
+  const rows = [
+    { id: 1, isWarmup: true },
+    { id: 2, isWarmup: false },
+    { id: 3, isWarmup: false },
+  ]
+
+  it('puts a main-block order after the untouched warm-up', () => {
+    expect(mergeBlockOrder(rows, false, [{ id: 3, supersetGroup: 1 }, { id: 2 }])).toEqual([
+      { id: 1 }, { id: 3, supersetGroup: 1 }, { id: 2 },
+    ])
+  })
+
+  it('puts a warm-up order before the untouched main block', () => {
+    expect(mergeBlockOrder(rows, true, [{ id: 1, supersetGroup: null }])).toEqual([
+      { id: 1, supersetGroup: null }, { id: 2 }, { id: 3 },
+    ])
+  })
+
+  it('without the other block, returns the block items alone', () => {
+    expect(mergeBlockOrder(null, false, [{ id: 2 }])).toEqual([{ id: 2 }])
   })
 })

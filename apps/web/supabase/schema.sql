@@ -644,7 +644,6 @@ CREATE OR REPLACE FUNCTION "public"."reorder_session_exercises"("exercise_orders
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 BEGIN
-  -- Verificar que el usuario tiene acceso a estos ejercicios de sesión
   IF EXISTS (
     SELECT 1 FROM jsonb_array_elements(exercise_orders) AS item
     WHERE NOT EXISTS (
@@ -657,15 +656,29 @@ BEGIN
     RAISE EXCEPTION 'Acceso denegado a uno o más ejercicios de sesión';
   END IF;
 
-  -- Paso 1: Poner valores negativos temporales para liberar los slots
+  -- The access check limits the payload to the caller's rows, not to one session: without this, a
+  -- crafted payload could mix membership across sessions. Every caller sends one session. An empty
+  -- payload stays a no-op (> 1, not <> 1).
+  IF (
+    SELECT count(DISTINCT se.session_id)
+    FROM jsonb_array_elements(exercise_orders) AS item
+    JOIN session_exercises se ON se.id = (item->>'id')::int
+  ) > 1 THEN
+    RAISE EXCEPTION 'Exercises to reorder must belong to a single session';
+  END IF;
+
+  -- Two steps because of UNIQUE (session_id, sort_order): negative values first free every slot.
   UPDATE session_exercises se
   SET sort_order = -(item->>'sort_order')::int
   FROM jsonb_array_elements(exercise_orders) AS item
   WHERE se.id = (item->>'id')::int;
 
-  -- Paso 2: Asignar los valores finales positivos
   UPDATE session_exercises se
-  SET sort_order = (item->>'sort_order')::int
+  SET sort_order = (item->>'sort_order')::int,
+      superset_group = CASE
+        WHEN item ? 'superset_group' THEN (item->>'superset_group')::int
+        ELSE se.superset_group
+      END
   FROM jsonb_array_elements(exercise_orders) AS item
   WHERE se.id = (item->>'id')::int;
 END;
@@ -675,7 +688,7 @@ $$;
 ALTER FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") IS 'Reordena ejercicios de sesión en batch. Recibe JSONB array de {id, sort_order}';
+COMMENT ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") IS 'Reorders the exercises of ONE workout session in batch. Takes a JSONB array of {id, sort_order, superset_group?}: superset_group is written only when the key is present (null = leave the superset).';
 
 
 

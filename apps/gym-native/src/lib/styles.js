@@ -50,6 +50,9 @@ export const design = {
   // otro en silencio. `swipeDeleteMaxTravel > swipeDeleteThreshold` es obligatorio: con el
   // recorrido por debajo del disparo la fila nunca podría llegar a borrarse.
   gestureActivationDistance: 5,
+  // Hueco entre unidades de una lista de ejercicios con superseries (`ExerciseRowList`); la
+  // pantalla lo repite antes de su fila de "+ añadir".
+  exerciseRowGap: 8,
   swipeDeleteThreshold: 72,
   swipeDeleteMaxTravel: 96,
 

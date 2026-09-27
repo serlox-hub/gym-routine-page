@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, CheckCircle2 } from 'lucide-react'
-import { DropdownMenu } from '../ui/index.js'
+import { DragHandle, DropdownMenu } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { DEFAULT_TRACKED_FIELDS, SetField, getMuscleGroupName, formatEffortBadge, formatFieldValue } from '@gym/shared'
 
@@ -36,6 +36,8 @@ function ExerciseCardHeader({
   isCompleted = false,
   onToggleCollapse,
   menuItems,
+  dragHandleProps = null,
+  isReordering = false,
 }) {
   const { t } = useTranslation()
   const muscleGroupLabel = getMuscleGroupName(muscleGroup)
@@ -54,6 +56,12 @@ function ExerciseCardHeader({
       onClick={onToggleCollapse}
       style={{ cursor: 'pointer' }}
     >
+      {dragHandleProps && (
+        // Centrada con la línea del nombre (15px de fuente); el asa ya para el clic que pliega.
+        <div className="shrink-0" style={{ paddingTop: 2 }}>
+          <DragHandle dragHandleProps={dragHandleProps} disabled={isReordering} />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <h4 className="font-semibold mb-1.5 truncate" style={{ color: colors.textPrimary, fontSize: 15 }}>
           {exerciseName}

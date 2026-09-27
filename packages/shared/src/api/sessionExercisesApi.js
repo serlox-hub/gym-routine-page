@@ -232,10 +232,17 @@ export async function deleteSessionExercise(sessionExerciseId) {
   if (error) throw error
 }
 
-export async function reorderSessionExercises(orderedExerciseIds) {
-  const exerciseOrders = orderedExerciseIds.map((id, index) => ({
-    id,
-    sort_order: index + 1
+/**
+ * Reorders the whole session (warm-up first) in one atomic write, plus the membership of the items
+ * that carry `supersetGroup` (null = leave the superset). Items without the key keep their group.
+ *
+ * @param {Array<{ id: number, supersetGroup?: number|null }>} items - The session in its new order
+ */
+export async function reorderSessionExercises(items) {
+  const exerciseOrders = items.map((item, index) => ({
+    id: item.id,
+    sort_order: index + 1,
+    ...('supersetGroup' in item ? { superset_group: item.supersetGroup } : null),
   }))
 
   const { error } = await getClient().rpc('reorder_session_exercises', {

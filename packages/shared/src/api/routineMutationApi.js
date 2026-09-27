@@ -1,5 +1,5 @@
 import { getClient } from './_client.js'
-import { placeInSupersetForDay } from '../lib/routineDayLayout.js'
+import { placeInSupersetForBlocks } from '../lib/routineDayLayout.js'
 
 // ============================================
 // MUTATIONS
@@ -161,7 +161,7 @@ export async function reorderRoutineExercises(items) {
 
 /**
  * Joins a routine exercise to a superset or takes it out (`supersetGroup: null`), PLACING it next
- * to its run in the same write (`placeInSupersetForDay` + `reorderRoutineExercises`). Without an
+ * to its run in the same write (`placeInSupersetForBlocks` + `reorderRoutineExercises`). Without an
  * explicit position: joining goes after the last member, leaving goes right after the old run.
  *
  * @returns {Promise<Array|null>} What was written, or null if there was nothing to write
@@ -175,7 +175,7 @@ export async function setRoutineExerciseSupersetGroup({ dayId, routineExerciseId
 
   if (error) throw error
 
-  const items = placeInSupersetForDay(data || [], { routineExerciseId, supersetGroup, targetIndex, firstMemberId })
+  const items = placeInSupersetForBlocks(data || [], { exerciseId: routineExerciseId, supersetGroup, targetIndex, firstMemberId })
   if (!items) return null
 
   await reorderRoutineExercises(items)
