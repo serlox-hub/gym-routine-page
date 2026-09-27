@@ -19,10 +19,7 @@ vi.mock('./_stores.js', () => {
 // Mock the workoutApi barrel
 vi.mock('../api/workoutApi.js', () => ({
   fetchSessionExercises: vi.fn(),
-  fetchSessionExercisesSortOrder: vi.fn(),
-  fetchSessionExerciseBlockName: vi.fn(),
-  updateSessionExerciseSortOrder: vi.fn(),
-  insertSessionExercise: vi.fn(),
+  addSessionExercise: vi.fn(),
   replaceSessionExercise: vi.fn(),
   updateSessionExerciseFields: vi.fn(),
   deleteSessionExercise: vi.fn(),
@@ -40,8 +37,7 @@ vi.mock('../notifications.js', () => {
 
 import {
   fetchSessionExercises,
-  fetchSessionExercisesSortOrder,
-  insertSessionExercise,
+  addSessionExercise,
   deleteSessionExercise,
   reorderSessionExercises,
   updateSessionExerciseFields,
@@ -49,6 +45,7 @@ import {
 } from '../api/workoutApi.js'
 import * as notificationsMock from '../notifications.js'
 import { QUERY_KEYS } from '../lib/constants.js'
+import { t } from '../i18n/index.js'
 
 import {
   useSessionExercises,
@@ -116,51 +113,6 @@ describe('useSessionExercises — queries', () => {
 describe('useSessionExercises — mutations', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  it('useAddSessionExercise: llama a insertSessionExercise con los parámetros correctos', async () => {
-    // Sin ejercicios existentes (nuevo ejercicio al final)
-    fetchSessionExercisesSortOrder.mockResolvedValueOnce([])
-    insertSessionExercise.mockResolvedValueOnce({ id: 'se-new' })
-
-    const { result } = renderHook(() => useAddSessionExercise(), { wrapper: createWrapper() })
-
-    const exercise = { id: 'ex-1', nombre: 'Press Banca' }
-
-    await act(async () => {
-      await result.current.mutateAsync({ exercise, series: 3, reps: '10' })
-    })
-
-    expect(insertSessionExercise).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionId: 'session-123',
-        exerciseId: 'ex-1',
-        series: 3,
-        reps: '10',
-        isWarmup: false,
-      })
-    )
-  })
-
-  it('useAddSessionExercise: añade al final si ya hay ejercicios existentes', async () => {
-    const existingExercises = [
-      { id: 'se-1', sort_order: 0 },
-      { id: 'se-2', sort_order: 1 },
-    ]
-    fetchSessionExercisesSortOrder.mockResolvedValueOnce(existingExercises)
-    insertSessionExercise.mockResolvedValueOnce({ id: 'se-new' })
-
-    const { result } = renderHook(() => useAddSessionExercise(), { wrapper: createWrapper() })
-
-    await act(async () => {
-      await result.current.mutateAsync({ exercise: { id: 'ex-3' }, series: 3, reps: '8' })
-    })
-
-    expect(insertSessionExercise).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sortOrder: 2, // siguiente al sort_order 1
-      })
-    )
   })
 
   it('useRemoveSessionExercise: llama a deleteSessionExercise con el sessionExerciseId', async () => {
@@ -272,6 +224,83 @@ describe('useSessionExercises — mutations', () => {
     const cached = queryClient.getQueryData([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])
     expect(cached.map(e => e.id)).toEqual(['se-1', 'se-2'])
     expect(notificationsMock._notifierShow).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+})
+
+describe('useAddSessionExercise', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const TREADMILL = { id: 2, tracked_fields: ['distance', 'time'] }
+  // The add form's submit payload (`AddExerciseModal`), already parsed.
+  const FORM_DATA = {
+    exerciseId: 2, exercise: TREADMILL,
+    series: 1, target_field: 'time', reps: '20min', level: 8, rir: null, rest_seconds: 60, notes: null,
+    superset_group: 3,
+  }
+  const ROUTINE_KEYS = [QUERY_KEYS.ROUTINE_BLOCKS, QUERY_KEYS.ROUTINE_DAY, QUERY_KEYS.ROUTINE_DAYS, QUERY_KEYS.ROUTINE_ALL_EXERCISES, QUERY_KEYS.ROUTINES]
+
+  async function add(data) {
+    const { wrapper, queryClient } = createWrapperWithClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    const { result } = renderHook(() => useAddSessionExercise(), { wrapper })
+    await act(async () => {
+      await result.current.mutateAsync(data).catch(() => {})
+    })
+    return invalidate.mock.calls.map(([arg]) => arg.queryKey)
+  }
+
+  it('sends the column fields, the superset and the scope, with target_field and level', async () => {
+    addSessionExercise.mockResolvedValue({ session_exercise_id: 40, routine_exercise_id: 90 })
+
+    await add({ ...FORM_DATA, addToRoutine: true })
+
+    expect(addSessionExercise).toHaveBeenCalledWith({
+      sessionId: 'session-123',
+      exerciseId: 2,
+      fields: { series: 1, target_field: 'time', reps: '20min', level: 8, rir: null, rest_seconds: 60, notes: null },
+      supersetGroup: 3,
+      addToRoutine: true,
+    })
+  })
+
+  it('with a routine row, refreshes the session, the routine caches and the routine list', async () => {
+    addSessionExercise.mockResolvedValue({ session_exercise_id: 40, routine_exercise_id: 90 })
+
+    const keys = await add({ ...FORM_DATA, addToRoutine: true })
+
+    expect(keys).toContainEqual([QUERY_KEYS.SESSION_EXERCISES, 'session-123'])
+    expect(keys.map(key => key[0])).toEqual(expect.arrayContaining(ROUTINE_KEYS))
+    expect(notificationsMock._notifierShow).not.toHaveBeenCalled()
+  })
+
+  it('"only today" refreshes the session and leaves the routine alone', async () => {
+    addSessionExercise.mockResolvedValue({ session_exercise_id: 40, routine_exercise_id: null })
+
+    const keys = await add({ ...FORM_DATA, addToRoutine: false })
+
+    expect(keys).toEqual([[QUERY_KEYS.SESSION_EXERCISES, 'session-123']])
+    expect(notificationsMock._notifierShow).not.toHaveBeenCalled()
+  })
+
+  // The day was deleted mid-session: the RPC adds to the session only and says so with a null id.
+  it('asked for the routine but got no routine row, tells the user the day is gone', async () => {
+    addSessionExercise.mockResolvedValue({ session_exercise_id: 40, routine_exercise_id: null })
+
+    const keys = await add({ ...FORM_DATA, addToRoutine: true })
+
+    expect(keys).toEqual([[QUERY_KEYS.SESSION_EXERCISES, 'session-123']])
+    expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addRoutineDayGone'), 'info')
+  })
+
+  it('shows addFailed when the RPC fails', async () => {
+    addSessionExercise.mockRejectedValue(new Error('exercise_not_available'))
+
+    const keys = await add({ ...FORM_DATA, addToRoutine: true })
+
+    expect(keys).toEqual([])
+    expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addFailed'), 'error')
   })
 })
 

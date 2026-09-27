@@ -106,3 +106,16 @@ export function buildReplaceSessionExerciseFields(sessionExercise, newTrackedFie
     notes: null,
   }
 }
+
+const SESSION_EXERCISE_FIELD_KEYS = ['series', 'reps', 'target_field', 'level', 'rir', 'rest_seconds', 'notes']
+
+/**
+ * Column values for `add_session_exercise` (`p_fields`, migration 065), picked from the add form's
+ * submit payload, which `parseExerciseConfigForm` has already normalised. It only picks: the payload
+ * also carries `exercise` and `superset_group`, and the RPC raises on any key it does not know.
+ * @param {{ series: number, reps: string, target_field: string|null, level: number|null, rir: number|null, rest_seconds: number|null, notes: string|null }} data
+ * @returns {{ series: number, reps: string, target_field: string|null, level: number|null, rir: number|null, rest_seconds: number|null, notes: string|null }}
+ */
+export function pickSessionExerciseFields(data) {
+  return Object.fromEntries(SESSION_EXERCISE_FIELD_KEYS.map(key => [key, data[key] ?? null]))
+}

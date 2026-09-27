@@ -26,7 +26,7 @@ import GymSelector from './GymSelector.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, usePreference, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExerciseName, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, usePreference, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -37,6 +37,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const completedSets = useWorkoutStore(state => state.completedSets)
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
   const sessionGymId = useWorkoutStore(state => state.gymId)
+  const routineDayId = useWorkoutStore(state => state.routineDayId)
 
   const { gyms, hasMultiple } = useSelectedGym()
   const { changeGym } = useChangeSessionGym()
@@ -50,6 +51,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddExercise, setShowAddExercise] = useState(false)
+  // Add form already submitted in a routine session, waiting for "only today" / "also in the routine".
+  const [pendingAdd, setPendingAdd] = useState(null)
   const [showConverter, setShowConverter] = useState(false)
   const [showGymSelector, setShowGymSelector] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
@@ -155,20 +158,21 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     abandonSessionMutation.mutate()
   }
 
+  // A free session has no routine to ask about: the exercise goes to the session only.
   const handleAddExercise = (data) => {
-    addSessionExerciseMutation.mutate({
-      exercise: data.exercise,
-      series: data.series,
-      target_field: data.target_field,
-      reps: data.reps,
-      level: data.level,
-      rir: data.rir,
-      rest_seconds: data.rest_seconds,
-      notes: data.notes,
-      superset_group: data.superset_group,
-    }, {
-      onSuccess: () => setShowAddExercise(false)
-    })
+    if (routineDayId == null) {
+      addSessionExerciseMutation.mutate({ ...data, addToRoutine: false }, {
+        onSuccess: () => setShowAddExercise(false)
+      })
+      return
+    }
+    setShowAddExercise(false)
+    setPendingAdd(data)
+  }
+
+  const confirmAdd = (addToRoutine) => {
+    addSessionExerciseMutation.mutate({ ...pendingAdd, addToRoutine })
+    setPendingAdd(null)
   }
 
   const handleRemoveExercise = (sessionExerciseId) => {
@@ -308,6 +312,21 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         isPending={addSessionExerciseMutation.isPending}
         mode="session"
         existingSupersets={existingSupersets}
+      />
+
+      <ConfirmModal
+        isOpen={!!pendingAdd}
+        title={t('workout:exercise.addScopeTitle')}
+        message={t('workout:exercise.addScopeMessage', { name: getExerciseName(pendingAdd?.exercise) })}
+        cancelText={t('workout:exercise.addOnlyToday')}
+        confirmText={t('workout:exercise.addAlsoRoutine')}
+        variant="primary"
+        onCancel={() => confirmAdd(false)}
+        onConfirm={() => confirmAdd(true)}
+        // Closing without choosing adds to today only. Unlike replace, where closing aborts on
+        // purpose: replacing destroys the completed sets, adding destroys nothing, the user already
+        // pressed "Add", and the session is the narrow, safe scope.
+        onDismiss={() => confirmAdd(false)}
       />
 
       <EndSessionModal

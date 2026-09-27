@@ -29,9 +29,6 @@ export {
 
 export {
   fetchSessionExercises,
-  fetchSessionExercisesSortOrder,
-  updateSessionExerciseSortOrder,
-  insertSessionExercise,
   replaceSessionExercise,
   addSessionExercise,
   updateSessionExerciseFields,

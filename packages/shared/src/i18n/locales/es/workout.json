@@ -130,7 +130,13 @@
     "replaceScopeMessage": "Puedes cambiar \"{{name}}\" solo en este entrenamiento o dejarlo cambiado en la rutina.",
     "replaceOnlyToday": "Solo hoy",
     "replaceAlsoRoutine": "También en la rutina",
-    "replaceFailed": "No se pudo reemplazar el ejercicio. Inténtalo de nuevo."
+    "replaceFailed": "No se pudo reemplazar el ejercicio. Inténtalo de nuevo.",
+    "addScopeTitle": "¿Solo hoy o también en la rutina?",
+    "addScopeMessage": "Puedes añadir \"{{name}}\" solo a este entrenamiento o dejarlo también en la rutina.",
+    "addOnlyToday": "Solo hoy",
+    "addAlsoRoutine": "También en la rutina",
+    "addFailed": "No se pudo añadir el ejercicio. Inténtalo de nuevo.",
+    "addRoutineDayGone": "Este día ya no está en la rutina. El ejercicio se ha añadido solo a hoy."
   },
   "summary": {
     "title": "Resumen",
