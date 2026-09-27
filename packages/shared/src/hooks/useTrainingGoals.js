@@ -28,24 +28,55 @@ const EMPTY = []
 /**
  * Hook principal para el widget de objetivos de entrenamiento.
  * Combina preferencias del usuario con datos de sesiones.
+ *
+ * Los errores no se tragan (issue #98): con `sessionsError` las sesiones vacías no significan "no
+ * has entrenado", y con `preferencesError` el objetivo no se conoce, así que `isConfigured` vale
+ * null (ni sí ni no) y la tarjeta no puede ofrecer configurarlo a quien ya lo tiene.
  */
 export function useTrainingGoal() {
   const userId = useUserId()
-  const { value: daysPerCycle, isLoading: prefsLoading } = usePreference('training_days_per_week')
+  const {
+    value: daysPerCycle, isLoading: prefsLoading, isError: preferencesError, refetch: refetchPreferences,
+  } = usePreference('training_days_per_week')
   const { value: restCycles } = usePreference('training_rest_weeks')
   const { value: showWidget } = usePreference('show_training_goal')
   const { value: weekStartDay } = usePreference('week_start_day')
 
-  const { data: sessions, isLoading: sessionsLoading } = useQuery({
+  const {
+    data: sessions, isLoading: sessionsLoading, isError: sessionsQueryError, refetch: refetchSessions,
+  } = useQuery({
     queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS, userId],
     queryFn: () => fetchCompletedSessionDates({ userId, from: FROM_DATE }),
     enabled: !!userId,
     staleTime: 1000 * 60 * 5,
   })
 
+  // Un refresco fallido con sesiones ya en caché no es un error para la tarjeta: los datos valen.
+  const sessionsError = sessionsQueryError && !sessions
   // Mientras cargan las preferencias, daysPerCycle vale null aunque el usuario tenga objetivo
   const isLoading = sessionsLoading || prefsLoading
   const wsd = weekStartDay || 'monday'
+  // `retry` relanza solo lo que falló: es lo que pulsa el «Reintentar» de la tarjeta. Mientras
+  // reintenta, la query sin datos vuelve a `pending` (TanStack v5 limpia el error al empezar un
+  // fetch sin datos), así que `isLoading` pasa a true y la tarjeta pinta su skeleton.
+  const retry = () => {
+    if (preferencesError) refetchPreferences()
+    if (sessionsError) refetchSessions()
+  }
+  const errors = { preferencesError, sessionsError, refetchPreferences, refetchSessions, retry }
+
+  // La ventana de la gráfica usa el inicio de semana por defecto (lunes): sin preferencias no se
+  // sabe el del usuario. Aceptado: el issue #98 deja fuera los defaults del resto de preferencias.
+  if (preferencesError) {
+    return {
+      isConfigured: null,
+      showWidget: true,
+      isLoading,
+      sessions: sessions || EMPTY,
+      weekStartDay: wsd,
+      ...errors,
+    }
+  }
 
   // Sin objetivo no hay racha ni progreso, pero la gráfica del widget pinta igual los días entrenados
   if (!daysPerCycle) {
@@ -55,6 +86,7 @@ export function useTrainingGoal() {
       isLoading,
       sessions: sessions || EMPTY,
       weekStartDay: wsd,
+      ...errors,
     }
   }
 
@@ -70,6 +102,7 @@ export function useTrainingGoal() {
     restCycles: restCycles || EMPTY,
     sessions: sessions || EMPTY,
     weekStartDay: wsd,
+    ...errors,
   }
 }
 

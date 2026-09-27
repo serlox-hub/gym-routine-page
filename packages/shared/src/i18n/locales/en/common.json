@@ -205,6 +205,7 @@
     "greetingEvening": "Good evening",
     "workout": "Workout",
     "noStreakYet": "No streak yet",
+    "streakLoadError": "Couldn't load your streak.",
     "createRoutine": "Create Routine",
     "pinnedToHome": "Pinned to Home",
     "pinRoutine": "Pin a routine",

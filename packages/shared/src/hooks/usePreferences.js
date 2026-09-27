@@ -59,10 +59,15 @@ export function useUpdatePreference() {
   return useMutation({
     mutationFn: (params) => upsertPreference({ userId, ...params }),
     onSuccess: ({ key, value }) => {
-      queryClient.setQueryData([QUERY_KEYS.USER_PREFERENCES, userId], (old) => ({
-        ...old,
-        [key]: value,
-      }))
+      const queryKey = [QUERY_KEYS.USER_PREFERENCES, userId]
+      // Sin caché (la carga falló o no ha llegado) no se escribe un objeto con una sola clave: la
+      // query pasaría a éxito con el resto en sus defaults, y la tarjeta de racha le ofrecería
+      // configurar el objetivo a quien ya lo tiene (issue #98). Se vuelve a pedir entero.
+      if (queryClient.getQueryData(queryKey) === undefined) {
+        queryClient.invalidateQueries({ queryKey })
+        return
+      }
+      queryClient.setQueryData(queryKey, (old) => ({ ...old, [key]: value }))
     },
   })
 }
@@ -71,11 +76,16 @@ export function useUpdatePreference() {
 // HELPERS
 // ============================================
 
+// Con `isError`, `value` es el valor por defecto, no el del usuario: quien decida algo con él tiene
+// que mirar antes `isError` (ver `useTrainingGoal`). Solo cuenta sin datos: si falla un refresco en
+// segundo plano, la caché sigue siendo la del usuario y el valor vale.
 export function usePreference(key) {
-  const { data: preferences, isLoading } = usePreferences()
+  const { data: preferences, isLoading, isError, refetch } = usePreferences()
   return {
     value: preferences?.[key] ?? DEFAULT_VALUES[key],
     isLoading,
+    isError: isError && !preferences,
+    refetch,
   }
 }
 

@@ -8,6 +8,7 @@ import {
 } from '@gym/shared'
 import { Card, Skeleton } from '../ui/index.js'
 import { colors, gradients, design } from '../../lib/styles.js'
+import StreakErrorState from './StreakErrorState.jsx'
 
 
 function SetupBanner() {
@@ -142,6 +143,17 @@ function StreakCard() {
       </section>
     )
   }
+  // Sin sesiones no hay nada fiable que pintar: ni barras (vacías parecerían "no has entrenado") ni
+  // racha ("Sin racha aún" sería falso). Solo el error.
+  if (goal.sessionsError) {
+    return (
+      <section className="mb-4">
+        <Card className="p-4">
+          <StreakErrorState onRetry={goal.retry} />
+        </Card>
+      </section>
+    )
+  }
   const showStreakInfo = goal.isConfigured && goal.showWidget
 
   const todayStr = getTodayDateStr()
@@ -164,8 +176,10 @@ function StreakCard() {
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
       `}</style>
       <Card className="p-4 overflow-hidden">
-        {/* Setup banner when not configured */}
-        {!goal.isConfigured && <SetupBanner />}
+        {/* Sin objetivo, el banner para configurarlo. Con las preferencias caídas no se sabe si lo hay
+            (`isConfigured` null): el error en su sitio, y la gráfica sigue como sin objetivo. */}
+        {goal.isConfigured === false && <SetupBanner />}
+        {goal.preferencesError && <div className="mb-3"><StreakErrorState onRetry={goal.retry} /></div>}
 
         {/* Header: streak + pause (only when enabled) */}
         {showStreakInfo && (
