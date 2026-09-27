@@ -250,7 +250,7 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **Un stack por worktree** (#63): `project_id` y los 4 puertos activos vienen de `.env`. `shadow_port` se queda literal porque solo lo usa `db diff`; dos worktrees haciendo `db diff` a la vez chocan en el 54320.
 - **`full_reset.sql` está obsoleto** (esquema de ~migración 009) y marcado como tal. No regenerarlo a mano.
 
-## 2026-09 · Auto-merge y versionado
+## 2026-09 · Merge y versionado
 - **Solo squash, con el título de la PR como mensaje:** así `bump-version.js` ve un commit por PR, y el título tiene que ser Conventional Commits.
 - ⚠️ **Los required status checks bloquean también los push directos**, no solo el merge. El bot de Actions no es admin, así que `version.yml` pushea con `RELEASE_TOKEN` (PAT de un admin). Descartado mover el bump dentro de la PR (rediseño mayor) y Rulesets con bypass (no verificado en vivo).
 - **Sin "require PR" ni "up to date":** cada commit de bump dejaría las PRs pendientes de "Update branch".

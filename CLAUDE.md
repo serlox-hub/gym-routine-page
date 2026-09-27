@@ -361,13 +361,10 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - One feature/fix per commit
 - No co-author or AI attribution lines
 
-## PRs y auto-merge
-**Al crear una PR en este repo (`gh pr create`):**
-1. **Título en inglés, Conventional Commits** (`feat: ...`, `fix(scope): ...`, `chore: ...`) — el check `Formato Conventional Commits` lo rechaza si no. La descripción/body sí va en español.
-2. **Activar auto-merge inmediatamente después de crearla**, sin esperar a que lo pida el usuario: `gh pr merge --auto --squash`. Es el flujo estándar del repo (ver abajo) — fusiona sola en cuanto pase el check `test`.
+## PRs
+**Al crear una PR en este repo (`gh pr create`):** título en inglés, Conventional Commits (`feat: ...`, `fix(scope): ...`, `chore: ...`). El check `Formato Conventional Commits` rechaza el título sin ese prefijo (el idioma no lo comprueba). La descripción/body sí va en español.
 
-`main` solo permite **squash merge** (sin merge commit ni rebase): cada PR aterriza como un único commit cuyo mensaje es el título de la PR (`squash_merge_commit_title: PR_TITLE`). Ese commit es lo que `scripts/bump-version.js` escanea para decidir el bump semántico, así que **el título de la PR debe seguir Conventional Commits en inglés** (`feat:`, `fix:`, `chore:`, etc. — igual que un mensaje de commit normal, ver arriba), aunque la descripción vaya en español. Lo valida el workflow `pr-title.yml` (check requerido).
-- Para activar auto-merge en una PR: `gh pr merge --auto --squash`. Se fusiona sola en cuanto el check `test` (CI) pase — no hace falta esperar ni pedir revisión.
+`main` solo permite **squash merge** (sin merge commit ni rebase): cada PR aterriza como un único commit cuyo mensaje es el título de la PR (`squash_merge_commit_title: PR_TITLE`). Ese commit es lo que `scripts/bump-version.js` escanea para decidir el bump semántico: por eso el título de la PR lleva ese formato (lo exige el workflow `pr-title.yml`, check requerido).
 - `main` NO exige "pull request obligatoria" en branch protection (solo status checks) para que `version.yml` pueda pushear el commit de bump directamente a `main` tras cada merge. Tampoco exige "rama al día", para que ese commit de bump no deje cada PR abierta pendiente de "Update branch".
 - **`version.yml` pushea con `secrets.RELEASE_TOKEN` (PAT del dueño del repo), no con `GITHUB_TOKEN`.** Los required status checks bloquean CUALQUIER push a `main`, no solo el botón de merge — el bot de Actions no es admin del repo y no tiene bypass. Un PAT de un admin sí lo salta (`enforce_admins: false`). Detalle y alternativas descartadas en `docs/DECISIONS.md`.
 
