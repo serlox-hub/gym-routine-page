@@ -4,6 +4,8 @@ import {
   isExtraExercise,
   generateExtraExerciseId,
   isSetDataValid,
+  getMissingSetFields,
+  formatIncompleteSetMessage,
   buildCompletedSetData,
   getSetMeasurementValues,
   buildCachedMeasurementValues,
@@ -61,6 +63,38 @@ describe('setUtils', () => {
       const id2 = generateExtraExerciseId()
       vi.useRealTimers()
       expect(id1).not.toBe(id2)
+    })
+  })
+
+  describe('getMissingSetFields', () => {
+    it('devuelve los campos vacíos en el orden del ejercicio', () => {
+      expect(getMissingSetFields(['weight', 'reps'], { weight: '', reps: null })).toEqual(['weight', 'reps'])
+    })
+
+    it('vacío si está todo relleno, 0 incluido', () => {
+      expect(getMissingSetFields(['weight', 'reps'], { weight: '0', reps: 0 })).toEqual([])
+    })
+
+    it('un ritmo a 0 cuenta como vacío', () => {
+      expect(getMissingSetFields(['distance', 'pace'], { distance: '5', pace: 0 })).toEqual(['pace'])
+    })
+
+    it('sin datos faltan todos', () => {
+      expect(getMissingSetFields(['reps'], undefined)).toEqual(['reps'])
+    })
+  })
+
+  describe('formatIncompleteSetMessage', () => {
+    it('un campo', () => {
+      expect(formatIncompleteSetMessage(['reps'])).toBe('Pon reps para completar la serie')
+    })
+
+    it('dos campos unidos con "y"', () => {
+      expect(formatIncompleteSetMessage(['weight', 'reps'])).toBe('Pon peso y reps para completar la serie')
+    })
+
+    it('tres campos: comas y "y" al final', () => {
+      expect(formatIncompleteSetMessage(['level', 'distance', 'time'])).toBe('Pon nivel, distancia y tiempo para completar la serie')
     })
   })
 

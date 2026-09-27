@@ -1,7 +1,7 @@
 import { useState, memo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, AlertCircle, Trophy } from 'lucide-react-native'
+import { Check, CheckCircle2, AlertCircle, Trophy } from 'lucide-react-native'
 import { useIsPRSet } from './PRContext'
 import SetDetailsModal from './SetDetailsModal'
 import EffortPicker from './EffortPicker'
@@ -17,6 +17,8 @@ import {
   getSetColumns,
   tracksTime,
   effortRendersAsWord,
+  formatIncompleteSetMessage,
+  getNotifier,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences'
 import { uploadVideo } from '../../lib/videoStorage'
@@ -86,7 +88,7 @@ function SetRow({
     calories, setCalories, level, setLevel, pace, setPace,
     rir, setRir,
     notes, setType, saveDetails, setSetType,
-    isCompleted, setData, isValid, targetPlaceholder, targetField: resolvedTargetField, progressableValue, suggestedFields,
+    isCompleted, setData, isValid, getMissingFields, targetPlaceholder, targetField: resolvedTargetField, progressableValue, suggestedFields,
   } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit, previousSet, previousLoaded, target, targetField, levelTarget })
 
   const { data: preferences } = usePreferences()
@@ -122,7 +124,10 @@ function SetRow({
   const handleCheckPress = () => {
     if (isCompleted) {
       onUncomplete({ sessionExerciseId, setNumber })
-    } else if (isValid() && !isUploadingVideo) {
+    } else if (!isValid()) {
+      // Botón bloqueado que responde (ver CLAUDE.md): dice qué falta en vez de comerse el toque.
+      getNotifier()?.show(formatIncompleteSetMessage(getMissingFields()), 'info')
+    } else if (!isUploadingVideo) {
       // Un toque: registra la serie (con el RIR inline actual) e inicia el descanso. Bloqueado
       // mientras sube un vídeo elegido en la hoja: completar sin esperar lo dejaría huérfano
       // (ver useSetVideoUpload) — el botón «Completar» de la hoja tiene el mismo guard.
@@ -290,24 +295,34 @@ function SetRow({
         </Pressable>
       )
     }
-    // Cualquier fila con datos válidos se puede completar; isActive solo colorea el borde.
-    // Bloqueado (disabled real, transitorio) mientras sube un vídeo elegido en la hoja — completar
-    // sin esperar lo dejaría huérfano (issue #31, ver useSetVideoUpload); se pinta con spinner.
-    const blocked = !isValid() || isUploadingVideo
+    // Cualquier fila con datos válidos se puede completar. Pendiente = aro (lima en la activa: "aquí
+    // estás") con el ✓ SIEMPRE gris dentro: un círculo vacío se leía como indicador, no como botón,
+    // y un ✓ lima se leía como serie ya hecha (hecha = círculo RELLENO de lima).
+    // "Sin datos" se marca SOLO en el ✓ (textMuted; se aclara a textSecondary al poder completar).
+    // Atenuar el botón entero ponía el aro lima al 50%, que vira a oliva (ver regla del lima en
+    // CLAUDE.md) y deja de ser el lima de los inputs de la fila.
+    // Sin datos: bloqueado que responde (✓ en textMuted, sin feedback de pulsación, y al pulsar dice qué
+    // falta). `disabled` real solo mientras sube un vídeo elegido en la hoja — completar sin
+    // esperar lo dejaría huérfano (issue #31, ver useSetVideoUpload); se pinta con spinner.
+    const incomplete = !isValid()
     return (
       <Pressable
         onPress={handleCheckPress}
-        disabled={blocked}
+        disabled={isUploadingVideo}
         hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel={t('workout:set.complete')}
-        accessibilityState={{ disabled: blocked }}
-        className="w-7 h-7 items-center justify-center active:opacity-70"
-        style={{ opacity: blocked ? 0.6 : 1 }}
+        accessibilityState={{ disabled: isUploadingVideo }}
+        className={`w-7 h-7 items-center justify-center ${incomplete || isUploadingVideo ? '' : 'active:opacity-70'}`}
+        style={{ opacity: isUploadingVideo ? 0.5 : 1 }}
       >
         {isUploadingVideo
           ? <LoadingSpinner inline />
-          : <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: isActive ? colors.success : colors.textMuted }} />}
+          : (
+            <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: isActive ? colors.success : colors.textMuted, alignItems: 'center', justifyContent: 'center' }}>
+              <Check size={14} color={incomplete ? colors.textMuted : colors.textSecondary} strokeWidth={3} />
+            </View>
+          )}
       </Pressable>
     )
   }

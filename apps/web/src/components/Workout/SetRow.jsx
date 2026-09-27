@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, AlertCircle, Trophy } from 'lucide-react'
+import { Check, CheckCircle2, AlertCircle, Trophy } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { LoadingSpinner } from '../ui/index.js'
 import { useIsPRSet } from './PRContext.jsx'
@@ -18,6 +18,8 @@ import {
   getSetColumns,
   tracksTime,
   effortRendersAsWord,
+  formatIncompleteSetMessage,
+  getNotifier,
 } from '@gym/shared'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { uploadVideo } from '../../lib/videoStorage.js'
@@ -93,7 +95,7 @@ function SetRow({
     calories, setCalories, level, setLevel, pace, setPace,
     rir, setRir,
     notes, setType, saveDetails, setSetType,
-    isCompleted, setData, isValid, targetPlaceholder, targetField: resolvedTargetField, progressableValue, suggestedFields,
+    isCompleted, setData, isValid, getMissingFields, targetPlaceholder, targetField: resolvedTargetField, progressableValue, suggestedFields,
   } = useSetInputs({ sessionExerciseId, setNumber, exerciseId, trackedFields, weightUnit, distanceUnit, previousSet, previousLoaded, target, targetField, levelTarget })
 
   const { data: preferences } = usePreferences()
@@ -126,7 +128,10 @@ function SetRow({
   const handleCheckClick = () => {
     if (isCompleted) {
       onUncomplete({ sessionExerciseId, setNumber })
-    } else if (isValid() && !isUploadingVideo) {
+    } else if (!isValid()) {
+      // Botón bloqueado que responde (ver CLAUDE.md): dice qué falta en vez de comerse el toque.
+      getNotifier()?.show(formatIncompleteSetMessage(getMissingFields()), 'info')
+    } else if (!isUploadingVideo) {
       // Un toque: registra la serie (con el RIR inline actual) e inicia el descanso. Bloqueado
       // mientras sube un vídeo elegido en la hoja: completar sin esperar lo dejaría huérfano
       // (ver useSetVideoUpload) — el botón «Completar» de la hoja tiene el mismo guard.
@@ -303,23 +308,32 @@ function SetRow({
         </button>
       )
     }
-    // Cualquier fila con datos válidos se puede completar; isActive solo colorea el borde.
-    // Bloqueado (disabled real, transitorio) mientras sube un vídeo elegido en la hoja — completar
-    // sin esperar lo dejaría huérfano (issue #31, ver useSetVideoUpload); se pinta con spinner.
-    const valid = isValid()
-    const blocked = !valid || isUploadingVideo
+    // Cualquier fila con datos válidos se puede completar. Pendiente = aro (lima en la activa: "aquí
+    // estás") con el ✓ SIEMPRE gris dentro: un círculo vacío se leía como indicador, no como botón,
+    // y un ✓ lima se leía como serie ya hecha (hecha = círculo RELLENO de lima).
+    // "Sin datos" se marca SOLO en el ✓ (textMuted; se aclara a textSecondary al poder completar).
+    // Atenuar el botón entero ponía el aro lima al 50%, que vira a oliva (ver regla del lima en
+    // CLAUDE.md) y deja de ser el lima de los inputs de la fila.
+    // Sin datos: bloqueado que responde (✓ en textMuted, sin hover, y al pulsar dice qué falta).
+    // `disabled` real solo mientras sube un vídeo elegido en la hoja — completar sin esperar lo
+    // dejaría huérfano (issue #31, ver useSetVideoUpload); se pinta con spinner.
+    const incomplete = !isValid()
     return (
       <button
         onClick={handleCheckClick}
-        disabled={blocked}
-        className="w-11 h-11 flex items-center justify-center hover:opacity-80"
-        style={{ background: 'transparent', border: 'none', cursor: blocked ? 'default' : 'pointer', opacity: blocked ? 0.6 : 1 }}
+        disabled={isUploadingVideo}
+        className={`w-11 h-11 flex items-center justify-center ${incomplete || isUploadingVideo ? '' : 'hover:opacity-80'}`}
+        style={{ background: 'transparent', border: 'none', cursor: isUploadingVideo ? 'default' : 'pointer', opacity: isUploadingVideo ? 0.5 : 1 }}
         title={t('workout:set.complete')}
         aria-label={t('workout:set.complete')}
       >
         {isUploadingVideo
           ? <LoadingSpinner inline />
-          : <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${isActive ? colors.success : colors.textMuted}`, display: 'inline-block' }} />}
+          : (
+            <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${isActive ? colors.success : colors.textMuted}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Check size={14} color={incomplete ? colors.textMuted : colors.textSecondary} strokeWidth={3} />
+            </span>
+          )}
       </button>
     )
   }

@@ -2,12 +2,14 @@
  * Utilidades para manejo de series (sets)
  */
 
+import { t } from '../i18n/index.js'
 import { formatEffortBadge } from './effortScale.js'
 import {
   FIELD_ORDER,
   SetField,
   formatFieldValue,
   getFieldMeta,
+  getFieldName,
   getFieldSeparator,
   metersToDistanceUnit,
   normalizeTrackedFields,
@@ -43,21 +45,45 @@ export function generateExtraExerciseId() {
 }
 
 /**
+ * Campos que mide el ejercicio y aún están vacíos, en el orden del ejercicio. Vacío = la serie
+ * se puede completar.
+ * @param {string[]} trackedFields - campos del ejercicio
+ * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number, calories?: string|number, level?: string|number, pace?: string|number}} data - Datos de la serie
+ * @returns {string[]}
+ */
+export function getMissingSetFields(trackedFields, data) {
+  return normalizeTrackedFields(trackedFields).filter(field => {
+    const value = data?.[field]
+    if (value === '' || value === undefined || value === null) return true
+    // El ritmo es el único campo con mínimo: un 0 significaría velocidad infinita, y además es
+    // lo que devuelve el input de duración mientras está a medio teclear.
+    if (field === SetField.PACE) return !(Number(value) > 0)
+    return false
+  })
+}
+
+/**
  * ¿Están rellenos todos los campos que mide el ejercicio? Es la condición para poder completar
  * la serie.
  * @param {string[]} trackedFields - campos del ejercicio
- * @param {{weight?: string|number, reps?: string|number, time?: string|number, distance?: string|number, calories?: string|number, level?: string|number, pace?: string|number}} data - Datos de la serie
+ * @param {Object} data - Datos de la serie (ver getMissingSetFields)
  * @returns {boolean}
  */
 export function isSetDataValid(trackedFields, data) {
-  return normalizeTrackedFields(trackedFields).every(field => {
-    const value = data?.[field]
-    if (value === '' || value === undefined || value === null) return false
-    // El ritmo es el único campo con mínimo: un 0 significaría velocidad infinita, y además es
-    // lo que devuelve el input de duración mientras está a medio teclear.
-    if (field === SetField.PACE) return Number(value) > 0
-    return true
-  })
+  return getMissingSetFields(trackedFields, data).length === 0
+}
+
+/**
+ * Aviso al pulsar el check de una serie incompleta: "Pon peso y reps para completar la serie".
+ * @param {string[]} missingFields - salida de getMissingSetFields (no vacía)
+ * @returns {string}
+ */
+export function formatIncompleteSetMessage(missingFields) {
+  const names = missingFields.map(field => getFieldName(field).toLowerCase())
+  const fields = names.length > 1
+    ? `${names.slice(0, -1).join(', ')} ${t('common:labels.and')} ${names[names.length - 1]}`
+    : names[0]
+  return t('workout:set.fillToComplete', { fields })
 }
 
 /**

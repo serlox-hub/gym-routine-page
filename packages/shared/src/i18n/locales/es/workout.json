@@ -58,6 +58,7 @@
     "addVideoSubtitle": "Grábalo ahora o elige de la galería",
     "videoOptional": "Opcional",
     "complete": "Completar serie",
+    "fillToComplete": "Pon {{fields}} para completar la serie",
     "unmark": "Desmarcar serie",
     "edit": "Editar serie",
     "delete": "Eliminar serie",

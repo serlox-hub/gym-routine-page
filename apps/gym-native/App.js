@@ -1,6 +1,7 @@
 import "./global.css"
 // Antes que nada: react-native-gesture-handler pide ser el primer import del entry point.
 import 'react-native-gesture-handler'
+import { AccessibilityInfo } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
 import * as SplashScreen from 'expo-splash-screen'
@@ -39,9 +40,12 @@ initApi(supabase, {
   gifBaseUrl: __DEV__ ? process.env.EXPO_PUBLIC_EXERCISE_GIFS_BASE_URL : null,
 })
 initStores({ authStore: useAuthStore, workoutStore: useWorkoutStore })
-initNotifications((message, type = 'success') =>
+initNotifications((message, type = 'success') => {
   Toast.show({ type, text1: message })
-)
+  // Paridad con la región viva del Toast de web: un botón bloqueado que "responde" con un aviso
+  // no puede quedarse mudo para VoiceOver/TalkBack.
+  AccessibilityInfo.announceForAccessibility(message)
+})
 initHaptics({
   onSetComplete: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
   onExerciseComplete: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),

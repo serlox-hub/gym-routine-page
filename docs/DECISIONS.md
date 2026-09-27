@@ -199,7 +199,7 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **`routineDayId == null`, no falsy:** un id 0 es válido.
 - **`getRoutineDayAction` pone `BUSY` antes que reanudar**, al revés que `getFreeWorkoutAction`: necesita los bloques del día cargados. Los tests fijan las dos precedencias; no "unificarlas".
 - **Dos mensajes:** el día de rutina bloquea con cualquier sesión activa, también libre (`finishCurrentFirst`); el libre solo con una de rutina (`finishRoutineFirst`).
-- **El toast de web va abajo** (`tabBarFootprint`): arriba tapaba `ActiveSessionBanner`, justo el atajo que pide el mensaje.
+- **El toast de web va abajo**: arriba tapaba `ActiveSessionBanner`, justo el atajo que pide el mensaje. Encima de la barra (`tabBarFootprint`) solo si se pinta (`useIsTabBarVisible`); sin barra, pegado al borde.
 
 ## 2026-09 · Vídeo antes de completar (issue #31)
 - **Elegir un vídeo lo sube ya**; la URL se guarda en memoria (`preCompleteUrl`, en `useSetVideoUpload`) y viaja en el mismo `upsert` de completar. Nunca se escribe a una fila que puede no existir.
