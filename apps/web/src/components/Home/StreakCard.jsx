@@ -1,20 +1,14 @@
-import { useMemo, useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { Zap, Pause, X, Target, ChevronRight, Timer } from 'lucide-react'
 import {
-  useTrainingGoal, useUpdateTrainingGoal,
-  getCurrentCycleDays, getCurrentCycleProgress, getCurrentCycleKey,
-  countSessionsByCycle, getCycleDateRange, formatShortDate,
-  transformSessionsToCycleDurationChart,
-  calculateChartMetrics, getTodayDateStr,
+  useTrainingGoal, useViewedTrainingCycle, getTodayDateStr, getPaginationDots, STREAK_MAX_BACK,
 } from '@gym/shared'
 import { Card, Skeleton } from '../ui/index.js'
 import { colors, gradients, design } from '../../lib/styles.js'
 
-const CYCLE_LENGTH = 7
-const MAX_BACK = -12
 
 function SetupBanner() {
   const { t } = useTranslation()
@@ -45,34 +39,10 @@ function SetupBanner() {
   )
 }
 const SWIPE_THRESHOLD = design.swipeThreshold
-const MAX_DOTS = 5
-
 function PaginationDots({ current, min, max }) {
-  const total = max - min + 1
-  const index = current - min
-
-  let windowStart
-  if (total <= MAX_DOTS) {
-    windowStart = 0
-  } else if (index <= 1) {
-    windowStart = 0
-  } else if (index >= total - 2) {
-    windowStart = total - MAX_DOTS
-  } else {
-    windowStart = index - 2
-  }
-
-  const visibleCount = Math.min(total, MAX_DOTS)
-
   return (
     <div className="flex items-center justify-center gap-1.5 mt-3">
-      {[...Array(visibleCount)].map((_, i) => {
-        const dotIndex = windowStart + i
-        const isActive = dotIndex === index
-        const distFromEdge = Math.min(i, visibleCount - 1 - i)
-        const isEdge = total > MAX_DOTS && distFromEdge === 0 && !isActive
-        const size = isActive ? 8 : isEdge ? 4 : 6
-
+      {getPaginationDots(current, min, max).map(({ dotIndex, isActive, isEdge, size }) => {
         return (
           <div
             key={dotIndex}
@@ -95,7 +65,6 @@ function StreakCard() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const goal = useTrainingGoal()
-  const updatePreference = useUpdateTrainingGoal()
   const [cycleOffset, setCycleOffset] = useState(0)
   const [slideClass, setSlideClass] = useState('')
   const pointerStart = useRef(null)
@@ -105,7 +74,7 @@ function StreakCard() {
 
   const changeCycle = useCallback((direction) => {
     const newOffset = cycleOffset + direction
-    if (newOffset < MAX_BACK || newOffset > 0) return
+    if (newOffset < STREAK_MAX_BACK || newOffset > 0) return
 
     isAnimating.current = true
     const outClass = direction > 0 ? 'streak-slide-out-left' : 'streak-slide-out-right'
@@ -156,33 +125,8 @@ function StreakCard() {
     dragOffset.current = 0
   }
 
-  const { streak, restCycles = [], sessions = [], daysPerCycle, weekStartDay = 'monday' } = goal.isConfigured ? goal : {}
-
-  const referenceDate = useMemo(() => {
-    const d = new Date()
-    d.setDate(d.getDate() + cycleOffset * CYCLE_LENGTH)
-    return d
-  }, [cycleOffset])
-
-  const sessionsByCycle = useMemo(
-    () => sessions.length ? countSessionsByCycle(sessions, CYCLE_LENGTH, weekStartDay) : {},
-    [sessions, weekStartDay]
-  )
-
-  const viewedCycleDays = useMemo(
-    () => getCurrentCycleDays(sessions, CYCLE_LENGTH, referenceDate, weekStartDay),
-    [sessions, referenceDate, weekStartDay]
-  )
-
-  const chartData = useMemo(
-    () => transformSessionsToCycleDurationChart(viewedCycleDays, sessions),
-    [viewedCycleDays, sessions]
-  )
-
-  const dateRangeLabel = useMemo(() => {
-    const { start, end } = getCycleDateRange(CYCLE_LENGTH, referenceDate, weekStartDay)
-    return `${formatShortDate(start)} – ${formatShortDate(end)}`
-  }, [referenceDate, weekStartDay])
+  const { streak } = goal
+  const { chartData, chartMax, emptyBarValue, dateRangeLabel, progress, isRest, toggleViewedRest } = useViewedTrainingCycle(goal, cycleOffset)
 
   if (goal.isLoading) {
     return (
@@ -200,24 +144,12 @@ function StreakCard() {
   }
   const showStreakInfo = goal.isConfigured && goal.showWidget
 
-  const viewedCycleKey = getCurrentCycleKey(CYCLE_LENGTH, referenceDate, weekStartDay)
-  const viewedProgress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, CYCLE_LENGTH, referenceDate, weekStartDay)
-  const viewedIsRest = restCycles.includes(viewedCycleKey)
-
   const todayStr = getTodayDateStr()
-  const { chartMax, emptyBarValue } = calculateChartMetrics(chartData)
 
   const webChartData = chartData.map(d => ({
     ...d,
     barValue: d.durationMinutes > 0 ? d.durationMinutes : emptyBarValue,
   }))
-
-  const handleToggleRestCycle = () => {
-    const newRestCycles = viewedIsRest
-      ? restCycles.filter(k => k !== viewedCycleKey)
-      : [...restCycles, viewedCycleKey]
-    updatePreference.mutate({ key: 'training_rest_weeks', value: newRestCycles })
-  }
 
   return (
     <section className="mb-4">
@@ -248,12 +180,12 @@ function StreakCard() {
               </span>
             </div>
             <button
-              onClick={handleToggleRestCycle}
+              onClick={toggleViewedRest}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
               style={{ border: `1px solid ${colors.border}`, color: colors.textSecondary }}
             >
-              {viewedIsRest ? <X size={12} /> : <Pause size={12} />}
-              {viewedIsRest ? t('common:preferences.removeRest') : t('common:preferences.rest')}
+              {isRest ? <X size={12} /> : <Pause size={12} />}
+              {isRest ? t('common:preferences.removeRest') : t('common:preferences.rest')}
             </button>
           </div>
         )}
@@ -271,22 +203,22 @@ function StreakCard() {
           {showStreakInfo && (<>
           {/* Progress */}
           <div className="flex items-center gap-3 mb-3">
-            <span className="font-extrabold" style={{ color: viewedIsRest ? colors.textMuted : colors.textPrimary, fontSize: design.progressLabelSize, letterSpacing: -1 }}>
-              {viewedIsRest ? '—' : `${viewedProgress.completed}/${viewedProgress.target}`}
+            <span className="font-extrabold" style={{ color: isRest ? colors.textMuted : colors.textPrimary, fontSize: design.progressLabelSize, letterSpacing: -1 }}>
+              {isRest ? '—' : `${progress.completed}/${progress.target}`}
             </span>
             <div className="flex-1 rounded-full overflow-hidden" style={{ backgroundColor: colors.borderSubtle, height: design.progressBarHeight }}>
-              {!viewedIsRest && (
+              {!isRest && (
                 <div
                   className="h-full rounded-full"
                   style={{
                     background: `linear-gradient(to right, ${gradients.lime[0]}, ${gradients.lime[1]})`,
-                    width: `${Math.min((viewedProgress.completed / viewedProgress.target) * 100, 100)}%`,
+                    width: `${progress.percent}%`,
                   }}
                 />
               )}
             </div>
             <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 500 }}>
-              {viewedIsRest ? t('common:home.paused') : t('common:home.days')}
+              {isRest ? t('common:home.paused') : t('common:home.days')}
             </span>
           </div>
           </>)}
@@ -354,7 +286,7 @@ function StreakCard() {
                 }}
               >
                 {webChartData.map((entry, index) => {
-                  const clickable = !viewedIsRest && entry.durationMinutes > 0
+                  const clickable = !isRest && entry.durationMinutes > 0
                   return (
                     <Cell
                       key={`cell-${index}`}
@@ -369,7 +301,7 @@ function StreakCard() {
         </div>
 
         {/* Dot pagination */}
-        <PaginationDots current={cycleOffset} min={MAX_BACK} max={0} />
+        <PaginationDots current={cycleOffset} min={STREAK_MAX_BACK} max={0} />
       </Card>
     </section>
   )

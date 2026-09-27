@@ -3,6 +3,8 @@ import {
   getGreetingKey,
   getNextRoutineDay,
   transformSessionsToCycleDurationChart,
+  getViewedCycle,
+  getPaginationDots,
   calculateWeeklyDurationMinutes,
   formatDurationHoursMinutes,
 } from './homeUtils.js'
@@ -128,6 +130,108 @@ describe('transformSessionsToCycleDurationChart', () => {
 })
 
 // ============================================
+// getViewedCycle
+// ============================================
+
+describe('getViewedCycle', () => {
+  // Fijo: jueves 19 marzo 2026. Nunca el reloj real.
+  const now = new Date(2026, 2, 19, 12, 0)
+
+  it('las sesiones de la semana visible aparecen como barras con duración en su dateStr', () => {
+    const goal = {
+      sessions: [
+        { completed_at: '2026-03-16T10:00:00Z', duration_minutes: 30 }, // lunes, ciclo actual
+        { completed_at: '2026-03-09T10:00:00Z', duration_minutes: 45 }, // ciclo anterior
+      ],
+      weekStartDay: 'monday',
+    }
+    const result = getViewedCycle(goal, 0, now)
+
+    expect(result.cycleKey).toBe('2026-03-16')
+    const monday = result.chartData.find(d => d.dateStr === '2026-03-16')
+    expect(monday.durationMinutes).toBe(30)
+    expect(result.chartData.some(d => d.dateStr === '2026-03-09')).toBe(false)
+  })
+
+  it('un cycleOffset negativo se desplaza al ciclo anterior', () => {
+    const goal = {
+      sessions: [
+        { completed_at: '2026-03-16T10:00:00Z', duration_minutes: 30 }, // ciclo actual
+        { completed_at: '2026-03-09T10:00:00Z', duration_minutes: 45 }, // ciclo anterior
+      ],
+      weekStartDay: 'monday',
+    }
+    const current = getViewedCycle(goal, 0, now)
+    const previous = getViewedCycle(goal, -1, now)
+
+    expect(previous.cycleKey).toBe('2026-03-09')
+    expect(previous.chartData.find(d => d.dateStr === '2026-03-09').durationMinutes).toBe(45)
+    expect(current.chartData.find(d => d.dateStr === '2026-03-16').durationMinutes).toBe(30)
+    expect(current.chartData.every(d => d.dateStr !== '2026-03-09')).toBe(true)
+  })
+
+  it('weekStartDay "sunday" desplaza los límites de la semana frente a "monday"', () => {
+    const base = { sessions: [], weekStartDay: 'monday' }
+    const monday = getViewedCycle(base, 0, now)
+    const sunday = getViewedCycle({ ...base, weekStartDay: 'sunday' }, 0, now)
+
+    expect(monday.cycleKey).toBe('2026-03-16')
+    expect(monday.chartData[0].dateStr).toBe('2026-03-16')
+    expect(monday.chartData[6].dateStr).toBe('2026-03-22')
+
+    expect(sunday.cycleKey).toBe('2026-03-15')
+    expect(sunday.chartData[0].dateStr).toBe('2026-03-15')
+    expect(sunday.chartData[6].dateStr).toBe('2026-03-21')
+  })
+
+  it('isRest es true solo si la clave del ciclo visible está en restCycles', () => {
+    const goal = {
+      sessions: [],
+      restCycles: ['2026-03-16'], // clave del ciclo actual
+      weekStartDay: 'monday',
+    }
+    expect(getViewedCycle(goal, 0, now).isRest).toBe(true)
+    expect(getViewedCycle(goal, -1, now).isRest).toBe(false) // ciclo anterior: 2026-03-09
+  })
+
+  it('progress.completed cuenta solo las sesiones del ciclo visible', () => {
+    const goal = {
+      sessions: [
+        { completed_at: '2026-03-16T10:00:00Z' },
+        { completed_at: '2026-03-17T10:00:00Z' },
+        { completed_at: '2026-03-09T10:00:00Z' }, // ciclo anterior
+      ],
+      daysPerCycle: 3,
+      weekStartDay: 'monday',
+    }
+    expect(getViewedCycle(goal, 0, now).progress).toMatchObject({ completed: 2, target: 3, isComplete: false })
+    expect(getViewedCycle(goal, -1, now).progress.completed).toBe(1)
+  })
+
+  it('un objetivo sin configurar (sin daysPerCycle ni restCycles) no lanza y devuelve datos de gráfica', () => {
+    const goal = {
+      sessions: [{ completed_at: '2026-03-16T10:00:00Z', duration_minutes: 20 }],
+      weekStartDay: 'monday',
+    }
+    expect(() => getViewedCycle(goal, 0, now)).not.toThrow()
+
+    const result = getViewedCycle(goal, 0, now)
+    expect(result.chartData).toHaveLength(7)
+    expect(result.isRest).toBe(false)
+    expect(result.progress.target).toBeUndefined()
+  })
+
+  it('sin sesiones (goal vacío) todas las barras quedan a cero', () => {
+    expect(() => getViewedCycle({}, 0, now)).not.toThrow()
+
+    const result = getViewedCycle({}, 0, now)
+    expect(result.chartData).toHaveLength(7)
+    expect(result.chartData.every(d => d.durationMinutes === 0)).toBe(true)
+    expect(result.progress.completed).toBe(0)
+  })
+})
+
+// ============================================
 // calculateWeeklyDurationMinutes
 // ============================================
 
@@ -177,5 +281,74 @@ describe('formatDurationHoursMinutes', () => {
 
   it('handles exact hours', () => {
     expect(formatDurationHoursMinutes(120)).toEqual({ hours: 2, minutes: 0 })
+  })
+})
+
+// ============================================
+// getViewedCycle: porcentaje y valores null
+// ============================================
+
+describe('getViewedCycle (porcentaje y null)', () => {
+  const now = new Date(2026, 2, 19, 12, 0)
+  const twoSessions = [
+    { completed_at: '2026-03-16T10:00:00Z', duration_minutes: 30 },
+    { completed_at: '2026-03-17T10:00:00Z', duration_minutes: 30 },
+  ]
+
+  it('calcula el porcentaje de progreso sobre el objetivo', () => {
+    const { progress } = getViewedCycle({ sessions: twoSessions, daysPerCycle: 4 }, 0, now)
+    expect(progress.percent).toBe(50)
+  })
+
+  it('el porcentaje no pasa de 100 si se supera el objetivo', () => {
+    const { progress } = getViewedCycle({ sessions: twoSessions, daysPerCycle: 1 }, 0, now)
+    expect(progress.percent).toBe(100)
+  })
+
+  it('sin objetivo el porcentaje es 0', () => {
+    const { progress } = getViewedCycle({ sessions: twoSessions }, 0, now)
+    expect(progress.percent).toBe(0)
+  })
+
+  it('acepta sessions, restCycles y weekStartDay en null', () => {
+    const result = getViewedCycle({ sessions: null, restCycles: null, weekStartDay: null, daysPerCycle: 3 }, 0, now)
+    expect(result.chartData).toHaveLength(7)
+    expect(result.chartData.every(d => d.durationMinutes === 0)).toBe(true)
+    expect(result.isRest).toBe(false)
+    expect(result.chartData[0].dateStr).toBe('2026-03-16')
+  })
+})
+
+// ============================================
+// getPaginationDots
+// ============================================
+
+describe('getPaginationDots', () => {
+  it('con pocos ciclos enseña todos, sin extremos encogidos', () => {
+    const dots = getPaginationDots(-1, -2, 0)
+    expect(dots.map(d => d.dotIndex)).toEqual([0, 1, 2])
+    expect(dots.map(d => d.isActive)).toEqual([false, true, false])
+    expect(dots.some(d => d.isEdge)).toBe(false)
+  })
+
+  it('en el ciclo actual (el último) la ventana queda pegada al final', () => {
+    const dots = getPaginationDots(0, -12, 0)
+    expect(dots.map(d => d.dotIndex)).toEqual([8, 9, 10, 11, 12])
+    expect(dots[4]).toEqual({ dotIndex: 12, isActive: true, isEdge: false, size: 8 })
+    expect(dots[0]).toMatchObject({ isEdge: true, size: 4 })
+  })
+
+  it('en el ciclo más antiguo la ventana queda pegada al principio', () => {
+    const dots = getPaginationDots(-12, -12, 0)
+    expect(dots.map(d => d.dotIndex)).toEqual([0, 1, 2, 3, 4])
+    expect(dots[0].isActive).toBe(true)
+    expect(dots[4]).toMatchObject({ isEdge: true, size: 4 })
+  })
+
+  it('en medio centra el punto activo con los dos extremos encogidos', () => {
+    const dots = getPaginationDots(-6, -12, 0)
+    expect(dots.map(d => d.dotIndex)).toEqual([4, 5, 6, 7, 8])
+    expect(dots[2]).toMatchObject({ isActive: true, size: 8 })
+    expect(dots.map(d => d.size)).toEqual([4, 6, 8, 6, 4])
   })
 })

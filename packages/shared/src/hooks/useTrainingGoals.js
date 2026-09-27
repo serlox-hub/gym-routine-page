@@ -1,14 +1,9 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { fetchCompletedSessionDates } from '../api/trainingGoalsApi.js'
-import {
-  countSessionsByCycle,
-  calculateStreak,
-  getCurrentCycleProgress,
-  isCurrentCycleRest,
-  getCurrentCycleKey,
-  getCurrentCycleDays,
-} from '../lib/streakUtils.js'
+import { STREAK_CYCLE_LENGTH, countSessionsByCycle, calculateStreak, toggleRestCycle } from '../lib/streakUtils.js'
+import { getViewedCycle } from '../lib/homeUtils.js'
 import { usePreference, useUpdatePreference } from './usePreferences.js'
 import { useUserId } from './useAuth.js'
 
@@ -23,6 +18,9 @@ function getTwoYearsAgoISO() {
 
 const FROM_DATE = getTwoYearsAgoISO()
 
+// Referencia estable: un `[]` nuevo en cada render invalidaría el useMemo de useViewedTrainingCycle
+const EMPTY = []
+
 // ============================================
 // QUERIES
 // ============================================
@@ -33,30 +31,35 @@ const FROM_DATE = getTwoYearsAgoISO()
  */
 export function useTrainingGoal() {
   const userId = useUserId()
-  const { value: daysPerCycle } = usePreference('training_days_per_week')
+  const { value: daysPerCycle, isLoading: prefsLoading } = usePreference('training_days_per_week')
   const { value: restCycles } = usePreference('training_rest_weeks')
   const { value: showWidget } = usePreference('show_training_goal')
   const { value: weekStartDay } = usePreference('week_start_day')
 
-  const { data: sessions, isLoading } = useQuery({
+  const { data: sessions, isLoading: sessionsLoading } = useQuery({
     queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS, userId],
     queryFn: () => fetchCompletedSessionDates({ userId, from: FROM_DATE }),
-    enabled: !!userId && !!daysPerCycle,
+    enabled: !!userId,
     staleTime: 1000 * 60 * 5,
   })
 
+  // Mientras cargan las preferencias, daysPerCycle vale null aunque el usuario tenga objetivo
+  const isLoading = sessionsLoading || prefsLoading
+  const wsd = weekStartDay || 'monday'
+
+  // Sin objetivo no hay racha ni progreso, pero la gráfica del widget pinta igual los días entrenados
   if (!daysPerCycle) {
-    return { isConfigured: false, showWidget: showWidget !== false, isLoading: false }
+    return {
+      isConfigured: false,
+      showWidget: showWidget !== false,
+      isLoading,
+      sessions: sessions || EMPTY,
+      weekStartDay: wsd,
+    }
   }
 
-  const CYCLE_LENGTH = 7
-  const wsd = weekStartDay || 'monday'
-  const sessionsByCycle = sessions ? countSessionsByCycle(sessions, CYCLE_LENGTH, wsd) : {}
-  const streak = sessions ? calculateStreak(sessionsByCycle, daysPerCycle, restCycles || [], CYCLE_LENGTH, new Date(), wsd) : 0
-  const cycleProgress = getCurrentCycleProgress(sessionsByCycle, daysPerCycle, CYCLE_LENGTH, new Date(), wsd)
-  const isRestCycle = isCurrentCycleRest(restCycles || [], CYCLE_LENGTH, new Date(), wsd)
-  const currentCycleKey = getCurrentCycleKey(CYCLE_LENGTH, new Date(), wsd)
-  const cycleDays = getCurrentCycleDays(sessions || [], CYCLE_LENGTH, new Date(), wsd)
+  const sessionsByCycle = sessions ? countSessionsByCycle(sessions, STREAK_CYCLE_LENGTH, wsd) : {}
+  const streak = sessions ? calculateStreak(sessionsByCycle, daysPerCycle, restCycles || [], STREAK_CYCLE_LENGTH, new Date(), wsd) : 0
 
   return {
     isConfigured: true,
@@ -64,21 +67,30 @@ export function useTrainingGoal() {
     isLoading,
     daysPerCycle,
     streak,
-    cycleProgress,
-    isRestCycle,
-    currentCycleKey,
-    restCycles: restCycles || [],
-    cycleDays,
-    sessions: sessions || [],
-    sessionsByCycle,
+    restCycles: restCycles || EMPTY,
+    sessions: sessions || EMPTY,
     weekStartDay: wsd,
   }
 }
 
-// ============================================
-// MUTATIONS
-// ============================================
+/**
+ * Ciclo que está mostrando el widget de racha (`cycleOffset` ciclos desde el actual)
+ * y la acción de marcarlo o desmarcarlo como descanso.
+ * @param {ReturnType<typeof useTrainingGoal>} goal
+ * @param {number} cycleOffset
+ */
+export function useViewedTrainingCycle(goal, cycleOffset) {
+  const updatePreference = useUpdatePreference()
+  const { sessions, restCycles, daysPerCycle, weekStartDay } = goal
 
-export function useUpdateTrainingGoal() {
-  return useUpdatePreference()
+  const cycle = useMemo(
+    () => getViewedCycle({ sessions, restCycles, daysPerCycle, weekStartDay }, cycleOffset),
+    [sessions, restCycles, daysPerCycle, weekStartDay, cycleOffset]
+  )
+
+  const toggleViewedRest = () => {
+    updatePreference.mutate({ key: 'training_rest_weeks', value: toggleRestCycle(restCycles, cycle.cycleKey) })
+  }
+
+  return { ...cycle, toggleViewedRest }
 }

@@ -10,6 +10,9 @@
  * - Si no cumple → la racha se rompe.
  */
 
+// Duración del ciclo del objetivo semanal: racha, progreso y gráfica deben contar el mismo
+export const STREAK_CYCLE_LENGTH = 7
+
 const DAY_LABELS_MONDAY = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 const DAY_LABELS_SUNDAY = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
@@ -152,15 +155,16 @@ export function getCurrentCycleProgress(sessionsByCycle, target, cycleLength = 7
 }
 
 /**
- * Determina si el ciclo en curso esta marcado como descanso.
- * @param {string[]} restCycles
- * @param {number} cycleLength
- * @param {Date} [now]
- * @returns {boolean}
+ * Marca o desmarca un ciclo como descanso.
+ * @param {string[]|null} restCycles
+ * @param {string} cycleKey
+ * @returns {string[]} Lista nueva; no muta la de entrada
  */
-export function isCurrentCycleRest(restCycles, cycleLength = 7, now = new Date(), weekStartDay = 'monday') {
-  const key = getCycleKey(now, cycleLength, weekStartDay)
-  return restCycles.includes(key)
+export function toggleRestCycle(restCycles, cycleKey) {
+  const current = restCycles || []
+  return current.includes(cycleKey)
+    ? current.filter(k => k !== cycleKey)
+    : [...current, cycleKey]
 }
 
 /**
