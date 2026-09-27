@@ -25,6 +25,7 @@ vi.mock('../api/workoutApi.js', () => ({
   deleteSessionExercisesWithoutSets: vi.fn(),
   completeWorkoutSession: vi.fn(),
   deleteWorkoutSession: vi.fn(),
+  fetchLastSetPerformedAt: vi.fn(),
 }))
 
 vi.mock('../api/exerciseStatsApi.js', () => ({
@@ -47,11 +48,12 @@ vi.mock('../notifications.js', () => {
   return { getNotifier: () => ({ show }), initNotifications: vi.fn(), _notifierShow: show }
 })
 
-import { startWorkoutSession, fetchActiveSession } from '../api/workoutApi.js'
+import { startWorkoutSession, fetchActiveSession, fetchExerciseIdsWithSets, completeWorkoutSession, fetchLastSetPerformedAt } from '../api/workoutApi.js'
+import { fetchSessionExercises } from '../api/sessionExercisesApi.js'
 import * as notificationsMock from '../notifications.js'
 import * as storesMock from './_stores.js'
 import * as authMock from './useAuth.js'
-import { useStartSession, useRestoreActiveSession } from './useSession.js'
+import { useStartSession, useRestoreActiveSession, useEndSession, useLastSetAt } from './useSession.js'
 
 function wrapper() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -197,5 +199,90 @@ describe('useRestoreActiveSession', () => {
 
     await waitFor(() => expect(storesMock.useWorkoutStore._mockStore.setActiveSessionSynced)
       .toHaveBeenCalledWith(true))
+  })
+})
+
+describe('useEndSession', () => {
+  const startedAt = '2026-01-01T10:00:00.000Z'
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    Object.assign(storesMock.useWorkoutStore._mockStore, { sessionId: 's-1', startedAt, gymId: null, completedSets: {} })
+    fetchExerciseIdsWithSets.mockResolvedValue([])
+    fetchSessionExercises.mockResolvedValue([])
+    completeWorkoutSession.mockResolvedValue({ id: 's-1' })
+  })
+
+  it('cierra a la hora elegida y calcula la duración desde el inicio', async () => {
+    const { result } = renderHook(() => useEndSession(), { wrapper: wrapper() })
+    result.current.mutate({ overallFeeling: null, notes: null, completedAt: '2026-01-01T11:30:00.000Z' })
+
+    await waitFor(() => expect(completeWorkoutSession).toHaveBeenCalled())
+    expect(completeWorkoutSession).toHaveBeenCalledWith(expect.objectContaining({
+      completedAt: '2026-01-01T11:30:00.000Z',
+      durationMinutes: 90,
+    }))
+  })
+
+  it('sin completedAt cierra ahora', async () => {
+    const before = Date.now()
+    storesMock.useWorkoutStore._mockStore.startedAt = new Date(before - 3600000).toISOString()
+    const { result } = renderHook(() => useEndSession(), { wrapper: wrapper() })
+    result.current.mutate({ overallFeeling: null, notes: null })
+
+    await waitFor(() => expect(completeWorkoutSession).toHaveBeenCalled())
+    const { completedAt } = completeWorkoutSession.mock.calls[0][0]
+    expect(new Date(completedAt).getTime()).toBeGreaterThanOrEqual(before - 1000)
+    expect(new Date(completedAt).getTime()).toBeLessThanOrEqual(Date.now())
+  })
+})
+
+describe('useLastSetAt', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    Object.assign(storesMock.useWorkoutStore._mockStore, {
+      sessionId: 's-1',
+      completedSets: { 'a-1': { completedAt: '2026-01-01T10:30:00.000Z' } },
+    })
+  })
+
+  it('se queda con la más reciente entre servidor y store', async () => {
+    fetchLastSetPerformedAt.mockResolvedValue('2026-01-01T11:00:00+00:00')
+    const { result } = renderHook(() => useLastSetAt(), { wrapper: wrapper() })
+
+    expect(result.current.isResolved).toBe(false)
+    await waitFor(() => expect(result.current.isResolved).toBe(true))
+    expect(result.current.lastSetAt).toBe('2026-01-01T11:00:00.000Z')
+  })
+
+  it('si el servidor falla se resuelve con el dato local', async () => {
+    fetchLastSetPerformedAt.mockRejectedValue(new Error('offline'))
+    const { result } = renderHook(() => useLastSetAt(), { wrapper: wrapper() })
+
+    await waitFor(() => expect(result.current.isResolved).toBe(true))
+    expect(result.current.lastSetAt).toBe('2026-01-01T10:30:00.000Z')
+  })
+
+  // Al reabrir el modal la caché trae la respuesta anterior: no vale como resuelta mientras se repregunta
+  it('no se da por resuelto mientras vuelve a preguntar con datos en caché', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const localWrapper = ({ children }) => React.createElement(QueryClientProvider, { client: queryClient }, children)
+    fetchLastSetPerformedAt.mockResolvedValueOnce('2026-01-01T11:00:00+00:00')
+    const { result } = renderHook(() => useLastSetAt(), { wrapper: localWrapper })
+    await waitFor(() => expect(result.current.isResolved).toBe(true))
+
+    let resolveSecond
+    fetchLastSetPerformedAt.mockReturnValueOnce(new Promise(resolve => { resolveSecond = resolve }))
+    queryClient.invalidateQueries()
+    await waitFor(() => expect(result.current.isResolved).toBe(false))
+
+    resolveSecond('2026-01-01T12:00:00+00:00')
+    await waitFor(() => expect(result.current.isResolved).toBe(true))
+    expect(result.current.lastSetAt).toBe('2026-01-01T12:00:00.000Z')
+  })
+
+  it('deshabilitado no pregunta al servidor', () => {
+    renderHook(() => useLastSetAt({ enabled: false }), { wrapper: wrapper() })
+    expect(fetchLastSetPerformedAt).not.toHaveBeenCalled()
   })
 })

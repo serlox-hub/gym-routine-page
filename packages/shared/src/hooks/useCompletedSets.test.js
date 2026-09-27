@@ -15,6 +15,7 @@ vi.mock('./_stores.js', () => {
     updateSetVideo: vi.fn(),
     updateSetDetails: vi.fn(),
     uncompleteSet: vi.fn(),
+    updateCompletedSetValues: vi.fn(),
   }
 
   const useWorkoutStore = vi.fn((selector) => selector ? selector(mockStore) : mockStore)
@@ -42,7 +43,7 @@ vi.mock('../lib/constants.js', () => ({
   },
 }))
 
-import { useSyncPendingSets } from './useCompletedSets.js'
+import { useSyncPendingSets, useCompleteSet, useUpdateCompletedSet } from './useCompletedSets.js'
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -209,5 +210,63 @@ describe('useSyncPendingSets', () => {
     expect(upsertCompletedSet).toHaveBeenCalledWith(
       expect.objectContaining({ level: 8, caloriesBurned: 120 })
     )
+  })
+})
+
+describe('performedAt', () => {
+  const completedAt = '2026-01-01T10:00:00.000Z'
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    const { getWorkoutStore } = await import('./_stores.js')
+    getWorkoutStore.mockReturnValue({
+      getState: vi.fn(() => ({
+        pendingSets: {},
+        completedSets: { 'ex-1-1': { completedAt } },
+        removePendingSet: vi.fn(),
+      })),
+    })
+  })
+
+  it('completar manda la hora del store como performedAt', async () => {
+    const { upsertCompletedSet } = await import('../api/workoutApi.js')
+    const { result } = renderHook(() => useCompleteSet(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ sessionExerciseId: 'ex-1', setNumber: 1, weight: 100 })
+    })
+
+    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({ performedAt: completedAt }))
+  })
+
+  // Si el insert sigue pendiente offline, esta edición lo sustituye en la cola: tiene que llevar la hora
+  it('editar manda la misma hora que el insert', async () => {
+    const { upsertCompletedSet } = await import('../api/workoutApi.js')
+    const { result } = renderHook(() => useUpdateCompletedSet(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ sessionExerciseId: 'ex-1', setNumber: 1, weight: 102 })
+    })
+
+    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({ performedAt: completedAt }))
+  })
+
+  it('sincronizar reenvía la performedAt encolada', async () => {
+    const { upsertCompletedSet } = await import('../api/workoutApi.js')
+    const { getWorkoutStore } = await import('./_stores.js')
+    getWorkoutStore.mockReturnValue({
+      getState: vi.fn(() => ({
+        pendingSets: { 'ex-1-1': { sessionId: 's', sessionExerciseId: 'ex-1', setNumber: 1, performedAt: completedAt } },
+        updateSetDbId: vi.fn(),
+        removePendingSet: vi.fn(),
+      })),
+    })
+    let capturedCallback = null
+    const onVisibilityChange = vi.fn().mockImplementation((cb) => { capturedCallback = cb; return () => {} })
+    renderHook(() => useSyncPendingSets({ onVisibilityChange }), { wrapper: createWrapper() })
+
+    await act(async () => { await capturedCallback() })
+
+    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({ performedAt: completedAt }))
   })
 })

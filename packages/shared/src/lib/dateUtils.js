@@ -1,5 +1,5 @@
 import { t, getCurrentLocale } from '../i18n/index.js'
-import { MAX_SESSION_DURATION_MINUTES } from './constants.js'
+import { MAX_SESSION_DURATION_MINUTES, IDLE_SESSION_WARNING_MINUTES } from './constants.js'
 
 export function toDateLocale(language) {
   return language === 'en' ? 'en-US' : 'es-ES'
@@ -81,8 +81,9 @@ export function parseDateInput(date) {
 }
 
 /**
- * Resolves a proposed session end timestamp, clamping it to [startedAt, now]
- * and recomputing the duration. Used when editing a finished session's end
+ * Resolves a proposed session end timestamp, clamping it to
+ * [startedAt, min(now, startedAt + MAX_SESSION_DURATION_MINUTES)] and recomputing
+ * the duration. Used when finishing a session and when editing a finished one's end
  * (caso típico: la sesión quedó abierta y se cierra al día siguiente): el
  * inicio es fijo y el fin nunca puede ser anterior a él ni futuro.
  * @param {Date|string} proposed - end timestamp elegido por el usuario
@@ -93,8 +94,9 @@ export function parseDateInput(date) {
 export function resolveSessionEnd(proposed, startedAt, now = new Date()) {
   const startedMs = new Date(startedAt).getTime()
   const nowMs = new Date(now).getTime()
-  // Guard clock skew (now < startedAt): el fin nunca puede quedar antes del inicio
-  const upperMs = Math.max(nowMs, startedMs)
+  // Guard clock skew (now < startedAt): el fin nunca puede quedar antes del inicio.
+  // Y nunca más allá del tope: `duration_minutes` es smallint y el UPDATE moriría por rango.
+  const upperMs = Math.min(Math.max(nowMs, startedMs), startedMs + MAX_SESSION_DURATION_MINUTES * 60000)
   let endMs = new Date(proposed).getTime()
   if (Number.isNaN(endMs)) endMs = startedMs
   endMs = Math.min(Math.max(endMs, startedMs), upperMs)
@@ -102,6 +104,79 @@ export function resolveSessionEnd(proposed, startedAt, now = new Date()) {
     completedAtISO: new Date(endMs).toISOString(),
     durationMinutes: Math.round((endMs - startedMs) / 60000),
   }
+}
+
+function toValidMs(value) {
+  if (value == null || value === '') return NaN
+  return new Date(value).getTime()
+}
+
+/**
+ * El más reciente de varios timestamps, ignorando null/undefined/inválidos.
+ * @param {...(Date|string|null|undefined)} timestamps
+ * @returns {string|null} ISO del más reciente, o null si ninguno es válido
+ */
+export function pickLatestTimestamp(...timestamps) {
+  let latestMs = NaN
+  for (const value of timestamps) {
+    const ms = toValidMs(value)
+    if (!Number.isNaN(ms) && (Number.isNaN(latestMs) || ms > latestMs)) latestMs = ms
+  }
+  return Number.isNaN(latestMs) ? null : new Date(latestMs).toISOString()
+}
+
+/**
+ * Hora de la última serie completada según el store de la sesión activa.
+ * @param {Record<string, { completedAt?: string }>|null} completedSets
+ * @returns {string|null}
+ */
+export function getLastSetCompletedAt(completedSets) {
+  return pickLatestTimestamp(...Object.values(completedSets || {}).map(set => set?.completedAt))
+}
+
+/**
+ * Si al finalizar ha pasado tanto tiempo desde la última serie que la sesión se quedó
+ * abierta por olvido. Estrictamente mayor que el umbral.
+ * @param {Date|string|null} lastSetAt
+ * @param {Date|string} [now]
+ * @param {number} [threshold] - minutos
+ * @returns {boolean} false si no hay última serie válida
+ */
+export function shouldWarnIdleSession(lastSetAt, now = new Date(), threshold = IDLE_SESSION_WARNING_MINUTES) {
+  const lastMs = toValidMs(lastSetAt)
+  const nowMs = new Date(now).getTime()
+  if (Number.isNaN(lastMs) || Number.isNaN(nowMs)) return false
+  return nowMs - lastMs > threshold * 60000
+}
+
+/**
+ * Si dos instantes caen en el mismo día de calendario local.
+ * @param {Date|string} a
+ * @param {Date|string} [b]
+ * @returns {boolean} false si alguno no es válido
+ */
+export function isSameLocalDay(a, b = new Date()) {
+  const ms1 = toValidMs(a)
+  const ms2 = toValidMs(b)
+  if (Number.isNaN(ms1) || Number.isNaN(ms2)) return false
+  return new Date(ms1).toDateString() === new Date(ms2).toDateString()
+}
+
+/**
+ * Clave i18n y parámetros de la opción "terminé a la hora de la última serie". Si la serie
+ * no es de hoy lleva también la fecha: "a las 19:42" sin más, cerrando al día siguiente,
+ * se leería como de hoy. Devuelve clave + params (no el texto) para que el componente
+ * traduzca con su `t` de `useTranslation`.
+ * @param {Date|string} lastSetAt
+ * @param {Date|string} [now]
+ * @returns {{ key: string, params: { time: string, date?: string } }}
+ */
+export function getLastSetEndChoice(lastSetAt, now = new Date()) {
+  const time = formatTime(lastSetAt)
+  if (isSameLocalDay(lastSetAt, now)) {
+    return { key: 'workout:session.endAtLastSet', params: { time } }
+  }
+  return { key: 'workout:session.endAtLastSetOtherDay', params: { time, date: formatShortDate(lastSetAt) } }
 }
 
 /**

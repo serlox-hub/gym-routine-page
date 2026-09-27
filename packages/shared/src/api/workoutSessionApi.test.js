@@ -13,6 +13,7 @@ import { recalculateSessionStats, recalculateExercisePRs } from './exerciseStats
 import {
   fetchActiveSession,
   fetchCompletedSetsForSession,
+  fetchLastSetPerformedAt,
   startWorkoutSession,
   fetchExerciseIdsWithSets,
   deleteSessionExercisesWithoutSets,
@@ -64,6 +65,30 @@ describe('fetchActiveSession', () => {
 // ============================================
 // fetchCompletedSetsForSession
 // ============================================
+
+describe('fetchLastSetPerformedAt', () => {
+  it('pide solo la serie más reciente de la sesión', async () => {
+    const mock = makeQueryMock({ data: [{ performed_at: '2026-01-01T11:00:00+00:00' }], error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    const result = await fetchLastSetPerformedAt('session-1')
+    expect(result).toBe('2026-01-01T11:00:00+00:00')
+    expect(mock.eq).toHaveBeenCalledWith('session_id', 'session-1')
+    expect(mock.order).toHaveBeenCalledWith('performed_at', { ascending: false })
+    expect(mock.limit).toHaveBeenCalledWith(1)
+  })
+
+  it('devuelve null si la sesión no tiene series', async () => {
+    const mock = makeQueryMock({ data: [], error: null })
+    getClient.mockReturnValue({ from: () => mock })
+    expect(await fetchLastSetPerformedAt('session-1')).toBeNull()
+  })
+
+  it('lanza si Supabase devuelve error', async () => {
+    const mock = makeQueryMock({ data: null, error: new Error('boom') })
+    getClient.mockReturnValue({ from: () => mock })
+    await expect(fetchLastSetPerformedAt('session-1')).rejects.toThrow('boom')
+  })
+})
 
 describe('fetchCompletedSetsForSession', () => {
   it('returns array of completed sets for the session', async () => {
