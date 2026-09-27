@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ScrollView } from 'react-native'
 import { ChevronDown, CheckCircle2 } from 'lucide-react-native'
-import { DropdownMenu } from '../ui'
+import { DragHandle, DropdownMenu } from '../ui'
 import { colors } from '../../lib/styles'
 import { DEFAULT_TRACKED_FIELDS, SetField, getMuscleGroupName, formatEffortBadge, formatFieldValue, t } from '@gym/shared'
 
@@ -25,6 +25,8 @@ function ExerciseCardHeader({
   isCompleted = false,
   onToggleCollapse,
   menuItems,
+  dragHandleProps = null,
+  isReordering = false,
 }) {
   const muscleGroupLabel = getMuscleGroupName(muscleGroup)
 
@@ -38,6 +40,12 @@ function ExerciseCardHeader({
 
   return (
     <Pressable onPress={onToggleCollapse} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+      {dragHandleProps ? (
+        // Centrada con la línea del nombre; el asa reclama el toque, así que no pliega la tarjeta.
+        <View style={{ paddingTop: 2 }}>
+          <DragHandle dragHandleProps={dragHandleProps} disabled={isReordering} />
+        </View>
+      ) : null}
       <View style={{ flex: 1 }}>
         <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600', marginBottom: 6 }} numberOfLines={1}>
           {exerciseName}

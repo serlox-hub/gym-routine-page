@@ -2,19 +2,22 @@ import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ArrowUpDown, Link2 } from 'lucide-react-native'
-import { DragHandle, Modal, ReorderModal } from '../ui'
+import DragHandle from './DragHandle'
+import Modal from './Modal'
+import ReorderModal from './ReorderModal'
 import { colors } from '../../lib/styles'
 
 /**
  * Cabecera morada de una superserie, como FILA de la lista de ejercicios del bloque.
  *
  * Es la fila que pinta el borde de arriba de la tarjeta (sus miembros pintan los laterales, ver
- * `BlockSection`) y la que arrastra la tirada entera: su asa mueve la superserie como una unidad
+ * `ExerciseRowList`) y la que arrastra la tirada entera: su asa mueve la superserie como una unidad
  * entre las del bloque. Pulsarla ofrece el mismo movimiento por menú, que es el único camino con
- * lector de pantalla.
+ * lector de pantalla. `count` (la sesión) añade "(N ejercicios)" tras la etiqueta.
  */
 export default function SupersetHeaderRow({
   label,
+  count,
   dragHandleProps = null,
   isReordering = false,
   unitLabels = [],
@@ -55,6 +58,11 @@ export default function SupersetHeaderRow({
         >
           <Link2 size={12} color={colors.purple} />
           <Text style={{ color: colors.purple, fontSize: 12, fontWeight: '500' }}>{label}</Text>
+          {count != null && (
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+              ({t('routine:superset.exerciseCount', { count })})
+            </Text>
+          )}
         </Pressable>
       </View>
 

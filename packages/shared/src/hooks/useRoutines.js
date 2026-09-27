@@ -33,7 +33,7 @@ import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 import { getTemplateImportData } from '../lib/routineTemplates.js'
-import { applyExerciseOrderToBlocks, placeInSupersetForDay } from '../lib/routineDayLayout.js'
+import { applyExerciseOrderToBlocks, placeInSupersetForBlocks } from '../lib/routineDayLayout.js'
 import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
 
 export function useRoutines() {
@@ -331,7 +331,7 @@ export function useReorderRoutineExercises() {
 }
 
 // Non-drag entry point (the action sheet) to join or leave a superset, with the default placement.
-// Optimistic with the SAME rule as the API (`placeInSupersetForDay`), applied to the day's cache.
+// Optimistic with the SAME rule as the API (`placeInSupersetForBlocks`), applied to the day's cache.
 export function useSetRoutineExerciseSupersetGroup() {
   const queryClient = useQueryClient()
 
@@ -342,7 +342,7 @@ export function useSetRoutineExerciseSupersetGroup() {
       await queryClient.cancelQueries({ queryKey })
       const previous = queryClient.getQueryData(queryKey)
       const items = previous
-        ? placeInSupersetForDay(previous.flatMap(block => block.routine_exercises || []), params)
+        ? placeInSupersetForBlocks(previous.flatMap(block => block.routine_exercises || []), { ...params, exerciseId: params.routineExerciseId })
         : null
       if (items) queryClient.setQueryData(queryKey, applyExerciseOrderToBlocks(previous, items))
       return { queryKey, previous }

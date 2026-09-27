@@ -326,31 +326,33 @@ describe('deleteSessionExercise', () => {
 // ============================================
 
 describe('reorderSessionExercises', () => {
-  it('completes without throwing on success', async () => {
+  it('sends the items as 1-based sort_order, without superset_group when the key is absent', async () => {
     const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: null }) }
     getClient.mockReturnValue(clientMock)
-    await expect(reorderSessionExercises(['se-1', 'se-2', 'se-3'])).resolves.toBeUndefined()
+    await expect(reorderSessionExercises([{ id: 1 }, { id: 2 }, { id: 3 }])).resolves.toBeUndefined()
     expect(clientMock.rpc).toHaveBeenCalledWith('reorder_session_exercises', {
       exercise_orders: [
-        { id: 'se-1', sort_order: 1 },
-        { id: 'se-2', sort_order: 2 },
-        { id: 'se-3', sort_order: 3 },
+        { id: 1, sort_order: 1 },
+        { id: 2, sort_order: 2 },
+        { id: 3, sort_order: 3 },
       ],
     })
+  })
+
+  it('sends superset_group only for the items that carry supersetGroup, null included', async () => {
+    const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: null }) }
+    getClient.mockReturnValue(clientMock)
+    await reorderSessionExercises([{ id: 1, supersetGroup: 4 }, { id: 2 }, { id: 3, supersetGroup: null }])
+    expect(clientMock.rpc.mock.calls[0][1].exercise_orders).toEqual([
+      { id: 1, sort_order: 1, superset_group: 4 },
+      { id: 2, sort_order: 2 },
+      { id: 3, sort_order: 3, superset_group: null },
+    ])
   })
 
   it('throws when rpc returns error', async () => {
     const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: new Error('rpc failed') }) }
     getClient.mockReturnValue(clientMock)
-    await expect(reorderSessionExercises(['se-1', 'se-2'])).rejects.toThrow('rpc failed')
-  })
-
-  it('maps ids to 1-based sort_order correctly', async () => {
-    const clientMock = { rpc: vi.fn().mockResolvedValue({ data: null, error: null }) }
-    getClient.mockReturnValue(clientMock)
-    await reorderSessionExercises(['a', 'b'])
-    const { exercise_orders } = clientMock.rpc.mock.calls[0][1]
-    expect(exercise_orders[0]).toEqual({ id: 'a', sort_order: 1 })
-    expect(exercise_orders[1]).toEqual({ id: 'b', sort_order: 2 })
+    await expect(reorderSessionExercises([{ id: 1 }, { id: 2 }])).rejects.toThrow('rpc failed')
   })
 })

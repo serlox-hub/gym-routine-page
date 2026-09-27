@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Info, Trash2, ArrowUpDown, Repeat2, Pencil } from 'lucide-react'
+import { Info, Trash2, ArrowUpDown, Repeat2, Pencil, Link2Off } from 'lucide-react'
 import { Card, ConfirmModal } from '../ui/index.js'
+import { colors } from '../../lib/styles.js'
 import ExerciseHistoryModal from './ExerciseHistoryModal.jsx'
 import ExercisePickerModal from '../Routine/ExercisePickerModal.jsx'
 import EditSessionExerciseModal from './EditSessionExerciseModal.jsx'
@@ -15,7 +16,7 @@ import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
-function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, onReorderToPosition, currentIndex = 0, totalExercises = 1, isReordering = false, positionLabels = [], existingSupersets = [] }) {
+function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, reorder, isReordering = false, onRemoveFromSuperset, dragHandleProps = null, isDragging = false, existingSupersets = [] }) {
   const { t } = useTranslation()
   const { id, sessionExerciseId, exercise, series, reps, target_field, level, rir, notes, rest_seconds } = sessionExercise
   const [showHistory, setShowHistory] = useState(false)
@@ -72,13 +73,16 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
     { label: t('workout:history.title'), icon: Info, onClick: () => setShowHistory(true) },
     { label: t('common:buttons.edit'), icon: Pencil, onClick: () => setShowEdit(true) },
     onReplace && { label: t('routine:exercise.replace'), icon: Repeat2, onClick: () => setShowReplace(true) },
-    onReorderToPosition && totalExercises > 1 && {
+    // Solo las posiciones de SU ámbito (su tirada o las unidades del bloque): el menú nunca parte
+    // una superserie. Ver `ExerciseRowList`.
+    reorder && reorder.labels.length > 1 && {
       icon: ArrowUpDown, label: t('routine:reorder'), disabled: isReordering,
-      children: Array.from({ length: totalExercises }, (_, i) => ({
-        label: `${i + 1}. ${positionLabels[i] || ''}`, onClick: () => onReorderToPosition(i),
-        active: i === currentIndex, disabled: i === currentIndex || isReordering,
+      children: reorder.labels.map((label, i) => ({
+        label: `${i + 1}. ${label || ''}`, onClick: () => reorder.onReorderTo(i),
+        active: i === reorder.index, disabled: i === reorder.index || isReordering,
       })),
     },
+    onRemoveFromSuperset && { label: t('routine:superset.removeFrom'), icon: Link2Off, onClick: onRemoveFromSuperset, disabled: isReordering },
     onRemove && { label: t('workout:exercise.removeFromSession'), icon: Trash2, onClick: () => setShowRemoveConfirm(true), danger: true },
   ]
 
@@ -89,9 +93,12 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         // Expandida: MÁS aire, pero solo en vertical. El padding horizontal se queda en 16px a
         // propósito — es una de las restas de la aritmética de anchos de `MAX_TRACKED_FIELDS`, y
         // subirlo dejaría los inputs de un cardio de 3 campos por debajo de su mínimo legible.
-        // El mismo valor lo repite `SupersetCard` en su envoltorio por ejercicio.
+        // El mismo valor lo repite `BlockExerciseList` en su envoltorio por miembro de superserie.
         className: collapsed ? 'px-4 py-2.5' : 'px-4 py-5',
-        style: getMuscleGroupBorderStyle(exercise.muscle_group?.name),
+        style: {
+          ...getMuscleGroupBorderStyle(exercise.muscle_group?.name),
+          boxShadow: isDragging ? `0 8px 24px ${colors.shadow}` : undefined,
+        },
       }
 
   const hasNotes = hasExerciseNotes(exercise, override, notes)
@@ -106,6 +113,8 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         isCompleted={isCompleted}
         onToggleCollapse={toggleExpanded}
         menuItems={menuItems}
+        dragHandleProps={dragHandleProps}
+        isReordering={isReordering}
       />
       {!collapsed && (
         <>

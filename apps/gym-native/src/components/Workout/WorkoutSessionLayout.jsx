@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { View, Text, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
+import Animated, { useAnimatedRef } from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Plus, ArrowRightLeft, X, Flag, ChevronDown } from 'lucide-react-native'
@@ -18,7 +19,7 @@ import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
 import { usePreference } from '../../hooks/usePreferences'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
@@ -99,6 +100,10 @@ export default function WorkoutSessionLayout({ title }) {
   }, [flatExercises])
 
   const { formatted: elapsedTime } = useSessionTimer()
+  // `DraggableList` auto-scrolls (and keeps the dragged row under the finger) with `scrollTo` from
+  // the UI thread, which needs an `Animated.ScrollView` behind a `useAnimatedRef`: on a plain
+  // `ScrollView` it silently does nothing.
+  const scrollRef = useAnimatedRef()
 
   const handlers = useStableHandlers({
     onCompleteSet: (setData, descansoSeg, context) => {
@@ -118,13 +123,8 @@ export default function WorkoutSessionLayout({ title }) {
     onReplace: (sessionExerciseId, newExerciseId) => {
       replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExerciseId })
     },
-    onReorder: (currentIndex, newIndex) => {
-      if (currentIndex === newIndex) return
-      const newOrder = [...flatExercises]
-      const [removed] = newOrder.splice(currentIndex, 1)
-      newOrder.splice(newIndex, 0, removed)
-      const orderedIds = newOrder.map(e => e.sessionExerciseId)
-      reorderSessionExercisesMutation.mutate(orderedIds)
+    onReorderBlock: (isWarmup, blockItems) => {
+      reorderSessionExercisesMutation.mutate(mergeBlockOrder(flatExercises, isWarmup, blockItems))
     },
   })
 
@@ -229,7 +229,8 @@ export default function WorkoutSessionLayout({ title }) {
       >
         <PRProvider value={prSets}>
         <ExpandedExerciseProvider defaultKey={firstExerciseKey}>
-        <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        {/* `style`, not `className`: NativeWind drops `className` on `Animated.*` without a warning. */}
+        <Animated.ScrollView ref={scrollRef} style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
           {!hasExercises ? (
             <View className="items-center py-12 px-4">
               <Text className="text-secondary text-sm mb-6">
@@ -246,7 +247,8 @@ export default function WorkoutSessionLayout({ title }) {
                 onRemove={handlers.onRemove}
                 onReplace={handlers.onReplace}
                 flatExercises={flatExercises}
-                onReorder={handlers.onReorder}
+                onReorderBlock={handlers.onReorderBlock}
+                scrollRef={scrollRef}
                 isReordering={reorderSessionExercisesMutation.isPending}
                 existingSupersets={existingSupersets}
               />
@@ -276,7 +278,7 @@ export default function WorkoutSessionLayout({ title }) {
               {endSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.finishWorkout')}
             </Text>
           </Pressable>
-        </ScrollView>
+        </Animated.ScrollView>
         </ExpandedExerciseProvider>
         </PRProvider>
       </KeyboardAvoidingView>

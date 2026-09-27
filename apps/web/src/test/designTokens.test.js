@@ -19,3 +19,10 @@ describe('tokens de gesto de fila (design)', () => {
     expect(webDesign.swipeDeleteMaxTravel).toBeGreaterThan(webDesign.swipeDeleteThreshold)
   })
 })
+
+describe('exerciseRowGap (design) — mismo hueco en web y native', () => {
+  it('existe y vale lo mismo en las dos plataformas', () => {
+    expect(typeof webDesign.exerciseRowGap).toBe('number')
+    expect(nativeDesign.exerciseRowGap).toBe(webDesign.exerciseRowGap)
+  })
+})

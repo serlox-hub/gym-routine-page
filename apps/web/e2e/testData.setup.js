@@ -1,7 +1,7 @@
 import { test as setup } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import '../scripts/loadEnv.js'
-import { SUPERSET_ROUTINES } from './supersetRoutines.js'
+import { SUPERSET_ROUTINES, seedRoutine } from './supersetRoutines.js'
 
 /**
  * Setup que crea datos de prueba para los tests e2e.
@@ -151,74 +151,4 @@ setup('create test data', async () => {
 
 async function seedSupersetRoutines(supabase, userId) {
   for (const routine of SUPERSET_ROUTINES) await seedRoutine(supabase, userId, routine)
-}
-
-/** Id of the user's exercise with that name, creating it if it does not exist. */
-async function findOrCreateExercise(supabase, userId, name, muscleGroupId) {
-  const { data: found } = await supabase
-    .from('exercises')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('name_es', name)
-    .is('deleted_at', null)
-    .limit(1)
-
-  if (found && found.length > 0) return found[0].id
-
-  const { data: created, error } = await supabase
-    .from('exercises')
-    .insert({ name_es: name, tracked_fields: ['weight', 'reps'], muscle_group_id: muscleGroupId, user_id: userId })
-    .select()
-    .single()
-  if (error) throw error
-  return created.id
-}
-
-/** Routine with its days and exercises (`[name, superset_group]`, in order). No-op if it already exists. */
-async function seedRoutine(supabase, userId, { name, description, days }) {
-  const { data: existing } = await supabase
-    .from('routines')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('name', name)
-    .limit(1)
-
-  if (existing && existing.length > 0) return
-
-  const { data: muscleGroups } = await supabase.from('muscle_groups').select('id').limit(1)
-  if (!muscleGroups || muscleGroups.length === 0) throw new Error('No hay grupos musculares en la BD')
-
-  const { data: routine, error: routineError } = await supabase
-    .from('routines')
-    .insert({ name, description, user_id: userId })
-    .select()
-    .single()
-  if (routineError) throw routineError
-
-  for (const [dayIndex, day] of days.entries()) {
-    const { data: createdDay, error: dayError } = await supabase
-      .from('routine_days')
-      .insert({ routine_id: routine.id, name: day.name, sort_order: dayIndex + 1 })
-      .select()
-      .single()
-    if (dayError) throw dayError
-
-    const rows = []
-    for (const [index, [exerciseName, supersetGroup]] of day.exercises.entries()) {
-      rows.push({
-        routine_day_id: createdDay.id,
-        exercise_id: await findOrCreateExercise(supabase, userId, exerciseName, muscleGroups[0].id),
-        series: 3,
-        reps: '10',
-        rest_seconds: 90,
-        sort_order: index + 1,
-        is_warmup: false,
-        superset_group: supersetGroup,
-      })
-    }
-    const { error: exercisesError } = await supabase.from('routine_exercises').insert(rows)
-    if (exercisesError) throw exercisesError
-  }
-
-  console.log(`   - Rutina: ${name}`)
 }

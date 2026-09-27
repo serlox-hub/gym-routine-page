@@ -26,7 +26,7 @@ import GymSelector from './GymSelector.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExistingSupersetIds, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, usePreference, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -188,15 +188,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const currentGym = gyms.find(g => String(g.id) === String(sessionGymId))
   const currentGymName = currentGym ? getGymDisplayName(currentGym, t('common:gym.defaultName')) : null
 
-  const handleReorderExercise = (currentIndex, newIndex) => {
-    if (currentIndex === newIndex) return
-
-    const newOrder = [...flatExercises]
-    const [removed] = newOrder.splice(currentIndex, 1)
-    newOrder.splice(newIndex, 0, removed)
-
-    const orderedIds = newOrder.map(e => e.sessionExerciseId)
-    reorderSessionExercisesMutation.mutate(orderedIds)
+  const handleReorderBlock = (isWarmup, blockItems) => {
+    reorderSessionExercisesMutation.mutate(mergeBlockOrder(flatExercises, isWarmup, blockItems))
   }
 
   const hasExercises = flatExercises.length > 0
@@ -257,7 +250,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             onRemove={handleRemoveExercise}
             onReplace={handleReplaceExercise}
             flatExercises={flatExercises}
-            onReorder={handleReorderExercise}
+            onReorderBlock={handleReorderBlock}
             isReordering={reorderSessionExercisesMutation.isPending}
             existingSupersets={existingSupersets}
           />

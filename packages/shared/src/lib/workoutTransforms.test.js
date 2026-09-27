@@ -230,6 +230,8 @@ describe('workoutTransforms', () => {
       expect(result.flatExercises[0].exercise.name).toBe('Press banca')
       expect(result.flatExercises[0].series).toBe(3)
       expect(result.flatExercises[0].reps).toBe('10')
+      // ExerciseRowList builds units and rows from it.
+      expect(result.flatExercises.map(e => e.sort_order)).toEqual(sampleSessionExercises.map(e => e.sort_order).sort((a, b) => a - b))
     })
 
     it('agrupa ejercicios por bloque', () => {

@@ -14,6 +14,7 @@ import {
 import { getClient } from '../api/_client.js'
 import { useWorkoutStore } from './_stores.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
+import { applyExerciseOrder } from '../lib/routineDayLayout.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 
@@ -172,25 +173,19 @@ export function useUpdateSessionExerciseFields() {
   })
 }
 
+// Takes `reorderSessionExercises` items: the whole session, warm-up first, with `supersetGroup` on
+// the rows whose membership changes. Session only: nothing here touches the routine.
 export function useReorderSessionExercises() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
   const queryKey = [QUERY_KEYS.SESSION_EXERCISES, sessionId]
 
   return useMutation({
-    mutationFn: async (orderedExerciseIds) => {
-      await reorderSessionExercises(orderedExerciseIds)
-    },
-    onMutate: async (orderedExerciseIds) => {
+    mutationFn: (items) => reorderSessionExercises(items),
+    onMutate: async (items) => {
       await queryClient.cancelQueries({ queryKey })
       const previous = queryClient.getQueryData(queryKey)
-      queryClient.setQueryData(queryKey, (old) => {
-        if (!old) return old
-        const orderMap = Object.fromEntries(orderedExerciseIds.map((id, i) => [id, i + 1]))
-        return [...old]
-          .map(item => ({ ...item, sort_order: orderMap[item.id] ?? item.sort_order }))
-          .sort((a, b) => a.sort_order - b.sort_order)
-      })
+      queryClient.setQueryData(queryKey, old => applyExerciseOrder(old, items))
       return { previous }
     },
     onError: (_err, _vars, context) => {
