@@ -40,6 +40,8 @@ function SetupBanner() {
   )
 }
 const SWIPE_THRESHOLD = design.swipeThreshold
+// Más recorrido que esto ya es arrastre, no toque: al soltar no abre el día (mismo valor que native)
+const TAP_MAX_DISTANCE_PX = 10
 function PaginationDots({ current, min, max }) {
   return (
     <div className="flex items-center justify-center gap-1.5 mt-3">
@@ -70,14 +72,20 @@ function StreakCard() {
   const [slideClass, setSlideClass] = useState('')
   const pointerStart = useRef(null)
   const dragOffset = useRef(0)
+  const pressX = useRef(0)
+  const moved = useRef(false)
   const contentRef = useRef(null)
   const isAnimating = useRef(false)
 
+  // Devuelve false, sin animar nada, si la semana destino queda fuera del rango navegable
   const changeCycle = useCallback((direction) => {
     const newOffset = cycleOffset + direction
-    if (newOffset < STREAK_MAX_BACK || newOffset > 0) return
+    if (newOffset < STREAK_MAX_BACK || newOffset > 0) return false
 
     isAnimating.current = true
+    // El keyframe de salida no tiene `from`: arranca desde donde se soltó el dedo. Por eso el
+    // contenido no se devuelve al centro antes de salir (se vería un salto atrás). El transform
+    // inline se limpia al acabar la entrada, cuyos keyframes son explícitos y lo tapan mientras dura.
     const outClass = direction > 0 ? 'streak-slide-out-left' : 'streak-slide-out-right'
     setSlideClass(outClass)
 
@@ -86,23 +94,33 @@ function StreakCard() {
       const inClass = direction > 0 ? 'streak-slide-in-right' : 'streak-slide-in-left'
       setSlideClass(inClass)
       setTimeout(() => {
+        if (contentRef.current) contentRef.current.style.transform = ''
         setSlideClass('')
         isAnimating.current = false
       }, design.slideAnimDuration)
     }, design.slideAnimDuration)
+    return true
   }, [cycleOffset])
 
   const handlePointerDown = (e) => {
     if (isAnimating.current) return
-    pointerStart.current = e.clientX
-    dragOffset.current = 0
-    if (contentRef.current) {
-      contentRef.current.style.transition = 'none'
+    const el = contentRef.current
+    // Si se agarra mientras vuelve al centro, se sigue desde donde está: cortar la transición sin
+    // más lo dejaría saltar a 0 bajo el dedo
+    const base = el ? new DOMMatrixReadOnly(getComputedStyle(el).transform).m41 : 0
+    if (el) {
+      el.style.transition = 'none'
+      el.style.transform = base ? `translateX(${base}px)` : ''
     }
+    pointerStart.current = e.clientX - base
+    dragOffset.current = base
+    pressX.current = e.clientX
+    moved.current = false
   }
 
   const handlePointerMove = (e) => {
     if (pointerStart.current === null) return
+    if (Math.abs(e.clientX - pressX.current) > TAP_MAX_DISTANCE_PX) moved.current = true
     dragOffset.current = e.clientX - pointerStart.current
     if (contentRef.current) {
       contentRef.current.style.transform = `translateX(${dragOffset.current}px)`
@@ -113,17 +131,17 @@ function StreakCard() {
     if (pointerStart.current === null) return
     pointerStart.current = null
 
-    if (contentRef.current) {
-      contentRef.current.style.transition = ''
-      contentRef.current.style.transform = ''
-    }
-
-    if (dragOffset.current > SWIPE_THRESHOLD) {
-      changeCycle(-1)
-    } else if (dragOffset.current < -SWIPE_THRESHOLD) {
-      changeCycle(1)
-    }
+    const offset = dragOffset.current
     dragOffset.current = 0
+    const direction = offset > SWIPE_THRESHOLD ? -1 : offset < -SWIPE_THRESHOLD ? 1 : 0
+    if (direction !== 0 && changeCycle(direction)) return
+
+    // Sin cambio de semana (poco recorrido o en un extremo): vuelve al centro animado, no de golpe
+    const el = contentRef.current
+    if (el) {
+      el.style.transition = `transform ${design.slideAnimDuration}ms ease-out`
+      el.style.transform = ''
+    }
   }
 
   const { streak } = goal
@@ -170,6 +188,7 @@ function StreakCard() {
         .streak-slide-out-right { animation: slideOutRight 150ms ease-in forwards; }
         .streak-slide-in-left { animation: slideInLeft 150ms ease-out forwards; }
         .streak-slide-in-right { animation: slideInRight 150ms ease-out forwards; }
+        /* Sin from a propósito: la salida arranca desde el translateX inline donde se soltó el dedo (ver changeCycle) */
         @keyframes slideOutLeft { to { transform: translateX(-100%); opacity: 0; } }
         @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
         @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -293,7 +312,12 @@ function StreakCard() {
                 dataKey="barValue"
                 radius={[design.barRadius, design.barRadius, design.barRadius, design.barRadius]}
                 maxBarSize={40}
+                // Recharts anima cada cambio de datos desde las barras anteriores: al cambiar de semana,
+                // las de la semana vieja entrarían deslizando y luego se transformarían en las nuevas.
+                // Apagada del todo (tampoco crecen al cargar) por paridad: native no anima las barras
+                isAnimationActive={false}
                 onClick={(data) => {
+                  if (moved.current) return
                   if (data?.durationMinutes > 0 && data.dateStr) {
                     navigate('/history', { state: { date: data.dateStr } })
                   }
