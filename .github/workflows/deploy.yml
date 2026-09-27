@@ -1,0 +1,119 @@
+name: Deploy
+
+# Despliega `main` a producción en orden: primero las migraciones pendientes en Supabase, después la
+# web en Vercel. El auto-deploy de Vercel en `main` está apagado (`git.deploymentEnabled` en
+# vercel.json) porque publicaba la web ~1 min después del merge y las migraciones llegaban más
+# tarde: la web nueva podía llamar a una RPC que en prod aún no existía. Las previews de PR siguen
+# siendo automáticas.
+#
+# Se dispara cuando termina el CI de un push a `main`, y solo si pasó, no con el push. `main` no
+# exige "rama al día", así que dos PRs verdes por separado pueden aterrizar juntas con migraciones
+# que chocan (mismo número: #95 y #106 casi lo hacen). El CI de `main` es el único que las prueba
+# juntas sobre una BD limpia: si falla, no se toca prod.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# Solo lectura: el deploy no escribe en el repo.
+permissions:
+  contents: read
+
+# Nunca dos despliegues a la vez contra prod, y nunca cancelar uno a medias.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # Solo se despliega la cabeza de `main`. Relanzar el CI de un commit viejo publicaría su web encima
+  # de una más nueva (la BD no: `db push` falla si prod tiene migraciones que el commit no trae).
+  # De paso, el CI del commit de merge queda superado por el del bump y no se despliega dos veces.
+  guard:
+    if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    outputs:
+      latest: ${{ steps.head.outputs.latest }}
+    steps:
+      - id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          MAIN=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          if [ "$MAIN" = "$SHA" ]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SHA ya no es la cabeza de main ($MAIN): no se despliega."
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  db:
+    needs: guard
+    if: needs.guard.outputs.latest == 'true'
+    runs-on: ubuntu-latest
+    # `supabase/config.toml` interpola estas variables y revienta si falta alguna (issue #63), aunque
+    # `db push --db-url` no levanta nada local. Mismos valores que ci.yml.
+    env:
+      GYM_SUPABASE_PROJECT_ID: gym-routine-page
+      GYM_SUPABASE_API_PORT: 54321
+      GYM_SUPABASE_DB_PORT: 54322
+      GYM_SUPABASE_STUDIO_PORT: 54323
+      GYM_SUPABASE_INBUCKET_PORT: 54324
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El commit que pasó el CI, no el último de `main` (puede haber llegado otro después).
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Para usar la versión de la CLI que fija package-lock.json, la misma que genera schema.sql.
+      # SUPABASE_DB_URL va solo en los pasos de `db push`, no en el job: así no la ven los
+      # postinstall de las dependencias.
+      - run: npm ci
+
+      # Sin `--include-seed` a propósito: `supabase/seed.sql` crea el usuario de e2e.
+      - name: Migraciones pendientes
+        working-directory: apps/web
+        run: npx supabase db push --db-url "$SUPABASE_DB_URL" --dry-run
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+      - name: Aplicar en producción
+        working-directory: apps/web
+        run: npx supabase db push --db-url "$SUPABASE_DB_URL" --yes
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+  web:
+    needs: db
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # `vercel pull` trae la config del proyecto y sus variables de producción (VITE_*), así que el
+      # build es el mismo que hacía Vercel. Versión fijada para que un cambio de la CLI no rompa
+      # el despliegue sin tocar el repo.
+      - name: Build
+        run: |
+          npx --yes vercel@60.1.3 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@60.1.3 build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy
+        run: npx --yes vercel@60.1.3 deploy --prebuilt --prod --token="$VERCEL_TOKEN"

@@ -12,6 +12,10 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-09 · Despliegue a producción desde `deploy.yml`
+- **La web sale después de la BD, y solo desde aquí:** con el auto-deploy de Vercel la web podía publicarse antes que su migración y llamar a una RPC que en prod no existe. Por eso `git.deploymentEnabled.main: false` en `vercel.json`: no reactivarlo.
+- **Tras el CI de `main`, no con el push:** `main` no exige rama al día, y dos PRs verdes pueden traer migraciones que chocan. El CI de `main` las prueba juntas. Descartado migrar en el push: acorta la ventana pero pierde esa protección.
+
 ## 2026-07 · GIFs de ejercicios (issue #6)
 - **Ruta con subcarpeta `gif/` obligatoria** (sin ella, 404): `.../public/exercise-gifs/gif/<gif_key>_<180|360|720>.gif`. Tamaño por superficie para ahorrar egress: 180 listas, 360 sesión, 720 pantalla completa.
 - **Native usa `expo-image`**: el `<Image>` de RN no anima GIF en Android. Es módulo nativo (rebuild del dev client).
