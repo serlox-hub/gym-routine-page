@@ -14,6 +14,12 @@ const SIZES = {
   lg: { container: 'px-6 py-3.5', text: 'text-lg' },
 }
 
+const BLOCKED_OPACITY = 0.5
+
+// `blocked`: not available, but it still answers (the "botón bloqueado" pattern in CLAUDE.md):
+// dimmed with no press feedback, and the press goes through so the caller can say why.
+// `disabled`/`loading` are for transient states only. On the solid lime of `primary` only the
+// label is dimmed: translucent lime turns olive.
 export default function Button({
   children,
   variant = 'primary',
@@ -22,10 +28,14 @@ export default function Button({
   textClassName = '',
   disabled,
   loading,
+  blocked = false,
   onPress,
 }) {
   const v = VARIANT_STYLES[variant] || VARIANT_STYLES.primary
   const s = SIZES[size] || SIZES.md
+  const isTransient = disabled || loading
+  const isBlocked = blocked && !isTransient
+  const dimsLabelOnly = isBlocked && v === VARIANT_STYLES.primary
 
   return (
     <Pressable
@@ -33,21 +43,23 @@ export default function Button({
       disabled={disabled || loading}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || loading }}
-      className={`rounded-lg items-center justify-center flex-row ${s.container} ${disabled || loading ? 'opacity-50' : 'active:opacity-70'} ${className}`}
+      className={`rounded-lg items-center justify-center flex-row ${s.container} ${isTransient ? 'opacity-50' : isBlocked ? '' : 'active:opacity-70'} ${className}`}
       style={{
         backgroundColor: v.bg,
         borderWidth: v.borderWidth || 0,
         borderColor: v.borderColor || 'transparent',
+        // Only when set: an `opacity: undefined` would override the className's `opacity-50`.
+        ...(isBlocked && !dimsLabelOnly ? { opacity: BLOCKED_OPACITY } : null),
       }}
     >
       {loading ? (
         <ActivityIndicator size="small" color={v.text} />
       ) : typeof children === 'string' ? (
-        <Text className={`font-semibold text-center ${s.text} ${textClassName}`} style={{ color: v.text }}>
+        <Text className={`font-semibold text-center ${s.text} ${textClassName}`} style={{ color: v.text, ...(dimsLabelOnly ? { opacity: BLOCKED_OPACITY } : null) }}>
           {children}
         </Text>
       ) : (
-        <Text className={`font-semibold text-center ${s.text} ${textClassName}`} style={{ color: v.text }}>
+        <Text className={`font-semibold text-center ${s.text} ${textClassName}`} style={{ color: v.text, ...(dimsLabelOnly ? { opacity: BLOCKED_OPACITY } : null) }}>
           {children}
         </Text>
       )}

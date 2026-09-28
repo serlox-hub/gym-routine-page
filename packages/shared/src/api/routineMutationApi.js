@@ -268,6 +268,30 @@ export async function duplicateRoutineDay({ dayId, newName }) {
   return data
 }
 
+/**
+ * Creates a routine day with its exercises in one transaction, creating the routine first when
+ * `routineId` is null. The rows come from `buildRoutineDayFromSession`; the RPC checks them again
+ * (migration 067), so a malformed day is rejected rather than stored.
+ *
+ * @param {object} params
+ * @param {number|string|null} [params.routineId] - Existing routine; null to create one
+ * @param {string|null} [params.newRoutineName] - Required when `routineId` is null, else null
+ * @param {string} params.dayName
+ * @param {Array<object>} params.exercises
+ * @returns {Promise<{ routineId: number, dayId: number }>}
+ */
+export async function createRoutineDayWithExercises({ routineId = null, newRoutineName = null, dayName, exercises }) {
+  const { data, error } = await getClient().rpc('create_routine_day_with_exercises', {
+    p_routine_id: routineId,
+    p_new_routine_name: newRoutineName,
+    p_day_name: dayName,
+    p_exercises: exercises,
+  })
+
+  if (error) throw error
+  return { routineId: data.routine_id, dayId: data.day_id }
+}
+
 export async function moveRoutineExerciseToDay({ routineExercise, targetDayId, esCalentamiento = false }) {
   const { data: maxOrderExercises } = await getClient()
     .from('routine_exercises')

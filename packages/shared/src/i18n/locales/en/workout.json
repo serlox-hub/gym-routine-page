@@ -196,7 +196,37 @@
     "noSessionsDay": "No workouts on this day",
     "recentSessions": "Recent Sessions",
     "repeatWorkout": "Repeat workout",
-    "repeatConfirm": "A new session will start copying this day's exercises."
+    "repeatConfirm": "A new session will start copying this day's exercises.",
+    "convertToDay": {
+      "menu": "Convert to routine day",
+      "nothingToCopy": "Nothing to copy. The exercises are deleted or have no sets.",
+      "title": "Convert to routine day",
+      "description": "A new day is added at the end of the routine you pick. This workout doesn't change.",
+      "routine": "Routine",
+      "newRoutine": "New routine",
+      "routineName": "Routine name",
+      "dayName": "Day name",
+      "confirm": "Create day",
+      "routinesLoadError": "Couldn't load your routines.",
+      "blocked": {
+        "noRoutine": "Pick a routine or create a new one.",
+        "noRoutineName": "Type a name for the new routine.",
+        "noDayName": "Type a name for the day."
+      },
+      "success": "Day added to the routine",
+      "skippedDeleted_one": "{{count}} deleted exercise was not copied.",
+      "skippedDeleted_other": "{{count}} deleted exercises were not copied.",
+      "skippedEmpty_one": "{{count}} exercise with no sets was not copied.",
+      "skippedEmpty_other": "{{count}} exercises with no sets were not copied.",
+      "errors": {
+        "invalidArguments": "Couldn't create the day. The data isn't valid.",
+        "unknownField": "Couldn't create the day. Update the app and try again.",
+        "nothingToCopy": "Nothing to copy.",
+        "routineNotFound": "That routine no longer exists. Pick another one.",
+        "exerciseNotAvailable": "An exercise is no longer available. Try again and it will be left out.",
+        "generic": "Couldn't create the day. Try again."
+      }
+    }
   },
   "share": {
     "dialogTitle": "Share workout"

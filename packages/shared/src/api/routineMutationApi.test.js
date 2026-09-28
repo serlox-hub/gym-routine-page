@@ -21,6 +21,7 @@ import {
   addExerciseToDay,
   duplicateRoutineExercise,
   duplicateRoutineDay,
+  createRoutineDayWithExercises,
   moveRoutineExerciseToDay,
 } from './routineMutationApi.js'
 
@@ -600,6 +601,51 @@ describe('duplicateRoutineDay', () => {
     getClient.mockReturnValue(clientMock)
 
     await expect(duplicateRoutineDay({ dayId: 10, newName: 'Día A (copia)' })).rejects.toThrow('Acceso denegado al día')
+  })
+})
+
+// ============================================
+// createRoutineDayWithExercises
+// ============================================
+
+describe('createRoutineDayWithExercises', () => {
+  const exercises = [{ exercise_id: 7, sort_order: 1, series: 3, reps: '8-12', is_warmup: false, superset_group: null }]
+
+  it('calls the RPC with an existing routine and returns the ids', async () => {
+    const clientMock = { rpc: vi.fn().mockResolvedValue({ data: { routine_id: 4, day_id: 21 }, error: null }) }
+    getClient.mockReturnValue(clientMock)
+
+    const result = await createRoutineDayWithExercises({ routineId: 4, dayName: 'Push', exercises })
+
+    expect(result).toEqual({ routineId: 4, dayId: 21 })
+    expect(clientMock.rpc).toHaveBeenCalledWith('create_routine_day_with_exercises', {
+      p_routine_id: 4,
+      p_new_routine_name: null,
+      p_day_name: 'Push',
+      p_exercises: exercises,
+    })
+  })
+
+  it('passes a null routine id and the name when creating a routine', async () => {
+    const clientMock = { rpc: vi.fn().mockResolvedValue({ data: { routine_id: 9, day_id: 30 }, error: null }) }
+    getClient.mockReturnValue(clientMock)
+
+    const result = await createRoutineDayWithExercises({ newRoutineName: 'Summer', dayName: 'Push', exercises })
+
+    expect(result).toEqual({ routineId: 9, dayId: 30 })
+    expect(clientMock.rpc).toHaveBeenCalledWith('create_routine_day_with_exercises', {
+      p_routine_id: null,
+      p_new_routine_name: 'Summer',
+      p_day_name: 'Push',
+      p_exercises: exercises,
+    })
+  })
+
+  it('rethrows the Supabase error unchanged', async () => {
+    const error = { message: 'exercise_not_available', code: 'P0002' }
+    getClient.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: null, error }) })
+
+    await expect(createRoutineDayWithExercises({ routineId: 4, dayName: 'Push', exercises })).rejects.toBe(error)
   })
 })
 

@@ -70,7 +70,9 @@ function Toast() {
       {toast.type === 'loading'
         ? <LoadingSpinner inline />
         : <Icon size={18} style={{ color, flexShrink: 0 }} />}
-      <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+      {/* `pre-line`: a message can carry several lines (a result plus what was left out), as a
+          native <Text> already renders them. */}
+      <span className="text-sm font-semibold whitespace-pre-line" style={{ color: colors.textPrimary }}>
         {toast.message}
       </span>
       <style>{`

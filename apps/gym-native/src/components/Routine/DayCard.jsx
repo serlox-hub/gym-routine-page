@@ -35,6 +35,8 @@ export default function DayCard({
   isReorderingDays = false,
   dragHandleProps = null,
   isDragging = false,
+  // Read on mount only: the day just created from a History session starts open.
+  initiallyExpanded = false,
   // El mismo `useAnimatedRef` del ScrollView de la pantalla que usa la lista de días: la lista de
   // ejercicios de dentro lo necesita para su propio auto-scroll (ver `DraggableList`).
   scrollRef,
@@ -42,7 +44,7 @@ export default function DayCard({
 }) {
   const { t } = useTranslation()
   const { id, name } = day
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded)
 
   const { data: blocks, isLoading: loadingBlocks } = useRoutineBlocks(id)
   const startSessionMutation = useStartSession()

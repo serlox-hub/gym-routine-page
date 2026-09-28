@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react'
+import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell, CalendarPlus } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useRescheduleSession, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
@@ -11,6 +11,7 @@ import SetValueInput from '../Workout/SetInputs.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
 import GymSelector from '../Workout/GymSelector.jsx'
+import ConvertToRoutineDayModal from './ConvertToRoutineDayModal.jsx'
 import { uploadVideo } from '../../lib/videoStorage.js'
 import {
   SENSATION_LABELS,
@@ -37,6 +38,8 @@ import {
   useResolvedDistanceUnit,
   formatEffortBadge,
   buildSessionExercisesFromSession,
+  buildRoutineDayFromSession,
+  getNotifier,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 import { colors } from '../../lib/styles.js'
@@ -336,6 +339,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showRepeatConfirm, setShowRepeatConfirm] = useState(false)
+  const [showConvertToDay, setShowConvertToDay] = useState(false)
   const [showGymSelector, setShowGymSelector] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
@@ -428,6 +432,22 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
     )
   }
 
+  // Always offered: with nothing to copy, the press says so instead of opening a dialog that could
+  // only fail.
+  const handleOpenConvertToDay = () => {
+    if (buildRoutineDayFromSession(session.exercises).exercises.length === 0) {
+      getNotifier()?.show(t('workout:history.convertToDay.nothingToCopy'), 'info')
+      return
+    }
+    setShowConvertToDay(true)
+  }
+
+  // The day id travels as navigation state: RoutineDetail reads it once and clears it.
+  const handleConvertedToDay = ({ routineId, dayId }) => {
+    setShowConvertToDay(false)
+    navigate(`/routine/${routineId}`, { state: { expandDayId: dayId } })
+  }
+
   const handleReassignGym = (newGymId) => {
     if (newGymId == null || String(newGymId) === String(session.gym_id)) return
     reassignGym.mutate({ sessionId, newGymId })
@@ -475,6 +495,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
               <DropdownMenu items={[
                 // Mientras no se sepa si hay sesión activa no se ofrece: rebotaría en el guard del servidor.
                 !hasActiveSession && activeSessionSynced && { icon: Play, label: t('workout:history.repeatWorkout'), onClick: () => setShowRepeatConfirm(true) },
+                { icon: CalendarPlus, label: t('workout:history.convertToDay.menu'), onClick: handleOpenConvertToDay },
                 { icon: Pencil, label: t('common:buttons.edit'), onClick: handleStartEdit },
                 { icon: Share2, label: t('common:buttons.share'), onClick: async () => {
                   const summaryData = await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })
@@ -678,6 +699,14 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
         selectedGymId={session.gym_id}
         onSelect={handleReassignGym}
       />
+
+      {showConvertToDay && (
+        <ConvertToRoutineDayModal
+          session={session}
+          onClose={() => setShowConvertToDay(false)}
+          onConverted={handleConvertedToDay}
+        />
+      )}
     </div>
   )
 }

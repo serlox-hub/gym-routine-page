@@ -18,6 +18,8 @@ function RoutineDetail() {
   // La señal de "abre el modal de nombre y descripción" se lee UNA vez y se limpia: el state del
   // historial sobrevive a recargas y a atrás/adelante, y si no volvería a abrirse cada vez.
   const [openDetails] = useState(() => location.state?.openDetails === true)
+  // Same for the day just created from a History session ("Convert to routine day"): it starts open.
+  const [expandDayId] = useState(() => location.state?.expandDayId ?? null)
   const hasActiveSession = useWorkoutStore(state => state.sessionId !== null)
   const activeRoutineDayId = useWorkoutStore(state => state.routineDayId)
   const activeSessionSynced = useWorkoutStore(state => state.activeSessionSynced)
@@ -36,7 +38,7 @@ function RoutineDetail() {
   const [descExpanded, setDescExpanded] = useState(false)
 
   useEffect(() => {
-    if (location.state?.openDetails) navigate(location.pathname, { replace: true, state: null })
+    if (location.state?.openDetails || location.state?.expandDayId != null) navigate(location.pathname, { replace: true, state: null })
   }, [location.state, location.pathname, navigate])
 
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
@@ -356,6 +358,7 @@ function RoutineDetail() {
                 activeSessionSynced={activeSessionSynced}
                 dragHandleProps={days.length >= 2 ? dragHandleProps : null}
                 isDragging={isDragging}
+                initiallyExpanded={expandDayId != null && String(day.id) === String(expandDayId)}
               />
             )}
           />

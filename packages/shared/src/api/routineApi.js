@@ -28,6 +28,7 @@ export {
   addExerciseToDay,
   duplicateRoutineExercise,
   duplicateRoutineDay,
+  createRoutineDayWithExercises,
   moveRoutineExerciseToDay,
 } from './routineMutationApi.js'
 

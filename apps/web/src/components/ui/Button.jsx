@@ -23,15 +23,30 @@ const SIZES = {
   lg: 'px-6 py-3 text-lg',
 }
 
-function Button({ children, variant = 'primary', size = 'md', className = '', disabled, ...props }) {
+const BLOCKED_OPACITY = 0.5
+
+// `blocked`: not available, but it still answers (the "botón bloqueado" pattern in CLAUDE.md):
+// dimmed with no hover, and the click goes through so the caller can say why. `disabled` is for
+// transient states only. On the solid lime of `primary` only the content is dimmed: translucent
+// lime turns olive.
+function Button({ children, variant = 'primary', size = 'md', className = '', disabled, blocked = false, ...props }) {
+  const isBlocked = blocked && !disabled
+  const dimsContentOnly = isBlocked && variant === 'primary'
+  const stateClassName = disabled
+    ? 'opacity-50 cursor-not-allowed'
+    : isBlocked ? 'cursor-pointer' : 'hover:opacity-80'
+  const style = isBlocked && !dimsContentOnly
+    ? { ...VARIANTS[variant], opacity: BLOCKED_OPACITY }
+    : VARIANTS[variant]
+
   return (
     <button
-      className={`font-medium rounded-lg transition-opacity ${SIZES[size]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
-      style={VARIANTS[variant]}
+      className={`font-medium rounded-lg transition-opacity ${SIZES[size]} ${className} ${stateClassName}`}
+      style={style}
       disabled={disabled}
       {...props}
     >
-      {children}
+      {dimsContentOnly ? <span style={{ opacity: BLOCKED_OPACITY }}>{children}</span> : children}
     </button>
   )
 }
