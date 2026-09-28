@@ -189,7 +189,7 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ## 2026-08 · Permisos de tablas en migración (057)
 - **Las tablas heredaban los GRANT de la imagen de Postgres**, y la imagen 17.6.1.054 los recortó. La 057 los concede explícitamente (también a `anon`, para igualar el remoto); es no-op en prod.
-- **Las funciones no se tocan:** restaurar su default daría EXECUTE a `anon` sobre cada RPC nuevo, incluidos los SECURITY DEFINER.
+- **Functions do not get the tables' default back:** it would give `anon` EXECUTE on every new RPC, SECURITY DEFINER ones included. Since 066 (issue #115) the default for functions is closed instead (owner only), and each migration grants its own. Rule in CLAUDE.md § Database Schema.
 - **Si un reset vuelve a dar 42501, mirar aquí**, no las políticas RLS.
 
 ## 2026-08 · Una sola sesión en curso (issue #30)

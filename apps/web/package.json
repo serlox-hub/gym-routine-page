@@ -17,7 +17,8 @@
     "test:e2e:ui": "playwright test --ui",
     "check": "npm run lint && npm run test:run && npm run test:e2e",
     "db:dump": "supabase db dump --local --schema public -f",
-    "db:schema": "supabase db reset && npm run db:dump -- supabase/schema.sql"
+    "db:schema": "supabase db reset && npm run db:dump -- supabase/schema.sql",
+    "db:check-grants": "node scripts/checkFunctionGrants.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

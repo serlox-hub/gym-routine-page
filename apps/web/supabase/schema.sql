@@ -553,6 +553,7 @@ CREATE OR REPLACE FUNCTION "public"."is_admin"("check_user_id" "uuid") RETURNS b
     SELECT EXISTS (
         SELECT 1 FROM user_settings
         WHERE user_id = check_user_id
+        AND user_id = auth.uid()
         AND key = 'is_admin'
         AND value = 'true'
     );
@@ -560,6 +561,10 @@ $$;
 
 
 ALTER FUNCTION "public"."is_admin"("check_user_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."is_admin"("check_user_id" "uuid") IS 'TRUE only when check_user_id is the caller and the caller is an admin. Any other uuid answers FALSE, never NULL: this runs for anon too (inside RLS policies), so it must not tell who is an admin. Callers pass auth.uid().';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint DEFAULT NULL::bigint) RETURNS "void"
@@ -2476,21 +2481,25 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."add_session_exercise"("p_session_id" "uuid", "p_exercise_id" integer, "p_fields" "jsonb", "p_superset_group" integer, "p_add_to_routine" boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."add_session_exercise"("p_session_id" "uuid", "p_exercise_id" integer, "p_fields" "jsonb", "p_superset_group" integer, "p_add_to_routine" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."add_session_exercise"("p_session_id" "uuid", "p_exercise_id" integer, "p_fields" "jsonb", "p_superset_group" integer, "p_add_to_routine" boolean) TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."change_session_gym"("p_session_id" "uuid", "p_gym_id" bigint, "p_weights" "jsonb") TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."convert_user_measurements"("p_factor" numeric) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."convert_user_measurements"("p_factor" numeric) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."convert_user_measurements"("p_factor" numeric) TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) TO "service_role";
 
 
 
@@ -2500,13 +2509,63 @@ GRANT ALL ON TABLE "public"."routine_days" TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."duplicate_routine_day"("p_day_id" integer, "p_new_name" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."duplicate_routine_day"("p_day_id" integer, "p_new_name" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."duplicate_routine_day"("p_day_id" integer, "p_new_name" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."get_all_feedback"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."get_all_users"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_all_users"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_all_users"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."reorder_routine_days"("day_orders" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."reorder_routine_days"("day_orders" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."reorder_routine_days"("day_orders" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."reorder_routine_exercises"("exercise_orders" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."reorder_routine_exercises"("exercise_orders" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."reorder_routine_exercises"("exercise_orders" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "jsonb") TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."update_session_exercise_with_routine"("p_session_exercise_id" integer, "p_fields" "jsonb") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."update_session_exercise_with_routine"("p_session_exercise_id" integer, "p_fields" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_session_exercise_with_routine"("p_session_exercise_id" integer, "p_fields" "jsonb") TO "service_role";
 
 
 

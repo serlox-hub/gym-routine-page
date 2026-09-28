@@ -92,6 +92,13 @@ jobs:
             exit 1
           fi
 
+      # Who can execute each function in `public` (issue #115). The drift check above cannot see it:
+      # `db:dump` only dumps `public`, so the global default that closes new functions never reaches
+      # schema.sql. And no e2e calls the admin, feedback, unit conversion or day duplication RPCs, so
+      # a forgotten GRANT would only show up in production, as a 42501 for every logged-in user.
+      - name: Check function EXECUTE grants
+        run: npm run db:check-grants -w apps/web
+
       # Credenciales fijas del usuario que crea `apps/web/supabase/seed.sql` en cada reset. No son
       # secretos: esa BD vive y muere dentro del job y usa el JWT secret público de la CLI.
       - name: Run e2e tests
