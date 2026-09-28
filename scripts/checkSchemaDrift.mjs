@@ -15,6 +15,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { readLocalMigrationDrift } from '../apps/web/scripts/localMigrations.js'
 
 // `git ls-files --others` imprime rutas relativas al CWD (a diferencia de `git diff --name-only`),
 // así que todo se ancla a la raíz del repo y el script funciona se lance desde donde se lance.
@@ -56,19 +57,13 @@ if (status.status !== 0) {
 }
 
 // La comparación solo significa algo si la BD refleja EXACTAMENTE las migraciones del árbol.
-// `local` vacío = migración aplicada que no está en este árbol: rama anterior de ESTE worktree, o
-// un worktree al que no le diste su propio GYM_SUPABASE_PROJECT_ID y sigue con el de por defecto.
-// `remote` vacío = migración del árbol sin aplicar (la que acabas de escribir: el caso que importa).
-const listed = run('npx', ['supabase', 'migration', 'list', '--local', '--output-format', 'json'], { cwd: WEB })
-const json = listed.stdout.split('\n').find((line) => line.startsWith('{"migrations"'))
-if (listed.status !== 0 || !json) {
+const drift = readLocalMigrationDrift(WEB)
+if (drift == null) {
   skip('no se pudo leer el estado de las migraciones de la BD local.')
 }
 
-const desincronizadas = JSON.parse(json).migrations.filter((m) => !m.local || !m.remote)
-if (desincronizadas.length > 0) {
-  const sinAplicar = desincronizadas.filter((m) => !m.remote).map((m) => m.local)
-  const ajenas = desincronizadas.filter((m) => !m.local).map((m) => m.remote)
+const { unapplied: sinAplicar, foreign: ajenas } = drift
+if (sinAplicar.length > 0 || ajenas.length > 0) {
   skip(
     'la BD local no está al día con las migraciones, así que compararla no diría nada.' +
     (sinAplicar.length ? `\n  Sin aplicar (están en el árbol): ${sinAplicar.join(', ')}` : '') +

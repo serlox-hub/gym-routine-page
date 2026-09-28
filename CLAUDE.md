@@ -299,6 +299,12 @@ export function getSensationLabels() {
 
 **Permisos**: los de los roles de la API (`anon`, `authenticated`, `service_role`) se conceden en migraciones (ver 057), ya NO se heredan de los default privileges de la imagen de Postgres, que dejó de darlos. Una tabla nueva necesita su GRANT (o los default privileges ya restaurados) o la app responde 42501. Lo que protege los datos es RLS, no la ausencia de GRANT.
 
+**Function EXECUTE** (issue #115): since 066 a new function is executable only by its owner (no PUBLIC, no API role), in local and production alike. So every migration that creates a function, or recreates one with DROP + CREATE (that drops its grants), ends with its grants:
+- An RPC: `REVOKE EXECUTE ON FUNCTION f(args) FROM PUBLIC, anon;` + `GRANT EXECUTE ON FUNCTION f(args) TO authenticated, service_role;`. The explicit `anon` matters: production's older image presumably granted it directly (reproduced locally, not verified in production), and a direct grant survives a revoke from PUBLIC.
+- A helper called inside RLS policies: `GRANT EXECUTE ... TO anon, authenticated, service_role` (a policy without `TO` also runs for anon, and without EXECUTE it answers 42501 instead of an empty result), and add it to `ANON_ALLOWED` in `apps/web/scripts/functionGrants.js`. It must reveal nothing to a caller without a session (see `is_admin`).
+- A function no API role should call: add it to `INTERNAL_ONLY` in the same file.
+A forgotten GRANT means 42501 for every logged-in user. `npm run db:check-grants -w apps/web` catches it (CI runs it after `supabase start`; locally it refuses to answer until the database holds exactly the tree's migrations, so run `npx supabase db reset` after writing one); `schema.sql` and `db:check-drift` cannot, because `db:dump` only dumps `public` and the default that closes new functions is global.
+
 ```
 muscle_groups ← exercises (muscle_group_id)
     ↓

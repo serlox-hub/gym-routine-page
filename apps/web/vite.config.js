@@ -59,6 +59,7 @@ export default defineConfig({
     // NUNCA se ejecutaban — el glob solo cogía .test.js
     include: [
       'src/**/*.test.{js,jsx}',
+      'scripts/**/*.test.js',
       '../../packages/shared/src/**/*.test.{js,jsx}',
     ],
     exclude: ['**/node_modules/**', 'e2e'],
