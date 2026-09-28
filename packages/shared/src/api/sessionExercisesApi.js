@@ -45,74 +45,6 @@ export async function fetchSessionExercises(sessionId) {
   return data
 }
 
-export async function fetchSessionExercisesSortOrder(sessionId) {
-  const { data, error } = await getClient()
-    .from('session_exercises')
-    .select('id, sort_order, superset_group')
-    .eq('session_id', sessionId)
-    .order('sort_order', { ascending: true })
-
-  if (error) throw error
-  return data || []
-}
-
-export async function updateSessionExerciseSortOrder(id, sortOrder) {
-  const { error } = await getClient()
-    .from('session_exercises')
-    .update({ sort_order: sortOrder })
-    .eq('id', id)
-
-  if (error) throw error
-}
-
-export async function insertSessionExercise({ sessionId, exerciseId, sortOrder, series, targetField, reps, level, rir, restSeconds, notes, supersetGroup, isWarmup = false }) {
-  const { data, error } = await getClient()
-    .from('session_exercises')
-    .insert({
-      session_id: sessionId,
-      exercise_id: exerciseId,
-      routine_exercise_id: null,
-      sort_order: sortOrder,
-      // Sin defaults: son NOT NULL y los valida el formulario. Ver addExerciseToDay.
-      series,
-      target_field: targetField ?? null,
-      reps,
-      level: level ?? null,
-      rir,
-      rest_seconds: restSeconds,
-      notes,
-      superset_group: supersetGroup,
-      is_extra: true,
-      is_warmup: isWarmup,
-    })
-    .select(`
-      id,
-      exercise_id,
-      sort_order,
-      series,
-      target_field,
-      reps,
-      level,
-      rir,
-      rest_seconds,
-      notes,
-      superset_group,
-      is_extra,
-      is_warmup,
-      exercise:exercises (
-        id,
-        name:name_es,
-        name_en,
-        tracked_fields,
-        distance_unit
-      )
-    `)
-    .single()
-
-  if (error) throw error
-  return data
-}
-
 // ============================================
 // SESSION EXERCISES - MUTATIONS
 // ============================================
@@ -133,58 +65,24 @@ export async function replaceSessionExercise({ sessionExerciseId, newExerciseId,
   if (error) throw error
 }
 
-export async function addSessionExercise({ sessionId, exercise, series, target_field, reps, level, rir, rest_seconds, notes, superset_group }) {
-  const existing = await fetchSessionExercisesSortOrder(sessionId)
-
-  let insertSortOrder
-  let isWarmup = false
-
-  if (superset_group && existing?.length) {
-    const supersetExercises = existing.filter(e => e.superset_group === superset_group)
-
-    if (supersetExercises.length > 0) {
-      const lastSupersetExercise = supersetExercises[supersetExercises.length - 1]
-      insertSortOrder = lastSupersetExercise.sort_order + 1
-
-      const supersetMember = existing.find(e => e.superset_group === superset_group)
-      if (supersetMember) {
-        const { data: memberData } = await getClient()
-          .from('session_exercises')
-          .select('is_warmup')
-          .eq('id', supersetMember.id)
-          .single()
-        if (memberData) {
-          isWarmup = memberData.is_warmup || false
-        }
-      }
-
-      const exercisesToShift = existing.filter(e => e.sort_order >= insertSortOrder)
-      if (exercisesToShift.length > 0) {
-        await Promise.all(
-          exercisesToShift.map(e => updateSessionExerciseSortOrder(e.id, e.sort_order + 1))
-        )
-      }
-    } else {
-      insertSortOrder = (existing[existing.length - 1]?.sort_order || 0) + 1
-    }
-  } else {
-    insertSortOrder = (existing?.[existing.length - 1]?.sort_order || 0) + 1
-  }
-
-  return insertSessionExercise({
-    sessionId,
-    exerciseId: exercise.id,
-    sortOrder: insertSortOrder,
-    series,
-    targetField: target_field,
-    reps,
-    level,
-    rir,
-    restSeconds: rest_seconds,
-    notes,
-    supersetGroup: superset_group,
-    isWarmup,
+/**
+ * Adds an exercise to the session and, with `addToRoutine`, also to the session's routine day, in
+ * one transaction (migration 065). `fields` are column values (`pickSessionExerciseFields`).
+ * `routine_exercise_id` comes back null when the exercise went to the session only, which also
+ * happens with `addToRoutine` if the day was deleted mid-session.
+ * @returns {Promise<{ session_exercise_id: number, routine_exercise_id: number|null }>}
+ */
+export async function addSessionExercise({ sessionId, exerciseId, fields, supersetGroup, addToRoutine }) {
+  const { data, error } = await getClient().rpc('add_session_exercise', {
+    p_session_id: sessionId,
+    p_exercise_id: exerciseId,
+    p_fields: fields,
+    p_superset_group: supersetGroup ?? null,
+    p_add_to_routine: addToRoutine === true,
   })
+
+  if (error) throw error
+  return data
 }
 
 export async function updateSessionExerciseFields(sessionExerciseId, fields, { propagateToRoutine = false } = {}) {

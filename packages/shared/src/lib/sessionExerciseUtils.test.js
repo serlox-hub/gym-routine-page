@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { diffSessionExerciseFields, buildEmptySetData, canApplyToRoutine, buildReplaceSessionExerciseFields } from './sessionExerciseUtils.js'
+import { diffSessionExerciseFields, buildEmptySetData, canApplyToRoutine, buildReplaceSessionExerciseFields, pickSessionExerciseFields } from './sessionExerciseUtils.js'
 
 describe('diffSessionExerciseFields', () => {
   const original = {
@@ -218,5 +218,46 @@ describe('buildReplaceSessionExerciseFields', () => {
   it('sin target_field guardado (fila antigua) lo resuelve con los campos', () => {
     const old = { target_field: undefined, reps: '10', level: null }
     expect(buildReplaceSessionExerciseFields(old, ['weight', 'reps'], ['weight', 'reps']).target_field).toBe('reps')
+  })
+})
+
+describe('pickSessionExerciseFields', () => {
+  const FORM_DATA = {
+    exerciseId: 5,
+    exercise: { id: 5, name: 'Cinta' },
+    series: 1,
+    target_field: 'time',
+    reps: '20min',
+    level: 8,
+    rir: null,
+    rest_seconds: 60,
+    notes: 'suave',
+    superset_group: 2,
+  }
+
+  it('picks exactly the seven column keys', () => {
+    expect(pickSessionExerciseFields(FORM_DATA)).toEqual({
+      series: 1, target_field: 'time', reps: '20min', level: 8, rir: null, rest_seconds: 60, notes: 'suave',
+    })
+  })
+
+  // The RPC raises on unknown keys: these two travel in the same payload but are not p_fields.
+  it('drops exercise, exerciseId and superset_group', () => {
+    const fields = pickSessionExerciseFields(FORM_DATA)
+    expect(fields).not.toHaveProperty('exercise')
+    expect(fields).not.toHaveProperty('exerciseId')
+    expect(fields).not.toHaveProperty('superset_group')
+  })
+
+  it('keeps 0 and null as they are', () => {
+    const fields = pickSessionExerciseFields({ ...FORM_DATA, level: 0, rir: 0, rest_seconds: 0, notes: null, target_field: null })
+    expect(fields).toMatchObject({ level: 0, rir: 0, rest_seconds: 0, notes: null, target_field: null })
+  })
+
+  it('returns null, never undefined, for a key the payload lacks', () => {
+    const fields = pickSessionExerciseFields({ series: 3, reps: '8-12' })
+    expect(fields).toEqual({
+      series: 3, reps: '8-12', target_field: null, level: null, rir: null, rest_seconds: null, notes: null,
+    })
   })
 })

@@ -130,7 +130,13 @@
     "replaceScopeMessage": "You can change \"{{name}}\" for this workout only, or keep the change in the routine.",
     "replaceOnlyToday": "Just today",
     "replaceAlsoRoutine": "In the routine too",
-    "replaceFailed": "Could not replace the exercise. Try again."
+    "replaceFailed": "Could not replace the exercise. Try again.",
+    "addScopeTitle": "Just today or in the routine too?",
+    "addScopeMessage": "You can add \"{{name}}\" to this workout only, or keep it in the routine too.",
+    "addOnlyToday": "Just today",
+    "addAlsoRoutine": "In the routine too",
+    "addFailed": "Could not add the exercise. Try again.",
+    "addRoutineDayGone": "This day is no longer in the routine. The exercise was added to today only."
   },
   "summary": {
     "title": "Summary",

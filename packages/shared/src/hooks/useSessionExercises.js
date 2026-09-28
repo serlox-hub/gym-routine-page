@@ -2,19 +2,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import {
   fetchSessionExercises,
-  fetchSessionExercisesSortOrder,
-  updateSessionExerciseSortOrder,
-  insertSessionExercise,
+  addSessionExercise,
   replaceSessionExercise,
   updateSessionExerciseFields,
   deleteSessionExercise,
   reorderSessionExercises,
 } from '../api/workoutApi.js'
-import { getClient } from '../api/_client.js'
 import { useWorkoutStore } from './_stores.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 import { applyExerciseOrder } from '../lib/routineDayLayout.js'
-import { buildReplaceSessionExerciseFields } from '../lib/sessionExerciseUtils.js'
+import { buildReplaceSessionExerciseFields, pickSessionExerciseFields } from '../lib/sessionExerciseUtils.js'
 import { resolveTrackedFields } from '../lib/measurementFields.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
@@ -42,71 +39,32 @@ export function useSessionExercises(sessionId) {
   })
 }
 
+// Takes the add form's payload (`exercise`, the parsed fields, `superset_group`) plus `addToRoutine`.
 export function useAddSessionExercise() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
 
   return useMutation({
-    mutationFn: async ({ exercise, series, reps, rir, rest_seconds, notes, superset_group }) => {
-      // Obtener todos los ejercicios de la sesion para calcular posicion
-      const existing = await fetchSessionExercisesSortOrder(sessionId)
-
-      let insertSortOrder
-      let isWarmup = false
-
-      if (superset_group && existing?.length) {
-        // Si se asigna a un superset, insertar despues del ultimo ejercicio del superset
-        const supersetExercises = existing.filter(e => e.superset_group === superset_group)
-
-        if (supersetExercises.length > 0) {
-          // Encontrar la posicion del ultimo ejercicio del superset
-          const lastSupersetExercise = supersetExercises[supersetExercises.length - 1]
-          insertSortOrder = lastSupersetExercise.sort_order + 1
-
-          // Usar el mismo is_warmup que el superset
-          const supersetMember = existing.find(e => e.superset_group === superset_group)
-          if (supersetMember) {
-            const { data: memberData } = await getClient()
-              .from('session_exercises')
-              .select('is_warmup')
-              .eq('id', supersetMember.id)
-              .single()
-            if (memberData) {
-              isWarmup = memberData.is_warmup || false
-            }
-          }
-
-          // Desplazar los ejercicios posteriores
-          const exercisesToShift = existing.filter(e => e.sort_order >= insertSortOrder)
-          if (exercisesToShift.length > 0) {
-            await Promise.all(
-              exercisesToShift.map(e => updateSessionExerciseSortOrder(e.id, e.sort_order + 1))
-            )
-          }
-        } else {
-          // Superset nuevo, anadir al final
-          insertSortOrder = (existing[existing.length - 1]?.sort_order || 0) + 1
-        }
-      } else {
-        // Sin superset, anadir al final
-        insertSortOrder = (existing?.[existing.length - 1]?.sort_order || 0) + 1
-      }
-
-      return insertSessionExercise({
-        sessionId,
-        exerciseId: exercise.id,
-        sortOrder: insertSortOrder,
-        series,
-        reps,
-        rir,
-        restSeconds: rest_seconds,
-        notes,
-        supersetGroup: superset_group,
-        isWarmup,
-      })
-    },
-    onSuccess: () => {
+    mutationFn: (data) => addSessionExercise({
+      sessionId,
+      exerciseId: data.exercise.id,
+      fields: pickSessionExerciseFields(data),
+      supersetGroup: data.superset_group,
+      addToRoutine: data.addToRoutine,
+    }),
+    onSuccess: (result, { addToRoutine }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
+      if (result?.routine_exercise_id != null) {
+        invalidateRoutineExerciseCaches(queryClient)
+        // The routine card shows `exercises_count` (`fetchRoutines`): adding is the only session
+        // write that changes it, so it is not in the shared list above.
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      } else if (addToRoutine) {
+        getNotifier()?.show(t('workout:exercise.addRoutineDayGone'), 'info')
+      }
+    },
+    onError: () => {
+      getNotifier()?.show(t('workout:exercise.addFailed'), 'error')
     },
   })
 }
