@@ -27,6 +27,7 @@ vi.mock('../api/routineApi.js', () => ({
   addExerciseToDay: vi.fn(),
   duplicateRoutineExercise: vi.fn(),
   duplicateRoutineDay: vi.fn(),
+  createRoutineDayWithExercises: vi.fn(),
   moveRoutineExerciseToDay: vi.fn(),
   duplicateRoutine: vi.fn(),
 }))
@@ -59,6 +60,7 @@ import {
   reorderRoutineExercises,
   setRoutineExerciseSupersetGroup,
   updateRoutine,
+  createRoutineDayWithExercises,
 } from '../api/routineApi.js'
 
 import { QUERY_KEYS } from '../lib/constants.js'
@@ -81,6 +83,8 @@ import {
   useReorderRoutineExercises,
   useSetRoutineExerciseSupersetGroup,
   useRoutineDetailsForm,
+  useCreateRoutineDayWithExercises,
+  useConvertSessionToRoutineDayForm,
 } from './useRoutines.js'
 
 function createQueryClient() {
@@ -658,5 +662,191 @@ describe('useRoutineDetailsForm', () => {
     rerender({ routine: { ...ROUTINE, name: 'Nombre del servidor' } })
 
     expect(result.current.form.name).toBe('A medio escribir')
+  })
+})
+
+describe('useCreateRoutineDayWithExercises', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('passes the params to the API and invalidates exactly the list and the target routine', async () => {
+    const params = { routineId: null, newRoutineName: 'Summer', dayName: 'Push', exercises: [{ exercise_id: 1 }] }
+    createRoutineDayWithExercises.mockResolvedValueOnce({ routineId: 12, dayId: 40 })
+    const queryClient = createQueryClient()
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    const { result } = renderHook(() => useCreateRoutineDayWithExercises(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync(params)
+    })
+
+    expect(createRoutineDayWithExercises).toHaveBeenCalledWith(params)
+    expect(invalidateSpy.mock.calls.map(([filters]) => filters.queryKey)).toEqual([
+      [QUERY_KEYS.ROUTINES],
+      [QUERY_KEYS.ROUTINE, '12'],
+      [QUERY_KEYS.ROUTINE_DAYS, '12'],
+      [QUERY_KEYS.ROUTINE_ALL_EXERCISES, '12'],
+    ])
+  })
+})
+
+describe('useConvertSessionToRoutineDayForm', () => {
+  const SESSION = {
+    id: 'session-1',
+    day_name: 'Push',
+    routine_day: { id: 5, name: 'Push', routine: { id: 3, name: 'PPL' } },
+    exercises: [
+      {
+        sessionExerciseId: 100,
+        exercise: { id: 7, deleted_at: null },
+        series: 3, target_field: 'reps', reps: '8-12', level: null, rir: 2, rest_seconds: 90, notes: null,
+        superset_group: null, is_extra: false, is_warmup: false,
+        sets: [{ id: 1, set_number: 1 }, { id: 2, set_number: 2 }],
+      },
+    ],
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    fetchRoutines.mockResolvedValue([{ id: 3, name: 'PPL' }, { id: 4, name: 'Full body' }])
+  })
+
+  function renderForm(session = SESSION, onSuccess = vi.fn(), queryClient = createQueryClient()) {
+    return renderHook(() => useConvertSessionToRoutineDayForm({ session, onSuccess }), { wrapper: createWrapper(queryClient) })
+  }
+
+  it('prefills the day name and preselects the source routine once the routines load', async () => {
+    const { result } = renderForm()
+
+    expect(result.current.dayName).toBe('Push')
+    await waitFor(() => expect(result.current.selectedRoutineId).toBe('3'))
+    expect(result.current.isBlocked).toBe(false)
+  })
+
+  it('surfaces a first-load failure as isRoutinesError, and retryRoutines recovers the list', async () => {
+    fetchRoutines.mockRejectedValueOnce(new Error('network error'))
+    const { result } = renderForm()
+
+    await waitFor(() => expect(result.current.isRoutinesError).toBe(true))
+    expect(result.current.isLoadingRoutines).toBe(false)
+    expect(result.current.routines).toEqual([])
+
+    act(() => result.current.retryRoutines())
+
+    await waitFor(() => expect(result.current.isRoutinesError).toBe(false))
+    expect(result.current.routines).toEqual([{ id: 3, name: 'PPL' }, { id: 4, name: 'Full body' }])
+  })
+
+  it('explains why Confirm is blocked and does not call the API', async () => {
+    const { result } = renderForm({ ...SESSION, routine_day: null })
+    await waitFor(() => expect(result.current.isLoadingRoutines).toBe(false))
+
+    act(() => result.current.submit())
+
+    expect(result.current.notice).toEqual({ type: 'info', text: t('workout:history.convertToDay.blocked.noRoutine') })
+    expect(createRoutineDayWithExercises).not.toHaveBeenCalled()
+
+    act(() => result.current.selectNewRoutine())
+    expect(result.current.notice).toBeNull()
+  })
+
+  it('creates the day from the built rows with trimmed names, then toasts and calls onSuccess', async () => {
+    createRoutineDayWithExercises.mockResolvedValueOnce({ routineId: 9, dayId: 30 })
+    const onSuccess = vi.fn()
+    const { result } = renderForm(SESSION, onSuccess)
+    await waitFor(() => expect(result.current.isLoadingRoutines).toBe(false))
+
+    act(() => {
+      result.current.selectNewRoutine()
+      result.current.setNewRoutineName('  Summer ')
+      result.current.setDayName(' Push A ')
+    })
+    act(() => result.current.submit())
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledWith({ routineId: 9, dayId: 30 }))
+    expect(createRoutineDayWithExercises).toHaveBeenCalledWith({
+      routineId: null,
+      newRoutineName: 'Summer',
+      dayName: 'Push A',
+      exercises: [expect.objectContaining({ exercise_id: 7, series: 2, sort_order: 1 })],
+    })
+    expect(notify).toHaveBeenCalledWith(t('workout:history.convertToDay.success'), 'success')
+  })
+
+  it('keeps the dialog state, shows the mapped error and refetches the session on exercise_not_available', async () => {
+    createRoutineDayWithExercises.mockRejectedValueOnce({ message: 'exercise_not_available', code: 'P0002' })
+    const queryClient = createQueryClient()
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+    const onSuccess = vi.fn()
+    const { result } = renderForm(SESSION, onSuccess, queryClient)
+    await waitFor(() => expect(result.current.selectedRoutineId).toBe('3'))
+
+    act(() => result.current.submit())
+
+    await waitFor(() => expect(result.current.notice?.type).toBe('error'))
+    expect(result.current.notice.text).toBe(t('workout:history.convertToDay.errors.exerciseNotAvailable'))
+    expect(createRoutineDayWithExercises).toHaveBeenCalledWith(expect.objectContaining({ routineId: 3, newRoutineName: null }))
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.SESSION_DETAIL, 'session-1'] })
+    expect(result.current.dayName).toBe('Push')
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
+  it('does not refetch the session for any other error, but does invalidate the routines list', async () => {
+    createRoutineDayWithExercises.mockRejectedValueOnce({ message: 'routine_not_found' })
+    const queryClient = createQueryClient()
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+    const { result } = renderForm(SESSION, vi.fn(), queryClient)
+    await waitFor(() => expect(result.current.selectedRoutineId).toBe('3'))
+
+    act(() => result.current.submit())
+
+    await waitFor(() => expect(result.current.notice?.text).toBe(t('workout:history.convertToDay.errors.routineNotFound')))
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.SESSION_DETAIL, 'session-1'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINES] })
+  })
+
+  it('falls back to the source routine after routine_not_found drops an explicit pick, if it is still in the list', async () => {
+    createRoutineDayWithExercises.mockRejectedValueOnce({ message: 'routine_not_found' })
+    const queryClient = createQueryClient()
+    const { result } = renderForm(SESSION, vi.fn(), queryClient)
+    await waitFor(() => expect(result.current.selectedRoutineId).toBe('3'))
+
+    act(() => result.current.selectRoutine(4))
+    expect(result.current.selectedRoutineId).toBe('4')
+
+    act(() => result.current.submit())
+
+    await waitFor(() => expect(result.current.notice?.text).toBe(t('workout:history.convertToDay.errors.routineNotFound')))
+    // The invalidated routines list refetches and still has the source routine (id 3, from beforeEach).
+    await waitFor(() => expect(result.current.selectedRoutineId).toBe('3'))
+  })
+
+  it('drops the selection once the refetched list no longer has the source routine either', async () => {
+    createRoutineDayWithExercises.mockRejectedValueOnce({ message: 'routine_not_found' })
+    const queryClient = createQueryClient()
+    const { result } = renderForm(SESSION, vi.fn(), queryClient)
+    await waitFor(() => expect(result.current.selectedRoutineId).toBe('3'))
+
+    act(() => result.current.selectRoutine(4))
+    // The refetch triggered by the ROUTINES invalidation returns a list without the source routine.
+    fetchRoutines.mockResolvedValueOnce([{ id: 4, name: 'Full body' }])
+
+    act(() => result.current.submit())
+
+    await waitFor(() => expect(result.current.notice?.text).toBe(t('workout:history.convertToDay.errors.routineNotFound')))
+    await waitFor(() => expect(result.current.selectedRoutineId).toBeNull())
+  })
+
+  it('says there is nothing to copy when every exercise was skipped', async () => {
+    const empty = { ...SESSION, exercises: [{ ...SESSION.exercises[0], sets: [] }] }
+    const { result } = renderForm(empty)
+    await waitFor(() => expect(result.current.selectedRoutineId).toBe('3'))
+
+    act(() => result.current.submit())
+
+    expect(result.current.notice).toEqual({ type: 'info', text: t('workout:history.convertToDay.nothingToCopy') })
+    expect(createRoutineDayWithExercises).not.toHaveBeenCalled()
   })
 })

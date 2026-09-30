@@ -67,6 +67,8 @@ flowchart LR
     SESSION_DETAIL --> SESSION_EDIT["Session Edit Mode"]:::page
     SESSION_DETAIL --> SUMMARY_H["WorkoutSummaryModal · share"]:::modal
     SESSION_DETAIL --> CONFIRM_MODAL
+    SESSION_DETAIL --> CONVERT_DAY["ConvertToRoutineDayModal"]:::modal
+    CONVERT_DAY -->|"day created"| ROUTINE_DETAIL
 
     %% ============ BODY METRICS ============
     BODY --> WEIGHT_MODAL["BodyWeightModal"]:::modal

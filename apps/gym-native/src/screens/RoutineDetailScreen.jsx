@@ -22,10 +22,12 @@ import { colors } from '../lib/styles'
 
 export default function RoutineDetailScreen({ route, navigation }) {
   const { t } = useTranslation()
-  const { routineId, openDetails } = route.params
+  const { routineId, openDetails, expandDayId } = route.params
   // La señal de "abre el modal de nombre y descripción" se lee UNA vez y se limpia: el param
   // sobrevive al volver a la pantalla, y si no volvería a abrirse cada vez.
   const [initialDetailsOpen] = useState(!!openDetails)
+  // Same for the day just created from a History session ("Convert to routine day"): it starts open.
+  const [initialExpandDayId] = useState(expandDayId ?? null)
   // `Animated.ScrollView` + ref animada, no un `ScrollView` a secas: el auto-scroll del arrastre
   // lo conduce `scrollTo` desde el hilo de UI, y sobre un ScrollView normal no hace nada ni avisa.
   const scrollRef = useAnimatedRef()
@@ -67,7 +69,8 @@ export default function RoutineDetailScreen({ route, navigation }) {
 
   useEffect(() => {
     if (openDetails) navigation.setParams({ openDetails: undefined })
-  }, [openDetails, navigation])
+    if (expandDayId != null) navigation.setParams({ expandDayId: undefined })
+  }, [openDetails, expandDayId, navigation])
 
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
@@ -299,6 +302,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
                 activeSessionSynced={activeSessionSynced}
                 dragHandleProps={days.length >= 2 ? dragHandleProps : null}
                 isDragging={isDragging}
+                initiallyExpanded={initialExpandDayId != null && String(day.id) === String(initialExpandDayId)}
                 scrollRef={scrollRef}
                 navigation={navigation}
               />

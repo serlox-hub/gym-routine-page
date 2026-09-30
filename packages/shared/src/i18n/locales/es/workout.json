@@ -196,7 +196,37 @@
     "noSessionsDay": "Sin entrenamientos este día",
     "recentSessions": "Sesiones recientes",
     "repeatWorkout": "Repetir entrenamiento",
-    "repeatConfirm": "Se iniciará una nueva sesión copiando los ejercicios de este día."
+    "repeatConfirm": "Se iniciará una nueva sesión copiando los ejercicios de este día.",
+    "convertToDay": {
+      "menu": "Convertir en día de rutina",
+      "nothingToCopy": "No hay nada que copiar. Los ejercicios están borrados o no tienen series.",
+      "title": "Convertir en día de rutina",
+      "description": "Se añade un día nuevo al final de la rutina que elijas. Este entrenamiento no cambia.",
+      "routine": "Rutina",
+      "newRoutine": "Nueva rutina",
+      "routineName": "Nombre de la rutina",
+      "dayName": "Nombre del día",
+      "confirm": "Crear día",
+      "routinesLoadError": "No se han podido cargar tus rutinas.",
+      "blocked": {
+        "noRoutine": "Elige una rutina o crea una nueva.",
+        "noRoutineName": "Escribe el nombre de la rutina nueva.",
+        "noDayName": "Escribe el nombre del día."
+      },
+      "success": "Día añadido a la rutina",
+      "skippedDeleted_one": "{{count}} ejercicio borrado no se ha copiado.",
+      "skippedDeleted_other": "{{count}} ejercicios borrados no se han copiado.",
+      "skippedEmpty_one": "{{count}} ejercicio sin series no se ha copiado.",
+      "skippedEmpty_other": "{{count}} ejercicios sin series no se han copiado.",
+      "errors": {
+        "invalidArguments": "No se ha podido crear el día. Los datos no son válidos.",
+        "unknownField": "No se ha podido crear el día. Actualiza la app y vuelve a intentarlo.",
+        "nothingToCopy": "No hay nada que copiar.",
+        "routineNotFound": "Esa rutina ya no existe. Elige otra.",
+        "exerciseNotAvailable": "Algún ejercicio ya no está disponible. Vuelve a intentarlo y se quedará fuera.",
+        "generic": "No se ha podido crear el día. Vuelve a intentarlo."
+      }
+    }
   },
   "share": {
     "dialogTitle": "Compartir entrenamiento"

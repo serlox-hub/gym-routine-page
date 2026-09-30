@@ -4,13 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trophy, SlidersHorizontal, AlertCircle, Dumbbell } from 'lucide-react-native'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trophy, SlidersHorizontal, AlertCircle, Dumbbell, CalendarPlus } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useRescheduleSession, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
 import SetValueInput from '../Workout/SetInputs'
+import ConvertToRoutineDayModal from './ConvertToRoutineDayModal'
 import { uploadVideo } from '../../lib/videoStorage'
 import {
   SENSATION_LABELS,
@@ -36,6 +37,8 @@ import {
   useResolvedDistanceUnit,
   formatEffortBadge,
   buildSessionExercisesFromSession,
+  buildRoutineDayFromSession,
+  getNotifier,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 import { colors } from '../../lib/styles'
@@ -382,6 +385,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   const [selectedSet, setSelectedSet] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showRepeatConfirm, setShowRepeatConfirm] = useState(false)
+  const [showConvertToDay, setShowConvertToDay] = useState(false)
   const [showGymSelector, setShowGymSelector] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
@@ -524,6 +528,22 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
     )
   }
 
+  // Always offered: with nothing to copy, the press says so instead of opening a dialog that could
+  // only fail.
+  const handleOpenConvertToDay = () => {
+    if (buildRoutineDayFromSession(session.exercises).exercises.length === 0) {
+      getNotifier()?.show(t('workout:history.convertToDay.nothingToCopy'), 'info')
+      return
+    }
+    setShowConvertToDay(true)
+  }
+
+  // The day id travels as a route param: RoutineDetailScreen reads it once and clears it.
+  const handleConvertedToDay = ({ routineId, dayId }) => {
+    setShowConvertToDay(false)
+    navigation.navigate('RoutineDetail', { routineId, expandDayId: dayId })
+  }
+
   const handleReassignGym = (newGymId) => {
     if (newGymId == null || String(newGymId) === String(session.gym_id)) return
     reassignSessionGym.mutate({ sessionId, newGymId })
@@ -570,6 +590,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
               <DropdownMenu items={[
                 // Mientras no se sepa si hay sesión activa no se ofrece: rebotaría en el guard del servidor.
                 !hasActiveSession && activeSessionSynced && { icon: Play, label: t('workout:history.repeatWorkout'), onPress: () => setShowRepeatConfirm(true) },
+                { icon: CalendarPlus, label: t('workout:history.convertToDay.menu'), onPress: handleOpenConvertToDay },
                 { icon: Pencil, label: t('common:buttons.edit'), onPress: handleStartEdit },
                 { icon: Share2, label: t('common:buttons.share'), onPress: async () => {
                   const summaryData = await fetchWorkoutSummary(sessionId, { weightUnit: globalWeightUnit })
@@ -775,6 +796,14 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
         selectedGymId={session.gym_id}
         onSelect={handleReassignGym}
       />
+
+      {showConvertToDay && (
+        <ConvertToRoutineDayModal
+          session={session}
+          onClose={() => setShowConvertToDay(false)}
+          onConverted={handleConvertedToDay}
+        />
+      )}
 
       {Platform.OS === 'ios' && pickerField && (
         <SessionDateTimePicker

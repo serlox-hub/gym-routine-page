@@ -24,6 +24,7 @@ import {
   addExerciseToDay as apiAddExerciseToDay,
   duplicateRoutineExercise as apiDuplicateRoutineExercise,
   duplicateRoutineDay as apiDuplicateRoutineDay,
+  createRoutineDayWithExercises as apiCreateRoutineDayWithExercises,
   moveRoutineExerciseToDay as apiMoveRoutineExerciseToDay,
   duplicateRoutine as apiDuplicateRoutine,
   importRoutine,
@@ -35,6 +36,17 @@ import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 import { getTemplateImportData } from '../lib/routineTemplates.js'
 import { applyExerciseOrderToBlocks, placeInSupersetForBlocks } from '../lib/routineDayLayout.js'
 import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
+import {
+  buildRoutineDayFromSession,
+  getSessionDayNameDefault,
+  getDefaultRoutineIdForSession,
+  getConvertToRoutineDayState,
+  getRoutineDayErrorKey,
+  getRoutineDayErrorToken,
+  getConvertToRoutineDaySuccessMessage,
+  CONVERT_BLOCKED_MESSAGE_KEYS,
+  ROUTINE_DAY_ERROR_TOKENS,
+} from '../lib/sessionToRoutineDay.js'
 
 export function useRoutines() {
   return useQuery({
@@ -395,6 +407,23 @@ export function useDuplicateRoutineExercise() {
   })
 }
 
+// A new routine changes the list and a new day changes its counts; the detail, its days and its
+// exercises are where the user lands next.
+export function useCreateRoutineDayWithExercises() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (params) => apiCreateRoutineDayWithExercises(params),
+    onSuccess: ({ routineId }) => {
+      const id = String(routineId)
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE, id] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, id] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_ALL_EXERCISES, id] })
+    },
+  })
+}
+
 export function useMoveRoutineExerciseToDay() {
   const queryClient = useQueryClient()
 
@@ -457,4 +486,125 @@ export function useRoutineDetailsForm(routine, routineId) {
   }, [form, routineId, updateRoutine])
 
   return { form, setField, error, submit, isSaving: updateRoutine.isPending }
+}
+
+/**
+ * Dialog of "Convert to routine day" (History), shared by web and native: they only render it.
+ *
+ * Mount it only while the dialog is open, so every opening starts from the defaults. Until the
+ * user picks, the selection is the session's source routine if the list has it: computed on each
+ * render, so it also appears when the routines load after the dialog opened.
+ *
+ * `notice` is what the dialog shows under the inputs: why Confirm is blocked (after pressing it) or
+ * why the request failed. Any edit clears it, since it described inputs that changed.
+ *
+ * @param {object} params
+ * @param {object} params.session - History detail of the session (`useSessionDetail`)
+ * @param {function} [params.onSuccess] - Called with `{ routineId, dayId }` once the day exists
+ */
+export function useConvertSessionToRoutineDayForm({ session, onSuccess }) {
+  const queryClient = useQueryClient()
+  // `isLoadingError`, not `isError`: a failed refetch keeps the cached list, which is still right.
+  // Only a first load that failed leaves the list empty for a reason other than "no routines".
+  const {
+    data: routines,
+    isLoading: isLoadingRoutines,
+    isLoadingError: isRoutinesError,
+    refetch: refetchRoutines,
+  } = useRoutines()
+  const createDay = useCreateRoutineDayWithExercises()
+  // undefined = the user has not picked yet (null is "picked nothing", which cannot happen by hand).
+  const [pickedSelection, setPickedSelection] = useState(undefined)
+  const [newRoutineName, setNewRoutineNameValue] = useState('')
+  const [dayName, setDayNameValue] = useState(() => getSessionDayNameDefault(session, t))
+  const [notice, setNotice] = useState(null)
+
+  const defaultRoutineId = getDefaultRoutineIdForSession(session, routines)
+  const selection = pickedSelection !== undefined
+    ? pickedSelection
+    : defaultRoutineId ? { kind: 'existing', routineId: defaultRoutineId } : null
+  const isPending = createDay.isPending
+  const { blockedReason } = getConvertToRoutineDayState({ selection, newRoutineName, dayName, isPending })
+
+  const selectNewRoutine = () => {
+    setPickedSelection({ kind: 'new' })
+    setNotice(null)
+  }
+  const selectRoutine = (routineId) => {
+    setPickedSelection({ kind: 'existing', routineId: String(routineId) })
+    setNotice(null)
+  }
+  const setNewRoutineName = (value) => {
+    setNewRoutineNameValue(value)
+    setNotice(null)
+  }
+  const setDayName = (value) => {
+    setDayNameValue(value)
+    setNotice(null)
+  }
+
+  const submit = () => {
+    if (isPending) return
+    if (blockedReason) {
+      setNotice({ type: 'info', text: t(CONVERT_BLOCKED_MESSAGE_KEYS[blockedReason]) })
+      return
+    }
+    // Built on press, from the detail as it is now: after `exercise_not_available` the refetched
+    // detail marks the exercise deleted, and the next try skips it.
+    const { exercises, skipped } = buildRoutineDayFromSession(session?.exercises)
+    if (exercises.length === 0) {
+      setNotice({ type: 'info', text: t('workout:history.convertToDay.nothingToCopy') })
+      return
+    }
+    setNotice(null)
+    const isNewRoutine = selection.kind === 'new'
+    createDay.mutate(
+      {
+        routineId: isNewRoutine ? null : Number(selection.routineId),
+        newRoutineName: isNewRoutine ? newRoutineName.trim() : null,
+        dayName: dayName.trim(),
+        exercises,
+      },
+      {
+        onSuccess: (result) => {
+          getNotifier()?.show(getConvertToRoutineDaySuccessMessage(skipped, t), 'success')
+          onSuccess?.(result)
+        },
+        onError: (error) => {
+          setNotice({ type: 'error', text: t(getRoutineDayErrorKey(error)) })
+          // The error proves a cached query stale: refetch it so the next try works.
+          const token = getRoutineDayErrorToken(error)
+          // The detail can be minutes old after an exercise is deleted from the catalogue.
+          if (token === ROUTINE_DAY_ERROR_TOKENS.EXERCISE_NOT_AVAILABLE) {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, session.id] })
+          }
+          // The routine was deleted elsewhere: drop it from the list and from the selection.
+          if (token === ROUTINE_DAY_ERROR_TOKENS.ROUTINE_NOT_FOUND) {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+            setPickedSelection(undefined)
+          }
+        },
+      }
+    )
+  }
+
+  return {
+    routines: routines ?? [],
+    isLoadingRoutines,
+    isRoutinesError,
+    // Wrapped: a press handler would pass its event as `refetch`'s options.
+    retryRoutines: () => { refetchRoutines() },
+    isNewRoutine: selection?.kind === 'new',
+    selectedRoutineId: selection?.kind === 'existing' ? selection.routineId : null,
+    selectNewRoutine,
+    selectRoutine,
+    newRoutineName,
+    setNewRoutineName,
+    dayName,
+    setDayName,
+    isBlocked: blockedReason != null,
+    notice,
+    submit,
+    isPending,
+  }
 }

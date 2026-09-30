@@ -108,6 +108,8 @@ jobs:
           E2E_TEST_PASSWORD: e2e-local-password
           E2E_SESSION_TEST_EMAIL: e2e-session@local.test
           E2E_SESSION_TEST_PASSWORD: e2e-local-password
+          E2E_HISTORY_TEST_EMAIL: e2e-history@local.test
+          E2E_HISTORY_TEST_PASSWORD: e2e-local-password
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

@@ -11,11 +11,11 @@ import { getExistingSupersetIds, getRoutineDayLayout, useSelectedGym, getRoutine
 import AddExerciseButton from './AddExerciseButton.jsx'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced, dragHandleProps = null, isDragging = false }) {
+function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced, dragHandleProps = null, isDragging = false, initiallyExpanded = false }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { id, name } = day
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded)
 
   // Cargar bloques siempre (necesarios para iniciar workout)
   const { data: blocks, isLoading: loadingBlocks } = useRoutineBlocks(id)
