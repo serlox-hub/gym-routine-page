@@ -10,7 +10,7 @@ import ExerciseThumbnail from '../Exercise/ExerciseThumbnail.jsx'
 
 function ExerciseSearchList({
   exercises, muscleGroups, equipmentTypes, isLoading, onSelect,
-  existingExerciseIds = new Set(), search = '', onSearchChange, initialMuscleGroup = null,
+  existingExerciseIds = new Set(), search = '', onSearchChange, initialMuscleGroup = null, inputRef,
 }) {
   const { t } = useTranslation()
   const [internalSearch, setInternalSearch] = useState(search)
@@ -50,6 +50,7 @@ function ExerciseSearchList({
         sourceFilter={sourceFilter}
         onSourceFilterChange={setSourceFilter}
         autoFocus
+        inputRef={inputRef}
       />
 
       <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
