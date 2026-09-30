@@ -100,6 +100,7 @@ export default function ExerciseSearchList({
           ItemSeparatorComponent={() => <View className="h-2" />}
           style={{ maxHeight: 300 }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         />
       )}
     </>

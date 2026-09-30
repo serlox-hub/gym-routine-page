@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCreateExercise } from '../../hooks/useExercises.js'
 import { Modal, Button } from '../ui/index.js'
@@ -23,12 +23,31 @@ export default function ExercisePickerModal({
   const { data: muscleGroups } = useMuscleGroups()
   const { data: equipmentTypes } = useEquipmentTypes()
   const createExercise = useCreateExercise()
+  const searchInputRef = useRef(null)
 
   useEffect(() => {
     if (isOpen) {
       setIsCreatingNew(false)
       setSearchTerm('')
     }
+  }, [isOpen])
+
+  // On iOS the keyboard only shrinks the visual viewport, so with it open a drag pans the whole
+  // window to reveal what the keyboard hides, and the search field at the top leaves the screen.
+  // Closing the keyboard leaves nothing to pan. Keeping it open by following visualViewport or
+  // interactive-widget was tried for the sticky PageHeader in May 2026 (b280133, 3aa71a0) and
+  // reverted, reason unrecorded.
+  // On document, not on a wrapper inside Modal: a drag starting on the window's padding or on the
+  // overlay around it never passes through the picker's own elements, and it pans all the same.
+  // A touch's target is where it started: a drag from the field itself (caret, selection) is kept.
+  useEffect(() => {
+    if (!isOpen) return
+    const handleTouchMove = (event) => {
+      const input = searchInputRef.current
+      if (input && input === document.activeElement && input !== event.target) input.blur()
+    }
+    document.addEventListener('touchmove', handleTouchMove, { passive: true })
+    return () => document.removeEventListener('touchmove', handleTouchMove)
   }, [isOpen])
 
   const handleCreateExercise = async (exerciseData, muscleGroupId) => {
@@ -93,6 +112,7 @@ export default function ExercisePickerModal({
             existingExerciseIds={existingExerciseIds}
             search={searchTerm}
             onSearchChange={setSearchTerm}
+            inputRef={searchInputRef}
           />
           <div className="flex gap-2 pt-3 mt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
             <Button onClick={() => setIsCreatingNew(true)} className="flex-1">{t('exercise:create')}</Button>

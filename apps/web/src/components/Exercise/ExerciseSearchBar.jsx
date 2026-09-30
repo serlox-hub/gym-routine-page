@@ -11,6 +11,7 @@ function ExerciseSearchBar({
   equipmentTypes, selectedEquipmentType, onEquipmentTypeChange,
   sourceFilter, onSourceFilterChange,
   autoFocus = false,
+  inputRef,
 }) {
   const { t } = useTranslation()
   const [showFilters, setShowFilters] = useState(false)
@@ -29,6 +30,7 @@ function ExerciseSearchBar({
     <div className="mb-3">
       <div className="flex items-center gap-2">
         <input
+          ref={inputRef}
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
