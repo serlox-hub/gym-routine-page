@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, AUTH_STORAGE_KEY } from '@/lib/supabase'
 import { createAuthStore, queryClient } from '@gym/shared'
 import useWorkoutStore from './workoutStore'
 
@@ -9,8 +9,7 @@ const useAuthStore = createAuthStore(supabase, {
   },
   onBeforeLogout: async ({ isErrorCleanup }) => {
     if (isErrorCleanup) {
-      const key = `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`
-      localStorage.removeItem(key)
+      localStorage.removeItem(AUTH_STORAGE_KEY)
     }
     useWorkoutStore.getState().endSession()
     queryClient.clear()

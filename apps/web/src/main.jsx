@@ -4,7 +4,9 @@ import * as Sentry from '@sentry/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
-import { supabase } from './lib/supabase.js'
+import { supabase, AUTH_STORAGE_KEY } from './lib/supabase.js'
+import { trackVisibility, watchSlowWrites } from './lib/netTimeline.js'
+import { readSessionExpiresAt, reportSlowWrite } from './lib/slowWriteReport.js'
 import { queryClient, initApi, initStores, initNotifications, i18n, initI18n } from '@gym/shared'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
@@ -18,6 +20,11 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     dsn: import.meta.env.VITE_SENTRY_DSN,
     environment: import.meta.env.MODE,
     enabled: import.meta.env.PROD,
+  })
+  // Slow write diagnostics (issue #123)
+  trackVisibility()
+  watchSlowWrites(queryClient.getMutationCache(), reportSlowWrite, {
+    readSessionExpiresAt: () => readSessionExpiresAt(AUTH_STORAGE_KEY),
   })
 }
 
