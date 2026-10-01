@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
@@ -44,12 +44,15 @@ import {
   replaceSessionExercise,
 } from '../api/workoutApi.js'
 import * as notificationsMock from '../notifications.js'
+import { useWorkoutStore } from './_stores.js'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { t } from '../i18n/index.js'
 
 import {
   useSessionExercises,
   useAddSessionExercise,
+  useAddSessionExerciseAttempt,
+  useAddSessionExerciseFlow,
   useRemoveSessionExercise,
   useReorderSessionExercises,
   useUpdateSessionExerciseFields,
@@ -301,6 +304,423 @@ describe('useAddSessionExercise', () => {
 
     expect(keys).toEqual([])
     expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addFailed'), 'error')
+  })
+
+  async function failWith(shouldToastError) {
+    addSessionExercise.mockRejectedValue(new Error('session_not_found'))
+    const variables = { ...FORM_DATA, addToRoutine: false }
+    const { result } = renderHook(() => useAddSessionExercise({ shouldToastError }), { wrapper: createWrapper() })
+    await act(async () => {
+      await result.current.mutateAsync(variables).catch(() => {})
+    })
+    return variables
+  }
+
+  it('shows no toast when shouldToastError returns false, and hands it the mutation variables', async () => {
+    const shouldToastError = vi.fn(() => false)
+
+    const variables = await failWith(shouldToastError)
+
+    expect(shouldToastError).toHaveBeenCalledTimes(1)
+    expect(shouldToastError.mock.calls[0][0]).toBeInstanceOf(Error)
+    expect(shouldToastError.mock.calls[0][1]).toBe(variables)
+    expect(notificationsMock._notifierShow).not.toHaveBeenCalled()
+  })
+
+  it('still shows addFailed when shouldToastError returns true', async () => {
+    await failWith(() => true)
+
+    expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addFailed'), 'error')
+  })
+})
+
+describe('useAddSessionExerciseAttempt', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const DATA = { exerciseId: 2, exercise: { id: 2, tracked_fields: ['weight', 'reps'] }, series: 3, reps: '10', addToRoutine: false }
+
+  /** The RPC answers only when the test says so. */
+  function holdRpc() {
+    const held = {}
+    addSessionExercise.mockReturnValueOnce(new Promise((resolve, reject) => {
+      held.resolve = resolve
+      held.reject = reject
+    }))
+    return held
+  }
+
+  function renderAttempt() {
+    return renderHook(() => useAddSessionExerciseAttempt(), { wrapper: createWrapper() })
+  }
+
+  it('is pending while its own add is in flight, and calls onSuccess when it lands', async () => {
+    const held = holdRpc()
+    const onSuccess = vi.fn()
+    const { result } = renderAttempt()
+
+    act(() => { result.current.start({ ...DATA }, onSuccess) })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+    expect(result.current.isFailed).toBe(false)
+
+    await act(async () => { held.resolve({ session_exercise_id: 1, routine_exercise_id: null }) })
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1))
+    expect(result.current.isPending).toBe(false)
+  })
+
+  it('a failure of its own add is shown as failed, with no toast', async () => {
+    const held = holdRpc()
+    const { result } = renderAttempt()
+
+    act(() => { result.current.start({ ...DATA }, vi.fn()) })
+    await act(async () => { held.reject(new Error('exercise_not_available')) })
+
+    await waitFor(() => expect(result.current.isFailed).toBe(true))
+    expect(result.current.isPending).toBe(false)
+    expect(notificationsMock._notifierShow).not.toHaveBeenCalled()
+  })
+
+  it('once cleared, a later failure is toasted and not shown as failed', async () => {
+    const held = holdRpc()
+    const { result } = renderAttempt()
+
+    act(() => { result.current.start({ ...DATA }, vi.fn()) })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+    act(() => { result.current.clear() })
+    expect(result.current.isPending).toBe(false)
+
+    await act(async () => { held.reject(new Error('network')) })
+
+    await waitFor(() => expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addFailed'), 'error'))
+    expect(result.current.isFailed).toBe(false)
+  })
+
+  it('once cleared, a later success does not call onSuccess (it would close a newer opening)', async () => {
+    const held = holdRpc()
+    const onSuccess = vi.fn()
+    const { result } = renderAttempt()
+
+    act(() => { result.current.start({ ...DATA }, onSuccess) })
+    act(() => { result.current.clear() })
+    await act(async () => { held.resolve({ session_exercise_id: 1, routine_exercise_id: null }) })
+
+    await waitFor(() => expect(result.current.mutation.isSuccess).toBe(true))
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
+  it('a failed add started without an own attempt is not shown as failed', async () => {
+    addSessionExercise.mockRejectedValueOnce(new Error('network'))
+    const { result } = renderAttempt()
+
+    await act(async () => {
+      await result.current.mutation.mutateAsync({ ...DATA }).catch(() => {})
+    })
+
+    await waitFor(() => expect(result.current.mutation.isError).toBe(true))
+    expect(result.current.isFailed).toBe(false)
+    expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addFailed'), 'error')
+  })
+
+  it('a new attempt does not inherit the previous failure', async () => {
+    holdRpc().reject(new Error('network'))
+    const held = holdRpc()
+    const { result } = renderAttempt()
+
+    act(() => { result.current.start({ ...DATA }, vi.fn()) })
+    await waitFor(() => expect(result.current.isFailed).toBe(true))
+
+    act(() => { result.current.start({ ...DATA }, vi.fn()) })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+    expect(result.current.isFailed).toBe(false)
+
+    await act(async () => { held.resolve({ session_exercise_id: 1, routine_exercise_id: null }) })
+  })
+
+  it('a failure after the screen unmounts is toasted', async () => {
+    const held = holdRpc()
+    const { result, unmount } = renderAttempt()
+
+    act(() => { result.current.start({ ...DATA }, vi.fn()) })
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+    unmount()
+
+    await act(async () => { held.reject(new Error('network')) })
+
+    await waitFor(() => expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addFailed'), 'error'))
+  })
+})
+
+describe('useAddSessionExerciseFlow', () => {
+  const store = useWorkoutStore._mockStore
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.routineDayId = 'day-1'
+  })
+
+  afterEach(() => {
+    delete store.routineDayId
+  })
+
+  const DATA = { exerciseId: 2, exercise: { id: 2, tracked_fields: ['weight', 'reps'] }, series: 3, reps: '10', superset_group: null }
+  const LANDED = { session_exercise_id: 1, routine_exercise_id: null }
+
+  /** The RPC answers only when the test says so. */
+  function holdRpc() {
+    const held = {}
+    addSessionExercise.mockReturnValueOnce(new Promise((resolve, reject) => {
+      held.resolve = resolve
+      held.reject = reject
+    }))
+    return held
+  }
+
+  function renderFlow() {
+    return renderHook(() => useAddSessionExerciseFlow(), { wrapper: createWrapper() })
+  }
+
+  /** Opens the modal and submits the form, the way the screen does. */
+  function submit(result, data = DATA) {
+    act(() => { result.current.openModal() })
+    act(() => { result.current.submitModal(data) })
+  }
+
+  it('openModal and closeModal toggle the modal', () => {
+    const { result } = renderFlow()
+    expect(result.current.isModalOpen).toBe(false)
+
+    act(() => { result.current.openModal() })
+    expect(result.current.isModalOpen).toBe(true)
+
+    act(() => { result.current.closeModal() })
+    expect(result.current.isModalOpen).toBe(false)
+  })
+
+  describe('routine session', () => {
+    it('submitting closes the modal and opens the scope dialog without adding anything yet', () => {
+      const { result } = renderFlow()
+
+      submit(result)
+
+      expect(result.current.isModalOpen).toBe(false)
+      expect(result.current.pendingAdd).toBe(DATA)
+      expect(addSessionExercise).not.toHaveBeenCalled()
+    })
+
+    it.each([[true], [false]])('choosing addToRoutine=%s sends that scope to the RPC', async (addToRoutine) => {
+      addSessionExercise.mockResolvedValue(LANDED)
+      const { result } = renderFlow()
+      submit(result)
+
+      await act(async () => { result.current.chooseScope(addToRoutine) })
+
+      expect(addSessionExercise).toHaveBeenCalledTimes(1)
+      expect(addSessionExercise).toHaveBeenCalledWith(expect.objectContaining({
+        sessionId: 'session-123',
+        exerciseId: 2,
+        addToRoutine,
+      }))
+    })
+
+    it('keeps the dialog open and pending while the add is in flight, and closes it when it lands', async () => {
+      const held = holdRpc()
+      const { result } = renderFlow()
+      submit(result)
+
+      act(() => { result.current.chooseScope(true) })
+      await waitFor(() => expect(result.current.isPending).toBe(true))
+      expect(result.current.pendingAdd).not.toBeNull()
+
+      await act(async () => { held.resolve(LANDED) })
+
+      await waitFor(() => expect(result.current.pendingAdd).toBeNull())
+      expect(result.current.isPending).toBe(false)
+    })
+
+    it('a failed add keeps the dialog open, shows as failed and does not toast', async () => {
+      const held = holdRpc()
+      const { result } = renderFlow()
+      submit(result)
+
+      act(() => { result.current.chooseScope(true) })
+      await act(async () => { held.reject(new Error('network')) })
+
+      await waitFor(() => expect(result.current.isFailed).toBe(true))
+      expect(result.current.pendingAdd).not.toBeNull()
+      expect(notificationsMock._notifierShow).not.toHaveBeenCalled()
+    })
+
+    it('after a failure the user can choose again and the second add succeeds', async () => {
+      const first = holdRpc()
+      const second = holdRpc()
+      const { result } = renderFlow()
+      submit(result)
+
+      act(() => { result.current.chooseScope(true) })
+      await act(async () => { first.reject(new Error('network')) })
+      await waitFor(() => expect(result.current.isFailed).toBe(true))
+
+      act(() => { result.current.chooseScope(false) })
+      await waitFor(() => expect(result.current.isPending).toBe(true))
+      expect(result.current.isFailed).toBe(false)
+
+      await act(async () => { second.resolve(LANDED) })
+      await waitFor(() => expect(result.current.pendingAdd).toBeNull())
+      expect(addSessionExercise).toHaveBeenCalledTimes(2)
+    })
+
+    describe('dismissing the dialog', () => {
+      it('before choosing adds to today only and closes the dialog', async () => {
+        addSessionExercise.mockResolvedValue(LANDED)
+        const { result } = renderFlow()
+        submit(result)
+
+        await act(async () => { result.current.dismissScope() })
+
+        expect(result.current.pendingAdd).toBeNull()
+        expect(addSessionExercise).toHaveBeenCalledTimes(1)
+        expect(addSessionExercise).toHaveBeenCalledWith(expect.objectContaining({ exerciseId: 2, addToRoutine: false }))
+      })
+
+      it('before choosing, a failure of that add is toasted because nobody is looking at it', async () => {
+        addSessionExercise.mockRejectedValueOnce(new Error('network'))
+        const { result } = renderFlow()
+        submit(result)
+
+        await act(async () => { result.current.dismissScope() })
+
+        await waitFor(() => expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addFailed'), 'error'))
+        expect(result.current.isFailed).toBe(false)
+      })
+
+      it('while its own add is pending closes without a second add and lets the first one continue', async () => {
+        const held = holdRpc()
+        const { result } = renderFlow()
+        submit(result)
+        act(() => { result.current.chooseScope(true) })
+        await waitFor(() => expect(result.current.isPending).toBe(true))
+
+        act(() => { result.current.dismissScope() })
+
+        expect(result.current.pendingAdd).toBeNull()
+        expect(result.current.isPending).toBe(false)
+        expect(addSessionExercise).toHaveBeenCalledTimes(1)
+
+        await act(async () => { held.reject(new Error('network')) })
+        await waitFor(() => expect(notificationsMock._notifierShow).toHaveBeenCalledWith(t('workout:exercise.addFailed'), 'error'))
+      })
+
+      it('while its own add is pending, a success afterwards is not an error and adds nothing else', async () => {
+        const held = holdRpc()
+        const { result } = renderFlow()
+        submit(result)
+        act(() => { result.current.chooseScope(false) })
+        await waitFor(() => expect(result.current.isPending).toBe(true))
+        act(() => { result.current.dismissScope() })
+
+        await act(async () => { held.resolve(LANDED) })
+
+        expect(addSessionExercise).toHaveBeenCalledTimes(1)
+        expect(notificationsMock._notifierShow).not.toHaveBeenCalled()
+      })
+
+      it('after its own add failed closes without adding anything', async () => {
+        const held = holdRpc()
+        const { result } = renderFlow()
+        submit(result)
+        act(() => { result.current.chooseScope(true) })
+        await act(async () => { held.reject(new Error('network')) })
+        await waitFor(() => expect(result.current.isFailed).toBe(true))
+
+        act(() => { result.current.dismissScope() })
+
+        expect(result.current.pendingAdd).toBeNull()
+        expect(result.current.isFailed).toBe(false)
+        expect(addSessionExercise).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    it('a routineDayId of 0 is still a routine session and asks for the scope', () => {
+      store.routineDayId = 0
+      const { result } = renderFlow()
+
+      submit(result)
+
+      expect(result.current.pendingAdd).toBe(DATA)
+      expect(addSessionExercise).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('free session', () => {
+    beforeEach(() => {
+      store.routineDayId = null
+    })
+
+    it('submitting adds to today only right away, without asking', async () => {
+      addSessionExercise.mockResolvedValue(LANDED)
+      const { result } = renderFlow()
+
+      await act(async () => {
+        result.current.openModal()
+        result.current.submitModal(DATA)
+      })
+
+      expect(result.current.pendingAdd).toBeNull()
+      expect(addSessionExercise).toHaveBeenCalledWith(expect.objectContaining({ exerciseId: 2, addToRoutine: false }))
+    })
+
+    it('keeps the modal open and pending while the add is in flight, and closes it when it lands', async () => {
+      const held = holdRpc()
+      const { result } = renderFlow()
+      submit(result)
+
+      await waitFor(() => expect(result.current.isPending).toBe(true))
+      expect(result.current.isModalOpen).toBe(true)
+
+      await act(async () => { held.resolve(LANDED) })
+
+      await waitFor(() => expect(result.current.isModalOpen).toBe(false))
+    })
+
+    it('a failed add keeps the modal open and shows as failed, with no toast', async () => {
+      const held = holdRpc()
+      const { result } = renderFlow()
+      submit(result)
+
+      await act(async () => { held.reject(new Error('network')) })
+
+      await waitFor(() => expect(result.current.isFailed).toBe(true))
+      expect(result.current.isModalOpen).toBe(true)
+      expect(notificationsMock._notifierShow).not.toHaveBeenCalled()
+    })
+
+    it('closing the modal clears the failure, so reopening it does not show the old one', async () => {
+      const held = holdRpc()
+      const { result } = renderFlow()
+      submit(result)
+      await act(async () => { held.reject(new Error('network')) })
+      await waitFor(() => expect(result.current.isFailed).toBe(true))
+
+      act(() => { result.current.closeModal() })
+      act(() => { result.current.openModal() })
+
+      expect(result.current.isFailed).toBe(false)
+      expect(result.current.isPending).toBe(false)
+    })
+
+    it('going back to the picker clears the failure but leaves the modal open', async () => {
+      const held = holdRpc()
+      const { result } = renderFlow()
+      submit(result)
+      await act(async () => { held.reject(new Error('network')) })
+      await waitFor(() => expect(result.current.isFailed).toBe(true))
+
+      act(() => { result.current.backToPicker() })
+
+      expect(result.current.isFailed).toBe(false)
+      expect(result.current.isModalOpen).toBe(true)
+    })
   })
 })
 

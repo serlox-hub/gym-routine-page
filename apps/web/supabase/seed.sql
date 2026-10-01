@@ -9,12 +9,13 @@
 -- catálogo de ejercicios) los crean las migraciones, y la rutina de los e2e la crea
 -- `e2e/testData.setup.js`, que ya es idempotente.
 --
--- Tres usuarios: `e2e@local.test` para casi toda la suite y `e2e-session@local.test` solo para
+-- Cuatro usuarios: `e2e@local.test` para casi toda la suite y `e2e-session@local.test` solo para
 -- `sessionReorder.spec.js`. Ese spec arranca una sesión de entrenamiento, y solo puede haber una en
 -- curso por usuario (`workout_sessions_one_in_progress_per_user`, migración 058): con el usuario
 -- compartido y `fullyParallel`, competiría con `session.spec.js`/`completeSet.spec.js`.
 -- `e2e-history@local.test` es para `convertSessionToRoutineDay.spec.js`: el Historial abre la
 -- primera sesión de hoy, y con el usuario compartido los otros specs añaden las suyas.
+-- `e2e-slow@local.test` is for `slowSave.spec.js`: it starts sessions too, like `sessionReorder.spec.js`.
 --
 -- ⚠️ Credenciales de DESARROLLO LOCAL, no son las de ningún entorno real: esta BD solo escucha en
 -- 127.0.0.1 y su JWT secret es el público de la CLI. Ver `.env.example`.
@@ -28,7 +29,8 @@ begin
     select * from (values
       ('00000000-0000-4000-8000-000000000001'::uuid, 'e2e@local.test'),
       ('00000000-0000-4000-8000-000000000002'::uuid, 'e2e-session@local.test'),
-      ('00000000-0000-4000-8000-000000000003'::uuid, 'e2e-history@local.test')
+      ('00000000-0000-4000-8000-000000000003'::uuid, 'e2e-history@local.test'),
+      ('00000000-0000-4000-8000-000000000004'::uuid, 'e2e-slow@local.test')
     ) as u(id, email)
   loop
     if exists (select 1 from auth.users where email = v_user.email) then

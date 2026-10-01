@@ -12,6 +12,9 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-10 · Guardado lento: se avisa, no se corta (#121)
+- **La espera no se acorta con un timeout:** los hasta 30 s son el bucle de reintentos del refresh de token de `auth-js` (`_refreshAccessToken`), que no es configurable. Descartado pasar a `createClient` un `fetch` con `AbortSignal.timeout()`: no corta ese bucle, y abortar un refresh puede gastar el refresh token y cerrar la sesión. Por eso `SaveStatus` solo avisa; quitar la espera es hacer las acciones offline (issue aparte).
+
 ## 2026-09 · Despliegue a producción desde `deploy.yml`
 - **La web sale después de la BD, y solo desde aquí:** con el auto-deploy de Vercel la web podía publicarse antes que su migración y llamar a una RPC que en prod no existe. Por eso `git.deploymentEnabled.main: false` en `vercel.json`: no reactivarlo.
 - **Tras el CI de `main`, no con el push:** `main` no exige rama al día, y dos PRs verdes pueden traer migraciones que chocan. El CI de `main` las prueba juntas. Descartado migrar en el push: acorta la ventana pero pierde esa protección.

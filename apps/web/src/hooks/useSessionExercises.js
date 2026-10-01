@@ -4,7 +4,7 @@
 export {
   // Session exercises
   useSessionExercises,
-  useAddSessionExercise,
+  useAddSessionExerciseFlow,
   useUpdateSessionExerciseFields,
   useReplaceSessionExercise,
   useRemoveSessionExercise,

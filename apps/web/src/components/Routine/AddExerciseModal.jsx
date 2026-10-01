@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal } from '../ui/index.js'
+import { Modal, SaveStatus } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { buildExerciseConfigForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm, resolveTrackedFields } from '@gym/shared'
 import ExercisePickerModal from './ExercisePickerModal.jsx'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm.jsx'
 
-function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine', existingSupersets = [], existingExercises = [] }) {
+// `saveStatus`/`error`: a slow or failed add shown inline above the buttons. `onBackToPicker`: the
+// picker step has no status line, so the caller stops treating the add as on screen.
+function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = false, mode = 'routine', existingSupersets = [], existingExercises = [], saveStatus = false, error = null, onBackToPicker }) {
   const { t } = useTranslation()
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [form, setForm] = useState(() => buildExerciseConfigForm())
@@ -26,6 +28,11 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
     setSelectedExercise(exercise)
     setForm(buildExerciseConfigForm(resolveTrackedFields(exercise)))
     setErrors({})
+  }
+
+  const handleBack = () => {
+    setSelectedExercise(null)
+    onBackToPicker?.()
   }
 
   const handleSubmit = () => {
@@ -80,8 +87,9 @@ function AddExerciseModal({ isOpen, onClose, onSubmit, isPending, isWarmup = fal
           errors={errors}
         />
       </div>
+      {saveStatus && <SaveStatus isPending={isPending} error={error} className="my-3 flex-shrink-0" />}
       <ExerciseConfigFormButtons
-        onBack={() => setSelectedExercise(null)}
+        onBack={handleBack}
         onSubmit={handleSubmit}
         isPending={isPending}
       />

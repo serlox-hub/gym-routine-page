@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { View, Text, TextInput, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle } from 'lucide-react-native'
-import { Modal, Button } from '../ui'
+import { Modal, Button, SaveStatus } from '../ui'
 import { inputStyle, colors } from '../../lib/styles'
 import { usePreference } from '../../hooks/usePreferences'
 import { shouldWarnIdleSession, getLastSetEndChoice, IDLE_SESSION_WARNING_MINUTES } from '@gym/shared'
 
 const END_CHOICE = { LAST_SET: 'lastSet', NOW: 'now' }
 
-export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending, setsPending = 0, lastSetAt = null, isLastSetResolved = false }) {
+export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending, error = null, setsPending = 0, lastSetAt = null, isLastSetResolved = false }) {
   const { t } = useTranslation()
   const { value: showSessionNotes } = usePreference('show_session_notes')
   const [notes, setNotes] = useState('')
@@ -103,6 +103,8 @@ export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending,
           />
         </View>
       )}
+
+      <SaveStatus isPending={isPending} error={error} className="mb-5" />
 
       <View className="flex-row gap-3">
         <Button variant="secondary" className="flex-1" onPress={handleClose} disabled={isPending}>

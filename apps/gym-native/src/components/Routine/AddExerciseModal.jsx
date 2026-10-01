@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Modal } from '../ui'
+import { Modal, SaveStatus } from '../ui'
 import { buildExerciseConfigForm, getNextSupersetId, parseExerciseConfigForm, validateExerciseConfigForm, resolveTrackedFields } from '@gym/shared'
 import ExercisePickerModal from './ExercisePickerModal'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm'
 
+// `saveStatus`/`error`: a slow or failed add shown inline above the buttons. `onBackToPicker`: the
+// picker step has no status line, so the caller stops treating the add as on screen.
 export default function AddExerciseModal({
   isOpen,
   onClose,
@@ -15,6 +17,9 @@ export default function AddExerciseModal({
   mode = 'routine',
   existingSupersets = [],
   existingExercises = [],
+  saveStatus = false,
+  error = null,
+  onBackToPicker,
 }) {
   const { t } = useTranslation()
   const [selectedExercise, setSelectedExercise] = useState(null)
@@ -35,6 +40,11 @@ export default function AddExerciseModal({
     setSelectedExercise(exercise)
     setForm(buildExerciseConfigForm(resolveTrackedFields(exercise)))
     setErrors({})
+  }
+
+  const handleBack = () => {
+    setSelectedExercise(null)
+    onBackToPicker?.()
   }
 
   const handleSubmit = () => {
@@ -79,8 +89,9 @@ export default function AddExerciseModal({
         nextSupersetId={nextSuperset}
         errors={errors}
       />
+      {saveStatus && <SaveStatus isPending={isPending} error={error} className="my-3" />}
       <ExerciseConfigFormButtons
-        onBack={() => setSelectedExercise(null)}
+        onBack={handleBack}
         onSubmit={handleSubmit}
         isPending={isPending}
       />
