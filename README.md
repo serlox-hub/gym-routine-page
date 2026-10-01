@@ -164,6 +164,7 @@ Sentry captura errores de produccion en ambas apps. Plan gratuito: 5K errores/me
 - Solo se activa en produccion (`import.meta.env.PROD` en web, `!__DEV__` en native)
 - En desarrollo no envia nada a Sentry
 - Si no hay DSN configurado, Sentry no se inicializa (sin errores)
+- Web also sends a `slow_write` warning (at most 5 each time the app comes to the foreground) when a write takes over 5 s, with a timeline of its requests, visibility changes and session expiry, to find the cause of slow saves (issue #123, `apps/web/src/lib/netTimeline.js`)
 
 **Dashboard:**
 
