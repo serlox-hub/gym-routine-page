@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { initReactI18next } from 'react-i18next'
-import { i18n, initI18n } from '@gym/shared'
+import { i18n, initI18n, SLOW_PENDING_MS } from '@gym/shared'
 
 // Sin esto los componentes pintan la CLAVE en vez del texto (ver BodyWeightModal.test.jsx).
 i18n.use(initReactI18next)
 initI18n()
 
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 
 // show_session_notes en false: evita renderizar el textarea de notas, que no hace falta
 // para estas pruebas (necesitaría contexto de React Query real).
@@ -102,5 +102,30 @@ describe('EndSessionModal — aviso de sesión inactiva', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(screen.getByRole('button', { name: /Terminé a las/, pressed: true })).toBeInTheDocument()
+  })
+})
+
+describe('EndSessionModal — slow and failed end', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows the slow-connection text after the threshold of isPending', () => {
+    renderModal({ isPending: true })
+    expect(screen.queryByText('Conexión lenta, sigo intentándolo...')).not.toBeInTheDocument()
+
+    act(() => { vi.advanceTimersByTime(SLOW_PENDING_MS) })
+
+    expect(screen.getByText('Conexión lenta, sigo intentándolo...')).toBeInTheDocument()
+  })
+
+  it('shows the error inline', () => {
+    renderModal({ error: 'No se pudo finalizar el entrenamiento. Inténtalo de nuevo.' })
+
+    expect(screen.getByText('No se pudo finalizar el entrenamiento. Inténtalo de nuevo.')).toBeInTheDocument()
   })
 })

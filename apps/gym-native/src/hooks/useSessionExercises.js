@@ -1,7 +1,7 @@
 // Re-exporta hooks de @gym/shared. Sin lógica platform-specific.
 export {
   useSessionExercises,
-  useAddSessionExercise,
+  useAddSessionExerciseFlow,
   useUpdateSessionExerciseFields,
   useReplaceSessionExercise,
   useRemoveSessionExercise,

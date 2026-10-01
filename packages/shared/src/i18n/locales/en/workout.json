@@ -6,6 +6,7 @@
     "finishRoutineFirst": "You have a routine workout in progress. Finish it to start a free one.",
     "finishCurrentFirst": "You have a workout in progress. Finish it to start another one.",
     "end": "End workout",
+    "endFailed": "Could not end the workout. Try again.",
     "finishWorkout": "Finish workout",
     "setProgress": "Set {{current}} of {{total}}",
     "endConfirm": "Are you sure you want to end the workout?",

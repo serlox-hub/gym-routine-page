@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, AlertTriangle } from 'lucide-react'
-import { Button, Modal } from '../ui/index.js'
+import { Button, Modal, SaveStatus } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 import { shouldWarnIdleSession, getLastSetEndChoice, IDLE_SESSION_WARNING_MINUTES } from '@gym/shared'
 
 const END_CHOICE = { LAST_SET: 'lastSet', NOW: 'now' }
 
-function EndSessionModal({ isOpen, onClose, onConfirm, isPending, setsPending = 0, lastSetAt = null, isLastSetResolved = false }) {
+function EndSessionModal({ isOpen, onClose, onConfirm, isPending, error = null, setsPending = 0, lastSetAt = null, isLastSetResolved = false }) {
   const { t } = useTranslation()
   const { value: showSessionNotes } = usePreference('show_session_notes')
   const [notes, setNotes] = useState('')
@@ -118,6 +118,8 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending, setsPending = 
           />
         </div>
       )}
+
+      <SaveStatus isPending={isPending} error={error} className="mb-5" />
 
       <div className="flex gap-3">
         <Button variant="secondary" className="flex-1" onClick={handleClose} disabled={isPending}>

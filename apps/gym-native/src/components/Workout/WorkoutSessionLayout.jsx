@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus, ArrowRightLeft, X, Flag, ChevronDown } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
-  useSessionExercises, useAddSessionExercise, useRemoveSessionExercise,
+  useSessionExercises, useAddSessionExerciseFlow, useRemoveSessionExercise,
   useReplaceSessionExercise, useReorderSessionExercises, useWakeLock,
 } from '../../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui'
@@ -33,7 +33,6 @@ export default function WorkoutSessionLayout({ title }) {
   const completedSets = useWorkoutStore(state => state.completedSets)
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
   const sessionGymId = useWorkoutStore(state => state.gymId)
-  const routineDayId = useWorkoutStore(state => state.routineDayId)
 
   const { gyms, hasMultiple } = useSelectedGym()
   const { changeGym } = useChangeSessionGym()
@@ -46,9 +45,6 @@ export default function WorkoutSessionLayout({ title }) {
 
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
-  const [showAddExercise, setShowAddExercise] = useState(false)
-  // Add form already submitted in a routine session, waiting for "only today" / "also in the routine".
-  const [pendingAdd, setPendingAdd] = useState(null)
   const [showConverter, setShowConverter] = useState(false)
 
   const completeSetMutation = useCompleteSet()
@@ -78,7 +74,8 @@ export default function WorkoutSessionLayout({ title }) {
     },
   })
   const abandonSessionMutation = useAbandonSession()
-  const addSessionExerciseMutation = useAddSessionExercise()
+  const addFlow = useAddSessionExerciseFlow()
+  const addFailedMessage = addFlow.isFailed ? t('workout:exercise.addFailed') : null
   const removeSessionExerciseMutation = useRemoveSessionExercise()
   const replaceSessionExerciseMutation = useReplaceSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
@@ -154,26 +151,16 @@ export default function WorkoutSessionLayout({ title }) {
     endSessionMutation.mutate({ overallFeeling, notes, completedAt })
   }
 
+  const handleEndWorkout = () => {
+    // Not in an effect: `useMutation` returns a new object every render, so the effect would reset
+    // on every render. It cannot be pending here: the modal cannot close while pending.
+    endSessionMutation.reset()
+    setShowEndModal(true)
+  }
+
   const handleAbandonWorkout = () => {
     setShowCancelModal(false)
     abandonSessionMutation.mutate()
-  }
-
-  // A free session has no routine to ask about: the exercise goes to the session only.
-  const handleAddExercise = (data) => {
-    if (routineDayId == null) {
-      addSessionExerciseMutation.mutate({ ...data, addToRoutine: false }, {
-        onSuccess: () => setShowAddExercise(false),
-      })
-      return
-    }
-    setShowAddExercise(false)
-    setPendingAdd(data)
-  }
-
-  const confirmAdd = (addToRoutine) => {
-    addSessionExerciseMutation.mutate({ ...pendingAdd, addToRoutine })
-    setPendingAdd(null)
   }
 
   const hasExercises = flatExercises.length > 0
@@ -241,7 +228,7 @@ export default function WorkoutSessionLayout({ title }) {
               <Text className="text-secondary text-sm mb-6">
                 {t('workout:addExercise.noExercises')}
               </Text>
-              <Button onPress={() => setShowAddExercise(true)}>{t('workout:addExercise.toSession')}</Button>
+              <Button onPress={addFlow.openModal}>{t('workout:addExercise.toSession')}</Button>
             </View>
           ) : (
             <>
@@ -257,7 +244,7 @@ export default function WorkoutSessionLayout({ title }) {
                 isReordering={reorderSessionExercisesMutation.isPending}
                 existingSupersets={existingSupersets}
               />
-              <Pressable onPress={() => setShowAddExercise(true)}
+              <Pressable onPress={addFlow.openModal}
                 style={{
                   flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                   paddingVertical: 14, borderRadius: 12, marginTop: 24,
@@ -270,7 +257,7 @@ export default function WorkoutSessionLayout({ title }) {
               </Pressable>
             </>
           )}
-          <Pressable onPress={() => setShowEndModal(true)}
+          <Pressable onPress={handleEndWorkout}
             disabled={endSessionMutation.isPending || !hasCompletedSets}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -299,27 +286,32 @@ export default function WorkoutSessionLayout({ title }) {
       />
 
       <AddExerciseModal
-        isOpen={showAddExercise}
-        onClose={() => setShowAddExercise(false)}
-        onSubmit={handleAddExercise}
-        isPending={addSessionExerciseMutation.isPending}
+        isOpen={addFlow.isModalOpen}
+        onClose={addFlow.closeModal}
+        onSubmit={addFlow.submitModal}
+        isPending={addFlow.isPending}
+        saveStatus
+        error={addFailedMessage}
+        onBackToPicker={addFlow.backToPicker}
         mode="session"
         existingSupersets={existingSupersets}
       />
 
       <ConfirmModal
-        isOpen={!!pendingAdd}
+        isOpen={!!addFlow.pendingAdd}
         title={t('workout:exercise.addScopeTitle')}
-        message={t('workout:exercise.addScopeMessage', { name: getExerciseName(pendingAdd?.exercise) })}
+        message={t('workout:exercise.addScopeMessage', { name: getExerciseName(addFlow.pendingAdd?.exercise) })}
         cancelText={t('workout:exercise.addOnlyToday')}
         confirmText={t('workout:exercise.addAlsoRoutine')}
         variant="primary"
-        onCancel={() => confirmAdd(false)}
-        onConfirm={() => confirmAdd(true)}
-        // Closing without choosing (backdrop, Android back) adds to today only. Unlike replace,
-        // where closing aborts on purpose: replacing destroys the completed sets, adding destroys
-        // nothing, the user already pressed "Add", and the session is the narrow, safe scope.
-        onDismiss={() => confirmAdd(false)}
+        onCancel={() => addFlow.chooseScope(false)}
+        onConfirm={() => addFlow.chooseScope(true)}
+        onDismiss={addFlow.dismissScope}
+        isLoading={addFlow.isPending}
+        loadingButton={addFlow.attempt?.addToRoutine ? 'confirm' : 'cancel'}
+        saveStatus
+        error={addFailedMessage}
+        dismissibleWhileLoading
       />
 
       <EndSessionModal
@@ -327,6 +319,7 @@ export default function WorkoutSessionLayout({ title }) {
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
+        error={endSessionMutation.isError ? t('workout:session.endFailed') : null}
         setsPending={progress.setsPending}
         lastSetAt={lastSetAt}
         isLastSetResolved={isLastSetResolved}

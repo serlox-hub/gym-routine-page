@@ -104,6 +104,9 @@
   "offline": {
     "banner": "No connection. Changes will sync when back online."
   },
+  "network": {
+    "slowRetrying": "Slow connection, still trying..."
+  },
   "preferences": {
     "title": "Preferences",
     "language": "Language",

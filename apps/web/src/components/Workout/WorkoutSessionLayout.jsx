@@ -10,7 +10,7 @@ import {
   useEndSession,
   useAbandonSession,
   useSessionExercises,
-  useAddSessionExercise,
+  useAddSessionExerciseFlow,
   useRemoveSessionExercise,
   useReplaceSessionExercise,
   useReorderSessionExercises,
@@ -37,7 +37,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const completedSets = useWorkoutStore(state => state.completedSets)
   const exerciseSetCounts = useWorkoutStore(state => state.exerciseSetCounts)
   const sessionGymId = useWorkoutStore(state => state.gymId)
-  const routineDayId = useWorkoutStore(state => state.routineDayId)
 
   const { gyms, hasMultiple } = useSelectedGym()
   const { changeGym } = useChangeSessionGym()
@@ -50,9 +49,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
 
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
-  const [showAddExercise, setShowAddExercise] = useState(false)
-  // Add form already submitted in a routine session, waiting for "only today" / "also in the routine".
-  const [pendingAdd, setPendingAdd] = useState(null)
   const [showConverter, setShowConverter] = useState(false)
   const [showGymSelector, setShowGymSelector] = useState(false)
   const [navigateToOnEnd, setNavigateToOnEnd] = useState(null)
@@ -65,7 +61,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const { lastSetAt, isResolved: isLastSetResolved } = useLastSetAt({ enabled: showEndModal })
   const endSessionMutation = useEndSession()
   const abandonSessionMutation = useAbandonSession()
-  const addSessionExerciseMutation = useAddSessionExercise()
+  const addFlow = useAddSessionExerciseFlow()
+  const addFailedMessage = addFlow.isFailed ? t('workout:exercise.addFailed') : null
   const removeSessionExerciseMutation = useRemoveSessionExercise()
   const replaceSessionExerciseMutation = useReplaceSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
@@ -134,6 +131,9 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   }
 
   const handleEndWorkout = () => {
+    // Not in an effect: `useMutation` returns a new object every render, so the effect would reset
+    // on every render. It cannot be pending here: the modal cannot close while pending.
+    endSessionMutation.reset()
     setShowEndModal(true)
   }
 
@@ -156,23 +156,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const handleAbandonWorkout = () => {
     setShowCancelModal(false)
     abandonSessionMutation.mutate()
-  }
-
-  // A free session has no routine to ask about: the exercise goes to the session only.
-  const handleAddExercise = (data) => {
-    if (routineDayId == null) {
-      addSessionExerciseMutation.mutate({ ...data, addToRoutine: false }, {
-        onSuccess: () => setShowAddExercise(false)
-      })
-      return
-    }
-    setShowAddExercise(false)
-    setPendingAdd(data)
-  }
-
-  const confirmAdd = (addToRoutine) => {
-    addSessionExerciseMutation.mutate({ ...pendingAdd, addToRoutine })
-    setPendingAdd(null)
   }
 
   const handleRemoveExercise = (sessionExerciseId) => {
@@ -242,7 +225,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             </p>
             <Button
               variant="primary"
-              onClick={() => setShowAddExercise(true)}
+              onClick={addFlow.openModal}
             >
               {t('workout:addExercise.toSession')}
             </Button>
@@ -266,7 +249,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
 
       {hasExercises && (
         <button
-          onClick={() => setShowAddExercise(true)}
+          onClick={addFlow.openModal}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold mt-6"
           style={{
             backgroundColor: 'transparent',
@@ -306,27 +289,32 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
       />
 
       <AddExerciseModal
-        isOpen={showAddExercise}
-        onClose={() => setShowAddExercise(false)}
-        onSubmit={handleAddExercise}
-        isPending={addSessionExerciseMutation.isPending}
+        isOpen={addFlow.isModalOpen}
+        onClose={addFlow.closeModal}
+        onSubmit={addFlow.submitModal}
+        isPending={addFlow.isPending}
+        saveStatus
+        error={addFailedMessage}
+        onBackToPicker={addFlow.backToPicker}
         mode="session"
         existingSupersets={existingSupersets}
       />
 
       <ConfirmModal
-        isOpen={!!pendingAdd}
+        isOpen={!!addFlow.pendingAdd}
         title={t('workout:exercise.addScopeTitle')}
-        message={t('workout:exercise.addScopeMessage', { name: getExerciseName(pendingAdd?.exercise) })}
+        message={t('workout:exercise.addScopeMessage', { name: getExerciseName(addFlow.pendingAdd?.exercise) })}
         cancelText={t('workout:exercise.addOnlyToday')}
         confirmText={t('workout:exercise.addAlsoRoutine')}
         variant="primary"
-        onCancel={() => confirmAdd(false)}
-        onConfirm={() => confirmAdd(true)}
-        // Closing without choosing adds to today only. Unlike replace, where closing aborts on
-        // purpose: replacing destroys the completed sets, adding destroys nothing, the user already
-        // pressed "Add", and the session is the narrow, safe scope.
-        onDismiss={() => confirmAdd(false)}
+        onCancel={() => addFlow.chooseScope(false)}
+        onConfirm={() => addFlow.chooseScope(true)}
+        onDismiss={addFlow.dismissScope}
+        isLoading={addFlow.isPending}
+        loadingButton={addFlow.attempt?.addToRoutine ? 'confirm' : 'cancel'}
+        saveStatus
+        error={addFailedMessage}
+        dismissibleWhileLoading
       />
 
       <EndSessionModal
@@ -334,6 +322,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
+        error={endSessionMutation.isError ? t('workout:session.endFailed') : null}
         setsPending={progress.setsPending}
         lastSetAt={lastSetAt}
         isLastSetResolved={isLastSetResolved}
