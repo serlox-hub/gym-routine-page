@@ -57,6 +57,19 @@ describe('prCardFormat', () => {
       expect(group.values).toEqual([110, 90, 70])
     })
 
+    it('the grouped line takes the unit of its rep PRs', () => {
+      const pr = {
+        exerciseName: 'Press Banca',
+        details: [
+          { type: 'repPR', repCount: 5, newValue: 245, oldValue: null, unit: 'lb' },
+          { type: 'repPR', repCount: 8, newValue: 200, oldValue: 180, unit: 'lb' },
+          { type: 'repPR', repCount: 12, newValue: 155, oldValue: null, unit: 'lb' },
+        ],
+      }
+      const group = preparePRCardData(pr).details.find(d => d.type === 'repPRGroup')
+      expect(group.unit).toBe('lb')
+    })
+
     it('NO agrupa repPRs cuando hay 2 (mantiene listados)', () => {
       const pr = {
         exerciseName: 'Press Banca',
@@ -119,6 +132,17 @@ describe('prCardFormat', () => {
     it('repPR con oldValue → incluye × repCount en anterior', () => {
       const detail = { type: 'repPR', newValue: 110, oldValue: 100, unit: 'kg', repCount: 5 }
       expect(formatPRDetailPrevious(detail)).toBe('anterior · 100 kg × 5')
+    })
+
+    // Issue #125: the beaten set can have more reps than the new record.
+    it('repPR with oldRepCount prints the beaten set\'s own rep count', () => {
+      const detail = { type: 'repPR', repCount: 6, newValue: 25, oldValue: 20, oldRepCount: 8, unit: 'kg' }
+      expect(formatPRDetailPrevious(detail)).toBe('anterior · 20 kg × 8')
+    })
+
+    it('repPR without oldRepCount falls back to repCount', () => {
+      const detail = { type: 'repPR', repCount: 6, newValue: 25, oldValue: 20, unit: 'kg' }
+      expect(formatPRDetailPrevious(detail)).toBe('anterior · 20 kg × 6')
     })
 
     it('repPR sin oldValue → "primera vez a N reps"', () => {

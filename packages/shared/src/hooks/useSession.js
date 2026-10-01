@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS, SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
 import { resolveTrackedFields } from '../lib/measurementFields.js'
@@ -251,6 +251,25 @@ export function useEndSession({ onSuccess: onSuccessCb } = {}) {
       }, 0)
     },
   })
+}
+
+/**
+ * Unidad de peso efectiva de cada ejercicio de la sesión en el gym de la sesión, para el resumen
+ * de fin de sesión: (ejercicio, gym) > preferencia global > 'kg'. Sale de la caché de
+ * useAllUserExerciseGymUnits, sin petición nueva; mientras no ha cargado, todos heredan la global.
+ * @param {Array<{exercise_id:number}>|undefined} sessionExercises
+ * @returns {Object<number,'kg'|'lb'>}
+ */
+export function useSessionWeightUnitByExercise(sessionExercises) {
+  const gymId = useWorkoutStore(state => state.gymId)
+  const { value: globalWeightUnit } = usePreference('weight_unit')
+  const { data: gymUnitRows } = useAllUserExerciseGymUnits()
+
+  return useMemo(() => resolveUnitsForExercises(
+    sessionExercises?.map(se => se.exercise_id),
+    pickGymUnitOverrides(gymUnitRows, gymId),
+    globalWeightUnit,
+  ), [sessionExercises, gymUnitRows, gymId, globalWeightUnit])
 }
 
 // ============================================
