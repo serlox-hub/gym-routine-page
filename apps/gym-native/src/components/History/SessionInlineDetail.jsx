@@ -12,6 +12,7 @@ import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
 import SetValueInput from '../Workout/SetInputs'
 import ConvertToRoutineDayModal from './ConvertToRoutineDayModal'
+import MuscleGroupSetsChart from './MuscleGroupSetsChart'
 import { uploadVideo } from '../../lib/videoStorage'
 import {
   SENSATION_LABELS,
@@ -30,8 +31,9 @@ import {
   buildEmptySetData,
   getSetColumns,
   getExerciseName,
-  getMuscleGroupName,
-  getMuscleGroupColor,
+  groupSessionDetailByBlock,
+  translateBlockName,
+  BLOCK_NAMES,
   usePreference,
   useResolvedWeightUnit,
   useResolvedDistanceUnit,
@@ -397,14 +399,6 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
 
   const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRsData), [sessionPRsData])
 
-  const muscleGroups = useMemo(() => {
-    if (!session?.exercises) return []
-    const seen = new Set()
-    return session.exercises
-      .map(e => e.exercise?.muscle_group)
-      .filter(mg => mg && !seen.has(mg.name) && seen.add(mg.name))
-  }, [session])
-
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} />
   if (!session) return null
@@ -550,6 +544,11 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   }
 
   const currentGymName = session.gym ? getGymDisplayName(session.gym, t('common:gym.defaultName')) : null
+
+  const exerciseBlocks = groupSessionDetailByBlock(session.exercises)
+  // Split by block only when there is a warm-up: the sets-per-muscle-group bars leave it out, so
+  // the list has to show which exercises those are.
+  const showBlockHeaders = exerciseBlocks.some(block => block.blockName === BLOCK_NAMES.WARMUP)
 
   const handleUpsertSet = (setData) => {
     upsertSet.mutate(setData)
@@ -704,46 +703,44 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>{session.notes}</Text>
           )}
 
-          {/* Muscle groups */}
-          {muscleGroups.length > 0 && (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-              {muscleGroups.map(mg => (
-                <View
-                  key={mg.name}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: `${getMuscleGroupColor(mg.name)}20`, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}
-                >
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getMuscleGroupColor(mg.name) }} />
-                  <Text style={{ color: getMuscleGroupColor(mg.name), fontSize: 10, fontWeight: '500' }}>
-                    {getMuscleGroupName(mg)}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
+          <MuscleGroupSetsChart exercises={session.exercises} />
         </>
       )}
       </View>
 
       {/* Exercises */}
-      <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', marginBottom: 8 }}>{t('workout:session.exercises')}</Text>
+      {!showBlockHeaders && (
+        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', marginBottom: 8 }}>{t('workout:session.exercises')}</Text>
+      )}
 
-      <View className="gap-3">
-        {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
-          <SessionExerciseBlock
-            key={sessionExerciseId}
-            sessionExerciseId={sessionExerciseId}
-            exercise={exercise}
-            sets={sets}
-            sessionId={sessionId}
-            prsByExercise={prsByExercise}
-            gymId={session.gym_id ?? null}
-            isEditing={isEditing}
-            navigation={navigation}
-            onUpsertSet={handleUpsertSet}
-            onDeleteSet={handleDeleteSet}
-            onAddSet={handleAddSet}
-            onSelectSet={setSelectedSet}
-          />
+      <View className="gap-4">
+        {exerciseBlocks.map(({ blockName, exercises }) => (
+          <View key={blockName}>
+            {showBlockHeaders && (
+              <Text className="text-xs font-semibold uppercase" style={{ color: colors.success, letterSpacing: 1, marginBottom: 8 }}>
+                {translateBlockName(blockName)} ({exercises.length})
+              </Text>
+            )}
+            <View className="gap-3">
+              {exercises.map(({ sessionExerciseId, exercise, sets }) => (
+                <SessionExerciseBlock
+                  key={sessionExerciseId}
+                  sessionExerciseId={sessionExerciseId}
+                  exercise={exercise}
+                  sets={sets}
+                  sessionId={sessionId}
+                  prsByExercise={prsByExercise}
+                  gymId={session.gym_id ?? null}
+                  isEditing={isEditing}
+                  navigation={navigation}
+                  onUpsertSet={handleUpsertSet}
+                  onDeleteSet={handleDeleteSet}
+                  onAddSet={handleAddSet}
+                  onSelectSet={setSelectedSet}
+                />
+              ))}
+            </View>
+          </View>
         ))}
       </View>
 

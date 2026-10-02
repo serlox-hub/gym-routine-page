@@ -412,3 +412,33 @@ export function buildPRsByExerciseMap(sessionPRs) {
   }
   return map
 }
+
+/**
+ * Sets per muscle group in a finished session (bars in the history session detail).
+ * Only main-block exercises count: the warm-up block is ignored. Every `completed_sets` row is one
+ * set, dropsets included, and every group counts the same, Cardio and Movilidad included (unlike
+ * `countSetsByMuscleGroup`, which skips groups without volume landmarks).
+ * @param {Array<{ is_warmup?: boolean, exercise?: { muscle_group?: { id, name, name_en } | null }, sets?: Array<object> }>} exercises
+ *   `session.exercises` as returned by transformSessionDetailData
+ * @returns {Array<{ muscleGroup: { id, name, name_en }, sets: number, ratio: number }>}
+ *   One entry per muscle group with at least one counted set, sorted by sets desc then
+ *   muscleGroup.id asc (locale independent). ratio = sets / max sets. [] when nothing counts.
+ */
+export function countSessionSetsByMuscleGroup(exercises) {
+  if (!exercises?.length) return []
+
+  const byGroupId = new Map()
+  for (const { is_warmup: isWarmup, exercise, sets } of exercises) {
+    const muscleGroup = exercise?.muscle_group
+    const setCount = sets?.length ?? 0
+    if (isWarmup || !muscleGroup || setCount === 0) continue
+    const entry = byGroupId.get(muscleGroup.id)
+    if (entry) entry.sets += setCount
+    else byGroupId.set(muscleGroup.id, { muscleGroup, sets: setCount })
+  }
+
+  const counts = [...byGroupId.values()]
+    .sort((a, b) => b.sets - a.sets || a.muscleGroup.id - b.muscleGroup.id)
+  const maxSets = counts[0]?.sets
+  return counts.map(entry => ({ ...entry, ratio: entry.sets / maxSets }))
+}

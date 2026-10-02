@@ -315,6 +315,22 @@ export function transformSessionDetailData(rawSession) {
   return { ...rawSession, exercises, session_exercises: undefined }
 }
 
+/**
+ * Splits a finished session's exercises into its blocks for the history session detail list.
+ * @param {Array<{ is_warmup?: boolean }>} exercises  session.exercises (already sorted by sort_order)
+ * @returns {Array<{ blockName: string, exercises: Array }>}
+ *   [] for null/undefined/empty. No warm-up exercise: a single BLOCK_NAMES.MAIN entry. Otherwise
+ *   warm-up first, then main, omitting a block with no exercises. Relative order preserved.
+ */
+export function groupSessionDetailByBlock(exercises) {
+  if (!exercises?.length) return []
+  const blocks = [
+    { blockName: BLOCK_NAMES.WARMUP, exercises: exercises.filter(e => e.is_warmup) },
+    { blockName: BLOCK_NAMES.MAIN, exercises: exercises.filter(e => !e.is_warmup) },
+  ]
+  return blocks.filter(block => block.exercises.length > 0)
+}
+
 // ============================================
 // ROUTINE EXERCISES (funciones legacy para rutinas)
 // ============================================
