@@ -42,8 +42,8 @@ function MuscleGroupSetsChart({ exercises }) {
                 <div className="flex-1 h-4 rounded-full overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
                   <div className="h-full rounded-full" style={{ width: `${ratio * 100}%`, backgroundColor: color }} />
                 </div>
-                <div className="w-8 flex-shrink-0 text-right">
-                  <span className="text-xs font-bold" style={{ color: colors.textPrimary }}>{sets}</span>
+                <div className="w-16 flex-shrink-0 text-right">
+                  <span className="text-xs font-bold whitespace-nowrap" style={{ color: colors.textPrimary }}>{t('common:home.nSets', { count: sets })}</span>
                 </div>
               </div>
             )
