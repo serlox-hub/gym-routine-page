@@ -12,6 +12,7 @@ import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
 import GymSelector from '../Workout/GymSelector.jsx'
 import ConvertToRoutineDayModal from './ConvertToRoutineDayModal.jsx'
+import MuscleGroupSetsChart from './MuscleGroupSetsChart.jsx'
 import { uploadVideo } from '../../lib/videoStorage.js'
 import {
   SENSATION_LABELS,
@@ -31,8 +32,9 @@ import {
   buildEmptySetData,
   getSetColumns,
   getExerciseName,
-  getMuscleGroupName,
-  getMuscleGroupColor,
+  groupSessionDetailByBlock,
+  translateBlockName,
+  BLOCK_NAMES,
   usePreference,
   useResolvedWeightUnit,
   useResolvedDistanceUnit,
@@ -349,14 +351,6 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
 
   const prsByExercise = useMemo(() => buildPRsByExerciseMap(sessionPRs), [sessionPRs])
 
-  const muscleGroups = useMemo(() => {
-    if (!session?.exercises) return []
-    const seen = new Set()
-    return session.exercises
-      .map(e => e.exercise?.muscle_group)
-      .filter(mg => mg && !seen.has(mg.name) && seen.add(mg.name))
-  }, [session])
-
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} />
   if (!session) return null
@@ -454,6 +448,11 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
   }
 
   const gymName = session.gym ? getGymDisplayName(session.gym, t('common:gym.defaultName')) : null
+
+  const exerciseBlocks = groupSessionDetailByBlock(session.exercises)
+  // Split by block only when there is a warm-up: the sets-per-muscle-group bars leave it out, so
+  // the list has to show which exercises those are.
+  const showBlockHeaders = exerciseBlocks.some(block => block.blockName === BLOCK_NAMES.WARMUP)
 
   const handleUpsertSet = (setData) => upsertSet.mutate(setData)
   const handleDeleteSet = (setData) => deleteSet.mutate(setData)
@@ -610,43 +609,42 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
             <p style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>{session.notes}</p>
           )}
 
-          {/* Muscle groups */}
-          {muscleGroups.length > 0 && (
-            <div className="flex flex-wrap gap-1.5" style={{ marginTop: 6 }}>
-              {muscleGroups.map(mg => (
-                <span
-                  key={mg.name}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${getMuscleGroupColor(mg.name)}20`, color: getMuscleGroupColor(mg.name), fontSize: 10, fontWeight: 500 }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getMuscleGroupColor(mg.name) }} />
-                  {getMuscleGroupName(mg)}
-                </span>
-              ))}
-            </div>
-          )}
+          <MuscleGroupSetsChart exercises={session.exercises} />
         </>
       )}
       </div>
 
       {/* Exercises */}
-      <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600, marginBottom: 8, display: 'block' }}>{t('workout:session.exercises')}</span>
-      <div className="space-y-3">
-        {session.exercises?.map(({ sessionExerciseId, exercise, sets }) => (
-          <SessionExerciseBlock
-            key={sessionExerciseId}
-            sessionExerciseId={sessionExerciseId}
-            exercise={exercise}
-            sets={sets}
-            sessionId={sessionId}
-            prsByExercise={prsByExercise}
-            gymId={session.gym_id ?? null}
-            isEditing={isEditing}
-            onUpsertSet={handleUpsertSet}
-            onDeleteSet={handleDeleteSet}
-            onAddSet={handleAddSet}
-            onSelectSet={setSelectedSet}
-          />
+      {!showBlockHeaders && (
+        <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600, marginBottom: 8, display: 'block' }}>{t('workout:session.exercises')}</span>
+      )}
+      <div className="space-y-4">
+        {exerciseBlocks.map(({ blockName, exercises }) => (
+          <section key={blockName}>
+            {showBlockHeaders && (
+              <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: colors.success, marginBottom: 8, display: 'block' }}>
+                {translateBlockName(blockName)} ({exercises.length})
+              </span>
+            )}
+            <div className="space-y-3">
+              {exercises.map(({ sessionExerciseId, exercise, sets }) => (
+                <SessionExerciseBlock
+                  key={sessionExerciseId}
+                  sessionExerciseId={sessionExerciseId}
+                  exercise={exercise}
+                  sets={sets}
+                  sessionId={sessionId}
+                  prsByExercise={prsByExercise}
+                  gymId={session.gym_id ?? null}
+                  isEditing={isEditing}
+                  onUpsertSet={handleUpsertSet}
+                  onDeleteSet={handleDeleteSet}
+                  onAddSet={handleAddSet}
+                  onSelectSet={setSelectedSet}
+                />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
 

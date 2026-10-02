@@ -32,6 +32,7 @@
     "notesPlaceholder": "Anything you want to remember about this session?",
     "duration": "Duration",
     "exercises": "Exercises",
+    "setsByMuscleGroup": "Sets per muscle group",
     "musclesWorked": "Muscles worked",
     "volume": "Volume"
   },

@@ -14,6 +14,7 @@ import {
   calculateAverageDuration,
   calculateExerciseStats,
   getExerciseStatCards,
+  countSessionSetsByMuscleGroup,
 } from './workoutCalculations.js'
 
 describe('workoutCalculations', () => {
@@ -722,5 +723,91 @@ describe('getExerciseStatCards', () => {
     expect(valuesOf({ maxWeight: 60 }, ['weight'], { weightUnit: 'lb' })).toEqual(['60 lb'])
     expect(valuesOf({ maxLevel: 12, avgLevel: 10 }, ['level'])).toEqual([12, 10])
     expect(valuesOf({ maxCalories: 300, avgCalories: 250 }, ['calories'])).toEqual(['300 kcal', '250 kcal'])
+  })
+})
+
+describe('countSessionSetsByMuscleGroup', () => {
+  const CHEST = { id: 1, name: 'Pecho', name_en: 'Chest' }
+  const TRICEPS = { id: 7, name: 'Tríceps', name_en: 'Triceps' }
+  const CARDIO = { id: 12, name: 'Cardio', name_en: 'Cardio' }
+  const MOBILITY = { id: 13, name: 'Movilidad', name_en: 'Mobility' }
+
+  const sets = (count, setType = 'normal') =>
+    Array.from({ length: count }, (_, i) => ({ set_number: i + 1, set_type: setType }))
+  const exerciseOf = (muscleGroup, setRows, isWarmup = false) =>
+    ({ is_warmup: isWarmup, exercise: { muscle_group: muscleGroup }, sets: setRows })
+  const summary = (result) => result.map(({ muscleGroup, sets: count, ratio }) => [muscleGroup.id, count, ratio])
+
+  it('returns [] for null, undefined or empty input', () => {
+    expect(countSessionSetsByMuscleGroup(null)).toEqual([])
+    expect(countSessionSetsByMuscleGroup(undefined)).toEqual([])
+    expect(countSessionSetsByMuscleGroup([])).toEqual([])
+  })
+
+  it('counts every completed set per group, dropsets included, sorted by sets desc', () => {
+    const result = countSessionSetsByMuscleGroup([
+      exerciseOf(TRICEPS, sets(6)),
+      exerciseOf(CHEST, sets(6)),
+      exerciseOf(CHEST, sets(3, 'dropset')),
+    ])
+    expect(result).toEqual([
+      { muscleGroup: CHEST, sets: 9, ratio: 1 },
+      { muscleGroup: TRICEPS, sets: 6, ratio: 6 / 9 },
+    ])
+  })
+
+  it('ignores warm-up block exercises but counts Cardio in the main block', () => {
+    const result = countSessionSetsByMuscleGroup([
+      exerciseOf(MOBILITY, sets(2), true),
+      exerciseOf(CHEST, sets(4)),
+      exerciseOf(CARDIO, sets(1)),
+    ])
+    expect(summary(result)).toEqual([[CHEST.id, 4, 1], [CARDIO.id, 1, 0.25]])
+  })
+
+  it('counts an exercise without is_warmup as main block, like groupSessionDetailByBlock does', () => {
+    const result = countSessionSetsByMuscleGroup([
+      { exercise: { muscle_group: CHEST }, sets: sets(2) },
+    ])
+    expect(summary(result)).toEqual([[CHEST.id, 2, 1]])
+  })
+
+  it('returns [] when the only sets are in the warm-up block', () => {
+    expect(countSessionSetsByMuscleGroup([exerciseOf(MOBILITY, sets(2), true)])).toEqual([])
+  })
+
+  it('skips exercises without a muscle group', () => {
+    const result = countSessionSetsByMuscleGroup([
+      { is_warmup: false, exercise: { muscle_group: null }, sets: sets(3) },
+      { is_warmup: false, sets: sets(3) },
+      exerciseOf(CHEST, sets(2)),
+    ])
+    expect(summary(result)).toEqual([[CHEST.id, 2, 1]])
+  })
+
+  it('adds no group for an exercise with 0 completed sets', () => {
+    const result = countSessionSetsByMuscleGroup([
+      exerciseOf(TRICEPS, []),
+      { is_warmup: false, exercise: { muscle_group: CARDIO } },
+      exerciseOf(CHEST, sets(3)),
+    ])
+    expect(summary(result)).toEqual([[CHEST.id, 3, 1]])
+  })
+
+  it('breaks ties by muscle group id ascending, whatever the input order', () => {
+    const result = countSessionSetsByMuscleGroup([
+      exerciseOf(CARDIO, sets(3)),
+      exerciseOf(TRICEPS, sets(3)),
+      exerciseOf(CHEST, sets(3)),
+    ])
+    expect(summary(result)).toEqual([[CHEST.id, 3, 1], [TRICEPS.id, 3, 1], [CARDIO.id, 3, 1]])
+  })
+
+  it('merges groups by id, not by object identity', () => {
+    const result = countSessionSetsByMuscleGroup([
+      exerciseOf(CHEST, sets(2)),
+      exerciseOf({ ...CHEST }, sets(2)),
+    ])
+    expect(summary(result)).toEqual([[CHEST.id, 4, 1]])
   })
 })

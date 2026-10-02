@@ -11,6 +11,7 @@ import {
   transformSessionDetailData,
   buildCompletedSetsMap,
   buildPreviousWorkoutRef,
+  groupSessionDetailByBlock,
 } from './workoutTransforms.js'
 
 describe('workoutTransforms', () => {
@@ -566,6 +567,44 @@ describe('workoutTransforms', () => {
       // session_exercises eliminado del resultado, resto preservado
       expect(result.session_exercises).toBeUndefined()
       expect(result.started_at).toBe('2026-07-12T10:00:00Z')
+    })
+  })
+
+  describe('groupSessionDetailByBlock', () => {
+    const warmup = (id) => ({ sessionExerciseId: id, is_warmup: true })
+    const main = (id) => ({ sessionExerciseId: id, is_warmup: false })
+    const idsByBlock = (blocks) => blocks.map(b => [b.blockName, b.exercises.map(e => e.sessionExerciseId)])
+
+    it('returns [] for null, undefined or empty input', () => {
+      expect(groupSessionDetailByBlock(null)).toEqual([])
+      expect(groupSessionDetailByBlock(undefined)).toEqual([])
+      expect(groupSessionDetailByBlock([])).toEqual([])
+    })
+
+    it('returns a single main block when no exercise is warm-up', () => {
+      expect(idsByBlock(groupSessionDetailByBlock([main(1), main(2)]))).toEqual([
+        ['Principal', [1, 2]],
+      ])
+    })
+
+    it('treats a missing is_warmup as main', () => {
+      expect(idsByBlock(groupSessionDetailByBlock([{ sessionExerciseId: 1 }]))).toEqual([
+        ['Principal', [1]],
+      ])
+    })
+
+    it('returns only the warm-up block when every exercise is warm-up', () => {
+      expect(idsByBlock(groupSessionDetailByBlock([warmup(1), warmup(2)]))).toEqual([
+        ['Calentamiento', [1, 2]],
+      ])
+    })
+
+    it('puts warm-up first and keeps the relative order inside each block', () => {
+      const exercises = [main(1), warmup(2), main(3), warmup(4), main(5)]
+      expect(idsByBlock(groupSessionDetailByBlock(exercises))).toEqual([
+        ['Calentamiento', [2, 4]],
+        ['Principal', [1, 3, 5]],
+      ])
     })
   })
 
