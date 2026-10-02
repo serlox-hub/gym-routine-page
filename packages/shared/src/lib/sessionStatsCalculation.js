@@ -172,20 +172,53 @@ export function mergeExerciseStats(target, source) {
 // que un set W×N "cubre" implícitamente W×M para todo M < N. Por eso el récord a
 // N reps debe compararse contra el mejor peso conseguido a N reps *o más*, no solo
 // a exactamente N. Esto evita marcar como PR un 100×8 cuando ya se hizo 100×9.
-//
-// Devuelve el máximo peso entre las entradas con rep count >= minReps (o > minReps
-// si strictlyGreater=true) de uno o varios objetos bestPerReps. 0 si no hay ninguna.
-export function maxWeightAtRepsOrAbove(minReps, strictlyGreater, ...maps) {
-  let best = 0
+
+// Higher weight wins; on a weight tie, more reps wins (by the same dominance rule,
+// that set covers the others).
+function isBetterRepEntry(candidate, best) {
+  return !best
+    || candidate.weight > best.weight
+    || (candidate.weight === best.weight && candidate.reps > best.reps)
+}
+
+/**
+ * The best entry at minReps reps or more across one or more bestPerReps maps: its weight and
+ * its rep count. Ties on weight resolve to the highest rep count. Entries without a positive
+ * weight never win.
+ * @param {number} minReps
+ * @param {boolean} strictlyGreater - true: only rep counts > minReps qualify; false: >= minReps
+ * @param {...Object<string, number>} maps - bestPerReps objects (rep count → best weight)
+ * @returns {{ weight: number, reps: number } | null}  null when no entry qualifies
+ */
+export function bestAtRepsOrAbove(minReps, strictlyGreater, ...maps) {
+  let best = null
   for (const map of maps) {
     if (!map) continue
     for (const [repsKey, weight] of Object.entries(map)) {
       const reps = parseInt(repsKey, 10)
       const qualifies = strictlyGreater ? reps > minReps : reps >= minReps
-      if (qualifies && weight > best) best = weight
+      if (!qualifies || !(weight > 0)) continue
+      const candidate = { weight, reps }
+      if (isBetterRepEntry(candidate, best)) best = candidate
     }
   }
   return best
+}
+
+/**
+ * The record a rep PR at repCount beats: the best of historicalMap at >= repCount reps and
+ * sessionMap at > repCount reps (the session's own entry at repCount is the new record).
+ * Higher weight wins; on a weight tie, higher reps.
+ * @param {number} repCount
+ * @param {Object<string, number>|null} historicalMap - bestPerReps before the session
+ * @param {Object<string, number>|null} sessionMap - bestPerReps of the session
+ * @returns {{ weight: number, reps: number } | null}
+ */
+export function findBeatenRepRecord(repCount, historicalMap, sessionMap) {
+  const historical = bestAtRepsOrAbove(repCount, false, historicalMap)
+  const sameSession = bestAtRepsOrAbove(repCount, true, sessionMap)
+  if (!sameSession) return historical
+  return isBetterRepEntry(sameSession, historical) ? sameSession : historical
 }
 
 // ============================================
@@ -210,14 +243,25 @@ function getPRLabel(stat) {
   return key ? t(key) : ''
 }
 
+// This module does not know the exercise's weight unit in the session's gym, so weight PRs
+// carry this placeholder. buildWorkoutSummaryFromEndSession relabels every WEIGHT_PR_TYPES
+// detail with the real unit (labelPRDetailUnit).
+const PLACEHOLDER_WEIGHT_UNIT = 'kg'
+
 const PR_FIELDS = [
-  { stat: 'bestWeight', flag: 'isPrWeight', unit: 'kg', metric: 'weight' },
+  { stat: 'bestWeight', flag: 'isPrWeight', unit: PLACEHOLDER_WEIGHT_UNIT, metric: 'weight' },
   { stat: 'bestReps', flag: 'isPrReps', unit: 'reps', metric: 'reps' },
-  { stat: 'best1rm', flag: 'isPr1rm', unit: 'kg', metric: '1rm' },
-  { stat: 'totalVolume', flag: 'isPrVolume', unit: 'kg', metric: 'volume' },
+  { stat: 'best1rm', flag: 'isPr1rm', unit: PLACEHOLDER_WEIGHT_UNIT, metric: '1rm' },
+  { stat: 'totalVolume', flag: 'isPrVolume', unit: PLACEHOLDER_WEIGHT_UNIT, metric: 'volume' },
   { stat: 'bestTimeSeconds', flag: 'isPrTime', unit: 's', metric: 'time' },
   { stat: 'bestDistanceMeters', flag: 'isPrDistance', unit: 'm', metric: 'distance' },
 ]
+
+// Derived, so a new weight metric in PR_FIELDS is relabelled without touching another list.
+export const WEIGHT_PR_TYPES = new Set([
+  ...PR_FIELDS.filter(field => field.unit === PLACEHOLDER_WEIGHT_UNIT).map(field => field.stat),
+  'repPR',
+])
 
 const PACE_FIELD = { stat: 'bestPaceSeconds', flag: 'isPrPace', unit: 's/km', metric: 'pace' }
 
@@ -284,12 +328,10 @@ export function detectNewPersonalRecords(currentStats, previousBests, trackedFie
         // o más — tanto del histórico (M >= N) como de la propia sesión (M > N,
         // porque más reps al mismo peso domina). El mismo rep count ya está
         // agregado como máximo en currentBPR[N].
-        const historicalThreshold = maxWeightAtRepsOrAbove(repCount, false, previousBPR)
-        const sameSessionDom = maxWeightAtRepsOrAbove(repCount, true, currentBPR)
-        const threshold = Math.max(historicalThreshold, sameSessionDom)
-        if (weight > threshold) {
+        const beaten = findBeatenRepRecord(repCount, previousBPR, currentBPR)
+        if (weight > (beaten?.weight ?? 0)) {
           prCounts.push(repCount)
-          const oldValue = threshold > 0 ? threshold : null
+          const oldValue = beaten?.weight ?? null
           const improvement = oldValue
             ? Math.round(((weight - oldValue) / oldValue) * 100)
             : null
@@ -299,7 +341,9 @@ export function detectNewPersonalRecords(currentStats, previousBests, trackedFie
             label: t('workout:pr.repPR', { repCount }),
             newValue: weight,
             oldValue,
-            unit: 'kg',
+            // The beaten set can have more reps than repCount (dominance), so its own count.
+            oldRepCount: beaten?.reps ?? null,
+            unit: PLACEHOLDER_WEIGHT_UNIT,
             improvement,
           })
         }
@@ -379,8 +423,8 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, tracked
   }
 
   // Rep-PR-por-rep-count (modelo Strong/Hevy): el set @ W kg × N reps es PR si W
-  // supera el mejor peso histórico a exactamente N reps, o si es la primera vez a
-  // N reps con historial general del ejercicio.
+  // supera el mejor peso a N reps o más, o si es la primera vez a N reps con
+  // historial general del ejercicio.
   //
   // Guard: solo dispara si preSessionBests.bestPerReps tiene al menos una entrada.
   // Esto evita falsos positivos en la primera sesión del ejercicio (no hay historial
@@ -396,14 +440,20 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, tracked
       // Dominancia: comparar contra el mejor peso a N reps o más (M >= N), tanto de
       // los sets ya hechos en la sesión como del histórico. Así un 100×8 posterior a
       // un 100×9 no dispara PR (running[9]=100 ya cubre 8 reps).
-      const threshold = maxWeightAtRepsOrAbove(N, false, runningPerRep, preSessionPerRep)
+      // The notice names the set it measured against, so the previous value is that set's
+      // weight and reps, not the exact-N entry.
+      // Not findBeatenRepRecord, on purpose: the notice measures against what was lifted up to
+      // this set (history and earlier sets at >= N), the card against the finished session
+      // (history at >= N, session at > N). They can name different sets for the same PR (#125).
+      const beaten = bestAtRepsOrAbove(N, false, runningPerRep, preSessionPerRep)
 
-      if (setData.weight > threshold) {
+      if (setData.weight > (beaten?.weight ?? 0)) {
         newRecords.push({
           type: 'repPR',
           repCount: N,
           value: setData.weight,
-          previousValue: preSessionPerRep[N] ?? null,
+          previousValue: beaten?.weight ?? null,
+          previousRepCount: beaten?.reps ?? null,
           label: t('workout:pr.repPR', { repCount: N }),
           unit: weightUnit,
         })
@@ -625,7 +675,15 @@ export function formatPRNotificationText(notification) {
   })
   const record = sorted[0]
   const improvement = record.previousValue
-    ? ` (${t('workout:set.previous').toLowerCase()}: ${record.previousValue})`
+    ? ` (${t('workout:set.previous').toLowerCase()}: ${formatPreviousRecordValue(record)})`
     : ''
   return `${notification.exerciseName}: ${record.label} ${record.value} ${record.unit}${improvement}`
+}
+
+// A rep PR's previous set can have more reps than the new one (dominance), so it carries
+// its own unit and rep count. Records without previousRepCount (built before it existed)
+// fall back to the record's repCount.
+function formatPreviousRecordValue(record) {
+  if (record.type !== 'repPR') return record.previousValue
+  return `${record.previousValue} ${record.unit} × ${record.previousRepCount ?? record.repCount}`
 }

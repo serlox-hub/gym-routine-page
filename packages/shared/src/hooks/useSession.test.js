@@ -39,9 +39,18 @@ vi.mock('./useAuth.js', () => {
   const state = { userId: 'user-1' }
   return { useUserId: () => state.userId, _authState: state }
 })
-vi.mock('./usePreferences.js', () => ({ usePreference: () => ({ value: null }) }))
+vi.mock('./usePreferences.js', () => {
+  const state = { weightUnit: null }
+  return {
+    usePreference: (key) => ({ value: key === 'weight_unit' ? state.weightUnit : null }),
+    _prefState: state,
+  }
+})
 vi.mock('./useGyms.js', () => ({ useSetSelectedGym: () => vi.fn() }))
-vi.mock('./useExercises.js', () => ({ useAllUserExerciseGymUnits: () => ({ data: [] }) }))
+vi.mock('./useExercises.js', () => {
+  const state = { rows: [] }
+  return { useAllUserExerciseGymUnits: () => ({ data: state.rows }), _gymUnitsState: state }
+})
 
 vi.mock('../notifications.js', () => {
   const show = vi.fn()
@@ -53,7 +62,9 @@ import { fetchSessionExercises } from '../api/sessionExercisesApi.js'
 import * as notificationsMock from '../notifications.js'
 import * as storesMock from './_stores.js'
 import * as authMock from './useAuth.js'
-import { useStartSession, useRestoreActiveSession, useEndSession, useLastSetAt } from './useSession.js'
+import * as preferencesMock from './usePreferences.js'
+import * as exercisesMock from './useExercises.js'
+import { useStartSession, useRestoreActiveSession, useEndSession, useLastSetAt, useSessionWeightUnitByExercise } from './useSession.js'
 
 function wrapper() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -284,5 +295,76 @@ describe('useLastSetAt', () => {
   it('deshabilitado no pregunta al servidor', () => {
     renderHook(() => useLastSetAt({ enabled: false }), { wrapper: wrapper() })
     expect(fetchLastSetPerformedAt).not.toHaveBeenCalled()
+  })
+})
+
+// Issue #125: el resumen de fin de sesión etiqueta los PR con la unidad del ejercicio en el gym de
+// la sesión, no con la preferencia global. Aquí se fija de dónde sale cada eslabón de esa cadena.
+describe('useSessionWeightUnitByExercise', () => {
+  const sessionExercises = [{ exercise_id: 1 }, { exercise_id: 2 }]
+
+  beforeEach(() => {
+    storesMock.useWorkoutStore._mockStore.gymId = 7
+    preferencesMock._prefState.weightUnit = null
+    exercisesMock._gymUnitsState.rows = []
+  })
+
+  it('sin override en el gym todos los ejercicios heredan la preferencia global', () => {
+    preferencesMock._prefState.weightUnit = 'lb'
+    const { result } = renderHook(() => useSessionWeightUnitByExercise(sessionExercises))
+    expect(result.current).toEqual({ 1: 'lb', 2: 'lb' })
+  })
+
+  it('sin preferencia ni override cae a kg', () => {
+    const { result } = renderHook(() => useSessionWeightUnitByExercise(sessionExercises))
+    expect(result.current).toEqual({ 1: 'kg', 2: 'kg' })
+  })
+
+  it('el override del ejercicio en el gym de la sesión gana a la global, solo para ese ejercicio', () => {
+    preferencesMock._prefState.weightUnit = 'kg'
+    exercisesMock._gymUnitsState.rows = [{ exercise_id: 1, gym_id: 7, weight_unit: 'lb' }]
+    const { result } = renderHook(() => useSessionWeightUnitByExercise(sessionExercises))
+    expect(result.current).toEqual({ 1: 'lb', 2: 'kg' })
+  })
+
+  it('ignora los overrides de otros gyms (el peso nunca se mezcla entre gyms)', () => {
+    preferencesMock._prefState.weightUnit = 'kg'
+    exercisesMock._gymUnitsState.rows = [{ exercise_id: 1, gym_id: 99, weight_unit: 'lb' }]
+    const { result } = renderHook(() => useSessionWeightUnitByExercise(sessionExercises))
+    expect(result.current).toEqual({ 1: 'kg', 2: 'kg' })
+  })
+
+  it('compara el gym como texto: gym_id numérico en la fila y gymId en string en el store', () => {
+    storesMock.useWorkoutStore._mockStore.gymId = '7'
+    exercisesMock._gymUnitsState.rows = [{ exercise_id: 1, gym_id: 7, weight_unit: 'lb' }]
+    const { result } = renderHook(() => useSessionWeightUnitByExercise(sessionExercises))
+    expect(result.current[1]).toBe('lb')
+  })
+
+  it('sesión sin gym: solo cuenta la global, los overrides de gyms concretos no se cuelan', () => {
+    storesMock.useWorkoutStore._mockStore.gymId = null
+    preferencesMock._prefState.weightUnit = 'lb'
+    exercisesMock._gymUnitsState.rows = [{ exercise_id: 1, gym_id: 7, weight_unit: 'kg' }]
+    const { result } = renderHook(() => useSessionWeightUnitByExercise(sessionExercises))
+    expect(result.current).toEqual({ 1: 'lb', 2: 'lb' })
+  })
+
+  it('sin ejercicios de sesión (aún no cargados) devuelve un mapa vacío', () => {
+    expect(renderHook(() => useSessionWeightUnitByExercise(undefined)).result.current).toEqual({})
+    expect(renderHook(() => useSessionWeightUnitByExercise([])).result.current).toEqual({})
+  })
+
+  it('mantiene la misma referencia mientras no cambian las entradas, y la renueva cuando cambia la global', () => {
+    preferencesMock._prefState.weightUnit = 'kg'
+    const { result, rerender } = renderHook(() => useSessionWeightUnitByExercise(sessionExercises))
+    const first = result.current
+
+    rerender()
+    expect(result.current).toBe(first)
+
+    preferencesMock._prefState.weightUnit = 'lb'
+    rerender()
+    expect(result.current).not.toBe(first)
+    expect(result.current).toEqual({ 1: 'lb', 2: 'lb' })
   })
 })

@@ -196,6 +196,106 @@ describe('workoutSummary', () => {
       const summary = buildWorkoutSummaryFromEndSession(session, [], runSets, runExercises)
       expect(summary.exercises[0].bestSet).toContain('5000m')
     })
+
+    // Issue #125: the beaten set (20 × 8) has more reps than the new record (25 × 6).
+    it('keeps the beaten set\'s rep count on a rep PR detail', () => {
+      const prs = [{
+        exerciseId: 1,
+        exerciseName: 'Press banca',
+        details: [{ type: 'repPR', repCount: 6, newValue: 25, oldValue: 20, oldRepCount: 8, unit: 'kg' }],
+      }]
+      const summary = buildWorkoutSummaryFromEndSession(session, prs, completedSets, sessionExercises)
+      expect(summary.prs[0].details[0]).toMatchObject({ type: 'repPR', repCount: 6, oldValue: 20, oldRepCount: 8 })
+    })
+
+    // Issue #125: detectNewPersonalRecords labels every weight 'kg' and distances in raw meters.
+    describe('PR units', () => {
+      const weightDetails = [
+        { type: 'bestWeight', newValue: 80, oldValue: 75, unit: 'kg' },
+        { type: 'best1rm', newValue: 101, oldValue: 95, unit: 'kg' },
+        { type: 'totalVolume', newValue: 1440, oldValue: 1200, unit: 'kg' },
+        { type: 'repPR', repCount: 10, newValue: 80, oldValue: 75, oldRepCount: 10, unit: 'kg' },
+      ]
+
+      it('labels weight PRs with the global unit when there is no per-exercise map, values unchanged', () => {
+        const prs = [{ exerciseId: 1, exerciseName: 'Press banca', details: weightDetails }]
+        const summary = buildWorkoutSummaryFromEndSession(session, prs, completedSets, sessionExercises, { weightUnit: 'lb' })
+        expect(summary.prs[0].details).toEqual(weightDetails.map(d => ({ ...d, unit: 'lb' })))
+      })
+
+      it('labels each exercise\'s PRs and best set with its own weight unit', () => {
+        const twoWeightExercises = [
+          { id: 'se-1', exercise_id: 1, exercises: { id: 1, name: 'Press banca', tracked_fields: ['weight', 'reps'] } },
+          { id: 'se-5', exercise_id: 5, exercises: { id: 5, name: 'Remo', tracked_fields: ['weight', 'reps'] } },
+        ]
+        const sets = {
+          'se-1-1': { sessionExerciseId: 'se-1', weight: 80, repsCompleted: 10, setNumber: 1 },
+          'se-5-1': { sessionExerciseId: 'se-5', weight: 60, repsCompleted: 10, setNumber: 1 },
+        }
+        const prs = [
+          { exerciseId: 1, exerciseName: 'Press banca', details: weightDetails },
+          { exerciseId: 5, exerciseName: 'Remo', details: weightDetails },
+        ]
+        const summary = buildWorkoutSummaryFromEndSession(session, prs, sets, twoWeightExercises, {
+          weightUnit: 'kg',
+          weightUnitByExerciseId: { 1: 'lb' },
+        })
+        expect(summary.exercises[0].bestSet).toContain('lb')
+        expect(summary.exercises[1].bestSet).toContain('kg')
+        expect(summary.prs[0].details.every(d => d.unit === 'lb')).toBe(true)
+        expect(summary.prs[1].details.every(d => d.unit === 'kg')).toBe(true)
+      })
+
+      it('converts a distance PR to the exercise\'s distance unit', () => {
+        const runExercises = [
+          { id: 'se-4', exercise_id: 4, exercises: { id: 4, name: 'Cinta', tracked_fields: ['distance'], distance_unit: 'km' } },
+        ]
+        const runSets = { 'se-4-1': { sessionExerciseId: 'se-4', distanceMeters: 5000, setNumber: 1 } }
+        const prs = [{
+          exerciseId: 4,
+          exerciseName: 'Cinta',
+          details: [{ type: 'bestDistanceMeters', newValue: 5000, oldValue: 4000, unit: 'm' }],
+        }]
+        const summary = buildWorkoutSummaryFromEndSession(session, prs, runSets, runExercises)
+        expect(summary.prs[0].details[0]).toMatchObject({ newValue: 5, oldValue: 4, unit: 'km' })
+      })
+
+      it('the user\'s distance override wins over the exercise\'s unit', () => {
+        const runExercises = [
+          { id: 'se-4', exercise_id: 4, exercises: { id: 4, name: 'Cinta', tracked_fields: ['distance'], distance_unit: 'm' } },
+        ]
+        const runSets = { 'se-4-1': { sessionExerciseId: 'se-4', distanceMeters: 5000, setNumber: 1 } }
+        const prs = [{
+          exerciseId: 4,
+          exerciseName: 'Cinta',
+          details: [{ type: 'bestDistanceMeters', newValue: 5000, oldValue: null, unit: 'm' }],
+        }]
+        const summary = buildWorkoutSummaryFromEndSession(session, prs, runSets, runExercises, {
+          distanceUnitByExerciseId: { 4: 'km' },
+        })
+        expect(summary.prs[0].details[0]).toMatchObject({ newValue: 5, oldValue: null, unit: 'km' })
+      })
+
+      it('keeps a distance PR in raw meters when its exercise is not in the session', () => {
+        const prs = [{
+          exerciseId: 99,
+          exerciseName: 'Cinta',
+          details: [{ type: 'bestDistanceMeters', newValue: 5000, oldValue: 4000, unit: 'm' }],
+        }]
+        const summary = buildWorkoutSummaryFromEndSession(session, prs, completedSets, sessionExercises)
+        expect(summary.prs[0].details[0]).toMatchObject({ newValue: 5000, oldValue: 4000, unit: 'm' })
+      })
+
+      it('leaves units that are not weight or distance as they are', () => {
+        const prs = [{
+          exerciseId: 1,
+          exerciseName: 'Press banca',
+          details: [{ type: 'bestReps', newValue: 12, oldValue: 10, unit: 'reps' }],
+        }]
+        const summary = buildWorkoutSummaryFromEndSession(session, prs, completedSets, sessionExercises, { weightUnit: 'lb' })
+        expect(summary.prs[0].details[0].unit).toBe('reps')
+      })
+    })
   })
 
   describe('buildWorkoutSummaryFromSession', () => {
@@ -354,6 +454,24 @@ describe('workoutSummary', () => {
       const summary = buildWorkoutSummaryFromSession(session, sessionPRsWithRepPR, { previousBests })
       const at8 = summary.prs[0].details.find(d => d.type === 'repPR' && d.repCount === 8)
       expect(at8).toMatchObject({ type: 'repPR', repCount: 8, newValue: 100, oldValue: 95 })
+    })
+
+    // Issue #125: the beaten set (20 × 8) has more reps than the new record (25 × 6).
+    it('repPR detail carries the beaten set\'s rep count as oldRepCount', () => {
+      const sessionPRsWithRepPR = [{ ...sessionPRs[0], pr_rep_counts: [6], best_per_reps: { '6': 25 } }]
+      const previousBests = { 1: { bestPerReps: { '8': 20 } } }
+      const summary = buildWorkoutSummaryFromSession(session, sessionPRsWithRepPR, { previousBests })
+      const at6 = summary.prs[0].details.find(d => d.type === 'repPR')
+      expect(at6).toMatchObject({ repCount: 6, newValue: 25, oldValue: 20, oldRepCount: 8 })
+    })
+
+    it('repPR without a beaten set has null oldValue and oldRepCount; other types carry no oldRepCount', () => {
+      const sessionPRsWithRepPR = [{ ...sessionPRs[0], pr_rep_counts: [6], best_per_reps: { '6': 25 } }]
+      const summary = buildWorkoutSummaryFromSession(session, sessionPRsWithRepPR)
+      const at6 = summary.prs[0].details.find(d => d.type === 'repPR')
+      expect(at6).toMatchObject({ oldValue: null, oldRepCount: null })
+      const weight = summary.prs[0].details.find(d => d.type === 'bestWeight')
+      expect(weight).not.toHaveProperty('oldRepCount')
     })
 
     it('oldValue queda null si previousBests no se pasa', () => {

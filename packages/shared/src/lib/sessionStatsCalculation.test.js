@@ -10,6 +10,9 @@ import {
   computeExercisePRSetNumbers,
   recalculatePRFlags,
   mergeExerciseStats,
+  bestAtRepsOrAbove,
+  findBeatenRepRecord,
+  WEIGHT_PR_TYPES,
 } from './sessionStatsCalculation.js'
 
 describe('sessionStatsCalculation', () => {
@@ -707,6 +710,46 @@ describe('sessionStatsCalculation', () => {
       expect(result3.newRecords.find(r => r.type === 'repPR')).toBeDefined()
     })
 
+    // Issue #125: the notice names the set the PR was measured against, which can have more reps.
+    it('repPR previous value is the beaten set at N reps or more, with its rep count', () => {
+      const set = { weight: 25, reps_completed: 6 }
+      const preBests = { bestPerReps: { '6': 18, '8': 20 } }
+
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
+
+      const repPR = newRecords.find(r => r.type === 'repPR')
+      expect(repPR).toMatchObject({ previousValue: 20, previousRepCount: 8 })
+      expect(formatPRNotificationText({ exerciseName: 'Curl', records: [repPR] })).toContain('20 kg × 8')
+    })
+
+    it('repPR previous value exists when history only has more reps than N', () => {
+      const set = { weight: 25, reps_completed: 6 }
+      const preBests = { bestPerReps: { '8': 20 } }
+
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
+
+      expect(newRecords.find(r => r.type === 'repPR')).toMatchObject({ previousValue: 20, previousRepCount: 8 })
+    })
+
+    it('repPR previous value can be an earlier set of the session above the history', () => {
+      const set = { weight: 25, reps_completed: 6 }
+      const preBests = { bestPerReps: { '8': 20 } }
+      const running = { bestPerReps: { '7': 22 } }
+
+      const { newRecords } = evaluateSetForPR(set, running, preBests, ['weight', 'reps'])
+
+      expect(newRecords.find(r => r.type === 'repPR')).toMatchObject({ previousValue: 22, previousRepCount: 7 })
+    })
+
+    it('repPR first time at N reps has no previous value nor rep count', () => {
+      const set = { weight: 80, reps_completed: 8 }
+      const preBests = { bestPerReps: { '5': 100 } }
+
+      const { newRecords } = evaluateSetForPR(set, {}, preBests, ['weight', 'reps'])
+
+      expect(newRecords.find(r => r.type === 'repPR')).toMatchObject({ previousValue: null, previousRepCount: null })
+    })
+
     // ============================================
     // weight unit propagation
     // ============================================
@@ -853,6 +896,105 @@ describe('sessionStatsCalculation', () => {
     })
   })
 
+  // ============================================
+  // rep-PR dominance helpers
+  // ============================================
+
+  describe('bestAtRepsOrAbove', () => {
+    it('returns the weight and reps of the heaviest qualifying entry', () => {
+      expect(bestAtRepsOrAbove(6, false, { '5': 30, '6': 20, '8': 22, '10': 18 })).toEqual({ weight: 22, reps: 8 })
+    })
+
+    it('on a weight tie, returns the highest rep count', () => {
+      expect(bestAtRepsOrAbove(6, false, { '6': 20, '8': 20, '7': 20 })).toEqual({ weight: 20, reps: 8 })
+    })
+
+    it('returns null when no entry qualifies', () => {
+      expect(bestAtRepsOrAbove(9, false, { '5': 30, '8': 20 })).toBeNull()
+      expect(bestAtRepsOrAbove(6, false)).toBeNull()
+      expect(bestAtRepsOrAbove(6, false, null, {})).toBeNull()
+    })
+
+    it('strictlyGreater leaves out the entry at exactly minReps', () => {
+      expect(bestAtRepsOrAbove(6, true, { '6': 25, '7': 22 })).toEqual({ weight: 22, reps: 7 })
+      expect(bestAtRepsOrAbove(6, true, { '6': 25 })).toBeNull()
+    })
+
+    it('scans several maps, skipping missing ones', () => {
+      expect(bestAtRepsOrAbove(6, false, { '8': 20 }, null, { '7': 22 })).toEqual({ weight: 22, reps: 7 })
+    })
+
+    it('entries without a positive weight never win', () => {
+      expect(bestAtRepsOrAbove(6, false, { '6': null, '8': 0 })).toBeNull()
+    })
+  })
+
+  describe('findBeatenRepRecord', () => {
+    it('on a weight tie between history and session, the highest rep count wins', () => {
+      expect(findBeatenRepRecord(6, { '8': 20 }, { '7': 20 })).toEqual({ weight: 20, reps: 8 })
+      expect(findBeatenRepRecord(6, { '6': 20 }, { '7': 20 })).toEqual({ weight: 20, reps: 7 })
+    })
+
+    it('the session entry at exactly repCount is the new record, not the beaten one', () => {
+      expect(findBeatenRepRecord(6, { '8': 20 }, { '6': 25 })).toEqual({ weight: 20, reps: 8 })
+    })
+
+    it('returns null when neither history nor session qualifies', () => {
+      expect(findBeatenRepRecord(6, { '5': 30 }, { '6': 25 })).toBeNull()
+      expect(findBeatenRepRecord(6, null, null)).toBeNull()
+    })
+
+    it.each([
+      [6, { '8': 20 }, { '7': 20 }],
+      [6, { '6': 20 }, { '7': 20 }],
+      [6, { '6': 18, '8': 20 }, { '6': 25, '7': 22 }],
+      [6, { '9': 30 }, { '6': 25, '7': 22 }],
+      [6, { '5': 30 }, { '6': 25 }],
+      [5, null, { '5': 100, '8': 90 }],
+    ])('its weight equals the old threshold (N=%i, history %o, session %o)', (repCount, history, session) => {
+      // The threshold before #125, written out on its own so the oracle shares no code with the subject.
+      const oldMaxWeight = (minReps, strictlyGreater, map) => Object.entries(map ?? {})
+        .filter(([reps]) => (strictlyGreater ? Number(reps) > minReps : Number(reps) >= minReps))
+        .reduce((best, [, weight]) => (weight > best ? weight : best), 0)
+      const oldThreshold = Math.max(
+        oldMaxWeight(repCount, false, history),
+        oldMaxWeight(repCount, true, session),
+      )
+      expect(findBeatenRepRecord(repCount, history, session)?.weight ?? 0).toBe(oldThreshold)
+    })
+  })
+
+  // buildWorkoutSummaryFromEndSession relabels exactly these types with the exercise's real
+  // weight unit. A weight PR missing here would keep the 'kg' placeholder in a lb exercise.
+  describe('WEIGHT_PR_TYPES', () => {
+    const everyMetricImproves = () => detectNewPersonalRecords(
+      {
+        bestWeight: 100, bestReps: 12, best1rm: 130, totalVolume: 5000,
+        bestTimeSeconds: 600, bestDistanceMeters: 5000, bestPaceSeconds: 300,
+        bestPerReps: { '5': 100 },
+      },
+      {
+        bestWeight: 90, bestReps: 10, best1rm: 120, totalVolume: 4000,
+        bestTimeSeconds: 500, bestDistanceMeters: 4000, bestPaceSeconds: 330,
+        bestPerReps: { '5': 90 },
+      },
+    ).details
+
+    it('covers every PR detail that detectNewPersonalRecords labels in kg, and nothing else', () => {
+      const details = everyMetricImproves()
+      // Guard: all 8 kinds of detail must be produced, or the partition below proves nothing.
+      expect(details).toHaveLength(8)
+
+      for (const detail of details) {
+        expect(WEIGHT_PR_TYPES.has(detail.type), `${detail.type} (${detail.unit})`).toBe(detail.unit === 'kg')
+      }
+    })
+
+    it('holds the weight-based types and leaves out reps, time, distance and pace', () => {
+      expect([...WEIGHT_PR_TYPES].sort()).toEqual(['best1rm', 'bestWeight', 'repPR', 'totalVolume'])
+    })
+  })
+
   describe('formatPRNotificationText', () => {
     it('formatea notificación con mejora previa', () => {
       const notification = {
@@ -875,7 +1017,15 @@ describe('sessionStatsCalculation', () => {
         exerciseName: 'Press Banca',
         records: [{ type: 'repPR', repCount: 5, label: 'Récord a 5 reps', value: 110, unit: 'kg', previousValue: 100 }],
       }
-      expect(formatPRNotificationText(notification)).toBe('Press Banca: Récord a 5 reps 110 kg (anterior: 100)')
+      expect(formatPRNotificationText(notification)).toBe('Press Banca: Récord a 5 reps 110 kg (anterior: 100 kg × 5)')
+    })
+
+    it('repPR previous value prints the beaten set\'s own rep count and unit', () => {
+      const notification = {
+        exerciseName: 'Curl',
+        records: [{ type: 'repPR', repCount: 6, label: 'Récord a 6 reps', value: 25, unit: 'lb', previousValue: 20, previousRepCount: 8 }],
+      }
+      expect(formatPRNotificationText(notification)).toBe('Curl: Récord a 6 reps 25 lb (anterior: 20 lb × 8)')
     })
 
     it('prioriza repPR sobre best1rm y bestWeight cuando coexisten', () => {
@@ -888,7 +1038,7 @@ describe('sessionStatsCalculation', () => {
         ],
       }
       // repPR tiene la prioridad más alta
-      expect(formatPRNotificationText(notification)).toBe('Press Banca: Récord a 5 reps 110 kg (anterior: 100)')
+      expect(formatPRNotificationText(notification)).toBe('Press Banca: Récord a 5 reps 110 kg (anterior: 100 kg × 5)')
     })
 
     it('prioriza best1rm sobre bestWeight si no hay repPR', () => {
@@ -988,6 +1138,24 @@ describe('sessionStatsCalculation', () => {
       const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
       // 100×9 supera su récord; 100×8 queda dominado por el 100×9 de la misma sesión
       expect(flags.prRepCounts).toEqual([9])
+    })
+
+    // Issue #125: the beaten set can have more reps than the new record.
+    it('repPR detail carries the beaten set\'s rep count as oldRepCount', () => {
+      const repPRAt6 = (previous, current) => detectNewPersonalRecords(
+        { bestPerReps: current }, { bestPerReps: previous }, ['weight', 'reps'],
+      ).details.find(d => d.type === 'repPR' && d.repCount === 6)
+
+      expect(repPRAt6({ '8': 20 }, { '6': 25 })).toMatchObject({ oldValue: 20, oldRepCount: 8 })
+      expect(repPRAt6({ '6': 20 }, { '6': 25 })).toMatchObject({ oldValue: 20, oldRepCount: 6 })
+      expect(repPRAt6({ '6': 20 }, { '6': 25, '7': 22 })).toMatchObject({ oldValue: 22, oldRepCount: 7 })
+    })
+
+    it('repPR first time at N reps has null oldValue and oldRepCount', () => {
+      const { details } = detectNewPersonalRecords(
+        { bestPerReps: { '8': 80 } }, { bestPerReps: { '5': 100 } }, ['weight', 'reps'],
+      )
+      expect(details.find(d => d.type === 'repPR')).toMatchObject({ repCount: 8, oldValue: null, oldRepCount: null })
     })
 
     it('prRepCounts viene ordenado ascendente', () => {

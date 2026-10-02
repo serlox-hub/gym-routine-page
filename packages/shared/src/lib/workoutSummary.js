@@ -6,7 +6,7 @@ import { fetchSessionDetail } from '../api/workoutSessionApi.js'
 import { fetchSessionPRs, fetchExerciseBests } from '../api/exerciseStatsApi.js'
 import { fetchUserExerciseWeightUnits, fetchUserExerciseDistanceUnits } from '../api/exerciseApi.js'
 import { transformSessionDetailData } from './workoutTransforms.js'
-import { maxWeightAtRepsOrAbove } from './sessionStatsCalculation.js'
+import { findBeatenRepRecord, WEIGHT_PR_TYPES } from './sessionStatsCalculation.js'
 import { t, getCurrentLocale } from '../i18n/index.js'
 
 /**
@@ -103,9 +103,12 @@ function formatShortDate(dateStr) {
  * @param {Array} detectedPRs - PRs detectados [{exerciseId, exerciseName, details: [{type, label, newValue, unit}]}]
  * @param {Object} completedSets - snapshot del store {key: {sessionExerciseId, weight, repsCompleted, ...}}
  * @param {Array} sessionExercises - del query cache [{id, exercise_id, exercises: {id, name, tracked_fields}, ...}]
+ * @param {Object} [options.weightUnitByExerciseId] - exercise id → effective weight unit in the
+ *   session's gym; an exercise missing from it falls back to weightUnit
  */
-export function buildWorkoutSummaryFromEndSession(session, detectedPRs, completedSets, sessionExercises, { weightUnit = 'kg', distanceUnitByExerciseId = {} } = {}) {
+export function buildWorkoutSummaryFromEndSession(session, detectedPRs, completedSets, sessionExercises, { weightUnit = 'kg', weightUnitByExerciseId = {}, distanceUnitByExerciseId = {} } = {}) {
   const prExerciseIds = new Set((detectedPRs || []).map(pr => pr.exerciseId))
+  const getUnit = (exerciseId) => weightUnitByExerciseId[exerciseId] || weightUnit
 
   // Agrupar sets por sessionExerciseId
   const setsBySessionExercise = {}
@@ -146,9 +149,14 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
     exercises.push({
       name: getExerciseName(exercise) || t('exercise:title'),
       setsCompleted: sets.length,
-      bestSet: getBestSetFormatted(sets, exercise, weightUnit, resolveDistanceUnit(distanceUnitByExerciseId[exercise.id], exercise)),
+      bestSet: getBestSetFormatted(sets, exercise, getUnit(exercise.id), resolveDistanceUnit(distanceUnitByExerciseId[exercise.id], exercise)),
       hasPR: prExerciseIds.has(exercise.id),
     })
+  }
+
+  const findExercise = (exerciseId) => {
+    const se = (sessionExercises || []).find(s => s.exercise_id === exerciseId)
+    return se ? (se.exercises || se.exercise) : null
   }
 
   return {
@@ -163,12 +171,34 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
     exercises,
     prs: (detectedPRs || []).map(pr => ({
       exerciseName: pr.exerciseName,
-      // Preservamos type/oldValue/repCount para que las tarjetas de PR del
+      // Preservamos type/oldValue/oldRepCount/repCount para que las tarjetas de PR del
       // carrusel puedan formatear correctamente ("× N reps", "anterior · X",
       // "primera vez a N reps", etc.)
-      details: pr.details.map(d => ({ ...d })),
+      details: pr.details.map(d => labelPRDetailUnit(d, {
+        weightUnit: getUnit(pr.exerciseId),
+        exercise: findExercise(pr.exerciseId),
+        distanceUnitOverride: distanceUnitByExerciseId[pr.exerciseId],
+      })),
     })),
   }
+}
+
+// detectNewPersonalRecords knows neither the exercise's weight unit in the session's gym nor
+// its distance unit: it labels weights 'kg' and distances in raw meters. Stored weights are
+// already in the exercise's unit, so they are only relabelled; distances are converted, as
+// the history path does. Without the exercise, a distance keeps its raw meters.
+function labelPRDetailUnit(detail, { weightUnit, exercise, distanceUnitOverride }) {
+  if (WEIGHT_PR_TYPES.has(detail.type)) return { ...detail, unit: weightUnit }
+  if (detail.type === 'bestDistanceMeters' && exercise) {
+    const distanceUnit = resolveDistanceUnit(distanceUnitOverride, exercise)
+    return {
+      ...detail,
+      newValue: metersToDistanceUnit(detail.newValue, distanceUnit),
+      oldValue: detail.oldValue == null ? detail.oldValue : metersToDistanceUnit(detail.oldValue, distanceUnit),
+      unit: distanceUnit,
+    }
+  }
+  return { ...detail }
 }
 
 /**
@@ -176,8 +206,15 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
  * Compatible con el shape que producen detectNewPersonalRecords y los formatters
  * de prCardFormat.
  */
-function buildPRDetail({ type, newValue, oldValue, unit, repCount }) {
-  return { type, newValue, oldValue: oldValue ?? null, unit, ...(repCount != null && { repCount }) }
+function buildPRDetail({ type, newValue, oldValue, unit, repCount, oldRepCount }) {
+  return {
+    type,
+    newValue,
+    oldValue: oldValue ?? null,
+    unit,
+    ...(repCount != null && { repCount }),
+    ...(type === 'repPR' && { oldRepCount: oldRepCount ?? null }),
+  }
 }
 
 /**
@@ -250,14 +287,12 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
         // histórico (M >= N) y de la propia sesión a más reps (M > N). Coincide con
         // el umbral usado en detectNewPersonalRecords para no mostrar dos valores
         // distintos según la vista.
-        const threshold = Math.max(
-          maxWeightAtRepsOrAbove(repCount, false, prevPerReps),
-          maxWeightAtRepsOrAbove(repCount, true, pr.best_per_reps),
-        )
+        const beaten = findBeatenRepRecord(repCount, prevPerReps, pr.best_per_reps)
         details.push(buildPRDetail({
           type: 'repPR',
           newValue,
-          oldValue: threshold > 0 ? threshold : null,
+          oldValue: beaten?.weight,
+          oldRepCount: beaten?.reps ?? null,
           unit,
           repCount,
         }))

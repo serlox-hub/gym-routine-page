@@ -35,7 +35,8 @@ export function preparePRCardData(pr) {
     const values = counts.map(c => repPRs.find(r => r.repCount === c).newValue)
     details = [
       ...others,
-      { type: 'repPRGroup', counts, values, unit: 'kg' },
+      // Every rep PR of an exercise shares its weight unit.
+      { type: 'repPRGroup', counts, values, unit: repPRs[0].unit },
     ]
   }
 
@@ -92,6 +93,8 @@ export function formatPRDetailValue(detail) {
 /**
  * Devuelve el string del valor "anterior" del detalle:
  * - "anterior · 105 kg" si hay oldValue
+ * - repPR: "anterior · 20 kg × 8", with the beaten set's own reps (oldRepCount), which can be
+ *   more than the new record's; details without oldRepCount fall back to repCount
  * - "primera vez a 5 reps" si type=repPR y oldValue=null
  * - null para repPRGroup o cuando no hay info contextual relevante
  */
@@ -100,7 +103,7 @@ export function formatPRDetailPrevious(detail) {
   const previousLabel = t('workout:summary.previousLabel')
   if (detail.oldValue != null) {
     if (detail.type === 'repPR') {
-      return `${previousLabel} · ${detail.oldValue} ${detail.unit} × ${detail.repCount}`
+      return `${previousLabel} · ${detail.oldValue} ${detail.unit} × ${detail.oldRepCount ?? detail.repCount}`
     }
     return `${previousLabel} · ${detail.oldValue} ${detail.unit}`
   }

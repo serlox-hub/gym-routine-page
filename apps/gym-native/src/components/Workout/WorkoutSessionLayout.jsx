@@ -19,7 +19,7 @@ import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseLevelProgress, getExerciseName, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, useUserExerciseDistanceUnits, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExerciseName, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, useUserExerciseDistanceUnits, useSessionWeightUnitByExercise, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
 import { usePreference } from '../../hooks/usePreferences'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
@@ -52,6 +52,7 @@ export default function WorkoutSessionLayout({ title }) {
   const { prSets, prNotification, dismissPR } = useSessionPRDetection()
   const { value: weightUnit } = usePreference('weight_unit')
   const { data: distanceUnitByExerciseId } = useUserExerciseDistanceUnits()
+  const weightUnitByExerciseId = useSessionWeightUnitByExercise(sessionExercises)
   const { lastSetAt, isResolved: isLastSetResolved } = useLastSetAt({ enabled: showEndModal })
   const endSessionMutation = useEndSession({
     onSuccess: ({ session, detectedPRs }) => {
@@ -62,7 +63,7 @@ export default function WorkoutSessionLayout({ title }) {
         detectedPRs,
         completedSetsSnapshot,
         sessionExercises,
-        { weightUnit, distanceUnitByExerciseId },
+        { weightUnit, weightUnitByExerciseId, distanceUnitByExerciseId },
       )
       navigationRef.reset({
         index: 1,
