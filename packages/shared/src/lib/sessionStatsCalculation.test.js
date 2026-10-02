@@ -12,6 +12,7 @@ import {
   mergeExerciseStats,
   bestAtRepsOrAbove,
   findBeatenRepRecord,
+  findPreviousRepRecord,
   WEIGHT_PR_TYPES,
 } from './sessionStatsCalculation.js'
 
@@ -710,8 +711,8 @@ describe('sessionStatsCalculation', () => {
       expect(result3.newRecords.find(r => r.type === 'repPR')).toBeDefined()
     })
 
-    // Issue #125: the notice names the set the PR was measured against, which can have more reps.
-    it('repPR previous value is the beaten set at N reps or more, with its rep count', () => {
+    // The notice shows the best pre-session set at N reps or more, with its rep count.
+    it('repPR previous value is the best pre-session set at N reps or more, with its rep count', () => {
       const set = { weight: 25, reps_completed: 6 }
       const preBests = { bestPerReps: { '6': 18, '8': 20 } }
 
@@ -731,14 +732,24 @@ describe('sessionStatsCalculation', () => {
       expect(newRecords.find(r => r.type === 'repPR')).toMatchObject({ previousValue: 20, previousRepCount: 8 })
     })
 
-    it('repPR previous value can be an earlier set of the session above the history', () => {
+    it('repPR previous value comes only from history, never from earlier sets of the session', () => {
       const set = { weight: 25, reps_completed: 6 }
+      const preBests = { bestPerReps: { '8': 20 } }
+
+      for (const running of [{ bestPerReps: { '7': 22 } }, { bestPerReps: { '6': 22 } }]) {
+        const { newRecords } = evaluateSetForPR(set, running, preBests, ['weight', 'reps'])
+        expect(newRecords.find(r => r.type === 'repPR')).toMatchObject({ previousValue: 20, previousRepCount: 8 })
+      }
+    })
+
+    it('repPR decision still counts earlier sets of the session', () => {
+      const set = { weight: 21, reps_completed: 6 }
       const preBests = { bestPerReps: { '8': 20 } }
       const running = { bestPerReps: { '7': 22 } }
 
       const { newRecords } = evaluateSetForPR(set, running, preBests, ['weight', 'reps'])
 
-      expect(newRecords.find(r => r.type === 'repPR')).toMatchObject({ previousValue: 22, previousRepCount: 7 })
+      expect(newRecords.find(r => r.type === 'repPR')).toBeUndefined()
     })
 
     it('repPR first time at N reps has no previous value nor rep count', () => {
@@ -929,6 +940,18 @@ describe('sessionStatsCalculation', () => {
     })
   })
 
+  describe('findPreviousRepRecord', () => {
+    it('returns the best pre-session entry at repCount reps or more', () => {
+      expect(findPreviousRepRecord(6, { '6': 18, '8': 20 })).toEqual({ weight: 20, reps: 8 })
+      expect(findPreviousRepRecord(6, { '6': 20, '8': 20 })).toEqual({ weight: 20, reps: 8 })
+    })
+
+    it('returns null when nothing qualifies', () => {
+      expect(findPreviousRepRecord(6, { '5': 30 })).toBeNull()
+      expect(findPreviousRepRecord(6, null)).toBeNull()
+    })
+  })
+
   describe('findBeatenRepRecord', () => {
     it('on a weight tie between history and session, the highest rep count wins', () => {
       expect(findBeatenRepRecord(6, { '8': 20 }, { '7': 20 })).toEqual({ weight: 20, reps: 8 })
@@ -1020,7 +1043,7 @@ describe('sessionStatsCalculation', () => {
       expect(formatPRNotificationText(notification)).toBe('Press Banca: Récord a 5 reps 110 kg (anterior: 100 kg × 5)')
     })
 
-    it('repPR previous value prints the beaten set\'s own rep count and unit', () => {
+    it('repPR previous value prints the previous set\'s own rep count and unit', () => {
       const notification = {
         exerciseName: 'Curl',
         records: [{ type: 'repPR', repCount: 6, label: 'Récord a 6 reps', value: 25, unit: 'lb', previousValue: 20, previousRepCount: 8 }],
@@ -1140,15 +1163,23 @@ describe('sessionStatsCalculation', () => {
       expect(flags.prRepCounts).toEqual([9])
     })
 
-    // Issue #125: the beaten set can have more reps than the new record.
-    it('repPR detail carries the beaten set\'s rep count as oldRepCount', () => {
+    // Issue #125: the previous set can have more reps than the new record.
+    it('repPR detail carries the previous set\'s rep count as oldRepCount', () => {
       const repPRAt6 = (previous, current) => detectNewPersonalRecords(
         { bestPerReps: current }, { bestPerReps: previous }, ['weight', 'reps'],
       ).details.find(d => d.type === 'repPR' && d.repCount === 6)
 
       expect(repPRAt6({ '8': 20 }, { '6': 25 })).toMatchObject({ oldValue: 20, oldRepCount: 8 })
       expect(repPRAt6({ '6': 20 }, { '6': 25 })).toMatchObject({ oldValue: 20, oldRepCount: 6 })
-      expect(repPRAt6({ '6': 20 }, { '6': 25, '7': 22 })).toMatchObject({ oldValue: 22, oldRepCount: 7 })
+      // The session's own 22 × 7 raised the bar but is not the "previous": that is pre-session only.
+      expect(repPRAt6({ '6': 20 }, { '6': 25, '7': 22 })).toMatchObject({ oldValue: 20, oldRepCount: 6 })
+    })
+
+    it('repPR is not detected when a heavier set of the session at more reps dominates it', () => {
+      const { details } = detectNewPersonalRecords(
+        { bestPerReps: { '6': 21, '7': 22 } }, { bestPerReps: { '6': 20 } }, ['weight', 'reps'],
+      )
+      expect(details.find(d => d.type === 'repPR' && d.repCount === 6)).toBeUndefined()
     })
 
     it('repPR first time at N reps has null oldValue and oldRepCount', () => {
@@ -1256,6 +1287,17 @@ describe('sessionStatsCalculation', () => {
       const preBests = { bestWeight: 200, best1rm: 240 }
       const result = computeExercisePRSets(sets, preBests, ['weight', 'reps'], 'lb')
       expect(result[0].records.find(r => r.type === 'bestWeight').unit).toBe('lb')
+    })
+
+    it('el anterior de un repPR es el mejor pre-sesión, no una serie previa de la sesión', () => {
+      const sets = [
+        { setNumber: 1, weight: 22, repsCompleted: 7 },
+        { setNumber: 2, weight: 25, repsCompleted: 6 },
+      ]
+      const preBests = { bestPerReps: { '8': 20 } }
+      const result = computeExercisePRSets(sets, preBests, ['weight', 'reps'])
+      const repPR = result.find(r => r.setNumber === 2).records.find(r => r.type === 'repPR')
+      expect(repPR).toMatchObject({ repCount: 6, previousValue: 20, previousRepCount: 8 })
     })
 
     it('retorna vacío sin historial previo', () => {

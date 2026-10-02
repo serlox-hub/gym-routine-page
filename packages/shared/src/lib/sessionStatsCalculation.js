@@ -221,6 +221,19 @@ export function findBeatenRepRecord(repCount, historicalMap, sessionMap) {
   return isBetterRepEntry(sameSession, historical) ? sameSession : historical
 }
 
+/**
+ * The "previous" a rep PR at repCount shows, on the card and in the in-session notice: the best
+ * set before the session at repCount reps or more. Sets of the same session never count, even
+ * when they raised the bar the PR had to clear (findBeatenRepRecord): they can be later than the
+ * PR, and every other record type also shows its pre-session best.
+ * @param {number} repCount
+ * @param {Object<string, number>|null} historicalMap - bestPerReps before the session
+ * @returns {{ weight: number, reps: number } | null}
+ */
+export function findPreviousRepRecord(repCount, historicalMap) {
+  return bestAtRepsOrAbove(repCount, false, historicalMap)
+}
+
 // ============================================
 // PR DETECTION (END OF SESSION)
 // ============================================
@@ -328,10 +341,10 @@ export function detectNewPersonalRecords(currentStats, previousBests, trackedFie
         // o más — tanto del histórico (M >= N) como de la propia sesión (M > N,
         // porque más reps al mismo peso domina). El mismo rep count ya está
         // agregado como máximo en currentBPR[N].
-        const beaten = findBeatenRepRecord(repCount, previousBPR, currentBPR)
-        if (weight > (beaten?.weight ?? 0)) {
+        if (weight > (findBeatenRepRecord(repCount, previousBPR, currentBPR)?.weight ?? 0)) {
           prCounts.push(repCount)
-          const oldValue = beaten?.weight ?? null
+          const previous = findPreviousRepRecord(repCount, previousBPR)
+          const oldValue = previous?.weight ?? null
           const improvement = oldValue
             ? Math.round(((weight - oldValue) / oldValue) * 100)
             : null
@@ -341,8 +354,8 @@ export function detectNewPersonalRecords(currentStats, previousBests, trackedFie
             label: t('workout:pr.repPR', { repCount }),
             newValue: weight,
             oldValue,
-            // The beaten set can have more reps than repCount (dominance), so its own count.
-            oldRepCount: beaten?.reps ?? null,
+            // The previous set can have more reps than repCount (dominance), so its own count.
+            oldRepCount: previous?.reps ?? null,
             unit: PLACEHOLDER_WEIGHT_UNIT,
             improvement,
           })
@@ -440,20 +453,18 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, tracked
       // Dominancia: comparar contra el mejor peso a N reps o más (M >= N), tanto de
       // los sets ya hechos en la sesión como del histórico. Así un 100×8 posterior a
       // un 100×9 no dispara PR (running[9]=100 ya cubre 8 reps).
-      // The notice names the set it measured against, so the previous value is that set's
-      // weight and reps, not the exact-N entry.
-      // Not findBeatenRepRecord, on purpose: the notice measures against what was lifted up to
-      // this set (history and earlier sets at >= N), the card against the finished session
-      // (history at >= N, session at > N). They can name different sets for the same PR (#125).
-      const beaten = bestAtRepsOrAbove(N, false, runningPerRep, preSessionPerRep)
+      // Not findBeatenRepRecord: the running map holds this session's sets AT N (earlier PRs), so
+      // the session side must be >= N here, not > N as on the end-of-session card.
+      const threshold = bestAtRepsOrAbove(N, false, runningPerRep, preSessionPerRep)?.weight ?? 0
 
-      if (setData.weight > (beaten?.weight ?? 0)) {
+      if (setData.weight > threshold) {
+        const previous = findPreviousRepRecord(N, preSessionPerRep)
         newRecords.push({
           type: 'repPR',
           repCount: N,
           value: setData.weight,
-          previousValue: beaten?.weight ?? null,
-          previousRepCount: beaten?.reps ?? null,
+          previousValue: previous?.weight ?? null,
+          previousRepCount: previous?.reps ?? null,
           label: t('workout:pr.repPR', { repCount: N }),
           unit: weightUnit,
         })
