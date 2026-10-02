@@ -197,8 +197,8 @@ describe('workoutSummary', () => {
       expect(summary.exercises[0].bestSet).toContain('5000m')
     })
 
-    // Issue #125: the beaten set (20 × 8) has more reps than the new record (25 × 6).
-    it('keeps the beaten set\'s rep count on a rep PR detail', () => {
+    // Issue #125: the previous set (20 × 8) has more reps than the new record (25 × 6).
+    it('keeps the previous set\'s rep count on a rep PR detail', () => {
       const prs = [{
         exerciseId: 1,
         exerciseName: 'Press banca',
@@ -456,8 +456,8 @@ describe('workoutSummary', () => {
       expect(at8).toMatchObject({ type: 'repPR', repCount: 8, newValue: 100, oldValue: 95 })
     })
 
-    // Issue #125: the beaten set (20 × 8) has more reps than the new record (25 × 6).
-    it('repPR detail carries the beaten set\'s rep count as oldRepCount', () => {
+    // Issue #125: the previous set (20 × 8) has more reps than the new record (25 × 6).
+    it('repPR detail carries the previous set\'s rep count as oldRepCount', () => {
       const sessionPRsWithRepPR = [{ ...sessionPRs[0], pr_rep_counts: [6], best_per_reps: { '6': 25 } }]
       const previousBests = { 1: { bestPerReps: { '8': 20 } } }
       const summary = buildWorkoutSummaryFromSession(session, sessionPRsWithRepPR, { previousBests })
@@ -465,7 +465,15 @@ describe('workoutSummary', () => {
       expect(at6).toMatchObject({ repCount: 6, newValue: 25, oldValue: 20, oldRepCount: 8 })
     })
 
-    it('repPR without a beaten set has null oldValue and oldRepCount; other types carry no oldRepCount', () => {
+    it('repPR previous ignores heavier sets of the same session at more reps', () => {
+      const sessionPRsWithRepPR = [{ ...sessionPRs[0], pr_rep_counts: [6], best_per_reps: { '6': 25, '7': 22 } }]
+      const previousBests = { 1: { bestPerReps: { '6': 20 } } }
+      const summary = buildWorkoutSummaryFromSession(session, sessionPRsWithRepPR, { previousBests })
+      const at6 = summary.prs[0].details.find(d => d.type === 'repPR' && d.repCount === 6)
+      expect(at6).toMatchObject({ oldValue: 20, oldRepCount: 6 })
+    })
+
+    it('repPR without a previous set has null oldValue and oldRepCount; other types carry no oldRepCount', () => {
       const sessionPRsWithRepPR = [{ ...sessionPRs[0], pr_rep_counts: [6], best_per_reps: { '6': 25 } }]
       const summary = buildWorkoutSummaryFromSession(session, sessionPRsWithRepPR)
       const at6 = summary.prs[0].details.find(d => d.type === 'repPR')
