@@ -274,7 +274,7 @@ El em dash y el punto y coma los enforza `i18n/copyStyle.test.js`; el resto (ton
 ⚠️ Aplica SOLO a copy de UI (valores de i18n), **no** a documentación ni comentarios de código (`CLAUDE.md`, `docs/`, JSDoc pueden usar `—`, `;`, etc. con normalidad).
 
 ### DB reference data translation
-- **Muscle groups** (from `muscle_groups` table): display with `translateMuscleGroup(dbName)` from `@gym/shared`
+- **Muscle groups** (from `muscle_groups` table): display with `getMuscleGroupName(group)` from `@gym/shared`, which needs the group's `name_en` (select it in the join). With only the Spanish name (the export JSON), look the group up in `useMuscleGroups()` first (see `SharedRoutinePreview`)
 - **Block names** (`'Calentamiento'`, `'Principal'`, `'Añadido'`): stored in DB as Spanish identifiers. Use `BLOCK_NAMES.WARMUP` etc. in code logic, `translateBlockName(dbName)` for display
 - **User-generated content** (routine names, exercise names, notes): NOT translated — stays in the language the user wrote
 
@@ -378,6 +378,8 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - **`version.yml` pushea con `secrets.RELEASE_TOKEN` (PAT del dueño del repo), no con `GITHUB_TOKEN`.** Los required status checks bloquean CUALQUIER push a `main`, no solo el botón de merge — el bot de Actions no es admin del repo y no tiene bypass. Un PAT de un admin sí lo salta (`enforce_admins: false`). Detalle y alternativas descartadas en `docs/DECISIONS.md`.
 - **Producción se despliega desde `deploy.yml`, no desde Vercel**: al pasar el CI de `main`, primero `supabase db push` y después la web con la CLI de Vercel (auto-deploy de `main` apagado en `vercel.json`). Una migración ya no se aplica a mano antes de fusionar. Por qué en `docs/DECISIONS.md`.
 
+**Store release:** what is still pending before the native apps go to the stores (opening share links in the app, env vars for EAS builds) is listed in `docs/store-release.md`. Add to it whatever a web-only shortcut leaves for later.
+
 ## What NOT to Do
 - ❌ TypeScript
 - ❌ Multiple components per file
@@ -469,6 +471,7 @@ Extract when logic:
 | Orden de los ejercicios de un bloque (unidades, filas, arrastre, menú) | `exerciseOrder.js` | `getBlockUnits()`, `moveExercise()`, `moveSuperset()`, `getExerciseReorderScope()`, `buildExerciseRows()`, `collapseForDrag()`, `resolveRowDrop()`, `rowDropToMove()`, `placeInSuperset()`, `resolveMembershipDrop()`, `getMembershipDropPreview()`, `canDragExerciseRow()`, `membershipDropToPlacement()`, `applyRowDrop()`, `idsToOrderItems()` |
 | Cuerpo desplegado de un día y aplicación de un orden a su caché (rutina y sesión) | `routineDayLayout.js` | `getRoutineDayLayout()`, `applyExerciseOrder()`, `applyExerciseOrderToBlocks()`, `placeInSupersetForBlocks()` |
 | Exercise name layout (two lines, reserved height) | `exerciseNameLayout.js` | `getExerciseNameLineHeight()`, `getExerciseNameLinesHeight()` |
+| Routine share link (URL, way back after login, public preview) | `routineShare.js` | `buildRoutineShareUrl()`, `savePendingSharedRoutine()`, `takePendingSharedRoutine()`, `buildSharedRoutinePreview()` |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
 
 All these files live in `packages/shared/src/lib/` and are exported via `@gym/shared`.

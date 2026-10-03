@@ -69,13 +69,24 @@ function formatBlockName(name) {
 }
 
 function formatExerciseLine(exercise, trackedFields) {
+  return `- ${exercise.exercise_name} · ${formatExercisePrescription(exercise, trackedFields)}`
+}
+
+/**
+ * One exercise's prescription as one line: "3×8-12 · Nivel 8 · RIR 2 · 90s de descanso". Shared by
+ * the copy-as-text export and the public page of a shared routine.
+ * @param {{ series, reps, level?, rir?, rest_seconds? }} exercise - an exported routine exercise
+ * @param {string[]|undefined} trackedFields - decide the effort scale
+ * @returns {string}
+ */
+export function formatExercisePrescription(exercise, trackedFields) {
   const parts = [`${exercise.series}×${exercise.reps}`]
   // El nivel prescrito va con su palabra ("Nivel 8"): en un texto para pegar en un chat, el "Nv8"
   // compacto de la fila de serie no se entiende sin la cabecera de columna que lo acompaña.
   if (exercise.level != null) parts.push(`${t('workout:set.level')} ${exercise.level}`)
   if (exercise.rir != null) parts.push(formatEffortBadge(exercise.rir, trackedFields))
   if (exercise.rest_seconds) parts.push(formatRest(exercise.rest_seconds))
-  return `- ${exercise.exercise_name} · ${parts.join(' · ')}`
+  return parts.join(' · ')
 }
 
 function formatRest(seconds) {
