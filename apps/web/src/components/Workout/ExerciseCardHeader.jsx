@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, CheckCircle2 } from 'lucide-react'
-import { DragHandle, DropdownMenu } from '../ui/index.js'
+import { DragHandle, DropdownMenu, ExerciseName } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { DEFAULT_TRACKED_FIELDS, SetField, getMuscleGroupName, formatEffortBadge, formatFieldValue } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, EXERCISE_NAME_LINE_HEIGHT, SetField, getMuscleGroupName, formatEffortBadge, formatFieldValue } from '@gym/shared'
+
+const NAME_FONT_SIZE = 15
 
 function MetaPill({ children }) {
   return (
@@ -57,15 +59,16 @@ function ExerciseCardHeader({
       style={{ cursor: 'pointer' }}
     >
       {dragHandleProps && (
-        // Centrada con la línea del nombre (15px de fuente); el asa ya para el clic que pliega.
-        <div className="shrink-0" style={{ paddingTop: 2 }}>
+        // Centred on the name's first line: the box is one line tall, in the name's font size so
+        // `em` is the same line. The handle already stops the click that folds the card.
+        <div className="shrink-0 flex items-center" style={{ fontSize: NAME_FONT_SIZE, height: `${EXERCISE_NAME_LINE_HEIGHT}em` }}>
           <DragHandle dragHandleProps={dragHandleProps} disabled={isReordering} />
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <h4 className="font-semibold mb-1.5 truncate" style={{ color: colors.textPrimary, fontSize: 15 }}>
+        <ExerciseName as="h4" fontSize={NAME_FONT_SIZE} reserveLines className="mb-1.5">
           {exerciseName}
-        </h4>
+        </ExerciseName>
         <div
           className="flex items-center gap-1.5 overflow-x-auto"
           style={{ scrollbarWidth: 'none' }}

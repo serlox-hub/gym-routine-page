@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, ImageOff } from 'lucide-react'
 import { getExerciseGifUrl } from '@gym/shared'
-import { Modal, Skeleton } from '../ui/index.js'
+import { ExerciseName, Modal, Skeleton } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
 /**
@@ -26,7 +26,7 @@ function ExerciseGifViewer({ isOpen, onClose, gifKey, exerciseName = '' }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-md" className="max-h-[90vh]">
       <div className="flex items-center justify-between gap-3 p-3" style={{ borderBottom: `1px solid ${colors.border}` }}>
-        <h3 className="font-bold truncate min-w-0" style={{ color: colors.textPrimary }}>{exerciseName}</h3>
+        <ExerciseName as="h3" fontSize={16} fontWeight="700" className="min-w-0">{exerciseName}</ExerciseName>
         <button
           onClick={onClose}
           aria-label={t('common:buttons.close')}

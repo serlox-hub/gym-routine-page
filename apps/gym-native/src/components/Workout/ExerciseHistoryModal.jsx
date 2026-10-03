@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, ActivityIndicator, Animated } from '
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, ChevronDown, FileText, Video } from 'lucide-react-native'
 import { useExerciseHistory, useExerciseHistorySummary, useExerciseChartData } from '../../hooks/useWorkout'
-import { LoadingSpinner, Modal } from '../ui'
+import { ExerciseName, LoadingSpinner, Modal } from '../ui'
 import SetNotesView from './SetNotesView'
 import GymSelector from './GymSelector'
 import { colors } from '../../lib/styles'
@@ -267,7 +267,7 @@ export default function ExerciseHistoryModal({
       {/* Header */}
       <View className="p-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <View className="flex-row items-center gap-2">
-          <Text className="font-bold text-primary flex-1" numberOfLines={1}>{exerciseName}</Text>
+          <ExerciseName fontSize={16} fontWeight="700" className="flex-1">{exerciseName}</ExerciseName>
           {routineDayId && (
             <View
               style={{ flexDirection: 'row', borderRadius: 20, padding: 2, backgroundColor: colors.bgTertiary }}

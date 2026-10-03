@@ -4,7 +4,7 @@ import { Check } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
-import { Card } from '../ui/index.js'
+import { Card, ExerciseName } from '../ui/index.js'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
 import ExerciseThumbnail from '../Exercise/ExerciseThumbnail.jsx'
 
@@ -75,9 +75,9 @@ function ExerciseSearchList({
                   <div className="flex items-center gap-3">
                     <ExerciseThumbnail gifKey={exercise.gif_key} alt={getExerciseName(exercise)} />
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate" style={{ color: colors.textPrimary }}>
+                      <ExerciseName as="h4" fontSize={14} fontWeight="500" reserveLines>
                         {getExerciseName(exercise)}
-                      </h4>
+                      </ExerciseName>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <ExerciseBadge
                           label={getMuscleGroupName(exercise.muscle_group)}
