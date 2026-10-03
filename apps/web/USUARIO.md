@@ -1,5 +1,7 @@
 # Perfil del Usuario y Preferencias de Entrenamiento
 
+> Perfil personal para pegar en un chatbot externo al generar rutinas. No describe el comportamiento de la app: las reglas de progresión, esfuerzo y formato de rutina viven en `packages/shared/src/lib/`.
+
 ## Datos Personales
 
 - **Tipo de cuerpo**: Ectomorfo
@@ -102,59 +104,6 @@
 | Pedrosa et al. | 2023 | Ejercicios en stretch +20% hipertrofia |
 | Kassiano et al. | 2023 | Cables > mancuernas para laterales (curva de resistencia) |
 
-## Formato JSON para Rutinas
-
-Cuando generes rutinas, usar este formato:
-
-```json
-{
-  "nombre": "Nombre de la rutina",
-  "perfil": {
-    "tipo_cuerpo": "Ectomorfo",
-    "experiencia": "+10 años",
-    "foco": "descripción del foco",
-    "duracion_max_min": 90,
-    "frecuencia_dias": 4
-  },
-  "dias": [
-    {
-      "dia": 1,
-      "nombre": "Nombre del día",
-      "duracion_estimada_min": 85,
-      "bloques": [
-        {
-          "bloque": "Nombre del bloque",
-          "duracion_min": 10,
-          "ejercicios": [
-            {
-              "nombre": "Nombre en español",
-              "nombre_en": "English name",
-              "musculos": {
-                "principal": "Músculo principal",
-                "secundarios": ["Músculo 1", "Músculo 2"]
-              },
-              "series": 3,
-              "reps": "8-10",
-              "rir": "1-2",
-              "descanso_seg": 90,
-              "tempo": "1-1-2-0",
-              "tempo_razon": "Explicación del tempo",
-              "altura_polea": "Alta/Media/Baja (solo si aplica)",
-              "notas": "Notas de ejecución"
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "volumen_semanal": {},
-  "progresion": {},
-  "referencias_cientificas": []
-}
-```
-
 ## Notas Adicionales
 
-- El usuario ya tiene una rutina de hipertrofia guardada en `routines/hipertrofia.json`
-- La web muestra las rutinas con todos los detalles incluyendo tempo, RIR, descanso, músculos y altura de polea
 - Preferencia por explicaciones basadas en evidencia científica
