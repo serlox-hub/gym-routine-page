@@ -62,3 +62,20 @@ describe('ExerciseCardHeader — asa de arrastre', () => {
     expect(onToggleCollapse).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('ExerciseCardHeader — nombre a dos líneas y asa alineada con la primera', () => {
+  it('la caja del asa mide una línea del nombre, en su mismo tamaño de fuente', () => {
+    const { container } = renderHeader({ dragHandleProps: {} })
+    const name = screen.getByRole('heading', { level: 4, name: 'Press banca' })
+    const handleBox = container.querySelector('svg.lucide-grip-vertical').closest('button').parentElement
+
+    // `em` solo vale como "una línea del nombre" si la caja hereda la fuente del nombre.
+    expect(handleBox.style.fontSize).toBe(name.style.fontSize)
+    expect(handleBox.style.height).toBe(`${name.style.lineHeight}em`)
+  })
+
+  it('el nombre reserva dos líneas para que todas las tarjetas midan lo mismo', () => {
+    renderHeader()
+    expect(screen.getByRole('heading', { level: 4, name: 'Press banca' }).style.minHeight).toBe('2.6em')
+  })
+})

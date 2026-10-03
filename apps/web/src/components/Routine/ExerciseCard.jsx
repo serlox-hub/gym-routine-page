@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2, Link2Off } from 'lucide-react'
-import { DragHandle, Modal, ReorderModal } from '../ui/index.js'
+import { DragHandle, ExerciseName, Modal, ReorderModal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete.js'
@@ -105,9 +105,9 @@ function ExerciseCard({
               onPressEnd={() => { swipe.blockedRef.current = false }}
             />
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold truncate" style={{ color: colors.textPrimary, fontSize: 14 }}>
+              <ExerciseName as="h4" fontSize={14} reserveLines>
                 {getExerciseName(exercise)}
-              </h4>
+              </ExerciseName>
               <div className="flex flex-wrap gap-3 mt-1">
                 <span style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</span>
                 {level != null && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{formatFieldValue(SetField.LEVEL, level)}</span>}

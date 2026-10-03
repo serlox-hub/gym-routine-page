@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown, Link2Off } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
-import { DragHandle, Modal, ReorderModal } from '../ui'
+import { DragHandle, ExerciseName, Modal, ReorderModal } from '../ui'
 import { ExerciseHistoryModal } from '../Workout'
 import { colors } from '../../lib/styles'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete'
@@ -98,9 +98,9 @@ export default function ExerciseCard({
           pregunta a sus descendientes si quieren el movimiento, así que el swipe no arrancaría. */}
       <Pressable onPress={handleCardPress} className="active:opacity-70" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
+          <ExerciseName fontSize={14} reserveLines>
             {getExerciseName(exercise)}
-          </Text>
+          </ExerciseName>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
             <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{series}×{reps}</Text>
             {level != null && (

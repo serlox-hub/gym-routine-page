@@ -1,8 +1,11 @@
-import { View, Text, Pressable, ScrollView } from 'react-native'
+import { View, Text, Pressable, ScrollView, useWindowDimensions } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown, CheckCircle2 } from 'lucide-react-native'
-import { DragHandle, DropdownMenu } from '../ui'
+import { DragHandle, DropdownMenu, ExerciseName } from '../ui'
 import { colors } from '../../lib/styles'
-import { DEFAULT_TRACKED_FIELDS, SetField, getMuscleGroupName, formatEffortBadge, formatFieldValue, t } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, SetField, getMuscleGroupName, getExerciseNameLinesHeight, formatEffortBadge, formatFieldValue } from '@gym/shared'
+
+const NAME_FONT_SIZE = 15
 
 function MetaPill({ children }) {
   return (
@@ -28,6 +31,8 @@ function ExerciseCardHeader({
   dragHandleProps = null,
   isReordering = false,
 }) {
+  const { t } = useTranslation()
+  const { fontScale } = useWindowDimensions()
   const muscleGroupLabel = getMuscleGroupName(muscleGroup)
 
   const setsRepsParts = []
@@ -41,15 +46,16 @@ function ExerciseCardHeader({
   return (
     <Pressable onPress={onToggleCollapse} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
       {dragHandleProps ? (
-        // Centrada con la línea del nombre; el asa reclama el toque, así que no pliega la tarjeta.
-        <View style={{ paddingTop: 2 }}>
+        // Centred on the name's first line: the box is one line of the name tall, scaled like the
+        // name with the system text size. The handle claims the touch, so it does not fold the card.
+        <View style={{ height: getExerciseNameLinesHeight(NAME_FONT_SIZE, fontScale, 1), justifyContent: 'center' }}>
           <DragHandle dragHandleProps={dragHandleProps} disabled={isReordering} />
         </View>
       ) : null}
       <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600', marginBottom: 6 }} numberOfLines={1}>
+        <ExerciseName fontSize={NAME_FONT_SIZE} reserveLines className="mb-1.5">
           {exerciseName}
-        </Text>
+        </ExerciseName>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}

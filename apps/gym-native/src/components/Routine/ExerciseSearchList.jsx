@@ -5,7 +5,7 @@ import { Check } from 'lucide-react-native'
 import { colors } from '../../lib/styles'
 import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
-import { Card } from '../ui'
+import { Card, ExerciseName } from '../ui'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar'
 import ExerciseThumbnail from '../Exercise/ExerciseThumbnail'
 
@@ -45,9 +45,9 @@ export default function ExerciseSearchList({
           <View className="flex-row items-center gap-3">
             <ExerciseThumbnail gifKey={exercise.gif_key} alt={getExerciseName(exercise)} />
             <View className="flex-1" style={{ minWidth: 0 }}>
-              <Text className="font-medium text-sm" style={{ color: colors.textPrimary }} numberOfLines={1}>
+              <ExerciseName fontSize={14} fontWeight="500" reserveLines>
                 {getExerciseName(exercise)}
-              </Text>
+              </ExerciseName>
               <View className="flex-row items-center gap-1.5 mt-1 flex-wrap">
                 <ExerciseBadge
                   label={getMuscleGroupName(exercise.muscle_group)}

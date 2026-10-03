@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import { useExerciseHistory, useExerciseHistorySummary, useExerciseChartData } from '../../hooks/useWorkout.js'
 import { useSelectedGym } from '@gym/shared'
-import { LoadingSpinner, Modal } from '../ui/index.js'
+import { ExerciseName, LoadingSpinner, Modal } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import HistoryChart from './HistoryChart.jsx'
 import HistoryTable from './HistoryTable.jsx'
@@ -105,7 +105,7 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, track
     <Modal isOpen={isOpen} onClose={onClose} position="bottom" maxWidth="max-w-lg" className="max-h-[85vh] flex flex-col" noBorder>
       <div className="p-4 shrink-0" style={{ borderBottom: `1px solid ${colors.border}` }}>
         <div className="flex items-center gap-3">
-          <h3 className="font-bold truncate flex-1 min-w-0" style={{ color: colors.textPrimary }}>{exerciseName}</h3>
+          <ExerciseName as="h3" fontSize={16} fontWeight="700" className="flex-1 min-w-0">{exerciseName}</ExerciseName>
           {routineDayId && (
             <div className="shrink-0 grid grid-cols-2 rounded-full p-0.5 relative" style={{ backgroundColor: colors.bgTertiary }}>
               <div

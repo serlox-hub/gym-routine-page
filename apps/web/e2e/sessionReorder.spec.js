@@ -131,6 +131,19 @@ async function dragHandleTo(page, handle, getTargetY) {
 // More than dnd-kit's activation distance (`design.gestureActivationDistance`).
 const ACTIVATION_STEP = 10
 
+/**
+ * Drags exercise `name` so that its CARD's centre, not the pointer, ends at `getTargetY()`: the list
+ * picks the slot by the dragged card's centre (`closestCenter`), and the handle sits on the name's
+ * first line, well above that centre. Aiming the pointer would land a slot further down.
+ */
+async function dragExerciseTo(page, name, getTargetY) {
+  const handle = exerciseHandle(page, name)
+  const handleBox = await handle.boundingBox()
+  const cardBox = await exerciseHeader(page, name).locator('xpath=..').boundingBox()
+  const grabOffset = (cardBox.y + cardBox.height / 2) - (handleBox.y + handleBox.height / 2)
+  await dragHandleTo(page, handle, async () => (await getTargetY()) - grabOffset)
+}
+
 async function rowCenter(page, name) {
   const box = await exerciseHeader(page, name).boundingBox()
   return box.y + box.height / 2
@@ -146,7 +159,7 @@ test.describe('Session: drag to reorder, join and leave supersets', () => {
 
     // Cuatro onto Tres's slot (between Dos and Tres): it joins. ONE header is the proof: had it
     // stayed individual between two members, the superset would render as two cards.
-    await dragHandleTo(page, exerciseHandle(page, 'E2E Cuatro'), () => rowCenter(page, 'E2E Tres'))
+    await dragExerciseTo(page, 'E2E Cuatro', () => rowCenter(page, 'E2E Tres'))
     const joined = ['E2E Uno', 'E2E Dos', 'E2E Cuatro', 'E2E Tres', 'E2E Cinco']
     await expect(exerciseNames(page)).toHaveText(joined)
     await expect(supersetHeaders(page)).toHaveCount(1)
@@ -157,7 +170,7 @@ test.describe('Session: drag to reorder, join and leave supersets', () => {
     await expect(supersetHeaders(page)).toHaveCount(1)
 
     // Dos (a member) onto Cinco's slot, below the footer: it leaves.
-    await dragHandleTo(page, exerciseHandle(page, 'E2E Dos'), () => rowCenter(page, 'E2E Cinco'))
+    await dragExerciseTo(page, 'E2E Dos', () => rowCenter(page, 'E2E Cinco'))
     const left = ['E2E Uno', 'E2E Cuatro', 'E2E Tres', 'E2E Cinco', 'E2E Dos']
     await expect(exerciseNames(page)).toHaveText(left)
     await expect(supersetHeaders(page)).toHaveCount(1)
@@ -188,7 +201,7 @@ test.describe('Session: drag to reorder, join and leave supersets', () => {
     await expect(exerciseNames(page)).toHaveText(moved, { timeout: 10000 })
 
     // Criterion 2: Uno onto Tres, the last member, lands right above the footer and joins last.
-    await dragHandleTo(page, exerciseHandle(page, 'E2E Uno'), () => rowCenter(page, 'E2E Tres'))
+    await dragExerciseTo(page, 'E2E Uno', () => rowCenter(page, 'E2E Tres'))
     const joinedAtEnd = ['E2E Cuatro', 'E2E Dos', 'E2E Tres', 'E2E Uno', 'E2E Cinco']
     await expect(exerciseNames(page)).toHaveText(joinedAtEnd)
     await expect(supersetHeaders(page)).toHaveCount(1)
