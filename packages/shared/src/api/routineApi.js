@@ -1,5 +1,5 @@
 // Barrel re-export — sub-modules contain the implementations
-// See: routineQueryApi.js, routineMutationApi.js, routineIOApi.js
+// See: routineQueryApi.js, routineMutationApi.js, routineIOApi.js, routineShareApi.js
 
 export {
   fetchRoutines,
@@ -33,7 +33,16 @@ export {
 } from './routineMutationApi.js'
 
 export {
+  buildRoutineExport,
   exportRoutine,
   importRoutine,
   duplicateRoutine,
 } from './routineIOApi.js'
+
+export {
+  SharedRoutineNotFoundError,
+  enableRoutineShare,
+  disableRoutineShare,
+  fetchSharedRoutine,
+  importSharedRoutine,
+} from './routineShareApi.js'

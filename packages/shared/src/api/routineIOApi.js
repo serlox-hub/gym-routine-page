@@ -34,113 +34,51 @@ function resolveMuscleGroupId(name, index) {
 // ============================================
 
 /**
- * Exporta una rutina completa a JSON (esquema ROUTINE_EXPORT_VERSION).
- * Incluye `name_en` por ejercicio como clave estable para el re-import (independiente del idioma).
- * N+1 fix: la query de días incluye id, evitando una query extra por día
- * @param {string|number} routineId
- * @returns {Promise<object>} exportData con shape {version, exportedAt, exercises, routine}
+ * Turns the rows of `routine_export_rows` (migration 068) into the export JSON (schema
+ * ROUTINE_EXPORT_VERSION). Pure, and the ONLY place that knows the JSON shape: the normal export and
+ * the shared link (`get_shared_routine`, same rows) both go through it, as the SQL function is the
+ * only list of export columns. A routine column new to the export is added in both, never in a
+ * query of its own.
+ * Includes `name_en` per exercise as the stable key for the re-import (independent of the language).
+ * @param {{ routine: object, days: object[], routine_exercises: object[], exercises: object[] }} rows
+ * @returns {object} exportData with shape {version, exportedAt, exercises, routine}
  */
-export async function exportRoutine(routineId) {
-  // Obtener rutina base
-  const { data: routine, error: routineError } = await getClient()
-    .from('routines')
-    .select('name, description')
-    .eq('id', routineId)
-    .single()
+export function buildRoutineExport(rows) {
+  const exercisesById = new Map((rows.exercises || []).map(exercise => [exercise.id, exercise]))
+  const usedExerciseIds = new Set()
 
-  if (routineError) throw routineError
+  const toExportedExercise = (routineExercise) => {
+    usedExerciseIds.add(routineExercise.exercise_id)
+    return {
+      exercise_name: exercisesById.get(routineExercise.exercise_id)?.name_es,
+      series: routineExercise.series,
+      target_field: routineExercise.target_field,
+      reps: routineExercise.reps,
+      level: routineExercise.level,
+      rir: routineExercise.rir,
+      rest_seconds: routineExercise.rest_seconds,
+      notes: routineExercise.notes,
+      superset_group: routineExercise.superset_group,
+    }
+  }
 
-  // Obtener días — incluye id para evitar query extra por día (N+1 fix)
-  const { data: days, error: daysError } = await getClient()
-    .from('routine_days')
-    .select('id, name, estimated_duration_min, sort_order')
-    .eq('routine_id', routineId)
-    .order('sort_order')
+  const days = [...(rows.days || [])]
+    // A day without sort_order goes last, as Postgres orders ASC (NULLS LAST)
+    .sort((a, b) => (a.sort_order == null) - (b.sort_order == null) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map(day => {
+      const dayExercises = (rows.routine_exercises || [])
+        .filter(re => re.routine_day_id === day.id && exercisesById.has(re.exercise_id))
+        .sort((a, b) => a.sort_order - b.sort_order)
+      const warmup = dayExercises.filter(re => re.is_warmup)
+      const main = dayExercises.filter(re => !re.is_warmup)
 
-  if (daysError) throw daysError
-
-  // Set para recopilar ejercicios únicos
-  const exerciseIds = new Set()
-
-  // Obtener ejercicios para cada día directamente desde routine_exercises
-  const daysWithExercises = await Promise.all(
-    days.map(async (day) => {
-      const { data: exercises, error: exError } = await getClient()
-        .from('routine_exercises')
-        .select(`
-          series,
-          target_field,
-          reps,
-          level,
-          rir,
-          rest_seconds,
-          notes,
-          sort_order,
-          is_warmup,
-          superset_group,
-          exercise:exercises (
-            id,
-            name:name_es,
-            tracked_fields,
-            instructions,
-            muscle_group:muscle_groups!muscle_group_id(name:name_es)
-          )
-        `)
-        .eq('routine_day_id', day.id)
-        .order('sort_order')
-
-      if (exError) throw exError
-
-      // Agrupar por is_warmup para producir bloques en el formato de export
-      const warmup = (exercises || []).filter(re => re.is_warmup)
-      const main = (exercises || []).filter(re => !re.is_warmup)
-
+      // Bloques del formato de export, agrupados por is_warmup
       const blocks = []
       if (warmup.length > 0) {
-        blocks.push({
-          name: BLOCK_NAMES.WARMUP,
-          sort_order: 0,
-          duration_min: null,
-          exercises: warmup
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map(re => {
-              exerciseIds.add(re.exercise.id)
-              return {
-                exercise_name: re.exercise.name,
-                series: re.series,
-                target_field: re.target_field,
-                reps: re.reps,
-                level: re.level,
-                rir: re.rir,
-                rest_seconds: re.rest_seconds,
-                notes: re.notes,
-                superset_group: re.superset_group,
-              }
-            })
-        })
+        blocks.push({ name: BLOCK_NAMES.WARMUP, sort_order: 0, duration_min: null, exercises: warmup.map(toExportedExercise) })
       }
       if (main.length > 0) {
-        blocks.push({
-          name: BLOCK_NAMES.MAIN,
-          sort_order: 1,
-          duration_min: null,
-          exercises: main
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map(re => {
-              exerciseIds.add(re.exercise.id)
-              return {
-                exercise_name: re.exercise.name,
-                series: re.series,
-                target_field: re.target_field,
-                reps: re.reps,
-                level: re.level,
-                rir: re.rir,
-                rest_seconds: re.rest_seconds,
-                notes: re.notes,
-                superset_group: re.superset_group,
-              }
-            })
-        })
+        blocks.push({ name: BLOCK_NAMES.MAIN, sort_order: 1, duration_min: null, exercises: main.map(toExportedExercise) })
       }
 
       return {
@@ -150,39 +88,42 @@ export async function exportRoutine(routineId) {
         blocks,
       }
     })
-  )
-
-  // Obtener definiciones completas de los ejercicios usados
-  const { data: exercises, error: exercisesError } = await getClient()
-    .from('exercises')
-    .select(`
-      name:name_es,
-      name_en,
-      tracked_fields,
-      distance_unit,
-      instructions,
-      muscle_group:muscle_groups!muscle_group_id(name:name_es)
-    `)
-    .in('id', Array.from(exerciseIds))
-
-  if (exercisesError) throw exercisesError
 
   return {
     version: ROUTINE_EXPORT_VERSION,
     exportedAt: new Date().toISOString(),
-    exercises: exercises.map(ex => ({
-      name_es: ex.name,
-      name_en: ex.name_en,
-      tracked_fields: ex.tracked_fields,
-      distance_unit: ex.distance_unit,
-      instructions: ex.instructions,
-      muscle_group_name: ex.muscle_group?.name,
-    })),
+    exercises: [...usedExerciseIds].map(id => {
+      const exercise = exercisesById.get(id)
+      return {
+        name_es: exercise.name_es,
+        name_en: exercise.name_en,
+        tracked_fields: exercise.tracked_fields,
+        distance_unit: exercise.distance_unit,
+        instructions: exercise.instructions,
+        muscle_group_name: exercise.muscle_group_name_es,
+      }
+    }),
     routine: {
-      ...routine,
-      days: daysWithExercises
-    }
+      name: rows.routine.name,
+      description: rows.routine.description,
+      days,
+    },
   }
+}
+
+/**
+ * Exports one of the caller's routines to JSON (schema ROUTINE_EXPORT_VERSION). One round trip:
+ * `routine_export_rows` reads every row, RLS limits it to the caller's own routines.
+ * @param {string|number} routineId
+ * @returns {Promise<object>} exportData with shape {version, exportedAt, exercises, routine}
+ */
+export async function exportRoutine(routineId) {
+  const { data, error } = await getClient().rpc('routine_export_rows', { p_routine_id: Number(routineId) })
+
+  if (error) throw error
+  if (!data) throw new Error(`Routine ${routineId} not found`)
+
+  return buildRoutineExport(data)
 }
 
 /**

@@ -7,7 +7,7 @@ checklist de "cuando cambie el modelo de datos".
 
 ## Los dos archivos (no confundir)
 
-- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 10**) y mapea BD ↔ JSON.
+- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD) y `buildRoutineExport()` (puro: filas de `routine_export_rows` → JSON). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 10**) y mapea BD ↔ JSON.
 - **`packages/shared/src/lib/routineIO.js`** — prompts de IA (`buildChatbotPrompt`, `buildAdaptRoutinePrompt`) y el doc del formato (`ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`). Puro, sin BD.
 
 ⚠️ **Tercer consumidor del shape del export:** `packages/shared/src/lib/routineTextFormat.js` (compartir rutina como texto) empareja `blocks[].exercises[].exercise_name` con `exercises[].name_es` para leer sus `tracked_fields`, que deciden la escala de esfuerzo. Si se recortan columnas del catálogo del export, **degrada en silencio** a la escala RIR (un RPE se pintaría `@4` en vez de "Muy duro"). Hay test de shape en `routineApi.test.js`.
@@ -76,7 +76,7 @@ Since v10 each exercise of a day carries `superset_group`. Before it, duplicatin
 (tablas `routines`, `routine_days`, `routine_exercises`, `exercises`)
 
 1. Tras crear/aplicar la migración, regenerar el snapshot: `npm run db:schema` (en `apps/web`, requiere Docker) y commitear `apps/web/supabase/schema.sql` junto con la migración. Mantiene el snapshot == migraciones. ⚠️ Ejecútalo desde `apps/web` y no lo sustituyas por un dump a secas: perdería la garantía de que el snapshot == migraciones. Ver `CLAUDE.md` § Database Schema.
-2. Actualizar `exportRoutine()` para incluir los nuevos campos en el JSON.
+2. Add the new column to `routine_export_rows` (a new migration that recreates it: since 068 it is the ONLY list of export columns, read by `exportRoutine` and by the shared link `get_shared_routine`) and map it to the JSON in `buildRoutineExport()` (`routineIOApi.js`). A column added anywhere else reaches one of the two paths and silently misses the other. ⚠️ It must stay SECURITY INVOKER (the default, so `schema.sql` does not print it; `get_shared_routine` right next to it is DEFINER): as DEFINER any logged-in user could read any routine by id. Recreate it with `CREATE OR REPLACE` so its grants survive; a change of return type needs DROP + CREATE and its grants again.
 3. Actualizar `importRoutine()` para leer los nuevos campos del JSON.
 4. Actualizar `buildChatbotPrompt()` / `ROUTINE_JSON_FORMAT` si afecta al prompt de IA.
 5. Incrementar `ROUTINE_EXPORT_VERSION` si hay cambios breaking (importRoutine debe seguir aceptando versiones antiguas).
