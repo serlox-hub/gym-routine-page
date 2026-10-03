@@ -11,6 +11,7 @@ import { useIsTabBarVisible } from './hooks/useTabBar.js'
 import { colors } from './lib/styles.js'
 import { useRestoreActiveSession, useSyncPendingSets, useSyncPendingGymChange, useTimerEngine } from './hooks/useWorkout.js'
 import { useLanguageSync } from '@gym/shared'
+import { takePendingSharedRoutinePath } from './lib/pendingSharedRoutine.js'
 
 const Landing = lazy(() => import('./pages/Landing.jsx'))
 const Home = lazy(() => import('./pages/Home.jsx'))
@@ -30,9 +31,21 @@ const Login = lazy(() => import('./pages/Login.jsx'))
 const Signup = lazy(() => import('./pages/Signup.jsx'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'))
+const SharedRoutine = lazy(() => import('./pages/SharedRoutine.jsx'))
 
 function HomeOrLanding() {
   const { isAuthenticated, isLoading } = useAuth()
+  const navigate = useNavigate()
+
+  // Back from signing up or logging in on a shared routine's page (`pages/SharedRoutine.jsx`). Here
+  // and not at the app root: every way in lands on home with a session (Login's default target,
+  // Google's redirect, the signup confirmation link), and at the root Login's own redirect to home
+  // would run after this one and win.
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const pendingPath = takePendingSharedRoutinePath()
+    if (pendingPath) navigate(pendingPath, { replace: true })
+  }, [isAuthenticated, navigate])
 
   if (isLoading) {
     return (
@@ -99,6 +112,7 @@ function App() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/r/:token" element={<SharedRoutine />} />
 
             {/* Protected routes */}
             <Route path="/" element={<HomeOrLanding />} />

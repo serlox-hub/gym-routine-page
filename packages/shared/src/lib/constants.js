@@ -87,6 +87,7 @@ export const RPE_LABELS = RPE_OPTIONS.reduce((acc, opt) => {
 export const QUERY_KEYS = {
   ROUTINES: 'routines',
   ROUTINE: 'routine',
+  SHARED_ROUTINE: 'shared-routine',
   ROUTINE_DAYS: 'routine-days',
   ROUTINE_DAY: 'routine-day',
   ROUTINE_BLOCKS: 'routine-blocks',

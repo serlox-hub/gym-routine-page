@@ -279,5 +279,35 @@
   "share": {
     "restMin": "{{minutes}} min rest",
     "restSec": "{{seconds}}s rest"
+  },
+  "shareLink": {
+    "createLink": "Create share link",
+    "createConfirmTitle": "Create a share link?",
+    "createConfirmMessage": "Anyone with the link will be able to see this routine, notes included.",
+    "createConfirm": "Create link",
+    "share": "Share link",
+    "readyTitle": "Link ready",
+    "readyMessage": "Anyone who has it can see the routine and import it.",
+    "shareNow": "Share",
+    "copied": "Link copied",
+    "copyFailed": "Couldn't copy the link",
+    "shareFailed": "Couldn't share the link",
+    "stop": "Stop sharing",
+    "stopConfirmTitle": "Stop sharing this routine?",
+    "stopConfirmMessage": "The current link will stop working for everyone. If you share it again, it gets a new link.",
+    "stopped": "No longer shared",
+    "enableError": "Couldn't create the link",
+    "disableError": "Couldn't stop sharing",
+    "loadError": "Couldn't load the routine",
+    "deadLinkTitle": "This link no longer works",
+    "deadLinkMessage": "It may have stopped being shared or been deleted.",
+    "goHome": "Go to home",
+    "import": "Import to my routines",
+    "importing": "Importing...",
+    "imported": "Routine imported",
+    "importError": "Couldn't import the routine",
+    "signupToImport": "Create an account to import it",
+    "loginToImport": "I already have an account",
+    "duration": "{{minutes}} min"
   }
 }

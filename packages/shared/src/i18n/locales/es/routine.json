@@ -279,5 +279,35 @@
   "share": {
     "restMin": "{{minutes}} min de descanso",
     "restSec": "{{seconds}}s de descanso"
+  },
+  "shareLink": {
+    "createLink": "Crear enlace para compartir",
+    "createConfirmTitle": "¿Crear un enlace para compartir?",
+    "createConfirmMessage": "Cualquiera que tenga el enlace podrá ver esta rutina, notas incluidas.",
+    "createConfirm": "Crear enlace",
+    "share": "Compartir enlace",
+    "readyTitle": "Enlace listo",
+    "readyMessage": "Cualquiera que lo tenga puede ver la rutina e importarla.",
+    "shareNow": "Compartir",
+    "copied": "Enlace copiado",
+    "copyFailed": "No se pudo copiar el enlace",
+    "shareFailed": "No se pudo compartir el enlace",
+    "stop": "Dejar de compartir",
+    "stopConfirmTitle": "¿Dejar de compartir esta rutina?",
+    "stopConfirmMessage": "El enlace actual dejará de funcionar para todos. Si vuelves a compartirla, tendrá un enlace nuevo.",
+    "stopped": "Ya no se comparte",
+    "enableError": "No se pudo crear el enlace",
+    "disableError": "No se pudo dejar de compartir",
+    "loadError": "No se pudo cargar la rutina",
+    "deadLinkTitle": "Este enlace ya no funciona",
+    "deadLinkMessage": "Puede que ya no se comparta o que se haya borrado.",
+    "goHome": "Ir al inicio",
+    "import": "Importar a mis rutinas",
+    "importing": "Importando...",
+    "imported": "Rutina importada",
+    "importError": "No se pudo importar la rutina",
+    "signupToImport": "Crea una cuenta para importarla",
+    "loginToImport": "Ya tengo cuenta",
+    "duration": "{{minutes}} min"
   }
 }
