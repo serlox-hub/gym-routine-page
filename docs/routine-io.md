@@ -1,13 +1,13 @@
 # Import/export de rutinas (JSON) — detalle
 
-Referencia de consulta (no invariante). La invariante corta (dos archivos, versión 9, emparejar
+Referencia de consulta (no invariante). La invariante corta (dos archivos, versión 10, emparejar
 por clave estable, retrocompatibilidad) + puntero viven en `CLAUDE.md` → "Archivos críticos:
 import/export de rutinas (JSON)". Aquí el detalle completo, el rationale del emparejamiento y el
 checklist de "cuando cambie el modelo de datos".
 
 ## Los dos archivos (no confundir)
 
-- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 9**) y mapea BD ↔ JSON.
+- **`packages/shared/src/api/routineIOApi.js`** — `exportRoutine()` / `importRoutine()` / `duplicateRoutine()` (tocan BD). Define el **esquema** vía `ROUTINE_EXPORT_VERSION` (**actual: 10**) y mapea BD ↔ JSON.
 - **`packages/shared/src/lib/routineIO.js`** — prompts de IA (`buildChatbotPrompt`, `buildAdaptRoutinePrompt`) y el doc del formato (`ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`). Puro, sin BD.
 
 ⚠️ **Tercer consumidor del shape del export:** `packages/shared/src/lib/routineTextFormat.js` (compartir rutina como texto) empareja `blocks[].exercises[].exercise_name` con `exercises[].name_es` para leer sus `tracked_fields`, que deciden la escala de esfuerzo. Si se recortan columnas del catálogo del export, **degrada en silencio** a la escala RIR (un RPE se pintaría `@4` en vez de "Muy duro"). Hay test de shape en `routineApi.test.js`.
@@ -66,6 +66,10 @@ only carries the name, and on an existing exercise the database decides.
 ⚠️ Old JSON still imports but loses off-scale values: until 2026-08 the AI prompt asked for `rir`
 0-5 (JSON v6 and earlier), so such a JSON with `rir: 4` or `5` on weight × reps, or `0` on an
 exercise without reps, arrives with no effort. Owner's decision (2026-10-03, issue #21).
+
+## Supersets: `superset_group` (v10)
+
+Since v10 each exercise of a day carries `superset_group`. Before it, duplicating a routine (export + import) and re-importing a JSON lost every superset. The number is only unique within a day (`getNextSupersetId` over the day's exercises), so it is copied as is, never renumbered. The JSON is untrusted: `sanitizeImportedSupersetGroups` (`lib/supersetUtils.js`) undoes, without an error, a group with one member or with its members split by other rows, because a superset is a run of consecutive rows (#87). It checks the warmup rows and the main rows apart (what renders as one list, not each JSON block), and only the rows that resolved to an exercise. The AI prompt (`ROUTINE_JSON_RULES`) documents the field, so adapting a routine with the AI can keep its supersets.
 
 ## Cuando se modifique el modelo de datos
 

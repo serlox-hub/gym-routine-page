@@ -152,6 +152,37 @@ describe('exportRoutine', () => {
     // Contrato completo (no solo el shape): el consumidor real resuelve la escala con ese catálogo
     expect(formatRoutineAsText(exported)).toContain('Muy duro')
   })
+
+  it('exporta superset_group de cada ejercicio, en calentamiento y en principal', async () => {
+    const fakeDays = [{ id: 'day-1', name: 'Día 1', estimated_duration_min: 60, sort_order: 1 }]
+    const exercise = (id, name) => ({ id, name, tracked_fields: ['weight', 'reps'], instructions: null, muscle_group: { name: 'Pecho' } })
+    const fakeRoutineExercises = [
+      { series: 2, reps: '10', sort_order: 1, is_warmup: true, superset_group: 1, exercise: exercise(1, 'A') },
+      { series: 2, reps: '10', sort_order: 2, is_warmup: true, superset_group: 1, exercise: exercise(2, 'B') },
+      { series: 3, reps: '8', sort_order: 3, is_warmup: false, superset_group: 2, exercise: exercise(3, 'C') },
+      { series: 3, reps: '8', sort_order: 4, is_warmup: false, superset_group: null, exercise: exercise(4, 'D') },
+    ]
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'routines') {
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { name: 'R', description: null, goal: null }, error: null }) }
+        }
+        if (table === 'routine_days') {
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), order: vi.fn().mockResolvedValue({ data: fakeDays, error: null }) }
+        }
+        if (table === 'routine_exercises') {
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), order: vi.fn().mockResolvedValue({ data: fakeRoutineExercises, error: null }) }
+        }
+        return { select: vi.fn().mockReturnThis(), in: vi.fn().mockResolvedValue({ data: [], error: null }) }
+      },
+    }))
+
+    const exported = await exportRoutine('routine-123')
+    const groups = exported.routine.days[0].blocks.flatMap(block => block.exercises.map(ex => [ex.exercise_name, ex.superset_group]))
+
+    expect(groups).toEqual([['A', 1], ['B', 1], ['C', 2], ['D', null]])
+  })
 })
 
 // ============================================
@@ -824,6 +855,67 @@ describe('importRoutine', () => {
   })
 })
 
+describe('importRoutine superset_group', () => {
+  const systemRows = ['A', 'B', 'C', 'D'].map(name => ({ id: `sys-${name}`, name_es: name, name_en: null, tracked_fields: ['weight', 'reps'] }))
+
+  function mockImportClient(insertCalls) {
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (!insertCalls[table]) insertCalls[table] = []
+        if (table === 'exercises') {
+          const p = Promise.resolve({ data: systemRows, error: null })
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), is: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return { insert: vi.fn((record) => { insertCalls[table].push(record); return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) } }) }
+        }
+        return { insert: vi.fn((record) => { insertCalls[table].push(...(Array.isArray(record) ? record : [record])); return Promise.resolve({ data: null, error: null }) }) }
+      },
+    }))
+  }
+
+  const row = (name, supersetGroup) => ({ exercise_name: name, series: 3, reps: '10', ...(supersetGroup === undefined ? {} : { superset_group: supersetGroup }) })
+  const jsonWithBlocks = (blocks) => ({ routine: { name: 'R', description: null, days: [{ name: 'D1', sort_order: 0, blocks }] } })
+
+  async function importGroups(blocks) {
+    const insertCalls = {}
+    mockImportClient(insertCalls)
+    await importRoutine(jsonWithBlocks(blocks), 'user-1', {})
+    return insertCalls['routine_exercises'].map(r => r.superset_group)
+  }
+
+  it('keeps a superset whose members are consecutive', async () => {
+    expect(await importGroups([{ name: 'Principal', exercises: [row('A', 1), row('B', 1), row('C', null)] }])).toEqual([1, 1, null])
+  })
+
+  it('imports a JSON from before v10 (no superset_group) without supersets and without error', async () => {
+    expect(await importGroups([{ name: 'Principal', exercises: [row('A'), row('B')] }])).toEqual([null, null])
+  })
+
+  it('undoes a single-member group and a group whose members are not consecutive', async () => {
+    expect(await importGroups([{ name: 'Principal', exercises: [row('A', 1), row('B', 2), row('C', null), row('D', 2)] }]))
+      .toEqual([null, null, null, null])
+  })
+
+  it('keeps a group that is consecutive in the warmup and consecutive in the main block', async () => {
+    expect(await importGroups([
+      { name: 'Calentamiento', exercises: [row('A', 1), row('B', 1)] },
+      { name: 'Principal', exercises: [row('C', 1), row('D', 1)] },
+    ])).toEqual([1, 1, 1, 1])
+  })
+
+  it('checks consecutiveness per warmup/main list, not per JSON block', async () => {
+    expect(await importGroups([
+      { name: 'Principal', exercises: [row('A', 1), row('B', 1)] },
+      { name: 'Main', exercises: [row('C', null), row('D', 1)] },
+    ])).toEqual([null, null, null, null])
+  })
+
+  it('undoes a group left with one member when another member does not resolve', async () => {
+    expect(await importGroups([{ name: 'Principal', exercises: [row('A', 1), row('Unknown', 1)] }])).toEqual([null])
+  })
+})
+
 // ============================================
 // TEST: duplicateRoutine — crea copia con sufijo "(copia)"
 // ============================================
@@ -936,6 +1028,57 @@ describe('duplicateRoutine', () => {
     expect(insertedRoutines[0].name).toBe('Rutina Original (copia)')
     expect(result).toBeDefined()
     expect(result.name).toBe('Rutina Original (copia)')
+  })
+
+  it('keeps the supersets of the original routine', async () => {
+    const insertedRoutineExercises = []
+    const exercise = (id, name) => ({ id, name, tracked_fields: ['weight', 'reps'], instructions: null, muscle_group: { name: 'Pecho' } })
+    const fakeRoutineExercises = [
+      { series: 3, reps: '10', sort_order: 1, is_warmup: false, superset_group: 1, exercise: exercise(1, 'Press banca') },
+      { series: 3, reps: '10', sort_order: 2, is_warmup: false, superset_group: 1, exercise: exercise(2, 'Remo') },
+      { series: 3, reps: '10', sort_order: 3, is_warmup: false, superset_group: null, exercise: exercise(3, 'Curl') },
+    ]
+    const catalog = [
+      { id: 1, name_es: 'Press banca', name: 'Press banca', name_en: null, tracked_fields: ['weight', 'reps'] },
+      { id: 2, name_es: 'Remo', name: 'Remo', name_en: null, tracked_fields: ['weight', 'reps'] },
+      { id: 3, name_es: 'Curl', name: 'Curl', name_en: null, tracked_fields: ['weight', 'reps'] },
+    ]
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'routines') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: { name: 'R', description: null }, error: null }),
+            insert: vi.fn((record) => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 1, ...record }, error: null }) })),
+          }
+        }
+        if (table === 'routine_days') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({ data: [{ id: 'day-1', name: 'D1', estimated_duration_min: null, sort_order: 1 }], error: null }),
+            insert: vi.fn((record) => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'new-day', ...record }, error: null }) })),
+          }
+        }
+        if (table === 'routine_exercises') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({ data: fakeRoutineExercises, error: null }),
+            insert: vi.fn((rows) => { insertedRoutineExercises.push(...rows); return Promise.resolve({ data: null, error: null }) }),
+          }
+        }
+        // exercises: the export reads the catalog with .in(), the import reads system/custom with .eq().is()
+        const resolved = Promise.resolve({ data: catalog, error: null })
+        return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), is: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), then: resolved.then.bind(resolved) }
+      },
+    }))
+
+    await duplicateRoutine('routine-1', 'user-1')
+
+    expect(insertedRoutineExercises.map(r => [r.exercise_id, r.superset_group])).toEqual([[1, 1], [2, 1], [3, null]])
   })
 
   it('usa el nombre personalizado si se proporciona', async () => {

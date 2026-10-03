@@ -72,3 +72,36 @@ export function countExercisesInBlock(block) {
     return count + (group.type === 'individual' ? 1 : group.exercises.length)
   }, 0)
 }
+
+/** Largest value the `integer` column `superset_group` holds. */
+const MAX_SUPERSET_GROUP = 2147483647
+
+/**
+ * Superset groups an imported list can keep, in the block's order. The JSON is untrusted (AI,
+ * hand edits), and a superset is a run of CONSECUTIVE rows (#87): a group written as is with one
+ * member, or with its members split by other rows, would render as a lonely or doubled purple
+ * card. Such a group is undone (its rows become individual), not rejected: the routine still
+ * imports. A value that is not a positive integer within the `integer` column's range is dropped
+ * too, or the insert fails and leaves the routine half imported.
+ * @param {unknown[]} groups - the `superset_group` of each row of ONE list (warmup or main), in order
+ * @returns {Array<number|null>} same length; the group to write, or null
+ */
+export function sanitizeImportedSupersetGroups(groups) {
+  const values = (groups || []).map(group => (Number.isInteger(group) && group > 0 && group <= MAX_SUPERSET_GROUP ? group : null))
+  const runsByGroup = new Map()
+  values.forEach((group, index) => {
+    if (group === null) return
+    const run = runsByGroup.get(group)
+    if (run && run.last === index - 1) {
+      run.last = index
+      run.size++
+    } else {
+      runsByGroup.set(group, { last: index, size: 1, split: Boolean(run) })
+    }
+  })
+  return values.map(group => {
+    if (group === null) return null
+    const run = runsByGroup.get(group)
+    return run.size > 1 && !run.split ? group : null
+  })
+}

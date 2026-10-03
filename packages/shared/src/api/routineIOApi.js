@@ -2,11 +2,12 @@ import { getClient } from './_client.js'
 import { BLOCK_NAMES } from '../lib/constants.js'
 import { MAX_PRESCRIBED_LEVEL, isTargetField, normalizeTrackedFields, resolveTargetField, trackedFieldsFromLegacyType } from '../lib/measurementFields.js'
 import { isValidEffortValue } from '../lib/effortScale.js'
+import { sanitizeImportedSupersetGroups } from '../lib/supersetUtils.js'
 import { t } from '../i18n/index.js'
 import { normalizeExerciseName, buildExerciseIndex, resolveExerciseId } from '../lib/exerciseMatch.js'
 
-/** Versión del esquema de export/import JSON. v9 añade `distance_unit` por ejercicio (en qué unidad se lee y se teclea su distancia); v8 añadió `target_field` (de qué campo habla el objetivo) y `level` (nivel prescrito) por ejercicio del día; v7 sustituyó `measurement_type` por `tracked_fields`. */
-export const ROUTINE_EXPORT_VERSION = 9
+/** Versión del esquema de export/import JSON. v10 añade `superset_group` por ejercicio del día (antes duplicar o reimportar perdía las superseries); v9 añadió `distance_unit` por ejercicio (en qué unidad se lee y se teclea su distancia); v8 añadió `target_field` (de qué campo habla el objetivo) y `level` (nivel prescrito) por ejercicio del día; v7 sustituyó `measurement_type` por `tracked_fields`. */
+export const ROUTINE_EXPORT_VERSION = 10
 
 // Índice grupo-muscular por nombre normalizado (name_en + name_es) → id.
 // Solo se usa al CREAR ejercicios custom (cuando el ejercicio no está en el catálogo).
@@ -76,6 +77,7 @@ export async function exportRoutine(routineId) {
           notes,
           sort_order,
           is_warmup,
+          superset_group,
           exercise:exercises (
             id,
             name:name_es,
@@ -112,6 +114,7 @@ export async function exportRoutine(routineId) {
                 rir: re.rir,
                 rest_seconds: re.rest_seconds,
                 notes: re.notes,
+                superset_group: re.superset_group,
               }
             })
         })
@@ -134,6 +137,7 @@ export async function exportRoutine(routineId) {
                 rir: re.rir,
                 rest_seconds: re.rest_seconds,
                 notes: re.notes,
+                superset_group: re.superset_group,
               }
             })
         })
@@ -415,9 +419,19 @@ export async function importRoutine(jsonData, userId, options = {}) {
             notes: ex.notes,
             sort_order: sortOrder++,
             is_warmup: isWarmup,
+            superset_group: ex.superset_group,
           })
         }
       }
+    }
+
+    // Checked per `is_warmup` half, which is what renders as one list, not per JSON block: a JSON
+    // with two non-warmup blocks would otherwise pass a group split across them. And on the rows
+    // that resolved, since a dropped exercise can leave its superset with one member.
+    for (const isWarmup of [true, false]) {
+      const half = routineExerciseRows.filter(row => row.is_warmup === isWarmup)
+      const supersetGroups = sanitizeImportedSupersetGroups(half.map(row => row.superset_group))
+      half.forEach((row, index) => { row.superset_group = supersetGroups[index] })
     }
 
     if (routineExerciseRows.length > 0) {
