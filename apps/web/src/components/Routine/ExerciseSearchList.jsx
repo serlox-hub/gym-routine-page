@@ -32,6 +32,8 @@ function ExerciseSearchList({
       equipmentTypeId: selectedEquipmentType,
       sourceFilter,
       getName: getExerciseName,
+      getMuscleGroupText: e => getMuscleGroupName(e.muscle_group),
+      getEquipmentText: e => getEquipmentName(e.equipment_type),
     }),
     [exercises, currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter]
   )

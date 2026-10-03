@@ -2,7 +2,7 @@
  * Utilidades para manipulación de arrays
  */
 
-import { fuzzyMatchScore } from './textUtils.js'
+import { tokenizeSearchQuery, getSearchRank, compareSearchRanks } from './textUtils.js'
 
 /**
  * Reordena un elemento en un array moviéndolo arriba o abajo
@@ -91,20 +91,28 @@ export function moveItemToPosition(array, id, newIndex) {
 }
 
 /**
- * Filtra y ordena ejercicios para el buscador: búsqueda flexible por
- * subsecuencia (case- y tilde-insensitive) + filtros de músculo/equipo/origen +
- * ranking por relevancia. Lógica única compartida por web y native (paridad por
- * construcción). Pura, sin estado.
+ * Filters and sorts exercises for the picker: word search (see getSearchRank)
+ * plus the muscle group / equipment / source filters, all ANDed. One
+ * implementation for web and native. Same input, same output.
  *
- * @param {Array} exercises - Array de ejercicios
+ * Typos only rescue a query that finds nothing better: of the matches, only
+ * those with the fewest typos are kept, so `press` does not bring "Prensa"
+ * (one typo) next to the "Press ..." that match with none. The cut is taken
+ * after the filters, over what the user can actually see.
+ *
+ * @param {Array} exercises
  * @param {Object} [filters]
- * @param {string} [filters.search] - Término de búsqueda (vacío => sin filtro ni reordenación)
- * @param {number|null} [filters.muscleGroupId] - ID de grupo muscular (null => todos)
- * @param {number|null} [filters.equipmentTypeId] - ID de tipo de equipo (null => todos)
- * @param {'all'|'custom'|'system'} [filters.sourceFilter] - Origen ('all' por defecto)
- * @param {Function} [filters.getName] - Accessor del nombre a buscar (default: e => e.name).
- *                                       Web/native pasan getExerciseName (nombre traducido).
- * @returns {Array} Ejercicios filtrados; ordenados por relevancia solo si hay búsqueda
+ * @param {string} [filters.search] - Query (no words => no text filter, incoming order kept)
+ * @param {number|null} [filters.muscleGroupId] - null => all
+ * @param {number|null} [filters.equipmentTypeId] - null => all
+ * @param {'all'|'custom'|'system'} [filters.sourceFilter] - 'all' by default
+ * @param {Function} [filters.getName] - Name to search (default: e => e.name).
+ *        Web/native pass getExerciseName (localized name).
+ * @param {Function} [filters.getMuscleGroupText] - Muscle group to search (default: none).
+ *        Web/native pass e => getMuscleGroupName(e.muscle_group).
+ * @param {Function} [filters.getEquipmentText] - Equipment to search (default: none).
+ *        Web/native pass e => getEquipmentName(e.equipment_type).
+ * @returns {Array} Filtered exercises, sorted by relevance only when searching
  */
 export function filterExercises(exercises, filters = {}) {
   if (!exercises) return []
@@ -115,23 +123,42 @@ export function filterExercises(exercises, filters = {}) {
     equipmentTypeId = null,
     sourceFilter = 'all',
     getName = e => e.name,
+    getMuscleGroupText = () => '',
+    getEquipmentText = () => '',
   } = filters
 
-  const hasSearch = (search || '').trim().length > 0
+  const visible = exercises.filter(e => {
+    if (muscleGroupId && e.muscle_group_id !== muscleGroupId) return false
+    if (equipmentTypeId && e.equipment_type?.id !== equipmentTypeId) return false
+    if (sourceFilter === 'custom' && e.is_system) return false
+    if (sourceFilter === 'system' && !e.is_system) return false
+    return true
+  })
 
-  const result = exercises
-    .map(e => ({ e, score: fuzzyMatchScore(getName(e), search) }))
-    .filter(({ e, score }) => {
-      if (score === null) return false
-      if (muscleGroupId && e.muscle_group_id !== muscleGroupId) return false
-      if (equipmentTypeId && e.equipment_type?.id !== equipmentTypeId) return false
-      if (sourceFilter === 'custom' && e.is_system) return false
-      if (sourceFilter === 'system' && !e.is_system) return false
-      return true
+  const queryWords = tokenizeSearchQuery(search)
+  if (queryWords.length === 0) return visible
+
+  const rankVisible = allowTypos => {
+    const matches = []
+    visible.forEach((e, index) => {
+      const rank = getSearchRank({
+        name: getName(e),
+        muscleGroup: getMuscleGroupText(e),
+        secondary: [getEquipmentText(e)],
+      }, queryWords, { allowTypos })
+      if (rank) matches.push({ e, rank, index })
     })
+    return matches
+  }
+  // Any match with no typo hides every match with one, so typos (the costly
+  // part, on every keystroke) are only computed when there is none.
+  const exact = rankVisible(false)
+  const matches = exact.length > 0 ? exact : rankVisible(true)
 
-  // Ordena por relevancia solo al buscar; sin búsqueda conserva el orden original.
-  if (hasSearch) result.sort((a, b) => b.score - a.score)
-
-  return result.map(({ e }) => e)
+  const minTypos = Math.min(...matches.map(({ rank }) => rank.typos))
+  return matches
+    .filter(({ rank }) => rank.typos === minTypos)
+    // The index keeps ties in incoming order whatever the engine's sort does.
+    .sort((a, b) => compareSearchRanks(a.rank, b.rank) || a.index - b.index)
+    .map(({ e }) => e)
 }
