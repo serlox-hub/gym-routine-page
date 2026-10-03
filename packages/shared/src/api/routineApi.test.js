@@ -692,6 +692,38 @@ describe('importRoutine', () => {
     expect(insertCalls['routine_exercises'][0]).toMatchObject({ target_field: null, level: null })
   })
 
+  it('keeps an explicit level 0 and stores null for a null, empty or missing level', async () => {
+    const insertCalls = {}
+    const systemRow = { id: 'sys-bike', name_es: 'Bici', name_en: 'Bike', tracked_fields: ['level', 'time'] }
+    const exercise = (level) => ({ exercise_name: 'Bici', series: 1, reps: '20min', ...level })
+    const json = {
+      routine: {
+        name: 'R', description: null,
+        days: [{ name: 'D1', sort_order: 0, blocks: [{ name: 'Principal', sort_order: 1, exercises: [
+          exercise({ level: 0 }), exercise({ level: null }), exercise({ level: '' }), exercise({ level: '  ' }), exercise({}), exercise({ level: false }), exercise({ level: '7' }), exercise({ level: 5 }),
+        ] }] }],
+      },
+    }
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (!insertCalls[table]) insertCalls[table] = []
+        if (table === 'exercises') {
+          const p = Promise.resolve({ data: [systemRow], error: null })
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), is: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return { insert: vi.fn((record) => { insertCalls[table].push(record); return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) } }) }
+        }
+        return { insert: vi.fn((record) => { insertCalls[table].push(...(Array.isArray(record) ? record : [record])); return Promise.resolve({ data: null, error: null }) }) }
+      },
+    }))
+
+    await importRoutine(json, 'user-1', {})
+
+    expect(insertCalls['routine_exercises'].map(r => r.level)).toEqual([0, null, null, null, null, null, 7, 5])
+  })
+
   it('enlaza con un ejercicio de sistema por name_en (no crea custom) y resuelve la ref del día', async () => {
     const insertCalls = {}
     const systemRow = { id: 'sys-bench', name_es: 'Press de banca con barra', name_en: 'Barbell Bench Press' }
@@ -927,6 +959,7 @@ describe('duplicateRoutine', () => {
 
   it('crea una copia de la rutina con sufijo "(copia)" en el nombre', async () => {
     const insertedRoutines = []
+    const insertedRoutineExercises = []
 
     // Datos para exportRoutine (fase de lectura)
     const fakeRoutine = { name: 'Rutina Original', description: null, goal: null }
@@ -935,7 +968,8 @@ describe('duplicateRoutine', () => {
     ]
     const fakeRoutineExercises = [
       {
-        series: 3, reps: '10', rir: 2, rest_seconds: 60,
+        // The export writes `level: null` for an exercise without a level (#138)
+        series: 3, reps: '10', level: null, rir: 2, rest_seconds: 60,
         notes: null, sort_order: 1, is_warmup: false,
         exercise: {
           id: 'ex-1', name: 'Sentadilla', tracked_fields: ['weight', 'reps'],
@@ -987,7 +1021,7 @@ describe('duplicateRoutine', () => {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
             order: vi.fn().mockResolvedValue({ data: fakeRoutineExercises, error: null }),
-            insert: vi.fn().mockResolvedValue({ data: { id: 're-1' }, error: null }),
+            insert: vi.fn((rows) => { insertedRoutineExercises.push(...rows); return Promise.resolve({ data: null, error: null }) }),
           }
         }
         if (table === 'exercises') {
@@ -1028,6 +1062,9 @@ describe('duplicateRoutine', () => {
     expect(insertedRoutines[0].name).toBe('Rutina Original (copia)')
     expect(result).toBeDefined()
     expect(result.name).toBe('Rutina Original (copia)')
+    // Number(null) is 0: without the guard the copy showed "Nv0" on every exercise
+    expect(insertedRoutineExercises).toHaveLength(1)
+    expect(insertedRoutineExercises[0].level).toBeNull()
   })
 
   it('keeps the supersets of the original routine', async () => {

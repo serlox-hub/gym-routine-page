@@ -238,7 +238,11 @@ function importedTargetField(exportedRoutineExercise, trackedFields) {
  * @returns {number|null}
  */
 function importedLevel(exportedRoutineExercise) {
-  const level = Number(exportedRoutineExercise.level)
+  const raw = exportedRoutineExercise.level
+  // `Number()` turns null, '', false and [] into 0, a valid level: without this, every exercise
+  // exported without a level (`level: null`) came back as "Nv0" after duplicating the routine.
+  if ((typeof raw !== 'number' && typeof raw !== 'string') || raw.toString().trim() === '') return null
+  const level = Number(raw)
   return Number.isInteger(level) && level >= 0 && level <= MAX_PRESCRIBED_LEVEL ? level : null
 }
 
