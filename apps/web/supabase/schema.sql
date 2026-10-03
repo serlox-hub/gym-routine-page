@@ -536,6 +536,29 @@ ALTER FUNCTION "public"."create_routine_day_with_exercises"("p_routine_id" integ
 COMMENT ON FUNCTION "public"."create_routine_day_with_exercises"("p_routine_id" integer, "p_new_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb") IS 'Creates a routine day with its exercises, and the routine first when p_routine_id is NULL (p_new_routine_name is then required), in one transaction. Validates the rows (whitelisted keys, sort_order 1..n, warm-up first, supersets of two or more contiguous rows in one block, exercises available) before inserting. Returns { routine_id, day_id }. SECURITY INVOKER on purpose: RLS protects it.';
 
 
+
+CREATE OR REPLACE FUNCTION "public"."disable_routine_share"("p_routine_id" integer) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  UPDATE routines
+  SET share_token = NULL
+  WHERE id = p_routine_id AND user_id = auth.uid();
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'not_owner' USING ERRCODE = '42501';
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."disable_routine_share"("p_routine_id" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."disable_routine_share"("p_routine_id" integer) IS 'Turns sharing off for one of the caller''s routines (share_token = NULL); the old link stops working for good. Raises 42501 when the caller does not own the routine.';
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -605,6 +628,34 @@ ALTER FUNCTION "public"."duplicate_routine_day"("p_day_id" integer, "p_new_name"
 
 
 COMMENT ON FUNCTION "public"."duplicate_routine_day"("p_day_id" integer, "p_new_name" "text") IS 'Duplica un día de rutina y todos sus ejercicios en una sola transacción atómica. p_new_name lo calcula el cliente (sufijo localizado).';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."enable_routine_share"("p_routine_id" integer) RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_token TEXT;
+BEGIN
+  UPDATE routines
+  SET share_token = COALESCE(share_token, translate(encode(extensions.gen_random_bytes(16), 'base64'), '+/=', '-_'))
+  WHERE id = p_routine_id AND user_id = auth.uid()
+  RETURNING share_token INTO v_token;
+
+  IF v_token IS NULL THEN
+    RAISE EXCEPTION 'not_owner' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN v_token;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."enable_routine_share"("p_routine_id" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."enable_routine_share"("p_routine_id" integer) IS 'Turns sharing on for one of the caller''s routines and returns its share_token, creating it only if missing (idempotent). Raises 42501 when the caller does not own the routine.';
 
 
 
@@ -699,6 +750,35 @@ $$;
 
 
 ALTER FUNCTION "public"."get_all_users"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_shared_routine"("p_token" "text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_routine_id INTEGER;
+BEGIN
+  IF p_token IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT id INTO v_routine_id FROM routines WHERE share_token = p_token;
+
+  IF v_routine_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN routine_export_rows(v_routine_id);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_shared_routine"("p_token" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_shared_routine"("p_token" "text") IS 'Public read of a shared routine by its share_token: the routine_export_rows shape, or NULL for an unknown or NULL token. SECURITY DEFINER, executable by anon.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."is_admin"("check_user_id" "uuid") RETURNS boolean
@@ -1062,6 +1142,84 @@ ALTER FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integ
 
 
 COMMENT ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) IS 'Sustituye el ejercicio de una fila de sesión (borra sus series) y, con p_apply_to_routine, también en su routine_exercise, en una sola transacción. El parche p_fields lo aplica update_session_exercise_with_routine. SECURITY INVOKER a propósito: la protege RLS.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."routine_export_rows"("p_routine_id" integer) RETURNS "jsonb"
+    LANGUAGE "plpgsql" STABLE
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_routine JSONB;
+BEGIN
+  SELECT jsonb_build_object('name', r.name, 'description', r.description)
+  INTO v_routine
+  FROM routines r
+  WHERE r.id = p_routine_id;
+
+  IF v_routine IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'routine', v_routine,
+    'days', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'id', d.id,
+        'name', d.name,
+        'estimated_duration_min', d.estimated_duration_min,
+        'sort_order', d.sort_order
+      ) ORDER BY d.sort_order, d.id)
+      FROM routine_days d
+      WHERE d.routine_id = p_routine_id
+    ), '[]'::jsonb),
+    'routine_exercises', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'routine_day_id', re.routine_day_id,
+        'exercise_id', re.exercise_id,
+        'series', re.series,
+        'target_field', re.target_field,
+        'reps', re.reps,
+        'level', re.level,
+        'rir', re.rir,
+        'rest_seconds', re.rest_seconds,
+        'notes', re.notes,
+        'sort_order', re.sort_order,
+        'is_warmup', COALESCE(re.is_warmup, FALSE),
+        'superset_group', re.superset_group
+      ) ORDER BY re.routine_day_id, re.sort_order, re.id)
+      FROM routine_exercises re
+      JOIN routine_days d ON d.id = re.routine_day_id
+      WHERE d.routine_id = p_routine_id
+    ), '[]'::jsonb),
+    'exercises', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'id', e.id,
+        'name_es', e.name_es,
+        'name_en', e.name_en,
+        'tracked_fields', e.tracked_fields,
+        'distance_unit', e.distance_unit,
+        'instructions', e.instructions,
+        'muscle_group_name_es', mg.name_es
+      ) ORDER BY e.id)
+      FROM exercises e
+      LEFT JOIN muscle_groups mg ON mg.id = e.muscle_group_id
+      WHERE e.id IN (
+        SELECT re.exercise_id
+        FROM routine_exercises re
+        JOIN routine_days d ON d.id = re.routine_day_id
+        WHERE d.routine_id = p_routine_id
+      )
+    ), '[]'::jsonb)
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."routine_export_rows"("p_routine_id" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."routine_export_rows"("p_routine_id" integer) IS 'Every row a routine export needs, as JSONB { routine, days, routine_exercises, exercises }. The only list of export columns: exportRoutine and get_shared_routine both read it. SECURITY INVOKER: RLS limits it to the caller''s routines; NULL when the routine is not visible.';
 
 
 
@@ -1537,7 +1695,9 @@ CREATE TABLE IF NOT EXISTS "public"."routines" (
     "description" "text",
     "is_favorite" boolean DEFAULT false,
     "user_id" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "share_token" "text",
+    CONSTRAINT "routines_share_token_format" CHECK (("share_token" ~ '^[A-Za-z0-9_-]{22}$'::"text"))
 );
 
 
@@ -1889,6 +2049,11 @@ ALTER TABLE ONLY "public"."routine_exercises"
 
 ALTER TABLE ONLY "public"."routines"
     ADD CONSTRAINT "routines_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."routines"
+    ADD CONSTRAINT "routines_share_token_key" UNIQUE ("share_token");
 
 
 
@@ -2663,6 +2828,12 @@ GRANT ALL ON FUNCTION "public"."create_routine_day_with_exercises"("p_routine_id
 
 
 
+REVOKE ALL ON FUNCTION "public"."disable_routine_share"("p_routine_id" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."disable_routine_share"("p_routine_id" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."disable_routine_share"("p_routine_id" integer) TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."routine_days" TO "anon";
 GRANT ALL ON TABLE "public"."routine_days" TO "authenticated";
 GRANT ALL ON TABLE "public"."routine_days" TO "service_role";
@@ -2675,6 +2846,12 @@ GRANT ALL ON FUNCTION "public"."duplicate_routine_day"("p_day_id" integer, "p_ne
 
 
 
+REVOKE ALL ON FUNCTION "public"."enable_routine_share"("p_routine_id" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."enable_routine_share"("p_routine_id" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."enable_routine_share"("p_routine_id" integer) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."get_all_feedback"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "service_role";
@@ -2684,6 +2861,13 @@ GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "service_role";
 REVOKE ALL ON FUNCTION "public"."get_all_users"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_all_users"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_all_users"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."get_shared_routine"("p_token" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_shared_routine"("p_token" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_shared_routine"("p_token" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_shared_routine"("p_token" "text") TO "service_role";
 
 
 
@@ -2714,6 +2898,12 @@ GRANT ALL ON FUNCTION "public"."reorder_session_exercises"("exercise_orders" "js
 REVOKE ALL ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."replace_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_fields" "jsonb", "p_apply_to_routine" boolean) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."routine_export_rows"("p_routine_id" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."routine_export_rows"("p_routine_id" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."routine_export_rows"("p_routine_id" integer) TO "service_role";
 
 
 
