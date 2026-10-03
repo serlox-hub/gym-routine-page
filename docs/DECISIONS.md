@@ -76,7 +76,6 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **Siempre `formatEffortBadge`:** en RPE el número guardado es un índice y la palabra es el dato. Sin campos, `normalizeTrackedFields` cae a peso × reps y por tanto a RIR: caer a RPE pintaría una palabra falsa ("Moderado").
 - **Un solo formatter:** se probó `formatEffortText` ("RIR 2") y se descartó; `getEffortLabel` ya da el rótulo de la escala aparte.
 - **Datos legados fuera de escala se pintan crudos** y el formulario los descarta al cargar (`buildExerciseConfigFormFromRow`): validarlos dejaría el formulario imposible de guardar.
-- **Pendiente (issue #21):** `importRoutine` inserta `rir` sin validarlo con `isValidEffortValue`.
 
 ## 2026-08 · Config de ejercicio: validar, nunca defaults silenciosos
 - **El default silencioso estaba también en la capa de API** (`series || 3`, `reps || '8-12'` en los inserts). Arreglar el parser sin los inserts no cerraba el bug: si reaparece un default así, buscar en `api/` además de en `lib/`.

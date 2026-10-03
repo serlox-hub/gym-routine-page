@@ -1,6 +1,7 @@
 import { getClient } from './_client.js'
 import { BLOCK_NAMES } from '../lib/constants.js'
 import { MAX_PRESCRIBED_LEVEL, isTargetField, normalizeTrackedFields, resolveTargetField, trackedFieldsFromLegacyType } from '../lib/measurementFields.js'
+import { isValidEffortValue } from '../lib/effortScale.js'
 import { t } from '../i18n/index.js'
 import { normalizeExerciseName, buildExerciseIndex, resolveExerciseId } from '../lib/exerciseMatch.js'
 
@@ -238,6 +239,21 @@ function importedLevel(exportedRoutineExercise) {
 }
 
 /**
+ * Prescribed effort of an exercise from the imported JSON, or null when it is off the exercise's
+ * scale (RIR -1..3 with reps, RPE 1..5 without). The column has no CHECK, so an off-scale value
+ * would be saved without error: it would render like a valid one, the edit picker could not show
+ * it, and progression would never be suggested again (`metEffortTarget` could never be met).
+ * @param {{rir?: unknown}} exportedRoutineExercise
+ * @param {string[]|undefined} trackedFields - what the exercise tracks in the DB, not what the JSON
+ *   declares: on an existing exercise the database decides the scale
+ * @returns {number|null}
+ */
+function importedEffort(exportedRoutineExercise, trackedFields) {
+  const effort = exportedRoutineExercise.rir
+  return isValidEffortValue(effort, trackedFields) ? effort : null
+}
+
+/**
  * Importa una rutina desde JSON a la cuenta del usuario.
  *
  * Empareja cada ejercicio con el catálogo/custom por CLAVE ESTABLE (name_en → name_es,
@@ -266,11 +282,16 @@ export async function importRoutine(jsonData, userId, options = {}) {
   // Se cargan completos (una query cada uno) en vez de filtrar por nombre: evita el frágil
   // filtrado .in() con nombres que llevan acentos/paréntesis y habilita el match tolerante.
   const [{ data: systemRows }, { data: customRows }] = await Promise.all([
-    getClient().from('exercises').select('id, name_es, name_en').eq('is_system', true).is('deleted_at', null),
-    getClient().from('exercises').select('id, name_es, name_en').eq('user_id', userId).is('deleted_at', null),
+    getClient().from('exercises').select('id, name_es, name_en, tracked_fields').eq('is_system', true).is('deleted_at', null),
+    getClient().from('exercises').select('id, name_es, name_en, tracked_fields').eq('user_id', userId).is('deleted_at', null),
   ])
   const exerciseIndex = buildExerciseIndex({ systemRows: systemRows || [], customRows: customRows || [] })
   const customIds = new Set((customRows || []).map(r => r.id))
+  // exercise_id -> what it tracks in the DB once the import has written it (decides the effort
+  // scale). Templates only carry the name, so `trackedFieldsMap` below cannot be used for this.
+  const trackedFieldsById = new Map(
+    [...(systemRows || []), ...(customRows || [])].map(r => [r.id, r.tracked_fields])
+  )
 
   // nombre-normalizado del export -> exercise_id (para resolver las refs de los días)
   const exerciseMap = new Map()
@@ -302,10 +323,11 @@ export async function importRoutine(jsonData, userId, options = {}) {
         exerciseMap.set(normalizeExerciseName(exName), matchedId)
         // Actualizar SOLO ejercicios propios del usuario (nunca los de sistema, compartidos)
         if (updateExercises && customIds.has(matchedId)) {
-          await getClient()
+          const trackedFields = importedTrackedFields(ex)
+          const { error: updateError } = await getClient()
             .from('exercises')
             .update({
-              tracked_fields: importedTrackedFields(ex),
+              tracked_fields: trackedFields,
               // Solo si el JSON la DECLARA (v9+): un export antiguo no dice nada de la unidad, y
               // el default 'm' pisaría el 'km' que el usuario ya tuviera puesto.
               ...(ex.distance_unit ? { distance_unit: importedDistanceUnit(ex) } : {}),
@@ -313,13 +335,16 @@ export async function importRoutine(jsonData, userId, options = {}) {
               muscle_group_id: resolveMuscleGroupId(ex.muscle_group_name, await getMuscleGroupIndex()),
             })
             .eq('id', matchedId)
+          if (updateError) throw updateError
+          trackedFieldsById.set(matchedId, trackedFields)
         }
       } else {
+        const trackedFields = importedTrackedFields(ex)
         const { data: newExercise, error: exError } = await getClient()
           .from('exercises')
           .insert({
             name_es: exName,
-            tracked_fields: importedTrackedFields(ex),
+            tracked_fields: trackedFields,
             distance_unit: importedDistanceUnit(ex),
             instructions: ex.instructions,
             muscle_group_id: resolveMuscleGroupId(ex.muscle_group_name, await getMuscleGroupIndex()),
@@ -330,6 +355,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
 
         if (exError) throw exError
         exerciseMap.set(normalizeExerciseName(exName), newExercise.id)
+        trackedFieldsById.set(newExercise.id, trackedFields)
       }
     }
   }
@@ -384,7 +410,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
             target_field: importedTargetField(ex, trackedFieldsMap.get(normalizedName)),
             reps: ex.reps,
             level: importedLevel(ex),
-            rir: ex.rir,
+            rir: importedEffort(ex, trackedFieldsById.get(exerciseId)),
             rest_seconds: ex.rest_seconds,
             notes: ex.notes,
             sort_order: sortOrder++,

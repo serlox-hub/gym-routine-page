@@ -54,6 +54,19 @@ de la migración 056 (`resolveTargetField` → `getDefaultTargetField`).
 propósito: derivarlo del default `weight,reps` guardaría un objetivo de reps en una plancha. La app
 lo resuelve al leer con `resolveTargetField()`.
 
+## Effort (`rir`): validated against the fields in the DB
+
+`importRoutine` keeps a `rir` only if it is on the exercise's scale (`importedEffort()` →
+`isValidEffortValue`) and otherwise stores null, without a warning: the column has no CHECK. The
+scale comes from what the exercise tracks **in the DB** once the import has written it (catalog or
+custom row, or what it just created or rewrote with `updateExercises`), never from the JSON. That
+is why it does not reuse the name-keyed `trackedFieldsMap` of `importedTargetField()`: a template
+only carries the name, and on an existing exercise the database decides.
+
+⚠️ Old JSON still imports but loses off-scale values: until 2026-08 the AI prompt asked for `rir`
+0-5 (JSON v6 and earlier), so such a JSON with `rir: 4` or `5` on weight × reps, or `0` on an
+exercise without reps, arrives with no effort. Owner's decision (2026-10-03, issue #21).
+
 ## Cuando se modifique el modelo de datos
 
 (tablas `routines`, `routine_days`, `routine_exercises`, `exercises`)
