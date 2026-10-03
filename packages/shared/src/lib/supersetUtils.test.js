@@ -6,6 +6,7 @@ import {
   getNextSupersetId,
   isExerciseInSuperset,
   countExercisesInBlock,
+  sanitizeImportedSupersetGroups,
 } from './supersetUtils.js'
 
 describe('supersetUtils', () => {
@@ -214,6 +215,40 @@ describe('supersetUtils', () => {
         ]
       }
       expect(countExercisesInBlock(block)).toBe(7)
+    })
+  })
+
+  describe('sanitizeImportedSupersetGroups', () => {
+    it('keeps a run of two or more consecutive members', () => {
+      expect(sanitizeImportedSupersetGroups([null, 1, 1, null, 2, 2, 2])).toEqual([null, 1, 1, null, 2, 2, 2])
+    })
+
+    it('undoes a group with a single member', () => {
+      expect(sanitizeImportedSupersetGroups([1, null, 2, 2])).toEqual([null, null, 2, 2])
+    })
+
+    it('undoes a group whose members are split by another row', () => {
+      expect(sanitizeImportedSupersetGroups([1, 1, null, 1, 2, 2])).toEqual([null, null, null, null, 2, 2])
+    })
+
+    it('undoes a group split by another group', () => {
+      expect(sanitizeImportedSupersetGroups([1, 2, 2, 1])).toEqual([null, 2, 2, null])
+    })
+
+    it('drops values that are not positive integers', () => {
+      expect(sanitizeImportedSupersetGroups([0, 0, -1, -1, 'a', 'a', 1.5, 1.5, undefined, 1e10, 1e10])).toEqual(
+        [null, null, null, null, null, null, null, null, null, null, null]
+      )
+    })
+
+    it('accepts the largest value the integer column holds and drops the next one', () => {
+      expect(sanitizeImportedSupersetGroups([2147483647, 2147483647])).toEqual([2147483647, 2147483647])
+      expect(sanitizeImportedSupersetGroups([2147483648, 2147483648])).toEqual([null, null])
+    })
+
+    it('returns an empty array for empty or missing input', () => {
+      expect(sanitizeImportedSupersetGroups([])).toEqual([])
+      expect(sanitizeImportedSupersetGroups(undefined)).toEqual([])
     })
   })
 })

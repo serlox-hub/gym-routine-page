@@ -474,7 +474,7 @@ All these files live in `packages/shared/src/lib/` and are exported via `@gym/sh
 
 ### Archivos críticos: import/export de rutinas (JSON)
 
-Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 9**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
+Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 10**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
 
 ⚠️ **Emparejar por CLAVE ESTABLE** (`name_en` → `name_es` normalizado, vía `lib/exerciseMatch.js`), NUNCA por `name_es` solo. `importRoutine` debe seguir aceptando versiones antiguas del JSON.
 

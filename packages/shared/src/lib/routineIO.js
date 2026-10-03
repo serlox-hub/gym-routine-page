@@ -2,7 +2,7 @@ import { t, getCurrentLocale } from '../i18n/index.js'
 
 export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
-  "version": 9,
+  "version": 10,
   "exercises": [
     {
       "name_es": "Exercise name in Spanish",
@@ -93,7 +93,8 @@ ROUTINE EXERCISE FIELDS (in "blocks[].exercises"):
 - level: machine resistance level for this routine, only for exercises that track "level" (optional, e.g.: 8)
 - rir: effort. Scale depends on whether the exercise tracks reps: -1..3 when "reps" is in tracked_fields (-1 = to failure, 3 = 3 or more in reserve), 1..5 otherwise (RPE, 1 = easy, 5 = max). Optional
 - rest_seconds: rest between sets in seconds (optional)
-- notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest", "Tempo 3-1-1-0")`
+- notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest", "Tempo 3-1-1-0")
+- superset_group: positive integer shared by the exercises done back to back as one superset (optional, omit it for an exercise outside a superset). A superset has at least 2 exercises, written consecutively in the same block, and each superset of a day uses its own number (1, 2...). A group that breaks these rules is imported as individual exercises`
 
 export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }) {
   const lang = getCurrentLocale()
