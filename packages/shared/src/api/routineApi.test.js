@@ -573,6 +573,51 @@ describe('importRoutine', () => {
     expect('distance_unit' in updateCalls[0]).toBe(exportedUnit !== undefined)
   })
 
+  // A rejected update (RLS, a CHECK) used to be swallowed: the import went on and left a routine
+  // pointing at an exercise whose definition was never rewritten. It must abort before any
+  // routine row exists, like the insert branch does.
+  it('aborts with the update error and creates no routine when rewriting an own exercise fails', async () => {
+    const updateError = { code: '42501', message: 'permission denied for table exercises' }
+    const insertedTables = []
+    const customRows = [{ id: 'ex-custom', name_es: 'Cinta de casa', name_en: null }]
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'exercises') {
+          let isCustomQuery = false
+          const chain = {
+            select: vi.fn(() => chain),
+            eq: vi.fn((column) => { if (column === 'user_id') isCustomQuery = true; return chain }),
+            is: vi.fn(() => chain),
+            then: (resolve) => resolve({ data: isCustomQuery ? customRows : [], error: null }),
+            update: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ data: null, error: updateError }) })),
+          }
+          return chain
+        }
+        if (table === 'muscle_groups') {
+          const p = Promise.resolve({ data: [], error: null })
+          return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        return { insert: vi.fn(() => { insertedTables.push(table); return Promise.resolve({ data: null, error: null }) }) }
+      },
+    }))
+
+    await expect(importRoutine({
+      version: ROUTINE_EXPORT_VERSION,
+      exercises: [{ name_es: 'Cinta de casa', tracked_fields: ['distance', 'time'] }],
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [{ exercise_name: 'Cinta de casa', series: 1, reps: '5km' }] },
+          ] },
+        ],
+      },
+    }, 'user-1', { updateExercises: true })).rejects.toBe(updateError)
+
+    expect(insertedTables).toEqual([])
+  })
+
   // El JSON es entrada NO confiable (la genera una IA o se edita a mano) y los CHECK de las
   // columnas nuevas convertirían un valor raro en un 23514/22P02 que aborta el import ENTERO.
   it('sanea el campo objetivo y el nivel de un JSON con valores imposibles', async () => {
@@ -679,6 +724,103 @@ describe('importRoutine', () => {
     // La ref del día resolvió al id del ejercicio de sistema
     expect(insertCalls['routine_exercises']).toHaveLength(1)
     expect(insertCalls['routine_exercises'][0].exercise_id).toBe('sys-bench')
+  })
+
+  // Effort scale (issue #21): the JSON is untrusted and `routine_exercises.rir` has no CHECK, so an
+  // off-scale value would be saved, render like a valid one and block progression forever.
+  describe('effort scale', () => {
+    const bench = { id: 'sys-bench', name_es: 'Press de banca con barra', name_en: 'Barbell Bench Press', tracked_fields: ['weight', 'reps'] }
+    const plank = { id: 'sys-plank', name_es: 'Plancha frontal', name_en: 'Plank', tracked_fields: ['time'] }
+
+    // Imports a one-exercise routine and returns the `rir` it inserted. The exercise reads return
+    // only the columns the query selects: dropping `tracked_fields` from the select fails here
+    // instead of silently falling back to the RIR scale.
+    async function importEffort({ name, rir, exercises, systemRows = [], customRows = [], options = {} }) {
+      const routineExerciseRows = []
+      getClient.mockImplementation(() => ({
+        from: (table) => {
+          if (table === 'exercises') {
+            let columns = []
+            let isCustomQuery = false
+            const chain = {
+              select: vi.fn((selected) => { columns = selected.split(',').map(column => column.trim()); return chain }),
+              eq: vi.fn((column) => { if (column === 'user_id') isCustomQuery = true; return chain }),
+              is: vi.fn(() => chain),
+              then: (resolve) => resolve({
+                data: (isCustomQuery ? customRows : systemRows).map(row => Object.fromEntries(columns.map(column => [column, row[column]]))),
+                error: null,
+              }),
+              update: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) })),
+              insert: vi.fn(() => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'ex-new' }, error: null }) })),
+            }
+            return chain
+          }
+          if (table === 'muscle_groups') {
+            const p = Promise.resolve({ data: [], error: null })
+            return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+          }
+          if (table === 'routines' || table === 'routine_days') {
+            return { insert: vi.fn((record) => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) })) }
+          }
+          return { insert: vi.fn((rows) => { routineExerciseRows.push(...rows); return Promise.resolve({ data: null, error: null }) }) }
+        },
+      }))
+
+      await importRoutine({
+        version: ROUTINE_EXPORT_VERSION,
+        exercises,
+        routine: {
+          name: 'R', description: null,
+          days: [
+            { name: 'D1', sort_order: 0, blocks: [
+              { name: 'Principal', sort_order: 1, exercises: [{ exercise_name: name, series: 3, reps: '8', rir }] },
+            ] },
+          ],
+        },
+      }, 'user-1', options)
+
+      expect(routineExerciseRows).toHaveLength(1)
+      return routineExerciseRows[0].rir
+    }
+
+    it.each([
+      ['keeps a value on the RIR scale', { name: bench.name_es, rir: 2, systemRows: [bench] }, 2],
+      ['keeps failure (-1) on the RIR scale', { name: bench.name_es, rir: -1, systemRows: [bench] }, -1],
+      ['keeps 0 on the RIR scale', { name: bench.name_es, rir: 0, systemRows: [bench] }, 0],
+      ['drops rir 5 on weight × reps', { name: bench.name_es, rir: 5, systemRows: [bench] }, null],
+      ['drops rir -1 on an exercise without reps (RPE scale)', { name: plank.name_es, rir: -1, systemRows: [plank] }, null],
+      ['stores a missing effort as null', { name: bench.name_es, rir: undefined, systemRows: [bench] }, null],
+      // Strict on purpose: the format documents a number, and coercing with Number() would turn a
+      // null into 0, which is a valid RIR.
+      ['drops an effort written as text', { name: bench.name_es, rir: '2', systemRows: [bench] }, null],
+    ])('%s', async (_name, setup, expected) => {
+      expect(await importEffort(setup)).toBe(expected)
+    })
+
+    // Which fields decide the scale: the ones the exercise has in the DB once the import has
+    // written it, never the weight × reps default of a JSON that does not declare them. rir 4 is
+    // only valid on the RPE scale, so it survives only when the fields resolve to `time`.
+    it.each([
+      ['a template without declared fields uses the catalog fields',
+        { name: plank.name_es, exercises: [{ name_es: plank.name_es }], systemRows: [plank] }, 4],
+      ['a day exercise without a definition uses the catalog fields',
+        { name: plank.name_es, systemRows: [plank] }, 4],
+      ['a custom exercise uses its DB fields',
+        { name: 'Wall sit', customRows: [{ id: 'ex-custom', name_es: 'Wall sit', name_en: null, tracked_fields: ['time'] }] }, 4],
+      ['an existing exercise uses its DB fields, not the ones the JSON declares',
+        { name: bench.name_es, exercises: [{ name_es: bench.name_es, tracked_fields: ['time'] }], systemRows: [bench] }, null],
+      ['a created exercise uses the fields it was created with',
+        { name: 'Wall sit', exercises: [{ name_es: 'Wall sit', tracked_fields: ['time'] }] }, 4],
+      ['a custom rewritten by updateExercises uses its new fields',
+        {
+          name: 'Wall sit',
+          exercises: [{ name_es: 'Wall sit', tracked_fields: ['time'] }],
+          customRows: [{ id: 'ex-custom', name_es: 'Wall sit', name_en: null, tracked_fields: ['weight', 'reps'] }],
+          options: { updateExercises: true },
+        }, 4],
+    ])('%s', async (_name, setup, expected) => {
+      expect(await importEffort({ rir: 4, ...setup })).toBe(expected)
+    })
   })
 })
 
