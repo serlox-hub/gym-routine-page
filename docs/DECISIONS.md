@@ -12,6 +12,9 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-10 · "Recientes" del selector de ejercicios (#146)
+- **Lee `exercise_session_stats` (solo sesiones terminadas), no `session_exercises`:** `start_workout_session` mete desde el principio todos los ejercicios planificados del día, así que contar la sesión en curso llenaría la sección con lo que ya está en pantalla, justo cuando más se usa el selector (añadir o sustituir a mitad del entreno). Descartado `workout_sessions` + `session_exercises`: trae ejercicios planificados que nunca se hicieron.
+
 ## 2026-10 · Buscador de ejercicios por palabras (#145)
 - **Sin iniciales ("pmr"), decisión del dueño:** la subsecuencia que las permitía metía "Prensa de piernas" bajo `press`.
 - **Prefijo por palabra, no subcadena:** "ress" encontraría "Press". Más resultados, peor orden, y nadie teclea el medio de una palabra.

@@ -1,15 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
-import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
-import { Card, ExerciseName } from '../ui/index.js'
+import { getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises, getVisibleRecentExercises } from '@gym/shared'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
-import ExerciseThumbnail from '../Exercise/ExerciseThumbnail.jsx'
+import ExerciseSearchRow from './ExerciseSearchRow.jsx'
+import ExerciseSearchSectionTitle from './ExerciseSearchSectionTitle.jsx'
 
 function ExerciseSearchList({
-  exercises, muscleGroups, equipmentTypes, isLoading, onSelect,
+  exercises, muscleGroups, equipmentTypes, isLoading, onSelect, recentExercises = [],
   existingExerciseIds = new Set(), search = '', onSearchChange, initialMuscleGroup = null, inputRef,
 }) {
   const { t } = useTranslation()
@@ -25,8 +23,8 @@ function ExerciseSearchList({
   const currentSearch = onSearchChange ? search : internalSearch
   const handleSearchChange = onSearchChange || setInternalSearch
 
-  const filteredExercises = useMemo(
-    () => filterExercises(exercises, {
+  const filters = useMemo(
+    () => ({
       search: currentSearch,
       muscleGroupId: selectedMuscleGroup,
       equipmentTypeId: selectedEquipmentType,
@@ -35,7 +33,28 @@ function ExerciseSearchList({
       getMuscleGroupText: e => getMuscleGroupName(e.muscle_group),
       getEquipmentText: e => getEquipmentName(e.equipment_type),
     }),
-    [exercises, currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter]
+    [currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter]
+  )
+
+  const filteredExercises = useMemo(() => filterExercises(exercises, filters), [exercises, filters])
+  const visibleRecentExercises = useMemo(
+    () => getVisibleRecentExercises(recentExercises, filters),
+    [recentExercises, filters]
+  )
+
+  const showRecent = visibleRecentExercises.length > 0
+  // Under the section titles (h4) the names go one level down. Without them they sit right under
+  // the modal's title (h3), as they did before the section existed.
+  const nameAs = showRecent ? 'h5' : 'h4'
+
+  const renderRow = exercise => (
+    <ExerciseSearchRow
+      key={exercise.id}
+      exercise={exercise}
+      isInRoutine={existingExerciseIds.has(exercise.id)}
+      onSelect={onSelect}
+      nameAs={nameAs}
+    />
   )
 
   return (
@@ -55,77 +74,32 @@ function ExerciseSearchList({
         inputRef={inputRef}
       />
 
+      {/* One scroll area for both sections, so Recent scrolls away with the list. */}
       <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
         {isLoading ? (
           <p className="text-center py-4" style={{ color: colors.textSecondary }}>
             {t('common:buttons.loading')}
           </p>
-        ) : filteredExercises.length === 0 ? (
-          <p className="text-center py-4" style={{ color: colors.textSecondary }}>
-            {t('common:errors.notFound')}
-          </p>
         ) : (
-          filteredExercises.map(exercise => {
-            const isInRoutine = existingExerciseIds.has(exercise.id)
-            return (
-              <button
-                key={exercise.id}
-                onClick={() => onSelect(exercise)}
-                className="w-full text-left"
-              >
-                <Card className="p-3 transition-colors hover:opacity-90" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-                  <div className="flex items-center gap-3">
-                    <ExerciseThumbnail gifKey={exercise.gif_key} alt={getExerciseName(exercise)} />
-                    <div className="flex-1 min-w-0">
-                      <ExerciseName as="h4" fontSize={14} fontWeight="500" reserveLines>
-                        {getExerciseName(exercise)}
-                      </ExerciseName>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <ExerciseBadge
-                          label={getMuscleGroupName(exercise.muscle_group)}
-                          dot={getMuscleGroupColor(exercise.muscle_group?.name)}
-                        />
-                        {exercise.equipment_type && (
-                          <ExerciseBadge label={getEquipmentName(exercise.equipment_type)} />
-                        )}
-                        {!exercise.is_system && (
-                          <ExerciseBadge label={t('exercise:custom')} accent />
-                        )}
-                      </div>
-                    </div>
-                    {isInRoutine && (
-                      <span
-                        className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full shrink-0"
-                        style={{ backgroundColor: colors.successBg, color: colors.success }}
-                      >
-                        <Check size={12} />
-                        {t('exercise:usage.inRoutine')}
-                      </span>
-                    )}
-                  </div>
-                </Card>
-              </button>
-            )
-          })
+          <>
+            {showRecent && (
+              <>
+                <ExerciseSearchSectionTitle>{t('exercise:picker.recent')}</ExerciseSearchSectionTitle>
+                {visibleRecentExercises.map(renderRow)}
+                <ExerciseSearchSectionTitle>{t('exercise:picker.allExercises')}</ExerciseSearchSectionTitle>
+              </>
+            )}
+            {filteredExercises.length === 0 ? (
+              <p className="text-center py-4" style={{ color: colors.textSecondary }}>
+                {t('common:errors.notFound')}
+              </p>
+            ) : (
+              filteredExercises.map(renderRow)
+            )}
+          </>
         )}
       </div>
     </>
-  )
-}
-
-function ExerciseBadge({ label, dot, accent }) {
-  if (!label) return null
-  return (
-    <span
-      className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full"
-      style={{
-        backgroundColor: accent ? colors.successBgSubtle : colors.bgTertiary,
-        color: accent ? colors.success : colors.textSecondary,
-      }}
-    >
-      {dot && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dot }} />}
-      {label}
-    </span>
   )
 }
 

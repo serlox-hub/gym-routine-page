@@ -260,6 +260,7 @@ describe('arrayUtils', () => {
         expect(unsearched).not.toBe(list)
       })
 
+      // The picker's Recent section relies on this: its rows must keep their recency order.
       it('keeps the incoming order with no query words', () => {
         const all = catalog.map(e => e.name)
         expect(search('')).toEqual(all)

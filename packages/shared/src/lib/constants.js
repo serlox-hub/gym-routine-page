@@ -93,6 +93,7 @@ export const QUERY_KEYS = {
   ROUTINE_BLOCKS: 'routine-blocks',
   ROUTINE_ALL_EXERCISES: 'routine-all-exercises',
   EXERCISES: 'exercises',
+  RECENT_EXERCISES: 'recent-exercises',
   WORKOUT_SESSION: 'workout-session',
   LAST_SET_PERFORMED_AT: 'last-set-performed-at',
   SESSION_EXERCISES: 'session-exercises',

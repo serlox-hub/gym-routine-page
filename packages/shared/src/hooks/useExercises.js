@@ -18,6 +18,7 @@ import {
   fetchAllUserExerciseGymUnits,
   upsertUserExerciseOverride,
 } from '../api/exerciseApi.js'
+import { fetchRecentExerciseStats } from '../api/exerciseStatsApi.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
@@ -58,6 +59,20 @@ export function useExercise(exerciseId) {
     queryFn: () => fetchExercise(exerciseId),
     select: localizeExercise,
     enabled: !!exerciseId,
+  })
+}
+
+// Stats rows behind the picker's "Recent" section; getRecentExercises turns them into exercises.
+// staleTime 0 instead of invalidating from every mutation that changes the stats (finishing,
+// deleting or rescheduling a session, editing sets in history...): each opening refetches in the
+// background while the cached rows show at once.
+export function useRecentExerciseStats({ enabled = true } = {}) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.RECENT_EXERCISES],
+    // Wrapped: passed bare, the query context would arrive as `limit`.
+    queryFn: () => fetchRecentExerciseStats(),
+    staleTime: 0,
+    enabled,
   })
 }
 

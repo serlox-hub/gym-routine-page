@@ -1,16 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
-import { View, Text, Pressable, FlatList } from 'react-native'
+import { View, Text, FlatList } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Check } from 'lucide-react-native'
-import { colors } from '../../lib/styles'
-import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises } from '@gym/shared'
-import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
-import { Card, ExerciseName } from '../ui'
+import { getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises, getVisibleRecentExercises } from '@gym/shared'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar'
-import ExerciseThumbnail from '../Exercise/ExerciseThumbnail'
+import ExerciseSearchRow from './ExerciseSearchRow'
+import ExerciseSearchSectionTitle from './ExerciseSearchSectionTitle'
 
 export default function ExerciseSearchList({
-  exercises, muscleGroups, equipmentTypes, isLoading, onSelect,
+  exercises, muscleGroups, equipmentTypes, isLoading, onSelect, recentExercises = [],
   existingExerciseIds = new Set(), search = '', onSearchChange, initialMuscleGroup = null,
 }) {
   const { t } = useTranslation()
@@ -26,8 +23,8 @@ export default function ExerciseSearchList({
   const currentSearch = onSearchChange ? search : internalSearch
   const handleSearchChange = onSearchChange || setInternalSearch
 
-  const filteredExercises = useMemo(
-    () => filterExercises(exercises, {
+  const filters = useMemo(
+    () => ({
       search: currentSearch,
       muscleGroupId: selectedMuscleGroup,
       equipmentTypeId: selectedEquipmentType,
@@ -36,44 +33,32 @@ export default function ExerciseSearchList({
       getMuscleGroupText: e => getMuscleGroupName(e.muscle_group),
       getEquipmentText: e => getEquipmentName(e.equipment_type),
     }),
-    [exercises, currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter]
+    [currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter]
   )
 
-  const renderItem = ({ item: exercise }) => {
-    const isInRoutine = existingExerciseIds.has(exercise.id)
-    return (
-      <Pressable onPress={() => onSelect(exercise)} className="mx-0.5">
-        <Card className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
-          <View className="flex-row items-center gap-3">
-            <ExerciseThumbnail gifKey={exercise.gif_key} alt={getExerciseName(exercise)} />
-            <View className="flex-1" style={{ minWidth: 0 }}>
-              <ExerciseName fontSize={14} fontWeight="500" reserveLines>
-                {getExerciseName(exercise)}
-              </ExerciseName>
-              <View className="flex-row items-center gap-1.5 mt-1 flex-wrap">
-                <ExerciseBadge
-                  label={getMuscleGroupName(exercise.muscle_group)}
-                  dot={getMuscleGroupColor(exercise.muscle_group?.name)}
-                />
-                {exercise.equipment_type && (
-                  <ExerciseBadge label={getEquipmentName(exercise.equipment_type)} />
-                )}
-                {!exercise.is_system && (
-                  <ExerciseBadge label={t('exercise:custom')} accent />
-                )}
-              </View>
-            </View>
-            {isInRoutine && (
-              <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.successBg }}>
-                <Check size={12} color={colors.success} />
-                <Text style={{ fontSize: 12, color: colors.success }}>{t('exercise:usage.inRoutine')}</Text>
-              </View>
-            )}
-          </View>
-        </Card>
-      </Pressable>
-    )
-  }
+  const filteredExercises = useMemo(() => filterExercises(exercises, filters), [exercises, filters])
+  const visibleRecentExercises = useMemo(
+    () => getVisibleRecentExercises(recentExercises, filters),
+    [recentExercises, filters]
+  )
+
+  const renderRow = exercise => (
+    <ExerciseSearchRow
+      key={exercise.id}
+      exercise={exercise}
+      isInRoutine={existingExerciseIds.has(exercise.id)}
+      onSelect={onSelect}
+    />
+  )
+
+  // The list header, so Recent scrolls away with the list inside the same window.
+  const recentSection = visibleRecentExercises.length > 0 ? (
+    <View className="gap-2 mb-2">
+      <ExerciseSearchSectionTitle>{t('exercise:picker.recent')}</ExerciseSearchSectionTitle>
+      {visibleRecentExercises.map(renderRow)}
+      <ExerciseSearchSectionTitle>{t('exercise:picker.allExercises')}</ExerciseSearchSectionTitle>
+    </View>
+  ) : null
 
   return (
     <>
@@ -98,7 +83,8 @@ export default function ExerciseSearchList({
         <FlatList
           data={filteredExercises}
           keyExtractor={(item) => String(item.id)}
-          renderItem={renderItem}
+          renderItem={({ item }) => renderRow(item)}
+          ListHeaderComponent={recentSection}
           ItemSeparatorComponent={() => <View className="h-2" />}
           style={{ maxHeight: 300 }}
           keyboardShouldPersistTaps="handled"
@@ -106,18 +92,5 @@ export default function ExerciseSearchList({
         />
       )}
     </>
-  )
-}
-
-function ExerciseBadge({ label, dot, accent }) {
-  if (!label) return null
-  return (
-    <View
-      className="flex-row items-center gap-1 px-1.5 py-0.5 rounded-full"
-      style={{ backgroundColor: accent ? colors.successBgSubtle : colors.bgTertiary }}
-    >
-      {dot && <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dot }} />}
-      <Text style={{ fontSize: 10, color: accent ? colors.success : colors.textSecondary }}>{label}</Text>
-    </View>
   )
 }

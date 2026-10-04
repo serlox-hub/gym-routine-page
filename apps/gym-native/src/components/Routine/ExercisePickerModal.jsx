@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCreateExercise } from '../../hooks/useExercises'
+import { getRecentExercises } from '@gym/shared'
+import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCreateExercise, useRecentExerciseStats } from '../../hooks/useExercises'
 import { Modal, Button } from '../ui'
 import ExerciseForm from '../Exercise/ExerciseForm'
 import ExerciseSearchList from './ExerciseSearchList'
@@ -21,6 +22,8 @@ export default function ExercisePickerModal({
   const { data: exercises, isLoading } = useExercisesWithMuscleGroup()
   const { data: muscleGroups } = useMuscleGroups()
   const { data: equipmentTypes } = useEquipmentTypes()
+  const { data: recentStats } = useRecentExerciseStats({ enabled: isOpen })
+  const recentExercises = useMemo(() => getRecentExercises(recentStats, exercises), [recentStats, exercises])
   const createExercise = useCreateExercise()
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export default function ExercisePickerModal({
             equipmentTypes={equipmentTypes}
             isLoading={isLoading}
             onSelect={onSelect}
+            recentExercises={recentExercises}
             initialMuscleGroup={initialMuscleGroup}
             existingExerciseIds={existingExerciseIds}
             search={searchTerm}

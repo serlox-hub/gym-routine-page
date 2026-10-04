@@ -8,11 +8,13 @@ initI18n()
 
 import { render, screen, fireEvent } from '@testing-library/react'
 
-const { EXERCISES } = vi.hoisted(() => ({
+const { EXERCISES, useRecentExerciseStats } = vi.hoisted(() => ({
   EXERCISES: [
     { id: 1, name_es: 'Press banca', name_en: 'Bench press', muscle_group_id: 1, muscle_group: { id: 1, name: 'Pecho' }, is_system: true, gif_key: null },
     { id: 2, name_es: 'Sentadilla', name_en: 'Squat', muscle_group_id: 2, muscle_group: { id: 2, name: 'Piernas' }, is_system: true, gif_key: null },
+    { id: 3, name_es: 'Zancadas', name_en: 'Lunges', muscle_group_id: 2, muscle_group: { id: 2, name: 'Piernas' }, is_system: true, gif_key: null },
   ],
+  useRecentExerciseStats: vi.fn(),
 }))
 
 vi.mock('../../hooks/useExercises.js', () => ({
@@ -20,6 +22,7 @@ vi.mock('../../hooks/useExercises.js', () => ({
   useMuscleGroups: () => ({ data: [] }),
   useEquipmentTypes: () => ({ data: [] }),
   useCreateExercise: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRecentExerciseStats,
 }))
 
 import ExercisePickerModal from './ExercisePickerModal.jsx'
@@ -36,6 +39,7 @@ function renderPicker() {
 describe('ExercisePickerModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    useRecentExerciseStats.mockReturnValue({ data: undefined })
   })
 
   describe('dragging closes the keyboard', () => {
@@ -190,5 +194,121 @@ describe('ExercisePickerModal', () => {
     fireEvent.click(screen.getByText('Sentadilla'))
 
     expect(onSelect).toHaveBeenCalledWith(EXERCISES[1])
+  })
+
+  describe('Recent section', () => {
+    // Last session: Zancadas and Sentadilla. The one before: Press banca and Zancadas.
+    const LAST = '2026-09-30T18:00:00+00:00'
+    const BEFORE = '2026-09-27T18:00:00+00:00'
+    const RECENT_STATS = [
+      { exercise_id: 3, session_date: LAST },
+      { exercise_id: 2, session_date: LAST },
+      { exercise_id: 1, session_date: BEFORE },
+      { exercise_id: 3, session_date: BEFORE },
+    ]
+    const FULL_LIST = ['Press banca', 'Sentadilla', 'Zancadas']
+
+    // Every heading under the modal's title (h3): section titles and exercise names, top to bottom.
+    const headings = () => screen.getAllByRole('heading')
+      .filter(heading => heading.tagName !== 'H3')
+      .map(heading => heading.textContent)
+    const headingTexts = level => screen.queryAllByRole('heading', { level }).map(heading => heading.textContent)
+
+    beforeEach(() => {
+      useRecentExerciseStats.mockReturnValue({ data: RECENT_STATS })
+    })
+
+    it('shows the latest exercises above the full list, a session in catalog order', () => {
+      renderPicker()
+
+      expect(headings()).toEqual([
+        'Recientes', 'Sentadilla', 'Zancadas', 'Press banca',
+        'Todos los ejercicios', ...FULL_LIST,
+      ])
+    })
+
+    it('hides on a non-space character, stays with only spaces and comes back when cleared', () => {
+      const searchInput = renderPicker()
+
+      fireEvent.change(searchInput, { target: { value: 's' } })
+      expect(headings()).not.toContain('Recientes')
+      expect(headings()).not.toContain('Todos los ejercicios')
+
+      fireEvent.change(searchInput, { target: { value: '   ' } })
+      expect(headings()).toEqual(['Recientes', 'Sentadilla', 'Zancadas', 'Press banca', 'Todos los ejercicios', ...FULL_LIST])
+
+      fireEvent.change(searchInput, { target: { value: '' } })
+      expect(headings()).toContain('Recientes')
+    })
+
+    it('shows only the recents of the muscle group the picker opens filtered to', () => {
+      render(<ExercisePickerModal isOpen onClose={vi.fn()} onSelect={onSelect} initialMuscleGroup={1} />)
+
+      expect(headings()).toEqual(['Recientes', 'Press banca', 'Todos los ejercicios', 'Press banca'])
+    })
+
+    it('renders no section title when the filter leaves no recents', () => {
+      useRecentExerciseStats.mockReturnValue({ data: [{ exercise_id: 2, session_date: LAST }] })
+      render(<ExercisePickerModal isOpen onClose={vi.fn()} onSelect={onSelect} initialMuscleGroup={1} />)
+
+      expect(headings()).toEqual(['Press banca'])
+    })
+
+    it('shows today\'s picker with no recents (new user, or the query failed or is loading)', () => {
+      useRecentExerciseStats.mockReturnValue({ data: undefined })
+      renderPicker()
+
+      expect(headings()).toEqual(FULL_LIST)
+    })
+
+    it('puts the names one level under the section titles, and back under the modal title without them', () => {
+      const searchInput = renderPicker()
+
+      expect(headingTexts(4)).toEqual(['Recientes', 'Todos los ejercicios'])
+      expect(headingTexts(5)).toEqual(['Sentadilla', 'Zancadas', 'Press banca', ...FULL_LIST])
+
+      fireEvent.change(searchInput, { target: { value: 'press' } })
+      expect(headingTexts(4)).toEqual(['Press banca'])
+      expect(headingTexts(5)).toEqual([])
+    })
+
+    it('selects an exercise tapped in the section', () => {
+      renderPicker()
+
+      fireEvent.click(screen.getAllByText('Zancadas')[0])
+
+      expect(onSelect).toHaveBeenCalledWith(EXERCISES[2])
+    })
+
+    it('marks an exercise already in the routine in the section and in the list', () => {
+      render(<ExercisePickerModal isOpen onClose={vi.fn()} onSelect={onSelect} existingExerciseIds={new Set([3])} />)
+
+      // Zancadas is a recent and also in the full list, so it carries the mark twice.
+      expect(screen.getAllByText('En rutina')).toHaveLength(2)
+      screen.getAllByText('Zancadas').forEach(name => {
+        expect(name.closest('button')).toHaveTextContent('En rutina')
+      })
+      screen.getAllByText('Sentadilla').forEach(name => {
+        expect(name.closest('button')).not.toHaveTextContent('En rutina')
+      })
+    })
+
+    it('shows the not found message and no section title when the search matches nothing', () => {
+      const searchInput = renderPicker()
+
+      fireEvent.change(searchInput, { target: { value: 'xyzxyz' } })
+
+      expect(screen.getByText('No encontrado')).toBeInTheDocument()
+      expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
+      expect(screen.queryByText('Todos los ejercicios')).not.toBeInTheDocument()
+    })
+
+    it('only queries while the picker is open', () => {
+      const { rerender } = render(<ExercisePickerModal isOpen onClose={vi.fn()} onSelect={onSelect} />)
+      expect(useRecentExerciseStats).toHaveBeenLastCalledWith({ enabled: true })
+
+      rerender(<ExercisePickerModal isOpen={false} onClose={vi.fn()} onSelect={onSelect} />)
+      expect(useRecentExerciseStats).toHaveBeenLastCalledWith({ enabled: false })
+    })
   })
 })

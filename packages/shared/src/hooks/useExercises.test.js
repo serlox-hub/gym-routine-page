@@ -13,6 +13,10 @@ vi.mock('../api/exerciseApi.js', () => ({
   deleteExercise: vi.fn(),
 }))
 
+vi.mock('../api/exerciseStatsApi.js', () => ({
+  fetchRecentExerciseStats: vi.fn(),
+}))
+
 // Mock useAuth to avoid _stores.js initStores requirement
 vi.mock('./useAuth.js', () => ({
   useUserId: vi.fn(() => 'user-123'),
@@ -30,6 +34,7 @@ import {
   updateExercise,
   deleteExercise,
 } from '../api/exerciseApi.js'
+import { fetchRecentExerciseStats } from '../api/exerciseStatsApi.js'
 
 import {
   useExercisesWithMuscleGroup,
@@ -37,6 +42,7 @@ import {
   useCreateExercise,
   useUpdateExercise,
   useDeleteExercise,
+  useRecentExerciseStats,
 } from './useExercises.js'
 
 function createWrapper() {
@@ -148,5 +154,49 @@ describe('useExercises — mutations', () => {
     })
 
     expect(deleteExercise).toHaveBeenCalledWith(exerciseToDelete, expect.anything())
+  })
+})
+
+describe('useRecentExerciseStats', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const ROWS = [{ exercise_id: 1, session_date: '2026-09-30T18:00:00+00:00' }]
+
+  it('fetches with the default lookback, not with the query context as the limit', async () => {
+    fetchRecentExerciseStats.mockResolvedValueOnce(ROWS)
+
+    const { result } = renderHook(() => useRecentExerciseStats(), { wrapper: createWrapper() })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data).toEqual(ROWS)
+    expect(fetchRecentExerciseStats).toHaveBeenCalledWith()
+  })
+
+  it('does not fetch while disabled (picker closed)', () => {
+    const { result } = renderHook(() => useRecentExerciseStats({ enabled: false }), { wrapper: createWrapper() })
+
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(fetchRecentExerciseStats).not.toHaveBeenCalled()
+  })
+
+  it('refetches on every enable, showing the cached rows meanwhile', async () => {
+    fetchRecentExerciseStats.mockResolvedValueOnce(ROWS)
+    const newer = [{ exercise_id: 2, session_date: '2026-10-01T18:00:00+00:00' }, ...ROWS]
+    fetchRecentExerciseStats.mockResolvedValueOnce(newer)
+
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useRecentExerciseStats({ enabled }),
+      { wrapper: createWrapper(), initialProps: { enabled: true } },
+    )
+    await waitFor(() => expect(result.current.data).toEqual(ROWS))
+
+    rerender({ enabled: false })
+    rerender({ enabled: true })
+
+    expect(result.current.data).toEqual(ROWS)
+    await waitFor(() => expect(result.current.data).toEqual(newer))
+    expect(fetchRecentExerciseStats).toHaveBeenCalledTimes(2)
   })
 })

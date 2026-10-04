@@ -1,6 +1,7 @@
 import { getClient } from './_client.js'
 import { calculateSessionExerciseStats, mergeExerciseStats } from '../lib/sessionStatsCalculation.js'
 import { resolveTrackedFields } from '../lib/measurementFields.js'
+import { RECENT_STATS_LOOKBACK } from '../lib/recentExercises.js'
 
 // ============================================
 // UPSERT SESSION STATS (al finalizar sesión)
@@ -154,6 +155,28 @@ export async function fetchExerciseChartData({ exerciseId, routineDayId, gymId }
   }
 
   const { data, error } = await query
+
+  if (error) throw error
+  return data
+}
+
+// ============================================
+// RECENT EXERCISES (exercise picker "Recent" section)
+// ============================================
+
+/**
+ * Latest exercise_session_stats rows of the current user (RLS), newest first.
+ * @returns {Promise<Array<{ exercise_id: number, session_date: string }>>} Throws the Supabase error.
+ */
+export async function fetchRecentExerciseStats(limit = RECENT_STATS_LOOKBACK) {
+  const { data, error } = await getClient()
+    .from('exercise_session_stats')
+    .select('exercise_id, session_date')
+    .order('session_date', { ascending: false })
+    // Without a second key the rows of one session come in any order, and the limit
+    // could cut a different subset of it on each read.
+    .order('exercise_id', { ascending: true })
+    .limit(limit)
 
   if (error) throw error
   return data

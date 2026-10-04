@@ -4,7 +4,8 @@ import { makeClientMock } from './_testUtils.js'
 vi.mock('./_client.js', () => ({ getClient: vi.fn() }))
 import { getClient } from './_client.js'
 
-import { recalculateSessionStats } from './exerciseStatsApi.js'
+import { recalculateSessionStats, fetchRecentExerciseStats } from './exerciseStatsApi.js'
+import { RECENT_STATS_LOOKBACK } from '../lib/recentExercises.js'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -107,5 +108,41 @@ describe('recalculateSessionStats', () => {
 
     const result = await recalculateSessionStats(SESSION_ID)
     expect(result.affectedExerciseIds).toEqual([100])
+  })
+})
+
+describe('fetchRecentExerciseStats', () => {
+  it('reads the latest rows newest first, with a stable order inside a session, up to the lookback', async () => {
+    const rows = [{ exercise_id: 100, session_date: STARTED_AT }]
+    const client = makeClientMock({ exercise_session_stats: { data: rows, error: null } })
+    getClient.mockReturnValue(client)
+
+    const result = await fetchRecentExerciseStats()
+
+    expect(result).toEqual(rows)
+    expect(client.from).toHaveBeenCalledWith('exercise_session_stats')
+    const query = client.from.mock.results[0].value
+    expect(query.select).toHaveBeenCalledWith('exercise_id, session_date')
+    expect(query.order.mock.calls).toEqual([
+      ['session_date', { ascending: false }],
+      ['exercise_id', { ascending: true }],
+    ])
+    expect(query.limit).toHaveBeenCalledWith(RECENT_STATS_LOOKBACK)
+  })
+
+  it('takes a custom limit', async () => {
+    const client = makeClientMock({ exercise_session_stats: { data: [], error: null } })
+    getClient.mockReturnValue(client)
+
+    await fetchRecentExerciseStats(10)
+
+    expect(client.from.mock.results[0].value.limit).toHaveBeenCalledWith(10)
+  })
+
+  it('throws the Supabase error', async () => {
+    const error = { message: 'network down' }
+    getClient.mockReturnValue(makeClientMock({ exercise_session_stats: { data: null, error } }))
+
+    await expect(fetchRecentExerciseStats()).rejects.toBe(error)
   })
 })
