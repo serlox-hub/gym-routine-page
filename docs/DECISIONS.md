@@ -12,6 +12,15 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-10 · Buscador de ejercicios por palabras (#145)
+- **Sin iniciales ("pmr"), decisión del dueño:** la subsecuencia que las permitía metía "Prensa de piernas" bajo `press`.
+- **Prefijo por palabra, no subcadena:** "ress" encontraría "Press". Más resultados, peor orden, y nadie teclea el medio de una palabra.
+- **Sin librería:** Fuse puntúa la cadena entera y no da un AND de palabras en cualquier orden. MiniSearch sí, pero añade una dependencia y un índice por idioma para unos 300 ejercicios.
+- **Erratas con los umbrales de Algolia (1 desde 4 letras, 2 desde 8), no más estrictos:** con 5 letras se perdían 197 de 656 variantes con una letra omitida (press, banca, barra, pecho, polea). El ruido lo quita el corte de mínimas erratas de `filterExercises`. Ruido aceptado: `peho` trae "Peso muerto rumano".
+- **Cada palabra casa en cualquier campo (nombre, grupo, equipo):** así `remo mancuernas` encuentra "Remo con mancuerna" por su equipo. Consecuencia aceptada: `pecho polea` trae también "Jalón al pecho". Descartado ignorar el match en el equipo si otra palabra casó en el nombre: rompe el caso del plural.
+- **Nada de regex construida con la entrada del usuario:** obliga a escapar y expone a ReDoS.
+- **Límites:** una palabra del nombre puede cubrir dos de la query (en `sentadilla s` la `s` no filtra). La forma unida de una palabra con guion solo existe en el texto, nunca se exige en la query: `stepup` no encuentra "Step up con barra" ni `push-ups` un custom "Pushups".
+
 ## 2026-10 · Guardado lento: se avisa, no se corta (#121)
 - **La espera no se acorta con un timeout:** la sospecha es el bucle de reintentos del refresh de token de `auth-js` (`_refreshAccessToken`, hasta 30 s, no configurable), pero no está medido: lo mide el evento `slow_write` (#123). Descartado pasar a `createClient` un `fetch` con `AbortSignal.timeout()`: no corta ese bucle, y abortar un refresh puede gastar el refresh token y cerrar la sesión. Por eso `SaveStatus` solo avisa. El arreglo se elige cuando llegue el primer `slow_write` real.
 
@@ -34,11 +43,6 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **El panel de instrucciones se oculta, no se desmonta** (`useLazyMountToggle`): desmontar re-pedía el GIF en cada apertura.
 - **La base de GIFs alternativa (`gifBaseUrl`) solo se honra fuera de producción** (`import.meta.env.DEV` / `__DEV__`). Existe porque el bucket de la Supabase local está vacío. Es una redirección global y silenciosa: para servir GIFs desde una CDN en producción hay que quitar el guard a conciencia.
 - ⚠️ **`buildSessionExercisesCache` duplica la forma del `exercise` de `fetchSessionExercises`.** Siembra la caché al arrancar desde rutina y el `staleTime` la da por fresca. Un campo nuevo del ejercicio hay que añadirlo a los dos y al select de `fetchRoutineDayExercises`, o faltará solo en sesiones recién iniciadas (así se perdió `gif_key`).
-
-## 2026-07 · Buscador de ejercicios por subsecuencia
-- **Dos punteros, no regex `.*p.*m.*r.*`:** un regex construido con input del usuario obliga a escapar y expone a ReDoS.
-- **El ranking evita el ruido, no un filtro** (`fuzzyMatchScore`): exacta > prefijo > contigua > dispersa, desempate por cobertura. Con query vacía se conserva el orden de la lista.
-- **Límite conocido:** la query colapsa espacios, así que el orden de palabras importa ("banca press" no encuentra "Press de banca").
 
 ## 2026-07 · Instrucciones en español de España (migración 050)
 - **050 empareja por `name_en`**, no por `name_es`, porque los `name_es` de prod pueden variar. La 025 (español latino) no se editó: las migraciones aplicadas no se tocan.

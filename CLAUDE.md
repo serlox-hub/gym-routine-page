@@ -472,6 +472,7 @@ Extract when logic:
 | Cuerpo desplegado de un día y aplicación de un orden a su caché (rutina y sesión) | `routineDayLayout.js` | `getRoutineDayLayout()`, `applyExerciseOrder()`, `applyExerciseOrderToBlocks()`, `placeInSupersetForBlocks()` |
 | Exercise name layout (two lines, reserved height) | `exerciseNameLayout.js` | `getExerciseNameLineHeight()`, `getExerciseNameLinesHeight()` |
 | Routine share link (URL, way back after login, public preview) | `routineShare.js` | `buildRoutineShareUrl()`, `savePendingSharedRoutine()`, `takePendingSharedRoutine()`, `buildSharedRoutinePreview()` |
+| Exercise search (words in any order, typo tolerant) | `textUtils.js` | `tokenizeSearchQuery()`, `matchWordPrefix()`, `getSearchRank()`, `compareSearchRanks()` (run by `filterExercises()`) |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
 
 All these files live in `packages/shared/src/lib/` and are exported via `@gym/shared`.
