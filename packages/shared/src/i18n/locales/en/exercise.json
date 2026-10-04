@@ -45,8 +45,16 @@
   "filterMuscle": "Muscle",
   "filterEquipment": "Equipment",
   "custom": "Custom",
-  "system": "System",
-  "filterSource": "Source",
+  "allMuscles": "All muscles",
+  "allEquipment": "All equipment",
+  "muscleSection": {
+    "upper": "Upper body",
+    "lower": "Lower body",
+    "other": "Core and other"
+  },
+  "noResultsWithFilters": "No exercises match these filters",
+  "clearFilters": "Clear filters",
+  "clearFilterValue": "Clear {{value}}",
   "systemExerciseInfo": "This is a system exercise. It cannot be modified, but you can add your personal notes and adjust the weight unit.",
   "personalNotes": "Notes",
   "personalNotesPlaceholder": "E.g.: Backrest at position 3, wide grip...",

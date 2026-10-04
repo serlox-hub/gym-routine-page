@@ -45,8 +45,16 @@
   "filterMuscle": "Músculo",
   "filterEquipment": "Equipo",
   "custom": "Personal",
-  "system": "Sistema",
-  "filterSource": "Origen",
+  "allMuscles": "Todos los músculos",
+  "allEquipment": "Todo el equipo",
+  "muscleSection": {
+    "upper": "Tren superior",
+    "lower": "Tren inferior",
+    "other": "Core y otros"
+  },
+  "noResultsWithFilters": "Ningún ejercicio con estos filtros",
+  "clearFilters": "Quitar filtros",
+  "clearFilterValue": "Quitar {{value}}",
   "systemExerciseInfo": "Este es un ejercicio del sistema. No se puede modificar, pero puedes añadir tus notas personales y ajustar la unidad de peso.",
   "personalNotes": "Notas",
   "personalNotesPlaceholder": "Ej: Respaldo en posición 3, agarre ancho...",

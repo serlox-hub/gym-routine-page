@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Button from './Button.jsx'
 import Modal from './Modal.jsx'
+import Switch from './Switch.jsx'
 import { colors } from '../../lib/styles.js'
 
 function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
@@ -21,16 +22,10 @@ function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
         {t('common:import.configDescription')}
       </p>
 
-      <label
-        className="flex items-start gap-3 p-3 rounded-lg cursor-pointer mb-6"
+      <div
+        className="flex items-center justify-between gap-3 p-3 rounded-lg mb-6"
         style={{ backgroundColor: colors.bgSecondary }}
       >
-        <input
-          type="checkbox"
-          checked={updateExercises}
-          onChange={(e) => setUpdateExercises(e.target.checked)}
-          className="mt-0.5 w-4 h-4 rounded"
-        />
         <div>
           <span className="text-sm font-medium" style={{ color: colors.textPrimary }}>
             {t('common:import.updateExisting')}
@@ -39,7 +34,12 @@ function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
             {t('common:import.updateExistingDesc')}
           </p>
         </div>
-      </label>
+        <Switch
+          checked={updateExercises}
+          onChange={setUpdateExercises}
+          accessibilityLabel={t('common:import.updateExisting')}
+        />
+      </div>
 
       <div className="flex gap-3 justify-end">
         <Button variant="secondary" onClick={onCancel}>

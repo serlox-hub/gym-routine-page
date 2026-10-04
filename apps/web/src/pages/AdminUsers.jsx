@@ -2,29 +2,9 @@ import { Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useIsAdmin } from '../hooks/useAuth.js'
 import { useAllUsers, useUpdateUserSetting } from '../hooks/useAdmin.js'
-import { LoadingSpinner, ErrorMessage, PageHeader } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, PageHeader, Switch } from '../components/ui/index.js'
 import { formatFullDate } from '@gym/shared'
 import { colors } from '../lib/styles.js'
-
-function CustomToggle({ checked, onChange, disabled }) {
-  return (
-    <button
-      onClick={() => !disabled && onChange(!checked)}
-      className="shrink-0"
-      style={{ opacity: disabled ? 0.5 : 1 }}
-    >
-      <div
-        className="w-12 h-7 rounded-full relative transition-colors"
-        style={{ backgroundColor: checked ? colors.success : colors.border }}
-      >
-        <div
-          className="w-5 h-5 rounded-full absolute top-1 transition-all"
-          style={{ backgroundColor: colors.bgPrimary, left: checked ? 24 : 4 }}
-        />
-      </div>
-    </button>
-  )
-}
 
 function UserRow({ user, featureFlags, onToggleSetting, isUpdating }) {
   const { t } = useTranslation()
@@ -41,10 +21,11 @@ function UserRow({ user, featureFlags, onToggleSetting, isUpdating }) {
         return (
           <div key={flag.key} className="flex items-center justify-between py-1.5">
             <span style={{ color: colors.textPrimary, fontSize: 13 }}>{flag.label}</span>
-            <CustomToggle
+            <Switch
               checked={isEnabled}
               onChange={() => onToggleSetting(user.id, flag.key, isEnabled ? null : 'true')}
               disabled={isUpdating}
+              accessibilityLabel={flag.label}
             />
           </div>
         )

@@ -1,213 +1,85 @@
 import { useState } from 'react'
-import { View, Text, TextInput, Pressable, ScrollView, Modal as RNModal } from 'react-native'
+import { View, TextInput, Keyboard } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { SlidersHorizontal, X } from 'lucide-react-native'
-import { colors, inputStyle } from '../../lib/styles'
-import { getMuscleGroupColor, getMuscleGroupName, getEquipmentName } from '@gym/shared'
+import { colors, design, inputStyle } from '../../lib/styles'
+import {
+  getMuscleGroupColor, getMuscleGroupName, getEquipmentName,
+  getMuscleGroupFilterSections, getEquipmentFilterSections,
+} from '@gym/shared'
+import FilterSelectButton from './FilterSelectButton'
+import FilterOptionSheet from './FilterOptionSheet'
 
 export default function ExerciseSearchBar({
   search, onSearchChange,
   muscleGroups, selectedMuscleGroup, onMuscleGroupChange,
   equipmentTypes, selectedEquipmentType, onEquipmentTypeChange,
-  sourceFilter, onSourceFilterChange,
   autoFocus = false,
 }) {
   const { t } = useTranslation()
-  const [showFilters, setShowFilters] = useState(false)
+  const [openFilter, setOpenFilter] = useState(null)
 
+  // Built on every render, not memoized: labels and order depend on the language, which can
+  // change while the picker is open, and the lists are a dozen items.
+  const muscleSections = getMuscleGroupFilterSections(muscleGroups)
+  const equipmentSections = getEquipmentFilterSections(equipmentTypes)
   const selectedGroup = muscleGroups?.find(g => g.id === selectedMuscleGroup)
   const selectedEquipment = equipmentTypes?.find(e => e.id === selectedEquipmentType)
-  const activeFilterCount = (selectedMuscleGroup ? 1 : 0) + (selectedEquipmentType ? 1 : 0) + (sourceFilter && sourceFilter !== 'all' ? 1 : 0)
 
-  const handleClearAll = () => {
-    onMuscleGroupChange?.(null)
-    onEquipmentTypeChange?.(null)
-    onSourceFilterChange?.('all')
+  // The search keyboard would cover the sheet.
+  const openSheet = filter => {
+    Keyboard.dismiss()
+    setOpenFilter(filter)
   }
+  const closeSheet = () => setOpenFilter(null)
 
   return (
-    <>
-      <View className="flex-row items-center gap-2 mb-3">
-        <TextInput
-          value={search}
-          onChangeText={onSearchChange}
-          placeholder={t('exercise:searchPlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          autoFocus={autoFocus}
-          className="flex-1"
-          style={[inputStyle, { paddingHorizontal: 12, paddingVertical: 8, fontSize: 14 }]}
+    <View className="mb-2">
+      <TextInput
+        value={search}
+        onChangeText={onSearchChange}
+        placeholder={t('exercise:searchPlaceholder')}
+        placeholderTextColor={colors.textMuted}
+        autoFocus={autoFocus}
+        style={[inputStyle, { height: design.minTouchTarget, paddingHorizontal: 12, paddingVertical: 0, fontSize: 14 }]}
+      />
+
+      <View className="flex-row items-center gap-2 mt-2">
+        <FilterSelectButton
+          label={t('exercise:filterMuscle')}
+          value={selectedGroup ? getMuscleGroupName(selectedGroup) : null}
+          onOpen={() => openSheet('muscle')}
+          onClear={() => onMuscleGroupChange(null)}
+          clearLabel={t('exercise:clearFilterValue', { value: getMuscleGroupName(selectedGroup) })}
         />
-        <Pressable
-          onPress={() => setShowFilters(true)}
-          className="p-2 rounded-lg"
-          style={{
-            backgroundColor: activeFilterCount > 0 ? colors.successBgSubtle : colors.bgTertiary,
-            borderWidth: 1,
-            borderColor: activeFilterCount > 0 ? colors.success : colors.border,
-          }}
-        >
-          <SlidersHorizontal size={16} color={activeFilterCount > 0 ? colors.success : colors.textSecondary} />
-          {activeFilterCount > 0 && (
-            <View
-              className="absolute -top-1 -right-1 w-4 h-4 rounded-full items-center justify-center"
-              style={{ backgroundColor: colors.success }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: '700', color: colors.bgPrimary }}>{activeFilterCount}</Text>
-            </View>
-          )}
-        </Pressable>
+        <FilterSelectButton
+          label={t('exercise:filterEquipment')}
+          value={selectedEquipment ? getEquipmentName(selectedEquipment) : null}
+          onOpen={() => openSheet('equipment')}
+          onClear={() => onEquipmentTypeChange(null)}
+          clearLabel={t('exercise:clearFilterValue', { value: getEquipmentName(selectedEquipment) })}
+        />
       </View>
 
-      {/* Active filter chips */}
-      {activeFilterCount > 0 && (
-        <View className="flex-row flex-wrap gap-1.5 mb-3 -mt-1">
-          {selectedGroup && (
-            <ActiveChip
-              label={getMuscleGroupName(selectedGroup)}
-              dot={getMuscleGroupColor(selectedGroup.name)}
-              onClear={() => onMuscleGroupChange(null)}
-            />
-          )}
-          {selectedEquipment && (
-            <ActiveChip
-              label={getEquipmentName(selectedEquipment)}
-              onClear={() => onEquipmentTypeChange(null)}
-            />
-          )}
-          {sourceFilter && sourceFilter !== 'all' && (
-            <ActiveChip
-              label={sourceFilter === 'custom' ? t('exercise:custom') : t('exercise:system')}
-              onClear={() => onSourceFilterChange('all')}
-            />
-          )}
-        </View>
-      )}
-
-      {/* Filter panel */}
-      <RNModal visible={showFilters} transparent animationType="fade" onRequestClose={() => setShowFilters(false)}>
-        <Pressable onPress={() => setShowFilters(false)} className="flex-1 justify-end" style={{ backgroundColor: colors.overlaySoft }}>
-          <Pressable onPress={(e) => e.stopPropagation()} className="bg-surface-block rounded-t-2xl pb-8">
-            <View className="flex-row items-center justify-between p-4">
-              <Text className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                {t('common:buttons.filter')}
-              </Text>
-              {activeFilterCount > 0 && (
-                <Pressable onPress={handleClearAll}>
-                  <Text style={{ fontSize: 12, fontWeight: '500', color: colors.success }}>
-                    {t('common:buttons.reset')}
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-
-            <ScrollView className="px-4" style={{ maxHeight: 400 }}>
-              {/* Muscle group */}
-              <FilterSection label={t('exercise:filterMuscle')}>
-                <View className="flex-row flex-wrap gap-1.5">
-                  <ChipOption
-                    label={t('common:labels.all')}
-                    isSelected={!selectedMuscleGroup}
-                    onPress={() => onMuscleGroupChange(null)}
-                  />
-                  {muscleGroups?.map(group => (
-                    <ChipOption
-                      key={group.id}
-                      label={getMuscleGroupName(group)}
-                      isSelected={selectedMuscleGroup === group.id}
-                      dot={getMuscleGroupColor(group.name)}
-                      onPress={() => onMuscleGroupChange(group.id)}
-                    />
-                  ))}
-                </View>
-              </FilterSection>
-
-              {/* Equipment */}
-              {equipmentTypes && onEquipmentTypeChange && (
-                <FilterSection label={t('exercise:filterEquipment')}>
-                  <View className="flex-row flex-wrap gap-1.5">
-                    <ChipOption
-                      label={t('common:labels.all')}
-                      isSelected={!selectedEquipmentType}
-                      onPress={() => onEquipmentTypeChange(null)}
-                    />
-                    {equipmentTypes?.map(eq => (
-                      <ChipOption
-                        key={eq.id}
-                        label={getEquipmentName(eq)}
-                        isSelected={selectedEquipmentType === eq.id}
-                        onPress={() => onEquipmentTypeChange(eq.id)}
-                      />
-                    ))}
-                  </View>
-                </FilterSection>
-              )}
-
-              {/* Source */}
-              {onSourceFilterChange && (
-                <FilterSection label={t('exercise:filterSource')}>
-                  <View className="flex-row flex-wrap gap-1.5">
-                    {[
-                      { value: 'all', label: t('common:labels.all') },
-                      { value: 'system', label: t('exercise:system') },
-                      { value: 'custom', label: t('exercise:custom') },
-                    ].map(opt => (
-                      <ChipOption
-                        key={opt.value}
-                        label={opt.label}
-                        isSelected={sourceFilter === opt.value}
-                        onPress={() => onSourceFilterChange(opt.value)}
-                      />
-                    ))}
-                  </View>
-                </FilterSection>
-              )}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </RNModal>
-    </>
-  )
-}
-
-function FilterSection({ label, children }) {
-  return (
-    <View className="mb-4">
-      <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary, marginBottom: 8 }}>{label}</Text>
-      {children}
-    </View>
-  )
-}
-
-function ChipOption({ label, isSelected, dot, onPress }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full"
-      style={{
-        backgroundColor: isSelected ? colors.successBgSubtle : colors.bgTertiary,
-        borderWidth: 1,
-        borderColor: isSelected ? colors.success : 'transparent',
-      }}
-    >
-      {dot && <View className="w-2 h-2 rounded-full" style={{ backgroundColor: dot }} />}
-      <Text style={{ fontSize: 12, fontWeight: '500', color: isSelected ? colors.success : colors.textSecondary }}>
-        {label}
-      </Text>
-    </Pressable>
-  )
-}
-
-function ActiveChip({ label, dot, onClear }) {
-  return (
-    <View
-      className="flex-row items-center gap-1 px-2 py-0.5 rounded-full"
-      style={{ backgroundColor: colors.successBgSubtle }}
-    >
-      {dot && <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dot }} />}
-      <Text style={{ fontSize: 12, color: colors.success }}>{label}</Text>
-      <Pressable onPress={onClear} className="ml-0.5">
-        <X size={10} color={colors.success} />
-      </Pressable>
+      <FilterOptionSheet
+        isOpen={openFilter === 'muscle'}
+        onClose={closeSheet}
+        title={t('exercise:filterMuscle')}
+        allLabel={t('exercise:allMuscles')}
+        sections={muscleSections}
+        getSectionTitle={key => t(`exercise:muscleSection.${key}`)}
+        getOptionDot={option => getMuscleGroupColor(option.item.name)}
+        selectedId={selectedMuscleGroup}
+        onSelect={onMuscleGroupChange}
+      />
+      <FilterOptionSheet
+        isOpen={openFilter === 'equipment'}
+        onClose={closeSheet}
+        title={t('exercise:filterEquipment')}
+        allLabel={t('exercise:allEquipment')}
+        sections={equipmentSections}
+        selectedId={selectedEquipmentType}
+        onSelect={onEquipmentTypeChange}
+      />
     </View>
   )
 }

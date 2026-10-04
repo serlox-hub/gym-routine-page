@@ -1,10 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
-import { getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises, getVisibleRecentExercises } from '@gym/shared'
+import {
+  getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises, getVisibleRecentExercises, shouldOfferClearFilters,
+} from '@gym/shared'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
 import ExerciseSearchRow from './ExerciseSearchRow.jsx'
 import ExerciseSearchSectionTitle from './ExerciseSearchSectionTitle.jsx'
+import ExerciseSearchEmptyState from './ExerciseSearchEmptyState.jsx'
 
 function ExerciseSearchList({
   exercises, muscleGroups, equipmentTypes, isLoading, onSelect, recentExercises = [],
@@ -14,7 +17,6 @@ function ExerciseSearchList({
   const [internalSearch, setInternalSearch] = useState(search)
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(initialMuscleGroup)
   const [selectedEquipmentType, setSelectedEquipmentType] = useState(null)
-  const [sourceFilter, setSourceFilter] = useState('all')
 
   useEffect(() => {
     setSelectedMuscleGroup(initialMuscleGroup)
@@ -28,12 +30,11 @@ function ExerciseSearchList({
       search: currentSearch,
       muscleGroupId: selectedMuscleGroup,
       equipmentTypeId: selectedEquipmentType,
-      sourceFilter,
       getName: getExerciseName,
       getMuscleGroupText: e => getMuscleGroupName(e.muscle_group),
       getEquipmentText: e => getEquipmentName(e.equipment_type),
     }),
-    [currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter]
+    [currentSearch, selectedMuscleGroup, selectedEquipmentType]
   )
 
   const filteredExercises = useMemo(() => filterExercises(exercises, filters), [exercises, filters])
@@ -41,6 +42,16 @@ function ExerciseSearchList({
     () => getVisibleRecentExercises(recentExercises, filters),
     [recentExercises, filters]
   )
+  const offerClearFilters = useMemo(
+    () => filteredExercises.length === 0 && shouldOfferClearFilters(exercises, filters),
+    [filteredExercises, exercises, filters]
+  )
+
+  // Clears every filter, the muscle group included, and keeps the search text.
+  const handleClearFilters = () => {
+    setSelectedMuscleGroup(null)
+    setSelectedEquipmentType(null)
+  }
 
   const showRecent = visibleRecentExercises.length > 0
   // Under the section titles (h4) the names go one level down. Without them they sit right under
@@ -68,8 +79,6 @@ function ExerciseSearchList({
         equipmentTypes={equipmentTypes}
         selectedEquipmentType={selectedEquipmentType}
         onEquipmentTypeChange={setSelectedEquipmentType}
-        sourceFilter={sourceFilter}
-        onSourceFilterChange={setSourceFilter}
         autoFocus
         inputRef={inputRef}
       />
@@ -90,9 +99,7 @@ function ExerciseSearchList({
               </>
             )}
             {filteredExercises.length === 0 ? (
-              <p className="text-center py-4" style={{ color: colors.textSecondary }}>
-                {t('common:errors.notFound')}
-              </p>
+              <ExerciseSearchEmptyState onClearFilters={offerClearFilters ? handleClearFilters : null} />
             ) : (
               filteredExercises.map(renderRow)
             )}

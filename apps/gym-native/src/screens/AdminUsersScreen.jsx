@@ -1,9 +1,9 @@
-import { View, Text, Pressable, FlatList } from 'react-native'
+import { View, Text, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useIsAdmin } from '../hooks/useAuth'
 import { useAllUsers, useUpdateUserSetting } from '../hooks/useAdmin'
-import { LoadingSpinner, ErrorMessage, PageHeader } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, PageHeader, Switch } from '../components/ui'
 import { formatFullDate } from '@gym/shared'
 import { colors } from '../lib/styles'
 
@@ -11,24 +11,6 @@ const FEATURE_FLAGS = [
   { key: 'can_upload_video', labelKey: 'common:preferences.showVideoUpload' },
   { key: 'is_admin', labelKey: 'common:nav.admin' },
 ]
-
-function CustomToggle({ checked, onChange, disabled }) {
-  return (
-    <Pressable onPress={() => !disabled && onChange(!checked)} style={{ opacity: disabled ? 0.5 : 1 }}>
-      <View style={{
-        width: 48, height: 28, borderRadius: 14,
-        backgroundColor: checked ? colors.success : colors.border,
-      }}>
-        <View style={{
-          width: 20, height: 20, borderRadius: 10,
-          backgroundColor: colors.bgPrimary,
-          position: 'absolute', top: 4,
-          left: checked ? 24 : 4,
-        }} />
-      </View>
-    </Pressable>
-  )
-}
 
 function UserRow({ user, onToggleSetting, isUpdating }) {
   const { t } = useTranslation()
@@ -46,10 +28,11 @@ function UserRow({ user, onToggleSetting, isUpdating }) {
         return (
           <View key={flag.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 }}>
             <Text style={{ color: colors.textPrimary, fontSize: 13 }}>{t(flag.labelKey)}</Text>
-            <CustomToggle
+            <Switch
               checked={isEnabled}
               onChange={() => onToggleSetting(user.id, flag.key, isEnabled ? null : 'true')}
               disabled={isUpdating}
+              accessibilityLabel={t(flag.labelKey)}
             />
           </View>
         )
