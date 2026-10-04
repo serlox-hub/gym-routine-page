@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCreateExercise } from '../../hooks/useExercises.js'
+import { getRecentExercises } from '@gym/shared'
+import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCreateExercise, useRecentExerciseStats } from '../../hooks/useExercises.js'
 import { Modal, Button } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import ExerciseForm from '../Exercise/ExerciseForm.jsx'
@@ -22,6 +23,8 @@ export default function ExercisePickerModal({
   const { data: exercises, isLoading } = useExercisesWithMuscleGroup()
   const { data: muscleGroups } = useMuscleGroups()
   const { data: equipmentTypes } = useEquipmentTypes()
+  const { data: recentStats } = useRecentExerciseStats({ enabled: isOpen })
+  const recentExercises = useMemo(() => getRecentExercises(recentStats, exercises), [recentStats, exercises])
   const createExercise = useCreateExercise()
   const searchInputRef = useRef(null)
 
@@ -108,6 +111,7 @@ export default function ExercisePickerModal({
             equipmentTypes={equipmentTypes}
             isLoading={isLoading}
             onSelect={onSelect}
+            recentExercises={recentExercises}
             initialMuscleGroup={initialMuscleGroup}
             existingExerciseIds={existingExerciseIds}
             search={searchTerm}

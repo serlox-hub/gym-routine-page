@@ -473,6 +473,7 @@ Extract when logic:
 | Exercise name layout (two lines, reserved height) | `exerciseNameLayout.js` | `getExerciseNameLineHeight()`, `getExerciseNameLinesHeight()` |
 | Routine share link (URL, way back after login, public preview) | `routineShare.js` | `buildRoutineShareUrl()`, `savePendingSharedRoutine()`, `takePendingSharedRoutine()`, `buildSharedRoutinePreview()` |
 | Exercise search (words in any order, typo tolerant) | `textUtils.js` | `tokenizeSearchQuery()`, `matchWordPrefix()`, `getSearchRank()`, `compareSearchRanks()` (run by `filterExercises()`) |
+| Exercise picker "Recent" section (latest done exercises) | `recentExercises.js` | `getRecentExercises()`, `getVisibleRecentExercises()` |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
 
 All these files live in `packages/shared/src/lib/` and are exported via `@gym/shared`.

@@ -65,6 +65,10 @@
   "usage": {
     "inRoutine": "En rutina"
   },
+  "picker": {
+    "recent": "Recientes",
+    "allExercises": "Todos los ejercicios"
+  },
   "effort": {
     "rir": "RIR",
     "effort": "Esfuerzo"
