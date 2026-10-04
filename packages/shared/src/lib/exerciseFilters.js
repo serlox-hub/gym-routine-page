@@ -1,25 +1,57 @@
 /**
- * Filters of the exercise picker. The muscle group lives in a row always on
- * screen; equipment and "only my exercises" live in a sheet behind a button.
+ * Filters of the exercise picker: muscle group and equipment, each a button
+ * that opens the full list of options, and an "only my exercises" toggle.
  * Filter values are the ones filterExercises takes.
  */
 
 import { filterExercises } from './arrayUtils.js'
-import { t } from '../i18n/index.js'
+import { getMuscleGroupName, getEquipmentName } from './exerciseUtils.js'
+import { getCurrentLocale } from '../i18n/index.js'
 
 const isSourceFiltered = sourceFilter => Boolean(sourceFilter) && sourceFilter !== 'all'
 
+// muscle_groups.category is a Spanish identifier ('Superior', 'Inferior', 'Abdominales')
+// and is null for Cardio, Movilidad and Cuerpo Completo. Anything not mapped goes to 'other'.
+const MUSCLE_SECTION_BY_CATEGORY = { Superior: 'upper', Inferior: 'lower' }
+const MUSCLE_SECTION_ORDER = ['upper', 'lower', 'other']
+
+const byLocalizedName = getName => (a, b) => getName(a).localeCompare(getName(b), getCurrentLocale())
+
+const toOption = getName => item => ({ id: item.id, label: getName(item), item })
+
 /**
- * How many filters the sheet holds that are active (equipment, only mine).
- * Muscle group excluded: its row already shows it.
+ * Muscle groups as the filter's list shows them: upper body, lower body, then
+ * core and the rest, each sorted by the name in the current language. Empty
+ * sections are left out.
  *
- * @param {Object} filters
- * @param {number|null} [filters.equipmentTypeId]
- * @param {'all'|'custom'|'system'} [filters.sourceFilter]
- * @returns {number} 0 to 2
+ * @param {Array|null} muscleGroups - Rows with id, name, name_en, category
+ * @returns {Array<{ key: 'upper'|'lower'|'other', options: Array<{ id, label, item }> }>}
  */
-export function countSheetFilters({ equipmentTypeId, sourceFilter } = {}) {
-  return (equipmentTypeId ? 1 : 0) + (isSourceFiltered(sourceFilter) ? 1 : 0)
+export function getMuscleGroupFilterSections(muscleGroups) {
+  if (!muscleGroups?.length) return []
+  const bySection = new Map(MUSCLE_SECTION_ORDER.map(key => [key, []]))
+  for (const group of muscleGroups) {
+    bySection.get(MUSCLE_SECTION_BY_CATEGORY[group.category] ?? 'other').push(group)
+  }
+  return MUSCLE_SECTION_ORDER
+    .map(key => ({
+      key,
+      options: bySection.get(key).sort(byLocalizedName(getMuscleGroupName)).map(toOption(getMuscleGroupName)),
+    }))
+    .filter(section => section.options.length > 0)
+}
+
+/**
+ * Equipment types as the filter's list shows them: one section, sorted by the
+ * name in the current language (the query sorts by the Spanish name).
+ *
+ * @param {Array|null} equipmentTypes - Rows with id, name, name_en
+ * @returns {Array<{ key: 'all', options: Array<{ id, label, item }> }>}
+ */
+export function getEquipmentFilterSections(equipmentTypes) {
+  if (!equipmentTypes?.length) return []
+  const options = [...equipmentTypes].sort(byLocalizedName(getEquipmentName)).map(toOption(getEquipmentName))
+  return [{ key: 'all', options }]
 }
 
 /**
@@ -32,7 +64,7 @@ export function countSheetFilters({ equipmentTypeId, sourceFilter } = {}) {
  * @returns {boolean}
  */
 export function hasActiveExerciseFilters({ muscleGroupId, equipmentTypeId, sourceFilter } = {}) {
-  return Boolean(muscleGroupId) || countSheetFilters({ equipmentTypeId, sourceFilter }) > 0
+  return Boolean(muscleGroupId) || Boolean(equipmentTypeId) || isSourceFiltered(sourceFilter)
 }
 
 /**
@@ -49,17 +81,4 @@ export function shouldOfferClearFilters(exercises, filters = {}) {
   if (filterExercises(exercises, filters).length > 0) return false
   const withoutFilters = { ...filters, muscleGroupId: null, equipmentTypeId: null, sourceFilter: 'all' }
   return filterExercises(exercises, withoutFilters).length > 0
-}
-
-/**
- * Label of the button that closes the filter sheet: how many exercises the
- * current search and filters show.
- *
- * @param {number|null} resultCount - null while the catalog is loading
- * @returns {string} "Ver 23 ejercicios", "Sin resultados" for 0, "Hecho" while loading
- */
-export function getFilterSheetDoneLabel(resultCount) {
-  if (resultCount == null) return t('common:buttons.done')
-  if (resultCount === 0) return t('exercise:noResults')
-  return t('exercise:showResults', { count: resultCount })
 }

@@ -23,7 +23,6 @@ export default function ExerciseSearchList({
   const [internalSearch, setInternalSearch] = useState(search)
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(initialMuscleGroup)
   const [selectedEquipmentType, setSelectedEquipmentType] = useState(null)
-  const [sourceFilter, setSourceFilter] = useState('all')
   const [listMinHeight, setListMinHeight] = useState(LIST_MIN_HEIGHT)
 
   useEffect(() => {
@@ -38,12 +37,11 @@ export default function ExerciseSearchList({
       search: currentSearch,
       muscleGroupId: selectedMuscleGroup,
       equipmentTypeId: selectedEquipmentType,
-      sourceFilter,
       getName: getExerciseName,
       getMuscleGroupText: e => getMuscleGroupName(e.muscle_group),
       getEquipmentText: e => getEquipmentName(e.equipment_type),
     }),
-    [currentSearch, selectedMuscleGroup, selectedEquipmentType, sourceFilter]
+    [currentSearch, selectedMuscleGroup, selectedEquipmentType]
   )
 
   const filteredExercises = useMemo(() => filterExercises(exercises, filters), [exercises, filters])
@@ -60,7 +58,6 @@ export default function ExerciseSearchList({
   const handleClearFilters = () => {
     setSelectedMuscleGroup(null)
     setSelectedEquipmentType(null)
-    setSourceFilter('all')
   }
 
   const renderRow = exercise => (
@@ -92,9 +89,6 @@ export default function ExerciseSearchList({
         equipmentTypes={equipmentTypes}
         selectedEquipmentType={selectedEquipmentType}
         onEquipmentTypeChange={setSelectedEquipmentType}
-        sourceFilter={sourceFilter}
-        onSourceFilterChange={setSourceFilter}
-        resultCount={exercises ? filteredExercises.length : null}
         autoFocus
       />
       {isLoading ? (

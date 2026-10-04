@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import {
-  countSheetFilters,
+  getMuscleGroupFilterSections,
+  getEquipmentFilterSections,
   hasActiveExerciseFilters,
   shouldOfferClearFilters,
-  getFilterSheetDoneLabel,
 } from './exerciseFilters.js'
+import { initI18n } from '../i18n/index.js'
+
+initI18n()
 
 const CHEST = 1
 const LEGS = 2
@@ -18,34 +21,80 @@ const CATALOG = [
   { id: 4, name: 'Remo TRX', muscle_group_id: LEGS, is_system: true, equipment_type: { id: TRX } },
 ]
 
-describe('countSheetFilters', () => {
-  it('is 0 with no filter', () => {
-    expect(countSheetFilters({ equipmentTypeId: null, sourceFilter: 'all' })).toBe(0)
+describe('getMuscleGroupFilterSections', () => {
+  afterEach(() => initI18n({ lng: 'es' }))
+
+  const group = (id, name, nameEn, category) => ({ id, name, name_en: nameEn, category })
+  const GROUPS = [
+    group(1, 'Pecho', 'Chest', 'Superior'),
+    group(2, 'Cuádriceps', 'Quadriceps', 'Inferior'),
+    group(3, 'Abdominales', 'Abs', 'Abdominales'),
+    group(4, 'Bíceps', 'Biceps', 'Superior'),
+    group(5, 'Cardio', 'Cardio', null),
+    group(6, 'Glúteos', 'Glutes', 'Inferior'),
+  ]
+  const shape = sections => sections.map(s => [s.key, s.options.map(o => o.label)])
+
+  it('splits upper, lower and the rest, each sorted by name', () => {
+    expect(shape(getMuscleGroupFilterSections(GROUPS))).toEqual([
+      ['upper', ['Bíceps', 'Pecho']],
+      ['lower', ['Cuádriceps', 'Glúteos']],
+      ['other', ['Abdominales', 'Cardio']],
+    ])
   })
 
-  it('is 0 with nothing passed', () => {
-    expect(countSheetFilters()).toBe(0)
-    expect(countSheetFilters({})).toBe(0)
+  it('sorts by the name in the current language', () => {
+    initI18n({ lng: 'en' })
+    expect(shape(getMuscleGroupFilterSections(GROUPS))[0]).toEqual(['upper', ['Biceps', 'Chest']])
   })
 
-  it('counts the equipment alone', () => {
-    expect(countSheetFilters({ equipmentTypeId: BARBELL, sourceFilter: 'all' })).toBe(1)
+  it('carries the id and the row with each option', () => {
+    const [upper] = getMuscleGroupFilterSections(GROUPS)
+    expect(upper.options[0]).toEqual({ id: 4, label: 'Bíceps', item: GROUPS[3] })
   })
 
-  it('counts only mine alone', () => {
-    expect(countSheetFilters({ equipmentTypeId: null, sourceFilter: 'custom' })).toBe(1)
+  it('leaves empty sections out', () => {
+    expect(shape(getMuscleGroupFilterSections([GROUPS[0]]))).toEqual([['upper', ['Pecho']]])
   })
 
-  it('counts "system" as active, though the UI no longer offers it', () => {
-    expect(countSheetFilters({ equipmentTypeId: null, sourceFilter: 'system' })).toBe(1)
+  it('puts an unknown category with the rest', () => {
+    expect(shape(getMuscleGroupFilterSections([group(9, 'Cuello', 'Neck', 'Otra')]))).toEqual([['other', ['Cuello']]])
   })
 
-  it('counts both together', () => {
-    expect(countSheetFilters({ equipmentTypeId: BARBELL, sourceFilter: 'custom' })).toBe(2)
+  it('is empty without groups', () => {
+    expect(getMuscleGroupFilterSections(null)).toEqual([])
+    expect(getMuscleGroupFilterSections([])).toEqual([])
+  })
+})
+
+describe('getEquipmentFilterSections', () => {
+  afterEach(() => initI18n({ lng: 'es' }))
+
+  const EQUIPMENT = [
+    { id: 1, name: 'Polea', name_en: 'Cable' },
+    { id: 2, name: 'Barra', name_en: 'Barbell' },
+    { id: 3, name: 'Mancuernas', name_en: 'Dumbbell' },
+  ]
+
+  it('is one section sorted by name', () => {
+    const [section] = getEquipmentFilterSections(EQUIPMENT)
+    expect(section.key).toBe('all')
+    expect(section.options.map(o => o.label)).toEqual(['Barra', 'Mancuernas', 'Polea'])
   })
 
-  it('leaves the muscle group out', () => {
-    expect(countSheetFilters({ muscleGroupId: CHEST, equipmentTypeId: null, sourceFilter: 'all' })).toBe(0)
+  it('sorts by the name in the current language', () => {
+    initI18n({ lng: 'en' })
+    expect(getEquipmentFilterSections(EQUIPMENT)[0].options.map(o => o.label)).toEqual(['Barbell', 'Cable', 'Dumbbell'])
+  })
+
+  it('does not reorder the array it gets', () => {
+    getEquipmentFilterSections(EQUIPMENT)
+    expect(EQUIPMENT.map(e => e.id)).toEqual([1, 2, 3])
+  })
+
+  it('is empty without equipment', () => {
+    expect(getEquipmentFilterSections(undefined)).toEqual([])
+    expect(getEquipmentFilterSections([])).toEqual([])
   })
 })
 
@@ -111,24 +160,5 @@ describe('shouldOfferClearFilters', () => {
   it('treats only mine as a filter', () => {
     const systemOnly = CATALOG.filter(e => e.is_system)
     expect(shouldOfferClearFilters(systemOnly, { ...noFilters, sourceFilter: 'custom' })).toBe(true)
-  })
-})
-
-describe('getFilterSheetDoneLabel', () => {
-  it('shows how many exercises there are', () => {
-    expect(getFilterSheetDoneLabel(23)).toBe('Ver 23 ejercicios')
-  })
-
-  it('uses the singular for one', () => {
-    expect(getFilterSheetDoneLabel(1)).toBe('Ver 1 ejercicio')
-  })
-
-  it('says there are no results for 0', () => {
-    expect(getFilterSheetDoneLabel(0)).toBe('Sin resultados')
-  })
-
-  it('carries no number while the catalog is loading', () => {
-    expect(getFilterSheetDoneLabel(null)).toBe('Hecho')
-    expect(getFilterSheetDoneLabel(undefined)).toBe('Hecho')
   })
 })
