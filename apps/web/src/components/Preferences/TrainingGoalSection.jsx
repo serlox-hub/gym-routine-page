@@ -1,25 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
-
-function CustomToggle({ checked, onChange, disabled }) {
-  return (
-    <button
-      onClick={() => !disabled && onChange(!checked)}
-      className="shrink-0"
-      style={{ opacity: disabled ? 0.5 : 1 }}
-    >
-      <div
-        className="w-12 h-7 rounded-full relative transition-colors"
-        style={{ backgroundColor: checked ? colors.success : colors.border }}
-      >
-        <div
-          className="w-5 h-5 rounded-full absolute top-1 transition-all"
-          style={{ backgroundColor: colors.bgPrimary, left: checked ? 24 : 4 }}
-        />
-      </div>
-    </button>
-  )
-}
+import { Switch } from '../ui/index.js'
 
 function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabled, highlight }) {
   const { t } = useTranslation()
@@ -73,7 +54,12 @@ function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabl
               {t('common:preferences.showWidgetHomeDescription')}
             </p>
           </div>
-          <CustomToggle checked={showWidget} onChange={onToggleWidget} disabled={disabled} />
+          <Switch
+            checked={showWidget}
+            onChange={onToggleWidget}
+            disabled={disabled}
+            accessibilityLabel={t('common:preferences.showWidgetHome')}
+          />
         </div>
       </div>
     </section>

@@ -1,10 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
-import { getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises, getVisibleRecentExercises } from '@gym/shared'
+import {
+  getMuscleGroupName, getEquipmentName, getExerciseName, filterExercises, getVisibleRecentExercises, shouldOfferClearFilters,
+} from '@gym/shared'
 import ExerciseSearchBar from '../Exercise/ExerciseSearchBar.jsx'
 import ExerciseSearchRow from './ExerciseSearchRow.jsx'
 import ExerciseSearchSectionTitle from './ExerciseSearchSectionTitle.jsx'
+import ExerciseSearchEmptyState from './ExerciseSearchEmptyState.jsx'
 
 function ExerciseSearchList({
   exercises, muscleGroups, equipmentTypes, isLoading, onSelect, recentExercises = [],
@@ -41,6 +44,17 @@ function ExerciseSearchList({
     () => getVisibleRecentExercises(recentExercises, filters),
     [recentExercises, filters]
   )
+  const offerClearFilters = useMemo(
+    () => filteredExercises.length === 0 && shouldOfferClearFilters(exercises, filters),
+    [filteredExercises, exercises, filters]
+  )
+
+  // Clears every filter, the muscle group included, and keeps the search text.
+  const handleClearFilters = () => {
+    setSelectedMuscleGroup(null)
+    setSelectedEquipmentType(null)
+    setSourceFilter('all')
+  }
 
   const showRecent = visibleRecentExercises.length > 0
   // Under the section titles (h4) the names go one level down. Without them they sit right under
@@ -70,6 +84,7 @@ function ExerciseSearchList({
         onEquipmentTypeChange={setSelectedEquipmentType}
         sourceFilter={sourceFilter}
         onSourceFilterChange={setSourceFilter}
+        resultCount={exercises ? filteredExercises.length : null}
         autoFocus
         inputRef={inputRef}
       />
@@ -90,9 +105,7 @@ function ExerciseSearchList({
               </>
             )}
             {filteredExercises.length === 0 ? (
-              <p className="text-center py-4" style={{ color: colors.textSecondary }}>
-                {t('common:errors.notFound')}
-              </p>
+              <ExerciseSearchEmptyState onClearFilters={offerClearFilters ? handleClearFilters : null} />
             ) : (
               filteredExercises.map(renderRow)
             )}

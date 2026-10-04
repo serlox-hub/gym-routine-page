@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth'
-import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui'
+import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal, Switch } from '../components/ui'
 import { WeightUnitChangeModal, MeasurementUnitChangeModal, FeedbackModal } from '../components/Preferences'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors } from '../lib/styles'
@@ -36,24 +36,6 @@ function SmallPill({ label, active, onPress, disabled }) {
   )
 }
 
-function CustomToggle({ checked, onChange, disabled }) {
-  return (
-    <Pressable onPress={() => !disabled && onChange(!checked)} style={{ opacity: disabled ? 0.5 : 1 }}>
-      <View style={{
-        width: 48, height: 28, borderRadius: 14,
-        backgroundColor: checked ? colors.success : colors.border,
-      }}>
-        <View style={{
-          width: 20, height: 20, borderRadius: 10,
-          backgroundColor: colors.bgPrimary,
-          position: 'absolute', top: 4,
-          left: checked ? 24 : 4,
-        }} />
-      </View>
-    </Pressable>
-  )
-}
-
 function ToggleRow({ label, description, checked, onChange, disabled }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
@@ -61,7 +43,7 @@ function ToggleRow({ label, description, checked, onChange, disabled }) {
         <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>{label}</Text>
         {description && <Text style={{ color: colors.textMuted, fontSize: 12 }}>{description}</Text>}
       </View>
-      <CustomToggle checked={checked} onChange={onChange} disabled={disabled} />
+      <Switch checked={checked} onChange={onChange} disabled={disabled} accessibilityLabel={label} />
     </View>
   )
 }

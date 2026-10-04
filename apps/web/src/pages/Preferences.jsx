@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LogOut, Users, MessageSquare, Inbox, Dumbbell, ChevronRight } from 'lucide-react'
 import { useChangeWeightUnit, useChangeMeasurementUnit } from '@gym/shared'
-import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal } from '../components/ui/index.js'
+import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal, Switch } from '../components/ui/index.js'
 import { InstallAppSection, TrainingGoalSection, WeightUnitChangeModal, MeasurementUnitChangeModal, FeedbackModal } from '../components/Preferences/index.js'
 import { usePreferences, useUpdatePreference } from '../hooks/usePreferences.js'
 import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/useAuth.js'
@@ -26,29 +26,6 @@ function SmallPill({ label, active, onClick, disabled }) {
   )
 }
 
-function CustomToggle({ checked, onChange, disabled }) {
-  return (
-    <button
-      onClick={() => !disabled && onChange(!checked)}
-      className="shrink-0"
-      style={{ opacity: disabled ? 0.5 : 1 }}
-    >
-      <div
-        className="w-12 h-7 rounded-full relative transition-colors"
-        style={{ backgroundColor: checked ? colors.success : colors.border }}
-      >
-        <div
-          className="w-5 h-5 rounded-full absolute top-1 transition-all"
-          style={{
-            backgroundColor: colors.bgPrimary,
-            left: checked ? 24 : 4,
-          }}
-        />
-      </div>
-    </button>
-  )
-}
-
 function ToggleRow({ label, description, checked, onChange, disabled }) {
   return (
     <div className="flex items-center gap-3 py-3">
@@ -56,7 +33,7 @@ function ToggleRow({ label, description, checked, onChange, disabled }) {
         <p style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 500 }}>{label}</p>
         {description && <p style={{ color: colors.textMuted, fontSize: 12 }}>{description}</p>}
       </div>
-      <CustomToggle checked={checked} onChange={onChange} disabled={disabled} />
+      <Switch checked={checked} onChange={onChange} disabled={disabled} accessibilityLabel={label} />
     </div>
   )
 }

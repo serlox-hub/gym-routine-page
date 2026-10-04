@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { View, Text, Switch } from 'react-native'
+import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Button from './Button'
 import Modal from './Modal'
-import { colors } from '../../lib/styles'
+import Switch from './Switch'
 
 export default function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
   const { t } = useTranslation()
@@ -32,10 +32,9 @@ export default function ImportOptionsModal({ isOpen, onConfirm, onCancel }) {
           </Text>
         </View>
         <Switch
-          value={updateExercises}
-          onValueChange={setUpdateExercises}
-          trackColor={{ false: colors.border, true: colors.actionPrimary }}
-          thumbColor={colors.textPrimary}
+          checked={updateExercises}
+          onChange={setUpdateExercises}
+          accessibilityLabel={t('common:import.updateExisting')}
         />
       </View>
 
