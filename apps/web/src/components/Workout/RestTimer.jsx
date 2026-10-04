@@ -7,6 +7,7 @@ import { useRestTimer } from '../../hooks/useWorkout.js'
 import { useDraggable } from '../../hooks/useDrag.js'
 import { formatSecondsToMMSS } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
+import { IconButton } from '../ui/index.js'
 
 const CIRCLE_SIZE = 220
 const STROKE_WIDTH = 6
@@ -45,14 +46,17 @@ function RestTimer() {
     }
 
     return (
-      <div className="fixed z-50 select-none" style={{ top: 8, left: '50%', ...dragStyle }} {...dragProps}>
+      // top 4, not 8: the button is the 44px box and the pill inside it (36) stays where it was.
+      <div className="fixed z-50 select-none" style={{ top: 4, left: '50%', ...dragStyle }} {...dragProps}>
         <button onClick={handleExpand}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg cursor-grab active:cursor-grabbing"
-          style={{ backgroundColor: colors.bgSecondary, border: `2px solid ${timerColor}` }}>
-          <span className={`text-sm font-bold font-mono ${isCritical ? 'animate-pulse' : ''}`} style={{ color: timerColor }}>
-            {timeDisplay}
+          className="min-h-11 flex items-center cursor-grab active:cursor-grabbing">
+          <span className="flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg"
+            style={{ backgroundColor: colors.bgSecondary, border: `2px solid ${timerColor}` }}>
+            <span className={`text-sm font-bold font-mono ${isCritical ? 'animate-pulse' : ''}`} style={{ color: timerColor }}>
+              {timeDisplay}
+            </span>
+            <Maximize2 size={14} style={{ color: colors.textSecondary }} />
           </span>
-          <Maximize2 size={14} style={{ color: colors.textSecondary }} />
         </button>
       </div>
     )
@@ -73,11 +77,7 @@ function RestTimer() {
               {t('workout:rest.title').toUpperCase()}
             </span>
           </div>
-          <button onClick={() => setMinimized(true)}
-            className="flex items-center justify-center rounded-full hover:opacity-80"
-            style={{ width: 32, height: 32, backgroundColor: colors.bgTertiary }}>
-            <ChevronDown size={18} style={{ color: colors.textSecondary }} />
-          </button>
+          <IconButton icon={ChevronDown} filled label={t('workout:rest.minimize')} onClick={() => setMinimized(true)} />
         </div>
 
         {/* Circular timer */}
@@ -107,12 +107,12 @@ function RestTimer() {
         {/* Adjust pills */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <button onClick={() => addTime(-15)}
-            className="px-4 py-2 rounded-full text-sm font-medium hover:opacity-80"
+            className="min-h-11 px-4 py-2 rounded-full text-sm font-medium hover:opacity-80"
             style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}>
             − 15s
           </button>
           <button onClick={() => addTime(15)}
-            className="px-4 py-2 rounded-full text-sm font-medium hover:opacity-80"
+            className="min-h-11 px-4 py-2 rounded-full text-sm font-medium hover:opacity-80"
             style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}>
             + 15s
           </button>

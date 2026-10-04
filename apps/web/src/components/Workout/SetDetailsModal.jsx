@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Video, X, ChevronRight } from 'lucide-react'
-import { Modal, Button, LoadingSpinner } from '../ui/index.js'
+import { Modal, Button, IconButton, LoadingSpinner } from '../ui/index.js'
 import VideoPlayer from './VideoPlayer.jsx'
 import { colors } from '../../lib/styles.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -138,11 +138,7 @@ function SetDetailsModal({
         <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 700, letterSpacing: 1.5 }}>
           {t('workout:set.detailsTitle', { number: setNumber || '' })}
         </span>
-        <button onClick={handleClose}
-          className="flex items-center justify-center rounded-full hover:opacity-80"
-          style={{ width: 32, height: 32, backgroundColor: colors.bgTertiary }}>
-          <X size={16} style={{ color: colors.textSecondary }} />
-        </button>
+        <IconButton icon={X} iconSize={16} filled label={t('common:buttons.close')} onClick={handleClose} />
       </div>
 
       <div className="px-5 mt-3 overflow-y-auto" style={{ flex: 1, minHeight: 0 }}>
@@ -167,7 +163,7 @@ function SetDetailsModal({
                         onClick={() => handleRirSelect(option.value)}
                         aria-pressed={selected}
                         aria-label={usesReps ? `${info.label} ${info.description}` : undefined}
-                        className="flex items-center gap-2.5 rounded-lg text-left"
+                        className="min-h-11 flex items-center gap-2.5 rounded-lg text-left"
                         style={{
                           backgroundColor: selected ? colors.success : colors.bgTertiary,
                           color: selected ? colors.bgPrimary : colors.textPrimary,
@@ -198,7 +194,7 @@ function SetDetailsModal({
                   {['normal', 'dropset'].map((key) => (
                     <button key={key}
                       onClick={() => onSetTypeChange?.(key)}
-                      className="py-2.5 rounded-lg text-sm font-semibold"
+                      className="min-h-11 py-2.5 rounded-lg text-sm font-semibold"
                       style={{
                         backgroundColor: setType === key ? colors.success : 'transparent',
                         color: setType === key ? colors.bgPrimary : colors.textSecondary,
@@ -246,11 +242,8 @@ function SetDetailsModal({
                     ) : (
                       <VideoPlayer videoKey={videoUrl} />
                     )}
-                    <button onClick={handleRemoveVideo}
-                      className="absolute top-2 right-2 p-1 rounded-full"
-                      style={{ backgroundColor: colors.overlay }}>
-                      <X size={16} style={{ color: colors.textPrimary }} />
-                    </button>
+                    <IconButton icon={X} iconSize={16} color={colors.textPrimary} filled
+                      label={t('workout:set.removeVideo')} onClick={handleRemoveVideo} className="absolute top-0 right-0" />
                     {/* Progreso de subida (issue #31): visible sin salir de la hoja mientras el
                         botón «Completar» está bloqueado por isUploadingVideo. */}
                     {isUploadingVideo && (

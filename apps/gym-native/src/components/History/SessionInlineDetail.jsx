@@ -139,7 +139,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   )
 
   const trailingActions = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, width: 132 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, width: 150 }}>
       {trailingBadges}
       {menu}
     </View>

@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import DropdownMenu from './DropdownMenu.jsx'
+import IconButton from './IconButton.jsx'
 
 function PageHeader({
   title,
@@ -13,6 +15,7 @@ function PageHeader({
   children
 }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const handleBack = () => {
     if (onBack) {
@@ -34,13 +37,13 @@ function PageHeader({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {showBack && (
-            <button
+            <IconButton
+              icon={ChevronLeft}
+              iconSize={20}
+              color={colors.textPrimary}
+              label={t('common:buttons.back')}
               onClick={handleBack}
-              className="-ml-1 p-1.5 rounded hover:opacity-80 shrink-0"
-              style={{ color: colors.textPrimary }}
-            >
-              <ChevronLeft size={20} />
-            </button>
+            />
           )}
           <h1 className="text-xl font-bold truncate">{title}</h1>
           {titleExtra}

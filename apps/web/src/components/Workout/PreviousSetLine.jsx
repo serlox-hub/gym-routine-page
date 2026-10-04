@@ -9,8 +9,7 @@ import { formatPreviousSetValue, formatPreviousSetEffort } from '@gym/shared'
 // (bici: nivel × distancia × tiempo) dejaba los inputs a ~26px. Aquí cabe entera y CON unidades.
 // Es contexto de progresión (qué y cómo de duro fue la última vez), y ese mismo valor alimenta el
 // prefill automático de los inputs (useSetInputs). Al tocarla se abre la nota/vídeo de aquella serie.
-// El padding con margen negativo agranda el área táctil (texto de 11px = ~15px pulsables) sin
-// cambiar la altura de la subfila. Equivale al hitSlop del gemelo native.
+// 44px tall with `-my-2`: the box takes the subrow's padding (see SetRowMeta).
 function PreviousSetLine({ previousSet, trackedFields, weightUnit = 'kg', distanceUnit = 'm', showRir = false }) {
   const { t } = useTranslation()
   const [showDetail, setShowDetail] = useState(false)
@@ -30,7 +29,7 @@ function PreviousSetLine({ previousSet, trackedFields, weightUnit = 'kg', distan
       <button
         onClick={() => setShowDetail(true)}
         aria-label={t('workout:set.lastTime')}
-        className="flex items-center gap-1.5 hover:opacity-80 min-w-0 py-2 -my-2 px-0.5 -mx-0.5"
+        className="flex items-center gap-1.5 hover:opacity-80 min-w-0 min-h-11 -my-2"
         style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
       >
         <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>

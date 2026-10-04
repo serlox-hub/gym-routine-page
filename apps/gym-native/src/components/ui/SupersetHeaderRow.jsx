@@ -5,7 +5,7 @@ import { ArrowUpDown, Link2 } from 'lucide-react-native'
 import DragHandle from './DragHandle'
 import Modal from './Modal'
 import ReorderModal from './ReorderModal'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 /**
  * Cabecera morada de una superserie, como FILA de la lista de ejercicios del bloque.
@@ -40,7 +40,6 @@ export default function SupersetHeaderRow({
           alignItems: 'center',
           gap: 8,
           paddingHorizontal: 8,
-          paddingVertical: 4,
           backgroundColor: colors.purpleBg,
           borderWidth: 1,
           borderColor: colors.purple,
@@ -53,8 +52,9 @@ export default function SupersetHeaderRow({
             reclama el toque y la cabecera se quedaría sin su propia pulsación. */}
         <Pressable
           onPress={canReorder ? () => setShowMenu(true) : undefined}
+          accessibilityRole={canReorder ? 'button' : undefined}
           className={canReorder ? 'active:opacity-70' : ''}
-          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+          style={{ flex: 1, minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', gap: 8 }}
         >
           <Link2 size={12} color={colors.purple} />
           <Text style={{ color: colors.purple, fontSize: 12, fontWeight: '500' }}>{label}</Text>

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View, Pressable } from 'react-native'
+import { View } from 'react-native'
 import { Image } from 'expo-image'
 import { X, ImageOff } from 'lucide-react-native'
 import { getExerciseGifUrl } from '@gym/shared'
-import { ExerciseName, Modal, Skeleton } from '../ui'
+import { ExerciseName, IconButton, Modal, Skeleton } from '../ui'
 import { colors } from '../../lib/styles'
 
 /**
@@ -30,9 +30,7 @@ function ExerciseGifViewer({ isOpen, onClose, gifKey, exerciseName = '' }) {
         <ExerciseName fontSize={16} fontWeight="700" className="flex-1">
           {exerciseName}
         </ExerciseName>
-        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common:buttons.close')} hitSlop={8}>
-          <X size={20} color={colors.textMuted} />
-        </Pressable>
+        <IconButton icon={X} iconSize={20} color={colors.textMuted} label={t('common:buttons.close')} onPress={onClose} />
       </View>
       <View
         style={{

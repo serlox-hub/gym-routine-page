@@ -94,6 +94,8 @@
     "detailsTitle": "SET {{number}} · DETAILS",
     "detailsGeneric": "Details",
     "video": "Video",
+    "removeVideo": "Remove video",
+    "videoFullscreen": "Full screen",
     "type": {
       "label": "Set type",
       "normal": "Normal",
@@ -114,7 +116,8 @@
     "setsDone": "{{done}} done",
     "setsLeft": "{{count}} sets left",
     "notificationTitle": "Rest finished",
-    "notificationBody": "Tap to return to your session"
+    "notificationBody": "Tap to return to your session",
+    "minimize": "Minimize"
   },
   "addExercise": {
     "title": "Add exercise",
@@ -176,7 +179,8 @@
     "maxCalories": "Max Kcal",
     "avgCalories": "Avg Kcal",
     "bestPace": "Best Pace",
-    "avgPace": "Avg Pace"
+    "avgPace": "Avg Pace",
+    "goToSlide": "Go to card {{number}}"
   },
   "history": {
     "title": "History",

@@ -6,7 +6,7 @@ import { QUERY_KEYS, buildExerciseConfigForm, buildExerciseConfigFormFromRow, di
 import { Modal } from '../ui'
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm'
 import { ExerciseFormPanel } from '../Exercise'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 import useWorkoutStore from '../../stores/workoutStore'
 
 function ViewToggle({ view, onChangeView }) {
@@ -15,8 +15,8 @@ function ViewToggle({ view, onChangeView }) {
     <View className="flex-row rounded-lg overflow-hidden" style={{ backgroundColor: colors.bgTertiary }}>
       <Pressable
         onPress={() => onChangeView('session')}
-        className="flex-1 py-2 items-center"
-        style={view === 'session' ? { backgroundColor: colors.success } : undefined}
+        className="flex-1 py-2 items-center justify-center"
+        style={{ minHeight: design.minTouchTarget, ...(view === 'session' ? { backgroundColor: colors.success } : null) }}
       >
         <Text className="text-xs font-semibold" style={{ color: view === 'session' ? colors.textDark : colors.textSecondary }}>
           {t('workout:session.inSession')}
@@ -24,8 +24,8 @@ function ViewToggle({ view, onChangeView }) {
       </Pressable>
       <Pressable
         onPress={() => onChangeView('exercise')}
-        className="flex-1 py-2 items-center"
-        style={view === 'exercise' ? { backgroundColor: colors.success } : undefined}
+        className="flex-1 py-2 items-center justify-center"
+        style={{ minHeight: design.minTouchTarget, ...(view === 'exercise' ? { backgroundColor: colors.success } : null) }}
       >
         <Text className="text-xs font-semibold" style={{ color: view === 'exercise' ? colors.textDark : colors.textSecondary }}>
           {t('exercise:details')}

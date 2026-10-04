@@ -24,7 +24,7 @@ import { usePreference } from '../../hooks/usePreferences'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
 import { navigationRef } from '../../navigation/navigationRef'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 export default function WorkoutSessionLayout({ title }) {
   const { t } = useTranslation()
@@ -197,19 +197,25 @@ export default function WorkoutSessionLayout({ title }) {
           segments={progress.segments}
           elapsedTime={elapsedTime}
           gymSlot={hasMultiple && currentGymName ? (
+            // The Pressable is the 44pt box (touch target); the pill inside keeps its size.
             <Pressable
               onPress={() => setShowGymSelector(true)}
+              accessibilityRole="button"
               className="active:opacity-80"
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: 180,
-                paddingLeft: 8, paddingRight: 6, paddingVertical: 2,
-                borderRadius: 999, backgroundColor: colors.bgTertiary,
-                borderWidth: 1, borderColor: colors.border,
-              }}
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center', maxWidth: 180 }}
             >
-              <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '600' }}>{t('common:gym.label')}:</Text>
-              <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', flexShrink: 1 }}>{currentGymName}</Text>
-              <ChevronDown size={12} color={colors.textMuted} />
+              <View
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 4,
+                  paddingLeft: 8, paddingRight: 6, paddingVertical: 2,
+                  borderRadius: 999, backgroundColor: colors.bgTertiary,
+                  borderWidth: 1, borderColor: colors.border,
+                }}
+              >
+                <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '600' }}>{t('common:gym.label')}:</Text>
+                <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600', flexShrink: 1 }}>{currentGymName}</Text>
+                <ChevronDown size={12} color={colors.textMuted} />
+              </View>
             </Pressable>
           ) : null}
         />

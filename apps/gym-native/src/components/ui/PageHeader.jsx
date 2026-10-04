@@ -1,7 +1,9 @@
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import DropdownMenu from './DropdownMenu'
+import IconButton from './IconButton'
 import { colors } from '../../lib/styles'
 
 export default function PageHeader({
@@ -13,6 +15,7 @@ export default function PageHeader({
   children,
 }) {
   const navigation = useNavigation()
+  const { t } = useTranslation()
 
   const handleBack = () => {
     if (onBack) {
@@ -26,9 +29,13 @@ export default function PageHeader({
     <View className="bg-surface px-4 pt-2 pb-4">
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-row items-center gap-2 flex-1">
-          <Pressable onPress={handleBack} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} className="-ml-1 active:opacity-70" style={{ padding: 4 }}>
-            <ChevronLeft size={20} color={colors.textPrimary} />
-          </Pressable>
+          <IconButton
+            icon={ChevronLeft}
+            iconSize={20}
+            color={colors.textPrimary}
+            label={t('common:buttons.back')}
+            onPress={handleBack}
+          />
           <Text className="text-primary text-xl font-bold flex-shrink" numberOfLines={1}>
             {title}
           </Text>

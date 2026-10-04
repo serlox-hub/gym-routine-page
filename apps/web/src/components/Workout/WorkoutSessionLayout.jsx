@@ -202,15 +202,20 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             segments={progress.segments}
             elapsedTime={elapsedTime}
             gymSlot={hasMultiple && currentGymName ? (
+              // The button is the 44px box (touch target); the pill inside keeps its size.
               <button
                 onClick={() => setShowGymSelector(true)}
-                className="inline-flex items-center gap-1 max-w-[50vw] pl-2 pr-1.5 py-0.5 rounded-full hover:opacity-80 transition-opacity"
-                style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+                className="min-h-11 inline-flex items-center max-w-[50vw] hover:opacity-80 transition-opacity"
                 title={t('common:gym.changeForSession')}
               >
-                <span style={{ color: colors.textMuted, fontSize: 12, fontWeight: 600 }}>{t('common:gym.label')}:</span>
-                <span className="truncate" style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>{currentGymName}</span>
-                <ChevronDown size={12} style={{ color: colors.textMuted }} />
+                <span
+                  className="inline-flex items-center gap-1 min-w-0 pl-2 pr-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+                >
+                  <span style={{ color: colors.textMuted, fontSize: 12, fontWeight: 600 }}>{t('common:gym.label')}:</span>
+                  <span className="truncate" style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>{currentGymName}</span>
+                  <ChevronDown size={12} style={{ color: colors.textMuted }} />
+                </span>
               </button>
             ) : null}
           />

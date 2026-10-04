@@ -3,10 +3,10 @@ import { View, Text, Pressable, ScrollView, ActivityIndicator, Animated } from '
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, ChevronDown, FileText, Video } from 'lucide-react-native'
 import { useExerciseHistory, useExerciseHistorySummary, useExerciseChartData } from '../../hooks/useWorkout'
-import { ExerciseName, LoadingSpinner, Modal } from '../ui'
+import { ExerciseName, IconButton, LoadingSpinner, Modal } from '../ui'
 import SetNotesView from './SetNotesView'
 import GymSelector from './GymSelector'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 import {
   DEFAULT_TRACKED_FIELDS,
   getExerciseStatCards,
@@ -24,6 +24,8 @@ import { ExerciseProgressChart } from '../Charts'
 
 // gymFilter: id concreto → un gym, 'all' → overlay de todos los gyms
 const ALL_GYMS = 'all'
+// Scope toggle: the visible track sits this far inside the 44pt row (44 - 2 * 8 = a 28pt track).
+const TOGGLE_TRACK_INSET = 8
 
 
 function StatCard({ label, value }) {
@@ -130,16 +132,14 @@ function HistoryTab({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUn
                   <Text style={{ color: colors.textPrimary, fontSize: 13, flex: 1 }}>
                     {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: -8 }}>
+                  {/* No negative margin: the 44pt boxes make a set with a note or video 44 tall,
+                      so two consecutive ones do not overlap in the 6pt gap. */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                     {set.notes && (
-                      <Pressable onPress={() => onSelectSet(set)} style={{ padding: 8 }} className="active:opacity-50">
-                        <FileText size={14} color={colors.textMuted} />
-                      </Pressable>
+                      <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onPress={() => onSelectSet(set)} />
                     )}
                     {set.video_url && (
-                      <Pressable onPress={() => onSelectSet(set)} style={{ padding: 8 }} className="active:opacity-50">
-                        <Video size={14} color={colors.textMuted} />
-                      </Pressable>
+                      <IconButton icon={Video} iconSize={14} color={colors.textMuted} label={t('workout:set.video')} onPress={() => onSelectSet(set)} />
                     )}
                     {set.rir_actual !== null && set.rir_actual !== undefined && (
                       <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
@@ -269,15 +269,18 @@ export default function ExerciseHistoryModal({
         <View className="flex-row items-center gap-2">
           <ExerciseName fontSize={16} fontWeight="700" className="flex-1">{exerciseName}</ExerciseName>
           {routineDayId && (
+            // The Pressables are the 44pt boxes; the track and the sliding pill are painted behind
+            // them at their old size (TOGGLE_TRACK_INSET above and below).
             <View
-              style={{ flexDirection: 'row', borderRadius: 20, padding: 2, backgroundColor: colors.bgTertiary }}
+              style={{ flexDirection: 'row', paddingHorizontal: 2 }}
               onLayout={(e) => setToggleWidth(e.nativeEvent.layout.width)}
             >
+              <View style={{ position: 'absolute', left: 0, right: 0, top: TOGGLE_TRACK_INSET, bottom: TOGGLE_TRACK_INSET, borderRadius: 20, backgroundColor: colors.bgTertiary }} />
               {toggleWidth > 0 && (
                 <Animated.View
                   style={{
                     position: 'absolute',
-                    top: 2, bottom: 2,
+                    top: TOGGLE_TRACK_INSET + 2, bottom: TOGGLE_TRACK_INSET + 2,
                     width: (toggleWidth - 4) / 2,
                     borderRadius: 18,
                     backgroundColor: colors.success,
@@ -287,7 +290,7 @@ export default function ExerciseHistoryModal({
               )}
               <Pressable
                 onPress={() => setScope('day')}
-                style={{ paddingHorizontal: 12, paddingVertical: 5, zIndex: 1 }}
+                style={{ minHeight: design.minTouchTarget, justifyContent: 'center', paddingHorizontal: 12, zIndex: 1 }}
               >
                 <Text style={{ fontSize: 12, fontWeight: '700', color: isDay ? colors.bgPrimary : colors.textSecondary }}>
                   {t('exercise:scopeRoutine')}
@@ -295,7 +298,7 @@ export default function ExerciseHistoryModal({
               </Pressable>
               <Pressable
                 onPress={() => setScope('global')}
-                style={{ paddingHorizontal: 12, paddingVertical: 5, zIndex: 1 }}
+                style={{ minHeight: design.minTouchTarget, justifyContent: 'center', paddingHorizontal: 12, zIndex: 1 }}
               >
                 <Text style={{ fontSize: 12, fontWeight: '700', color: !isDay ? colors.bgPrimary : colors.textSecondary }}>
                   {t('exercise:scopeGlobal')}
@@ -305,35 +308,47 @@ export default function ExerciseHistoryModal({
           )}
         </View>
 
+        {/* The Pressables are the 44pt boxes, the pills inside keep their size. marginTop 4, not
+            12: the box adds ~10 above the pill. */}
         {hasMultiple && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
             <Pressable
               onPress={() => setShowGymSelector(true)}
+              accessibilityRole="button"
               className="active:opacity-80"
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 6,
-                paddingHorizontal: 10, paddingVertical: 4,
-                borderRadius: 999, backgroundColor: colors.bgTertiary,
-                borderWidth: 1, borderColor: colors.border,
-              }}
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
             >
-              <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{gymFilterLabel}</Text>
-              <ChevronDown size={13} color={colors.textMuted} />
+              <View
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 6,
+                  paddingHorizontal: 10, paddingVertical: 4,
+                  borderRadius: 999, backgroundColor: colors.bgTertiary,
+                  borderWidth: 1, borderColor: colors.border,
+                }}
+              >
+                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{gymFilterLabel}</Text>
+                <ChevronDown size={13} color={colors.textMuted} />
+              </View>
             </Pressable>
             <Pressable
               onPress={() => setGymFilter(isOverlay ? defaultGymId : ALL_GYMS)}
+              accessibilityRole="button"
               className="active:opacity-80"
-              style={{
-                flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 10, paddingVertical: 4,
-                borderRadius: 999,
-                backgroundColor: isOverlay ? `${colors.success}20` : colors.bgTertiary,
-                borderWidth: 1, borderColor: isOverlay ? colors.success : colors.border,
-              }}
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
             >
-              <Text style={{ color: isOverlay ? colors.success : colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
-                {t('common:gym.compareGyms')}
-              </Text>
+              <View
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingHorizontal: 10, paddingVertical: 4,
+                  borderRadius: 999,
+                  backgroundColor: isOverlay ? `${colors.success}20` : colors.bgTertiary,
+                  borderWidth: 1, borderColor: isOverlay ? colors.success : colors.border,
+                }}
+              >
+                <Text style={{ color: isOverlay ? colors.success : colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
+                  {t('common:gym.compareGyms')}
+                </Text>
+              </View>
             </Pressable>
           </View>
         )}
@@ -367,8 +382,8 @@ export default function ExerciseHistoryModal({
               <Pressable
                 onPress={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
-                className="py-2 items-center rounded-lg"
-                style={{ backgroundColor: colors.bgTertiary }}
+                className="py-2 items-center justify-center rounded-lg"
+                style={{ minHeight: design.minTouchTarget, backgroundColor: colors.bgTertiary }}
               >
                 {isFetchingNextPage ? (
                   <ActivityIndicator size="small" color={colors.textSecondary} />

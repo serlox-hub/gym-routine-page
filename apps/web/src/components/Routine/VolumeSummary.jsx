@@ -13,9 +13,11 @@ function VolumeSummary({ days, cycleDays = 7 }) {
   if (!days?.length) return null
 
   return (
-    <section className="mt-4">
+    // mt-1 and no mt-3 below: the 44px box (touch target) adds 12px above and below the title,
+    // which stays where it was.
+    <section className="mt-1">
       <button
-        className="flex items-center gap-2 w-full"
+        className="min-h-11 flex items-center gap-2 w-full"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <h3 className="text-sm font-medium" style={{ color: colors.textSecondary }}>
@@ -32,9 +34,7 @@ function VolumeSummary({ days, cycleDays = 7 }) {
         <DayBlocksCollector key={day.id} dayId={day.id} index={i} onBlocks={setAllDaysBlocks} />
       ))}
       {isExpanded && (
-        <div className="mt-3">
-          <VolumeBars allDaysBlocks={allDaysBlocks} cycleDays={cycleDays} totalDays={days.length} />
-        </div>
+        <VolumeBars allDaysBlocks={allDaysBlocks} cycleDays={cycleDays} totalDays={days.length} />
       )}
     </section>
   )

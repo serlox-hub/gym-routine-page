@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { initReactI18next } from 'react-i18next'
-import { i18n, initI18n } from '@gym/shared'
+import { i18n, initI18n, initNotifications } from '@gym/shared'
 
 // Sin esto los componentes pintan la CLAVE en vez del texto. Ver BodyWeightModal.test.jsx.
 i18n.use(initReactI18next)
@@ -11,15 +11,18 @@ import { render, screen, fireEvent } from '@testing-library/react'
 // `blocksRef` es mutable y compartida con el mock de abajo (vi.hoisted la saca del closure de
 // la fábrica) para poder variar los bloques que devuelve `useRoutineBlocks` por test. `pendingRef`
 // hace lo mismo con el `isPending` de las dos mutaciones que combina `isReorderingExercises`.
-const { blocksRef, pendingRef, reorderMutate, supersetMutate } = vi.hoisted(() => ({
+const { blocksRef, pendingRef, reorderMutate, supersetMutate, navigate, startMutate, startPendingRef } = vi.hoisted(() => ({
   blocksRef: { current: [] },
   pendingRef: { current: { reorder: false, superset: false } },
   reorderMutate: vi.fn(),
   supersetMutate: vi.fn(),
+  navigate: vi.fn(),
+  startMutate: vi.fn(),
+  startPendingRef: { current: false },
 }))
 
 vi.mock('react-router-dom', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
 }))
 
 // Solo los hooks con estado de red: dejan pasar getRoutineDayLayout/getExistingSupersetIds/
@@ -33,7 +36,7 @@ vi.mock('../../hooks/useRoutines.js', () => ({
 }))
 
 vi.mock('../../hooks/useWorkout.js', () => ({
-  useStartSession: () => ({ mutate: vi.fn(), isPending: false }),
+  useStartSession: () => ({ mutate: startMutate, isPending: startPendingRef.current }),
 }))
 
 vi.mock('@gym/shared', async () => {
@@ -202,5 +205,69 @@ describe('DayCard — exercise order and membership writes', () => {
 
     expect(screen.getByRole('button', { name: 'Reordenar' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Sacar del superset' })).toBeDisabled()
+  })
+})
+
+describe('DayCard — start button', () => {
+  const show = vi.fn()
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    startPendingRef.current = false
+    blocksRef.current = [main([routineExercise(1, 1, null, 'Sentadilla')])]
+    initNotifications(show)
+  })
+
+  const startButton = () => screen.getByRole('button', { name: 'Empezar Empuje' })
+
+  it('starts the day session, goes to the workout once it is created, and does not unfold the card', () => {
+    renderDay()
+
+    fireEvent.click(startButton())
+
+    expect(startMutate).toHaveBeenCalledTimes(1)
+    const [variables, { onSuccess }] = startMutate.mock.calls[0]
+    expect(variables).toMatchObject({ routineDayId: 1, routineId: 1, routineName: 'PPL', dayName: 'Empuje', gymId: 1 })
+    expect(navigate).not.toHaveBeenCalled()
+    onSuccess()
+    expect(navigate).toHaveBeenCalledWith('/routine/1/day/1/workout')
+    expect(screen.queryByText('Sentadilla')).not.toBeInTheDocument()
+  })
+
+  it('goes back to the running session when it is this day\'s', () => {
+    renderDay({ hasActiveSession: true, activeRoutineDayId: 1 })
+
+    fireEvent.click(startButton())
+
+    expect(navigate).toHaveBeenCalledWith('/routine/1/day/1/workout')
+    expect(startMutate).not.toHaveBeenCalled()
+  })
+
+  it('blocked by another day\'s session: still answers, says why, and starts nothing', () => {
+    renderDay({ hasActiveSession: true, activeRoutineDayId: 2 })
+
+    expect(startButton()).toBeEnabled()
+    fireEvent.click(startButton())
+
+    expect(show).toHaveBeenCalledWith('Tienes un entrenamiento en marcha. Termínalo para empezar otro.', 'info')
+    expect(startMutate).not.toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalled()
+    expect(screen.queryByText('Sentadilla')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['the server has not said yet whether a session is running', { activeSessionSynced: false }, false],
+    ['the start is already in flight', {}, true],
+  ])('while %s: a spinner instead of the play, and the tap does nothing', (_, props, isStarting) => {
+    startPendingRef.current = isStarting
+    renderDay(props)
+
+    expect(startButton()).toBeDisabled()
+    expect(startButton().querySelector('.animate-spin')).not.toBeNull()
+    expect(startButton().querySelector('.lucide-play')).toBeNull()
+    fireEvent.click(startButton())
+
+    expect(startMutate).not.toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalled()
   })
 })

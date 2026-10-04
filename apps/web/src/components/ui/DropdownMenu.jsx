@@ -1,11 +1,15 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MoreVertical, ChevronDown, ChevronUp } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
+import IconButton from './IconButton.jsx'
 import Modal from './Modal.jsx'
 
 const ITEM_CLASS = 'w-full flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:opacity-80 disabled:opacity-30'
 
+// `triggerSize` sizes the icon only: the trigger is always the 44px IconButton box.
 function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [expandedSubmenu, setExpandedSubmenu] = useState(null)
 
@@ -18,16 +22,17 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
 
   return (
     <>
-      <button
+      <IconButton
+        icon={MoreVertical}
+        iconSize={triggerSize}
+        color={colors.textPrimary}
+        label={t('common:buttons.moreOptions')}
         onClick={(e) => {
           e.stopPropagation()
           setIsOpen(true)
         }}
-        className={`p-1.5 rounded-lg transition-opacity hover:opacity-80 ${triggerClassName}`}
-        style={{ color: colors.textPrimary }}
-      >
-        <MoreVertical size={triggerSize} />
-      </button>
+        className={triggerClassName}
+      />
 
       <Modal isOpen={isOpen} onClose={handleClose} position="bottom" maxWidth="max-w-lg">
         <div className="py-2 pb-6">
@@ -63,7 +68,7 @@ function DropdownMenu({ items, triggerSize = 18, triggerClassName = '' }) {
                           handleClose()
                         }}
                         disabled={child.disabled}
-                        className="w-full flex items-center gap-3 px-8 py-2.5 text-sm transition-colors hover:opacity-80 disabled:opacity-30"
+                        className="w-full min-h-11 flex items-center gap-3 px-8 py-2.5 text-sm transition-colors hover:opacity-80 disabled:opacity-30"
                         style={{ color: child.active ? colors.success : colors.textPrimary }}
                       >
                         <span className="truncate">{child.label}</span>

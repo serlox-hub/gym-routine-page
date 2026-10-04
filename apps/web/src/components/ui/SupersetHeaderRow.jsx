@@ -30,27 +30,34 @@ function SupersetHeaderRow({
   // Con una sola unidad en el bloque no hay ninguna acción que ofrecer, así que la cabecera no
   // abre un menú vacío: se queda sin pulsación, como una etiqueta.
   const canReorder = unitLabels.length > 1
+  const HeaderBody = canReorder ? 'button' : 'div'
 
   return (
     <>
       <div
-        className={`flex items-center gap-2 px-2 py-1 ${canReorder ? 'cursor-pointer' : ''}`}
+        className="flex items-center gap-2 px-2"
         style={{
           backgroundColor: colors.purpleBg,
           border: `1px solid ${colors.purple}`,
           borderTopLeftRadius: 8,
           borderTopRightRadius: 8,
         }}
-        onClick={canReorder ? () => setShowMenu(true) : undefined}
       >
         <DragHandle dragHandleProps={dragHandleProps} disabled={isReordering} size={14} />
-        <Link2 size={12} style={{ color: colors.purple }} />
-        <span className="text-xs font-medium" style={{ color: colors.purple }}>{label}</span>
-        {count != null && (
-          <span className="text-xs" style={{ color: colors.textSecondary }}>
-            ({t('routine:superset.exerciseCount', { count })})
-          </span>
-        )}
+        {/* A real button (keyboard, screen reader) 44 tall, the touch-target minimum, sibling of
+            the handle like on native. Without an action it stays a label, at the same height. */}
+        <HeaderBody
+          {...(canReorder ? { type: 'button', onClick: () => setShowMenu(true) } : {})}
+          className={`flex-1 min-w-0 min-h-11 flex items-center gap-2 text-left ${canReorder ? 'cursor-pointer' : ''}`}
+        >
+          <Link2 size={12} style={{ color: colors.purple }} />
+          <span className="text-xs font-medium" style={{ color: colors.purple }}>{label}</span>
+          {count != null && (
+            <span className="text-xs" style={{ color: colors.textSecondary }}>
+              ({t('routine:superset.exerciseCount', { count })})
+            </span>
+          )}
+        </HeaderBody>
       </div>
 
       <Modal isOpen={showMenu} onClose={() => setShowMenu(false)} position="bottom" maxWidth="max-w-lg">

@@ -94,6 +94,8 @@
     "detailsTitle": "SERIE {{number}} · DETALLES",
     "detailsGeneric": "Detalles",
     "video": "Vídeo",
+    "removeVideo": "Quitar vídeo",
+    "videoFullscreen": "Ver a pantalla completa",
     "type": {
       "label": "Tipo de serie",
       "normal": "Normal",
@@ -114,7 +116,8 @@
     "setsDone": "{{done}} hechas",
     "setsLeft": "Quedan {{count}}",
     "notificationTitle": "Descanso terminado",
-    "notificationBody": "Toca para volver a la sesión"
+    "notificationBody": "Toca para volver a la sesión",
+    "minimize": "Minimizar"
   },
   "addExercise": {
     "title": "Añadir ejercicio",
@@ -176,7 +179,8 @@
     "maxCalories": "Máx Kcal",
     "avgCalories": "Media Kcal",
     "bestPace": "Mejor Ritmo",
-    "avgPace": "Media Ritmo"
+    "avgPace": "Media Ritmo",
+    "goToSlide": "Ir a la tarjeta {{number}}"
   },
   "history": {
     "title": "Histórico",

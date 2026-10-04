@@ -22,7 +22,7 @@ function ExerciseSearchEmptyState({ onClearFilters }) {
       <p className="text-center" style={{ color: colors.textSecondary }}>
         {t('exercise:noResultsWithFilters')}
       </p>
-      <Button variant="secondary" className="min-h-11" onClick={onClearFilters}>{t('exercise:clearFilters')}</Button>
+      <Button variant="secondary" onClick={onClearFilters}>{t('exercise:clearFilters')}</Button>
     </div>
   )
 }

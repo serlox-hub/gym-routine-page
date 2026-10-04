@@ -58,7 +58,8 @@
     "noDays": "No days in this routine yet",
     "noDaysHint": "Start by adding your first workout day",
     "duration": "Estimated duration",
-    "durationMin": "{{minutes}} min"
+    "durationMin": "{{minutes}} min",
+    "start": "Start {{name}}"
   },
   "block": {
     "warmup": "Warm-up",

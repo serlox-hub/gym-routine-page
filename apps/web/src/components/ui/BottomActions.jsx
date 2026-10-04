@@ -18,7 +18,7 @@ function BottomActions({
           <button
             onClick={secondary.onClick}
             disabled={secondary.disabled}
-            className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
+            className="flex-1 min-h-11 py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{
               backgroundColor: secondary.danger ? colors.dangerBg : colors.bgTertiary,
               color: secondary.danger ? colors.danger : colors.textPrimary,
@@ -32,7 +32,7 @@ function BottomActions({
           <button
             onClick={primary.onClick}
             disabled={primary.disabled}
-            className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 ${hasSecondary ? 'flex-1' : 'w-full'}`}
+            className={`min-h-11 py-2.5 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50 ${hasSecondary ? 'flex-1' : 'w-full'}`}
             style={{
               backgroundColor: colors.success,
               color: colors.bgPrimary,

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, Animated } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Trash2, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react-native'
-import { Card, ConfirmModal, DragHandle, DropdownMenu, LoadingSpinner, Modal, ReorderModal } from '../ui'
+import { Card, ConfirmModal, DragHandle, DropdownMenu, IconButton, LoadingSpinner, Modal, ReorderModal } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useSetRoutineExerciseSupersetGroup, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
@@ -196,22 +196,16 @@ export default function DayCard({
                   )}
                 </Pressable>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 }}>
-                  <Pressable
+                  {/* BUSY es transitorio: se pinta cargando, no como un play que no responde. */}
+                  <IconButton
+                    icon={Play}
+                    iconSize={20}
+                    color={colors.success}
+                    label={t('routine:day.start', { name })}
                     onPress={handleStartPress}
-                    disabled={isBusy}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    style={{
-                      padding: 4,
-                      // El 0.4 de BLOCKED es la convención "no disponible, pero responde"; BUSY se
-                      // atenúa igual que en web porque en native `disabled` no atenúa por sí solo.
-                      opacity: dayAction === WORKOUT_START_ACTION.BLOCKED || isBusy ? 0.4 : 1,
-                    }}
-                  >
-                    {isBusy
-                      ? <LoadingSpinner inline />
-                      : <Play size={20} color={colors.success} />
-                    }
-                  </Pressable>
+                    loading={isBusy}
+                    blocked={dayAction === WORKOUT_START_ACTION.BLOCKED}
+                  />
                   <DropdownMenu
                     items={[
                       {

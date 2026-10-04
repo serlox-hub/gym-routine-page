@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react'
-import { Card, ConfirmModal, DragHandle, DropdownMenu, LoadingSpinner, Modal } from '../ui/index.js'
+import { Card, ConfirmModal, DragHandle, DropdownMenu, IconButton, LoadingSpinner, Modal } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useSetRoutineExerciseSupersetGroup, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
@@ -166,18 +166,16 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <button
+                  {/* BUSY es transitorio: se pinta cargando, no como un play que no responde. */}
+                  <IconButton
+                    icon={Play}
+                    iconSize={20}
+                    color={colors.success}
+                    label={t('routine:day.start', { name })}
                     onClick={handleStartPress}
-                    disabled={isBusy}
-                    className="p-1 rounded hover:opacity-80 disabled:opacity-40"
-                    style={{ opacity: dayAction === WORKOUT_START_ACTION.BLOCKED ? 0.4 : undefined }}
-                  >
-                    {/* BUSY es transitorio: se pinta cargando, no como un play que no responde. */}
-                    {isBusy
-                      ? <LoadingSpinner inline />
-                      : <Play size={20} style={{ color: colors.success }} />
-                    }
-                  </button>
+                    loading={isBusy}
+                    blocked={dayAction === WORKOUT_START_ACTION.BLOCKED}
+                  />
                   <DropdownMenu
                     items={[
                       {

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ArrowRightLeft, X } from 'lucide-react-native'
-import { Modal, NumberTextInput } from '../ui'
+import { IconButton, Modal, NumberTextInput } from '../ui'
 import { colors } from '../../lib/styles'
 import { convertWeight, getWeightUnits, toggleWeightMode } from '@gym/shared'
 
@@ -42,12 +42,7 @@ export default function WeightConverterModal({ isOpen, onClose }) {
           <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>
             {t('workout:set.weightConverter')}
           </Text>
-          <Pressable
-            onPress={onClose}
-            style={{ backgroundColor: colors.bgTertiary, borderRadius: 999, padding: 4 }}
-          >
-            <X size={14} color={colors.textSecondary} />
-          </Pressable>
+          <IconButton icon={X} iconSize={14} filled label={t('common:buttons.close')} onPress={onClose} />
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
@@ -68,12 +63,8 @@ export default function WeightConverterModal({ isOpen, onClose }) {
             </View>
           </View>
 
-          <Pressable
-            onPress={handleToggle}
-            style={{ backgroundColor: colors.bgTertiary, borderRadius: 999, padding: 6, marginBottom: 6 }}
-          >
-            <ArrowRightLeft size={14} color={colors.success} />
-          </Pressable>
+          {/* No bottom margin: the 44pt box is as tall as the value boxes it sits between. */}
+          <IconButton icon={ArrowRightLeft} iconSize={14} color={colors.success} filled label={t('common:buttons.change')} onPress={handleToggle} />
 
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8, marginBottom: 4, textTransform: 'uppercase' }}>

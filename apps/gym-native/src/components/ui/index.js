@@ -1,6 +1,7 @@
 export { default as ActiveSessionBanner } from './ActiveSessionBanner'
 export { default as Badge } from './Badge'
 export { default as Button } from './Button'
+export { default as IconButton } from './IconButton'
 export { default as Card } from './Card'
 export { default as ConfirmModal } from './ConfirmModal'
 export { default as SaveStatus } from './SaveStatus'

@@ -54,9 +54,9 @@ function exerciseHandle(page, name) {
   return exerciseRow(page, name).locator('button')
 }
 
-/** El asa de la cabecera morada, hermana de su etiqueta. */
+/** The purple header's handle: the label sits in the header's button, the handle beside it. */
 function supersetHandle(page) {
-  return page.getByText('Superset A').locator('xpath=..').locator('button')
+  return page.getByText('Superset A').locator('xpath=../..').locator('button[aria-hidden="true"]')
 }
 
 async function openDay(page, routineName = ROUTINE_NAME, dayName = DAY_NAME) {

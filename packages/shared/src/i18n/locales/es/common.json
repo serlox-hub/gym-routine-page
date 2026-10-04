@@ -31,7 +31,9 @@
     "seeMore": "Ver más",
     "seeLess": "Ver menos",
     "loading": "Cargando...",
-    "change": "Cambiar"
+    "change": "Cambiar",
+    "previous": "Anterior",
+    "moreOptions": "Más opciones"
   },
   "labels": {
     "name": "Nombre",

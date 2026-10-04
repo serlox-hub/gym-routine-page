@@ -4,7 +4,7 @@ import { CircleMinus, CirclePlus, Clock } from 'lucide-react-native'
 import SetRow, { COL_SET, COL_CHECK, SET_ROW_GAP, SET_ROW_ACCENT, getEffortColumnWidth } from './SetRow'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreferences } from '../../hooks/usePreferences'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 import { formatRelativeDate, shouldShowAnnotationColumn, getSetColumns } from '@gym/shared'
 
 const HEADER_STYLE = {
@@ -138,10 +138,11 @@ function SetsList({
         })}
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, marginTop: 16 }}>
+      {/* marginTop 4, not 16: the 44pt box adds 12 above the text, which stays where it was. */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, marginTop: 4 }}>
         {setsCount > 0 && (
           <Pressable onPress={onRemoveSet}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            style={{ minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', gap: 6 }}
             className="active:opacity-70">
             <CircleMinus size={16} color={colors.textSecondary} />
             <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{t('workout:set.removeLast')}</Text>
@@ -149,7 +150,7 @@ function SetsList({
         )}
         {onAddSet && (
           <Pressable onPress={onAddSet}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            style={{ minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', gap: 6 }}
             className="active:opacity-70">
             <CirclePlus size={16} color={colors.success} />
             <Text style={{ color: colors.success, fontSize: 13, fontWeight: '600' }}>{t('workout:set.addSet')}</Text>

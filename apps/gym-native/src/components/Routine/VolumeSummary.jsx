@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react-native'
 import { countSetsByMuscleGroup, normalizeToWeekly, buildVolumeSummary, getMuscleGroupColor, getMuscleGroupName, useMuscleGroups, VOLUME_LANDMARKS, VOLUME_ZONE_COLORS, VOLUME_BAR_COLORS, VOLUME_LEGEND_ITEMS } from '@gym/shared'
 import { useRoutineBlocks } from '../../hooks/useRoutines'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 function VolumeSummary({ days, cycleDays = 7 }) {
   const { t } = useTranslation()
@@ -14,10 +14,13 @@ function VolumeSummary({ days, cycleDays = 7 }) {
   if (!days?.length) return null
 
   return (
-    <View className="mt-4 mb-4">
+    // mt-1/mb-1 and no marginTop below: the 44pt box (touch target) adds 12 above and below the
+    // title, which stays where it was.
+    <View className="mt-1 mb-1">
       <Pressable
         onPress={() => setIsExpanded(!isExpanded)}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+        accessibilityRole="button"
+        style={{ minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', gap: 8 }}
       >
         <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
           {t('routine:volumeSummary')}
@@ -31,9 +34,7 @@ function VolumeSummary({ days, cycleDays = 7 }) {
         <DayBlocksCollector key={day.id} dayId={day.id} index={i} onBlocks={setAllDaysBlocks} />
       ))}
       {isExpanded && (
-        <View style={{ marginTop: 12 }}>
-          <VolumeBars allDaysBlocks={allDaysBlocks} cycleDays={cycleDays} totalDays={days.length} />
-        </View>
+        <VolumeBars allDaysBlocks={allDaysBlocks} cycleDays={cycleDays} totalDays={days.length} />
       )}
     </View>
   )

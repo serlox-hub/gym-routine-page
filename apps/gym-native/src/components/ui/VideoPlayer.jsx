@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Maximize2 } from 'lucide-react-native'
 import { useVideoPlayer, VideoView } from 'expo-video'
+import IconButton from './IconButton'
 import LoadingSpinner from './LoadingSpinner'
 import { getVideoUrl } from '../../lib/videoStorage'
 import { colors } from '../../lib/styles'
@@ -67,13 +68,15 @@ export default function VideoPlayer({ videoKey }) {
         nativeControls
         allowsFullscreen
       />
-      <Pressable
+      <IconButton
+        icon={Maximize2}
+        iconSize={14}
+        color={colors.white}
+        filled
+        label={t('workout:set.videoFullscreen')}
         onPress={() => viewRef.current?.enterFullscreen()}
-        className="absolute top-2 left-2 p-1.5 rounded-full"
-        style={{ backgroundColor: colors.overlay }}
-      >
-        <Maximize2 size={14} color={colors.white} />
-      </Pressable>
+        style={{ position: 'absolute', top: 0, left: 0 }}
+      />
     </View>
   )
 }

@@ -1,5 +1,5 @@
 import { Pressable, Text, ActivityIndicator } from 'react-native'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 const VARIANT_STYLES = {
   primary: { bg: colors.actionPrimary, text: colors.textDark },
@@ -48,6 +48,8 @@ export default function Button({
         backgroundColor: v.bg,
         borderWidth: v.borderWidth || 0,
         borderColor: v.borderColor || 'transparent',
+        // `md` and `lg` already clear the touch-target minimum with their padding; `sm` does not.
+        ...(size === 'sm' ? { minHeight: design.minTouchTarget } : null),
         // Only when set: an `opacity: undefined` would override the className's `opacity-50`.
         ...(isBlocked && !dimsLabelOnly ? { opacity: BLOCKED_OPACITY } : null),
       }}

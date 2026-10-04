@@ -39,10 +39,15 @@ export default function SetRowMeta({
   const targetHint = formatSetTargetHint(trackedFields, target, targetField)
   if (!previousSet && !showProgressionHint && !showTimer && !targetHint) return null
 
+  // Its tap controls (PreviousSetLine, the progression "why", ExecutionTimer) are 44pt boxes, and
+  // the item holding each one (this row's direct child) has `marginVertical: -8`: the box takes this
+  // row's padding, so the row is 44 and not 60, and stays inside it (Android gives no touches
+  // outside the parent). rowGap 16 is that overflow twice: when items wrap, the boxes of two lines
+  // meet instead of overlapping.
   return (
     <View
       className="flex-row flex-wrap items-center"
-      style={{ columnGap: 12, rowGap: 4, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}
+      style={{ columnGap: 12, rowGap: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border }}
     >
       {targetHint && (
         <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: '500' }}>

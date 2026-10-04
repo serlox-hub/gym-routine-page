@@ -5,9 +5,12 @@ import { colors } from '../../lib/styles'
 export default function ExerciseProgressBar({ setsCompleted, setsTotal, segments = [], elapsedTime, gymSlot = null }) {
   const { t } = useTranslation()
   if (setsTotal <= 0) return null
+  // The gym chip is a 44pt box (touch target), taller than the text: it takes the padding above
+  // and the gap below, so the header grows only by what is left over.
+  const hasGymSlot = !!gymSlot
   return (
-    <View style={{ paddingTop: 8, paddingBottom: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
+    <View style={{ paddingTop: hasGymSlot ? 0 : 8, paddingBottom: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasGymSlot ? 0 : 6, gap: 8 }}>
         <Text numberOfLines={1} style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '600', flexShrink: 1 }}>
           {t('workout:session.setProgress', { current: setsCompleted, total: setsTotal })}
         </Text>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Loader2 } from 'lucide-react'
-import { Modal } from '../ui/index.js'
+import { Loader2, X } from 'lucide-react'
+import { IconButton, Modal } from '../ui/index.js'
 import { getVideoUrl } from '../../lib/videoStorage.js'
 import { colors } from '../../lib/styles.js'
 
@@ -83,13 +83,7 @@ function SetNotesView({ isOpen, onClose, notes, videoUrl, summary, effort, title
         <h3 className="font-bold" style={{ color: colors.textPrimary }}>
           {title || t('workout:set.notes')}
         </h3>
-        <button
-          onClick={onClose}
-          className="text-xl"
-          style={{ color: colors.textSecondary }}
-        >
-          ✕
-        </button>
+        <IconButton icon={X} iconSize={20} label={t('common:buttons.close')} onClick={onClose} />
       </div>
 
       <div className="space-y-3">
@@ -130,7 +124,7 @@ function SetNotesView({ isOpen, onClose, notes, videoUrl, summary, effort, title
 
       <button
         onClick={onClose}
-        className="w-full mt-4 py-2 rounded-lg text-sm font-medium"
+        className="w-full min-h-11 mt-4 py-2 rounded-lg text-sm font-medium"
         style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
       >
         {t('common:buttons.close')}

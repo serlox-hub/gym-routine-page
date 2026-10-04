@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { Video, X, ChevronRight, Maximize2 } from 'lucide-react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useVideoPlayer, VideoView } from 'expo-video'
-import { Modal, Button } from '../ui'
+import { Modal, Button, IconButton } from '../ui'
 import { useCanUploadVideo } from '../../hooks/useAuth'
 import { usePreference } from '../../hooks/usePreferences'
 import { getVideoUrl } from '../../lib/videoStorage'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 import { getEffortOptions, getEffortInfo, tracksReps } from '@gym/shared'
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
@@ -45,10 +45,8 @@ function SetVideoPreview({ uri }) {
   return (
     <View>
       <VideoView ref={viewRef} player={player} style={{ width: '100%', height: 160 }} contentFit="contain" nativeControls allowsFullscreen />
-      <Pressable onPress={() => viewRef.current?.enterFullscreen()}
-        style={{ position: 'absolute', top: 8, left: 8, padding: 6, borderRadius: 999, backgroundColor: colors.overlay }}>
-        <Maximize2 size={14} color={colors.white} />
-      </Pressable>
+      <IconButton icon={Maximize2} iconSize={14} color={colors.white} filled label={t('workout:set.videoFullscreen')}
+        onPress={() => viewRef.current?.enterFullscreen()} style={{ position: 'absolute', top: 0, left: 0 }} />
     </View>
   )
 }
@@ -160,10 +158,7 @@ export default function SetDetailsModal({
         <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>
           {t('workout:set.detailsTitle', { number: setNumber || '' })}
         </Text>
-        <Pressable onPress={handleClose}
-          style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgTertiary }}>
-          <X size={16} color={colors.textSecondary} />
-        </Pressable>
+        <IconButton icon={X} iconSize={16} filled label={t('common:buttons.close')} onPress={handleClose} />
       </View>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 8 }} style={{ flexShrink: 1 }}>
@@ -190,6 +185,7 @@ export default function SetDetailsModal({
                       style={{
                         backgroundColor: selected ? colors.success : colors.bgTertiary,
                         borderRadius: 10,
+                        minHeight: design.minTouchTarget,
                         paddingVertical: 10,
                         paddingHorizontal: 12,
                         flexDirection: 'row',
@@ -219,7 +215,7 @@ export default function SetDetailsModal({
                 {['normal', 'dropset'].map((key) => (
                   <Pressable key={key}
                     onPress={() => onSetTypeChange?.(key)}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: setType === key ? colors.success : 'transparent' }}>
+                    style={{ flex: 1, minHeight: design.minTouchTarget, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: setType === key ? colors.success : 'transparent' }}>
                     <Text style={{ color: setType === key ? colors.bgPrimary : colors.textSecondary, fontSize: 14, fontWeight: '600' }}>
                       {t(`data:setTypes.${key}`)}
                     </Text>
@@ -255,10 +251,8 @@ export default function SetDetailsModal({
               {videoUri ? (
                 <View style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: colors.bgTertiary }}>
                   <SetVideoPreview uri={videoUri} />
-                  <Pressable onPress={handleRemoveVideo}
-                    style={{ position: 'absolute', top: 8, right: 8, padding: 6, borderRadius: 999, backgroundColor: colors.overlay }}>
-                    <X size={16} color={colors.white} />
-                  </Pressable>
+                  <IconButton icon={X} iconSize={16} color={colors.white} filled label={t('workout:set.removeVideo')}
+                    onPress={handleRemoveVideo} style={{ position: 'absolute', top: 0, right: 0 }} />
                   {/* Progreso de subida (issue #31): visible sin salir de la hoja mientras el
                       botón «Completar» está bloqueado por isUploadingVideo. */}
                   {isUploadingVideo && (

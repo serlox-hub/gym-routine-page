@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle } from 'lucide-react-native'
 import { Modal, Button, SaveStatus } from '../ui'
-import { inputStyle, colors } from '../../lib/styles'
+import { inputStyle, colors, design } from '../../lib/styles'
 import { usePreference } from '../../hooks/usePreferences'
 import { shouldWarnIdleSession, getLastSetEndChoice, IDLE_SESSION_WARNING_MINUTES } from '@gym/shared'
 
@@ -41,8 +41,9 @@ export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending,
         disabled={isPending}
         accessibilityRole="button"
         accessibilityState={{ selected }}
-        className="px-3 py-2 rounded-lg"
+        className="px-3 py-2 rounded-lg justify-center"
         style={{
+          minHeight: design.minTouchTarget,
           backgroundColor: selected ? colors.successBg : colors.bgTertiary,
           borderWidth: 1,
           borderColor: selected ? colors.success : colors.border,
