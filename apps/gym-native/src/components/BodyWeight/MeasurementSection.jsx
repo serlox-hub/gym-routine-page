@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, Settings, ChevronDown } from 'lucide-react-native'
 import { useBodyMeasurementHistory, useRecordBodyMeasurement, useUpdateBodyMeasurement, useDeleteBodyMeasurement } from '../../hooks/useBodyMeasurements'
 import { usePreferences, useUpdatePreference } from '../../hooks/usePreferences'
-import { LoadingSpinner, Modal, ConfirmModal } from '../ui'
+import { LoadingSpinner, Modal, ConfirmModal, IconButton } from '../ui'
 import { MeasurementChart } from '../Charts'
 import MeasurementModal from './MeasurementModal'
 import MeasurementConfigModal from './MeasurementConfigModal'
 import { calculateMeasurementStats, formatShortDate, formatTime, getMeasurementLabel } from '@gym/shared'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 export default function MeasurementSection() {
   const { t } = useTranslation()
@@ -103,8 +103,9 @@ export default function MeasurementSection() {
 
   const stats = calculateMeasurementStats(records)
 
+  // paddingRight 4 and paddingVertical 4: with the 44pt boxes the row keeps its height and the icons stay put.
   const renderRecord = ({ item: record }) => (
-    <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
+    <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12, paddingRight: 4, paddingVertical: 4, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
         <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.value} {unit}</Text>
         <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
@@ -112,13 +113,10 @@ export default function MeasurementSection() {
         </Text>
       </View>
       <View style={{ flexDirection: 'row', gap: 4 }}>
-        <Pressable onPress={() => handleEdit(record)} style={{ padding: 8 }} className="active:opacity-70">
-          <Pencil size={16} color={colors.textMuted} />
-        </Pressable>
-        <Pressable onPress={() => setRecordToDelete(record.id)} disabled={deleteMutation.isPending}
-          style={{ padding: 8 }} className="active:opacity-70">
-          <Trash2 size={16} color={colors.textMuted} />
-        </Pressable>
+        <IconButton icon={Pencil} iconSize={16} color={colors.textMuted} label={t('body:measurements.edit')}
+          onPress={() => handleEdit(record)} />
+        <IconButton icon={Trash2} iconSize={16} color={colors.textMuted} label={t('body:measurements.delete')}
+          onPress={() => setRecordToDelete(record.id)} disabled={deleteMutation.isPending} />
       </View>
     </View>
   )
@@ -128,16 +126,14 @@ export default function MeasurementSection() {
       {/* Selector + Config */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Pressable onPress={() => setShowTypeSelector(true)}
-          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: colors.bgTertiary }}
+          style={{ flex: 1, minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: colors.bgTertiary }}
           className="active:opacity-80">
           <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>{getMeasurementLabel(selectedType)}</Text>
           <ChevronDown size={16} color={colors.textSecondary} />
         </Pressable>
-        <Pressable onPress={() => setShowConfigModal(true)}
-          style={{ padding: 12, borderRadius: 12, backgroundColor: colors.bgTertiary }}
-          className="active:opacity-70">
-          <Settings size={16} color={colors.textSecondary} />
-        </Pressable>
+        <IconButton icon={Settings} iconSize={16} label={t('body:measurements.configure')}
+          onPress={() => setShowConfigModal(true)}
+          style={{ borderRadius: 12, backgroundColor: colors.bgTertiary }} />
       </View>
 
       {isLoading ? (
@@ -177,7 +173,7 @@ export default function MeasurementSection() {
 
           {/* Record Button */}
           <Pressable onPress={() => setShowRecordModal(true)}
-            style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', marginBottom: 24 }}>
+            style={{ backgroundColor: colors.success, borderRadius: 12, minHeight: design.minTouchTarget, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
             <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>
               {t('body:measurements.record')} {selectedType ? getMeasurementLabel(selectedType).toLowerCase() : ''}
             </Text>
@@ -215,7 +211,7 @@ export default function MeasurementSection() {
             {enabledMeasurements.map(type => (
               <Pressable key={type}
                 onPress={() => { setSelectedType(type); setShowTypeSelector(false) }}
-                style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: type === selectedType ? colors.successBg : 'transparent' }}
+                style={{ minHeight: design.minTouchTarget, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: type === selectedType ? colors.successBg : 'transparent' }}
                 className="active:opacity-80">
                 <Text style={{ color: type === selectedType ? colors.success : colors.textPrimary, fontSize: 14 }}>
                   {getMeasurementLabel(type)}

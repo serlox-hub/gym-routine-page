@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2, Settings, ChevronDown } from 'lucide-react'
 import { useBodyMeasurementHistory, useRecordBodyMeasurement, useUpdateBodyMeasurement, useDeleteBodyMeasurement } from '../../hooks/useBodyMeasurements.js'
 import { usePreferences, useUpdatePreference } from '../../hooks/usePreferences.js'
-import { LoadingSpinner, ConfirmModal } from '../ui/index.js'
+import { LoadingSpinner, ConfirmModal, IconButton } from '../ui/index.js'
 import MeasurementChart from './MeasurementChart.jsx'
 import MeasurementModal from './MeasurementModal.jsx'
 import MeasurementConfigModal from './MeasurementConfigModal.jsx'
@@ -126,7 +126,7 @@ function MeasurementSection() {
                 {enabledMeasurements.map(type => (
                   <button key={type}
                     onClick={() => { setSelectedType(type); setShowTypeDropdown(false) }}
-                    className="w-full px-4 py-2.5 text-left text-sm hover:opacity-80"
+                    className="w-full min-h-11 px-4 py-2.5 text-left text-sm hover:opacity-80"
                     style={{
                       color: type === selectedType ? colors.success : colors.textPrimary,
                       backgroundColor: type === selectedType ? colors.successBg : 'transparent',
@@ -139,10 +139,9 @@ function MeasurementSection() {
           )}
         </div>
 
-        <button onClick={() => setShowConfigModal(true)} className="p-3 rounded-xl"
-          style={{ backgroundColor: colors.bgTertiary }}>
-          <Settings size={16} color={colors.textSecondary} />
-        </button>
+        <IconButton icon={Settings} iconSize={16} label={t('body:measurements.configure')}
+          onClick={() => setShowConfigModal(true)}
+          style={{ backgroundColor: colors.bgTertiary, borderRadius: 12 }} />
       </div>
 
       {isLoading ? (
@@ -182,7 +181,7 @@ function MeasurementSection() {
 
           {/* Record Button */}
           <button onClick={() => setShowRecordModal(true)}
-            className="w-full py-2.5 rounded-xl text-sm font-semibold mb-6"
+            className="w-full min-h-11 py-2.5 rounded-xl text-sm font-semibold mb-6"
             style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
             {t('body:measurements.record')} {selectedType ? getMeasurementLabel(selectedType).toLowerCase() : ''}
           </button>
@@ -195,8 +194,9 @@ function MeasurementSection() {
             </p>
           ) : (
             <div className="space-y-2">
+              {/* py-1 and pr-1: with the 44px boxes the row stays 52px tall and the icons stay put. */}
               {records.map(record => (
-                <div key={record.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                <div key={record.id} className="flex items-center justify-between pl-3 pr-1 py-1 rounded-xl"
                   style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
                   <div className="flex items-baseline gap-2">
                     <span className="text-base font-bold" style={{ color: colors.textPrimary }}>{record.value} {unit}</span>
@@ -205,15 +205,10 @@ function MeasurementSection() {
                     </span>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => handleEdit(record)} className="p-2 hover:opacity-80"
-                      style={{ color: colors.textMuted }}>
-                      <Pencil size={16} />
-                    </button>
-                    <button onClick={() => setRecordToDelete(record.id)}
-                      className="p-2 hover:opacity-80 disabled:opacity-50"
-                      style={{ color: colors.textMuted }} disabled={deleteMutation.isPending}>
-                      <Trash2 size={16} />
-                    </button>
+                    <IconButton icon={Pencil} iconSize={16} color={colors.textMuted} label={t('body:measurements.edit')}
+                      onClick={() => handleEdit(record)} />
+                    <IconButton icon={Trash2} iconSize={16} color={colors.textMuted} label={t('body:measurements.delete')}
+                      onClick={() => setRecordToDelete(record.id)} disabled={deleteMutation.isPending} />
                   </div>
                 </div>
               ))}

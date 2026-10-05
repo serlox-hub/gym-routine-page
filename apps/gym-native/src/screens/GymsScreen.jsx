@@ -11,9 +11,11 @@ import {
   useGymSessionCount,
   getNotifier,
   getGymDisplayName,
+  getGymDeleteAction,
+  GYM_DELETE_ACTION,
 } from '@gym/shared'
-import { LoadingSpinner, PageHeader, ConfirmModal, Modal } from '../components/ui'
-import { colors } from '../lib/styles'
+import { LoadingSpinner, PageHeader, ConfirmModal, Modal, IconButton } from '../components/ui'
+import { colors, design } from '../lib/styles'
 
 function getGymName(gym, t) {
   return getGymDisplayName(gym, t('common:gym.defaultName'))
@@ -21,16 +23,27 @@ function getGymName(gym, t) {
 
 function GymRow({ gym, onRename, onDelete }) {
   const { t } = useTranslation()
-  const { data: sessionCount = 0 } = useGymSessionCount(gym.id)
-  const canDelete = sessionCount === 0
+  const { data: sessionCount, isError, refetch } = useGymSessionCount(gym.id)
+  const deleteAction = getGymDeleteAction(sessionCount, isError)
 
+  const handleDeletePress = () => {
+    if (deleteAction === GYM_DELETE_ACTION.DELETE) return onDelete(gym)
+    if (deleteAction === GYM_DELETE_ACTION.HAS_SESSIONS) {
+      return getNotifier()?.show(t('common:gym.cannotDeleteWithSessions'), 'error')
+    }
+    getNotifier()?.show(t('common:gym.cannotDeleteUnknownSessions'), 'error')
+    refetch()
+  }
+
+  // paddingVertical 8 and paddingRight 6: with the 44pt boxes the row keeps its height and the
+  // icons stay put.
   return (
     <View
       style={{
         flexDirection: 'row', alignItems: 'center', gap: 12,
         backgroundColor: colors.bgSecondary, borderRadius: 12,
         borderWidth: 1, borderColor: colors.border,
-        paddingVertical: 12, paddingHorizontal: 14,
+        paddingVertical: 8, paddingLeft: 14, paddingRight: 6,
       }}
     >
       <Dumbbell size={18} color={colors.textMuted} />
@@ -38,26 +51,22 @@ function GymRow({ gym, onRename, onDelete }) {
         <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>
           {getGymName(gym, t)}
         </Text>
-        <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 1 }}>
-          {t('common:gym.sessionCount', { count: sessionCount })}
-        </Text>
+        {sessionCount != null && (
+          <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 1 }}>
+            {t('common:gym.sessionCount', { count: sessionCount })}
+          </Text>
+        )}
       </View>
-      <Pressable
-        onPress={() => onRename(gym)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        className="active:opacity-70"
-        style={{ padding: 6 }}
-      >
-        <Pencil size={16} color={colors.textSecondary} />
-      </Pressable>
-      <Pressable
-        onPress={() => canDelete ? onDelete(gym) : getNotifier()?.show(t('common:gym.cannotDeleteWithSessions'), 'error')}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        className="active:opacity-70"
-        style={{ padding: 6, opacity: canDelete ? 1 : 0.3 }}
-      >
-        <Trash2 size={16} color={colors.danger} />
-      </Pressable>
+      <IconButton icon={Pencil} iconSize={16} label={t('common:gym.rename')} onPress={() => onRename(gym)} />
+      <IconButton
+        icon={Trash2}
+        iconSize={16}
+        color={colors.danger}
+        label={t('common:gym.delete')}
+        loading={deleteAction === GYM_DELETE_ACTION.BUSY}
+        blocked={deleteAction === GYM_DELETE_ACTION.HAS_SESSIONS || deleteAction === GYM_DELETE_ACTION.UNKNOWN}
+        onPress={handleDeletePress}
+      />
     </View>
   )
 }
@@ -155,14 +164,14 @@ export default function GymsScreen({ navigation }) {
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Pressable
                   onPress={() => { setShowAddForm(false); setNewName('') }}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: colors.bgTertiary }}
+                  style={{ flex: 1, minHeight: design.minTouchTarget, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgTertiary }}
                 >
                   <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   onPress={handleCreate}
                   disabled={!newName.trim() || createGym.isPending}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: colors.success, opacity: !newName.trim() || createGym.isPending ? 0.4 : 1 }}
+                  style={{ flex: 1, minHeight: design.minTouchTarget, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.success, opacity: !newName.trim() || createGym.isPending ? 0.4 : 1 }}
                 >
                   <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>
                     {createGym.isPending ? t('common:buttons.loading') : t('common:buttons.save')}
@@ -174,7 +183,7 @@ export default function GymsScreen({ navigation }) {
             <Pressable
               onPress={() => setShowAddForm(true)}
               className="active:opacity-70"
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: design.minTouchTarget, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}
             >
               <Plus size={16} color={colors.success} />
               <Text style={{ color: colors.success, fontSize: 14, fontWeight: '600' }}>{t('common:gym.add')}</Text>
@@ -203,7 +212,7 @@ export default function GymsScreen({ navigation }) {
           <Pressable
             onPress={handleRename}
             disabled={!renameValue.trim() || renameGym.isPending}
-            style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', opacity: renameValue.trim() && !renameGym.isPending ? 1 : 0.4 }}
+            style={{ backgroundColor: colors.success, borderRadius: 12, minHeight: design.minTouchTarget, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', opacity: renameValue.trim() && !renameGym.isPending ? 1 : 0.4 }}
           >
             <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>
               {renameGym.isPending ? t('common:buttons.loading') : t('common:buttons.save')}

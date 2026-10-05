@@ -8,7 +8,7 @@ import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, Trop
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useRescheduleSession, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton } from '../ui'
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
 import SetValueInput from '../Workout/SetInputs'
 import ConvertToRoutineDayModal from './ConvertToRoutineDayModal'
@@ -43,7 +43,7 @@ import {
   getNotifier,
 } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 // Fila editable del historial. Usa las MISMAS columnas por lo que mide el ejercicio que la sesión
 // (getSetColumns + SetValueInput): antes tenía su propia lista peso/reps/tiempo/distancia, así que
@@ -87,17 +87,17 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
   // menú «···» → Editar (única puerta a la hoja, siempre disponible). Antes cada badge también
   // abría la hoja, pero la sección correspondiente podía estar oculta por preferencia (nota/vídeo)
   // — un botón que abre una hoja donde no se ve lo que anuncia.
+  // While the upload has failed, the 44pt retry box takes the note badge's place: the column is a
+  // fixed 150pt and with both it overflows onto the inputs. The note is still one tap away in «···».
   const trailingBadges = (
     <>
-      {hasNotes && (
+      {hasNotes && !videoUploadError && (
         <View style={badgeStyle} accessible accessibilityLabel={t('workout:set.notes')}>
           <FileText size={13} color={colors.textSecondary} />
         </View>
       )}
       {videoUploadError && (
-        <Pressable onPress={handleRetryVideoUpload} style={[badgeStyle, { backgroundColor: colors.dangerBg }]} accessibilityLabel={t('common:buttons.retry')}>
-          <AlertCircle size={13} color={colors.danger} />
-        </Pressable>
+        <IconButton icon={AlertCircle} iconSize={13} color={colors.danger} label={t('common:buttons.retry')} onPress={handleRetryVideoUpload} />
       )}
       {isUploadingVideo && (
         <View style={[badgeStyle, { paddingHorizontal: 7, paddingVertical: 3 }]}>
@@ -259,7 +259,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             <Pressable
               onPress={() => onAddSet(sessionExerciseId, exercise, maxSetNumber)}
               className="flex-row items-center justify-center gap-1 rounded self-center"
-              style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border, paddingVertical: 8, width: '90%' }}
+              style={{ minHeight: design.minTouchTarget, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border, paddingVertical: 8, width: '90%' }}
             >
               <Plus size={14} color={colors.success} />
               <Text className="text-xs" style={{ color: colors.success }}>{t('workout:set.addSet')}</Text>
@@ -287,16 +287,14 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                   </View>
                 )}
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: -8 }}>
+              {/* No negative margin: the 44pt boxes make a set with a note or video 44 tall, so two
+                  consecutive ones do not overlap in the 8pt gap. */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                 {set.notes && (
-                  <Pressable onPress={() => onSelectSet(set)} style={{ padding: 8 }} className="active:opacity-50">
-                    <FileText size={14} color={colors.textMuted} />
-                  </Pressable>
+                  <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onPress={() => onSelectSet(set)} />
                 )}
                 {set.video_url && (
-                  <Pressable onPress={() => onSelectSet(set)} style={{ padding: 8 }} className="active:opacity-50">
-                    <Video size={14} color={colors.textMuted} />
-                  </Pressable>
+                  <IconButton icon={Video} iconSize={14} color={colors.textMuted} label={t('workout:set.video')} onPress={() => onSelectSet(set)} />
                 )}
                 {set.rir_actual !== null && set.rir_actual !== undefined && (
                   <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
@@ -346,8 +344,9 @@ function SessionDateTimePicker({ initialValue, minimumDate, maximumDate, onConfi
         style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay }}
       >
         <Pressable onPress={() => {}} style={{ backgroundColor: colors.bgSecondary, paddingBottom: insets.bottom + 24 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 12 }}>
-            <Pressable onPress={handleDone}>
+          {/* No vertical padding: the 44pt box around «Done» already gives it. */}
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16 }}>
+            <Pressable onPress={handleDone} accessibilityRole="button" style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}>
               <Text style={{ color: colors.success, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.done')}</Text>
             </Pressable>
           </View>
@@ -577,7 +576,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
               <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '700', flex: 1 }} numberOfLines={1}>
                 {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </Text>
-              <Pressable onPress={() => setIsEditing(false)} style={{ marginLeft: 12 }}>
+              <Pressable onPress={() => setIsEditing(false)} accessibilityRole="button" style={{ marginLeft: 12, minHeight: design.minTouchTarget, justifyContent: 'center' }}>
                 <Text style={{ color: colors.success, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.done')}</Text>
               </Pressable>
             </>
@@ -607,7 +606,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
             <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.startDateTime')}</Text>
             <Pressable
               onPress={() => openPicker('start')}
-              style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}
             >
               <Text style={{ color: colors.textPrimary, fontSize: 13, textTransform: 'capitalize' }}>
                 {`${formatFullDate(editStartedAt || session.started_at)} · ${formatTime(editStartedAt || session.started_at)}`}
@@ -625,7 +624,7 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
             <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endDateTime')}</Text>
             <Pressable
               onPress={() => openPicker('end')}
-              style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}
             >
               <Text style={{ color: colors.textPrimary, fontSize: 13, textTransform: 'capitalize' }}>
                 {`${formatFullDate(editCompletedAt || session.completed_at)} · ${formatTime(editCompletedAt || session.completed_at)}`}
@@ -655,20 +654,26 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
                 {session.routine_day?.routine?.name || session.routine_name}
               </Text>
             )}
+            {/* The Pressable is the 44pt box, the pill inside keeps its size. */}
             {hasMultiple && currentGymName && (
               <Pressable
                 onPress={() => setShowGymSelector(true)}
+                disabled={reassignSessionGym.isPending}
+                accessibilityRole="button"
                 className="active:opacity-80"
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 5,
-                  paddingHorizontal: 8, paddingVertical: 3,
-                  borderRadius: 999, backgroundColor: colors.bgTertiary,
-                  borderWidth: 1, borderColor: colors.border,
-                  opacity: reassignSessionGym.isPending ? 0.5 : 1,
-                }}
+                style={{ minHeight: design.minTouchTarget, justifyContent: 'center', opacity: reassignSessionGym.isPending ? 0.5 : 1 }}
               >
-                <Dumbbell size={12} color={colors.textMuted} />
-                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{currentGymName}</Text>
+                <View
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 5,
+                    paddingHorizontal: 8, paddingVertical: 3,
+                    borderRadius: 999, backgroundColor: colors.bgTertiary,
+                    borderWidth: 1, borderColor: colors.border,
+                  }}
+                >
+                  <Dumbbell size={12} color={colors.textMuted} />
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{currentGymName}</Text>
+                </View>
               </Pressable>
             )}
           </View>

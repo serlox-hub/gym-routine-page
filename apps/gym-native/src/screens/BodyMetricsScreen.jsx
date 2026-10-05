@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2 } from 'lucide-react-native'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight'
 import { usePreference } from '../hooks/usePreferences'
-import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, ConfirmModal, IconButton } from '../components/ui'
 import { BodyWeightModal, MeasurementSection } from '../components/BodyWeight'
 import { BodyWeightChart } from '../components/Charts'
 import { calculateBodyWeightStats, formatShortDate, formatTime } from '@gym/shared'
@@ -58,8 +58,9 @@ function WeightSection() {
     setEditingRecord(null)
   }
 
+  // paddingRight 4 and paddingVertical 4: with the 44pt boxes the row keeps its height and the icons stay put.
   const renderRecord = ({ item: record }) => (
-    <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
+    <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 12, paddingRight: 4, paddingVertical: 4, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
         <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>{record.weight} {unit}</Text>
         <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
@@ -67,13 +68,10 @@ function WeightSection() {
         </Text>
       </View>
       <View style={{ flexDirection: 'row', gap: 4 }}>
-        <Pressable onPress={() => handleEdit(record)} style={{ padding: 8 }} className="active:opacity-70">
-          <Pencil size={16} color={colors.textMuted} />
-        </Pressable>
-        <Pressable onPress={() => setRecordToDelete(record.id)} disabled={deleteMutation.isPending}
-          style={{ padding: 8 }} className="active:opacity-70">
-          <Trash2 size={16} color={colors.textMuted} />
-        </Pressable>
+        <IconButton icon={Pencil} iconSize={16} color={colors.textMuted} label={t('body:weight.edit')}
+          onPress={() => handleEdit(record)} />
+        <IconButton icon={Trash2} iconSize={16} color={colors.textMuted} label={t('body:weight.delete')}
+          onPress={() => setRecordToDelete(record.id)} disabled={deleteMutation.isPending} />
       </View>
     </View>
   )
@@ -113,7 +111,7 @@ function WeightSection() {
 
       {/* Record Button */}
       <Pressable onPress={() => setShowModal(true)}
-        style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', marginBottom: 24 }}>
+        style={{ backgroundColor: colors.success, borderRadius: 12, minHeight: design.minTouchTarget, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
         <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('body:weight.record')}</Text>
       </Pressable>
 
@@ -174,25 +172,27 @@ export default function BodyMetricsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPrimary }} edges={['top']}>
-      {/* Tabs */}
+      {/* Tabs. The Pressables are the 44pt boxes; the track (top/bottom 2) and the sliding pill
+          (top/bottom 6) are painted behind them at their old 40pt and 32pt. */}
       <View
         onLayout={(e) => setTabWidth(e.nativeEvent.layout.width)}
-        style={{ flexDirection: 'row', marginHorizontal: 16, marginTop: 8, marginBottom: 20, padding: 4, borderRadius: 10, backgroundColor: colors.bgTertiary }}>
+        style={{ flexDirection: 'row', marginHorizontal: 16, marginTop: 8, marginBottom: 20, paddingHorizontal: 4 }}>
+        <View style={{ position: 'absolute', left: 0, right: 0, top: 2, bottom: 2, borderRadius: 10, backgroundColor: colors.bgTertiary }} />
         {tabWidth > 0 && (
           <Animated.View style={{
-            position: 'absolute', top: 4, bottom: 4, left: 4, borderRadius: 8,
+            position: 'absolute', top: 6, bottom: 6, left: 4, borderRadius: 8,
             width: (tabWidth - 8) / 2, backgroundColor: colors.success,
             transform: [{ translateX: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, (tabWidth - 8) / 2] }) }],
           }} />
         )}
         <Pressable onPress={() => setActiveTab('peso')}
-          style={{ flex: 1, paddingVertical: 7, borderRadius: 8, alignItems: 'center', zIndex: 1 }}>
+          style={{ flex: 1, minHeight: design.minTouchTarget, borderRadius: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
           <Text style={{ fontSize: 14, fontWeight: '600', color: activeTab === 'peso' ? colors.bgPrimary : colors.textSecondary }}>
             {t('body:weight.tab')}
           </Text>
         </Pressable>
         <Pressable onPress={() => setActiveTab('medidas')}
-          style={{ flex: 1, paddingVertical: 7, borderRadius: 8, alignItems: 'center', zIndex: 1 }}>
+          style={{ flex: 1, minHeight: design.minTouchTarget, borderRadius: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
           <Text style={{ fontSize: 14, fontWeight: '600', color: activeTab === 'medidas' ? colors.bgPrimary : colors.textSecondary }}>
             {t('body:measurements.title')}
           </Text>

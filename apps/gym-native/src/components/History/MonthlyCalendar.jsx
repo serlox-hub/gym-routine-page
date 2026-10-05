@@ -10,7 +10,10 @@ import {
   getPreviousMonth,
   usePreference
 } from '@gym/shared'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
+import { IconButton } from '../ui'
+
+const CALENDAR_HEADER_BLEED = -6
 
 export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onDateChange, selectedDateKey }) {
   const { t } = useTranslation()
@@ -27,13 +30,16 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
 
   return (
     <View className="rounded-lg p-4" style={{ backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
-      <View className="flex-row items-center justify-between mb-4">
-        <Pressable
+      {/* mb-3, not mb-4: the 44pt boxes already add 5pt under the old 34pt header. The negative
+          margin gives back 12pt of the 20 the arrows grew, inside the card's p-4 (so Android still
+          delivers touches there): at 360pt a long month ("Septiembre De 2026") plus «Hoy» did not
+          fit between them. */}
+      <View className="flex-row items-center justify-between mb-3" style={{ marginHorizontal: CALENDAR_HEADER_BLEED }}>
+        <IconButton
+          icon={ChevronLeft}
+          label={t('workout:history.previousMonth')}
           onPress={() => onDateChange(getPreviousMonth(currentDate))}
-          className="p-2 rounded active:opacity-70"
-        >
-          <ChevronLeft size={18} color={colors.textSecondary} />
-        </Pressable>
+        />
 
         <View className="flex-row items-center gap-3">
           <Text className="text-lg font-medium capitalize" style={{ color: colors.textPrimary }}>
@@ -41,19 +47,21 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
           </Text>
           <Pressable
             onPress={() => onDateChange(new Date())}
-            className="px-2 py-1 rounded active:opacity-70"
-            style={{ backgroundColor: colors.bgTertiary }}
+            accessibilityRole="button"
+            className="justify-center active:opacity-70"
+            style={{ minHeight: design.minTouchTarget }}
           >
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>{t('common:time.today')}</Text>
+            <View className="px-2 py-1 rounded" style={{ backgroundColor: colors.bgTertiary }}>
+              <Text className="text-xs" style={{ color: colors.textSecondary }}>{t('common:time.today')}</Text>
+            </View>
           </Pressable>
         </View>
 
-        <Pressable
+        <IconButton
+          icon={ChevronRight}
+          label={t('workout:history.nextMonth')}
           onPress={() => onDateChange(getNextMonth(currentDate))}
-          className="p-2 rounded active:opacity-70"
-        >
-          <ChevronRight size={18} color={colors.textSecondary} />
-        </Pressable>
+        />
       </View>
 
       <View className="flex-row mb-2">

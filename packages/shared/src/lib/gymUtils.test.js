@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getGymDisplayName, resolveSelectedGym } from './gymUtils.js'
+import { getGymDisplayName, resolveSelectedGym, getGymDeleteAction, GYM_DELETE_ACTION } from './gymUtils.js'
 
 describe('getGymDisplayName', () => {
   it('devuelve string vacío si el gym es null o undefined', () => {
@@ -46,5 +46,30 @@ describe('resolveSelectedGym', () => {
   it('cae al primer gym si no hay ninguno marcado por defecto', () => {
     const noDefault = [{ id: 5, is_default: false }, { id: 6, is_default: false }]
     expect(resolveSelectedGym(noDefault, null).id).toBe(5)
+  })
+})
+
+describe('getGymDeleteAction', () => {
+  it('permite borrar con 0 sesiones (0 es un dato, no "sin dato")', () => {
+    expect(getGymDeleteAction(0)).toBe(GYM_DELETE_ACTION.DELETE)
+  })
+
+  it('bloquea con sesiones', () => {
+    expect(getGymDeleteAction(1)).toBe(GYM_DELETE_ACTION.HAS_SESSIONS)
+    expect(getGymDeleteAction(30)).toBe(GYM_DELETE_ACTION.HAS_SESSIONS)
+  })
+
+  it('mientras el recuento carga no deja borrar', () => {
+    expect(getGymDeleteAction(undefined)).toBe(GYM_DELETE_ACTION.BUSY)
+    expect(getGymDeleteAction(null)).toBe(GYM_DELETE_ACTION.BUSY)
+  })
+
+  it('si el recuento falló bloquea en vez de dar el gym por vacío', () => {
+    expect(getGymDeleteAction(undefined, true)).toBe(GYM_DELETE_ACTION.UNKNOWN)
+  })
+
+  it('un error de un refetch no tapa un recuento ya conocido', () => {
+    expect(getGymDeleteAction(0, true)).toBe(GYM_DELETE_ACTION.DELETE)
+    expect(getGymDeleteAction(2, true)).toBe(GYM_DELETE_ACTION.HAS_SESSIONS)
   })
 })

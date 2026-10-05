@@ -88,22 +88,27 @@ function History() {
         </div>
       ) : (
         <>
-          {/* Session selector (when multiple sessions on same day) */}
+          {/* Session selector (when multiple sessions on same day). The buttons are the 44px boxes,
+              the pills inside keep their size. mt-2 and no mb: the box adds 8px around the pill. */}
           {selectedSessions.length > 1 && (
-            <div className="flex gap-2 mt-4 mb-2 overflow-x-auto">
+            <div className="flex gap-2 mt-2 overflow-x-auto">
               {selectedSessions.map(session => (
                 <button
                   key={session.id}
                   onClick={() => setSelectedSessionId(session.id)}
-                  className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
-                  style={{
-                    backgroundColor: session.id === selectedSessionId ? colors.success : colors.bgTertiary,
-                    color: session.id === selectedSessionId ? colors.bgPrimary : colors.textSecondary,
-                  }}
+                  className="shrink-0 min-h-11 flex items-center"
                 >
-                  {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
-                  {' · '}
-                  {formatTime(session.started_at)}
+                  <span
+                    className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap"
+                    style={{
+                      backgroundColor: session.id === selectedSessionId ? colors.success : colors.bgTertiary,
+                      color: session.id === selectedSessionId ? colors.bgPrimary : colors.textSecondary,
+                    }}
+                  >
+                    {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+                    {' · '}
+                    {formatTime(session.started_at)}
+                  </span>
                 </button>
               ))}
             </div>

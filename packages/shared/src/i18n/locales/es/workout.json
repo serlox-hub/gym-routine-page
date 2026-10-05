@@ -197,6 +197,8 @@
     "viewDetail": "Ver detalle",
     "selectDay": "Selecciona un día para ver el detalle",
     "noSessionsDay": "Sin entrenamientos este día",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
     "recentSessions": "Sesiones recientes",
     "repeatWorkout": "Repetir entrenamiento",
     "repeatConfirm": "Se iniciará una nueva sesión copiando los ejercicios de este día.",

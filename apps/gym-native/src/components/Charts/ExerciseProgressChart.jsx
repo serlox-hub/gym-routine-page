@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { LineChart } from 'react-native-gifted-charts'
 import { CHART_RANGES, tracksReps, tracksWeight, filterRecordsByRange, transformSessionsToChartData, convertWeightValue } from '@gym/shared'
 import ChartRangeToggle from './ChartRangeToggle.jsx'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 const TABS = {
   WEIGHT: 'weight',
@@ -99,27 +99,35 @@ export default function ExerciseProgressChart({ sessions, chartRows, overlayGyms
   const enoughSource = isStatRows ? (chartRows?.length ?? 0) >= 2 : (sessions?.length ?? 0) >= 2
   if (!enoughSource) return null
 
+  // The tab and range Pressables are 44pt boxes with the pills inside: marginBottom 4, not 12,
+  // because the boxes already add ~10pt under the pills.
   const header = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 8 }}>
       {showVolumeTabs ? (
         <View className="flex-row gap-2">
           {Object.entries(TAB_CONFIG).map(([key, config]) => (
             <Pressable
               key={key}
               onPress={() => setActiveTab(key)}
-              className="px-3 py-1.5 rounded active:opacity-70"
-              style={{
-                backgroundColor: activeTab === key
-                  ? `${config.color}25`
-                  : colors.bgTertiary,
-              }}
+              accessibilityRole="button"
+              className="justify-center active:opacity-70"
+              style={{ minHeight: design.minTouchTarget }}
             >
-              <Text
-                className="text-xs font-medium"
-                style={{ color: activeTab === key ? config.color : colors.textSecondary }}
+              <View
+                className="px-3 py-1.5 rounded"
+                style={{
+                  backgroundColor: activeTab === key
+                    ? `${config.color}25`
+                    : colors.bgTertiary,
+                }}
               >
-                {config.label}
-              </Text>
+                <Text
+                  className="text-xs font-medium"
+                  style={{ color: activeTab === key ? config.color : colors.textSecondary }}
+                >
+                  {config.label}
+                </Text>
+              </View>
             </Pressable>
           ))}
         </View>

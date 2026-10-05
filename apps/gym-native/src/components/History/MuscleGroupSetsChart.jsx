@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react-native'
 import { countSessionSetsByMuscleGroup, getMuscleGroupColor, getMuscleGroupName } from '@gym/shared'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 function MuscleGroupSetsChart({ exercises }) {
   const { t } = useTranslation()
@@ -15,13 +15,13 @@ function MuscleGroupSetsChart({ exercises }) {
   if (rows.length === 0) return null
 
   return (
-    <View style={{ marginTop: 8 }}>
+    // No top margin and no gap under the toggle: its 44pt box already puts 12pt around the title.
+    <View>
       <Pressable
         onPress={() => setIsExpanded(!isExpanded)}
         accessibilityRole="button"
         accessibilityState={{ expanded: isExpanded }}
-        hitSlop={{ top: 10, bottom: 10 }}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+        style={{ minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', gap: 8 }}
       >
         <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
           {t('workout:session.setsByMuscleGroup')}
@@ -32,7 +32,7 @@ function MuscleGroupSetsChart({ exercises }) {
         }
       </Pressable>
       {isExpanded && (
-        <View className="mt-3 gap-2.5">
+        <View className="gap-2.5">
           {rows.map(({ muscleGroup, sets, ratio }) => {
             const color = getMuscleGroupColor(muscleGroup.name)
             return (

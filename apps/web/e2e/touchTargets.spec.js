@@ -4,8 +4,9 @@ import '../scripts/loadEnv.js'
 import { seedRoutine } from './supersetRoutines.js'
 import { expectTouchTargets } from './touchTargets.js'
 
-// Touch targets (issue #151): every tap control of the screens used mid-workout is at least 44px.
-// A new screen, or a new state of one of these, gets its own measurement here.
+// Touch targets (issues #151, #152): every tap control of the screens used mid-workout, and of the
+// ones for looking back (history, body metrics, gyms, charts), is at least 44px. A new screen, or a
+// new state of one of these, gets its own measurement here.
 //
 // Runs on its OWN user (`supabase/seed.sql`): it starts sessions, and only one can be in progress
 // per user (migration 058), and it adds a second gym, which would change what the other specs see.
@@ -29,6 +30,8 @@ const ROUTINE = {
 }
 const DAY_NAME = ROUTINE.days[0].name
 const SECOND_GYM = 'Gimnasio Toque E2E'
+// Stored values of `BODY_MEASUREMENT_TYPES`: two, so that the type selector has a list to open.
+const MEASUREMENT_TYPES = ['cintura', 'pecho']
 
 // A phone, by touch: the size the 44px rule is about.
 test.use({
@@ -84,6 +87,18 @@ async function prepare() {
   await seedRoutine(supabase, userId, ROUTINE)
   await ensureTwoGyms(supabase, userId)
   await deleteSessions(supabase, userId)
+}
+
+/** Exactly one weight record, and two measurement types enabled: what shows every control of body metrics. */
+async function prepareBodyMetrics(supabase, userId) {
+  const { error: deleteError } = await supabase.from('body_weight_records').delete().eq('user_id', userId)
+  if (deleteError) throw deleteError
+  const { error: insertError } = await supabase.from('body_weight_records').insert({ user_id: userId, weight: 80 })
+  if (insertError) throw insertError
+  const { error: preferenceError } = await supabase
+    .from('user_preferences')
+    .upsert({ user_id: userId, key: 'enabled_body_measurements', value: MEASUREMENT_TYPES }, { onConflict: 'user_id,key' })
+  if (preferenceError) throw preferenceError
 }
 
 async function login(page) {
@@ -142,6 +157,19 @@ async function completeWeightSet(page, weight) {
   await inputs.nth(1).fill('10')
   await completeFirstSet(page)
   await page.getByRole('button', { name: 'Saltar descanso' }).click()
+}
+
+function endSessionModal(page) {
+  return modal(page, page.getByRole('heading', { name: 'Finalizar entrenamiento' }))
+}
+
+/** A whole session through the app: one set of the weight exercise at `weight` × 10, then ended. */
+async function finishSession(page, weight) {
+  await startSession(page)
+  await completeWeightSet(page, weight)
+  await page.getByRole('button', { name: 'Terminar entrenamiento' }).click()
+  await endSessionModal(page).getByRole('button', { name: 'Hecho' }).click()
+  await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
 }
 
 test.afterEach(async () => {
@@ -225,11 +253,7 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     await prepare()
     await login(page)
     // A first session at 40 kg: a rep record needs history to beat.
-    await startSession(page)
-    await completeWeightSet(page, '40')
-    await page.getByRole('button', { name: 'Terminar entrenamiento' }).click()
-    await modal(page, page.getByRole('heading', { name: 'Finalizar entrenamiento' })).getByRole('button', { name: 'Hecho' }).click()
-    await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
+    await finishSession(page, '40')
 
     // The second, at 50 kg, ends with a record: the summary has two cards, with arrows and dots.
     await startSession(page)
@@ -237,13 +261,87 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
 
     // State 8: the end session modal, then the summary.
     await page.getByRole('button', { name: 'Terminar entrenamiento' }).click()
-    const endModal = modal(page, page.getByRole('heading', { name: 'Finalizar entrenamiento' }))
+    const endModal = endSessionModal(page)
     await expect(endModal.getByRole('button', { name: 'Hecho' })).toBeVisible()
     await expectTouchTargets(endModal)
     await endModal.getByRole('button', { name: 'Hecho' }).click()
 
     await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
     await expect(page.getByRole('button', { name: 'Siguiente' })).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+  })
+
+  test('history: a session, its edit mode, two sessions in a day and the exercise chart', async ({ page }) => {
+    await prepare()
+    await login(page)
+    await finishSession(page, '40')
+    await page.goto('/history')
+    const body = page.locator('body')
+
+    // History state 1: today selected (the page does it on its own) and its session open, with the
+    // calendar, the gym chip, the session's "···" and the sets by muscle group.
+    await expect(page.getByRole('button', { name: 'Mes anterior' })).toBeVisible()
+    await expect(page.getByTitle('Cambiar gimnasio de la sesión')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Series por grupo muscular' })).toBeVisible()
+    await expectTouchTargets(body)
+
+    // History state 2: the same session in edit mode.
+    await page.getByRole('button', { name: 'Más opciones' }).click()
+    await page.getByRole('button', { name: 'Editar', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Añadir serie' })).toBeVisible()
+    await expectTouchTargets(body)
+    await page.getByRole('button', { name: 'Hecho', exact: true }).click()
+
+    // History state 3: a second session the same day, so the day shows a chip per session.
+    await finishSession(page, '50')
+    await page.goto('/history')
+    const sessionChips = page.getByRole('button', { name: new RegExp(`^${DAY_NAME} · `) })
+    await expect(sessionChips).toHaveCount(2)
+    await expectTouchTargets(body)
+
+    // History state 4: the weight exercise's history, from its card. Two sessions draw its chart,
+    // with the metric tabs and the range toggle.
+    await page.getByRole('heading', { level: 3, name: WEIGHT_EXERCISE }).click()
+    const historyModal = modal(page, page.getByRole('button', { name: '1M', exact: true }))
+    await expect(historyModal.getByRole('button', { name: 'Volumen total' })).toBeVisible()
+    await expectTouchTargets(historyModal)
+  })
+
+  test('body metrics: weight, measurements, the type selector and the config modal', async ({ page }) => {
+    const { supabase, userId } = await signedInClient()
+    await prepareBodyMetrics(supabase, userId)
+    await login(page)
+    await page.goto('/body-metrics')
+    const body = page.locator('body')
+
+    // The weight tab, with the record's edit and delete side by side.
+    await expect(page.getByRole('button', { name: 'Editar peso' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Registrar peso' })).toBeVisible()
+    await expectTouchTargets(body)
+
+    // The measurements tab, then its type selector open.
+    await page.getByRole('button', { name: 'Medidas Corporales' }).click()
+    await expect(page.getByRole('button', { name: 'Configurar medidas' })).toBeVisible()
+    await expectTouchTargets(body)
+    await page.getByRole('button', { name: 'Cintura', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Pecho', exact: true })).toBeVisible()
+    await expectTouchTargets(body)
+    await page.getByRole('button', { name: 'Pecho', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Cintura', exact: true })).toBeHidden()
+
+    // The config modal, from the settings button.
+    await page.getByRole('button', { name: 'Configurar medidas' }).click()
+    const configModal = modal(page, page.getByRole('heading', { name: 'Configurar medidas' }))
+    await expect(configModal.getByRole('button', { name: 'Cerrar' })).toBeVisible()
+    await expectTouchTargets(configModal)
+  })
+
+  test('gyms', async ({ page }) => {
+    await prepare()
+    await login(page)
+    await page.goto('/gyms')
+    await expect(page.getByText(SECOND_GYM)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Renombrar gimnasio' })).toHaveCount(2)
     await expectTouchTargets(page.locator('body'))
   })
 })

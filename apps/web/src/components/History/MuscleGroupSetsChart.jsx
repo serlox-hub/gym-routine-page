@@ -14,9 +14,10 @@ function MuscleGroupSetsChart({ exercises }) {
   if (rows.length === 0) return null
 
   return (
-    <section style={{ marginTop: 8 }}>
+    // No top margin and no gap under the toggle: its 44px box already puts 12px around the title.
+    <section>
       <button
-        className="flex items-center gap-2 w-full py-2 -my-2"
+        className="flex items-center gap-2 w-full min-h-11"
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
       >
@@ -31,7 +32,7 @@ function MuscleGroupSetsChart({ exercises }) {
         />
       </button>
       {isExpanded && (
-        <div className="mt-3 space-y-2.5">
+        <div className="space-y-2.5">
           {rows.map(({ muscleGroup, sets, ratio }) => {
             const color = getMuscleGroupColor(muscleGroup.name)
             return (
