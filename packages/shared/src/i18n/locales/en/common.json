@@ -329,6 +329,7 @@
     "allGyms": "All gyms",
     "compareGyms": "Compare",
     "cannotDeleteWithSessions": "You can't delete a gym with sessions. Rename it if needed.",
+    "cannotDeleteUnknownSessions": "Couldn't check whether this gym has sessions. Try again.",
     "reassignSession": "Change session gym",
     "sessionCount_one": "{{count}} session",
     "sessionCount_other": "{{count}} sessions"

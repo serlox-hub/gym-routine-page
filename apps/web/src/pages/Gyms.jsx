@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pencil, Trash2, Dumbbell } from 'lucide-react'
-import { useGyms, useCreateGym, useRenameGym, useDeleteGym, useGymSessionCount, getGymDisplayName } from '@gym/shared'
-import { LoadingSpinner, PageHeader, ConfirmModal, Modal } from '../components/ui/index.js'
+import { useGyms, useCreateGym, useRenameGym, useDeleteGym, useGymSessionCount, getGymDisplayName, getNotifier, getGymDeleteAction, GYM_DELETE_ACTION } from '@gym/shared'
+import { LoadingSpinner, PageHeader, ConfirmModal, Modal, IconButton } from '../components/ui/index.js'
 import { colors } from '../lib/styles.js'
 
 function getGymName(gym, t) {
@@ -12,12 +12,22 @@ function getGymName(gym, t) {
 
 function GymRow({ gym, onRename, onDelete }) {
   const { t } = useTranslation()
-  const { data: sessionCount } = useGymSessionCount(gym.id)
-  const hasSessions = (sessionCount ?? 0) > 0
+  const { data: sessionCount, isError, refetch } = useGymSessionCount(gym.id)
+  const deleteAction = getGymDeleteAction(sessionCount, isError)
 
+  const handleDeleteClick = () => {
+    if (deleteAction === GYM_DELETE_ACTION.DELETE) return onDelete(gym)
+    if (deleteAction === GYM_DELETE_ACTION.HAS_SESSIONS) {
+      return getNotifier()?.show(t('common:gym.cannotDeleteWithSessions'), 'error')
+    }
+    getNotifier()?.show(t('common:gym.cannotDeleteUnknownSessions'), 'error')
+    refetch()
+  }
+
+  // py-2 and pr-2: with the 44px boxes the row keeps its height and the icons stay put.
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3"
+      className="flex items-center gap-3 pl-4 pr-2 py-2"
       style={{ borderBottom: `1px solid ${colors.border}` }}
     >
       <Dumbbell size={18} style={{ color: colors.textMuted }} className="shrink-0" />
@@ -31,21 +41,16 @@ function GymRow({ gym, onRename, onDelete }) {
           </p>
         )}
       </div>
-      <button
-        onClick={() => onRename(gym)}
-        className="p-2 rounded-lg hover:opacity-80 transition-opacity shrink-0"
-        title={t('common:gym.rename')}
-      >
-        <Pencil size={16} style={{ color: colors.textSecondary }} />
-      </button>
-      <button
-        onClick={() => !hasSessions && onDelete(gym)}
-        disabled={hasSessions}
-        className="p-2 rounded-lg hover:opacity-80 transition-opacity shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
-        title={hasSessions ? t('common:gym.cannotDeleteWithSessions') : t('common:gym.delete')}
-      >
-        <Trash2 size={16} style={{ color: colors.danger }} />
-      </button>
+      <IconButton icon={Pencil} iconSize={16} label={t('common:gym.rename')} onClick={() => onRename(gym)} />
+      <IconButton
+        icon={Trash2}
+        iconSize={16}
+        color={colors.danger}
+        label={t('common:gym.delete')}
+        loading={deleteAction === GYM_DELETE_ACTION.BUSY}
+        blocked={deleteAction === GYM_DELETE_ACTION.HAS_SESSIONS || deleteAction === GYM_DELETE_ACTION.UNKNOWN}
+        onClick={handleDeleteClick}
+      />
     </div>
   )
 }
@@ -89,7 +94,7 @@ function GymFormModal({ isOpen, onClose, onSubmit, isPending, initialName = '', 
         <button
           onClick={handleSubmit}
           disabled={!name.trim() || isPending}
-          className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+          className="w-full min-h-11 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
           style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
         >
           {isPending ? t('common:buttons.loading') : t('common:buttons.save')}
@@ -133,7 +138,7 @@ function Gyms() {
         rightAction={
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold"
+            className="flex items-center gap-1.5 min-h-11 px-3 py-1.5 rounded-lg text-sm font-semibold"
             style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
           >
             <Plus size={16} />

@@ -5,7 +5,7 @@ import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Vid
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useRescheduleSession, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu } from '../ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
 import SetValueInput from '../Workout/SetInputs.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
@@ -100,17 +100,17 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
   // `role="img"` + `aria-label`: son badges solo-icono; un `<span>` sin rol no expone `title` como
   // nombre accesible (un `<button>` sí lo hacía de rebote), así que sin esto un lector de pantalla
   // no anunciaría nada — paridad con native, que ya usa `accessible`+`accessibilityLabel`.
+  // While the upload has failed, the 44px retry box takes the note badge's place: the column is a
+  // fixed 150px and with both it overflows onto the inputs. The note is still one tap away in «···».
   const trailingBadges = (
     <>
-      {hasNotes && (
+      {hasNotes && !videoUploadError && (
         <span style={{ ...badgeStyle, cursor: 'default' }} role="img" aria-label={t('workout:set.notes')} title={t('workout:set.notes')}>
           <FileText size={13} color={colors.textSecondary} />
         </span>
       )}
       {videoUploadError && (
-        <button onClick={handleRetryVideoUpload} style={{ ...badgeStyle, backgroundColor: colors.dangerBg }} title={t('common:buttons.retry')}>
-          <AlertCircle size={13} color={colors.danger} />
-        </button>
+        <IconButton icon={AlertCircle} iconSize={13} color={colors.danger} label={t('common:buttons.retry')} onClick={handleRetryVideoUpload} />
       )}
       {isUploadingVideo && (
         <span style={{ ...badgeStyle, padding: '3px 7px', cursor: 'default' }}>
@@ -264,7 +264,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             ))}
             <button
               onClick={() => onAddSet(sessionExerciseId, exercise, maxSetNumber)}
-              className="flex items-center justify-center gap-1 w-full py-2 rounded text-xs"
+              className="flex items-center justify-center gap-1 w-full min-h-11 py-2 rounded text-xs"
               style={{ border: `1px dashed ${colors.border}`, color: colors.success }}
             >
               <Plus size={14} /> {t('workout:set.addSet')}
@@ -290,16 +290,14 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                   </span>
                 )}
               </span>
-              <div className="flex items-center gap-0.5 -my-2">
+              {/* No negative margin: the 44px boxes make a set with a note or video 44 tall, so two
+                  consecutive ones do not overlap in the 8px gap. */}
+              <div className="flex items-center gap-0.5">
                 {set.notes && (
-                  <button onClick={() => onSelectSet(set)} className="p-2 rounded-lg opacity-70 hover:opacity-100 transition-opacity">
-                    <FileText size={14} color={colors.textMuted} />
-                  </button>
+                  <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onClick={() => onSelectSet(set)} />
                 )}
                 {set.video_url && (
-                  <button onClick={() => onSelectSet(set)} className="p-2 rounded-lg opacity-70 hover:opacity-100 transition-opacity">
-                    <Video size={14} color={colors.textMuted} />
-                  </button>
+                  <IconButton icon={Video} iconSize={14} color={colors.textMuted} label={t('workout:set.video')} onClick={() => onSelectSet(set)} />
                 )}
                 {set.rir_actual !== null && set.rir_actual !== undefined && (
                   <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center', whiteSpace: 'nowrap' }}>
@@ -484,7 +482,7 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
               <span className="truncate flex-1 min-w-0" style={{ color: colors.textPrimary, fontSize: 16, fontWeight: 700 }}>
                 {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
               </span>
-              <button onClick={() => setIsEditing(false)} className="shrink-0 ml-3 hover:opacity-80" style={{ color: colors.success, fontSize: 14, fontWeight: 600 }}>
+              <button onClick={() => setIsEditing(false)} className="shrink-0 ml-3 min-h-11 hover:opacity-80" style={{ color: colors.success, fontSize: 14, fontWeight: 600 }}>
                 {t('common:buttons.done')}
               </button>
             </>
@@ -514,12 +512,13 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
             <div style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.startDateTime')}</div>
             <input
               type="datetime-local"
+              aria-label={t('workout:history.startDateTime')}
               value={formatDateTimeLocal(editStartedAt || session.started_at)}
               min={formatDateTimeLocal(startBounds.minDate)}
               max={formatDateTimeLocal(startBounds.maxDate)}
               onChange={e => handleStartDateTimeChange(e.target.value)}
               onBlur={handleSaveStart}
-              className="w-full px-2 py-1 rounded text-xs"
+              className="w-full min-h-11 px-2 py-1 rounded text-xs"
               style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}`, colorScheme: 'dark' }}
             />
             {/* El clamp no puede ser mudo: sin esto el picker rechaza fechas anteriores sin decir por qué. */}
@@ -534,12 +533,13 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
             <div style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endDateTime')}</div>
             <input
               type="datetime-local"
+              aria-label={t('workout:history.endDateTime')}
               value={formatDateTimeLocal(editCompletedAt || session.completed_at)}
               min={formatDateTimeLocal(session.started_at)}
               max={formatDateTimeLocal(new Date())}
               onChange={e => handleDateTimeChange(e.target.value)}
               onBlur={handleSaveTime}
-              className="w-full px-2 py-1 rounded text-xs"
+              className="w-full min-h-11 px-2 py-1 rounded text-xs"
               style={{ backgroundColor: colors.bgPrimary, color: colors.textPrimary, border: 'none', borderBottom: `1px solid ${colors.border}`, colorScheme: 'dark' }}
             />
           </div>
@@ -567,16 +567,21 @@ function SessionInlineDetail({ sessionId, onSessionDeleted }) {
                   {session.routine_day?.routine?.name || session.routine_name}
                 </span>
               )}
+              {/* The button is the 44px box, the pill inside keeps its size. */}
               {hasMultiple && gymName && (
                 <button
                   onClick={() => setShowGymSelector(true)}
                   disabled={reassignGym.isPending}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity disabled:opacity-50"
-                  style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+                  className="min-h-11 inline-flex items-center hover:opacity-80 transition-opacity disabled:opacity-50"
                   title={t('common:gym.reassignSession')}
                 >
-                  <Dumbbell size={11} style={{ color: colors.textMuted }} />
-                  <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>{gymName}</span>
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+                  >
+                    <Dumbbell size={11} style={{ color: colors.textMuted }} />
+                    <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 600 }}>{gymName}</span>
+                  </span>
                 </button>
               )}
             </div>

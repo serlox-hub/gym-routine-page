@@ -100,26 +100,32 @@ export default function HistoryScreen({ navigation, route }) {
           </View>
         ) : (
           <>
-            {/* Session selector */}
+            {/* Session selector. The row is 44pt tall and each Pressable fills it, the pills inside
+                keep their size. mt-2 and no mb: the box adds 8pt around the pill. */}
             {selectedSessions.length > 1 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4 mb-2">
-                <View className="flex-row gap-2">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-2">
+                <View className="flex-row gap-2" style={{ height: design.minTouchTarget }}>
                   {selectedSessions.map(session => (
                     <Pressable
                       key={session.id}
                       onPress={() => setSelectedSessionId(session.id)}
-                      className="px-3 py-1.5 rounded-full"
-                      style={{
-                        backgroundColor: session.id === selectedSessionId ? colors.success : colors.bgTertiary,
-                      }}
+                      accessibilityRole="button"
+                      className="justify-center"
                     >
-                      <Text className="text-xs font-medium" style={{
-                        color: session.id === selectedSessionId ? colors.bgPrimary : colors.textSecondary,
-                      }}>
-                        {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
-                        {' · '}
-                        {formatTime(session.started_at)}
-                      </Text>
+                      <View
+                        className="px-3 py-1.5 rounded-full"
+                        style={{
+                          backgroundColor: session.id === selectedSessionId ? colors.success : colors.bgTertiary,
+                        }}
+                      >
+                        <Text className="text-xs font-medium" style={{
+                          color: session.id === selectedSessionId ? colors.bgPrimary : colors.textSecondary,
+                        }}>
+                          {session.day_name || session.routine_day?.name || t('workout:session.freeWorkout')}
+                          {' · '}
+                          {formatTime(session.started_at)}
+                        </Text>
+                      </View>
                     </Pressable>
                   ))}
                 </View>

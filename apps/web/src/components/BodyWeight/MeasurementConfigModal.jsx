@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Check } from 'lucide-react'
-import { Button, Modal } from '../ui/index.js'
+import { Button, IconButton, Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { getMeasurementLabel, getOrderedMeasurementTypes } from '@gym/shared'
 
@@ -41,9 +41,8 @@ function MeasurementConfigModal({ isOpen, onClose, enabledMeasurements = [], onS
         <h3 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
           {t('body:measurements.configure')}
         </h3>
-        <button onClick={onClose} className="p-1 rounded hover:opacity-80">
-          <X size={20} style={{ color: colors.textSecondary }} />
-        </button>
+        {/* -my-2 -mr-2: the 44px box sits inside the header's padding, so the header keeps its height. */}
+        <IconButton icon={X} iconSize={20} label={t('common:buttons.close')} onClick={onClose} className="-my-2 -mr-2" />
       </div>
 
       <div className="p-4 max-h-80 overflow-y-auto">

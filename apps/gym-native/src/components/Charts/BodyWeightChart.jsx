@@ -21,8 +21,9 @@ export default function BodyWeightChart({ records, unit = 'kg' }) {
 
   if (!records || records.length < 2) return null
 
+  // No marginBottom: the range toggle's 44pt box already adds ~11pt under its track.
   const header = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
       <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '500' }}>
         {t('body:weight.chartTitle')}
       </Text>

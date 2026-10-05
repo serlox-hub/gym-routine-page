@@ -20,6 +20,8 @@ const CONTROL_SELECTOR = [
   '[role="radio"]',
   'input[type="checkbox"]',
   'input[type="radio"]',
+  // A tap opens the picker, so it is a tap control (the history edit mode's start/end).
+  'input[type="datetime-local"]',
 ].join(', ')
 
 /**

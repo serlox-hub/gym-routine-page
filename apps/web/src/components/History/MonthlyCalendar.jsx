@@ -10,6 +10,7 @@ import {
   usePreference
 } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
+import { IconButton } from '../ui/index.js'
 
 function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, selectedDateKey }) {
   const { t } = useTranslation()
@@ -31,33 +32,27 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, sele
   return (
     <div className="rounded-lg p-4" style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
       {/* Header con navegación */}
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={goToPrevMonth}
-          className="p-2 rounded hover:opacity-80"
-        >
-          <ChevronLeft size={18} color={colors.textSecondary} />
-        </button>
+      {/* mb-3, not mb-4: the 44px boxes already add 5px under the old 34px header. -mx-1.5 gives
+          back 12px of the 20 the arrows grew, inside the card's p-4: at 360px a long month
+          ("Septiembre De 2026") plus «Hoy» did not fit between them. */}
+      <div className="flex items-center justify-between mb-3 -mx-1.5">
+        <IconButton icon={ChevronLeft} label={t('workout:history.previousMonth')} onClick={goToPrevMonth} />
 
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-medium capitalize" style={{ color: colors.textPrimary }}>
             {monthName}
           </h3>
-          <button
-            onClick={goToToday}
-            className="text-xs px-2 py-1 rounded hover:opacity-80"
-            style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-          >
-            {t('common:time.today')}
+          <button onClick={goToToday} className="min-h-11 flex items-center hover:opacity-80">
+            <span
+              className="text-xs px-2 py-1 rounded"
+              style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+            >
+              {t('common:time.today')}
+            </span>
           </button>
         </div>
 
-        <button
-          onClick={goToNextMonth}
-          className="p-2 rounded hover:opacity-80"
-        >
-          <ChevronRight size={18} color={colors.textSecondary} />
-        </button>
+        <IconButton icon={ChevronRight} label={t('workout:history.nextMonth')} onClick={goToNextMonth} />
       </div>
 
       {/* Días de la semana */}

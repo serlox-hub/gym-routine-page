@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react-native'
 import { useConvertSessionToRoutineDayForm } from '@gym/shared'
 import { Modal, Button, LoadingSpinner } from '../ui'
-import { colors, inputStyle } from '../../lib/styles'
+import { colors, design, inputStyle } from '../../lib/styles'
 
 // Mounted only while open: the form hook starts from the defaults on every opening.
 export default function ConvertToRoutineDayModal({ session, onClose, onConverted }) {
@@ -53,6 +53,7 @@ export default function ConvertToRoutineDayModal({ session, onClose, onConverted
                 accessibilityState={{ checked: option.selected }}
                 className="p-3 rounded-lg flex-row items-center"
                 style={{
+                  minHeight: design.minTouchTarget,
                   gap: 8,
                   backgroundColor: option.selected ? colors.successBg : colors.bgTertiary,
                   borderWidth: 1,

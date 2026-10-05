@@ -108,21 +108,27 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, tr
     return null
   }
 
+  // The tab and range buttons are 44px boxes with the pills inside: mb-1, not mb-3, because the
+  // boxes already add ~10px under the pills.
   const header = (
-    <div className="flex items-center justify-between mb-3 gap-2">
+    <div className="flex items-center justify-between mb-1 gap-2">
       {showVolumeTabs ? (
         <div className="flex gap-2">
           {Object.entries(TAB_CONFIG).map(([key, config]) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className="px-3 py-1 rounded text-xs font-medium transition-colors"
-              style={{
-                backgroundColor: activeTab === key ? `${config.color}20` : colors.bgTertiary,
-                color: activeTab === key ? config.color : colors.textSecondary,
-              }}
+              className="min-h-11 flex items-center"
             >
-              {config.label}
+              <span
+                className="px-3 py-1 rounded text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: activeTab === key ? `${config.color}20` : colors.bgTertiary,
+                  color: activeTab === key ? config.color : colors.textSecondary,
+                }}
+              >
+                {config.label}
+              </span>
             </button>
           ))}
         </div>

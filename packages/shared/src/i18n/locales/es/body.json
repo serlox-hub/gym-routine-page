@@ -25,6 +25,7 @@
   "measurements": {
     "title": "Medidas Corporales",
     "record": "Registrar medida",
+    "edit": "Editar medida",
     "submit": "Registrar",
     "delete": "Eliminar registro",
     "deleteConfirm": "¿Eliminar este registro de medida?",

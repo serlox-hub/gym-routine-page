@@ -27,8 +27,9 @@ function BodyWeightChart({ records, unit = 'kg' }) {
 
   if (!records || records.length < 2) return null
 
+  // No mb: the range toggle's 44px box already adds 10px under its track.
   const header = (
-    <div className="flex items-center justify-between mb-2">
+    <div className="flex items-center justify-between">
       <h4 className="text-xs font-medium" style={{ color: colors.textSecondary }}>
         {t('body:weight.chartTitle')}
       </h4>

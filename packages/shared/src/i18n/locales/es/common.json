@@ -329,6 +329,7 @@
     "allGyms": "Todos los gimnasios",
     "compareGyms": "Comparar",
     "cannotDeleteWithSessions": "No puedes eliminar un gimnasio con sesiones. Renómbralo si lo necesitas.",
+    "cannotDeleteUnknownSessions": "No se ha podido comprobar si este gimnasio tiene sesiones. Inténtalo otra vez.",
     "reassignSession": "Cambiar gimnasio de la sesión",
     "sessionCount_one": "{{count}} sesión",
     "sessionCount_other": "{{count}} sesiones"

@@ -25,6 +25,7 @@
   "measurements": {
     "title": "Body Measurements",
     "record": "Record measurement",
+    "edit": "Edit measurement",
     "submit": "Record",
     "delete": "Delete record",
     "deleteConfirm": "Delete this measurement record?",

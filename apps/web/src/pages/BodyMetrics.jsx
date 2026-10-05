@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useBodyWeightHistory, useRecordBodyWeight, useUpdateBodyWeight, useDeleteBodyWeight } from '../hooks/useBodyWeight.js'
 import { usePreference } from '../hooks/usePreferences.js'
-import { LoadingSpinner, ErrorMessage, ConfirmModal } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, ConfirmModal, IconButton } from '../components/ui/index.js'
 import { BodyWeightChart, BodyWeightModal, MeasurementSection } from '../components/BodyWeight/index.js'
 import { calculateBodyWeightStats, formatShortDate, formatTime } from '@gym/shared'
 import { colors } from '../lib/styles.js'
@@ -14,10 +14,12 @@ function BodyMetrics() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
-      {/* Tabs */}
-      <div className="relative flex p-1 rounded-xl mb-5" style={{ backgroundColor: colors.bgTertiary }}>
+      {/* Tabs. The buttons are the 44px boxes; the track (inset-y-0.5) and the sliding pill
+          (top-1.5 bottom-1.5) are painted behind them at their old 40px and 32px. */}
+      <div className="relative flex px-1 mb-5">
+        <div className="absolute inset-x-0 inset-y-0.5 rounded-xl" style={{ backgroundColor: colors.bgTertiary }} />
         <div
-          className="absolute top-1 bottom-1 rounded-lg"
+          className="absolute top-1.5 bottom-1.5 rounded-lg"
           style={{
             width: 'calc(50% - 4px)',
             backgroundColor: colors.success,
@@ -27,12 +29,12 @@ function BodyMetrics() {
           }}
         />
         <button onClick={() => setActiveTab('peso')}
-          className="relative flex-1 py-1.5 px-4 rounded-lg text-sm font-semibold z-10"
+          className="relative flex-1 min-h-11 px-4 rounded-lg text-sm font-semibold z-10"
           style={{ color: activeTab === 'peso' ? colors.bgPrimary : colors.textSecondary, background: 'none', border: 'none', transition: 'color 0.2s' }}>
           {t('body:weight.tab')}
         </button>
         <button onClick={() => setActiveTab('medidas')}
-          className="relative flex-1 py-1.5 px-4 rounded-lg text-sm font-semibold z-10"
+          className="relative flex-1 min-h-11 px-4 rounded-lg text-sm font-semibold z-10"
           style={{ color: activeTab === 'medidas' ? colors.bgPrimary : colors.textSecondary, background: 'none', border: 'none', transition: 'color 0.2s' }}>
           {t('body:measurements.title')}
         </button>
@@ -126,7 +128,7 @@ function WeightSection() {
 
       {/* Record Button */}
       <button onClick={() => setShowModal(true)}
-        className="w-full py-2.5 rounded-xl text-sm font-semibold mb-6"
+        className="w-full min-h-11 py-2.5 rounded-xl text-sm font-semibold mb-6"
         style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
         {t('body:weight.record')}
       </button>
@@ -139,8 +141,9 @@ function WeightSection() {
         </p>
       ) : (
         <div className="space-y-2">
+          {/* py-1 and pr-1: with the 44px boxes the row stays 52px tall and the icons stay put. */}
           {records.map(record => (
-            <div key={record.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+            <div key={record.id} className="flex items-center justify-between pl-3 pr-1 py-1 rounded-xl"
               style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}>
               <div className="flex items-baseline gap-2">
                 <span className="text-base font-bold" style={{ color: colors.textPrimary }}>{record.weight} {unit}</span>
@@ -149,15 +152,10 @@ function WeightSection() {
                 </span>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => handleEdit(record)} className="p-2 hover:opacity-80"
-                  style={{ color: colors.textMuted }}>
-                  <Pencil size={16} />
-                </button>
-                <button onClick={() => setRecordToDelete(record.id)}
-                  className="p-2 hover:opacity-80 disabled:opacity-50"
-                  style={{ color: colors.textMuted }} disabled={deleteMutation.isPending}>
-                  <Trash2 size={16} />
-                </button>
+                <IconButton icon={Pencil} iconSize={16} color={colors.textMuted} label={t('body:weight.edit')}
+                  onClick={() => handleEdit(record)} />
+                <IconButton icon={Trash2} iconSize={16} color={colors.textMuted} label={t('body:weight.delete')}
+                  onClick={() => setRecordToDelete(record.id)} disabled={deleteMutation.isPending} />
               </div>
             </div>
           ))}
