@@ -179,8 +179,7 @@
     "maxCalories": "Máx Kcal",
     "avgCalories": "Media Kcal",
     "bestPace": "Mejor Ritmo",
-    "avgPace": "Media Ritmo",
-    "goToSlide": "Ir a la tarjeta {{number}}"
+    "avgPace": "Media Ritmo"
   },
   "history": {
     "title": "Histórico",

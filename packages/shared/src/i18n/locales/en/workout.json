@@ -179,8 +179,7 @@
     "maxCalories": "Max Kcal",
     "avgCalories": "Avg Kcal",
     "bestPace": "Best Pace",
-    "avgPace": "Avg Pace",
-    "goToSlide": "Go to card {{number}}"
+    "avgPace": "Avg Pace"
   },
   "history": {
     "title": "History",

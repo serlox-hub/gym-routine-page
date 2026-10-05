@@ -229,7 +229,9 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
     <Card className="p-3" style={getMuscleGroupBorderStyle(exercise.muscle_group?.name)}>
       <div
         onClick={isHistoryClickable ? () => setShowHistory(true) : undefined}
-        className={`flex items-start justify-between gap-2 mb-2 ${isHistoryClickable ? 'cursor-pointer hover:opacity-80' : ''}`}
+        // min-h-11: a 44px touch target. -mt-2.5 sits it in the card's p-3 and py-2.5 gives the 10px
+        // back, so the name stays 12px from the top even when it wraps to two lines.
+        className={`flex items-center justify-between gap-2 min-h-11 -mt-2.5 py-2.5 ${isHistoryClickable ? 'cursor-pointer hover:opacity-80' : ''}`}
       >
         <div className="flex items-center gap-2">
           <h3 className={`font-medium ${exercise.deleted_at ? 'text-secondary line-through' : ''}`}>

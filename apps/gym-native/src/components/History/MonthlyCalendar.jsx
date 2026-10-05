@@ -75,7 +75,7 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
       <View className="flex-row flex-wrap">
         {calendarData.map((dayData, index) => {
           if (!dayData) {
-            return <View key={`empty-${index}`} style={{ width: '14.28%', aspectRatio: 1 }} />
+            return <View key={`empty-${index}`} style={{ width: '14.28%', aspectRatio: 1, minHeight: design.minTouchTarget }} />
           }
 
           const isSelected = selectedDateKey === dayData.dateKey
@@ -87,6 +87,8 @@ export default function MonthlyCalendar({ sessions, onDayPress, currentDate, onD
               style={{
                 width: '14.28%',
                 aspectRatio: 1,
+                // 44pt touch target: at 360pt wide the card's p-4 and border leave ~42pt per day.
+                minHeight: design.minTouchTarget,
                 padding: 2,
               }}
             >
