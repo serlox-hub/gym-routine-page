@@ -2,7 +2,7 @@
  * Utilidades para manipulación de arrays
  */
 
-import { tokenizeSearchQuery, createSearchRanker, compareSearchRanks } from './textUtils.js'
+import { tokenizeSearchQuery, getSearchRank, compareSearchRanks } from './textUtils.js'
 
 /**
  * Reordena un elemento en un array moviéndolo arriba o abajo
@@ -91,7 +91,7 @@ export function moveItemToPosition(array, id, newIndex) {
 }
 
 /**
- * Filters and sorts exercises for the picker: word search (see createSearchRanker)
+ * Filters and sorts exercises for the picker: word search (see getSearchRank)
  * plus the muscle group / equipment / source filters, all ANDed. One
  * implementation for web and native. Same input, same output.
  *
@@ -139,14 +139,13 @@ export function filterExercises(exercises, filters = {}) {
   if (queryWords.length === 0) return visible
 
   const rankVisible = allowTypos => {
-    const rankItem = createSearchRanker(queryWords, { allowTypos })
     const matches = []
     visible.forEach((e, index) => {
-      const rank = rankItem({
+      const rank = getSearchRank({
         name: getName(e),
         muscleGroup: getMuscleGroupText(e),
         secondary: [getEquipmentText(e)],
-      })
+      }, queryWords, { allowTypos })
       if (rank) matches.push({ e, rank, index })
     })
     return matches

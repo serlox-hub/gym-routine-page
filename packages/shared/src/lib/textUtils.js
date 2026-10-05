@@ -164,11 +164,11 @@ function isBetterMatch(candidate, best) {
   return candidate.start < best.start
 }
 
-function findBestMatch(matchTextWord, fields) {
+function findBestMatch(queryWord, fields, allowTypos) {
   let best = null
   for (const { tokens, inName } of fields) {
     for (const { word, start, end } of tokens) {
-      const match = matchTextWord(word)
+      const match = matchWordPrefix(queryWord, word, allowTypos)
       if (!match) continue
       const candidate = { ...match, inName, start, end }
       if (isBetterMatch(candidate, best)) best = candidate
@@ -193,80 +193,57 @@ function isNamePhrase(nameMatches, stopAt) {
 }
 
 /**
- * Ranker for one search: called with an item's texts, it returns the item's
- * rank against the query, or null if some query word matches no word of any
- * text. Each query word, in any order, takes its best match across all the
- * texts (see isBetterMatch): with `remo mancuernas`, "Remo con mancuerna"
- * matches `mancuernas` with no typo through its equipment.
+ * Rank of one item against the query, or null if some query word matches no
+ * word of any text. Each query word, in any order, takes its best match across
+ * all the texts (see isBetterMatch): with `remo mancuernas`, "Remo con
+ * mancuerna" matches `mancuernas` with no typo through its equipment.
  *
- * The typo matching is most of a search's cost, and catalog texts share most of
- * their words (barra, pecho, con...): each query word is matched against each
- * distinct text word once per ranker, not once per item. So one ranker for the
- * whole list, never one per item, and never kept across keystrokes: the query
- * words change with each one.
- *
+ * @param {{ name: string, muscleGroup?: string, secondary?: string[] }} texts -
+ *        name, muscle group and other lower-weight texts (equipment)
  * @param {string[]} queryWords - from tokenizeSearchQuery, at least one
  * @param {{ allowTypos?: boolean }} [options] - allowTypos false only takes exact
  *        prefixes: cheaper, and the same rank for every item that matches with no typo
- * @returns {(texts: { name: string, muscleGroup?: string, secondary?: string[] }) =>
- *   { typos: number, muscleGroupWords: number, nameWords: number, wholeWords: number,
- *     startsWithFirst: boolean, phrase: boolean, nameLength: number } | null}
- *   `texts` are the name, the muscle group and other lower-weight texts
- *   (equipment). `muscleGroupWords` counts the query words that are the whole
- *   muscle group name, with no more typos than their best match (`peho` is Pecho).
+ * @returns {{ typos: number, muscleGroupWords: number, nameWords: number,
+ *   wholeWords: number, startsWithFirst: boolean, phrase: boolean, nameLength: number } | null}
+ *   `muscleGroupWords` counts the query words that are the whole muscle group
+ *   name, with no more typos than their best match (`peho` is Pecho).
  */
-export function createSearchRanker(queryWords, { allowTypos = true } = {}) {
-  const matchers = queryWords.map(queryWord => {
-    // An exact prefix is a startsWith: cheaper than the lookup.
-    if (!allowTypos) return textWord => matchWordPrefix(queryWord, textWord, false)
-    const matchesByTextWord = new Map()
-    return textWord => {
-      let match = matchesByTextWord.get(textWord)
-      if (match === undefined) {
-        match = matchWordPrefix(queryWord, textWord, true)
-        matchesByTextWord.set(textWord, match)
-      }
-      return match
-    }
-  })
+export function getSearchRank(texts, queryWords, { allowTypos = true } = {}) {
+  const name = tokenizeCached(texts.name)
+  const muscleGroup = tokenizeCached(texts.muscleGroup)
+  const fields = [
+    { tokens: name.tokens, inName: true },
+    { tokens: muscleGroup.tokens, inName: false },
+    ...(texts.secondary ?? []).map(text => ({ tokens: tokenizeCached(text).tokens, inName: false })),
+  ]
 
-  return texts => {
-    const name = tokenizeCached(texts.name)
-    const muscleGroup = tokenizeCached(texts.muscleGroup)
-    const fields = [
-      { tokens: name.tokens, inName: true },
-      { tokens: muscleGroup.tokens, inName: false },
-      ...(texts.secondary ?? []).map(text => ({ tokens: tokenizeCached(text).tokens, inName: false })),
-    ]
+  const matches = []
+  for (const queryWord of queryWords) {
+    const match = findBestMatch(queryWord, fields, allowTypos)
+    if (!match) return null
+    matches.push(match)
+  }
 
-    const matches = []
-    for (const matchTextWord of matchers) {
-      const match = findBestMatch(matchTextWord, fields)
-      if (!match) return null
-      matches.push(match)
-    }
+  const muscleGroupWord = muscleGroup.stopAt.length === 1 ? muscleGroup.tokens[0].word : null
+  const isWholeMuscleGroup = (queryWord, index) => {
+    const match = muscleGroupWord && matchWordPrefix(queryWord, muscleGroupWord, allowTypos)
+    return Boolean(match?.whole) && match.typos === matches[index].typos
+  }
+  const nameMatches = matches.filter(match => match.inName)
 
-    const muscleGroupWord = muscleGroup.stopAt.length === 1 ? muscleGroup.tokens[0].word : null
-    const isWholeMuscleGroup = (matchTextWord, index) => {
-      const match = muscleGroupWord && matchTextWord(muscleGroupWord)
-      return Boolean(match?.whole) && match.typos === matches[index].typos
-    }
-    const nameMatches = matches.filter(match => match.inName)
-
-    return {
-      typos: matches.reduce((total, match) => total + match.typos, 0),
-      muscleGroupWords: matchers.filter(isWholeMuscleGroup).length,
-      nameWords: nameMatches.length,
-      wholeWords: matches.filter(match => match.whole).length,
-      startsWithFirst: matches[0].inName && matches[0].start === 0,
-      phrase: isNamePhrase(nameMatches, name.stopAt),
-      nameLength: name.stopAt.length,
-    }
+  return {
+    typos: matches.reduce((total, match) => total + match.typos, 0),
+    muscleGroupWords: queryWords.filter(isWholeMuscleGroup).length,
+    nameWords: nameMatches.length,
+    wholeWords: matches.filter(match => match.whole).length,
+    startsWithFirst: matches[0].inName && matches[0].start === 0,
+    phrase: isNamePhrase(nameMatches, name.stopAt),
+    nameLength: name.stopAt.length,
   }
 }
 
 /**
- * Comparator for two non-null ranks of createSearchRanker: negative if `a` ranks
+ * Comparator for two non-null ranks of getSearchRank: negative if `a` ranks
  * before `b`, 0 on a full tie. First difference wins: fewer typos, more whole
  * muscle group words, more name words, more whole words, name starting with the
  * first query word, name phrase, shorter name.
