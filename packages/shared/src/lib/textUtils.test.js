@@ -6,7 +6,7 @@ import {
   tokenizeSearchQuery,
   getAllowedTypos,
   matchWordPrefix,
-  getSearchRank,
+  createSearchRanker,
   compareSearchRanks,
 } from './textUtils.js'
 
@@ -194,9 +194,14 @@ describe('matchWordPrefix', () => {
   })
 })
 
-describe('getSearchRank', () => {
+// One item ranked on its own: a fresh ranker per call.
+function rankOne(texts, queryWords, options) {
+  return createSearchRanker(queryWords, options)(texts)
+}
+
+describe('createSearchRanker', () => {
   const rank = (name, query, { muscleGroup = '', secondary = [] } = {}) =>
-    getSearchRank({ name, muscleGroup, secondary }, tokenizeSearchQuery(query))
+    rankOne({ name, muscleGroup, secondary }, tokenizeSearchQuery(query))
 
   it('returns null when some query word matches nothing', () => {
     expect(rank('Press de banca', 'press xyz')).toBeNull()
@@ -282,29 +287,56 @@ describe('getSearchRank', () => {
 
   it('with allowTypos false only takes exact prefixes, and ranks those the same', () => {
     const texts = { name: 'Curl de bíceps con barra', muscleGroup: 'Bíceps', secondary: ['Barra'] }
-    expect(getSearchRank(texts, ['biseps'], { allowTypos: false })).toBeNull()
-    expect(getSearchRank(texts, ['biceps', 'barra'], { allowTypos: false }))
-      .toEqual(getSearchRank(texts, ['biceps', 'barra']))
+    expect(rankOne(texts, ['biseps'], { allowTypos: false })).toBeNull()
+    expect(rankOne(texts, ['biceps', 'barra'], { allowTypos: false }))
+      .toEqual(rankOne(texts, ['biceps', 'barra']))
   })
 
   it('works without the optional texts', () => {
-    expect(getSearchRank({ name: 'Press de banca' }, ['press'])).toMatchObject({ typos: 0, nameWords: 1 })
-    expect(getSearchRank({ name: null }, ['press'])).toBeNull()
+    expect(rankOne({ name: 'Press de banca' }, ['press'])).toMatchObject({ typos: 0, nameWords: 1 })
+    expect(rankOne({ name: null }, ['press'])).toBeNull()
   })
 
   it('treats missing muscle group and secondary texts as empty, not as a crash', () => {
     const texts = { name: 'Press', muscleGroup: null, secondary: [null, undefined] }
-    expect(getSearchRank(texts, ['press'])).toMatchObject({ typos: 0, nameWords: 1, muscleGroupWords: 0 })
-    expect(getSearchRank(texts, ['remo'])).toBeNull()
+    expect(rankOne(texts, ['press'])).toMatchObject({ typos: 0, nameWords: 1, muscleGroupWords: 0 })
+    expect(rankOne(texts, ['remo'])).toBeNull()
   })
 
   it('ranks the same after the tokenized-text cache has been overflowed', () => {
     const texts = { name: 'Press de banca', muscleGroup: 'Pecho', secondary: ['Barra'] }
-    const before = getSearchRank(texts, ['pecho', 'banca'])
+    const before = rankOne(texts, ['pecho', 'banca'])
     // Many more distinct texts than the cache holds: it is emptied when full.
-    for (let i = 0; i < 12000; i++) getSearchRank({ name: `Ejercicio ${i}` }, ['ejercicio'])
-    expect(getSearchRank(texts, ['pecho', 'banca'])).toEqual(before)
-    expect(getSearchRank({ name: 'Ejercicio 7' }, ['7'])).toMatchObject({ typos: 0, nameWords: 1 })
+    for (let i = 0; i < 12000; i++) rankOne({ name: `Ejercicio ${i}` }, ['ejercicio'])
+    expect(rankOne(texts, ['pecho', 'banca'])).toEqual(before)
+    expect(rankOne({ name: 'Ejercicio 7' }, ['7'])).toMatchObject({ typos: 0, nameWords: 1 })
+  })
+
+  // Items sharing words, so the ranker reuses its matches: "pecho" is the muscle
+  // group of one and part of the name of another, "barra" misses in one.
+  const items = [
+    { name: 'Press de banca', muscleGroup: 'Pecho', secondary: ['Barra'] },
+    { name: 'Jalón al pecho', muscleGroup: 'Espalda', secondary: ['Polea'] },
+    { name: 'Aperturas', muscleGroup: 'Pecho', secondary: ['Polea'] },
+    { name: 'Curl de bíceps con barra', muscleGroup: 'Bíceps', secondary: ['Barra'] },
+    { name: 'Press de banca', muscleGroup: 'Pecho', secondary: ['Barra'] },
+  ]
+
+  it('ranks every item of a list with one ranker as it ranks each on its own', () => {
+    for (const query of ['peho barra', 'pecho', 'biseps', 'press', 'xyz']) {
+      const queryWords = tokenizeSearchQuery(query)
+      for (const allowTypos of [true, false]) {
+        const rankItem = createSearchRanker(queryWords, { allowTypos })
+        const ranked = items.map(texts => rankItem(texts))
+        expect(ranked).toEqual(items.map(texts => rankOne(texts, queryWords, { allowTypos })))
+      }
+    }
+  })
+
+  it('allows typos unless told otherwise', () => {
+    const texts = { name: 'Curl de bíceps', muscleGroup: 'Bíceps' }
+    expect(createSearchRanker(['biseps'])(texts)).toMatchObject({ typos: 1 })
+    expect(createSearchRanker(['biseps'], { allowTypos: false })(texts)).toBeNull()
   })
 })
 
