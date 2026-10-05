@@ -200,9 +200,10 @@ function StreakCard() {
         {goal.isConfigured === false && <SetupBanner />}
         {goal.preferencesError && <div className="mb-3"><StreakErrorState onRetry={goal.retry} /></div>}
 
-        {/* Header: streak + pause (only when enabled) */}
+        {/* Header: streak + pause (only when enabled). The toggle is a 44px box around its pill:
+            -mt-2 (into the card's padding) and no bottom margin keep the title where it was. */}
         {showStreakInfo && (
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between -mt-2">
             <div className="flex items-center gap-1.5">
               <Zap size={16} style={{ color: streak > 0 ? colors.orange : colors.textMuted }} />
               <span style={{ color: streak > 0 ? colors.textPrimary : colors.textSecondary, fontSize: design.streakTitleSize, fontWeight: 700, letterSpacing: -0.3 }}>
@@ -212,13 +213,14 @@ function StreakCard() {
                 }
               </span>
             </div>
-            <button
-              onClick={toggleViewedRest}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
-              style={{ border: `1px solid ${colors.border}`, color: colors.textSecondary }}
-            >
-              {isRest ? <X size={12} /> : <Pause size={12} />}
-              {isRest ? t('common:preferences.removeRest') : t('common:preferences.rest')}
+            <button onClick={toggleViewedRest} className="min-h-11 flex items-center">
+              <span
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
+                style={{ border: `1px solid ${colors.border}`, color: colors.textSecondary }}
+              >
+                {isRest ? <X size={12} /> : <Pause size={12} />}
+                {isRest ? t('common:preferences.removeRest') : t('common:preferences.rest')}
+              </span>
             </button>
           </div>
         )}

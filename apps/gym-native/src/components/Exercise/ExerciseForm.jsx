@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react-native'
 import { Button } from '../ui'
 import { useMuscleGroups } from '../../hooks/useExercises'
-import { colors, inputStyle } from '../../lib/styles'
+import { colors, design, inputStyle } from '../../lib/styles'
 import {
   DEFAULT_TRACKED_FIELDS,
   isTrackedFieldsSelectionValid,
@@ -35,7 +35,7 @@ function BottomSheetPicker({ visible, onClose, title, options, selected, onSelec
                 key={opt.value}
                 onPress={() => { onSelect(opt.value); onClose() }}
                 className="px-4 py-3 flex-row items-center gap-2"
-                style={selected === opt.value ? { backgroundColor: colors.successBgSubtle } : {}}
+                style={{ minHeight: design.minTouchTarget, ...(selected === opt.value ? { backgroundColor: colors.successBgSubtle } : null) }}
               >
                 {opt.color && <View className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: opt.color }} />}
                 <Text style={{ color: selected === opt.value ? colors.success : colors.textPrimary }}>
@@ -170,7 +170,7 @@ export default function ExerciseForm({
         <Pressable
           onPress={() => setShowMuscleGroupPicker(true)}
           className="flex-row items-center gap-2 p-3 rounded-lg"
-          style={{ backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
+          style={{ minHeight: design.minTouchTarget, backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}
         >
           {selectedGroup && (
             <View className="w-3 h-3 rounded-full" style={{ backgroundColor: getMuscleGroupColor(selectedGroup.name) }} />

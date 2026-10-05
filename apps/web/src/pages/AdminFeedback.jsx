@@ -21,23 +21,39 @@ const TYPE_META = {
 
 function FilterPill({ label, active, onClick, count }) {
   return (
-    <button
-      onClick={onClick}
-      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-2"
-      style={{
-        backgroundColor: active ? colors.success : 'transparent',
-        color: active ? colors.bgPrimary : colors.textMuted,
-      }}
-    >
-      {label}
-      {typeof count === 'number' && (
-        <span
-          className="px-1.5 rounded-md"
-          style={{ backgroundColor: colors.bgTertiary, color: colors.textMuted, fontSize: 11 }}
-        >
-          {count}
-        </span>
-      )}
+    <button onClick={onClick} className="relative min-h-11 flex items-center">
+      <span
+        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-2"
+        style={{
+          backgroundColor: active ? colors.success : 'transparent',
+          color: active ? colors.bgPrimary : colors.textMuted,
+        }}
+      >
+        {label}
+        {typeof count === 'number' && (
+          <span
+            className="px-1.5 rounded-md"
+            style={{ backgroundColor: colors.bgTertiary, color: colors.textMuted, fontSize: 11 }}
+          >
+            {count}
+          </span>
+        )}
+      </span>
+    </button>
+  )
+}
+
+// The action is a 44px box around its 28px pill.
+function ActionButton({ icon: Icon, label, onClick, disabled, color, backgroundColor }) {
+  return (
+    <button onClick={onClick} disabled={disabled} className="min-h-11 flex items-center">
+      <span
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+        style={{ backgroundColor, color, opacity: disabled ? 0.5 : 1 }}
+      >
+        <Icon size={12} />
+        {label}
+      </span>
     </button>
   )
 }
@@ -107,33 +123,24 @@ function FeedbackRow({ item, onToggleResolved, onDelete, isPending }) {
         {item.message}
       </p>
 
-      <div className="flex gap-2 justify-end">
-        <button
+      {/* -my-2: the 44px boxes take the 8px they add from the gap above and the card's padding below. */}
+      <div className="flex gap-2 justify-end -my-2">
+        <ActionButton
+          icon={isResolved ? RotateCcw : Check}
+          label={isResolved ? t('common:admin.feedbackReopen') : t('common:admin.feedbackResolve')}
           onClick={() => onToggleResolved(item)}
           disabled={isPending}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-          style={{
-            backgroundColor: colors.bgTertiary,
-            color: colors.textSecondary,
-            opacity: isPending ? 0.5 : 1,
-          }}
-        >
-          {isResolved ? <RotateCcw size={12} /> : <Check size={12} />}
-          {isResolved ? t('common:admin.feedbackReopen') : t('common:admin.feedbackResolve')}
-        </button>
-        <button
+          color={colors.textSecondary}
+          backgroundColor={colors.bgTertiary}
+        />
+        <ActionButton
+          icon={Trash2}
+          label={t('common:admin.feedbackDelete')}
           onClick={() => onDelete(item)}
           disabled={isPending}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-          style={{
-            backgroundColor: colors.dangerBg,
-            color: colors.danger,
-            opacity: isPending ? 0.5 : 1,
-          }}
-        >
-          <Trash2 size={12} />
-          {t('common:admin.feedbackDelete')}
-        </button>
+          color={colors.danger}
+          backgroundColor={colors.dangerBg}
+        />
       </div>
     </div>
   )
@@ -177,7 +184,9 @@ function AdminFeedback() {
     <div className="px-6 pt-4 pb-20 max-w-2xl mx-auto">
       <PageHeader title={t('common:admin.feedbackTitle')} onBack={() => navigate(-1)} />
 
-      <div className="flex rounded-lg mb-4" style={{ backgroundColor: colors.bgTertiary, padding: 4, alignSelf: 'flex-start', width: 'fit-content' }}>
+      {/* The pills are 44px boxes; the track (inset-y-1) is painted behind them at its old 36px. */}
+      <div className="relative flex px-1 mb-4" style={{ width: 'fit-content' }}>
+        <div className="absolute inset-x-0 inset-y-1 rounded-lg" style={{ backgroundColor: colors.bgTertiary }} />
         <FilterPill
           label={t('common:admin.feedbackFilterPending')}
           active={filter === 'pending'}

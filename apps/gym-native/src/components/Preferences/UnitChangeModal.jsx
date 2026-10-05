@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Modal from '../ui/Modal'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 function OptionButton({ label, description, onPress, disabled, variant = 'primary' }) {
   const isPrimary = variant === 'primary'
@@ -75,7 +75,8 @@ export default function UnitChangeModal({
         <Pressable
           onPress={onCancel}
           disabled={isPending}
-          style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, opacity: isPending ? 0.5 : 1 }}
+          accessibilityRole="button"
+          style={{ minHeight: design.minTouchTarget, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, opacity: isPending ? 0.5 : 1 }}
         >
           <Text style={{ fontSize: 14, color: colors.textMuted }}>
             {isPending ? applyingLabel : t('common:buttons.cancel')}

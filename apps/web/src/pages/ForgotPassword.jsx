@@ -100,7 +100,7 @@ function ForgotPassword() {
         </form>
 
         <p className="text-xs">
-          <Link to="/login" className="hover:underline" style={{ color: colors.success }}>
+          <Link to="/login" className="inline-flex items-center min-h-11 hover:underline" style={{ color: colors.success }}>
             {t('auth:forgotPassword.backToLogin')}
           </Link>
         </p>

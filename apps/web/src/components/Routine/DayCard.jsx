@@ -280,7 +280,7 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
               onKeyDown={(e) => e.key === 'Enter' && handleRenameDay()} />
           </div>
           <button onClick={handleRenameDay} disabled={!renameValue.trim()}
-            className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+            className="w-full min-h-11 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
             style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
             {t('common:buttons.save')}
           </button>

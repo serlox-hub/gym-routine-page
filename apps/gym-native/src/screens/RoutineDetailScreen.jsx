@@ -18,7 +18,7 @@ import {
 } from '../components/Routine'
 import { moveItemToPosition } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 export default function RoutineDetailScreen({ route, navigation }) {
   const { t } = useTranslation()
@@ -175,8 +175,12 @@ export default function RoutineDetailScreen({ route, navigation }) {
                 {routine.description}
               </Text>
               {routine.description.length > 100 && (
-                <Pressable onPress={() => setDescExpanded(!descExpanded)}>
-                  <Text style={{ color: colors.success, fontSize: 13, fontWeight: '500', marginTop: 2 }}>
+                <Pressable
+                  onPress={() => setDescExpanded(!descExpanded)}
+                  accessibilityRole="button"
+                  style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
+                >
+                  <Text style={{ color: colors.success, fontSize: 13, fontWeight: '500' }}>
                     {descExpanded ? t('common:buttons.seeLess') : t('common:buttons.seeMore')}
                   </Text>
                 </Pressable>

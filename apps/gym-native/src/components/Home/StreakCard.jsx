@@ -251,9 +251,10 @@ function StreakCard({ onScrubbingChange }) {
         {goal.isConfigured === false && <SetupBanner />}
         {goal.preferencesError && <View className="mb-3"><StreakErrorState onRetry={goal.retry} /></View>}
 
-        {/* Header: streak + pause (only when enabled) */}
+        {/* Header: streak + pause (only when enabled). The toggle is a 44pt box around its pill:
+            marginTop -8 (into the card's padding) and no bottom margin keep the title where it was. */}
         {showStreakInfo && (
-          <View className="flex-row items-center justify-between mb-1">
+          <View className="flex-row items-center justify-between" style={{ marginTop: -8 }}>
             <View className="flex-row items-center gap-1.5">
               <Zap size={16} color={streak > 0 ? colors.orange : colors.textMuted} />
               <Text style={{ color: streak > 0 ? colors.textPrimary : colors.textSecondary, fontSize: design.streakTitleSize, fontWeight: '700', letterSpacing: -0.3 }}>
@@ -265,16 +266,21 @@ function StreakCard({ onScrubbingChange }) {
             </View>
             <Pressable
               onPress={toggleViewedRest}
-              className="flex-row items-center gap-1 px-3 py-1.5 rounded-full"
-              style={{ borderWidth: 1, borderColor: colors.border }}
+              accessibilityRole="button"
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
             >
-              {isRest
-                ? <X size={12} color={colors.textSecondary} />
-                : <Pause size={12} color={colors.textSecondary} />
-              }
-              <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-                {isRest ? t('common:preferences.removeRest') : t('common:preferences.rest')}
-              </Text>
+              <View
+                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full"
+                style={{ borderWidth: 1, borderColor: colors.border }}
+              >
+                {isRest
+                  ? <X size={12} color={colors.textSecondary} />
+                  : <Pause size={12} color={colors.textSecondary} />
+                }
+                <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+                  {isRest ? t('common:preferences.removeRest') : t('common:preferences.rest')}
+                </Text>
+              </View>
             </Pressable>
           </View>
         )}

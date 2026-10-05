@@ -128,7 +128,7 @@ function Signup() {
         {/* Login link */}
         <p className="text-xs" style={{ color: colors.textMuted }}>
           {t('auth:signup.hasAccount')}{' '}
-          <Link to="/login" className="hover:underline font-semibold" style={{ color: colors.success }}>
+          <Link to="/login" className="inline-flex items-center min-h-11 hover:underline font-semibold" style={{ color: colors.success }}>
             {t('auth:signup.loginLink')}
           </Link>
         </p>

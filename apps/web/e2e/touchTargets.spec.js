@@ -4,9 +4,11 @@ import '../scripts/loadEnv.js'
 import { seedRoutine } from './supersetRoutines.js'
 import { expectTouchTargets } from './touchTargets.js'
 
-// Touch targets (issues #151, #152): every tap control of the screens used mid-workout, and of the
-// ones for looking back (history, body metrics, gyms, charts), is at least 44px. A new screen, or a
-// new state of one of these, gets its own measurement here.
+// Touch targets (issues #151, #152, #153): every tap control of every screen but onboarding (epic
+// #47 rewrites it) is at least 44px, logged in and logged out. A new screen, or a new state of one
+// of these, gets its own measurement here. Checked by hand only, on a phone: the admin screens
+// (they need an admin user), the error boundary, the unit change modal, the streak card's error
+// state and a system exercise's sheet.
 //
 // Runs on its OWN user (`supabase/seed.sql`): it starts sessions, and only one can be in progress
 // per user (migration 058), and it adds a second gym, which would change what the other specs see.
@@ -22,7 +24,8 @@ const TIME_EXERCISE = 'E2E Toque Tiempo'
 const WEIGHT_EXERCISE = 'E2E Toque Peso'
 const ROUTINE = {
   name: 'Rutina Toque E2E',
-  description: 'Día para el e2e de zonas táctiles',
+  // Over 100 characters: the routine detail folds it behind "See more".
+  description: 'Rutina para el e2e de zonas táctiles. La descripción es larga a propósito, para que el detalle la pliegue tras «Ver más».',
   days: [{
     name: 'Día Toque E2E',
     exercises: [[TIME_EXERCISE, null], [WEIGHT_EXERCISE, null], ['E2E Toque Uno', 1], ['E2E Toque Dos', 1]],
@@ -79,6 +82,23 @@ async function ensureTwoGyms(supabase, userId) {
 async function deleteSessions(supabase, userId) {
   const { error } = await supabase.from('workout_sessions').delete().eq('user_id', userId)
   if (error) throw error
+}
+
+/** A weekly goal: without one, the home's streak card shows no rest day toggle. */
+async function prepareTrainingGoal(supabase, userId) {
+  const { error } = await supabase
+    .from('user_preferences')
+    .upsert({ user_id: userId, key: 'training_days_per_week', value: 3 }, { onConflict: 'user_id,key' })
+  if (error) throw error
+}
+
+/** A share link to the seeded routine, through the same RPC the app calls. */
+async function shareRoutine(supabase) {
+  const { data: routine, error } = await supabase.from('routines').select('id').eq('name', ROUTINE.name).single()
+  if (error) throw error
+  const { data: token, error: shareError } = await supabase.rpc('enable_routine_share', { p_routine_id: routine.id })
+  if (shareError) throw shareError
+  return token
 }
 
 async function prepare() {
@@ -172,20 +192,70 @@ async function finishSession(page, weight) {
   await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
 }
 
-test.afterEach(async () => {
-  const { supabase, userId } = await signedInClient()
-  await deleteSessions(supabase, userId)
-})
-
 test.describe('Touch targets: 44px tap controls at a phone size', () => {
-  test('routine detail', async ({ page }) => {
+  test.afterEach(async () => {
+    const { supabase, userId } = await signedInClient()
+    await deleteSessions(supabase, userId)
+  })
+
+  test('home', async ({ page }) => {
+    // The seeded routine is also what keeps the onboarding wizard (not measured, epic #47) off home.
+    await prepare()
+    const { supabase, userId } = await signedInClient()
+    await prepareTrainingGoal(supabase, userId)
+    await login(page)
+    await expect(page.getByRole('button', { name: 'Preferencias' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /descanso/i })).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+  })
+
+  test('routines list', async ({ page }) => {
+    await prepare()
+    await login(page)
+    await page.goto('/routines')
+    await expect(page.getByText(ROUTINE.name, { exact: true }).first()).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+  })
+
+  test('routine detail, its volume summary and the edit exercise modal', async ({ page }) => {
     await prepare()
     await login(page)
     await openRoutine(page)
     await expect(startDayButton(page)).toBeVisible()
     await expect(page.getByRole('button', { name: 'Volver' })).toBeVisible()
-
+    await expect(page.getByRole('button', { name: 'Ver más' })).toBeVisible()
     await expectTouchTargets(page.locator('body'))
+
+    await page.getByRole('button', { name: 'Resumen de volumen' }).click()
+    await expect(page.getByText('MRV').first()).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+
+    // The edit modal, from the weight exercise's row menu (the day opens first).
+    await page.getByRole('heading', { name: DAY_NAME }).click()
+    await page.getByRole('heading', { level: 4, name: WEIGHT_EXERCISE }).click()
+    await page.getByRole('button', { name: 'Editar', exact: true }).click()
+    const editModal = modal(page, page.getByRole('button', { name: 'Ficha' }))
+    await expect(editModal.getByRole('button', { name: 'En rutina' })).toBeVisible()
+    await expectTouchTargets(editModal)
+
+    // Its exercise sheet: the weight exercise is a custom one, so this is the editable form. A
+    // system exercise's panel (`SystemExerciseDetailsPanel`) is checked by hand.
+    await editModal.getByRole('button', { name: 'Ficha' }).click()
+    await expect(editModal.getByText('Qué mide este ejercicio')).toBeVisible()
+    await expectTouchTargets(editModal)
+  })
+
+  test('preferences and the feedback modal', async ({ page }) => {
+    await login(page)
+    await page.goto('/preferences')
+    await expect(page.getByRole('button', { name: 'Enviar feedback' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '7', exact: true })).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+
+    await page.getByRole('button', { name: 'Enviar feedback' }).click()
+    const feedbackModal = modal(page, page.getByRole('heading', { name: 'Enviar feedback' }))
+    await expect(feedbackModal.getByRole('button', { name: 'Sugerencia' })).toBeVisible()
+    await expectTouchTargets(feedbackModal)
   })
 
   test('active session, its timers and the sheets opened from it', async ({ page }) => {
@@ -322,6 +392,9 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     // The measurements tab, then its type selector open.
     await page.getByRole('button', { name: 'Medidas Corporales' }).click()
     await expect(page.getByRole('button', { name: 'Configurar medidas' })).toBeVisible()
+    // The type selector's first render has no type yet (an effect picks it): measured then, it is
+    // an unlabelled 40px box.
+    await expect(page.getByRole('button', { name: 'Cintura', exact: true })).toBeVisible()
     await expectTouchTargets(body)
     await page.getByRole('button', { name: 'Cintura', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Pecho', exact: true })).toBeVisible()
@@ -342,6 +415,44 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     await page.goto('/gyms')
     await expect(page.getByText(SECOND_GYM)).toBeVisible()
     await expect(page.getByRole('button', { name: 'Renombrar gimnasio' })).toHaveCount(2)
+    await expectTouchTargets(page.locator('body'))
+  })
+})
+
+// No login: these are the screens a visitor without a session sees.
+test.describe('Touch targets: 44px tap controls logged out', () => {
+  test('login', async ({ page }) => {
+    await page.goto('/login')
+    await expect(page.getByRole('link', { name: '¿Olvidaste tu contraseña?' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Crear cuenta' })).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+  })
+
+  test('signup', async ({ page }) => {
+    await page.goto('/signup')
+    await expect(page.getByRole('link', { name: 'Inicia sesión' })).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+  })
+
+  test('forgot password', async ({ page }) => {
+    await page.goto('/forgot-password')
+    await expect(page.getByRole('link', { name: 'Volver al login' })).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+  })
+
+  test('landing', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('link', { name: 'Empezar ahora' })).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+  })
+
+  test('shared routine', async ({ page }) => {
+    await prepare()
+    const { supabase } = await signedInClient()
+    const token = await shareRoutine(supabase)
+    await page.goto(`/r/${token}`)
+    await expect(page.getByRole('heading', { name: ROUTINE.name })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Crea una cuenta para importarla' })).toBeVisible()
     await expectTouchTargets(page.locator('body'))
   })
 })

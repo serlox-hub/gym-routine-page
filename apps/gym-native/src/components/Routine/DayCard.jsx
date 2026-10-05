@@ -6,7 +6,7 @@ import { Card, ConfirmModal, DragHandle, DropdownMenu, IconButton, LoadingSpinne
 import { useRoutineBlocks, useReorderRoutineExercises, useSetRoutineExerciseSupersetGroup, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete'
 import { getExistingSupersetIds, getRoutineDayLayout, useSelectedGym, getRoutineDayAction, WORKOUT_START_ACTION, getNotifier } from '@gym/shared'
 import AddExerciseButton from './AddExerciseButton'
@@ -320,7 +320,7 @@ export default function DayCard({
                 style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }} />
             </View>
             <Pressable onPress={handleRenameDay} disabled={!renameValue.trim()}
-              style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', opacity: renameValue.trim() ? 1 : 0.4 }}>
+              style={{ backgroundColor: colors.success, borderRadius: 12, minHeight: design.minTouchTarget, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', opacity: renameValue.trim() ? 1 : 0.4 }}>
               <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.save')}</Text>
             </Pressable>
           </View>

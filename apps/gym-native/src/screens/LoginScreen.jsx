@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, Image, KeyboardAvoidingView, Platform
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 export default function LoginScreen({ navigation }) {
   const { t } = useTranslation()
@@ -60,7 +60,12 @@ export default function LoginScreen({ navigation }) {
                   placeholder="••••••••" placeholderTextColor={colors.textMuted}
                   secureTextEntry autoComplete="current-password"
                   style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }} />
-                <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={{ alignSelf: 'flex-end', marginTop: 6 }}>
+                {/* No top margin: the link's 44pt box already puts 14 between it and the input. */}
+                <Pressable
+                  onPress={() => navigation.navigate('ForgotPassword')}
+                  accessibilityRole="link"
+                  style={{ alignSelf: 'flex-end', minHeight: design.minTouchTarget, justifyContent: 'center' }}
+                >
                   <Text style={{ color: colors.success, fontSize: 12 }}>{t('auth:login.forgotPassword')}</Text>
                 </Pressable>
               </View>
@@ -91,13 +96,17 @@ export default function LoginScreen({ navigation }) {
               <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>{t('auth:login.google')}</Text>
             </Pressable>
 
-            {/* Sign up link */}
-            <Pressable onPress={() => navigation.navigate('Signup')}>
-              <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center' }}>
-                {t('auth:login.noAccount')}{' '}
-                <Text style={{ color: colors.success, fontWeight: '600' }}>{t('auth:login.createAccount')}</Text>
-              </Text>
-            </Pressable>
+            {/* Sign up link: only the link is tappable, as on web, and its 44pt box sets the line's height */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t('auth:login.noAccount')} </Text>
+              <Pressable
+                onPress={() => navigation.navigate('Signup')}
+                accessibilityRole="link"
+                style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
+              >
+                <Text style={{ color: colors.success, fontSize: 12, fontWeight: '600' }}>{t('auth:login.createAccount')}</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

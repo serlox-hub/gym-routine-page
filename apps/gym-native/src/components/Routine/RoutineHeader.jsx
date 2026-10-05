@@ -8,7 +8,7 @@ import * as Clipboard from 'expo-clipboard'
 import Toast from 'react-native-toast-message'
 import { useDuplicateRoutine, useRoutineDetailsForm } from '../../hooks/useRoutines'
 import { sanitizeFilename, exportRoutine, formatRoutineAsText, buildRoutineShareUrl, useEnableRoutineShare, useDisableRoutineShare } from '@gym/shared'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 import { ConfirmModal, ErrorMessage, Modal, PageHeader } from '../ui'
 import CreateShareLinkModal from './CreateShareLinkModal'
 
@@ -63,13 +63,13 @@ export function RoutineEditForm({ routine, routineId, onClose }) {
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <Pressable
             onPress={onClose}
-            style={{ flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+            style={{ flex: 1, minHeight: design.minTouchTarget, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }}
           >
             <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.cancel')}</Text>
           </Pressable>
           <Pressable
             onPress={handleSave} disabled={isSaving}
-            style={{ flex: 1, backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', opacity: isSaving ? 0.4 : 1 }}
+            style={{ flex: 1, minHeight: design.minTouchTarget, backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', opacity: isSaving ? 0.4 : 1 }}
           >
             <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>
               {isSaving ? t('common:buttons.loading') : t('common:buttons.save')}

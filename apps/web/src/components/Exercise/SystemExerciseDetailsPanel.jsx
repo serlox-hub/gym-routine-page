@@ -124,7 +124,7 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
                 <button
                   key={unit}
                   onClick={() => setWeightUnit(effectiveUnit === unit ? '' : unit)}
-                  className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 min-h-11 py-2 rounded-lg text-sm font-medium transition-colors"
                   style={{
                     backgroundColor: isActive ? colors.success : colors.bgTertiary,
                     color: isActive ? colors.bgPrimary : colors.textSecondary,

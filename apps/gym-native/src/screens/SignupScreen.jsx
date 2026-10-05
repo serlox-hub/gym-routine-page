@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { validateSignupForm } from '@gym/shared'
 import { Check } from 'lucide-react-native'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 export default function SignupScreen({ navigation }) {
   const { t } = useTranslation()
@@ -123,13 +123,17 @@ export default function SignupScreen({ navigation }) {
               <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>{t('auth:login.google')}</Text>
             </Pressable>
 
-            {/* Login link */}
-            <Pressable onPress={() => navigation.navigate('Login')}>
-              <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center' }}>
-                {t('auth:signup.hasAccount')}{' '}
-                <Text style={{ color: colors.success, fontWeight: '600' }}>{t('auth:signup.loginLink')}</Text>
-              </Text>
-            </Pressable>
+            {/* Login link: only the link is tappable, as on web, and its 44pt box sets the line's height */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t('auth:signup.hasAccount')} </Text>
+              <Pressable
+                onPress={() => navigation.navigate('Login')}
+                accessibilityRole="link"
+                style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
+              >
+                <Text style={{ color: colors.success, fontSize: 12, fontWeight: '600' }}>{t('auth:signup.loginLink')}</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

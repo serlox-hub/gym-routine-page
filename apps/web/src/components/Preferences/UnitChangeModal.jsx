@@ -71,7 +71,7 @@ export default function UnitChangeModal({
           type="button"
           onClick={onCancel}
           disabled={isPending}
-          className="text-sm px-3 py-2 rounded-lg"
+          className="min-h-11 text-sm px-3 py-2 rounded-lg"
           style={{ color: colors.textMuted, opacity: isPending ? 0.5 : 1 }}
         >
           {isPending ? applyingLabel : t('common:buttons.cancel')}
