@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Share2, Download, Home, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCompletedSessionCount } from '@gym/shared'
-import { colors, design } from '../lib/styles.js'
+import { colors } from '../lib/styles.js'
 import { IconButton } from '../components/ui/index.js'
 import { useShareWorkoutSummary } from '../hooks/useShareWorkoutSummary.js'
 import WorkoutSummaryCard, { SUMMARY_CARD_ASPECT } from '../components/Workout/WorkoutSummaryCard.jsx'
@@ -11,10 +11,8 @@ import PRCard, { PR_CARD_ASPECT } from '../components/Workout/PRCard.jsx'
 
 // El preview se acota al menor entre el ancho disponible y un máximo razonable
 const MAX_PREVIEW_W = 360
-// Under the carousel: mt-4 above the dots row plus breathing room
-const DOTS_ROW_SPACING = 26
-// The two arrows (one touch target each) and the gap-1 between them and the dots
-const ARROWS_WIDTH = 2 * design.minTouchTarget + 2 * 4
+// Under the carousel: mt-4, the arrows' 44px row and breathing room
+const CONTROLS_ROW_SPACING = 70
 
 export default function WorkoutSummary() {
   const { t } = useTranslation()
@@ -56,11 +54,7 @@ export default function WorkoutSummary() {
   const previewW = (() => {
     const maxByW = Math.min(containerW || MAX_PREVIEW_W, MAX_PREVIEW_W)
     if (!containerH) return maxByW
-    // Each dot is a 44px box, so past ~6 cards the dots wrap: reserve every line, not just one,
-    // or the centred carousel is cut at the top and bottom.
-    const dotsPerRow = Math.max(1, Math.floor((containerW - ARROWS_WIDTH) / design.minTouchTarget))
-    const dotRows = Math.max(1, Math.ceil(slides.length / dotsPerRow))
-    const availH = containerH - DOTS_ROW_SPACING - dotRows * design.minTouchTarget
+    const availH = containerH - CONTROLS_ROW_SPACING
     const maxByH = availH * tallestAspect
     return Math.max(120, Math.min(maxByW, maxByH))
   })()
@@ -182,7 +176,7 @@ export default function WorkoutSummary() {
         </div>
 
         {slides.length > 1 && (
-          <div className="flex items-center gap-1 mt-4 max-w-full">
+          <div className="flex items-center gap-3 mt-4 max-w-full">
             <IconButton
               icon={ChevronLeft}
               color={colors.textPrimary}
@@ -191,28 +185,20 @@ export default function WorkoutSummary() {
               onClick={() => goToSlide(Math.max(0, currentIndex - 1))}
               disabled={currentIndex === 0}
             />
-            {/* Each dot is a 44px box (touch target) around the 8px dot, so they are 44 apart and
-                not 14: past ~6 cards they wrap instead of pushing the arrows off screen. */}
-            <div className="flex flex-wrap justify-center min-w-0">
+            {/* Decoration, as on native: the arrows and the swipe move between cards, so the dots
+                are not tap controls and keep their 8px. */}
+            <div className="flex gap-1.5 min-w-0 overflow-hidden" aria-hidden="true">
               {slides.map((_, i) => (
-                <button
+                <span
                   key={i}
-                  type="button"
-                  onClick={() => goToSlide(i)}
-                  aria-label={t('workout:summary.goToSlide', { number: i + 1 })}
-                  aria-current={i === currentIndex}
-                  className="w-11 h-11 flex items-center justify-center"
-                >
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: i === currentIndex ? colors.success : colors.bgTertiary,
-                      transition: 'background-color 0.2s',
-                    }}
-                  />
-                </button>
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: i === currentIndex ? colors.success : colors.bgTertiary,
+                    transition: 'background-color 0.2s',
+                  }}
+                />
               ))}
             </div>
             <IconButton

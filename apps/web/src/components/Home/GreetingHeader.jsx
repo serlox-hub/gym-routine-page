@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Settings } from 'lucide-react'
 import { getGreetingKey } from '@gym/shared'
 import { useAuth } from '../../hooks/useAuth.js'
+import { IconButton } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
 function GreetingHeader() {
@@ -25,13 +26,13 @@ function GreetingHeader() {
           {userName}
         </h1>
       </div>
-      <button
+      <IconButton
+        icon={Settings}
+        iconSize={20}
+        filled
+        label={t('common:preferences.title')}
         onClick={() => navigate('/preferences')}
-        className="p-2 rounded-full"
-        style={{ color: colors.textSecondary, backgroundColor: colors.bgTertiary }}
-      >
-        <Settings size={20} />
-      </button>
+      />
     </header>
   )
 }

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { Check } from 'lucide-react-native'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 export default function ForgotPasswordScreen({ navigation }) {
   const { t } = useTranslation()
@@ -88,7 +88,11 @@ export default function ForgotPasswordScreen({ navigation }) {
               </Pressable>
             </View>
 
-            <Pressable onPress={() => navigation.navigate('Login')}>
+            <Pressable
+              onPress={() => navigation.navigate('Login')}
+              accessibilityRole="link"
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
+            >
               <Text style={{ color: colors.success, fontSize: 12, textAlign: 'center' }}>{t('auth:forgotPassword.backToLogin')}</Text>
             </Pressable>
           </View>

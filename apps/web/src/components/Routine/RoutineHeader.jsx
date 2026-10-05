@@ -48,14 +48,14 @@ export function RoutineEditForm({ routine, routineId, onClose }) {
       <div className="flex gap-3">
         <button
           onClick={onClose}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+          className="flex-1 min-h-11 py-2.5 rounded-xl text-sm font-semibold"
           style={{ border: `1px solid ${colors.border}`, color: colors.textPrimary }}
         >
           {t('common:buttons.cancel')}
         </button>
         <button
           onClick={handleSave} disabled={isSaving}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+          className="flex-1 min-h-11 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
           style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
         >
           {isSaving ? t('common:buttons.loading') : t('common:buttons.save')}

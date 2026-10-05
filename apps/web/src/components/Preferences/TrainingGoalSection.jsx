@@ -24,22 +24,29 @@ function TrainingGoalSection({ preferences, onChangeDays, onToggleWidget, disabl
         }}
       >
         <div>
-          <p style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 500, marginBottom: 10 }}>
+          {/* 6, not 10: the 44px box puts 4 more above the circle. */}
+          <p style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 500, marginBottom: 6 }}>
             {t('common:preferences.trainingDaysPerWeek')}
           </p>
-          <div className="flex gap-2">
+          {/* Seven 44px-wide options do not fit a 360px phone: each one is 44 tall and takes its
+              share of the row, and the circle inside is 36 at most, smaller if the share is. */}
+          <div className="flex gap-1">
             {[1, 2, 3, 4, 5, 6, 7].map(n => (
               <button
                 key={n}
                 onClick={() => onChangeDays(n)}
                 disabled={disabled}
-                className="w-9 h-9 rounded-full text-sm font-semibold transition-colors"
-                style={{
-                  backgroundColor: n === currentDays ? colors.success : colors.bgTertiary,
-                  color: n === currentDays ? colors.bgPrimary : colors.textMuted,
-                }}
+                className="flex-1 min-w-0 h-11 flex items-center justify-center"
               >
-                {n}
+                <span
+                  className="w-full max-w-9 aspect-square rounded-full flex items-center justify-center text-sm font-semibold transition-colors"
+                  style={{
+                    backgroundColor: n === currentDays ? colors.success : colors.bgTertiary,
+                    color: n === currentDays ? colors.bgPrimary : colors.textMuted,
+                  }}
+                >
+                  {n}
+                </span>
               </button>
             ))}
           </div>

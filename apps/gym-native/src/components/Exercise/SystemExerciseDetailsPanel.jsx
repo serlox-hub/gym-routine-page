@@ -9,7 +9,7 @@ import { usePreference } from '../../hooks/usePreferences'
 import { WeightUnitChangeModal } from '../Preferences'
 import DistanceUnitPicker from './DistanceUnitPicker'
 import { ExerciseConfigFormButtons } from '../Routine/ExerciseConfigForm'
-import { colors, inputStyle } from '../../lib/styles'
+import { colors, design, inputStyle } from '../../lib/styles'
 
 export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
   const { t } = useTranslation()
@@ -126,8 +126,9 @@ export default function SystemExerciseDetailsPanel({ exerciseId, onClose }) {
                 <Pressable
                   key={unit}
                   onPress={() => setWeightUnit(effectiveUnit === unit ? '' : unit)}
-                  className="flex-1 py-2 rounded-lg items-center"
+                  className="flex-1 py-2 rounded-lg items-center justify-center"
                   style={{
+                    minHeight: design.minTouchTarget,
                     backgroundColor: isActive ? colors.success : colors.bgTertiary,
                   }}
                 >

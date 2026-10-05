@@ -36,7 +36,7 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
           >
             {/* Session header — clickable to navigate */}
             <div
-              className="flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex items-center justify-between min-h-11 cursor-pointer hover:opacity-80 transition-opacity"
               style={{ padding: '12px 14px 8px' }}
               onClick={() => onSessionClick(session.sessionId, session.date)}
             >

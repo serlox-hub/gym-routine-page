@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useCreateFeedback, getNotifier } from '@gym/shared'
 import { Modal, Button } from '../ui'
-import { colors, inputStyle } from '../../lib/styles'
+import { colors, design, inputStyle } from '../../lib/styles'
 const appVersion = require('../../../app.json').expo.version
 
 const TYPES = ['bug', 'suggestion']
@@ -13,11 +13,14 @@ function TypePill({ label, active, onPress, disabled }) {
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
       style={{
         flex: 1,
+        minHeight: design.minTouchTarget,
         paddingVertical: 10,
         borderRadius: 8,
         alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: active ? colors.success : colors.bgTertiary,
       }}
     >

@@ -36,7 +36,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left"
+        className="w-full min-h-11 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left"
         style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}`, color: selected ? colors.textPrimary : colors.textSecondary }}
       >
         {selected && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(selected.name) }} />}
@@ -50,7 +50,7 @@ function MuscleGroupPicker({ muscleGroups, selectedId, onChange, required }) {
               key={g.id}
               type="button"
               onClick={() => { onChange(g.id); setOpen(false) }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:opacity-80"
+              className="w-full min-h-11 flex items-center gap-2 px-3 py-2 text-sm text-left hover:opacity-80"
               style={selectedId === g.id ? { backgroundColor: colors.successBgSubtle } : undefined}
             >
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getMuscleGroupColor(g.name) }} />

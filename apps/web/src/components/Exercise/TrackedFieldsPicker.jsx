@@ -40,7 +40,7 @@ function TrackedFieldsPicker({ value, onChange, required = true }) {
               disabled={isDisabled}
               aria-pressed={isSelected}
               onClick={() => onChange(toggleTrackedField(selected, field))}
-              className="px-3 py-2 rounded-lg text-sm transition-colors"
+              className="min-h-11 px-3 py-2 rounded-lg text-sm transition-colors"
               style={{
                 backgroundColor: isSelected ? colors.successBg : colors.bgTertiary,
                 border: `1px solid ${isSelected ? colors.success : colors.border}`,

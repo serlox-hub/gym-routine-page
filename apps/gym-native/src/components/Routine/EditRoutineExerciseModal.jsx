@@ -6,7 +6,7 @@ import { buildExerciseConfigForm, buildExerciseConfigFormFromRow, buildReplaceEx
 import ExerciseConfigForm, { ExerciseConfigFormButtons } from './ExerciseConfigForm'
 import ExercisePickerModal from './ExercisePickerModal'
 import { ExerciseFormPanel } from '../Exercise'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 function ViewToggle({ view, onChangeView, labels }) {
   return (
@@ -15,8 +15,8 @@ function ViewToggle({ view, onChangeView, labels }) {
         <Pressable
           key={key}
           onPress={() => onChangeView(key)}
-          className="flex-1 py-2 items-center"
-          style={view === key ? { backgroundColor: colors.success } : undefined}
+          className="flex-1 py-2 items-center justify-center"
+          style={{ minHeight: design.minTouchTarget, ...(view === key ? { backgroundColor: colors.success } : null) }}
         >
           <Text className="text-xs font-semibold" style={{ color: view === key ? colors.textDark : colors.textSecondary }}>
             {label}

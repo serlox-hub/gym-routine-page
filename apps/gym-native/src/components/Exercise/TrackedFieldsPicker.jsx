@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 import {
   FIELD_ORDER,
   MAX_TRACKED_FIELDS,
@@ -41,8 +41,9 @@ export default function TrackedFieldsPicker({ value, onChange, required = true }
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected, disabled: isDisabled }}
               onPress={() => onChange(toggleTrackedField(selected, field))}
-              className="px-3 py-2 rounded-lg"
+              className="px-3 py-2 rounded-lg justify-center"
               style={{
+                minHeight: design.minTouchTarget,
                 backgroundColor: isSelected ? colors.successBg : colors.bgTertiary,
                 borderWidth: 1,
                 borderColor: isSelected ? colors.success : colors.border,

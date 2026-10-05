@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 import { DISTANCE_UNITS } from '@gym/shared'
 
 // La distancia se guarda SIEMPRE en metros: esto elige en qué unidad se lee y se teclea, no
@@ -23,8 +23,9 @@ export default function DistanceUnitPicker({ value, onChange, label }) {
               accessibilityRole="button"
               accessibilityState={{ selected: isActive }}
               onPress={() => onChange(unit)}
-              className="flex-1 py-2 rounded-lg items-center"
+              className="flex-1 py-2 rounded-lg items-center justify-center"
               style={{
+                minHeight: design.minTouchTarget,
                 backgroundColor: isActive ? colors.successBg : colors.bgTertiary,
                 borderWidth: 1,
                 borderColor: isActive ? colors.success : colors.border,

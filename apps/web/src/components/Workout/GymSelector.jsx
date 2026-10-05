@@ -116,7 +116,7 @@ function GymSelector({ isOpen, onClose, selectedGymId, onSelect, allowAllGyms = 
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setShowAddForm(false); setNewName('') }}
-                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold"
+                    className="flex-1 min-h-11 py-2.5 rounded-lg text-sm font-semibold"
                     style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
                   >
                     {t('common:buttons.cancel')}
@@ -124,7 +124,7 @@ function GymSelector({ isOpen, onClose, selectedGymId, onSelect, allowAllGyms = 
                   <button
                     onClick={handleCreate}
                     disabled={!newName.trim() || createGym.isPending}
-                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40"
+                    className="flex-1 min-h-11 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40"
                     style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
                   >
                     {createGym.isPending ? t('common:buttons.loading') : t('common:buttons.save')}

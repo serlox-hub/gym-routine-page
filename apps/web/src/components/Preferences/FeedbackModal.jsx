@@ -12,7 +12,7 @@ function TypePill({ label, active, onClick, disabled }) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex-1 py-2 rounded-lg text-sm font-semibold transition-colors"
+      className="flex-1 min-h-11 py-2 rounded-lg text-sm font-semibold transition-colors"
       style={{
         backgroundColor: active ? colors.success : colors.bgTertiary,
         color: active ? colors.bgPrimary : colors.textMuted,

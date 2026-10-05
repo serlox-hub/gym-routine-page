@@ -4,9 +4,11 @@ import { expect } from '@playwright/test'
 // 44px tall, and also 44px wide when it shows no text (CLAUDE.md → Touch targets). It measures the
 // rendered box, so it sees what a Tailwind class, an inline style or a child's size end up giving.
 //
-// Blind spot, accepted: an element clickable only through a React `onClick` on a `div` with no
-// role is not a control to this guard. The known ones are whole-row headers far above 44px
-// (`DayCard`, `ExerciseCardHeader`); `SupersetHeaderRow` was one and is now a button.
+// A `div` clickable only through a React `onClick` has no role to select it by, so it is found by
+// its pointer cursor (`cursor-pointer`): the history's exercise header slipped past the first
+// version of this guard that way. Still not seen: a clickable `div` without that cursor, and one
+// nested inside another pointer-cursor element that is not a control (only the outermost is measured,
+// because children inherit the cursor).
 
 const MIN_TOUCH_TARGET = 44
 
@@ -82,7 +84,13 @@ function measureControls(root, selector) {
     || [...element.querySelectorAll('img[alt]')].map(img => img.alt.trim()).join(' ').trim()
   const fallbackName = (element) => [element.tagName.toLowerCase(), element.classList[0]].filter(Boolean).join('.')
 
-  return [...root.querySelectorAll(selector)]
+  // Clickable without being a control: the outermost element showing the pointer cursor that is
+  // not inside a control (its children inherit the cursor, and a control's insides are the control).
+  const isPointer = (element) => element && getComputedStyle(element).cursor === 'pointer'
+  const pointerOnly = [...root.querySelectorAll('*')].filter(element =>
+    !element.closest(selector) && isPointer(element) && !isPointer(element.parentElement))
+
+  return [...root.querySelectorAll(selector), ...pointerOnly]
     .filter(element => element.checkVisibility({ checkVisibilityCSS: true }))
     .map(element => {
       const rect = element.getBoundingClientRect()

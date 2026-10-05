@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Check, Plus, Dumbbell } from 'lucide-react-native'
 import { useGyms, useCreateGym, getGymDisplayName } from '@gym/shared'
 import { Modal, LoadingSpinner } from '../ui'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 /**
  * Reusable gym picker. Lists the user's gyms, lets them pick one and add a new
@@ -113,14 +113,14 @@ export default function GymSelector({ isOpen, onClose, selectedGymId, onSelect, 
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Pressable
                   onPress={() => { setShowAddForm(false); setNewName('') }}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: colors.bgTertiary }}
+                  style={{ flex: 1, minHeight: design.minTouchTarget, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgTertiary }}
                 >
                   <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   onPress={handleCreate}
                   disabled={!newName.trim() || createGym.isPending}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: colors.success, opacity: !newName.trim() || createGym.isPending ? 0.4 : 1 }}
+                  style={{ flex: 1, minHeight: design.minTouchTarget, paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.success, opacity: !newName.trim() || createGym.isPending ? 0.4 : 1 }}
                 >
                   <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>
                     {createGym.isPending ? t('common:buttons.loading') : t('common:buttons.save')}

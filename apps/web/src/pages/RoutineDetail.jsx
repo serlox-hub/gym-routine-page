@@ -260,7 +260,8 @@ function RoutineDetail() {
             {descNeedsTruncation && (
               <button
                 onClick={() => setDescExpanded(!descExpanded)}
-                style={{ color: colors.success, fontSize: 13, fontWeight: 500, marginTop: 2 }}
+                className="min-h-11 flex items-center"
+                style={{ color: colors.success, fontSize: 13, fontWeight: 500 }}
               >
                 {descExpanded ? t('common:buttons.seeLess') : t('common:buttons.seeMore')}
               </button>

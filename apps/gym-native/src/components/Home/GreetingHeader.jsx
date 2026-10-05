@@ -1,8 +1,9 @@
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Settings } from 'lucide-react-native'
 import { getGreetingKey } from '@gym/shared'
 import { useAuth } from '../../hooks/useAuth'
+import { IconButton } from '../ui'
 import { colors } from '../../lib/styles'
 
 function GreetingHeader({ navigation }) {
@@ -24,13 +25,13 @@ function GreetingHeader({ navigation }) {
           {userName}
         </Text>
       </View>
-      <Pressable
+      <IconButton
+        icon={Settings}
+        iconSize={20}
+        filled
+        label={t('common:preferences.title')}
         onPress={() => navigation.navigate('Preferences')}
-        className="p-2 rounded-full"
-        style={{ backgroundColor: colors.bgTertiary }}
-      >
-        <Settings size={20} color={colors.textSecondary} />
-      </Pressable>
+      />
     </View>
   )
 }

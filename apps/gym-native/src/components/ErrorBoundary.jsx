@@ -1,7 +1,7 @@
 import { Component } from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
 import { t } from '@gym/shared'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 export default class ErrorBoundary extends Component {
   state = { hasError: false, error: null, errorInfo: null }
@@ -79,6 +79,8 @@ export default class ErrorBoundary extends Component {
           <Pressable
             onPress={this.handleReset}
             style={{
+              minHeight: design.minTouchTarget,
+              justifyContent: 'center',
               paddingHorizontal: 24,
               paddingVertical: 12,
               borderRadius: 8,

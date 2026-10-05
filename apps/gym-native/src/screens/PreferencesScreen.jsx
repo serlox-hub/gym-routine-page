@@ -10,7 +10,7 @@ import { useAuth, useIsAdmin, useCanUploadVideo, useIsPremium } from '../hooks/u
 import { LoadingSpinner, PlanBadge, PageHeader, ConfirmModal, Switch } from '../components/ui'
 import { WeightUnitChangeModal, MeasurementUnitChangeModal, FeedbackModal } from '../components/Preferences'
 import useWorkoutStore from '../stores/workoutStore'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 import {
   REST_NOTIFICATIONS_ENABLED_KEY,
   getNotificationPermissionStatus,
@@ -19,20 +19,46 @@ import {
 } from '../lib/restTimerNotifications'
 const appVersion = require('../../app.json').expo.version
 
+// Visible height of the track and of the active pill, centred in each 44pt option.
+const PILL_HEIGHT = 28
+const DAY_CIRCLE_SIZE = 36
+
 function SmallPill({ label, active, onPress, disabled }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={{
-        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
-        backgroundColor: active ? colors.success : 'transparent',
-      }}
+      accessibilityRole="button"
+      style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
     >
-      <Text style={{ fontSize: 12, fontWeight: '600', color: active ? colors.bgPrimary : colors.textMuted }}>
-        {label}
-      </Text>
+      <View
+        style={{
+          height: PILL_HEIGHT, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 8,
+          backgroundColor: active ? colors.success : 'transparent',
+        }}
+      >
+        <Text style={{ fontSize: 12, fontWeight: '600', color: active ? colors.bgPrimary : colors.textMuted }}>
+          {label}
+        </Text>
+      </View>
     </Pressable>
+  )
+}
+
+// The pills are 44pt boxes; the track is painted behind them at PILL_HEIGHT, so the control looks
+// as before. Its row trades 16 of vertical padding for the taller boxes.
+function PillGroup({ children }) {
+  return (
+    <View style={{ flexDirection: 'row' }}>
+      <View
+        style={{
+          position: 'absolute', left: 0, right: 0,
+          top: (design.minTouchTarget - PILL_HEIGHT) / 2, height: PILL_HEIGHT,
+          borderRadius: 8, backgroundColor: colors.bgTertiary,
+        }}
+      />
+      {children}
+    </View>
   )
 }
 
@@ -230,36 +256,36 @@ export default function PreferencesScreen({ navigation, route }) {
         <View>
           <SectionLabel>{t('common:preferences.general')}</SectionLabel>
           <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
               <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.language')}</Text>
-              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {[{ code: 'es', label: 'ES' }, { code: 'en', label: 'EN' }].map(({ code, label }) => (
                   <SmallPill key={code} label={label} active={(preferences?.language || 'es') === code}
                     onPress={() => handleChange('language', code)} disabled={updatePreference.isPending} />
                 ))}
-              </View>
+              </PillGroup>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
               <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weightUnit')}</Text>
-              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {['kg', 'lb'].map((unit) => (
                   <SmallPill key={unit} label={unit} active={(preferences?.weight_unit || 'kg') === unit}
                     onPress={() => handleWeightUnitClick(unit)} disabled={changeWeightUnit.isPending} />
                 ))}
-              </View>
+              </PillGroup>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
               <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.measurementUnit')}</Text>
-              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {['cm', 'in'].map((unit) => (
                   <SmallPill key={unit} label={unit} active={(preferences?.measurement_unit || 'cm') === unit}
                     onPress={() => handleMeasurementUnitClick(unit)} disabled={changeMeasurementUnit.isPending} />
                 ))}
-              </View>
+              </PillGroup>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 6 }}>
               <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weekStartDay')}</Text>
-              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {[
                   { value: 'monday', label: t('common:preferences.mondayShort') || 'Mon' },
                   { value: 'sunday', label: t('common:preferences.sundayShort') || 'Sun' },
@@ -267,7 +293,7 @@ export default function PreferencesScreen({ navigation, route }) {
                   <SmallPill key={value} label={label} active={(preferences?.week_start_day || 'monday') === value}
                     onPress={() => handleChange('week_start_day', value)} disabled={updatePreference.isPending} />
                 ))}
-              </View>
+              </PillGroup>
             </View>
           </View>
         </View>
@@ -323,9 +349,9 @@ export default function PreferencesScreen({ navigation, route }) {
         <View>
           <SectionLabel>{t('common:preferences.remindersTitle')}</SectionLabel>
           <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
               <Text style={{ color: colors.textPrimary, fontSize: 14, flexShrink: 1 }}>{t('common:preferences.weightReminder')}</Text>
-              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {[0, 3, 7, 14, 30].map(days => (
                   <SmallPill
                     key={days}
@@ -335,11 +361,11 @@ export default function PreferencesScreen({ navigation, route }) {
                     disabled={updatePreference.isPending}
                   />
                 ))}
-              </View>
+              </PillGroup>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 6 }}>
               <Text style={{ color: colors.textPrimary, fontSize: 14, flexShrink: 1 }}>{t('common:preferences.measurementsReminder')}</Text>
-              <View style={{ flexDirection: 'row', borderRadius: 8, backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {[0, 7, 14, 30, 60].map(days => (
                   <SmallPill
                     key={days}
@@ -349,7 +375,7 @@ export default function PreferencesScreen({ navigation, route }) {
                     disabled={updatePreference.isPending}
                   />
                 ))}
-              </View>
+              </PillGroup>
             </View>
           </View>
         </View>
@@ -361,24 +387,33 @@ export default function PreferencesScreen({ navigation, route }) {
             backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor, borderRadius: 12, padding: 16, gap: 16,
           }}>
             <View>
-              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500', marginBottom: 10 }}>
+              {/* 6, not 10: the 44pt box puts 4 more above the circle. */}
+              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500', marginBottom: 6 }}>
                 {t('common:preferences.trainingDaysPerWeek')}
               </Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              {/* Seven 44pt-wide options do not fit a 360pt phone: each one is 44 tall and takes its
+                  share of the row, and the circle inside is DAY_CIRCLE_SIZE at most, smaller if the
+                  share is. */}
+              <View style={{ flexDirection: 'row', gap: 4 }}>
                 {[1, 2, 3, 4, 5, 6, 7].map(n => (
                   <Pressable
                     key={n}
                     onPress={() => handleChange('training_days_per_week', n)}
                     disabled={updatePreference.isPending}
-                    style={{
-                      width: 36, height: 36, borderRadius: 18,
-                      alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: n === currentDays ? colors.success : colors.bgTertiary,
-                    }}
+                    accessibilityRole="button"
+                    style={{ flex: 1, height: design.minTouchTarget, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: n === currentDays ? colors.bgPrimary : colors.textMuted }}>
-                      {n}
-                    </Text>
+                    <View
+                      style={{
+                        width: '100%', maxWidth: DAY_CIRCLE_SIZE, aspectRatio: 1, borderRadius: DAY_CIRCLE_SIZE / 2,
+                        alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: n === currentDays ? colors.success : colors.bgTertiary,
+                      }}
+                    >
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: n === currentDays ? colors.bgPrimary : colors.textMuted }}>
+                        {n}
+                      </Text>
+                    </View>
                   </Pressable>
                 ))}
               </View>

@@ -39,14 +39,14 @@ export default class ErrorBoundary extends Component {
           <div className="flex gap-3">
             <button
               onClick={this.handleReset}
-              className="px-4 py-2 rounded-lg text-sm font-medium"
+              className="min-h-11 px-4 py-2 rounded-lg text-sm font-medium"
               style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}
             >
               {t('common:buttons.retry')}
             </button>
             <button
               onClick={this.handleReload}
-              className="px-4 py-2 rounded-lg text-sm font-medium"
+              className="min-h-11 px-4 py-2 rounded-lg text-sm font-medium"
               style={{ backgroundColor: colors.success, color: colors.bgPrimary }}
             >
               {t('common:buttons.reload')}

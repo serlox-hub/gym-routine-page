@@ -22,7 +22,7 @@ function DistanceUnitPicker({ value, onChange, label }) {
               type="button"
               aria-pressed={isActive}
               onClick={() => onChange(unit)}
-              className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="flex-1 min-h-11 py-2 rounded-lg text-sm font-medium transition-colors"
               style={{
                 backgroundColor: isActive ? colors.successBg : colors.bgTertiary,
                 border: `1px solid ${isActive ? colors.success : colors.border}`,

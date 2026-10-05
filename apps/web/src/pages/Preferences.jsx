@@ -12,17 +12,28 @@ import { colors } from '../lib/styles.js'
 
 function SmallPill({ label, active, onClick, disabled }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-      style={{
-        backgroundColor: active ? colors.success : 'transparent',
-        color: active ? colors.bgPrimary : colors.textMuted,
-      }}
-    >
-      {label}
+    <button onClick={onClick} disabled={disabled} className="relative min-h-11 flex items-center">
+      <span
+        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+        style={{
+          backgroundColor: active ? colors.success : 'transparent',
+          color: active ? colors.bgPrimary : colors.textMuted,
+        }}
+      >
+        {label}
+      </span>
     </button>
+  )
+}
+
+// The pills are 44px boxes; the track is painted behind them at the pill's 28px (inset-y-2), so
+// the control looks as before. Its row trades 16px of vertical padding for the taller boxes.
+function PillGroup({ children }) {
+  return (
+    <div className="relative flex">
+      <div className="absolute inset-x-0 inset-y-2 rounded-lg" style={{ backgroundColor: colors.bgTertiary }} />
+      {children}
+    </div>
   )
 }
 
@@ -167,9 +178,9 @@ function Preferences() {
             className="rounded-xl"
             style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, overflow: 'hidden' }}
           >
-            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+            <div className="flex items-center justify-between" style={{ padding: '6px 16px', borderBottom: `1px solid ${colors.border}` }}>
               <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.language')}</span>
-              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {[
                   { code: 'es', label: 'ES' },
                   { code: 'en', label: 'EN' },
@@ -177,29 +188,29 @@ function Preferences() {
                   <SmallPill key={code} label={label} active={(preferences?.language || 'es') === code}
                     onClick={() => handleChange('language', code)} disabled={updatePreference.isPending} />
                 ))}
-              </div>
+              </PillGroup>
             </div>
-            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+            <div className="flex items-center justify-between" style={{ padding: '6px 16px', borderBottom: `1px solid ${colors.border}` }}>
               <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weightUnit')}</span>
-              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {['kg', 'lb'].map((unit) => (
                   <SmallPill key={unit} label={unit} active={(preferences?.weight_unit || 'kg') === unit}
                     onClick={() => handleWeightUnitClick(unit)} disabled={changeWeightUnit.isPending} />
                 ))}
-              </div>
+              </PillGroup>
             </div>
-            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+            <div className="flex items-center justify-between" style={{ padding: '6px 16px', borderBottom: `1px solid ${colors.border}` }}>
               <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.measurementUnit')}</span>
-              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {['cm', 'in'].map((unit) => (
                   <SmallPill key={unit} label={unit} active={(preferences?.measurement_unit || 'cm') === unit}
                     onClick={() => handleMeasurementUnitClick(unit)} disabled={changeMeasurementUnit.isPending} />
                 ))}
-              </div>
+              </PillGroup>
             </div>
-            <div className="flex items-center justify-between" style={{ padding: '14px 16px' }}>
+            <div className="flex items-center justify-between" style={{ padding: '6px 16px' }}>
               <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weekStartDay')}</span>
-              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {[
                   { value: 'monday', label: t('common:preferences.mondayShort') || 'Mon' },
                   { value: 'sunday', label: t('common:preferences.sundayShort') || 'Sun' },
@@ -207,7 +218,7 @@ function Preferences() {
                   <SmallPill key={value} label={label} active={(preferences?.week_start_day || 'monday') === value}
                     onClick={() => handleChange('week_start_day', value)} disabled={updatePreference.isPending} />
                 ))}
-              </div>
+              </PillGroup>
             </div>
           </div>
         </section>
@@ -265,9 +276,9 @@ function Preferences() {
             className="rounded-xl"
             style={{ backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}`, overflow: 'hidden' }}
           >
-            <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
+            <div className="flex items-center justify-between" style={{ padding: '6px 16px', borderBottom: `1px solid ${colors.border}` }}>
               <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.weightReminder')}</span>
-              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {[0, 3, 7, 14, 30].map(days => (
                   <SmallPill
                     key={days}
@@ -277,11 +288,11 @@ function Preferences() {
                     disabled={updatePreference.isPending}
                   />
                 ))}
-              </div>
+              </PillGroup>
             </div>
-            <div className="flex items-center justify-between" style={{ padding: '14px 16px' }}>
+            <div className="flex items-center justify-between" style={{ padding: '6px 16px' }}>
               <span style={{ color: colors.textPrimary, fontSize: 14 }}>{t('common:preferences.measurementsReminder')}</span>
-              <div className="flex rounded-lg" style={{ backgroundColor: colors.bgTertiary }}>
+              <PillGroup>
                 {[0, 7, 14, 30, 60].map(days => (
                   <SmallPill
                     key={days}
@@ -291,7 +302,7 @@ function Preferences() {
                     disabled={updatePreference.isPending}
                   />
                 ))}
-              </div>
+              </PillGroup>
             </div>
           </div>
         </section>

@@ -13,42 +13,48 @@ import {
   filterFeedback,
 } from '@gym/shared'
 import { LoadingSpinner, ErrorMessage, PageHeader, ConfirmModal } from '../components/ui'
-import { colors } from '../lib/styles'
+import { colors, design } from '../lib/styles'
 
 const TYPE_META = {
   bug: { Icon: Bug, color: colors.danger, bg: colors.dangerBg, labelKey: 'common:admin.feedbackTypeBug' },
   suggestion: { Icon: Lightbulb, color: colors.warning, bg: colors.warningBg, labelKey: 'common:admin.feedbackTypeSuggestion' },
 }
 
+// Visible height of the filter and action pills, centred in their 44pt boxes.
+const PILL_HEIGHT = 28
+
 function FilterPill({ label, active, onPress, count }) {
   return (
     <Pressable
       onPress={onPress}
-      style={{
+      accessibilityRole="button"
+      style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
+    >
+      <View style={{
+        height: PILL_HEIGHT,
         paddingHorizontal: 12,
-        paddingVertical: 6,
         borderRadius: 8,
         backgroundColor: active ? colors.success : 'transparent',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-      }}
-    >
-      <Text style={{ fontSize: 12, fontWeight: '600', color: active ? colors.bgPrimary : colors.textMuted }}>
-        {label}
-      </Text>
-      {typeof count === 'number' && (
-        <View style={{
-          paddingHorizontal: 6,
-          paddingVertical: 1,
-          borderRadius: 6,
-          backgroundColor: colors.bgTertiary,
-        }}>
-          <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textMuted }}>
-            {count}
-          </Text>
-        </View>
-      )}
+      }}>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: active ? colors.bgPrimary : colors.textMuted }}>
+          {label}
+        </Text>
+        {typeof count === 'number' && (
+          <View style={{
+            paddingHorizontal: 6,
+            paddingVertical: 1,
+            borderRadius: 6,
+            backgroundColor: colors.bgTertiary,
+          }}>
+            <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textMuted }}>
+              {count}
+            </Text>
+          </View>
+        )}
+      </View>
     </Pressable>
   )
 }
@@ -58,19 +64,22 @@ function ActionButton({ Icon, label, onPress, color, bg, disabled }) {
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={{
+      accessibilityRole="button"
+      style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
+    >
+      <View style={{
+        height: PILL_HEIGHT,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
         paddingHorizontal: 10,
-        paddingVertical: 6,
         borderRadius: 8,
         backgroundColor: bg,
         opacity: disabled ? 0.5 : 1,
-      }}
-    >
-      <Icon size={12} color={color} />
-      <Text style={{ fontSize: 12, fontWeight: '600', color }}>{label}</Text>
+      }}>
+        <Icon size={12} color={color} />
+        <Text style={{ fontSize: 12, fontWeight: '600', color }}>{label}</Text>
+      </View>
     </Pressable>
   )
 }
@@ -132,7 +141,9 @@ function FeedbackRow({ item, onToggleResolved, onDelete, isPending }) {
         {item.message}
       </Text>
 
-      <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'flex-end' }}>
+      {/* marginVertical -8: the 44pt boxes take the 8 they add from the gap above and the card's
+          padding below, so they stay inside the card (where Android delivers touches). */}
+      <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'flex-end', marginVertical: -8 }}>
         <ActionButton
           Icon={isResolved ? RotateCcw : Check}
           label={isResolved ? t('common:admin.feedbackReopen') : t('common:admin.feedbackResolve')}
@@ -192,13 +203,9 @@ export default function AdminFeedbackScreen({ navigation }) {
       <PageHeader title={t('common:admin.feedbackTitle')} onBack={() => navigation.goBack()} />
 
       <View style={{ paddingHorizontal: 24, paddingBottom: 12 }}>
-        <View style={{
-          flexDirection: 'row',
-          backgroundColor: colors.bgTertiary,
-          borderRadius: 8,
-          padding: 4,
-          alignSelf: 'flex-start',
-        }}>
+        {/* The pills are 44pt boxes; the track (top/bottom 4) is painted behind them at its old 36. */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 4, alignSelf: 'flex-start' }}>
+          <View style={{ position: 'absolute', left: 0, right: 0, top: 4, bottom: 4, borderRadius: 8, backgroundColor: colors.bgTertiary }} />
           <FilterPill
             label={t('common:admin.feedbackFilterPending')}
             active={filter === 'pending'}

@@ -79,8 +79,9 @@ function Login() {
               className="w-full px-4 py-3 rounded-xl text-sm outline-none"
               style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
             />
-            <div className="text-right mt-1.5">
-              <Link to="/forgot-password" className="text-xs hover:underline" style={{ color: colors.success }}>
+            {/* No top margin: the link's 44px box already puts 14px between it and the input. */}
+            <div className="text-right">
+              <Link to="/forgot-password" className="inline-flex items-center min-h-11 text-xs hover:underline" style={{ color: colors.success }}>
                 {t('auth:login.forgotPassword')}
               </Link>
             </div>
@@ -115,7 +116,7 @@ function Login() {
         {/* Sign up link */}
         <p className="text-xs" style={{ color: colors.textMuted }}>
           {t('auth:login.noAccount')}{' '}
-          <Link to="/signup" className="hover:underline font-semibold" style={{ color: colors.success }}>
+          <Link to="/signup" className="inline-flex items-center min-h-11 hover:underline font-semibold" style={{ color: colors.success }}>
             {t('auth:login.createAccount')}
           </Link>
         </p>
