@@ -1,8 +1,9 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Modal } from '../ui'
+import { X } from 'lucide-react-native'
+import { IconButton, Modal } from '../ui'
 import VideoPlayer from '../ui/VideoPlayer'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 /**
  * Detalle de una serie ya registrada. `summary`/`effort` (opcionales) muestran su valor completo
@@ -16,9 +17,7 @@ export default function SetNotesView({ isOpen, onClose, notes, videoUrl, summary
     <Modal isOpen={isOpen} onClose={onClose} className="p-4">
       <View className="flex-row justify-between items-center mb-4">
         <Text className="text-primary font-bold">{title || t('workout:set.notes')}</Text>
-        <Pressable onPress={onClose}>
-          <Text className="text-xl" style={{ color: colors.textSecondary }}>✕</Text>
-        </Pressable>
+        <IconButton icon={X} iconSize={20} label={t('common:buttons.close')} onPress={onClose} />
       </View>
 
       <View className="gap-3">
@@ -41,8 +40,8 @@ export default function SetNotesView({ isOpen, onClose, notes, videoUrl, summary
 
       <Pressable
         onPress={onClose}
-        className="mt-4 py-2 rounded-lg items-center"
-        style={{ backgroundColor: colors.bgTertiary }}
+        className="mt-4 py-2 rounded-lg items-center justify-center"
+        style={{ minHeight: design.minTouchTarget, backgroundColor: colors.bgTertiary }}
       >
         <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
           {t('common:buttons.close')}

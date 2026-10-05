@@ -67,3 +67,20 @@ describe('SupersetHeaderRow — menú de reordenar solo con más de una unidad',
     expect(onReorderToUnit).toHaveBeenCalledWith(0)
   })
 })
+
+describe('SupersetHeaderRow — a real button only when it has something to do', () => {
+  it('with more than one unit the header is a button 44 tall', () => {
+    renderRow()
+
+    const header = screen.getByRole('button', { name: /Superset A/ })
+    expect(header).toHaveAttribute('type', 'button')
+    expect(header).toHaveClass('min-h-11')
+  })
+
+  it('with a single unit it stays a label, at the same height', () => {
+    const { container } = renderRow({ unitLabels: ['Superset A'], currentUnitIndex: 0 })
+
+    expect(screen.queryByRole('button', { name: /Superset A/ })).not.toBeInTheDocument()
+    expect(container.querySelector('.min-h-11')).toHaveTextContent('Superset A')
+  })
+})

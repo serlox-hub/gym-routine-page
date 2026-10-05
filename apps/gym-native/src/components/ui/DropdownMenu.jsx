@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { View, Text, Pressable, Modal } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { MoreVertical } from 'lucide-react-native'
 import { colors } from '../../lib/styles'
+import IconButton from './IconButton'
 
+// `triggerSize` sizes the icon only: the trigger is always the 44pt IconButton box.
 export default function DropdownMenu({ items, triggerSize = 18 }) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
 
   const handleClose = () => setIsOpen(false)
@@ -12,13 +16,13 @@ export default function DropdownMenu({ items, triggerSize = 18 }) {
 
   return (
     <View>
-      <Pressable
+      <IconButton
+        icon={MoreVertical}
+        iconSize={triggerSize}
+        color={colors.textPrimary}
+        label={t('common:buttons.moreOptions')}
         onPress={() => setIsOpen(true)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        className="p-2 rounded-lg active:opacity-70"
-      >
-        <MoreVertical size={triggerSize} color={colors.textPrimary} />
-      </Pressable>
+      />
 
       <Modal
         visible={isOpen}

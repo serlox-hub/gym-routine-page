@@ -1,5 +1,8 @@
 import { GripVertical } from 'lucide-react'
-import { colors } from '../../lib/styles.js'
+import { colors, design } from '../../lib/styles.js'
+
+// What the handle took around its icon before it grew to the touch-target box.
+const LAYOUT_PADDING = 4
 
 // Asa de arrastre de una fila reordenable: el ÚNICO punto que lleva los listeners del gesto, para
 // que el resto de la fila conserve sus pulsaciones y siga scrolleando la página con el dedo.
@@ -13,6 +16,9 @@ function DragHandle({ dragHandleProps, disabled = false, size = 16, onPressStart
   if (!dragHandleProps) return null
 
   const { style: handleStyle, onPointerDown: dndPointerDown, ...listeners } = dragHandleProps
+  // 44px de zona táctil (lo mínimo cómodo para un dedo) mida lo que mida el icono, sin mover el
+  // icono: el margen negativo devuelve al layout el tamaño de antes (icono + 2*4).
+  const padding = (design.minTouchTarget - size) / 2
 
   const handlePointerDown = (e) => {
     onPressStart?.()
@@ -47,10 +53,8 @@ function DragHandle({ dragHandleProps, disabled = false, size = 16, onPressStart
       style={{
         ...handleStyle,
         display: 'flex',
-        // 44px de zona táctil (lo mínimo cómodo para un dedo) sin mover el icono: el margen negativo
-        // devuelve al layout el tamaño de antes (16 + 2*4).
-        padding: 14,
-        margin: -10,
+        padding,
+        margin: -(padding - LAYOUT_PADDING),
         opacity: disabled ? 0.4 : 1,
         cursor: disabled ? 'default' : handleStyle?.cursor,
       }}

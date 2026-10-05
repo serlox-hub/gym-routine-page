@@ -17,9 +17,10 @@ const VARIANTS = {
   },
 }
 
+// min-h-11: 44px, the touch-target minimum (CLAUDE.md). `lg` already clears it.
 const SIZES = {
-  sm: 'px-3 py-1 text-sm',
-  md: 'px-4 py-2',
+  sm: 'min-h-11 px-3 py-1 text-sm',
+  md: 'min-h-11 px-4 py-2',
   lg: 'px-6 py-3 text-lg',
 }
 

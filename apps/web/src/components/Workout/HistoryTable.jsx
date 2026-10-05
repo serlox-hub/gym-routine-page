@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, FileText, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
+import { IconButton } from '../ui/index.js'
 import { DEFAULT_TRACKED_FIELDS, formatSetValue, formatShortDate, calculateTotalVolume, formatEffortBadge } from '@gym/shared'
 
 function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUnit = 'kg', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
@@ -62,16 +63,16 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
                   <span className="flex-1" style={{ color: colors.textPrimary }}>
                     {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                   </span>
-                  <div className="flex items-center gap-0.5 -my-2">
+                  {/* No negative margin: the 44px boxes make a set with a note or video 44 tall,
+                      so two consecutive ones do not overlap in the 6px gap. */}
+                  <div className="flex items-center gap-0.5">
                     {set.notes && (
-                      <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSelectSet(set) }} className="p-2 rounded-lg opacity-70 hover:opacity-100 transition-opacity">
-                        <FileText size={14} color={colors.textMuted} />
-                      </button>
+                      <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSelectSet(set) }} />
                     )}
                     {set.video_url && (
-                      <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSelectSet(set) }} className="p-2 rounded-lg opacity-70 hover:opacity-100 transition-opacity">
-                        <Video size={14} color={colors.textMuted} />
-                      </button>
+                      <IconButton icon={Video} iconSize={14} color={colors.textMuted} label={t('workout:set.video')}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSelectSet(set) }} />
                     )}
                     {set.rir_actual !== null && set.rir_actual !== undefined && (
                       <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center', whiteSpace: 'nowrap' }}>
@@ -90,7 +91,7 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
         <button
           onClick={onLoadMore}
           disabled={isFetchingNextPage}
-          className="w-full py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50"
+          className="w-full min-h-11 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50"
           style={{ backgroundColor: colors.bgTertiary, color: colors.success }}
         >
           {isFetchingNextPage ? t('common:buttons.loading') : t('common:buttons.seeMore')}

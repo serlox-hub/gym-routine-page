@@ -4,9 +4,12 @@ import { colors } from '../../lib/styles.js'
 function ExerciseProgressBar({ setsCompleted, setsTotal, segments = [], elapsedTime, gymSlot = null }) {
   const { t } = useTranslation()
   if (setsTotal <= 0) return null
+  // The gym chip is a 44px box (touch target), taller than the text: it takes the padding above
+  // and the gap below, so the header grows only by what is left over.
+  const hasGymSlot = !!gymSlot
   return (
-    <div style={{ paddingTop: 8, paddingBottom: 12 }}>
-      <div className="flex items-center justify-between gap-2 mb-1.5">
+    <div style={{ paddingTop: hasGymSlot ? 0 : 8, paddingBottom: 12 }}>
+      <div className="flex items-center justify-between gap-2" style={{ marginBottom: hasGymSlot ? 0 : 6 }}>
         <span className="truncate" style={{ color: colors.textPrimary, fontSize: 13, fontWeight: 600 }}>
           {t('workout:session.setProgress', { current: setsCompleted, total: setsTotal })}
         </span>

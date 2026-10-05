@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowRightLeft, X } from 'lucide-react'
-import { Modal, DecimalInput } from '../ui/index.js'
+import { Modal, DecimalInput, IconButton } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { convertWeight, getWeightUnits, toggleWeightMode } from '@gym/shared'
 
@@ -38,14 +38,7 @@ function WeightConverterModal({ isOpen, onClose }) {
           <h3 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
             {t('workout:set.weightConverter')}
           </h3>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 hover:opacity-80"
-            style={{ backgroundColor: colors.bgTertiary, border: 'none', cursor: 'pointer' }}
-            aria-label="Close"
-          >
-            <X size={14} color={colors.textSecondary} />
-          </button>
+          <IconButton icon={X} iconSize={14} filled label={t('common:buttons.close')} onClick={onClose} />
         </div>
 
         <div className="flex items-end gap-2">
@@ -63,14 +56,8 @@ function WeightConverterModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          <button
-            onClick={handleToggle}
-            className="rounded-full p-1.5 mb-1.5 hover:opacity-80"
-            style={{ backgroundColor: colors.bgTertiary, border: 'none', cursor: 'pointer' }}
-            title={t('common:buttons.change')}
-          >
-            <ArrowRightLeft size={14} color={colors.success} />
-          </button>
+          {/* No bottom margin: the 44px box is as tall as the value boxes it sits between. */}
+          <IconButton icon={ArrowRightLeft} iconSize={14} color={colors.success} filled label={t('common:buttons.change')} onClick={handleToggle} />
 
           <div className="flex-1 flex flex-col items-center">
             <span className="uppercase mb-1" style={labelStyle}>{toUnit}</span>

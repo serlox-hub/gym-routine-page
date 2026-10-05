@@ -67,6 +67,10 @@ export const design = {
   // test que pasa mientras las dos plataformas se sienten distintas.
   dragAutoScrollEdge: 96,
 
+  // Smallest box a tap control may have (Apple HIG: 44pt). Classes use Tailwind's h-11 / w-11;
+  // this is for sizes computed in JS (DragHandle).
+  minTouchTarget: 44,
+
   // Routine card
   routineCardRadius: 16,
   routineCardPadding: 16,

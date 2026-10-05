@@ -107,9 +107,12 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, track
         <div className="flex items-center gap-3">
           <ExerciseName as="h3" fontSize={16} fontWeight="700" className="flex-1 min-w-0">{exerciseName}</ExerciseName>
           {routineDayId && (
-            <div className="shrink-0 grid grid-cols-2 rounded-full p-0.5 relative" style={{ backgroundColor: colors.bgTertiary }}>
+            // The buttons are the 44px boxes; the track and the sliding pill are painted behind
+            // them at their old size (inset-y-2 = 28px track).
+            <div className="shrink-0 grid grid-cols-2 px-0.5 relative">
+              <div className="absolute inset-x-0 inset-y-2 rounded-full" style={{ backgroundColor: colors.bgTertiary }} />
               <div
-                className="absolute top-0.5 bottom-0.5 rounded-full transition-transform duration-200 ease-in-out"
+                className="absolute top-2.5 bottom-2.5 rounded-full transition-transform duration-200 ease-in-out"
                 style={{
                   width: 'calc(50% - 1px)',
                   backgroundColor: colors.success,
@@ -117,39 +120,49 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, track
                   transform: isDay ? 'translateX(0)' : 'translateX(100%)',
                 }}
               />
-              <button onClick={() => setScope(SCOPE.DAY)} className="relative z-10 px-3 py-1 text-xs font-semibold"
+              <button onClick={() => setScope(SCOPE.DAY)} className="relative z-10 min-h-11 px-3 text-xs font-semibold"
                 style={{ color: isDay ? colors.bgPrimary : colors.textSecondary }}>
                 {t('exercise:scopeRoutine')}
               </button>
-              <button onClick={() => setScope(SCOPE.GLOBAL)} className="relative z-10 px-3 py-1 text-xs font-semibold"
+              <button onClick={() => setScope(SCOPE.GLOBAL)} className="relative z-10 min-h-11 px-3 text-xs font-semibold"
                 style={{ color: !isDay ? colors.bgPrimary : colors.textSecondary }}>
                 {t('exercise:scopeGlobal')}
               </button>
             </div>
           )}
         </div>
+        {/* The buttons are the 44px boxes, the pills inside keep their size. mt-1, not mt-3: the
+            box adds ~10px above the pill. */}
         {hasMultiple && (
-          <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-2 mt-1">
             <button
               onClick={() => setShowGymSelector(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+              className="min-h-11 inline-flex items-center hover:opacity-80 transition-opacity"
             >
-              <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>{gymFilterLabel}</span>
-              <ChevronDown size={13} style={{ color: colors.textMuted }} />
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}
+              >
+                <span style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 600 }}>{gymFilterLabel}</span>
+                <ChevronDown size={13} style={{ color: colors.textMuted }} />
+              </span>
             </button>
             <button
               onClick={() => setGymFilter(isOverlay ? defaultGymId : ALL_GYMS)}
-              className="inline-flex items-center px-2.5 py-1 rounded-full transition-opacity hover:opacity-80"
-              style={{
-                backgroundColor: isOverlay ? `${colors.success}20` : colors.bgTertiary,
-                border: `1px solid ${isOverlay ? colors.success : colors.border}`,
-                color: isOverlay ? colors.success : colors.textSecondary,
-                fontSize: 12,
-                fontWeight: 600,
-              }}
+              className="min-h-11 inline-flex items-center transition-opacity hover:opacity-80"
             >
-              {t('common:gym.compareGyms')}
+              <span
+                className="inline-flex items-center px-2.5 py-1 rounded-full"
+                style={{
+                  backgroundColor: isOverlay ? `${colors.success}20` : colors.bgTertiary,
+                  border: `1px solid ${isOverlay ? colors.success : colors.border}`,
+                  color: isOverlay ? colors.success : colors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                {t('common:gym.compareGyms')}
+              </span>
             </button>
           </div>
         )}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, AlertTriangle } from 'lucide-react'
-import { Button, Modal, SaveStatus } from '../ui/index.js'
+import { Button, IconButton, Modal, SaveStatus } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import { usePreference } from '../../hooks/usePreferences.js'
 import { shouldWarnIdleSession, getLastSetEndChoice, IDLE_SESSION_WARNING_MINUTES } from '@gym/shared'
@@ -40,7 +40,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending, error = null, 
         onClick={() => setEndChoice(choice)}
         disabled={isPending}
         aria-pressed={selected}
-        className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium"
+        className="w-full min-h-11 text-left px-3 py-2 rounded-lg text-sm font-medium"
         style={{
           backgroundColor: selected ? colors.successBg : colors.bgTertiary,
           border: `1px solid ${selected ? colors.success : colors.border}`,
@@ -59,14 +59,7 @@ function EndSessionModal({ isOpen, onClose, onConfirm, isPending, error = null, 
         <h3 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
           {t('workout:session.end')}
         </h3>
-        <button
-          onClick={handleClose}
-          disabled={isPending}
-          className="p-1.5 rounded hover:opacity-80 disabled:opacity-50"
-          style={{ backgroundColor: colors.bgTertiary }}
-        >
-          <X size={18} style={{ color: colors.textSecondary }} />
-        </button>
+        <IconButton icon={X} filled label={t('common:buttons.close')} onClick={handleClose} disabled={isPending} />
       </div>
 
       {showIdleWarning && (

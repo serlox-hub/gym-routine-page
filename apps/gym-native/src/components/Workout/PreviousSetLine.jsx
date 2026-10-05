@@ -3,13 +3,14 @@ import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { formatPreviousSetValue, formatPreviousSetEffort } from '@gym/shared'
 import SetNotesView from './SetNotesView'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
 
 // Referencia de la MISMA serie en la última sesión. Vive en la subfila (SetRowMeta), no en una
 // columna: como columna medía 46px, tenía que elidir y ocultar las unidades, y con tres campos
 // (bici: nivel × distancia × tiempo) dejaba los inputs a ~26px. Aquí cabe entera y CON unidades.
 // Es contexto de progresión (qué y cómo de duro fue la última vez), y ese mismo valor alimenta el
 // prefill automático de los inputs (useSetInputs). Al tocarla se abre la nota/vídeo de aquella serie.
+// 44pt tall with `marginVertical: -8`: the box takes the subrow's padding (see SetRowMeta).
 export default function PreviousSetLine({
   previousSet,
   trackedFields,
@@ -34,10 +35,10 @@ export default function PreviousSetLine({
     <>
       <Pressable
         onPress={() => setShowDetail(true)}
+        accessibilityRole="button"
         accessibilityLabel={t('workout:set.lastTime')}
-        hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
         className="flex-row items-center active:opacity-70"
-        style={{ gap: 6, flexShrink: 1 }}
+        style={{ gap: 6, flexShrink: 1, minHeight: design.minTouchTarget, marginVertical: -8 }}
       >
         <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: '500' }}>
           {t('workout:set.previous')}

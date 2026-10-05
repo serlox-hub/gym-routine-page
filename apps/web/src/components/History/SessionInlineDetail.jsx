@@ -76,7 +76,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
 
   const containerStyle = {
     display: 'grid',
-    gridTemplateColumns: `24px ${columns.map(() => 'minmax(0, 1fr)').join(' ')} 132px`,
+    gridTemplateColumns: `24px ${columns.map(() => 'minmax(0, 1fr)').join(' ')} 150px`, // badges + the 44px «···» box
     alignItems: 'center',
     gap: 12,
     fontSize: 12,
@@ -132,10 +132,12 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
     </>
   )
 
+  // No negative margin on the 44px trigger: rows are only 8px apart, so pulling it back with -my-2
+  // made two rows' menus overlap and a tap could open the next set's (whose «Eliminar» has no confirm).
   const menu = (
     <DropdownMenu
       triggerSize={14}
-      triggerClassName="shrink-0 -my-2"
+      triggerClassName="shrink-0"
       items={[
         {
           label: t('common:buttons.edit'),

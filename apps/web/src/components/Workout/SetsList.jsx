@@ -135,10 +135,11 @@ function SetsList({
         })}
       </div>
 
-      <div className="flex items-center justify-center gap-6 mt-4">
+      {/* mt-1, not mt-4: the 44px box adds 12px above the text, which stays where it was. */}
+      <div className="flex items-center justify-center gap-6 mt-1">
         {setsCount > 0 && (
           <button onClick={onRemoveSet}
-            className="flex items-center gap-1.5 hover:opacity-80"
+            className="min-h-11 flex items-center gap-1.5 hover:opacity-80"
             style={{ color: colors.textSecondary, fontSize: 13 }}>
             <CircleMinus size={16} />
             {t('workout:set.removeLast')}
@@ -146,7 +147,7 @@ function SetsList({
         )}
         {onAddSet && (
           <button onClick={onAddSet}
-            className="flex items-center gap-1.5 hover:opacity-80"
+            className="min-h-11 flex items-center gap-1.5 hover:opacity-80"
             style={{ color: colors.success, fontSize: 13, fontWeight: 600 }}>
             <CirclePlus size={16} />
             {t('workout:set.addSet')}

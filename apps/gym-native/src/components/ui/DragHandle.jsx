@@ -1,7 +1,10 @@
 import { View } from 'react-native'
 import { GestureDetector } from 'react-native-gesture-handler'
 import { GripVertical } from 'lucide-react-native'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
+
+// What the handle took around its icon before it grew to the touch-target box.
+const LAYOUT_PADDING = 4
 
 // Asa de arrastre de una fila reordenable: el ÚNICO punto que lleva el gesto, para que el resto de
 // la fila conserve sus pulsaciones y siga scrolleando la pantalla con el dedo.
@@ -14,6 +17,9 @@ import { colors } from '../../lib/styles'
 // habría leído la bandera cuando llegase un `runOnJS` desde el `onStart` del pan.
 export default function DragHandle({ dragHandleProps, disabled = false, size = 16, onPressStart, onPressEnd }) {
   if (!dragHandleProps) return null
+  // 44pt de zona táctil mida lo que mida el icono, sin mover el icono: el margen negativo devuelve
+  // al layout el tamaño de antes (icono + 2*4).
+  const padding = (design.minTouchTarget - size) / 2
 
   return (
     <GestureDetector gesture={dragHandleProps.gesture}>
@@ -29,10 +35,9 @@ export default function DragHandle({ dragHandleProps, disabled = false, size = 1
         }}
         onResponderRelease={() => onPressEnd?.()}
         onResponderTerminate={() => onPressEnd?.()}
-        // 44px de zona táctil sin mover el icono: el margen negativo devuelve al layout el tamaño de
-        // antes (16 + 2*4). Con tamaño real y no con `hitSlop`, porque el pan de RNGH mide la caja
-        // de la vista y no está verificado que respete el `hitSlop` de RN.
-        style={{ padding: 14, margin: -10, opacity: disabled ? 0.4 : 1 }}
+        // Con tamaño real y no con `hitSlop`, porque el pan de RNGH mide la caja de la vista y no
+        // está verificado que respete el `hitSlop` de RN.
+        style={{ padding, margin: -(padding - LAYOUT_PADDING), opacity: disabled ? 0.4 : 1 }}
       >
         <GripVertical size={size} color={colors.textSecondary} />
       </View>

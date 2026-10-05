@@ -129,3 +129,27 @@ describe('EndSessionModal — slow and failed end', () => {
     expect(screen.getByText('No se pudo finalizar el entrenamiento. Inténtalo de nuevo.')).toBeInTheDocument()
   })
 })
+
+describe('EndSessionModal — close button', () => {
+  it('is a named 44px button that closes the modal', () => {
+    const onClose = vi.fn()
+    renderModal({ onClose })
+
+    const close = screen.getByRole('button', { name: 'Cerrar' })
+    expect(close).toHaveClass('w-11', 'h-11')
+    fireEvent.click(close)
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('while the session is being saved it is disabled and does not close', () => {
+    const onClose = vi.fn()
+    renderModal({ onClose, isPending: true })
+
+    const close = screen.getByRole('button', { name: 'Cerrar' })
+    fireEvent.click(close)
+
+    expect(close).toBeDisabled()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+})

@@ -7,7 +7,8 @@ import Svg, { Circle } from 'react-native-svg'
 import { useRestTimer } from '../../hooks/useWorkout'
 import { formatSecondsToMMSS } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
-import { colors } from '../../lib/styles'
+import { colors, design } from '../../lib/styles'
+import { IconButton } from '../ui'
 
 const CIRCLE_SIZE = 220
 const STROKE_WIDTH = 6
@@ -65,14 +66,17 @@ export default function RestTimer() {
 
   if (minimized) {
     return (
+      // + 4, not + 8: the Pressable is the 44pt box and the pill inside it (~38) stays where it was.
       <Animated.View {...panResponder.panHandlers}
         className="absolute self-center z-50"
-        style={{ top: insets.top + 8, transform: pan.getTranslateTransform() }}>
-        <Pressable onPress={() => setMinimized(false)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bgSecondary, borderWidth: 2, borderColor: timerColor }}
+        style={{ top: insets.top + 4, transform: pan.getTranslateTransform() }}>
+        <Pressable onPress={() => setMinimized(false)} accessibilityRole="button"
+          style={{ minHeight: design.minTouchTarget, justifyContent: 'center' }}
           className="active:opacity-70">
-          <Text style={{ color: timerColor, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{timeDisplay}</Text>
-          <Maximize2 size={14} color={colors.textSecondary} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bgSecondary, borderWidth: 2, borderColor: timerColor }}>
+            <Text style={{ color: timerColor, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{timeDisplay}</Text>
+            <Maximize2 size={14} color={colors.textSecondary} />
+          </View>
         </Pressable>
       </Animated.View>
     )
@@ -94,11 +98,7 @@ export default function RestTimer() {
                 {t('workout:rest.title').toUpperCase()}
               </Text>
             </View>
-            <Pressable onPress={() => setMinimized(true)}
-              style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bgTertiary, alignItems: 'center', justifyContent: 'center' }}
-              className="active:opacity-70">
-              <ChevronDown size={18} color={colors.textSecondary} />
-            </Pressable>
+            <IconButton icon={ChevronDown} filled label={t('workout:rest.minimize')} onPress={() => setMinimized(true)} />
           </View>
 
           {/* Circular timer */}
@@ -126,12 +126,12 @@ export default function RestTimer() {
           {/* Adjust pills */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 24 }}>
             <Pressable onPress={() => addTime(-15)}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bgTertiary }}
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bgTertiary }}
               className="active:opacity-70">
               <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>− 15s</Text>
             </Pressable>
             <Pressable onPress={() => addTime(15)}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bgTertiary }}
+              style={{ minHeight: design.minTouchTarget, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bgTertiary }}
               className="active:opacity-70">
               <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '500' }}>+ 15s</Text>
             </Pressable>

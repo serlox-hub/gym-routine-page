@@ -90,9 +90,9 @@ function exerciseHandle(page, name) {
   return exerciseHeader(page, name).locator('button').first()
 }
 
-/** The purple header's handle, sibling of its label. */
+/** The purple header's handle: the label sits in the header's button, the handle beside it. */
 function supersetHandle(page) {
-  return page.getByText('Superset A', { exact: true }).locator('xpath=..').locator('button')
+  return page.getByText('Superset A', { exact: true }).locator('xpath=../..').locator('button[aria-hidden="true"]')
 }
 
 /** Y just below the card of individual `name` (its header's parent): dropping there lands after it. */

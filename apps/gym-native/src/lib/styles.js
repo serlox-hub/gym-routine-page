@@ -66,7 +66,7 @@ export const design = {
   tabContentPaddingBottom: 100,
 
   // Smallest box a tap control may have (Apple HIG: 44pt). The visible control may be
-  // smaller; the pressable around it is not. Web uses Tailwind's h-11 / w-11 (44px).
+  // smaller; the pressable around it is not. Web classes use Tailwind's h-11 / w-11 (44px).
   minTouchTarget: 44,
 
   // Routine card

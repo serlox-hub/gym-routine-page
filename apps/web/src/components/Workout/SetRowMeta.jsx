@@ -38,9 +38,13 @@ function SetRowMeta({
   const targetHint = formatSetTargetHint(trackedFields, target, targetField)
   if (!previousSet && !showProgressionHint && !showTimer && !targetHint) return null
 
+  // Its tap controls (PreviousSetLine, the progression "why", ExecutionTimer) are 44px boxes, and
+  // the item holding each one (this row's direct child) has `-my-2`: the box takes this row's
+  // py-2, so the row is 44 and not 60. gap-y-4 is that overflow twice: when items wrap, the boxes
+  // of two lines meet instead of overlapping.
   return (
     <div
-      className="flex items-center flex-wrap gap-x-3 gap-y-1 py-2"
+      className="flex items-center flex-wrap gap-x-3 gap-y-4 py-2"
       style={{ borderTop: `1px solid ${colors.border}` }}
     >
       {targetHint && (

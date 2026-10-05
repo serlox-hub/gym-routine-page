@@ -58,7 +58,8 @@
     "noDays": "Aún no hay días en esta rutina",
     "noDaysHint": "Empieza añadiendo tu primer día de entrenamiento",
     "duration": "Duración estimada",
-    "durationMin": "{{minutes}} min"
+    "durationMin": "{{minutes}} min",
+    "start": "Empezar {{name}}"
   },
   "block": {
     "warmup": "Calentamiento",
