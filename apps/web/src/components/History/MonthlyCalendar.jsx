@@ -72,7 +72,7 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, sele
       <div className="grid grid-cols-7 gap-1">
         {calendarData.map((dayData, index) => {
           if (!dayData) {
-            return <div key={`empty-${index}`} className="aspect-square" />
+            return <div key={`empty-${index}`} className="aspect-square min-h-11" />
           }
 
           const isSelected = selectedDateKey === dayData.dateKey
@@ -81,7 +81,7 @@ function MonthlyCalendar({ sessions, onDayClick, currentDate, onDateChange, sele
             <div
               key={dayData.dateKey}
               onClick={() => onDayClick?.(dayData)}
-              className="aspect-square rounded p-1 flex flex-col cursor-pointer hover:opacity-80"
+              className="aspect-square min-h-11 rounded p-1 flex flex-col cursor-pointer hover:opacity-80"
               style={{
                 backgroundColor: isSelected ? colors.successBg : colors.bgTertiary,
                 border: isSelected ? `1px solid ${colors.success}` : dayData.isToday ? `1px solid ${colors.textMuted}` : '1px solid transparent',

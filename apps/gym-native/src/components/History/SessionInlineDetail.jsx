@@ -219,7 +219,11 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
       <Pressable
         onPress={isHistoryClickable ? () => setShowHistory(true) : undefined}
         disabled={!isHistoryClickable}
-        className={`flex-row items-start justify-between gap-2 mb-3 ${isHistoryClickable ? 'active:opacity-70' : ''}`}
+        className={`flex-row items-center justify-between gap-2 ${isHistoryClickable ? 'active:opacity-70' : ''}`}
+        // A 44pt touch target. marginTop -10 sits it in the card's p-3 (inside the parent, so Android
+        // still gets the touches) and paddingVertical 10 gives it back, so the name stays 12pt from
+        // the top even when it wraps to two lines.
+        style={{ minHeight: design.minTouchTarget, marginTop: -10, paddingVertical: 10 }}
       >
         <View className="flex-1 flex-row flex-wrap items-center gap-2">
           <Text

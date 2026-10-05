@@ -107,7 +107,7 @@ function HistoryTab({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUn
             <Pressable
               onPress={() => onSessionClick(session.sessionId, session.date)}
               className="active:opacity-70"
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 }}
+              style={{ minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 }}
             >
               <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '700' }}>
                 {formatShortDate(session.date)}
