@@ -43,7 +43,9 @@ import {
   useUpdateExercise,
   useDeleteExercise,
   useRecentExerciseStats,
+  usePromptExerciseCatalog,
 } from './useExercises.js'
+import { PROMPT_CATALOG_STATUS } from '../lib/routineIO.js'
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -198,5 +200,44 @@ describe('useRecentExerciseStats', () => {
     expect(result.current.data).toEqual(ROWS)
     await waitFor(() => expect(result.current.data).toEqual(newer))
     expect(fetchRecentExerciseStats).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('usePromptExerciseCatalog', () => {
+  const ROWS = [
+    { id: 1, name: 'Press de banca', name_en: 'Barbell Bench Press', is_system: true, muscle_group: { name: 'Pecho', name_en: 'Chest' } },
+    { id: 2, name: 'Mi press', name_en: null, is_system: false, muscle_group: { name: 'Pecho', name_en: 'Chest' } },
+  ]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('is loading with no catalog until the exercises arrive, then ready with the system catalog', async () => {
+    let resolveFetch
+    fetchExercisesWithMuscleGroup.mockReturnValueOnce(new Promise(resolve => { resolveFetch = resolve }))
+
+    const { result } = renderHook(() => usePromptExerciseCatalog(), { wrapper: createWrapper() })
+
+    expect(result.current).toMatchObject({ status: PROMPT_CATALOG_STATUS.LOADING, catalog: '' })
+
+    resolveFetch(ROWS)
+    await waitFor(() => expect(result.current.status).toBe(PROMPT_CATALOG_STATUS.READY))
+    expect(result.current.catalog).toContain('## Chest\n- Barbell Bench Press')
+    expect(result.current.catalog).not.toContain('Mi press')
+  })
+
+  it('reports the error, and retry loads the catalog', async () => {
+    fetchExercisesWithMuscleGroup.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(ROWS)
+
+    const { result } = renderHook(() => usePromptExerciseCatalog(), { wrapper: createWrapper() })
+
+    await waitFor(() => expect(result.current.status).toBe(PROMPT_CATALOG_STATUS.ERROR))
+    expect(result.current.catalog).toBe('')
+
+    act(() => { result.current.retry() })
+
+    await waitFor(() => expect(result.current.status).toBe(PROMPT_CATALOG_STATUS.READY))
+    expect(fetchExercisesWithMuscleGroup).toHaveBeenCalledTimes(2)
   })
 })

@@ -603,6 +603,65 @@ describe('importRoutine', () => {
     expect(insertedTables).toEqual([])
   })
 
+  // A failed catalog read used to look like an empty catalog: every exercise in the JSON was then
+  // created as a custom duplicate, with no GIF and no muscle group (#159). It must abort before
+  // anything is written, whichever of the two reads failed.
+  it.each([
+    ['the system catalog', false],
+    ['the user\'s own exercises', true],
+  ])('aborts with the read error and writes nothing when reading %s fails', async (_name, failCustomRead) => {
+    const readError = { code: '57014', message: 'canceling statement due to statement timeout' }
+    const insertedTables = []
+
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'exercises') {
+          let isCustomQuery = false
+          const chain = {
+            select: vi.fn(() => chain),
+            eq: vi.fn((column) => { if (column === 'user_id') isCustomQuery = true; return chain }),
+            is: vi.fn(() => chain),
+            then: (resolve) => resolve(isCustomQuery === failCustomRead
+              ? { data: null, error: readError }
+              : { data: [], error: null }),
+            insert: vi.fn(() => {
+              insertedTables.push(table)
+              return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'ex-new' }, error: null }) }
+            }),
+          }
+          return chain
+        }
+        if (table === 'muscle_groups') {
+          const p = Promise.resolve({ data: [], error: null })
+          return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        return {
+          insert: vi.fn(() => {
+            insertedTables.push(table)
+            return { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1` }, error: null }), then: (resolve) => resolve({ data: null, error: null }) }
+          }),
+        }
+      },
+    }))
+
+    await expect(importRoutine({
+      version: ROUTINE_EXPORT_VERSION,
+      // Unmatched against an empty catalog: if the failed read were swallowed, this exercise would
+      // be inserted, followed by the routine, its day and its row.
+      exercises: [{ name_es: 'Plancha frontal', name_en: 'Plank', tracked_fields: ['time'] }],
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [{ exercise_name: 'Plancha frontal', series: 3, reps: '30s' }] },
+          ] },
+        ],
+      },
+    }, 'user-1', {})).rejects.toBe(readError)
+
+    expect(insertedTables).toEqual([])
+  })
+
   // El JSON es entrada NO confiable (la genera una IA o se edita a mano) y los CHECK de las
   // columnas nuevas convertirían un valor raro en un 23514/22P02 que aborta el import ENTERO.
   it('sanea el campo objetivo y el nivel de un JSON con valores imposibles', async () => {
@@ -610,9 +669,9 @@ describe('importRoutine', () => {
     const systemRow = { id: 'sys-bench', name_es: 'Press banca', name_en: 'Bench Press' }
     const json = {
       version: 8,
-      // Sin catálogo de ejercicios: el día referencia por nombre y no se sabe qué mide, así que
-      // `target_field` no se puede validar contra los campos y solo queda comprobar que es un
-      // campo objetivo real.
+      // No exercise definitions in the JSON and no tracked_fields on the row: nothing says what it
+      // tracks, so `target_field` cannot be checked against the fields, only that it is a real
+      // target field.
       routine: {
         name: 'R', description: null,
         days: [
@@ -743,61 +802,134 @@ describe('importRoutine', () => {
     expect(insertCalls['routine_exercises'][0].exercise_id).toBe('sys-bench')
   })
 
+  // Imports a routine with one day exercise and returns the routine_exercises row it inserted. The
+  // exercise reads return only the columns the query selects: dropping `tracked_fields` from the
+  // select fails here instead of silently falling back to the JSON's fields or the RIR scale.
+  async function importSingleRoutineExercise({ dayExercise, exercises, systemRows = [], customRows = [], options = {} }) {
+    const routineExerciseRows = []
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (table === 'exercises') {
+          let columns = []
+          let isCustomQuery = false
+          const chain = {
+            select: vi.fn((selected) => { columns = selected.split(',').map(column => column.trim()); return chain }),
+            eq: vi.fn((column) => { if (column === 'user_id') isCustomQuery = true; return chain }),
+            is: vi.fn(() => chain),
+            then: (resolve) => resolve({
+              data: (isCustomQuery ? customRows : systemRows).map(row => Object.fromEntries(columns.map(column => [column, row[column]]))),
+              error: null,
+            }),
+            update: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) })),
+            insert: vi.fn(() => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'ex-new' }, error: null }) })),
+          }
+          return chain
+        }
+        if (table === 'muscle_groups') {
+          const p = Promise.resolve({ data: [], error: null })
+          return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return { insert: vi.fn((record) => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) })) }
+        }
+        return { insert: vi.fn((rows) => { routineExerciseRows.push(...rows); return Promise.resolve({ data: null, error: null }) }) }
+      },
+    }))
+
+    await importRoutine({
+      version: ROUTINE_EXPORT_VERSION,
+      exercises,
+      routine: {
+        name: 'R', description: null,
+        days: [
+          { name: 'D1', sort_order: 0, blocks: [
+            { name: 'Principal', sort_order: 1, exercises: [dayExercise] },
+          ] },
+        ],
+      },
+    }, 'user-1', options)
+
+    expect(routineExerciseRows).toHaveLength(1)
+    return routineExerciseRows[0]
+  }
+
+  // Target field (issue #159): an AI can declare the wrong fields for a catalog exercise it names
+  // right, and the target must talk about something the exercise tracks in the DB.
+  describe('target field', () => {
+    const plank = { id: 'sys-plank', name_es: 'Plancha frontal', name_en: 'Plank', tracked_fields: ['time'] }
+
+    async function importTarget(setup) {
+      return (await importSingleRoutineExercise(setup)).target_field
+    }
+
+    it('resolves a matched catalog exercise against its DB fields, not the ones the JSON declares', async () => {
+      expect(await importTarget({
+        exercises: [{ name_es: 'Plancha', name_en: 'Plank', tracked_fields: ['weight', 'reps'] }],
+        dayExercise: { exercise_name: 'Plancha', series: 3, target_field: 'reps', reps: '12' },
+        systemRows: [plank],
+      })).toBe('time')
+    })
+
+    it('keeps a declared target the catalog exercise does track', async () => {
+      const bike = { id: 'sys-bike', name_es: 'Bici estática', name_en: 'Stationary Bike', tracked_fields: ['level', 'distance', 'time'] }
+      expect(await importTarget({
+        exercises: [{ name_es: 'Bici', name_en: 'Stationary Bike', tracked_fields: ['distance'] }],
+        dayExercise: { exercise_name: 'Bici', series: 1, target_field: 'time', reps: '20min' },
+        systemRows: [bike],
+      })).toBe('time')
+    })
+
+    it('a template without declared fields gets the target from the catalog fields', async () => {
+      expect(await importTarget({
+        exercises: [{ name_es: plank.name_es }],
+        dayExercise: { exercise_name: plank.name_es, series: 3, reps: '30s' },
+        systemRows: [plank],
+      })).toBe('time')
+    })
+
+    it('a created exercise resolves against the fields it was created with', async () => {
+      expect(await importTarget({
+        exercises: [{ name_es: 'Wall sit', tracked_fields: ['time'] }],
+        dayExercise: { exercise_name: 'Wall sit', series: 3, target_field: 'reps', reps: '45s' },
+      })).toBe('time')
+    })
+
+    it('a day exercise without a definition in the JSON resolves against the catalog fields', async () => {
+      expect(await importTarget({
+        dayExercise: { exercise_name: plank.name_es, series: 3, target_field: 'reps', reps: '30s' },
+        systemRows: [plank],
+      })).toBe('time')
+    })
+
+    const ownWallSit = { id: 'ex-custom', name_es: 'Wall sit', name_en: null, tracked_fields: ['weight', 'reps'] }
+
+    it('an own exercise keeps its DB fields when the JSON redefines it and updateExercises is off', async () => {
+      expect(await importTarget({
+        exercises: [{ name_es: 'Wall sit', tracked_fields: ['time'] }],
+        dayExercise: { exercise_name: 'Wall sit', series: 3, target_field: 'reps', reps: '12' },
+        customRows: [ownWallSit],
+      })).toBe('reps')
+    })
+
+    it('an own exercise rewritten by updateExercises resolves against its new fields', async () => {
+      expect(await importTarget({
+        exercises: [{ name_es: 'Wall sit', tracked_fields: ['time'] }],
+        dayExercise: { exercise_name: 'Wall sit', series: 3, target_field: 'reps', reps: '45s' },
+        customRows: [ownWallSit],
+        options: { updateExercises: true },
+      })).toBe('time')
+    })
+  })
+
   // Effort scale (issue #21): the JSON is untrusted and `routine_exercises.rir` has no CHECK, so an
   // off-scale value would be saved, render like a valid one and block progression forever.
   describe('effort scale', () => {
     const bench = { id: 'sys-bench', name_es: 'Press de banca con barra', name_en: 'Barbell Bench Press', tracked_fields: ['weight', 'reps'] }
     const plank = { id: 'sys-plank', name_es: 'Plancha frontal', name_en: 'Plank', tracked_fields: ['time'] }
 
-    // Imports a one-exercise routine and returns the `rir` it inserted. The exercise reads return
-    // only the columns the query selects: dropping `tracked_fields` from the select fails here
-    // instead of silently falling back to the RIR scale.
-    async function importEffort({ name, rir, exercises, systemRows = [], customRows = [], options = {} }) {
-      const routineExerciseRows = []
-      getClient.mockImplementation(() => ({
-        from: (table) => {
-          if (table === 'exercises') {
-            let columns = []
-            let isCustomQuery = false
-            const chain = {
-              select: vi.fn((selected) => { columns = selected.split(',').map(column => column.trim()); return chain }),
-              eq: vi.fn((column) => { if (column === 'user_id') isCustomQuery = true; return chain }),
-              is: vi.fn(() => chain),
-              then: (resolve) => resolve({
-                data: (isCustomQuery ? customRows : systemRows).map(row => Object.fromEntries(columns.map(column => [column, row[column]]))),
-                error: null,
-              }),
-              update: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) })),
-              insert: vi.fn(() => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: 'ex-new' }, error: null }) })),
-            }
-            return chain
-          }
-          if (table === 'muscle_groups') {
-            const p = Promise.resolve({ data: [], error: null })
-            return { select: vi.fn().mockReturnThis(), then: p.then.bind(p) }
-          }
-          if (table === 'routines' || table === 'routine_days') {
-            return { insert: vi.fn((record) => ({ select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }) })) }
-          }
-          return { insert: vi.fn((rows) => { routineExerciseRows.push(...rows); return Promise.resolve({ data: null, error: null }) }) }
-        },
-      }))
-
-      await importRoutine({
-        version: ROUTINE_EXPORT_VERSION,
-        exercises,
-        routine: {
-          name: 'R', description: null,
-          days: [
-            { name: 'D1', sort_order: 0, blocks: [
-              { name: 'Principal', sort_order: 1, exercises: [{ exercise_name: name, series: 3, reps: '8', rir }] },
-            ] },
-          ],
-        },
-      }, 'user-1', options)
-
-      expect(routineExerciseRows).toHaveLength(1)
-      return routineExerciseRows[0].rir
+    // Imports a one-exercise routine and returns the `rir` it inserted.
+    async function importEffort({ name, rir, ...setup }) {
+      return (await importSingleRoutineExercise({ ...setup, dayExercise: { exercise_name: name, series: 3, reps: '8', rir } })).rir
     }
 
     it.each([

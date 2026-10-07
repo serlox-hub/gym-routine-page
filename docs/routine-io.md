@@ -21,6 +21,11 @@ ejercicios de sistema; los custom (sin `name_en`) casan por `name_es`. Solo crea
 custom si no hay match. El export incluye `name_en` por ejercicio (v6) para que el re-import sea
 independiente del idioma. Ver `docs/DECISIONS.md`.
 
+The AI prompts carry the system catalog by `name_en` right after the rules (`formatExerciseCatalog`)
+and tell the AI to copy those names verbatim (#159): without it the AI invented names that matched
+nothing. `name_en` because it is the importer's first key, and because the cached list
+(`useExercisesWithMuscleGroup`) overwrites `name` with the localized name.
+
 ## Qué mide cada ejercicio: `tracked_fields` (v7) vs `measurement_type` (v6 y anteriores)
 
 Desde v7 el catálogo del export lleva `tracked_fields` (array de 1 a 3 campos: `weight`, `reps`,
@@ -46,22 +51,22 @@ escribe si el JSON la declara: el default `'m'` pisaría el `'km'` que el usuari
 Desde v8 cada ejercicio de un día lleva `target_field` (`reps` | `time` | `distance` | `calories`,
 de qué campo habla el valor de `reps`) y `level` (nivel de máquina prescrito). Hasta v7 el objetivo
 era texto libre sin campo: `importRoutine` lo deriva con `importedTargetField()` (`routineIOApi.js`)
-a partir de los `tracked_fields` que declare el JSON, con la misma prioridad que aplicó el backfill
-de la migración 056 (`resolveTargetField` → `getDefaultTargetField`).
+con la misma prioridad que aplicó el backfill de la migración 056 (`resolveTargetField` →
+`getDefaultTargetField`).
 
-⚠️ Si el JSON **no declara** lo que mide el ejercicio (caso de `routineTemplates.js`, que solo trae
-`name_es` y hereda los campos del catálogo al casar), `target_field` se inserta como NULL a
-propósito: derivarlo del default `weight,reps` guardaría un objetivo de reps en una plancha. La app
-lo resuelve al leer con `resolveTargetField()`.
+The fields it resolves against are always the exercise's **in the DB** (`trackedFieldsById`, the
+same map the effort uses), never the ones the JSON declares (#159): an AI that names a catalog
+exercise right but declares the wrong fields would otherwise save a target the exercise does not
+track. The column is NOT NULL, so every resolved exercise has them; the no-fields branch of
+`importedTargetField` only guards a row read without the column.
 
 ## Effort (`rir`): validated against the fields in the DB
 
 `importRoutine` keeps a `rir` only if it is on the exercise's scale (`importedEffort()` →
 `isValidEffortValue`) and otherwise stores null, without a warning: the column has no CHECK. The
 scale comes from what the exercise tracks **in the DB** once the import has written it (catalog or
-custom row, or what it just created or rewrote with `updateExercises`), never from the JSON. That
-is why it does not reuse the name-keyed `trackedFieldsMap` of `importedTargetField()`: a template
-only carries the name, and on an existing exercise the database decides.
+custom row, or what it just created or rewrote with `updateExercises`), never from the JSON: a
+template only carries the name, and on an existing exercise the database decides.
 
 ⚠️ Old JSON still imports but loses off-scale values: until 2026-08 the AI prompt asked for `rir`
 0-5 (JSON v6 and earlier), so such a JSON with `rir: 4` or `5` on weight × reps, or `0` on an

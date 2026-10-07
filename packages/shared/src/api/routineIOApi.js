@@ -153,17 +153,20 @@ function importedDistanceUnit(exportedExercise) {
 }
 
 /**
- * Campo del que habla el objetivo de un ejercicio de un día del JSON importado.
+ * Field the target of a day's exercise in the imported JSON talks about.
  *
- * v8 en adelante lo trae explícito. En v7 y anteriores el objetivo era texto libre sin campo, así
- * que se deriva de lo que mide el ejercicio con la misma prioridad que la app venía asumiendo
- * (`resolveTargetField` → `getDefaultTargetField`), que es lo que hizo el backfill de la migración.
- * Si el día referencia un ejercicio sin definición en el JSON no se sabe qué mide: se valida que
- * al menos sea un campo objetivo real y si no se deja null, que lo resuelve la app al leer. El JSON
- * es entrada NO confiable (lo genera una IA o se edita a mano) y el CHECK de la columna convertiría
- * un `"target_field": "weight"` en un 23514 que aborta el import entero, no en un campo ignorado.
+ * v8 onwards carries it explicitly. Up to v7 the target was free text with no field, so it is
+ * derived from what the exercise tracks with the priority the app already assumed
+ * (`resolveTargetField` → `getDefaultTargetField`), which is what the migration's backfill did.
+ * What the exercise tracks comes from the DB, not the JSON: an AI that declares the wrong fields
+ * for a catalog exercise would save a target the exercise does not track (#159). With no fields
+ * (only a row read without the column, since it is NOT NULL) it is unknown, so the declared field
+ * is only checked to be a real target field and otherwise stays null, which the app resolves on
+ * read. The JSON is UNTRUSTED input (an AI
+ * writes it, or a person edits it) and the column's CHECK would turn a `"target_field": "weight"`
+ * into a 23514 that aborts the whole import, not into an ignored field.
  * @param {{target_field?: string|null}} exportedRoutineExercise
- * @param {string[]|undefined} trackedFields
+ * @param {string[]|undefined} trackedFields - what the exercise tracks in the DB
  * @returns {string|null}
  */
 function importedTargetField(exportedRoutineExercise, trackedFields) {
@@ -230,22 +233,24 @@ export async function importRoutine(jsonData, userId, options = {}) {
   // Índice del catálogo (sistema) + customs del usuario para resolver por clave estable.
   // Se cargan completos (una query cada uno) en vez de filtrar por nombre: evita el frágil
   // filtrado .in() con nombres que llevan acentos/paréntesis y habilita el match tolerante.
-  const [{ data: systemRows }, { data: customRows }] = await Promise.all([
+  const [{ data: systemRows, error: systemError }, { data: customRows, error: customError }] = await Promise.all([
     getClient().from('exercises').select('id, name_es, name_en, tracked_fields').eq('is_system', true).is('deleted_at', null),
     getClient().from('exercises').select('id, name_es, name_en, tracked_fields').eq('user_id', userId).is('deleted_at', null),
   ])
+  // A failed read is not an empty catalog: every exercise would be created as a custom duplicate.
+  if (systemError) throw systemError
+  if (customError) throw customError
   const exerciseIndex = buildExerciseIndex({ systemRows: systemRows || [], customRows: customRows || [] })
   const customIds = new Set((customRows || []).map(r => r.id))
-  // exercise_id -> what it tracks in the DB once the import has written it (decides the effort
-  // scale). Templates only carry the name, so `trackedFieldsMap` below cannot be used for this.
+  // exercise_id -> what it tracks in the DB once the import has written it. It decides the effort
+  // scale and what the target talks about: templates only carry the name, and on an existing
+  // exercise the database decides, not the fields the JSON declares (an AI can get them wrong).
   const trackedFieldsById = new Map(
     [...(systemRows || []), ...(customRows || [])].map(r => [r.id, r.tracked_fields])
   )
 
   // nombre-normalizado del export -> exercise_id (para resolver las refs de los días)
   const exerciseMap = new Map()
-  // nombre-normalizado del export -> campos que mide (para derivar el objetivo de un JSON < v8)
-  const trackedFieldsMap = new Map()
 
   // Crear o actualizar ejercicios (solo si el export incluye definiciones)
   if (exportedExercises && exportedExercises.length > 0) {
@@ -260,13 +265,6 @@ export async function importRoutine(jsonData, userId, options = {}) {
     for (const ex of exportedExercises) {
       const exName = ex.name_es || ex.name
       const matchedId = resolveExerciseId(ex, exerciseIndex)
-      // Solo si el JSON DECLARA lo que mide. Las plantillas (routineTemplates) traen solo el
-      // nombre y heredan los campos del catálogo al casar: ahí no se puede derivar el objetivo,
-      // y `importedTrackedFields` devolvería el default (peso × reps), que en una plancha
-      // guardaría un objetivo de reps.
-      if (ex.tracked_fields || ex.measurement_type) {
-        trackedFieldsMap.set(normalizeExerciseName(exName), importedTrackedFields(ex))
-      }
 
       if (matchedId) {
         exerciseMap.set(normalizeExerciseName(exName), matchedId)
@@ -356,7 +354,7 @@ export async function importRoutine(jsonData, userId, options = {}) {
             routine_day_id: newDay.id,
             exercise_id: exerciseId,
             series: ex.series,
-            target_field: importedTargetField(ex, trackedFieldsMap.get(normalizedName)),
+            target_field: importedTargetField(ex, trackedFieldsById.get(exerciseId)),
             reps: ex.reps,
             level: importedLevel(ex),
             rir: importedEffort(ex, trackedFieldsById.get(exerciseId)),

@@ -1,14 +1,16 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Sparkles, Pencil, LayoutGrid, Upload, ChevronRight, ChevronLeft, Lock, Check, Copy, FileText } from 'lucide-react'
+import { Sparkles, Pencil, LayoutGrid, Upload, ChevronRight, ChevronLeft, Lock, Check, FileText } from 'lucide-react'
 import { useUserId, useIsPremium } from '../../hooks/useAuth.js'
 import { useCreateRoutine } from '../../hooks/useRoutines.js'
+import { usePromptExerciseCatalog } from '../../hooks/useExercises.js'
 import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui/index.js'
 import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, getNotifier, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { readJsonFile } from '../../lib/routineIO.js'
 import { colors } from '../../lib/styles.js'
+import CopyPromptButton from './CopyPromptButton.jsx'
 
 // ============================================
 // MENU VIEW
@@ -158,8 +160,10 @@ function ChatbotView({ onImport, step, setStep, t }) {
   const [jsonError, setJsonError] = useState('')
   const [form, setForm] = useState({ objetivo: '', objetivoCustom: '', diasPorSemana: '', duracionSesion: 60, nivelExperiencia: '', notas: '' })
 
+  const catalog = usePromptExerciseCatalog()
+
   const goal = form.objetivo === 'custom' ? form.objetivoCustom : form.objetivo
-  const prompt = buildChatbotPrompt({ ...form, objetivo: goal })
+  const prompt = buildChatbotPrompt({ ...form, objetivo: goal }, catalog.catalog)
 
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText(prompt) }
@@ -311,10 +315,7 @@ function ChatbotView({ onImport, step, setStep, t }) {
           {t('common:buttons.next')}
         </button>
       ) : step === 5 ? (
-        <button onClick={() => { handleCopy(); setStep(6) }} className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-          style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
-          <Copy size={16} /> {t('routine:chatbot.copyPrompt')}
-        </button>
+        <CopyPromptButton status={catalog.status} onCopy={() => { handleCopy(); setStep(6) }} onRetry={catalog.retry} />
       ) : (
         <button onClick={() => {
           setJsonError('')
@@ -485,7 +486,8 @@ function ImportFileView({ onImport, t }) {
 // ============================================
 
 function AdaptView({ onImport, step, setStep, t }) {
-  const adaptPrompt = buildAdaptRoutinePrompt()
+  const catalog = usePromptExerciseCatalog()
+  const adaptPrompt = buildAdaptRoutinePrompt(catalog.catalog)
   const [jsonText, setJsonText] = useState('')
   const [jsonError, setJsonError] = useState('')
 
@@ -552,11 +554,7 @@ function AdaptView({ onImport, step, setStep, t }) {
           {t('common:buttons.next')} <ChevronRight size={16} />
         </button>
       ) : step === 2 ? (
-        <button onClick={() => { handleCopy(); setStep(3) }} className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-          style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
-          <Copy size={16} />
-          {t('routine:chatbot.copyPrompt')}
-        </button>
+        <CopyPromptButton status={catalog.status} onCopy={() => { handleCopy(); setStep(3) }} onRetry={catalog.retry} />
       ) : step === 3 ? (
         <button onClick={() => {
           setJsonError('')

@@ -203,6 +203,7 @@
     "generate": "Generate routine",
     "generating": "Generating...",
     "copyPrompt": "Copy prompt",
+    "catalogLoadError": "Couldn't load the exercise list. Check your connection and try again.",
     "copyInstructions": "Copy the prompt and paste it into your favorite AI chatbot",
     "promptInstructions": "Copy this prompt and paste it into ChatGPT, Claude, or another AI chatbot",
     "yourPrompt": "Your prompt",

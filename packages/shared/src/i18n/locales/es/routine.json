@@ -203,6 +203,7 @@
     "generate": "Generar rutina",
     "generating": "Generando...",
     "copyPrompt": "Copiar prompt",
+    "catalogLoadError": "No se ha podido cargar la lista de ejercicios. Comprueba la conexión y vuelve a intentarlo.",
     "copyInstructions": "Copia el prompt y pégalo en tu chatbot de IA favorito",
     "promptInstructions": "Copia este prompt y pégalo en ChatGPT, Claude u otro chatbot de IA",
     "yourPrompt": "Tu prompt",
