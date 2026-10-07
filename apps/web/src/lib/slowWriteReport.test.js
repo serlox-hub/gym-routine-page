@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import * as Sentry from '@sentry/react'
-import { readSessionExpiresAt, reportSlowWrite } from './slowWriteReport.js'
+import { fitTimeline, readSessionExpiresAt, reportSlowWrite } from './slowWriteReport.js'
 
 const KEY = 'sb-ref-auth-token'
 
@@ -109,6 +109,56 @@ describe('reportSlowWrite', () => {
 
     expect(event.extra).toMatchObject({ durationMs: 21_000, sessionExpiresInMs: -60_000 })
     expect(event.extra.pauses).toEqual(payload.pauses)
-    expect(event.extra.timeline.map((entry) => JSON.parse(entry))).toEqual(payload.timeline)
+    expect(event.extra.timelineDropped).toBe(0)
+    const [entry] = event.extra.timeline.map((serialized) => JSON.parse(serialized))
+    expect(entry.timing).toEqual({
+      startTime: -1199, fetchStart: -1198, responseEnd: 19_600, duration: 20_799, nextHopProtocol: 'h2',
+    })
+  })
+})
+
+describe('fitTimeline', () => {
+  const request = (start) => ({ kind: 'request', path: '/rest/v1/sets', start, end: null, timing: null })
+
+  it('drops null fields', () => {
+    expect(fitTimeline([request(5)]).timeline).toEqual(['{"kind":"request","path":"/rest/v1/sets","start":5}'])
+  })
+
+  it('keeps the newest entries that fit and counts the dropped ones', () => {
+    const size = JSON.stringify(request(10)).length - '"end":null,"timing":null,'.length
+
+    const fitted = fitTimeline([request(10), request(20), request(30)], size * 2)
+
+    expect(fitted.timeline.map((entry) => JSON.parse(entry).start)).toEqual([20, 30])
+    expect(fitted.timelineDropped).toBe(1)
+  })
+
+  it('keeps everything when it fits', () => {
+    expect(fitTimeline([request(10), request(20)]).timelineDropped).toBe(0)
+  })
+
+  it('drops everything when the newest entry alone is over the budget', () => {
+    expect(fitTimeline([request(10), request(20)], 5)).toEqual({ timeline: [], timelineDropped: 2 })
+  })
+
+  it('keeps an entry that exactly fills the budget', () => {
+    const exact = '{"kind":"request","path":"/rest/v1/sets","start":5}'.length
+
+    expect(fitTimeline([request(5)], exact).timelineDropped).toBe(0)
+    expect(fitTimeline([request(5)], exact - 1).timelineDropped).toBe(1)
+  })
+
+  it('stops at the first misfit instead of skipping to a smaller older entry', () => {
+    const big = { kind: 'request', path: `/${'x'.repeat(200)}`, start: 1 }
+    const small = (start) => ({ kind: 'request', path: '/a', start })
+
+    const fitted = fitTimeline([small(0), big, small(2)], 100)
+
+    expect(fitted.timeline.map((entry) => JSON.parse(entry).start)).toEqual([2])
+    expect(fitted.timelineDropped).toBe(2)
+  })
+
+  it('returns an empty timeline for an empty one', () => {
+    expect(fitTimeline([])).toEqual({ timeline: [], timelineDropped: 0 })
   })
 })
