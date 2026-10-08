@@ -248,3 +248,32 @@ ${jsonOnly}
 ${myRoutine}
 `
 }
+
+// iOS Smart Punctuation and some AI chat apps turn straight double quotes into these (#162).
+const CURLY_DOUBLE_QUOTES = /[\u201C\u201D]/g
+
+/**
+ * Parses a routine export pasted by the user or read from a file. When the text is not JSON, it
+ * retries with the curly double quotes straightened. The raw text goes first because in valid
+ * JSON a curly quote can only sit inside a value (a note like "“slow” eccentric"), and it must
+ * survive. Single curly quotes are never touched: JSON has no single-quote syntax, so they are
+ * apostrophes ("Farmer’s Walk").
+ * @param {string} text Raw pasted or file text
+ * @returns {object} The parsed routine export, with a truthy `routine.name`
+ * @throws {Error} With the message 'invalid' when the text is not JSON (even with the quotes
+ *   straightened) or has no routine.name
+ */
+export function parseRoutineJson(text) {
+  let data
+  try {
+    data = JSON.parse(text)
+  } catch {
+    try {
+      data = JSON.parse(text.replace(CURLY_DOUBLE_QUOTES, '"'))
+    } catch {
+      throw new Error('invalid')
+    }
+  }
+  if (!data?.routine?.name) throw new Error('invalid')
+  return data
+}

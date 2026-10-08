@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildChatbotPrompt, buildAdaptRoutinePrompt, formatExerciseCatalog, getPromptCatalogStatus, PROMPT_CATALOG_STATUS, ROUTINE_JSON_FORMAT, ROUTINE_JSON_RULES } from './routineIO.js'
+import { buildChatbotPrompt, buildAdaptRoutinePrompt, formatExerciseCatalog, getPromptCatalogStatus, parseRoutineJson, PROMPT_CATALOG_STATUS, ROUTINE_JSON_FORMAT, ROUTINE_JSON_RULES } from './routineIO.js'
 
 describe('routineIO - funciones puras (shared)', () => {
   describe('buildChatbotPrompt', () => {
@@ -283,6 +283,52 @@ describe('routineIO - funciones puras (shared)', () => {
       expect(ROUTINE_JSON_RULES).toContain('EXERCISE CATALOG')
       expect(ROUTINE_JSON_RULES).toMatch(/name_en: .*REQUIRED/)
       expect(ROUTINE_JSON_FORMAT).not.toMatch(/"name_en": .*optional/)
+    })
+  })
+
+  describe('parseRoutineJson', () => {
+    // As iOS Smart Punctuation produced it in the routines pasted on 2026-10-07 (#162).
+    const CURLY_FIXTURE = '{ “version”: 10, “exercises”: [ { “name_es”: “Prensa de piernas”, “name_en”: “Leg Press”, “tracked_fields”: [“weight”, “reps”], “muscle_group_name”: “Cuádriceps” } ], “routine”: { “name”: “Pierna A”, “days”: [ { “name”: “Día 1”, “exercises”: [ { “exercise_name”: “Prensa de piernas”, “series”: 3, “target_field”: “reps”, “reps”: “8-12”, “rir”: 1, “rest_seconds”: 120 } ] } ] } }'
+
+    it('parses valid JSON exactly as JSON.parse, keeping curly quotes inside a value', () => {
+      const text = JSON.stringify({
+        version: 10,
+        routine: { name: 'Pierna A', days: [{ name: 'Día 1', exercises: [{ exercise_name: 'Prensa', notes: '“slow” eccentric' }] }] },
+      })
+
+      const data = parseRoutineJson(text)
+
+      expect(data).toEqual(JSON.parse(text))
+      expect(data.routine.days[0].exercises[0].notes).toBe('“slow” eccentric')
+    })
+
+    it('parses a routine whose structural quotes are curly', () => {
+      const data = parseRoutineJson(CURLY_FIXTURE)
+
+      expect(data.routine.name).toBe('Pierna A')
+      expect(data.exercises[0].tracked_fields).toEqual(['weight', 'reps'])
+      expect(data.routine.days[0].exercises[0].reps).toBe('8-12')
+    })
+
+    it('keeps an apostrophe inside a value when it straightens the double quotes', () => {
+      const data = parseRoutineJson('{ “exercises”: [ { “name_en”: “Farmer’s Walk” } ], “routine”: { “name”: “Pierna A” } }')
+
+      expect(data.exercises[0].name_en).toBe('Farmer’s Walk')
+    })
+
+    it('does not treat single curly quotes as JSON quotes', () => {
+      expect(() => parseRoutineJson('{ ‘routine’: { ‘name’: ‘Pierna A’ } }')).toThrow(/^invalid$/)
+    })
+
+    it.each([
+      ['non-JSON text', 'Pierna A: sentadilla 3x8'],
+      ['an empty string', ''],
+      ['JSON without a routine', '{"version": 10}'],
+      ['JSON without routine.name', '{"routine": {"days": []}}'],
+      ['curly JSON without routine.name', '{ “routine”: { “days”: [] } }'],
+      ['JSON null', 'null'],
+    ])('throws "invalid" for %s', (_name, text) => {
+      expect(() => parseRoutineJson(text)).toThrow(/^invalid$/)
     })
   })
 })

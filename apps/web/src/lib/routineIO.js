@@ -1,3 +1,5 @@
+import { parseRoutineJson } from '@gym/shared'
+
 // Re-export pure parts from shared for backward compatibility
 export { ROUTINE_JSON_FORMAT, ROUTINE_JSON_RULES, buildChatbotPrompt, buildAdaptRoutinePrompt } from '@gym/shared'
 
@@ -22,14 +24,14 @@ export function downloadRoutineAsJson(data, filename) {
 }
 
 /**
- * Lee un archivo JSON
+ * Reads a routine export file, parsed and checked by parseRoutineJson
  */
 export function readJsonFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target.result)
+        const data = parseRoutineJson(e.target.result)
         resolve(data)
       } catch {
         reject(new Error('Error al leer el archivo JSON'))

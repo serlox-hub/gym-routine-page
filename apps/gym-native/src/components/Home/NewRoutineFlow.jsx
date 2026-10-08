@@ -9,7 +9,7 @@ import { useUserId, useIsPremium } from '../../hooks/useAuth'
 import { useCreateRoutine } from '../../hooks/useRoutines'
 import { usePromptExerciseCatalog } from '../../hooks/useExercises'
 import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui'
-import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData } from '@gym/shared'
+import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData, parseRoutineJson } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { colors } from '../../lib/styles'
 import CopyPromptButton from './CopyPromptButton'
@@ -271,8 +271,7 @@ function ChatbotView({ onImport, step, setStep, t }) {
         <Pressable onPress={() => {
           setJsonError('')
           try {
-            const data = JSON.parse(jsonText)
-            if (!data?.routine?.name) throw new Error('invalid')
+            const data = parseRoutineJson(jsonText)
             onImport(data)
           } catch { setJsonError(t('common:import.invalidFormat')) }
         }} disabled={!jsonText.trim()}
@@ -296,8 +295,7 @@ function ImportView({ onImport, onNavigate, t }) {
   const handleTextImport = () => {
     setError('')
     try {
-      const data = JSON.parse(jsonText)
-      if (!data?.routine?.name) throw new Error('invalid')
+      const data = parseRoutineJson(jsonText)
       onImport(data)
     } catch { setError(t('common:import.invalidFormat')) }
   }
@@ -376,8 +374,7 @@ function ImportFileView({ onImport, t }) {
       setFileName(result.assets[0].name)
       const file = new File(uri)
       const content = await file.text()
-      const data = JSON.parse(content)
-      if (!data?.routine?.name) throw new Error('invalid')
+      const data = parseRoutineJson(content)
       setParsedData(data)
     } catch {
       setError(t('common:import.invalidFormat'))
@@ -494,8 +491,7 @@ function AdaptView({ onImport, step, setStep, t }) {
         <Pressable onPress={() => {
           setJsonError('')
           try {
-            const data = JSON.parse(jsonText)
-            if (!data?.routine?.name) throw new Error('invalid')
+            const data = parseRoutineJson(jsonText)
             onImport(data)
           } catch { setJsonError(t('common:import.invalidFormat')) }
         }} disabled={!jsonText.trim()}
