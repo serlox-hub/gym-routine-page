@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
 import { View, Text, Pressable, ScrollView, TextInput, Alert, Animated, Dimensions, Linking } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Sparkles, Pencil, LayoutGrid, Upload, ChevronRight, ChevronLeft, Lock, Check, Copy, FileText } from 'lucide-react-native'
+import { Sparkles, Pencil, LayoutGrid, Upload, ChevronRight, ChevronLeft, Lock, Check, FileText } from 'lucide-react-native'
 import * as DocumentPicker from 'expo-document-picker'
 import * as Clipboard from 'expo-clipboard'
 import { File } from 'expo-file-system'
 import { useUserId, useIsPremium } from '../../hooks/useAuth'
 import { useCreateRoutine } from '../../hooks/useRoutines'
+import { usePromptExerciseCatalog } from '../../hooks/useExercises'
 import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui'
 import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { colors } from '../../lib/styles'
+import CopyPromptButton from './CopyPromptButton'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -122,8 +124,10 @@ function ChatbotView({ onImport, step, setStep, t }) {
   const [jsonError, setJsonError] = useState('')
   const [form, setForm] = useState({ objetivo: '', objetivoCustom: '', diasPorSemana: '', duracionSesion: 60, nivelExperiencia: '', notas: '' })
 
+  const catalog = usePromptExerciseCatalog()
+
   const goal = form.objetivo === 'custom' ? form.objetivoCustom : form.objetivo
-  const prompt = buildChatbotPrompt({ ...form, objetivo: goal })
+  const prompt = buildChatbotPrompt({ ...form, objetivo: goal }, catalog.catalog)
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(prompt)
@@ -262,11 +266,7 @@ function ChatbotView({ onImport, step, setStep, t }) {
           <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.next')}</Text>
         </Pressable>
       ) : step === 5 ? (
-        <Pressable onPress={() => { handleCopy(); setStep(6) }}
-          style={{ flexDirection: 'row', backgroundColor: colors.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <Copy size={16} color={colors.bgPrimary} />
-          <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('routine:chatbot.copyPrompt')}</Text>
-        </Pressable>
+        <CopyPromptButton status={catalog.status} onCopy={() => { handleCopy(); setStep(6) }} onRetry={catalog.retry} />
       ) : (
         <Pressable onPress={() => {
           setJsonError('')
@@ -423,7 +423,8 @@ function ImportFileView({ onImport, t }) {
 // ============================================
 
 function AdaptView({ onImport, step, setStep, t }) {
-  const adaptPrompt = buildAdaptRoutinePrompt()
+  const catalog = usePromptExerciseCatalog()
+  const adaptPrompt = buildAdaptRoutinePrompt(catalog.catalog)
   const [jsonText, setJsonText] = useState('')
   const [jsonError, setJsonError] = useState('')
 
@@ -488,9 +489,7 @@ function AdaptView({ onImport, step, setStep, t }) {
           <ChevronRight size={16} color={colors.bgPrimary} />
         </Pressable>
       ) : step === 2 ? (
-        <Pressable onPress={() => { handleCopy(); setStep(3) }} style={{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
-          <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('routine:chatbot.copyPrompt')}</Text>
-        </Pressable>
+        <CopyPromptButton status={catalog.status} onCopy={() => { handleCopy(); setStep(3) }} onRetry={catalog.retry} />
       ) : step === 3 ? (
         <Pressable onPress={() => {
           setJsonError('')

@@ -14,8 +14,6 @@ const SIZES = {
   lg: { container: 'px-6 py-3.5', text: 'text-lg' },
 }
 
-const BLOCKED_OPACITY = 0.5
-
 // `blocked`: not available, but it still answers (the "botón bloqueado" pattern in CLAUDE.md):
 // dimmed with no press feedback, and the press goes through so the caller can say why.
 // `disabled`/`loading` are for transient states only. On the solid lime of `primary` only the
@@ -51,17 +49,17 @@ export default function Button({
         // `md` and `lg` already clear the touch-target minimum with their padding; `sm` does not.
         ...(size === 'sm' ? { minHeight: design.minTouchTarget } : null),
         // Only when set: an `opacity: undefined` would override the className's `opacity-50`.
-        ...(isBlocked && !dimsLabelOnly ? { opacity: BLOCKED_OPACITY } : null),
+        ...(isBlocked && !dimsLabelOnly ? { opacity: design.blockedOpacity } : null),
       }}
     >
       {loading ? (
         <ActivityIndicator size="small" color={v.text} />
       ) : typeof children === 'string' ? (
-        <Text className={`font-semibold text-center ${s.text} ${textClassName}`} style={{ color: v.text, ...(dimsLabelOnly ? { opacity: BLOCKED_OPACITY } : null) }}>
+        <Text className={`font-semibold text-center ${s.text} ${textClassName}`} style={{ color: v.text, ...(dimsLabelOnly ? { opacity: design.blockedOpacity } : null) }}>
           {children}
         </Text>
       ) : (
-        <Text className={`font-semibold text-center ${s.text} ${textClassName}`} style={{ color: v.text, ...(dimsLabelOnly ? { opacity: BLOCKED_OPACITY } : null) }}>
+        <Text className={`font-semibold text-center ${s.text} ${textClassName}`} style={{ color: v.text, ...(dimsLabelOnly ? { opacity: design.blockedOpacity } : null) }}>
           {children}
         </Text>
       )}

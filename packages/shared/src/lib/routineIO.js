@@ -6,7 +6,7 @@ export const ROUTINE_JSON_FORMAT = `\`\`\`json
   "exercises": [
     {
       "name_es": "Exercise name in Spanish",
-      "name_en": "Exercise name in English (optional, improves catalog matching)",
+      "name_en": "Exercise name in English, copied verbatim from the catalog when it is there",
       "tracked_fields": ["weight", "reps"],
       "distance_unit": "m",
       "muscle_group_name": "Pecho",
@@ -56,10 +56,11 @@ export const ROUTINE_JSON_RULES = `IMPORTANT RULES:
 2. The "exercise_name" must EXACTLY match the "name_es" of the exercise
 3. Each day must have exactly 2 blocks: "Calentamiento" (sort_order: 0) and "Principal" (sort_order: 1)
 4. Days must have sequential sort_order starting at 0
+5. If this prompt includes an EXERCISE CATALOG, use its exercises: when one fits, copy its name into "name_en" verbatim (same words, spelling and capitalization). Create a new exercise only when nothing in the catalog fits
 
 EXERCISE FIELDS (in "exercises"):
 - name_es: exercise name in Spanish (REQUIRED)
-- name_en: common English name (optional; improves matching with the app catalog)
+- name_en: exercise name in English (REQUIRED). For an exercise in the EXERCISE CATALOG, the exact name listed there
 - tracked_fields (REQUIRED): what gets logged for each set, as an array of 1 to 3 of these:
   - "weight": load lifted
   - "reps": repetitions
@@ -96,7 +97,68 @@ ROUTINE EXERCISE FIELDS (in "blocks[].exercises"):
 - notes: specific execution notes for this routine (optional, e.g.: "Close grip", "Pause at chest", "Tempo 3-1-1-0")
 - superset_group: positive integer shared by the exercises done back to back as one superset (optional, omit it for an exercise outside a superset). A superset has at least 2 exercises, written consecutively in the same block, and each superset of a day uses its own number (1, 2...). A group that breaks these rules is imported as individual exercises`
 
-export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }) {
+// Rule 5 of ROUTINE_JSON_RULES refers to the block by this name.
+const EXERCISE_CATALOG_HEADING = 'EXERCISE CATALOG (the "name_en" of every exercise in the app, by muscle group):'
+const EXERCISE_CATALOG_OTHER_GROUP = 'Other'
+
+/**
+ * Catalog block for the AI prompts (#159). It lists the system exercises by `name_en`, the first
+ * key the importer tries (`buildExerciseIndex`): an AI that copies a name from here lands on the
+ * catalog exercise instead of a new custom one. `name` is no use here, because
+ * useExercisesWithMuscleGroup() overwrites it with the localized name.
+ * @param {Array<{ name_en: string|null, is_system: boolean, muscle_group: { name_en: string|null, name: string } | null }>|null} exercises
+ *   Rows as returned by useExercisesWithMuscleGroup(). Non-system rows and rows without name_en are skipped.
+ * @returns {string} A heading line, then one "## <muscle group name_en>" line per group followed by
+ *   "- <exercise name_en>" lines, groups and names sorted alphabetically. Exercises without a muscle
+ *   group go under a final "## Other" group. Empty string when no row qualifies.
+ */
+export function formatExerciseCatalog(exercises) {
+  const namesByGroup = new Map()
+  for (const exercise of exercises || []) {
+    if (!exercise?.is_system || !exercise.name_en) continue
+    const group = exercise.muscle_group?.name_en || exercise.muscle_group?.name || EXERCISE_CATALOG_OTHER_GROUP
+    if (!namesByGroup.has(group)) namesByGroup.set(group, [])
+    namesByGroup.get(group).push(exercise.name_en)
+  }
+  if (namesByGroup.size === 0) return ''
+
+  const byName = (a, b) => a.localeCompare(b, 'en')
+  const isOther = (group) => group === EXERCISE_CATALOG_OTHER_GROUP
+  const groups = [...namesByGroup.keys()].sort((a, b) => isOther(a) - isOther(b) || byName(a, b))
+
+  const lines = [EXERCISE_CATALOG_HEADING]
+  for (const group of groups) {
+    lines.push(`## ${group}`, ...namesByGroup.get(group).sort(byName).map(name => `- ${name}`))
+  }
+  return lines.join('\n')
+}
+
+export const PROMPT_CATALOG_STATUS = {
+  READY: 'ready',     // loaded: the prompt can be copied
+  LOADING: 'loading', // not loaded yet, also while paused offline: copying waits
+  ERROR: 'error',     // failed with nothing loaded: pressing copy retries and says why
+}
+
+/**
+ * Whether an AI prompt can be copied yet, from the state of the catalog query. Only loaded data
+ * counts: a prompt copied without the catalog brings the custom duplicates back without a
+ * warning, so "not loaded yet" is never an empty catalog. A catalog that loaded once stays usable
+ * when a later background refetch fails.
+ * @param {{ data: unknown, isError: boolean }} catalogQuery
+ * @returns {string} One of PROMPT_CATALOG_STATUS
+ */
+export function getPromptCatalogStatus({ data, isError }) {
+  if (data) return PROMPT_CATALOG_STATUS.READY
+  return isError ? PROMPT_CATALOG_STATUS.ERROR : PROMPT_CATALOG_STATUS.LOADING
+}
+
+// Goes right after the rules: the on-screen preview starts with the readable part, and the
+// closing instructions stay last.
+function catalogSection(catalog) {
+  return catalog ? `\n\n${catalog}` : ''
+}
+
+export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }, catalog) {
   const lang = getCurrentLocale()
   const isEn = lang === 'en'
 
@@ -155,12 +217,12 @@ ${outputInstruction}
 
 ${ROUTINE_JSON_FORMAT}
 
-${ROUTINE_JSON_RULES}
+${ROUTINE_JSON_RULES}${catalogSection(catalog)}
 
 ${jsonOnly}`
 }
 
-export function buildAdaptRoutinePrompt() {
+export function buildAdaptRoutinePrompt(catalog) {
   const lang = getCurrentLocale()
   const isEn = lang === 'en'
 
@@ -179,7 +241,7 @@ export function buildAdaptRoutinePrompt() {
 ${requiredFormat}
 ${ROUTINE_JSON_FORMAT}
 
-${ROUTINE_JSON_RULES}
+${ROUTINE_JSON_RULES}${catalogSection(catalog)}
 
 ${jsonOnly}
 

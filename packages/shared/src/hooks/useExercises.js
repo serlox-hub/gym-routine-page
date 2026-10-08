@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { getExerciseName, getMuscleGroupName, getEquipmentName, localizeExercise, resolveDistanceUnit, resolveWeightUnit } from '../lib/exerciseUtils.js'
+import { formatExerciseCatalog, getPromptCatalogStatus } from '../lib/routineIO.js'
 import { usePreference } from './usePreferences.js'
 import {
   fetchExercisesWithMuscleGroup,
@@ -31,6 +32,14 @@ export function useExercisesWithMuscleGroup() {
       getExerciseName(a).localeCompare(getExerciseName(b))
     ),
   })
+}
+
+// Exercise catalog block for the AI prompts, whether the prompt can be copied yet, and a retry
+// for when the catalog failed to load (#159).
+export function usePromptExerciseCatalog() {
+  const { data, isError, refetch } = useExercisesWithMuscleGroup()
+  const catalog = useMemo(() => formatExerciseCatalog(data), [data])
+  return { catalog, status: getPromptCatalogStatus({ data, isError }), retry: refetch }
 }
 
 export function useMuscleGroups() {

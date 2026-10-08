@@ -1,4 +1,4 @@
-import { colors } from '../../lib/styles.js'
+import { colors, design } from '../../lib/styles.js'
 
 const VARIANTS = {
   primary: {
@@ -24,8 +24,6 @@ const SIZES = {
   lg: 'px-6 py-3 text-lg',
 }
 
-const BLOCKED_OPACITY = 0.5
-
 // `blocked`: not available, but it still answers (the "botón bloqueado" pattern in CLAUDE.md):
 // dimmed with no hover, and the click goes through so the caller can say why. `disabled` is for
 // transient states only. On the solid lime of `primary` only the content is dimmed: translucent
@@ -37,7 +35,7 @@ function Button({ children, variant = 'primary', size = 'md', className = '', di
     ? 'opacity-50 cursor-not-allowed'
     : isBlocked ? 'cursor-pointer' : 'hover:opacity-80'
   const style = isBlocked && !dimsContentOnly
-    ? { ...VARIANTS[variant], opacity: BLOCKED_OPACITY }
+    ? { ...VARIANTS[variant], opacity: design.blockedOpacity }
     : VARIANTS[variant]
 
   return (
@@ -47,7 +45,7 @@ function Button({ children, variant = 'primary', size = 'md', className = '', di
       disabled={disabled}
       {...props}
     >
-      {dimsContentOnly ? <span style={{ opacity: BLOCKED_OPACITY }}>{children}</span> : children}
+      {dimsContentOnly ? <span style={{ opacity: design.blockedOpacity }}>{children}</span> : children}
     </button>
   )
 }

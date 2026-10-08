@@ -71,6 +71,10 @@ export const design = {
   // this is for sizes computed in JS (DragHandle).
   minTouchTarget: 44,
 
+  // How much a blocked control (the "botón bloqueado" pattern in CLAUDE.md) is dimmed. On a solid
+  // lime fill only the content takes it: translucent lime turns olive.
+  blockedOpacity: 0.5,
+
   // Routine card
   routineCardRadius: 16,
   routineCardPadding: 16,
