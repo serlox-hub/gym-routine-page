@@ -6,7 +6,7 @@ import { useUserId, useIsPremium } from '../../hooks/useAuth.js'
 import { useCreateRoutine } from '../../hooks/useRoutines.js'
 import { usePromptExerciseCatalog } from '../../hooks/useExercises.js'
 import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui/index.js'
-import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, getNotifier, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData } from '@gym/shared'
+import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, getNotifier, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData, parseRoutineJson } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { readJsonFile } from '../../lib/routineIO.js'
 import { colors } from '../../lib/styles.js'
@@ -320,8 +320,7 @@ function ChatbotView({ onImport, step, setStep, t }) {
         <button onClick={() => {
           setJsonError('')
           try {
-            const data = JSON.parse(jsonText)
-            if (!data?.routine?.name) throw new Error('invalid')
+            const data = parseRoutineJson(jsonText)
             onImport(data)
           } catch { setJsonError(t('common:import.invalidFormat')) }
         }} disabled={!jsonText.trim()}
@@ -346,8 +345,7 @@ function ImportView({ onImport, onNavigate, t }) {
   const handleTextImport = () => {
     setError('')
     try {
-      const data = JSON.parse(jsonText)
-      if (!data?.routine?.name) throw new Error('invalid')
+      const data = parseRoutineJson(jsonText)
       onImport(data)
     }
     catch { setError(t('common:import.invalidFormat')) }
@@ -430,7 +428,6 @@ function ImportFileView({ onImport, t }) {
     setFileName(file.name)
     try {
       const data = await readJsonFile(file)
-      if (!data?.routine?.name) throw new Error('invalid')
       setParsedData(data)
     } catch {
       setError(t('common:import.invalidFormat'))
@@ -559,8 +556,7 @@ function AdaptView({ onImport, step, setStep, t }) {
         <button onClick={() => {
           setJsonError('')
           try {
-            const data = JSON.parse(jsonText)
-            if (!data?.routine?.name) throw new Error('invalid')
+            const data = parseRoutineJson(jsonText)
             onImport(data)
           } catch { setJsonError(t('common:import.invalidFormat')) }
         }} disabled={!jsonText.trim()}

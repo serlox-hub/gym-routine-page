@@ -465,7 +465,7 @@ Extract when logic:
 | Input de duración por dígitos (mm:ss) | `durationInput.js` | `durationDigitsToSeconds()`, `secondsToDurationDigits()`, `formatDurationDigits()` |
 | Form de config de ejercicio en rutina/sesión | `routineExerciseForm.js` | `buildExerciseConfigForm()`, `validateExerciseConfigForm()`, `parseExerciseConfigForm()` |
 | Form de override de ejercicio del sistema (notas + unidad) | `exerciseOverrideForm.js` | `buildExerciseOverrideForm()` |
-| AI prompts / routine JSON format (with the system catalog, and whether the prompt can be copied yet) | `routineIO.js` | `buildChatbotPrompt()`, `ROUTINE_JSON_FORMAT`, `formatExerciseCatalog()`, `getPromptCatalogStatus()` |
+| AI prompts / routine JSON format (with the system catalog, and whether the prompt can be copied yet) / parsing the routine JSON the user pastes or uploads | `routineIO.js` | `buildChatbotPrompt()`, `ROUTINE_JSON_FORMAT`, `formatExerciseCatalog()`, `getPromptCatalogStatus()`, `parseRoutineJson()` |
 | Matching ejercicio→catálogo (import) | `exerciseMatch.js` | `normalizeExerciseName()`, `buildExerciseIndex()`, `resolveExerciseId()` |
 | Gesto de fila (swipe para borrar) | `swipeGesture.js` | `shouldClaimSwipe()`, `clampSwipeOffset()` |
 | Past session → new routine day (History) | `sessionToRoutineDay.js` | `buildRoutineDayFromSession()`, `getConvertToRoutineDayState()`, `getRoutineDayErrorKey()` |
@@ -483,7 +483,7 @@ All these files live in `packages/shared/src/lib/` and are exported via `@gym/sh
 
 ### Archivos críticos: import/export de rutinas (JSON)
 
-Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 10**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES`; puro, sin BD).
+Dos archivos (no confundir): **`packages/shared/src/api/routineIOApi.js`** (export/import/duplicate, tocan BD; definen el esquema vía `ROUTINE_EXPORT_VERSION`, **actual: 10**) y **`packages/shared/src/lib/routineIO.js`** (prompts de IA + doc del formato `ROUTINE_JSON_FORMAT`/`ROUTINE_JSON_RULES` + `parseRoutineJson`, único parseo del JSON que pega o sube el usuario; puro, sin BD).
 
 ⚠️ **Emparejar por CLAVE ESTABLE** (`name_en` → `name_es` normalizado, vía `lib/exerciseMatch.js`), NUNCA por `name_es` solo. `importRoutine` debe seguir aceptando versiones antiguas del JSON.
 
