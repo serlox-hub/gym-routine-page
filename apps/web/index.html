@@ -8,7 +8,11 @@
     <meta name="theme-color" content="#0A0A0F" />
     <!-- iOS PWA -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- black, not black-translucent: with an opaque bar the page starts below the clock, so
+         nothing can ever show behind it (#164). Going edge to edge (black-translucent +
+         viewport-fit=cover) means moving every element pinned to the top down by
+         env(safe-area-inset-top) by hand. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Diario Gym" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Diario Gym</title>
