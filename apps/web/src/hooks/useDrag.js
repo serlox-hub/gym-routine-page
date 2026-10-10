@@ -36,7 +36,9 @@ export function useDraggable() {
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) wasDragged.current = true
     setPosition({
       x: dragState.current.offsetX + dx,
-      y: dragState.current.offsetY + dy,
+      // Never above where it starts: each pill starts at a top known to keep iOS Safari painting
+      // the status bar strip (#164). Native clamps y the same way on release.
+      y: Math.max(0, dragState.current.offsetY + dy),
     })
   }, [])
 

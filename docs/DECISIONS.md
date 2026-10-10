@@ -12,6 +12,9 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-10 · Franja de la hora transparente en iOS (#164)
+- **Se arregla bajando el `fixed` de arriba, no con la meta `apple-mobile-web-app-status-bar-style`:** con la caja de la píldora del temporizador a 4 px del borde, Safari en iOS deja de pintar la franja y la lista se ve detrás al hacer scroll. Descartado cambiar `black-translucent` por `black` en `index.html` (PR #165): se probó en el iPhone y no lo arregla.
+
 ## 2026-10 · El service worker no cachea la API de Supabase
 - **Quitada la regla `NetworkFirst` (3 s) sobre `*.supabase.co/rest/v1`:** si la red tardaba más de 3 s, el service worker devolvía la respuesta guardada y TanStack Query la tomaba por fresca. Con mala cobertura en el gimnasio, una nota personal recién guardada no aparecía hasta recargar. No se ve en local: la URL local es `127.0.0.1` y la regla nunca casaba.
 - **Lo que se pierde:** recargar sin conexión ya no enseña datos de hasta 5 minutos antes. El modo offline del entreno no dependía de ella: las series pendientes viven en el workout store persistido (`pendingSets`) y lo ya cargado sigue en la caché en memoria de TanStack Query.
