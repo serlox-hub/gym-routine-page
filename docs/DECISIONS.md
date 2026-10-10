@@ -12,6 +12,9 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-10 · Franja de la hora transparente en iOS (#164)
+- **Se arregla bajando el `fixed` de arriba, no con la meta `apple-mobile-web-app-status-bar-style`:** con la caja de la píldora del temporizador a 4 px del borde, Safari en iOS deja de pintar la franja y la lista se ve detrás al hacer scroll. Descartado cambiar `black-translucent` por `black` en `index.html` (PR #165): se probó en el iPhone y no lo arregla.
+
 ## 2026-10 · "Recientes" del selector de ejercicios (#146)
 - **Lee `exercise_session_stats` (solo sesiones terminadas), no `session_exercises`:** `start_workout_session` mete desde el principio todos los ejercicios planificados del día, así que contar la sesión en curso llenaría la sección con lo que ya está en pantalla, justo cuando más se usa el selector (añadir o sustituir a mitad del entreno). Descartado `workout_sessions` + `session_exercises`: trae ejercicios planificados que nunca se hicieron.
 

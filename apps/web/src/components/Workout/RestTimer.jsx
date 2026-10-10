@@ -46,8 +46,9 @@ function RestTimer() {
     }
 
     return (
-      // top 4, not 8: the button is the 44px box and the pill inside it (36) stays where it was.
-      <div className="fixed z-50 select-none" style={{ top: 4, left: '50%', ...dragStyle }} {...dragProps}>
+      // top 8: at top 4 (#154) iOS Safari stopped painting the status bar strip and the list showed
+      // through it while scrolling (#164). 8 is the last value known to work, not a measured threshold.
+      <div className="fixed z-50 select-none" style={{ top: 8, left: '50%', ...dragStyle }} {...dragProps}>
         <button onClick={handleExpand}
           className="min-h-11 flex items-center cursor-grab active:cursor-grabbing">
           <span className="flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg"
