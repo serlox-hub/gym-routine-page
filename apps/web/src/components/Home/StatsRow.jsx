@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { Timer, Trophy } from 'lucide-react'
 import { useWeeklyStats, useWeeklyPRs, formatDurationHoursMinutes } from '@gym/shared'
 import { Card } from '../ui/index.js'
@@ -8,6 +9,7 @@ import WeeklyPRsModal from './WeeklyPRsModal.jsx'
 
 function StatsRow() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { totalMinutes, isLoading: loadingWeekly, isError: errorWeekly } = useWeeklyStats()
   const { sessions, count, isLoading: loadingPRs, detailsLoading, isError: errorPRs } = useWeeklyPRs()
   const [showPRs, setShowPRs] = useState(false)
@@ -19,7 +21,7 @@ function StatsRow() {
 
   return (
     <section className="flex gap-3 mb-4">
-      <Card className="flex-1 p-4">
+      <Card className="flex-1 p-4" onClick={() => navigate('/history', { state: { date: new Date().toISOString() } })}>
         <Timer size={16} style={{ color: colors.success }} />
         <p style={{ color: colors.textPrimary, fontSize: design.statValueSize.large, fontWeight: 700, letterSpacing: -0.5, marginTop: 8 }}>
           {loadingWeekly || errorWeekly ? '—' : durationParts.map((p, i) => (
