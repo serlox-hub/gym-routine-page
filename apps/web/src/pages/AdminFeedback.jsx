@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Bug, Lightbulb, Check, RotateCcw, Trash2 } from 'lucide-react'
 import { useIsAdmin } from '../hooks/useAuth.js'
@@ -148,7 +148,6 @@ function FeedbackRow({ item, onToggleResolved, onDelete, isPending }) {
 
 function AdminFeedback() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { isAdmin, isLoading: isLoadingAdmin } = useIsAdmin()
   const { data: feedback, isLoading, error } = useAllFeedback()
   const setResolved = useSetFeedbackResolved()
@@ -182,7 +181,7 @@ function AdminFeedback() {
 
   return (
     <div className="px-6 pt-4 pb-20 max-w-2xl mx-auto">
-      <PageHeader title={t('common:admin.feedbackTitle')} onBack={() => navigate(-1)} />
+      <PageHeader title={t('common:admin.feedbackTitle')} fallbackTo="/preferences" />
 
       {/* The pills are 44px boxes; the track (inset-y-1) is painted behind them at its old 36px. */}
       <div className="relative flex px-1 mb-4" style={{ width: 'fit-content' }}>

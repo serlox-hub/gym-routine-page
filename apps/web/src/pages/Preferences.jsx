@@ -156,7 +156,7 @@ function Preferences() {
 
   return (
     <div className="px-6 pt-4 pb-20 max-w-2xl mx-auto">
-      <PageHeader title={t('common:preferences.title')} onBack={() => navigate(-1)} />
+      <PageHeader title={t('common:preferences.title')} fallbackTo="/" />
 
       <main style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 

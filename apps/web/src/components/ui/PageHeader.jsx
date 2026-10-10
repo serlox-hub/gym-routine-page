@@ -2,13 +2,14 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
+import { goBack } from '../../lib/historyBack.js'
 import DropdownMenu from './DropdownMenu.jsx'
 import IconButton from './IconButton.jsx'
 
 function PageHeader({
   title,
   titleExtra,
-  backTo,
+  fallbackTo,
   onBack,
   menuItems,
   rightAction,
@@ -20,14 +21,12 @@ function PageHeader({
   const handleBack = () => {
     if (onBack) {
       onBack()
-    } else if (backTo) {
-      navigate(backTo)
     } else {
-      navigate(-1)
+      goBack(navigate, fallbackTo)
     }
   }
 
-  const showBack = backTo || onBack
+  const showBack = fallbackTo || onBack
 
   return (
     <header

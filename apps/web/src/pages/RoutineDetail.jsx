@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, Repeat, Layers, CalendarDays } from 'lucide-react'
 import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
-import { LoadingSpinner, ErrorMessage, ConfirmModal, SortableList } from '../components/ui/index.js'
+import { LoadingSpinner, ErrorMessage, ConfirmModal, SortableList, PageHeader } from '../components/ui/index.js'
 import { DayCard, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
 import { moveItemToPosition } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
@@ -58,8 +58,16 @@ function RoutineDetail() {
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
 
-  if (isLoading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error.message} className="m-4" />
+  // The header goes in while loading too: coming back from a long session the routine has left the
+  // cache, and on a slow connection a bare spinner was a screen with no way out (no tab bar here).
+  if (isLoading || error) {
+    return (
+      <div className="p-4 max-w-4xl mx-auto">
+        <PageHeader title="" fallbackTo="/routines" />
+        {isLoading ? <LoadingSpinner /> : <ErrorMessage message={error.message} />}
+      </div>
+    )
+  }
 
   const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
   const nextDayNumber = maxDayNumber + 1

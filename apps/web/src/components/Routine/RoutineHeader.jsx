@@ -184,7 +184,7 @@ function RoutineHeader({ routine, routineId, onDelete, initialDetailsOpen = fals
     <>
       <PageHeader
         title=""
-        onBack={() => navigate(-1)}
+        fallbackTo="/routines"
         menuItems={menuItems}
       />
       <CreateShareLinkModal

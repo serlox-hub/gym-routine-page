@@ -8,6 +8,7 @@ import { IconButton } from '../components/ui/index.js'
 import { useShareWorkoutSummary } from '../hooks/useShareWorkoutSummary.js'
 import WorkoutSummaryCard, { SUMMARY_CARD_ASPECT } from '../components/Workout/WorkoutSummaryCard.jsx'
 import PRCard, { PR_CARD_ASPECT } from '../components/Workout/PRCard.jsx'
+import { goBack } from '../lib/historyBack.js'
 
 // El preview se acota al menor entre el ancho disponible y un máximo razonable
 const MAX_PREVIEW_W = 360
@@ -102,7 +103,7 @@ export default function WorkoutSummary() {
   const handleShare = () => generateAndShare(cardRefs.current[currentIndex]?.current, summaryData.date)
   const handleDownload = () => generateAndDownload(cardRefs.current[currentIndex]?.current, summaryData.date)
   const handleDismiss = () => {
-    if (fromHistory) navigate(-1)
+    if (fromHistory) goBack(navigate, '/history')
     else navigate('/', { replace: true })
   }
 

@@ -56,7 +56,7 @@ function AdminUsers() {
 
   return (
     <div className="px-6 pt-4 pb-20 max-w-2xl mx-auto">
-      <PageHeader title={t('common:nav.admin')} backTo="/" />
+      <PageHeader title={t('common:nav.admin')} fallbackTo="/preferences" />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {users?.map(user => (
