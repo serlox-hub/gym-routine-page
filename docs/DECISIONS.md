@@ -12,6 +12,12 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-10 · El service worker no cachea la API de Supabase
+- **Quitada la regla `NetworkFirst` (3 s) sobre `*.supabase.co/rest/v1`:** si la red tardaba más de 3 s, el service worker devolvía la respuesta guardada y TanStack Query la tomaba por fresca. Con mala cobertura en el gimnasio, una nota personal recién guardada no aparecía hasta recargar. No se ve en local: la URL local es `127.0.0.1` y la regla nunca casaba.
+- **Lo que se pierde:** recargar sin conexión ya no enseña datos de hasta 5 minutos antes. El modo offline del entreno no dependía de ella: las series pendientes viven en el workout store persistido (`pendingSets`) y lo ya cargado sigue en la caché en memoria de TanStack Query.
+- **Descartado subir el timeout:** solo mueve el umbral. Por encima de él, vuelven los datos viejos sin aviso.
+- **`main.jsx` borra `api-cache` al arrancar:** Workbox no limpia las cachés de `runtimeCaching` retiradas, así que quedaba en disco con datos del usuario. Se puede quitar cuando los dispositivos ya la hayan borrado (unos meses).
+
 ## 2026-10 · "Recientes" del selector de ejercicios (#146)
 - **Lee `exercise_session_stats` (solo sesiones terminadas), no `session_exercises`:** `start_workout_session` mete desde el principio todos los ejercicios planificados del día, así que contar la sesión en curso llenaría la sección con lo que ya está en pantalla, justo cuando más se usa el selector (añadir o sustituir a mitad del entreno). Descartado `workout_sessions` + `session_exercises`: trae ejercicios planificados que nunca se hicieron.
 
