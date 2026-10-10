@@ -141,7 +141,14 @@
     "addOnlyToday": "Solo hoy",
     "addAlsoRoutine": "También en la rutina",
     "addFailed": "No se pudo añadir el ejercicio. Inténtalo de nuevo.",
-    "addRoutineDayGone": "Este día ya no está en la rutina. El ejercicio se ha añadido solo a hoy."
+    "addRoutineDayGone": "Este día ya no está en la rutina. El ejercicio se ha añadido solo a hoy.",
+    "correct": "Cambiar ejercicio",
+    "correctPickerSubtitle": "Solo salen ejercicios que miden lo mismo que \"{{name}}\". Las series se conservan.",
+    "correctConfirmTitle": "¿Cambiar el ejercicio?",
+    "correctConfirmMessage": "Las series de \"{{oldName}}\" pasarán a \"{{newName}}\" en este entrenamiento. La rutina no cambia.",
+    "correctConfirm": "Cambiar",
+    "correctFailed": "No se pudo cambiar el ejercicio. Inténtalo de nuevo.",
+    "correctFieldsMismatch": "Este ejercicio tiene que medir lo mismo que \"{{name}}\"."
   },
   "summary": {
     "title": "Resumen",

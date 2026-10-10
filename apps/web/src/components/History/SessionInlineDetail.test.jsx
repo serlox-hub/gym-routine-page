@@ -10,8 +10,9 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 // What useHistorySetEditor returns for the set row. The hook owns the upload and save logic and is
 // tested on its own: here it is only the source of the flags the row paints (note, failed upload).
-const { editorState, session } = vi.hoisted(() => ({
+const { editorState, editorMounts, session } = vi.hoisted(() => ({
   editorState: {},
+  editorMounts: { count: 0 },
   session: {
     id: 1,
     started_at: '2026-09-01T10:00:00.000Z',
@@ -48,6 +49,7 @@ vi.mock('../../hooks/useWorkout.js', () => {
 
 vi.mock('@gym/shared', async () => {
   const actual = await vi.importActual('@gym/shared')
+  const { useEffect } = await import('react')
   return {
     ...actual,
     useSelectedGym: () => ({ hasMultiple: false, gymId: null }),
@@ -55,7 +57,11 @@ vi.mock('@gym/shared', async () => {
     usePreference: () => ({ value: 'kg' }),
     useResolvedWeightUnit: () => 'kg',
     useResolvedDistanceUnit: () => 'm',
-    useHistorySetEditor: () => editorState,
+    useHistorySetEditor: () => {
+      // One mount per set row: tells a remounted row (reseeded values) from a re-render.
+      useEffect(() => { editorMounts.count += 1 }, [])
+      return editorState
+    },
   }
 })
 
@@ -65,6 +71,9 @@ vi.mock('../Workout/GymSelector.jsx', () => ({ default: () => null }))
 vi.mock('../Workout/SetDetailsModal.jsx', () => ({ default: () => null }))
 vi.mock('./MuscleGroupSetsChart.jsx', () => ({ default: () => null }))
 vi.mock('./ConvertToRoutineDayModal.jsx', () => ({ default: () => null }))
+vi.mock('./CorrectSessionExerciseAction.jsx', () => ({
+  default: ({ sessionExerciseId, gymId }) => <div data-testid="correct-exercise" data-row={sessionExerciseId} data-gym={gymId} />,
+}))
 vi.mock('../Workout/SetNotesView.jsx', () => ({
   default: ({ isOpen, notes }) => (isOpen ? <div data-testid="notes-view">{notes}</div> : null),
 }))
@@ -123,6 +132,7 @@ function enterEditMode() {
 }
 
 beforeEach(() => {
+  editorMounts.count = 0
   setSession([buildSet()])
   setEditor()
 })
@@ -191,5 +201,32 @@ describe('SessionInlineDetail: set row in read mode', () => {
 
     expect(screen.queryByRole('button', { name: 'Notas' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Vídeo' })).not.toBeInTheDocument()
+  })
+})
+
+describe('SessionInlineDetail: correcting the exercise (issue 168)', () => {
+  it('offers it only in edit mode', () => {
+    render(<SessionInlineDetail sessionId={1} />)
+    expect(screen.queryByTestId('correct-exercise')).not.toBeInTheDocument()
+
+    enterEditMode()
+
+    expect(screen.getByTestId('correct-exercise')).toBeInTheDocument()
+  })
+})
+
+describe('SessionInlineDetail: set rows after correcting the exercise', () => {
+  it('remounts the set row when the exercise changes, so its values are reseeded', () => {
+    const { rerender } = render(<SessionInlineDetail sessionId={1} />)
+    enterEditMode()
+    expect(editorMounts.count).toBe(1)
+
+    rerender(<SessionInlineDetail sessionId={1} />)
+    expect(editorMounts.count).toBe(1)
+
+    session.exercises[0].exercise = { ...session.exercises[0].exercise, id: 4 }
+    rerender(<SessionInlineDetail sessionId={1} />)
+
+    expect(editorMounts.count).toBe(2)
   })
 })

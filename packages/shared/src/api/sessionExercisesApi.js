@@ -66,6 +66,20 @@ export async function replaceSessionExercise({ sessionExerciseId, newExerciseId,
 }
 
 /**
+ * Corrects the exercise of a row of a completed session, keeping its sets (weights times
+ * `weightFactor`), in one transaction. Never touches the routine. See migration 069.
+ */
+export async function correctSessionExercise({ sessionExerciseId, newExerciseId, weightFactor }) {
+  const { error } = await getClient().rpc('correct_session_exercise', {
+    p_session_exercise_id: sessionExerciseId,
+    p_new_exercise_id: newExerciseId,
+    p_weight_factor: weightFactor,
+  })
+
+  if (error) throw error
+}
+
+/**
  * Adds an exercise to the session and, with `addToRoutine`, also to the session's routine day, in
  * one transaction (migration 065). `fields` are column values (`pickSessionExerciseFields`).
  * `routine_exercise_id` comes back null when the exercise went to the session only, which also

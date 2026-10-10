@@ -15,12 +15,21 @@ export default function ExercisePickerModal({
   subtitle,
   initialMuscleGroup,
   existingExerciseIds,
+  isExerciseAllowed,
+  newExerciseDefaults,
+  notAllowedMessage,
 }) {
   const { t } = useTranslation()
   const _title = title || t('exercise:selectExercise')
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const { data: exercises, isLoading } = useExercisesWithMuscleGroup()
+  const [notAllowedError, setNotAllowedError] = useState(false)
+  const { data: allExercises, isLoading } = useExercisesWithMuscleGroup()
+  // Filtered before "Recent" and the search are computed, so neither offers an excluded exercise.
+  const exercises = useMemo(
+    () => (isExerciseAllowed && allExercises ? allExercises.filter(isExerciseAllowed) : allExercises),
+    [allExercises, isExerciseAllowed],
+  )
   const { data: muscleGroups } = useMuscleGroups()
   const { data: equipmentTypes } = useEquipmentTypes()
   const { data: recentStats } = useRecentExerciseStats({ enabled: isOpen })
@@ -32,6 +41,7 @@ export default function ExercisePickerModal({
     if (isOpen) {
       setIsCreatingNew(false)
       setSearchTerm('')
+      setNotAllowedError(false)
     }
   }, [isOpen])
 
@@ -54,14 +64,22 @@ export default function ExercisePickerModal({
   }, [isOpen])
 
   const handleCreateExercise = async (exerciseData, muscleGroupId) => {
+    // Checked before creating, so a rejected exercise never lands in the user's catalog.
+    if (isExerciseAllowed && !isExerciseAllowed(exerciseData)) {
+      setNotAllowedError(true)
+      return
+    }
+    setNotAllowedError(false)
     const newExercise = await createExercise.mutateAsync({ exercise: exerciseData, muscleGroupId })
     onSelect(newExercise)
   }
 
   const trimmedSearch = searchTerm.trim()
   const initialFormData = useMemo(
-    () => trimmedSearch ? { name: trimmedSearch } : null,
-    [trimmedSearch],
+    () => (trimmedSearch || newExerciseDefaults)
+      ? { ...newExerciseDefaults, ...(trimmedSearch && { name: trimmedSearch }) }
+      : null,
+    [trimmedSearch, newExerciseDefaults],
   )
 
   return (
@@ -88,6 +106,9 @@ export default function ExercisePickerModal({
               hideSubmitButton
             />
           </div>
+          {notAllowedError && notAllowedMessage && (
+            <p className="text-sm mt-3" style={{ color: colors.danger }}>{notAllowedMessage}</p>
+          )}
           <div className="flex gap-2 pt-3 mt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
             <Button
               type="submit"

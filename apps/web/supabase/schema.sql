@@ -383,6 +383,91 @@ $$;
 ALTER FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."correct_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_weight_factor" numeric) RETURNS "void"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+  v_old_exercise_id INTEGER;
+  v_session_id UUID;
+  v_status session_status;
+  v_started_at TIMESTAMPTZ;
+  v_gym_id BIGINT;
+  v_old_fields measurement_field[];
+  v_new_fields measurement_field[];
+BEGIN
+  IF p_weight_factor IS NULL OR p_weight_factor <= 0 THEN
+    RAISE EXCEPTION 'invalid_weight_factor' USING ERRCODE = '22023';
+  END IF;
+
+  SELECT exercise_id, session_id INTO v_old_exercise_id, v_session_id
+  FROM session_exercises
+  WHERE id = p_session_exercise_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'session_exercise_not_found' USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT status, started_at, gym_id INTO v_status, v_started_at, v_gym_id
+  FROM workout_sessions
+  WHERE id = v_session_id;
+
+  IF v_status IS DISTINCT FROM 'completed' THEN
+    RAISE EXCEPTION 'session_not_completed' USING ERRCODE = 'P0001';
+  END IF;
+
+  IF p_new_exercise_id = v_old_exercise_id THEN
+    RETURN;
+  END IF;
+
+  -- The FK skips RLS: without this check the row could point at another user's private exercise
+  -- or a soft-deleted one.
+  SELECT tracked_fields INTO v_new_fields
+  FROM exercises
+  WHERE id = p_new_exercise_id AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'exercise_not_available' USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT tracked_fields INTO v_old_fields FROM exercises WHERE id = v_old_exercise_id;
+
+  -- Compared as sets: the stored order is irrelevant (see the column comment). NULL = the old
+  -- exercise is not visible to the caller (RLS): fail closed, NOT (NULL) would let it through.
+  IF v_old_fields IS NULL OR NOT (v_old_fields @> v_new_fields AND v_new_fields @> v_old_fields) THEN
+    RAISE EXCEPTION 'tracked_fields_mismatch' USING ERRCODE = 'P0001';
+  END IF;
+
+  IF p_weight_factor <> 1 THEN
+    UPDATE completed_sets
+    SET weight = ROUND(weight * p_weight_factor, 2)
+    WHERE session_exercise_id = p_session_exercise_id AND weight IS NOT NULL;
+  END IF;
+
+  UPDATE session_exercises SET exercise_id = p_new_exercise_id WHERE id = p_session_exercise_id;
+
+  -- Another row of the same session may still use the old exercise: its row is still valid then,
+  -- and recalculateSessionStats rebuilds it.
+  IF NOT EXISTS (
+    SELECT 1 FROM session_exercises
+    WHERE session_id = v_session_id AND exercise_id = v_old_exercise_id
+  ) THEN
+    DELETE FROM exercise_session_stats
+    WHERE session_id = v_session_id AND exercise_id = v_old_exercise_id;
+  END IF;
+
+  PERFORM recalculate_exercise_prs(v_old_exercise_id, v_started_at, v_gym_id);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."correct_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_weight_factor" numeric) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."correct_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_weight_factor" numeric) IS 'Corrects the exercise of a row of a completed session, keeping its sets (weights times p_weight_factor, rounded to 2 decimals). Only to an exercise with the same tracked_fields; never touches the routine. Deletes the old exercise''s stale stats row and recalculates its PR flags; the client rebuilds the new one (recalculateSessionStats). No-op when the row already has the new exercise. SECURITY INVOKER: RLS protects it.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."create_routine_day_with_exercises"("p_routine_id" integer, "p_new_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb") RETURNS "jsonb"
     LANGUAGE "plpgsql"
     AS $$
@@ -2819,6 +2904,12 @@ GRANT ALL ON FUNCTION "public"."convert_user_measurements"("p_factor" numeric) T
 REVOKE ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."convert_user_weights"("p_scope" "text", "p_factor" numeric, "p_exercise_id" integer, "p_old_unit" "text", "p_gym_id" bigint) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."correct_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_weight_factor" numeric) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."correct_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_weight_factor" numeric) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."correct_session_exercise"("p_session_exercise_id" integer, "p_new_exercise_id" integer, "p_weight_factor" numeric) TO "service_role";
 
 
 

@@ -13,6 +13,7 @@ import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from
 import SetValueInput from '../Workout/SetInputs'
 import ConvertToRoutineDayModal from './ConvertToRoutineDayModal'
 import MuscleGroupSetsChart from './MuscleGroupSetsChart'
+import CorrectSessionExerciseAction from './CorrectSessionExerciseAction'
 import { uploadVideo } from '../../lib/videoStorage'
 import {
   SENSATION_LABELS,
@@ -219,6 +220,8 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
       <Pressable
         onPress={isHistoryClickable ? () => setShowHistory(true) : undefined}
         disabled={!isHistoryClickable}
+        // In edit mode it must not group its children, or VoiceOver never reaches the change-exercise button.
+        accessible={isHistoryClickable}
         className={`flex-row items-center justify-between gap-2 ${isHistoryClickable ? 'active:opacity-70' : ''}`}
         // A 44pt touch target. marginTop -10 sits it in the card's p-3 (inside the parent, so Android
         // still gets the touches) and paddingVertical 10 gives it back, so the name stays 12pt from
@@ -241,6 +244,17 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         {isHistoryClickable && (
           <ChevronRight size={16} color={colors.textMuted} />
         )}
+        {isEditing && (
+          // marginVertical -10 gives back the header's paddingVertical, so the 44pt box keeps the
+          // header 44 tall and stays inside it (Android drops touches outside the parent).
+          <CorrectSessionExerciseAction
+            sessionId={sessionId}
+            sessionExerciseId={sessionExerciseId}
+            exercise={exercise}
+            gymId={gymId}
+            style={{ marginVertical: -10, marginRight: -8 }}
+          />
+        )}
       </Pressable>
 
       <View className="gap-2">
@@ -248,7 +262,9 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
           <>
             {sets.map(set => (
               <EditableSetRow
-                key={set.id}
+                // Correcting the exercise (#168) can convert the weights without changing set.id:
+                // remounting reseeds the row's values, or it would save the old weight in the new unit.
+                key={`${set.id}:${exercise.id}`}
                 set={set}
                 exercise={exercise}
                 sessionId={sessionId}
