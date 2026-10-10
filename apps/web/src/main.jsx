@@ -40,6 +40,10 @@ initNotifications((message, type = 'success') => {
   getShowToast()?.(message, type)
 })
 
+// La caché de la API que guardaba el service worker ya no se lee, pero nada la borra: se
+// quedaría en disco con datos del usuario. Ver docs/DECISIONS.md (2026-10).
+if ('caches' in window) caches.delete('api-cache').catch(() => {})
+
 // Consola de desarrollo para móvil
 if (import.meta.env.DEV) {
   import('eruda').then(eruda => eruda.default.init())
