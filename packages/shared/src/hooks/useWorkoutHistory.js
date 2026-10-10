@@ -199,7 +199,7 @@ export function useUpdateSessionMetadata() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS] })
       // Mover el fin puede cruzar de semana: lo que se agrega por `completed_at` también queda stale.
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_SESSION_STATS] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PR_COUNT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PRS] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.LAST_SESSION_FOR_ROUTINE] })
     },
   })
@@ -222,7 +222,7 @@ export function useRescheduleSession() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PR_COUNT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PRS] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.LAST_SESSION_FOR_ROUTINE] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_SESSION_STATS] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRAINING_GOAL_SESSIONS] })
@@ -298,7 +298,7 @@ export function useCorrectSessionExercise() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PR_COUNT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PRS] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RECENT_EXERCISES] })
     },
   })

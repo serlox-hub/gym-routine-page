@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import { fetchRoutineDays } from '../api/routineQueryApi.js'
@@ -5,10 +6,12 @@ import {
   fetchLastCompletedSessionForRoutine,
   fetchWeeklySessionStats,
 } from '../api/workoutSessionApi.js'
-import { fetchWeeklyPRCount } from '../api/exerciseStatsApi.js'
-import { getNextRoutineDay, calculateWeeklyDurationMinutes, toDateStr } from '../lib/homeUtils.js'
+import { fetchWeeklyPRs } from '../api/exerciseStatsApi.js'
+import { buildWeeklyPRs } from '../lib/weeklyPRs.js'
+import { getNextRoutineDay, calculateWeeklyDurationMinutes } from '../lib/homeUtils.js'
 import { getCycleDateRange } from '../lib/streakUtils.js'
 import { usePreference } from './usePreferences.js'
+import { useAllUserExerciseGymUnits, useUserExerciseDistanceUnits } from './useExercises.js'
 
 // ============================================
 // NEXT ROUTINE DAY
@@ -61,22 +64,36 @@ export function useWeeklyStats() {
 }
 
 // ============================================
-// WEEKLY PR COUNT
+// WEEKLY PRS
 // ============================================
 
-export function useWeeklyPRCount() {
+export function useWeeklyPRs() {
   const { value: weekStartDay } = usePreference('week_start_day')
+  const { value: globalWeightUnit } = usePreference('weight_unit')
   const wsd = weekStartDay || 'monday'
   const { start, end } = getCycleDateRange(7, new Date(), wsd)
 
-  const from = toDateStr(start)
-  const to = toDateStr(end)
+  // session_date is an instant: a bare date would be read as midnight UTC and drop the last day.
+  const from = start.toISOString()
+  const to = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59).toISOString()
 
-  const { data: count, isLoading, isError } = useQuery({
-    queryKey: [QUERY_KEYS.WEEKLY_PR_COUNT, from, to],
-    queryFn: () => fetchWeeklyPRCount(from, to),
+  const { data: rows, isLoading, isError } = useQuery({
+    queryKey: [QUERY_KEYS.WEEKLY_PRS, from, to],
+    queryFn: () => fetchWeeklyPRs(from, to),
     staleTime: 1000 * 60 * 5,
   })
+  const { data: gymUnitRows, isLoading: loadingGymUnits } = useAllUserExerciseGymUnits()
+  const { data: distanceUnitOverrides, isLoading: loadingDistanceUnits } = useUserExerciseDistanceUnits()
 
-  return { count: count || 0, isLoading, isError }
+  const { sessions, count } = useMemo(() => buildWeeklyPRs(rows, {
+    gymUnitRows: gymUnitRows || [],
+    globalWeightUnit,
+    distanceUnitOverrides: distanceUnitOverrides || {},
+  }), [rows, gymUnitRows, globalWeightUnit, distanceUnitOverrides])
+
+  // The count does not depend on units, the details do: until they arrive a weight would read kg
+  // where the exercise is in lb.
+  const detailsLoading = isLoading || loadingGymUnits || loadingDistanceUnits
+
+  return { sessions, count, isLoading, detailsLoading, isError }
 }

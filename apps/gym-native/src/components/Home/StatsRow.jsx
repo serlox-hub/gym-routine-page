@@ -1,14 +1,17 @@
+import { useState } from 'react'
 import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Timer, Trophy } from 'lucide-react-native'
-import { useWeeklyStats, useWeeklyPRCount, formatDurationHoursMinutes } from '@gym/shared'
+import { useWeeklyStats, useWeeklyPRs, formatDurationHoursMinutes } from '@gym/shared'
 import { Card } from '../ui'
 import { colors, design } from '../../lib/styles'
+import WeeklyPRsModal from './WeeklyPRsModal'
 
 function StatsRow() {
   const { t } = useTranslation()
   const { totalMinutes, isLoading: loadingWeekly, isError: errorWeekly } = useWeeklyStats()
-  const { count, isLoading: loadingPRs, isError: errorPRs } = useWeeklyPRCount()
+  const { sessions, count, isLoading: loadingPRs, detailsLoading, isError: errorPRs } = useWeeklyPRs()
+  const [showPRs, setShowPRs] = useState(false)
   const { hours, minutes } = formatDurationHoursMinutes(totalMinutes)
 
   const durationParts = hours > 0
@@ -28,7 +31,7 @@ function StatsRow() {
           {t('common:home.thisWeek')}
         </Text>
       </Card>
-      <Card className="flex-1 p-4">
+      <Card className="flex-1 p-4" onPress={() => setShowPRs(true)}>
         <Trophy size={16} color={colors.gold} />
         <Text style={{ color: colors.textPrimary, fontSize: design.statValueSize.large, fontWeight: '700', letterSpacing: -0.5, marginTop: 8 }}>
           {loadingPRs || errorPRs ? '—' : String(count)}
@@ -37,6 +40,14 @@ function StatsRow() {
           {t('common:home.prsThisWeek')}
         </Text>
       </Card>
+      <WeeklyPRsModal
+        isOpen={showPRs}
+        onClose={() => setShowPRs(false)}
+        sessions={sessions}
+        count={count}
+        isLoading={detailsLoading}
+        isError={errorPRs}
+      />
     </View>
   )
 }

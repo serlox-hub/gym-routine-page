@@ -101,6 +101,24 @@ async function shareRoutine(supabase) {
   return token
 }
 
+/** One finished session today with a weight record: what fills the home's records sheet. */
+async function seedWeeklyRecord(supabase, userId) {
+  const { data: exercise, error } = await supabase
+    .from('exercises').select('id').eq('user_id', userId).eq('name_es', WEIGHT_EXERCISE).is('deleted_at', null).limit(1).single()
+  if (error) throw error
+  const now = new Date().toISOString()
+  const { data: session, error: sessionError } = await supabase
+    .from('workout_sessions')
+    .insert({ user_id: userId, started_at: now, completed_at: now, status: 'completed', duration_minutes: 30 })
+    .select('id').single()
+  if (sessionError) throw sessionError
+  const { error: statsError } = await supabase.from('exercise_session_stats').insert({
+    user_id: userId, exercise_id: exercise.id, session_id: session.id, session_date: now,
+    best_weight: 100, is_pr_weight: true, total_sets: 1,
+  })
+  if (statsError) throw statsError
+}
+
 async function prepare() {
   const { supabase, userId } = await signedInClient()
   await ensureTimeExercise(supabase, userId)
@@ -207,6 +225,17 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     await expect(page.getByRole('button', { name: 'Preferencias' })).toBeVisible()
     await expect(page.getByRole('button', { name: /descanso/i })).toBeVisible()
     await expectTouchTargets(page.locator('body'))
+  })
+
+  test('home records sheet', async ({ page }) => {
+    await prepare()
+    const { supabase, userId } = await signedInClient()
+    await seedWeeklyRecord(supabase, userId)
+    await login(page)
+    await page.getByText('Récords esta semana').click()
+    const sheet = modal(page, page.getByRole('heading', { name: 'Récords de esta semana' }))
+    await expect(sheet.getByRole('button', { name: new RegExp(WEIGHT_EXERCISE) })).toBeVisible()
+    await expectTouchTargets(sheet)
   })
 
   test('routines list', async ({ page }) => {

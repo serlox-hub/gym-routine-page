@@ -337,7 +337,7 @@ describe('invalidaciones al mover una sesión en el tiempo', () => {
       'workout-history',
       'exercise-history',
       'previous-workout',
-      'weekly-pr-count',
+      'weekly-prs',
       'last-session-for-routine',
       'weekly-session-stats',
       'training-goal-sessions',
@@ -353,7 +353,7 @@ describe('invalidaciones al mover una sesión en el tiempo', () => {
 
     const keys = invalidatedKeys(spy)
     expect(keys).toContain('weekly-session-stats')
-    expect(keys).toContain('weekly-pr-count')
+    expect(keys).toContain('weekly-prs')
     expect(keys).toContain('last-session-for-routine')
   })
 })

@@ -348,16 +348,28 @@ export async function fetchSessionPRs(sessionId) {
   return data
 }
 
-export async function fetchWeeklyPRCount(from, to) {
-  const { count, error } = await getClient()
+// Rows of the week with at least one record. A rep record (pr_rep_counts) can come without any
+// is_pr_* flag, so it has its own condition (an empty array is filtered out in buildWeeklyPRs).
+// Pace is left out on purpose: no PR list shows a pace record (buildPRDetailsFromStats).
+export async function fetchWeeklyPRs(from, to) {
+  const { data, error } = await getClient()
     .from('exercise_session_stats')
-    .select('*', { count: 'exact', head: true })
+    .select(`
+      session_id, session_date, gym_id, exercise_id,
+      exercise:exercises (name:name_es, name_en, distance_unit),
+      session:workout_sessions (day_name),
+      best_weight, best_reps, best_1rm, total_volume,
+      best_time_seconds, best_distance_meters, best_per_reps,
+      is_pr_weight, is_pr_reps, is_pr_1rm, is_pr_volume,
+      is_pr_time, is_pr_distance,
+      pr_rep_counts
+    `)
     .gte('session_date', from)
     .lte('session_date', to)
-    .or('is_pr_weight.eq.true,is_pr_reps.eq.true,is_pr_1rm.eq.true,is_pr_volume.eq.true,is_pr_time.eq.true,is_pr_distance.eq.true,is_pr_pace.eq.true')
+    .or('is_pr_weight.eq.true,is_pr_reps.eq.true,is_pr_1rm.eq.true,is_pr_volume.eq.true,is_pr_time.eq.true,is_pr_distance.eq.true,pr_rep_counts.not.is.null')
 
   if (error) throw error
-  return count || 0
+  return data || []
 }
 
 export async function fetchSessionsWithPRs(sessionIds) {

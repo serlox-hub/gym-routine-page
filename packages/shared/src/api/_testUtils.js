@@ -25,6 +25,7 @@ export function makeQueryMock(resolveWith) {
     order: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
     not: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
     is: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
     lte: vi.fn().mockReturnThis(),

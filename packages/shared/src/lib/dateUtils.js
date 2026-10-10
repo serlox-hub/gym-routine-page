@@ -19,6 +19,16 @@ export function formatFullDate(dateStr, locale) {
   })
 }
 
+// "martes, 6 oct"
+export function formatWeekdayDate(dateStr, locale) {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString(locale || getDateLocale(), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+  })
+}
+
 export function formatShortDate(dateStr, locale) {
   const date = new Date(dateStr)
   return date.toLocaleDateString(locale || getDateLocale(), {
