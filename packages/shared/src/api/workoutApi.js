@@ -30,6 +30,7 @@ export {
 export {
   fetchSessionExercises,
   replaceSessionExercise,
+  correctSessionExercise,
   addSessionExercise,
   updateSessionExerciseFields,
   deleteSessionExercise,

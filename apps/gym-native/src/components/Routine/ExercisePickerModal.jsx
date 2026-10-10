@@ -6,6 +6,7 @@ import { useExercisesWithMuscleGroup, useMuscleGroups, useEquipmentTypes, useCre
 import { Modal, Button } from '../ui'
 import ExerciseForm from '../Exercise/ExerciseForm'
 import ExerciseSearchList from './ExerciseSearchList'
+import { colors } from '../../lib/styles'
 
 export default function ExercisePickerModal({
   isOpen,
@@ -15,11 +16,20 @@ export default function ExercisePickerModal({
   subtitle,
   initialMuscleGroup,
   existingExerciseIds,
+  isExerciseAllowed,
+  newExerciseDefaults,
+  notAllowedMessage,
 }) {
   const { t } = useTranslation()
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const { data: exercises, isLoading } = useExercisesWithMuscleGroup()
+  const [notAllowedError, setNotAllowedError] = useState(false)
+  const { data: allExercises, isLoading } = useExercisesWithMuscleGroup()
+  // Filtered before "Recent" and the search are computed, so neither offers an excluded exercise.
+  const exercises = useMemo(
+    () => (isExerciseAllowed && allExercises ? allExercises.filter(isExerciseAllowed) : allExercises),
+    [allExercises, isExerciseAllowed],
+  )
   const { data: muscleGroups } = useMuscleGroups()
   const { data: equipmentTypes } = useEquipmentTypes()
   const { data: recentStats } = useRecentExerciseStats({ enabled: isOpen })
@@ -30,18 +40,27 @@ export default function ExercisePickerModal({
     if (isOpen) {
       setIsCreatingNew(false)
       setSearchTerm('')
+      setNotAllowedError(false)
     }
   }, [isOpen])
 
   const handleCreateExercise = async (exerciseData, muscleGroupId) => {
+    // Checked before creating, so a rejected exercise never lands in the user's catalog.
+    if (isExerciseAllowed && !isExerciseAllowed(exerciseData)) {
+      setNotAllowedError(true)
+      return
+    }
+    setNotAllowedError(false)
     const newExercise = await createExercise.mutateAsync({ exercise: exerciseData, muscleGroupId })
     onSelect(newExercise)
   }
 
   const trimmedSearch = searchTerm.trim()
   const initialFormData = useMemo(
-    () => trimmedSearch ? { name: trimmedSearch } : null,
-    [trimmedSearch],
+    () => (trimmedSearch || newExerciseDefaults)
+      ? { ...newExerciseDefaults, ...(trimmedSearch && { name: trimmedSearch }) }
+      : null,
+    [trimmedSearch, newExerciseDefaults],
   )
 
   return (
@@ -61,6 +80,9 @@ export default function ExercisePickerModal({
               hideSubmitButton
             />
           </ScrollView>
+          {notAllowedError && notAllowedMessage && (
+            <Text className="text-sm mt-3" style={{ color: colors.danger }}>{notAllowedMessage}</Text>
+          )}
           <View className="flex-row gap-2 pt-3 mt-3 border-t border-border">
             <Button variant="secondary" onPress={() => setIsCreatingNew(false)}>{t('common:buttons.cancel')}</Button>
             <Button

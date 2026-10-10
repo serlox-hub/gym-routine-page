@@ -15,17 +15,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 5 },
-              networkTimeoutSeconds: 3,
-            },
-          },
-        ],
+        // Sin caché de la API de Supabase a propósito: con red lenta servía datos viejos sin
+        // avisar. Ver docs/DECISIONS.md.
       },
       manifest: false,
     }),
