@@ -4,7 +4,7 @@ import { makeClientMock } from './_testUtils.js'
 vi.mock('./_client.js', () => ({ getClient: vi.fn() }))
 import { getClient } from './_client.js'
 
-import { recalculateSessionStats, fetchRecentExerciseStats } from './exerciseStatsApi.js'
+import { recalculateSessionStats, fetchRecentExerciseStats, fetchWeeklyPRs } from './exerciseStatsApi.js'
 import { RECENT_STATS_LOOKBACK } from '../lib/recentExercises.js'
 
 beforeEach(() => {
@@ -144,5 +144,34 @@ describe('fetchRecentExerciseStats', () => {
     getClient.mockReturnValue(makeClientMock({ exercise_session_stats: { data: null, error } }))
 
     await expect(fetchRecentExerciseStats()).rejects.toBe(error)
+  })
+})
+
+describe('fetchWeeklyPRs', () => {
+  it('filters by the date range, keeps rep records and leaves pace out', async () => {
+    const rows = [{ session_id: 's1', exercise_id: 1 }]
+    const client = makeClientMock({ exercise_session_stats: { data: rows, error: null } })
+    getClient.mockReturnValue(client)
+
+    const result = await fetchWeeklyPRs('2026-05-04T00:00:00.000Z', '2026-05-10T23:59:59.000Z')
+
+    expect(result).toEqual(rows)
+    const query = client.from.mock.results[0].value
+    expect(query.gte).toHaveBeenCalledWith('session_date', '2026-05-04T00:00:00.000Z')
+    expect(query.lte).toHaveBeenCalledWith('session_date', '2026-05-10T23:59:59.000Z')
+    const filter = query.or.mock.calls[0][0]
+    expect(filter).toContain('pr_rep_counts.not.is.null')
+    expect(filter).not.toContain('is_pr_pace')
+  })
+
+  it('returns an empty array when there is no data', async () => {
+    getClient.mockReturnValue(makeClientMock({ exercise_session_stats: { data: null, error: null } }))
+    expect(await fetchWeeklyPRs('a', 'b')).toEqual([])
+  })
+
+  it('throws the Supabase error', async () => {
+    const error = { message: 'boom' }
+    getClient.mockReturnValue(makeClientMock({ exercise_session_stats: { data: null, error } }))
+    await expect(fetchWeeklyPRs('a', 'b')).rejects.toBe(error)
   })
 })

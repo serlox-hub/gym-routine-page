@@ -248,52 +248,7 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
     if (!pr) continue
     const unit = getUnit(exercise?.id)
     const distanceUnit = resolveDistanceUnit(distanceUnitByExerciseId[exercise?.id], exercise)
-    const prevBests = previousBests[exercise?.id] || {}
-    const details = []
-
-    if (pr.is_pr_weight && pr.best_weight) {
-      details.push(buildPRDetail({ type: 'bestWeight', newValue: pr.best_weight, oldValue: prevBests.bestWeight, unit }))
-    }
-    if (pr.is_pr_1rm && pr.best_1rm) {
-      details.push(buildPRDetail({ type: 'best1rm', newValue: pr.best_1rm, oldValue: prevBests.best1rm, unit }))
-    }
-    if (pr.is_pr_reps && pr.best_reps) {
-      details.push(buildPRDetail({ type: 'bestReps', newValue: pr.best_reps, oldValue: prevBests.bestReps, unit: 'reps' }))
-    }
-    if (pr.is_pr_volume && pr.total_volume) {
-      details.push(buildPRDetail({ type: 'totalVolume', newValue: pr.total_volume, oldValue: prevBests.totalVolume, unit }))
-    }
-    if (pr.is_pr_time && pr.best_time_seconds) {
-      details.push(buildPRDetail({ type: 'bestTimeSeconds', newValue: pr.best_time_seconds, oldValue: prevBests.bestTimeSeconds, unit: 's' }))
-    }
-    if (pr.is_pr_distance && pr.best_distance_meters) {
-      // En la unidad del ejercicio, no en metros crudos: esta tarjeta se lee JUNTO a la línea del
-      // ejercicio, que ya dice "5km". La marca y su etiqueta tienen que hablar de la misma escala.
-      details.push(buildPRDetail({
-        type: 'bestDistanceMeters',
-        newValue: metersToDistanceUnit(pr.best_distance_meters, distanceUnit),
-        oldValue: prevBests.bestDistanceMeters == null ? prevBests.bestDistanceMeters : metersToDistanceUnit(prevBests.bestDistanceMeters, distanceUnit),
-        unit: distanceUnit,
-      }))
-    }
-
-    if (Array.isArray(pr.pr_rep_counts) && pr.best_per_reps) {
-      const prevPerReps = prevBests.bestPerReps || {}
-      for (const repCount of pr.pr_rep_counts) {
-        const key = String(repCount)
-        const newValue = pr.best_per_reps[key]
-        if (newValue == null) continue
-        const previous = findPreviousRepRecord(repCount, prevPerReps)
-        details.push(buildPRDetail({
-          type: 'repPR',
-          newValue,
-          oldValue: previous?.weight,
-          oldRepCount: previous?.reps ?? null,
-          unit,
-          repCount,
-        }))
-      }
-    }
+    const details = buildPRDetailsFromStats(pr, { unit, distanceUnit, prevBests: previousBests[exercise?.id] })
 
     if (details.length > 0) {
       prs.push({ exerciseName: getExerciseName(exercise), details })
@@ -312,6 +267,67 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
     exercises,
     prs,
   }
+}
+
+/**
+ * The records of one `exercise_session_stats` row, one detail per record: each `is_pr_*` flag
+ * and each rep count in `pr_rep_counts`. A pace PR gives no detail (the summary carousel never
+ * showed one).
+ *
+ * @param {Object} pr - exercise_session_stats row (bests + flags)
+ * @param {{unit: string, distanceUnit: 'm'|'km', prevBests?: Object}} options - weight unit of the
+ *   exercise in the session's gym, its distance unit, and its bests before the session (fills oldValue)
+ * @returns {Array<Object>} details with the shape of buildPRDetail
+ */
+export function buildPRDetailsFromStats(pr, { unit, distanceUnit, prevBests = {} }) {
+  if (!pr) return []
+  const details = []
+
+  if (pr.is_pr_weight && pr.best_weight) {
+    details.push(buildPRDetail({ type: 'bestWeight', newValue: pr.best_weight, oldValue: prevBests.bestWeight, unit }))
+  }
+  if (pr.is_pr_1rm && pr.best_1rm) {
+    details.push(buildPRDetail({ type: 'best1rm', newValue: pr.best_1rm, oldValue: prevBests.best1rm, unit }))
+  }
+  if (pr.is_pr_reps && pr.best_reps) {
+    details.push(buildPRDetail({ type: 'bestReps', newValue: pr.best_reps, oldValue: prevBests.bestReps, unit: 'reps' }))
+  }
+  if (pr.is_pr_volume && pr.total_volume) {
+    details.push(buildPRDetail({ type: 'totalVolume', newValue: pr.total_volume, oldValue: prevBests.totalVolume, unit }))
+  }
+  if (pr.is_pr_time && pr.best_time_seconds) {
+    details.push(buildPRDetail({ type: 'bestTimeSeconds', newValue: pr.best_time_seconds, oldValue: prevBests.bestTimeSeconds, unit: 's' }))
+  }
+  if (pr.is_pr_distance && pr.best_distance_meters) {
+    // En la unidad del ejercicio, no en metros crudos: esta tarjeta se lee JUNTO a la línea del
+    // ejercicio, que ya dice "5km". La marca y su etiqueta tienen que hablar de la misma escala.
+    details.push(buildPRDetail({
+      type: 'bestDistanceMeters',
+      newValue: metersToDistanceUnit(pr.best_distance_meters, distanceUnit),
+      oldValue: prevBests.bestDistanceMeters == null ? prevBests.bestDistanceMeters : metersToDistanceUnit(prevBests.bestDistanceMeters, distanceUnit),
+      unit: distanceUnit,
+    }))
+  }
+
+  if (Array.isArray(pr.pr_rep_counts) && pr.best_per_reps) {
+    const prevPerReps = prevBests.bestPerReps || {}
+    for (const repCount of pr.pr_rep_counts) {
+      const key = String(repCount)
+      const newValue = pr.best_per_reps[key]
+      if (newValue == null) continue
+      const previous = findPreviousRepRecord(repCount, prevPerReps)
+      details.push(buildPRDetail({
+        type: 'repPR',
+        newValue,
+        oldValue: previous?.weight,
+        oldRepCount: previous?.reps ?? null,
+        unit,
+        repCount,
+      }))
+    }
+  }
+
+  return details
 }
 
 /**

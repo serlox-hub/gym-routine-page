@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   formatFullDate,
   formatShortDate,
+  formatWeekdayDate,
   toDateLocale,
   formatTime,
   formatRelativeDate,
@@ -27,6 +28,13 @@ describe('dateUtils', () => {
       const result = formatFullDate('2024-01-15T10:00:00Z')
       expect(result).toMatch(/15/)
       expect(result).toMatch(/2024/)
+    })
+  })
+
+  describe('formatWeekdayDate', () => {
+    it('día de la semana, día y mes corto, sin año', () => {
+      expect(formatWeekdayDate('2026-10-06T12:00:00Z', 'es-ES')).toBe('martes, 6 oct')
+      expect(formatWeekdayDate('2026-10-06T12:00:00Z', 'en-US')).toBe('Tuesday, Oct 6')
     })
   })
 

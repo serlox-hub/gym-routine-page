@@ -5,6 +5,7 @@ import {
   calculateSessionTotalSets,
   buildWorkoutSummaryFromEndSession,
   buildWorkoutSummaryFromSession,
+  buildPRDetailsFromStats,
 } from './workoutSummary.js'
 
 describe('workoutSummary', () => {
@@ -522,6 +523,43 @@ describe('workoutSummary', () => {
       expect(summary.prs).toHaveLength(1)
       const repPR = summary.prs[0].details.find(d => d.type === 'repPR')
       expect(repPR).toMatchObject({ type: 'repPR', repCount: 13, newValue: 10, oldValue: 8 })
+    })
+  })
+
+  describe('buildPRDetailsFromStats', () => {
+    const options = { unit: 'kg', distanceUnit: 'm' }
+
+    it('returns no details for a null row', () => {
+      expect(buildPRDetailsFromStats(null, options)).toEqual([])
+    })
+
+    it('gives no detail for a pace PR or for a flag without a value', () => {
+      const row = { is_pr_pace: true, best_pace_seconds: 300, is_pr_weight: true, best_weight: 0 }
+      expect(buildPRDetailsFromStats(row, options)).toEqual([])
+    })
+
+    it('gives one detail per flag and one per rep count, skipping rep counts without a value', () => {
+      const row = {
+        is_pr_weight: true, best_weight: 100,
+        is_pr_1rm: true, best_1rm: 120,
+        pr_rep_counts: [5, 8],
+        best_per_reps: { 5: 90 },
+      }
+      const details = buildPRDetailsFromStats(row, options)
+      expect(details.map(d => d.type)).toEqual(['bestWeight', 'best1rm', 'repPR'])
+      expect(details[2]).toMatchObject({ repCount: 5, newValue: 90 })
+    })
+
+    it('ignores a rep record with no best_per_reps', () => {
+      expect(buildPRDetailsFromStats({ pr_rep_counts: [5] }, options)).toEqual([])
+    })
+
+    it('converts distance to the exercise unit', () => {
+      const details = buildPRDetailsFromStats(
+        { is_pr_distance: true, best_distance_meters: 5000 },
+        { unit: 'kg', distanceUnit: 'km' },
+      )
+      expect(details[0]).toMatchObject({ type: 'bestDistanceMeters', newValue: 5, unit: 'km' })
     })
   })
 })

@@ -476,6 +476,7 @@ Extract when logic:
 | Exercise name layout (two lines, reserved height) | `exerciseNameLayout.js` | `getExerciseNameLineHeight()`, `getExerciseNameLinesHeight()` |
 | Routine share link (URL, way back after login, public preview) | `routineShare.js` | `buildRoutineShareUrl()`, `savePendingSharedRoutine()`, `takePendingSharedRoutine()`, `buildSharedRoutinePreview()` |
 | Exercise search (words in any order, typo tolerant) | `textUtils.js` | `tokenizeSearchQuery()`, `matchWordPrefix()`, `createSearchRanker()` (one per search, memoizes the typo matching), `compareSearchRanks()` (run by `filterExercises()`) |
+| Home records card: the week's records by session and exercise, and their count (the card's number) | `weeklyPRs.js` | `buildWeeklyPRs()` |
 | Exercise picker "Recent" section (latest done exercises) | `recentExercises.js` | `getRecentExercises()`, `getVisibleRecentExercises()` |
 | Exercise picker filters (option lists, "Clear filters" offer) | `exerciseFilters.js` | `getMuscleGroupFilterSections()`, `getEquipmentFilterSections()`, `hasActiveExerciseFilters()`, `shouldOfferClearFilters()` |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |

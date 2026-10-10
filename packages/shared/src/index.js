@@ -51,6 +51,7 @@ export * from './lib/sessionGymChange.js'
 export * from './lib/sessionToRoutineDay.js'
 export * from './lib/workoutSummary.js'
 export * from './lib/prCardFormat.js'
+export * from './lib/weeklyPRs.js'
 export * from './lib/homeUtils.js'
 
 // API layer

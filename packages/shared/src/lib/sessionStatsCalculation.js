@@ -251,7 +251,7 @@ const PR_LABEL_KEY = {
   bestPaceSeconds: 'workout:pr.pace',
 }
 
-function getPRLabel(stat) {
+export function getPRLabel(stat) {
   const key = PR_LABEL_KEY[stat]
   return key ? t(key) : ''
 }
