@@ -65,6 +65,12 @@ export const baseConfig = [
           selector: 'Literal[value=/^eyJ[A-Za-z0-9_-]+\\./]',
           message: 'No pegues un JWT en el código: la anon key va por variable de entorno, y la service_role nunca en cliente.',
         },
+        // Web: con la pantalla abierta directamente (recarga, enlace, PWA) no hay nada de la app
+        // detrás y `navigate(-1)` sale de ella. Native no llama a `navigate(-1)`.
+        {
+          selector: 'CallExpression[callee.name="navigate"][arguments.0.type="UnaryExpression"][arguments.0.operator="-"]',
+          message: 'No uses `navigate(-1)` a pelo: sale de la app si la pantalla se abrió directamente. Usa `PageHeader fallbackTo`, o `goBack(navigate, fallbackTo)` (lib/historyBack.js) fuera de PageHeader.',
+        },
       ],
 
       // Frontera arquitectónica apps ↔ @gym/shared (issue #20, G1): la lógica de negocio vive en

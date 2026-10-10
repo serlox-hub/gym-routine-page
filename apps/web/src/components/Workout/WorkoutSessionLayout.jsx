@@ -190,7 +190,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
       <div className="p-4 max-w-2xl mx-auto pb-32">
         <PageHeader
           title={title}
-          onBack={() => navigate(-1)}
+          fallbackTo={fallbackRoute}
           menuItems={[
             { icon: ArrowRightLeft, label: t('workout:set.weightConverter'), onClick: () => setShowConverter(true) },
             { icon: X, label: t('workout:session.abandon'), onClick: () => setShowCancelModal(true), danger: true },

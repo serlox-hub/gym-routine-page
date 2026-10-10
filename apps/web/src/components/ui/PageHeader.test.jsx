@@ -22,22 +22,32 @@ describe('PageHeader — back button', () => {
   })
 
   it('is a named 44px button', () => {
-    render(<PageHeader title="Rutinas" backTo="/" />)
+    render(<PageHeader title="Rutinas" fallbackTo="/" />)
 
     expect(screen.getByRole('button', { name: 'Volver' })).toHaveClass('w-11', 'h-11')
   })
 
-  it('goes to backTo', () => {
-    render(<PageHeader title="Rutinas" backTo="/routines" />)
+  it('goes back when there is an app screen behind', () => {
+    window.history.replaceState({ idx: 1 }, '')
+    render(<PageHeader title="Rutinas" fallbackTo="/routines" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
 
-    expect(navigate).toHaveBeenCalledWith('/routines')
+    expect(navigate).toHaveBeenCalledWith(-1)
   })
 
-  it('onBack wins over backTo and does not navigate by itself', () => {
+  it('replaces with fallbackTo when the screen was opened directly', () => {
+    window.history.replaceState({ idx: 0 }, '')
+    render(<PageHeader title="Rutinas" fallbackTo="/routines" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
+
+    expect(navigate).toHaveBeenCalledWith('/routines', { replace: true })
+  })
+
+  it('onBack wins over fallbackTo and does not navigate by itself', () => {
     const onBack = vi.fn()
-    render(<PageHeader title="Rutinas" backTo="/routines" onBack={onBack} />)
+    render(<PageHeader title="Rutinas" fallbackTo="/routines" onBack={onBack} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
 
@@ -45,7 +55,7 @@ describe('PageHeader — back button', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('without backTo or onBack there is no back button', () => {
+  it('without fallbackTo or onBack there is no back button', () => {
     render(<PageHeader title="Inicio" />)
 
     expect(screen.queryByRole('button', { name: 'Volver' })).not.toBeInTheDocument()

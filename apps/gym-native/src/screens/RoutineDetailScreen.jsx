@@ -11,7 +11,7 @@ import {
   useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay,
   useSetFavoriteRoutine,
 } from '../hooks/useRoutines'
-import { LoadingSpinner, ErrorMessage, ConfirmModal, DraggableList } from '../components/ui'
+import { LoadingSpinner, ErrorMessage, ConfirmModal, DraggableList, PageHeader } from '../components/ui'
 import {
   DayCard, RoutineHeader, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal, VolumeSummary,
@@ -75,8 +75,16 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const isLoading = loadingRoutine || loadingDays
   const error = routineError || daysError
 
-  if (isLoading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error.message} className="m-4" />
+  // The header goes in while loading too: on a slow connection a bare spinner was a screen with no
+  // way out (no tab bar here).
+  if (isLoading || error) {
+    return (
+      <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+        <PageHeader title="" />
+        {isLoading ? <LoadingSpinner /> : <ErrorMessage message={error.message} className="m-4" />}
+      </SafeAreaView>
+    )
+  }
 
   const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
   const nextDayNumber = maxDayNumber + 1

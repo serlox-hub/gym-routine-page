@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pencil, Trash2, Dumbbell } from 'lucide-react'
 import { useGyms, useCreateGym, useRenameGym, useDeleteGym, useGymSessionCount, getGymDisplayName, getNotifier, getGymDeleteAction, GYM_DELETE_ACTION } from '@gym/shared'
@@ -105,7 +104,6 @@ function GymFormModal({ isOpen, onClose, onSubmit, isPending, initialName = '', 
 }
 
 function Gyms() {
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const { data: gyms = [], isLoading } = useGyms()
   const createGym = useCreateGym()
@@ -134,7 +132,7 @@ function Gyms() {
     <div className="px-6 pt-4 pb-20 max-w-2xl mx-auto">
       <PageHeader
         title={t('common:gym.title')}
-        onBack={() => navigate(-1)}
+        fallbackTo="/preferences"
         rightAction={
           <button
             onClick={() => setShowAdd(true)}
