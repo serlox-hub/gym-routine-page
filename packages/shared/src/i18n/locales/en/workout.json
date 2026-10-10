@@ -141,7 +141,14 @@
     "addOnlyToday": "Just today",
     "addAlsoRoutine": "In the routine too",
     "addFailed": "Could not add the exercise. Try again.",
-    "addRoutineDayGone": "This day is no longer in the routine. The exercise was added to today only."
+    "addRoutineDayGone": "This day is no longer in the routine. The exercise was added to today only.",
+    "correct": "Change exercise",
+    "correctPickerSubtitle": "Only exercises that measure the same as \"{{name}}\" are shown. The sets are kept.",
+    "correctConfirmTitle": "Change the exercise?",
+    "correctConfirmMessage": "The sets of \"{{oldName}}\" will move to \"{{newName}}\" in this workout. The routine stays the same.",
+    "correctConfirm": "Change",
+    "correctFailed": "Could not change the exercise. Try again.",
+    "correctFieldsMismatch": "This exercise has to measure the same as \"{{name}}\"."
   },
   "summary": {
     "title": "Summary",

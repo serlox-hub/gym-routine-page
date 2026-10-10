@@ -7,6 +7,7 @@ import { getClient } from './_client.js'
 import {
   fetchSessionExercises,
   replaceSessionExercise,
+  correctSessionExercise,
   addSessionExercise,
   deleteSessionExercise,
   reorderSessionExercises,
@@ -73,6 +74,32 @@ describe('replaceSessionExercise', () => {
     getClient.mockReturnValue(clientMock)
     await expect(replaceSessionExercise({ sessionExerciseId: 5, newExerciseId: 9, fields: {}, applyToRoutine: false }))
       .rejects.toThrow('exercise_not_available')
+  })
+})
+
+// ============================================
+// correctSessionExercise
+// ============================================
+
+describe('correctSessionExercise', () => {
+  it('calls the RPC with the row, the new exercise and the weight factor', async () => {
+    const clientMock = makeClientMock()
+    getClient.mockReturnValue(clientMock)
+    await correctSessionExercise({ sessionExerciseId: 5, newExerciseId: 9, weightFactor: 2.20462262 })
+    expect(clientMock.rpc).toHaveBeenCalledWith('correct_session_exercise', {
+      p_session_exercise_id: 5,
+      p_new_exercise_id: 9,
+      p_weight_factor: 2.20462262,
+    })
+    expect(clientMock.from).not.toHaveBeenCalled()
+  })
+
+  it('throws when the RPC fails', async () => {
+    const clientMock = makeClientMock()
+    clientMock.rpc.mockResolvedValue({ data: null, error: new Error('tracked_fields_mismatch') })
+    getClient.mockReturnValue(clientMock)
+    await expect(correctSessionExercise({ sessionExerciseId: 5, newExerciseId: 9, weightFactor: 1 }))
+      .rejects.toThrow('tracked_fields_mismatch')
   })
 })
 

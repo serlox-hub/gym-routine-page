@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
-import { useExerciseHistory, useExerciseHistorySummary, usePreviousWorkout, useRescheduleSession, useUpdateSessionMetadata } from './useWorkoutHistory.js'
+import { useExerciseHistory, useExerciseHistorySummary, usePreviousWorkout, useRescheduleSession, useUpdateSessionMetadata, useCorrectSessionExercise } from './useWorkoutHistory.js'
 
 // Mock the workoutApi module
 vi.mock('../api/workoutApi.js', () => ({
@@ -17,9 +17,24 @@ vi.mock('../api/workoutApi.js', () => ({
   upsertCompletedSet: vi.fn(),
   deleteCompletedSet: vi.fn(),
   fetchCompletedSessionCount: vi.fn(),
+  correctSessionExercise: vi.fn(),
 }))
 
-import { fetchExerciseHistory, fetchExerciseHistorySummary, fetchPreviousWorkout, rescheduleSession, updateSessionMetadata } from '../api/workoutApi.js'
+vi.mock('../api/exerciseStatsApi.js', () => ({
+  fetchExerciseChartData: vi.fn(),
+  fetchExerciseAllTimeStats: vi.fn(),
+  fetchSessionPRs: vi.fn(),
+  recalculateExercisePRs: vi.fn(),
+  recalculateSessionStats: vi.fn(),
+}))
+vi.mock('../api/exerciseApi.js', () => ({ fetchUserExerciseGymUnit: vi.fn() }))
+vi.mock('../api/preferencesApi.js', () => ({ fetchPreferences: vi.fn() }))
+vi.mock('./useAuth.js', () => ({ useUserId: () => 'user-1' }))
+
+import { fetchExerciseHistory, fetchExerciseHistorySummary, fetchPreviousWorkout, rescheduleSession, updateSessionMetadata, correctSessionExercise } from '../api/workoutApi.js'
+import { recalculateSessionStats } from '../api/exerciseStatsApi.js'
+import { fetchUserExerciseGymUnit } from '../api/exerciseApi.js'
+import { fetchPreferences } from '../api/preferencesApi.js'
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -340,5 +355,65 @@ describe('invalidaciones al mover una sesión en el tiempo', () => {
     expect(keys).toContain('weekly-session-stats')
     expect(keys).toContain('weekly-pr-count')
     expect(keys).toContain('last-session-for-routine')
+  })
+})
+
+describe('useCorrectSessionExercise', () => {
+  const PARAMS = { sessionId: 's-1', sessionExerciseId: 5, oldExerciseId: 10, newExerciseId: 20, gymId: 3 }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    correctSessionExercise.mockResolvedValue(undefined)
+    recalculateSessionStats.mockResolvedValue({ affectedExerciseIds: [] })
+    fetchUserExerciseGymUnit.mockResolvedValue(null)
+    fetchPreferences.mockResolvedValue([{ key: 'weight_unit', value: 'kg' }])
+  })
+
+  function renderCorrect() {
+    return renderHook(() => useCorrectSessionExercise(), { wrapper: createWrapper() })
+  }
+
+  it('passes factor 1 when both exercises resolve to the same unit, then recalculates the stats', async () => {
+    const { result } = renderCorrect()
+    await result.current.mutateAsync(PARAMS)
+
+    expect(fetchUserExerciseGymUnit).toHaveBeenCalledWith(10, 3)
+    expect(fetchUserExerciseGymUnit).toHaveBeenCalledWith(20, 3)
+    expect(fetchPreferences).toHaveBeenCalledWith('user-1')
+    expect(correctSessionExercise).toHaveBeenCalledWith({ sessionExerciseId: 5, newExerciseId: 20, weightFactor: 1 })
+    expect(recalculateSessionStats).toHaveBeenCalledWith('s-1')
+  })
+
+  it('converts kg to lb when only the new exercise has a lb override in that gym', async () => {
+    fetchUserExerciseGymUnit.mockImplementation(async (exerciseId) => (exerciseId === 20 ? 'lb' : null))
+    const { result } = renderCorrect()
+    await result.current.mutateAsync(PARAMS)
+
+    expect(correctSessionExercise).toHaveBeenCalledWith({ sessionExerciseId: 5, newExerciseId: 20, weightFactor: 2.20462262 })
+  })
+
+  it('uses the global preference for an exercise without override', async () => {
+    fetchPreferences.mockResolvedValue([{ key: 'weight_unit', value: 'lb' }])
+    fetchUserExerciseGymUnit.mockImplementation(async (exerciseId) => (exerciseId === 20 ? 'kg' : null))
+    const { result } = renderCorrect()
+    await result.current.mutateAsync(PARAMS)
+
+    expect(correctSessionExercise).toHaveBeenCalledWith({ sessionExerciseId: 5, newExerciseId: 20, weightFactor: 0.45359237 })
+  })
+
+  it('aborts before writing when a unit read fails', async () => {
+    fetchPreferences.mockRejectedValue(new Error('network'))
+    const { result } = renderCorrect()
+    await expect(result.current.mutateAsync(PARAMS)).rejects.toThrow('network')
+
+    expect(correctSessionExercise).not.toHaveBeenCalled()
+  })
+
+  it('propagates a failed recalculation instead of swallowing it', async () => {
+    recalculateSessionStats.mockRejectedValue(new Error('recalc failed'))
+    const { result } = renderCorrect()
+    await expect(result.current.mutateAsync(PARAMS)).rejects.toThrow('recalc failed')
+
+    expect(correctSessionExercise).toHaveBeenCalled()
   })
 })

@@ -8,7 +8,8 @@ initI18n()
 
 import { render, screen, fireEvent } from '@testing-library/react'
 
-const { EXERCISES, useRecentExerciseStats } = vi.hoisted(() => ({
+const { EXERCISES, useRecentExerciseStats, createExerciseMutateAsync } = vi.hoisted(() => ({
+  createExerciseMutateAsync: vi.fn(),
   EXERCISES: [
     { id: 1, name_es: 'Press banca', name_en: 'Bench press', muscle_group_id: 1, muscle_group: { id: 1, name: 'Pecho' }, is_system: true, gif_key: null },
     { id: 2, name_es: 'Sentadilla', name_en: 'Squat', muscle_group_id: 2, muscle_group: { id: 2, name: 'Piernas' }, is_system: true, gif_key: null },
@@ -21,7 +22,7 @@ vi.mock('../../hooks/useExercises.js', () => ({
   useExercisesWithMuscleGroup: () => ({ data: EXERCISES, isLoading: false }),
   useMuscleGroups: () => ({ data: [] }),
   useEquipmentTypes: () => ({ data: [] }),
-  useCreateExercise: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useCreateExercise: () => ({ mutateAsync: createExerciseMutateAsync, isPending: false }),
   useRecentExerciseStats,
 }))
 
@@ -309,6 +310,72 @@ describe('ExercisePickerModal', () => {
 
       rerender(<ExercisePickerModal isOpen={false} onClose={vi.fn()} onSelect={onSelect} />)
       expect(useRecentExerciseStats).toHaveBeenLastCalledWith({ enabled: false })
+    })
+  })
+
+  describe('isExerciseAllowed (correcting a past session exercise, issue 168)', () => {
+    const allowOnlyLegs = (exercise) => exercise.muscle_group_id === 2 && exercise.id !== 3
+
+    const exerciseHeadings = () => screen.getAllByRole('heading')
+      .filter(heading => heading.tagName !== 'H3')
+      .map(heading => heading.textContent)
+
+    it('lists only the allowed exercises, in "Recent" and in the full list', () => {
+      useRecentExerciseStats.mockReturnValue({ data: [
+        { exercise_id: 1, session_date: '2026-09-30T18:00:00+00:00' },
+        { exercise_id: 2, session_date: '2026-09-30T18:00:00+00:00' },
+      ] })
+      render(<ExercisePickerModal isOpen onClose={vi.fn()} onSelect={onSelect} isExerciseAllowed={allowOnlyLegs} />)
+
+      expect(exerciseHeadings()).toEqual(['Recientes', 'Sentadilla', 'Todos los ejercicios', 'Sentadilla'])
+    })
+
+    it('never finds an excluded exercise through the search', () => {
+      render(<ExercisePickerModal isOpen onClose={vi.fn()} onSelect={onSelect} isExerciseAllowed={allowOnlyLegs} />)
+
+      fireEvent.change(screen.getByPlaceholderText('Buscar ejercicio...'), { target: { value: 'press' } })
+
+      expect(screen.queryByText('Press banca')).not.toBeInTheDocument()
+    })
+
+    it('does not create an exercise the check rejects, and says why', () => {
+      render(
+        <ExercisePickerModal
+          isOpen
+          onClose={vi.fn()}
+          onSelect={onSelect}
+          isExerciseAllowed={() => false}
+          newExerciseDefaults={{ tracked_fields: ['weight', 'reps'], muscle_group_id: 1 }}
+          notAllowedMessage="Tiene que medir lo mismo"
+        />,
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Crear ejercicio' }))
+      fireEvent.change(screen.getByPlaceholderText('Ej: Press banca con barra'), { target: { value: 'Elevaciones' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Crear ejercicio' }))
+
+      expect(screen.getByText('Tiene que medir lo mismo')).toBeInTheDocument()
+      expect(createExerciseMutateAsync).not.toHaveBeenCalled()
+      expect(onSelect).not.toHaveBeenCalled()
+    })
+
+    it('creates and selects an allowed exercise', async () => {
+      const created = { id: 99, name: 'Elevaciones', tracked_fields: ['weight', 'reps'] }
+      createExerciseMutateAsync.mockResolvedValue(created)
+      render(
+        <ExercisePickerModal
+          isOpen
+          onClose={vi.fn()}
+          onSelect={onSelect}
+          isExerciseAllowed={() => true}
+          newExerciseDefaults={{ tracked_fields: ['weight', 'reps'], muscle_group_id: 1 }}
+        />,
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Crear ejercicio' }))
+      fireEvent.change(screen.getByPlaceholderText('Ej: Press banca con barra'), { target: { value: 'Elevaciones' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Crear ejercicio' }))
+
+      await vi.waitFor(() => expect(onSelect).toHaveBeenCalledWith(created))
+      expect(createExerciseMutateAsync.mock.calls[0][0].exercise.tracked_fields).toEqual(['weight', 'reps'])
     })
   })
 })

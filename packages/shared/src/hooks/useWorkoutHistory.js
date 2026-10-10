@@ -12,7 +12,11 @@ import {
   fetchCompletedSessionCount,
   upsertCompletedSet,
   deleteCompletedSet,
+  correctSessionExercise,
 } from '../api/workoutApi.js'
+import { fetchUserExerciseGymUnit } from '../api/exerciseApi.js'
+import { fetchPreferences } from '../api/preferencesApi.js'
+import { getConversionFactor } from '../api/weightConversionApi.js'
 import {
   fetchExerciseChartData,
   fetchExerciseAllTimeStats,
@@ -21,7 +25,8 @@ import {
   recalculateSessionStats,
 } from '../api/exerciseStatsApi.js'
 import { transformSessionDetailData, buildPreviousWorkoutRef } from '../lib/workoutTransforms.js'
-import { localizeExercisesInList, localizeExercise } from '../lib/exerciseUtils.js'
+import { localizeExercisesInList, localizeExercise, resolveWeightUnit } from '../lib/exerciseUtils.js'
+import { useUserId } from './useAuth.js'
 
 // ============================================
 // HISTORY QUERIES
@@ -258,6 +263,43 @@ export function useDeleteCompletedSet() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, 'prs', sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
+    },
+  })
+}
+
+// Corrects the exercise of a past session row, keeping its sets. Weights are stored raw in the unit
+// of (exercise, gym), so both units are resolved for the SESSION's gym and the RPC converts. Every
+// read is fresh and any failure aborts before writing: a wrong factor would change the numbers'
+// meaning silently. The recalculation is NOT best effort, unlike a set edit: if it fails the new
+// exercise has no stats row for the session, so the error reaches the modal and a retry (a no-op in
+// the RPC, then the recalculation again) completes it.
+export function useCorrectSessionExercise() {
+  const queryClient = useQueryClient()
+  const userId = useUserId()
+
+  return useMutation({
+    mutationFn: async ({ sessionId, sessionExerciseId, oldExerciseId, newExerciseId, gymId }) => {
+      const [oldGymUnit, newGymUnit, preferenceRows] = await Promise.all([
+        fetchUserExerciseGymUnit(oldExerciseId, gymId),
+        fetchUserExerciseGymUnit(newExerciseId, gymId),
+        fetchPreferences(userId),
+      ])
+      const globalUnit = preferenceRows?.find(row => row.key === 'weight_unit')?.value
+      const weightFactor = getConversionFactor(
+        resolveWeightUnit(oldGymUnit, { weight_unit: globalUnit }),
+        resolveWeightUnit(newGymUnit, { weight_unit: globalUnit }),
+      )
+      await correctSessionExercise({ sessionExerciseId, newExerciseId, weightFactor })
+      await recalculateSessionStats(sessionId)
+    },
+    onSettled: (_, __, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_DETAIL, 'prs', sessionId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WORKOUT_HISTORY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXERCISE_HISTORY] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PREVIOUS_WORKOUT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.WEEKLY_PR_COUNT] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RECENT_EXERCISES] })
     },
   })
 }

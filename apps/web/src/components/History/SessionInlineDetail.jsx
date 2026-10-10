@@ -13,6 +13,7 @@ import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
 import GymSelector from '../Workout/GymSelector.jsx'
 import ConvertToRoutineDayModal from './ConvertToRoutineDayModal.jsx'
 import MuscleGroupSetsChart from './MuscleGroupSetsChart.jsx'
+import CorrectSessionExerciseAction from './CorrectSessionExerciseAction.jsx'
 import { uploadVideo } from '../../lib/videoStorage.js'
 import {
   SENSATION_LABELS,
@@ -246,13 +247,25 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
         {isHistoryClickable && (
           <ChevronRight size={16} color={colors.textMuted} />
         )}
+        {isEditing && (
+          // -my-2.5 gives back the header's py-2.5, so the 44px box keeps the header 44 tall.
+          <CorrectSessionExerciseAction
+            sessionId={sessionId}
+            sessionExerciseId={sessionExerciseId}
+            exercise={exercise}
+            gymId={gymId}
+            className="-my-2.5 -mr-2 flex-shrink-0"
+          />
+        )}
       </div>
       <div className="space-y-2">
         {isEditing ? (
           <>
             {sets.map(set => (
               <EditableSetRow
-                key={set.id}
+                // Correcting the exercise (#168) can convert the weights without changing set.id:
+                // remounting reseeds the row's values, or it would save the old weight in the new unit.
+                key={`${set.id}:${exercise.id}`}
                 set={set}
                 exercise={exercise}
                 sessionId={sessionId}
