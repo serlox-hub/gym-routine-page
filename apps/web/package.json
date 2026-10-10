@@ -1,7 +1,7 @@
 {
   "name": "@gym/web",
   "private": true,
-  "version": "1.87.7",
+  "version": "1.87.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
