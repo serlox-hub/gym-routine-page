@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Trash2, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react'
-import { Card, ConfirmModal, DragHandle, DropdownMenu, IconButton, LoadingSpinner, Modal } from '../ui/index.js'
+import { Card, ConfirmModal, DragHandle, DropdownMenu, IconButton, LoadingSpinner, Modal, SaveStatus } from '../ui/index.js'
 import { useRoutineBlocks, useReorderRoutineExercises, useSetRoutineExerciseSupersetGroup, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines.js'
 import { useStartSession } from '../../hooks/useWorkout.js'
 import { colors } from '../../lib/styles.js'
@@ -11,7 +11,7 @@ import { getExistingSupersetIds, getRoutineDayLayout, useSelectedGym, getRoutine
 import AddExerciseButton from './AddExerciseButton.jsx'
 import BlockSection from './BlockSection.jsx'
 
-function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced, dragHandleProps = null, isDragging = false, initiallyExpanded = false }) {
+function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEditExercise, onReplaceExercise, onDuplicateExercise, duplicatingExerciseId = null, onMoveExerciseToDay, onDelete, onDuplicate, isDuplicatingDay = false, onReorderToPosition, currentIndex = 0, totalDays = 1, dayNames = [], isReorderingDays = false, hasActiveSession, activeRoutineDayId, activeSessionSynced, dragHandleProps = null, isDragging = false, initiallyExpanded = false }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { id, name } = day
@@ -107,18 +107,33 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
   // Both writes renumber the whole day: while one is in flight, no drag and no menu.
   const isReorderingExercises = reorderExercises.isPending || setSupersetGroup.isPending
 
+  // Both modals wait for their write and show its failure: reset on open so they show this
+  // opening's call, which is safe because neither can close while it is pending.
+  const openDeleteExercise = (routineExercise) => {
+    deleteExercise.reset()
+    setExerciseToDelete(routineExercise)
+  }
+
   const handleDeleteExercise = () => {
     if (!exerciseToDelete) return
-    deleteExercise.mutate({ exerciseId: exerciseToDelete.id, dayId: id })
-    setExerciseToDelete(null)
+    deleteExercise.mutate({ exerciseId: exerciseToDelete.id, dayId: id }, { onSuccess: () => setExerciseToDelete(null) })
+  }
+
+  const openRename = () => {
+    updateDay.reset()
+    setRenameValue(name)
+    setShowRenameModal(true)
   }
 
   const handleRenameDay = () => {
+    // Enter in the field while the save is in flight.
+    if (updateDay.isPending) return
     const trimmed = renameValue.trim()
-    if (trimmed && trimmed !== name) {
-      updateDay.mutate({ dayId: id, routineId, data: { name: trimmed } })
+    if (!trimmed || trimmed === name) {
+      setShowRenameModal(false)
+      return
     }
-    setShowRenameModal(false)
+    updateDay.mutate({ dayId: id, routineId, data: { name: trimmed } }, { onSuccess: () => setShowRenameModal(false) })
   }
 
 
@@ -181,10 +196,7 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
                       {
                         icon: Pencil,
                         label: t('routine:day.rename'),
-                        onClick: () => {
-                          setRenameValue(name)
-                          setShowRenameModal(true)
-                        }
+                        onClick: openRename,
                       },
                       { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
                       totalDays > 1 && {
@@ -223,8 +235,9 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
                         onReplaceExercise={(re) => onReplaceExercise(re, id)}
                         onReorderBlock={handleReorderWarmupBlock}
                         onRemoveExerciseFromSuperset={handleRemoveFromSuperset}
-                        onDeleteExercise={(re) => setExerciseToDelete(re)}
+                        onDeleteExercise={openDeleteExercise}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
+                        duplicatingExerciseId={duplicatingExerciseId}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                       />
                     ) : (
@@ -240,8 +253,9 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
                         onReplaceExercise={(re) => onReplaceExercise(re, id)}
                         onReorderBlock={handleReorderMainBlock}
                         onRemoveExerciseFromSuperset={handleRemoveFromSuperset}
-                        onDeleteExercise={(re) => setExerciseToDelete(re)}
+                        onDeleteExercise={openDeleteExercise}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
+                        duplicatingExerciseId={duplicatingExerciseId}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                       />
                     ) : (
@@ -267,9 +281,12 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
         confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteExercise}
         onCancel={() => setExerciseToDelete(null)}
+        isLoading={deleteExercise.isPending}
+        saveStatus
+        error={deleteExercise.isError ? t('routine:exercise.removeError') : null}
       />
 
-      <Modal isOpen={showRenameModal} onClose={() => setShowRenameModal(false)} position="bottom" maxWidth="max-w-lg">
+      <Modal isOpen={showRenameModal} onClose={updateDay.isPending ? undefined : () => setShowRenameModal(false)} position="bottom" maxWidth="max-w-lg">
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <h3 style={{ color: colors.textPrimary, fontSize: 18, fontWeight: 700 }}>{t('routine:day.rename')}</h3>
           <div>
@@ -278,11 +295,17 @@ function DayCard({ day, routineId, routineName, onAddExercise, onAddWarmup, onEd
               autoFocus className="w-full px-4 py-3 rounded-xl text-sm outline-none"
               style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, border: 'none' }}
               onKeyDown={(e) => e.key === 'Enter' && handleRenameDay()} />
+            {/* Inside the field's block: the always-mounted live region would add a gap of its own. */}
+            <SaveStatus
+              isPending={updateDay.isPending}
+              error={updateDay.isError ? t('routine:day.renameError') : null}
+              className="mt-3"
+            />
           </div>
-          <button onClick={handleRenameDay} disabled={!renameValue.trim()}
+          <button onClick={handleRenameDay} disabled={!renameValue.trim() || updateDay.isPending}
             className="w-full min-h-11 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
             style={{ backgroundColor: colors.success, color: colors.bgPrimary }}>
-            {t('common:buttons.save')}
+            {updateDay.isPending ? t('common:buttons.loading') : t('common:buttons.save')}
           </button>
         </div>
       </Modal>

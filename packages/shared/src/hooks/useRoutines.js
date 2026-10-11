@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import {
@@ -32,6 +32,7 @@ import {
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
+import { useOneAtATimeMutation } from './useOneAtATimeMutation.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
 import { calculateNextSortOrder } from '../lib/arrayUtils.js'
 import { getTemplateImportData } from '../lib/routineTemplates.js'
@@ -106,6 +107,8 @@ export function useRoutineAllExercises(routineId) {
   })
 }
 
+// No `onError` toast: the only caller is the "new routine" sheet, which shows the failure inline.
+// On native a toast would paint under its modal.
 export function useCreateRoutine() {
   const queryClient = useQueryClient()
   const userId = useUserId()
@@ -142,29 +145,19 @@ export function useCreateRoutineDay() {
 // keeps a routine from getting the same day twice, and only shared code has a test runner on both.
 export function useAddRoutineDay(routineId) {
   const queryClient = useQueryClient()
-  const { mutateAsync, isPending } = useCreateRoutineDay()
-  // A ref, not `isPending`: TanStack Query publishes the pending state on a timer, so a second
-  // tap right after the first still reads it as false and would create the same day twice.
-  const addingRef = useRef(false)
+  // useCreateRoutineDay's onError tells the user when it fails.
+  const { run, isPending } = useOneAtATimeMutation(useCreateRoutineDay())
 
-  const addDay = useCallback(async () => {
-    if (addingRef.current) return
-    addingRef.current = true
+  const addDay = useCallback(() => {
     // From the cache at tap time, not from the screen's render: the refetch lands here before the
     // screen re-renders with it.
     const days = queryClient.getQueryData([QUERY_KEYS.ROUTINE_DAYS, String(routineId)])
     const nextDayNumber = calculateNextSortOrder(days)
-    try {
-      await mutateAsync({
-        routineId,
-        day: { name: t('routine:day.title', { number: nextDayNumber }), sort_order: nextDayNumber },
-      })
-    } catch {
-      // useCreateRoutineDay's onError tells the user
-    } finally {
-      addingRef.current = false
-    }
-  }, [queryClient, mutateAsync, routineId])
+    return run({
+      routineId,
+      day: { name: t('routine:day.title', { number: nextDayNumber }), sort_order: nextDayNumber },
+    })
+  }, [queryClient, run, routineId])
 
   return { addDay, isPending }
 }
@@ -181,13 +174,17 @@ export function useUpdateRoutine() {
   })
 }
 
+// No `onError` toast: the confirm modal shows the failure inline. `isPending` holds until the
+// routines list has been refetched, so the screen the user lands on no longer shows it.
+// `refetchType: 'all'`: on web nothing observes the list from the routine's page, and the default
+// (active only) would resolve at once and land on Home with the deleted routine still cached.
 export function useDeleteRoutine() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (routineId) => apiDeleteRoutine(routineId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES], refetchType: 'all' })
       getNotifier()?.show(t('routine:deleted'), 'success')
     },
   })
@@ -271,25 +268,30 @@ export function useCreateRoutineFromTemplate() {
   })
 }
 
+// No `onError` toast: the rename modal shows the failure inline. `isPending` holds until the days
+// list has been refetched, so the modal closes onto the new name, not the old one.
 export function useUpdateRoutineDay() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ dayId, data }) => apiUpdateRoutineDay({ dayId, data }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
     },
   })
 }
 
+// No `onError` toast: the confirm modal shows the failure inline. `isPending` holds until the days
+// list has been refetched, so the modal closes onto a list without the day. The routines list (its
+// "N days") does not need to hold the modal.
 export function useDeleteRoutineDay() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ dayId }) => apiDeleteRoutineDay(dayId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
     },
   })
 }
@@ -334,13 +336,15 @@ export function useReorderRoutineDays() {
   })
 }
 
+// No `onError` toast: the confirm modal shows the failure inline. `isPending` holds until the day's
+// exercises have been refetched, so the modal closes onto a list without the exercise.
 export function useDeleteRoutineExercise() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ exerciseId }) => apiDeleteRoutineExercise(exerciseId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
     },
   })
 }
@@ -438,13 +442,18 @@ export function useAddExerciseToDay() {
   })
 }
 
+// `isPending` holds until the day's exercises have been refetched: the menu option comes back only
+// once the copy is on screen, or the user would duplicate again thinking the first did nothing.
 export function useDuplicateRoutineExercise() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ routineExercise }) => apiDuplicateRoutineExercise({ routineExercise }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_BLOCKS, String(variables.dayId)] })
+    },
+    onError: () => {
+      getNotifier()?.show(t('routine:exercise.duplicateError'), 'error')
     },
   })
 }

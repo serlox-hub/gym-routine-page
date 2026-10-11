@@ -6,12 +6,12 @@ import { i18n, initI18n, initNotifications } from '@gym/shared'
 i18n.use(initReactI18next)
 initI18n()
 
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 
 // `blocksRef` es mutable y compartida con el mock de abajo (vi.hoisted la saca del closure de
 // la fábrica) para poder variar los bloques que devuelve `useRoutineBlocks` por test. `pendingRef`
 // hace lo mismo con el `isPending` de las dos mutaciones que combina `isReorderingExercises`.
-const { blocksRef, pendingRef, reorderMutate, supersetMutate, navigate, startMutate, startPendingRef } = vi.hoisted(() => ({
+const { blocksRef, pendingRef, reorderMutate, supersetMutate, navigate, startMutate, startPendingRef, deleteExerciseMutation, updateDayMutation } = vi.hoisted(() => ({
   blocksRef: { current: [] },
   pendingRef: { current: { reorder: false, superset: false } },
   reorderMutate: vi.fn(),
@@ -19,6 +19,8 @@ const { blocksRef, pendingRef, reorderMutate, supersetMutate, navigate, startMut
   navigate: vi.fn(),
   startMutate: vi.fn(),
   startPendingRef: { current: false },
+  deleteExerciseMutation: { current: {} },
+  updateDayMutation: { current: {} },
 }))
 
 vi.mock('react-router-dom', () => ({
@@ -31,8 +33,8 @@ vi.mock('../../hooks/useRoutines.js', () => ({
   useRoutineBlocks: () => ({ data: blocksRef.current, isLoading: false }),
   useReorderRoutineExercises: () => ({ mutate: reorderMutate, isPending: pendingRef.current.reorder }),
   useSetRoutineExerciseSupersetGroup: () => ({ mutate: supersetMutate, isPending: pendingRef.current.superset }),
-  useDeleteRoutineExercise: () => ({ mutate: vi.fn() }),
-  useUpdateRoutineDay: () => ({ mutate: vi.fn() }),
+  useDeleteRoutineExercise: () => deleteExerciseMutation.current,
+  useUpdateRoutineDay: () => updateDayMutation.current,
 }))
 
 vi.mock('../../hooks/useWorkout.js', () => ({
@@ -63,6 +65,10 @@ const routineExercise = (id, sortOrder, supersetGroup, name, isWarmup = false) =
   rest_seconds: 90,
   exercise: { id: id * 10, name_es: name, tracked_fields: ['weight', 'reps'] },
 })
+
+const idleMutation = () => ({ mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false })
+deleteExerciseMutation.current = idleMutation()
+updateDayMutation.current = idleMutation()
 
 function renderDay(props) {
   return render(
@@ -269,5 +275,199 @@ describe('DayCard — start button', () => {
 
     expect(startMutate).not.toHaveBeenCalled()
     expect(navigate).not.toHaveBeenCalled()
+  })
+})
+
+// Issue #174: the remove and rename modals wait for their write (open, disabled, loading) and show
+// its failure, instead of closing at once onto a list that has not changed yet.
+describe('DayCard — modals that wait for their write', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    pendingRef.current = { reorder: false, superset: false }
+    deleteExerciseMutation.current = idleMutation()
+    updateDayMutation.current = idleMutation()
+    blocksRef.current = [main([routineExercise(1, 1, null, 'Sentadilla')])]
+  })
+
+  // The modal's title: the exercise menu that opens it has no heading of its own.
+  const removeMessage = () => screen.queryByRole('heading', { name: i18n.t('routine:exercise.removeFromRoutine') })
+  // The only text field in the card is the rename modal's.
+  const renameField = () => screen.queryByRole('textbox')
+
+  function openRemoveExercise() {
+    fireEvent.click(screen.getByText('Empuje').closest('[class*="justify-between"]'))
+    fireEvent.click(screen.getByText('Sentadilla').closest('[class*="cursor-pointer"]'))
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common:buttons.delete') }))
+  }
+
+  function openRename() {
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common:buttons.moreOptions') }))
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('routine:day.rename') }))
+  }
+
+  it('remove exercise: resets the last call on open, and closes only once the removal succeeds', () => {
+    renderDay()
+    openRemoveExercise()
+    expect(deleteExerciseMutation.current.reset).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common:buttons.delete') }))
+
+    const [variables, { onSuccess }] = deleteExerciseMutation.current.mutate.mock.calls[0]
+    expect(variables).toEqual({ exerciseId: 1, dayId: 1 })
+    expect(removeMessage()).not.toBeNull()
+
+    act(() => { onSuccess() })
+    expect(removeMessage()).toBeNull()
+  })
+
+  it('remove exercise: while in flight the modal stays open and its buttons are disabled', () => {
+    deleteExerciseMutation.current = { ...idleMutation(), isPending: true }
+    renderDay()
+    openRemoveExercise()
+
+    expect(screen.getByRole('button', { name: i18n.t('common:buttons.loading') })).toBeDisabled()
+    expect(screen.getByRole('button', { name: i18n.t('common:buttons.cancel') })).toBeDisabled()
+    fireEvent.mouseDown(removeMessage().closest('.rounded-lg').parentElement)
+    expect(removeMessage()).not.toBeNull()
+  })
+
+  it('remove exercise: a failure shows inside the modal', () => {
+    deleteExerciseMutation.current = { ...idleMutation(), isError: true }
+    renderDay()
+    openRemoveExercise()
+
+    expect(screen.getByText(i18n.t('routine:exercise.removeError'))).toBeInTheDocument()
+  })
+
+  it('rename: resets the last call on open, saves the trimmed name and closes once it succeeds', () => {
+    renderDay()
+    openRename()
+    expect(updateDayMutation.current.reset).toHaveBeenCalledTimes(1)
+
+    fireEvent.change(renameField(), { target: { value: '  Pierna  ' } })
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common:buttons.save') }))
+
+    const [variables, { onSuccess }] = updateDayMutation.current.mutate.mock.calls[0]
+    expect(variables).toEqual({ dayId: 1, routineId: '1', data: { name: 'Pierna' } })
+    expect(renameField()).not.toBeNull()
+
+    act(() => { onSuccess() })
+    expect(renameField()).toBeNull()
+  })
+
+  it('rename: the same name closes without writing', () => {
+    renderDay()
+    openRename()
+
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common:buttons.save') }))
+
+    expect(updateDayMutation.current.mutate).not.toHaveBeenCalled()
+    expect(renameField()).toBeNull()
+  })
+
+  it('rename: while in flight the button is disabled and loading, Enter and the backdrop do nothing', () => {
+    updateDayMutation.current = { ...idleMutation(), isPending: true }
+    renderDay()
+    openRename()
+    fireEvent.change(renameField(), { target: { value: 'Pierna' } })
+
+    expect(screen.getByRole('button', { name: i18n.t('common:buttons.loading') })).toBeDisabled()
+    fireEvent.keyDown(renameField(), { key: 'Enter' })
+    fireEvent.mouseDown(renameField().closest('.rounded-t-2xl').parentElement)
+
+    expect(updateDayMutation.current.mutate).not.toHaveBeenCalled()
+    expect(renameField()).not.toBeNull()
+  })
+
+  it('rename: a failure shows inside the modal', () => {
+    updateDayMutation.current = { ...idleMutation(), isError: true }
+    renderDay()
+    openRename()
+
+    expect(screen.getByText(i18n.t('routine:day.renameError'))).toBeInTheDocument()
+  })
+})
+
+// Issue #174: the exercise menu closes on tap, so a copy in flight is shown on the row being copied
+// and the option waits on every row until the copy is on screen.
+describe('DayCard — copying an exercise', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    pendingRef.current = { reorder: false, superset: false }
+    blocksRef.current = [
+      warmup([routineExercise(5, 1, null, 'Movilidad', true)]),
+      main([
+        routineExercise(1, 2, null, 'Sentadilla'),
+        routineExercise(2, 3, null, 'Press'),
+      ]),
+    ]
+  })
+
+  const rowOf = (name) => screen.getByText(name).closest('[class*="cursor-pointer"]')
+  const showsSpinner = (name) => rowOf(name).querySelector('.animate-spin') !== null
+  const showsChevron = (name) => rowOf(name).querySelector('.lucide-chevron-right') !== null
+  const duplicateOption = () => screen.getByRole('button', { name: i18n.t('routine:exercise.duplicateExercise') })
+
+  function expandDay() {
+    fireEvent.click(screen.getByText('Empuje').closest('[class*="justify-between"]'))
+  }
+
+  it('with no copy in flight, the option is enabled and no row shows a spinner', () => {
+    renderDay()
+    expandDay()
+
+    expect(['Movilidad', 'Sentadilla', 'Press'].map(showsSpinner)).toEqual([false, false, false])
+    fireEvent.click(rowOf('Sentadilla'))
+    expect(duplicateOption()).toBeEnabled()
+  })
+
+  // Not only the row being copied: a second copy would race the first one's refetch.
+  it.each(['Movilidad', 'Sentadilla', 'Press'])('while a copy is in flight, the option is disabled on %s', (name) => {
+    renderDay({ duplicatingExerciseId: 1 })
+    expandDay()
+
+    fireEvent.click(rowOf(name))
+
+    expect(duplicateOption()).toBeDisabled()
+  })
+
+  it('shows the spinner, instead of the chevron, only on the row being copied', () => {
+    renderDay({ duplicatingExerciseId: 1 })
+    expandDay()
+
+    expect(showsSpinner('Sentadilla')).toBe(true)
+    expect(showsChevron('Sentadilla')).toBe(false)
+    for (const other of ['Movilidad', 'Press']) {
+      expect(showsSpinner(other)).toBe(false)
+      expect(showsChevron(other)).toBe(true)
+    }
+  })
+
+  it('finds the row being copied in the warm-up block too', () => {
+    renderDay({ duplicatingExerciseId: 5 })
+    expandDay()
+
+    expect(showsSpinner('Movilidad')).toBe(true)
+    expect(showsSpinner('Sentadilla')).toBe(false)
+    expect(showsSpinner('Press')).toBe(false)
+  })
+
+  // Web route params are strings, native ones numbers: the id travels as whichever one the caller has.
+  it('matches the row being copied whether its id arrives as a string or a number', () => {
+    renderDay({ duplicatingExerciseId: '2' })
+    expandDay()
+
+    expect(showsSpinner('Press')).toBe(true)
+    expect(showsSpinner('Sentadilla')).toBe(false)
+  })
+
+  // 0 is a legitimate id: only null/undefined mean "nothing is being copied".
+  it('treats an id of 0 as a copy in flight', () => {
+    renderDay({ duplicatingExerciseId: 0 })
+    expandDay()
+
+    fireEvent.click(rowOf('Sentadilla'))
+
+    expect(duplicateOption()).toBeDisabled()
   })
 })

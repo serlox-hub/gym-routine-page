@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus, ArrowRightLeft, X, Flag, ChevronDown } from 'lucide-react-native'
 import {
   useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
-  useSessionExercises, useAddSessionExerciseFlow, useRemoveSessionExercise,
+  useSessionExercises, useAddSessionExerciseFlow,
   useReplaceSessionExercise, useReorderSessionExercises, useWakeLock,
 } from '../../hooks/useWorkout'
 import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui'
@@ -77,7 +77,6 @@ export default function WorkoutSessionLayout({ title }) {
   const abandonSessionMutation = useAbandonSession()
   const addFlow = useAddSessionExerciseFlow()
   const addFailedMessage = addFlow.isFailed ? t('workout:exercise.addFailed') : null
-  const removeSessionExerciseMutation = useRemoveSessionExercise()
   const replaceSessionExerciseMutation = useReplaceSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
 
@@ -118,9 +117,6 @@ export default function WorkoutSessionLayout({ title }) {
     onUncompleteSet: (setData) => {
       uncompleteSetMutation.mutate(setData)
       // El trofeo se recalcula solo al desaparecer la serie de completedSets (prSets derivado).
-    },
-    onRemove: (sessionExerciseId) => {
-      removeSessionExerciseMutation.mutate(sessionExerciseId)
     },
     onReplace: (sessionExerciseId, newExercise, applyToRoutine) => {
       replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExercise, applyToRoutine })
@@ -243,7 +239,6 @@ export default function WorkoutSessionLayout({ title }) {
                 exercisesByBlock={exercisesByBlock}
                 onCompleteSet={handlers.onCompleteSet}
                 onUncompleteSet={handlers.onUncompleteSet}
-                onRemove={handlers.onRemove}
                 onReplace={handlers.onReplace}
                 flatExercises={flatExercises}
                 onReorderBlock={handlers.onReorderBlock}

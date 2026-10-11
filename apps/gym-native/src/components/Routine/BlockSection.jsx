@@ -46,6 +46,7 @@ export default function BlockSection({
   onReplaceExercise,
   onDeleteExercise,
   onDuplicateExercise,
+  duplicatingExerciseId = null,
   onMoveExerciseToDay,
   onRemoveExerciseFromSuperset,
   onReorderBlock,
@@ -95,6 +96,8 @@ export default function BlockSection({
                 onReplace={() => onReplaceExercise?.(routineExercise)}
                 onDelete={() => onDeleteExercise?.(routineExercise)}
                 onDuplicate={() => onDuplicateExercise?.(routineExercise)}
+                isDuplicating={duplicatingExerciseId != null}
+                isDuplicateSource={String(duplicatingExerciseId) === String(routineExercise.id)}
                 onMoveToDay={() => onMoveExerciseToDay?.(routineExercise)}
                 // The routine keeps its own path (`useSetRoutineExerciseSupersetGroup`), which reads the day from the DB.
                 onRemoveFromSuperset={onRemoveFromSuperset ? () => onRemoveExerciseFromSuperset?.(routineExercise) : undefined}

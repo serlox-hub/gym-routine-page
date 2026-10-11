@@ -130,6 +130,42 @@ describe('useSessionExercises — mutations', () => {
     expect(deleteSessionExercise).toHaveBeenCalledWith('se-1')
   })
 
+  // The confirm modal closes on success: it must close onto a list without the exercise.
+  it('useRemoveSessionExercise: stays pending until the session exercises have been refetched', async () => {
+    deleteSessionExercise.mockResolvedValueOnce(undefined)
+    const { wrapper, queryClient } = createWrapperWithClient()
+    const sessionKey = [QUERY_KEYS.SESSION_EXERCISES, 'session-123']
+    let finishRefetch
+    const held = new Promise(resolve => { finishRefetch = resolve })
+    vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(({ queryKey }) =>
+      JSON.stringify(queryKey) === JSON.stringify(sessionKey) ? held : Promise.resolve())
+
+    const { result } = renderHook(() => useRemoveSessionExercise(), { wrapper })
+
+    act(() => { result.current.mutate('se-1') })
+
+    await waitFor(() => expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: sessionKey }))
+    expect(useWorkoutStore._mockStore.clearExercise).toHaveBeenCalledWith('se-1')
+    expect(result.current.isPending).toBe(true)
+
+    await act(async () => { finishRefetch() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  })
+
+  it('useRemoveSessionExercise: leaves its failure to the confirm modal, with no toast', async () => {
+    deleteSessionExercise.mockRejectedValueOnce(new Error('network down'))
+
+    const { result } = renderHook(() => useRemoveSessionExercise(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync('se-1').catch(() => {})
+    })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(notificationsMock._notifierShow).not.toHaveBeenCalled()
+    expect(useWorkoutStore._mockStore.clearExercise).not.toHaveBeenCalled()
+  })
+
   it('useReorderSessionExercises: llama a reorderSessionExercises con los items ordenados', async () => {
     reorderSessionExercises.mockResolvedValueOnce(undefined)
 

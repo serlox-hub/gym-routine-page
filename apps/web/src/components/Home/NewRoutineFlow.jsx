@@ -5,8 +5,8 @@ import { Sparkles, Pencil, LayoutGrid, Upload, ChevronRight, ChevronLeft, Lock, 
 import { useUserId, useIsPremium } from '../../hooks/useAuth.js'
 import { useCreateRoutine } from '../../hooks/useRoutines.js'
 import { usePromptExerciseCatalog } from '../../hooks/useExercises.js'
-import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui/index.js'
-import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, getNotifier, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData, parseRoutineJson } from '@gym/shared'
+import { ImportOptionsModal, LoadingSpinner, Modal, SaveStatus } from '../ui/index.js'
+import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, getNotifier, useOneAtATimeMutation, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData, parseRoutineJson } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { readJsonFile } from '../../lib/routineIO.js'
 import { colors } from '../../lib/styles.js'
@@ -16,7 +16,7 @@ import CopyPromptButton from './CopyPromptButton.jsx'
 // MENU VIEW
 // ============================================
 
-function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
+function MenuView({ onNavigate, onCreateManually, isCreating, createError, isPremium, t }) {
 
   return (
     <div style={{ padding: 20 }}>
@@ -24,11 +24,17 @@ function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
         {t('routine:new')}
       </h3>
 
+      <SaveStatus isPending={isCreating} error={createError} className="mb-4" />
+
+      {/* While a routine is being created every entry waits: the other three end up closing the
+          sheet, which would drop the create's result and its failure. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {/* Create with AI */}
+        {/* Create with AI. On solid lime only what is painted on it dims, never the control
+            (translucent lime turns olive). */}
         <button
           onClick={() => isPremium && onNavigate('chatbot')}
-          className="flex items-center gap-3 rounded-xl transition-opacity"
+          disabled={isCreating}
+          className="flex items-center rounded-xl transition-opacity disabled:cursor-not-allowed"
           style={{
             padding: '14px 16px',
             backgroundColor: isPremium ? colors.success : colors.bgSecondary,
@@ -36,27 +42,30 @@ function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
             opacity: isPremium ? 1 : 0.7,
           }}
         >
-          <Sparkles size={20} color={isPremium ? colors.bgPrimary : colors.success} />
-          <div className="flex-1 text-left">
-            <span style={{ color: isPremium ? colors.bgPrimary : colors.textPrimary, fontSize: 14, fontWeight: 600, display: 'block' }}>
-              {t('routine:newFlow.createWithAI')}
-            </span>
-            <span style={{ color: isPremium ? colors.bgPrimary : colors.textMuted, fontSize: 12, opacity: 0.8 }}>
-              {t('routine:newFlow.createWithAIDesc')}
-            </span>
+          <div className="flex flex-1 items-center gap-3 min-w-0" style={{ opacity: isCreating ? 0.5 : 1 }}>
+            <Sparkles size={20} color={isPremium ? colors.bgPrimary : colors.success} />
+            <div className="flex-1 text-left">
+              <span style={{ color: isPremium ? colors.bgPrimary : colors.textPrimary, fontSize: 14, fontWeight: 600, display: 'block' }}>
+                {t('routine:newFlow.createWithAI')}
+              </span>
+              <span style={{ color: isPremium ? colors.bgPrimary : colors.textMuted, fontSize: 12, opacity: 0.8 }}>
+                {t('routine:newFlow.createWithAIDesc')}
+              </span>
+            </div>
+            {!isPremium && (
+              <span className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.successBg, color: colors.success, fontSize: 11, fontWeight: 600 }}>
+                <Lock size={10} /> Premium
+              </span>
+            )}
+            <ChevronRight size={18} color={isPremium ? colors.bgPrimary : colors.textMuted} className="shrink-0" />
           </div>
-          {!isPremium && (
-            <span className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.successBg, color: colors.success, fontSize: 11, fontWeight: 600 }}>
-              <Lock size={10} /> Premium
-            </span>
-          )}
-          <ChevronRight size={18} color={isPremium ? colors.bgPrimary : colors.textMuted} className="shrink-0" />
         </button>
 
         {/* Create manually */}
         <button
           onClick={onCreateManually}
-          className="flex items-center gap-3 rounded-xl hover:opacity-80 transition-opacity"
+          disabled={isCreating}
+          className="flex items-center gap-3 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ padding: '14px 16px', backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
         >
           <Pencil size={20} color={colors.success} />
@@ -64,13 +73,14 @@ function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
             <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600, display: 'block' }}>{t('routine:newFlow.createManually')}</span>
             <span style={{ color: colors.textMuted, fontSize: 12 }}>{t('routine:newFlow.createManuallyDesc')}</span>
           </div>
-          <ChevronRight size={18} color={colors.textMuted} className="shrink-0" />
+          {isCreating ? <LoadingSpinner inline className="shrink-0" /> : <ChevronRight size={18} color={colors.textMuted} className="shrink-0" />}
         </button>
 
         {/* From templates */}
         <button
           onClick={() => onNavigate('templates')}
-          className="flex items-center gap-3 rounded-xl hover:opacity-80 transition-opacity"
+          disabled={isCreating}
+          className="flex items-center gap-3 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ padding: '14px 16px', backgroundColor: colors.bgSecondary, border: `1px solid ${colors.border}` }}
         >
           <LayoutGrid size={20} color={colors.success} />
@@ -85,7 +95,8 @@ function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
       {/* Import from file */}
       <button
         onClick={() => onNavigate('import')}
-        className="flex items-center justify-center gap-2 w-full mt-4 py-2 hover:opacity-80 transition-opacity"
+        disabled={isCreating}
+        className="flex items-center justify-center gap-2 w-full mt-4 py-2 hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         style={{ color: colors.textMuted, fontSize: 13 }}
       >
         <Upload size={14} />
@@ -592,7 +603,7 @@ function NewRoutineFlow({ isOpen, onClose }) {
   const userId = useUserId()
   const isPremium = useIsPremium()
   const queryClient = useQueryClient()
-  const createRoutine = useCreateRoutine()
+  const createRoutine = useOneAtATimeMutation(useCreateRoutine())
   const [stack, setStack] = useState(['menu'])
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
@@ -616,17 +627,20 @@ function NewRoutineFlow({ isOpen, onClose }) {
     setStack(s => s.slice(0, -1))
   }
 
+  // The sheet stays mounted between openings: a failed create would still show on the next one.
+  // Closing cannot happen mid-create (see the Modal below), so the reset never drops a call in flight.
   const handleClose = () => {
     onClose()
+    createRoutine.reset()
     setTimeout(() => { setStack(['menu']); setChatbotStep(1); setAdaptStep(1) }, 300)
   }
 
+  // A failure shows in the menu (`createError`); `run` drops a second tap while one is in flight.
   const handleCreateManually = async () => {
-    try {
-      const newRoutine = await createRoutine.mutateAsync({ name: t('routine:defaultName') })
-      handleClose()
-      navigate(`/routine/${newRoutine.id}`, { state: { openDetails: true } })
-    } catch { /* error handled by mutation */ }
+    const newRoutine = await createRoutine.run({ name: t('routine:defaultName') })
+    if (!newRoutine) return
+    handleClose()
+    navigate(`/routine/${newRoutine.id}`, { state: { openDetails: true } })
   }
 
   const handleImport = (data) => {
@@ -667,7 +681,8 @@ function NewRoutineFlow({ isOpen, onClose }) {
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={handleClose} position="bottom" maxWidth="max-w-lg" noBorder>
+      {/* Not closable while a routine is being created: its failure is shown here, nowhere else. */}
+      <Modal isOpen={isOpen} onClose={createRoutine.isPending ? undefined : handleClose} position="bottom" maxWidth="max-w-lg" noBorder>
         {/* Header with back + title (only when not on menu) */}
         {titleKey && (
           <div className="flex items-center shrink-0" style={{ padding: '16px 20px 8px' }}>
@@ -691,7 +706,16 @@ function NewRoutineFlow({ isOpen, onClose }) {
           >
             {stack.map((screen, i) => (
               <div key={`${screen}-${i}`} style={{ minWidth: '100%', maxHeight: '75vh', overflowY: 'auto' }}>
-                {screen === 'menu' && <MenuView onNavigate={push} onCreateManually={handleCreateManually} isPremium={isPremium} t={t} />}
+                {screen === 'menu' && (
+                  <MenuView
+                    onNavigate={push}
+                    onCreateManually={handleCreateManually}
+                    isCreating={createRoutine.isPending}
+                    createError={createRoutine.isError ? t('routine:createError') : null}
+                    isPremium={isPremium}
+                    t={t}
+                  />
+                )}
                 {screen === 'templates' && <TemplatesView onSelect={handleTemplateSelect} t={t} />}
                 {screen === 'chatbot' && <ChatbotView onImport={handleImport} step={chatbotStep} setStep={setChatbotStep} t={t} />}
                 {screen === 'import' && <ImportView onImport={handleImport} onNavigate={push} t={t} />}

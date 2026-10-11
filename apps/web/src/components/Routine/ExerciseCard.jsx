@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, ArrowUpDown, Repeat2, Link2Off } from 'lucide-react'
-import { DragHandle, ExerciseName, Modal, ReorderModal } from '../ui/index.js'
+import { DragHandle, ExerciseName, LoadingSpinner, Modal, ReorderModal } from '../ui/index.js'
 import { ExerciseHistoryModal } from '../Workout/index.js'
 import { colors } from '../../lib/styles.js'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete.js'
@@ -15,6 +15,10 @@ function ExerciseCard({
   onEdit,
   onDelete,
   onDuplicate,
+  // A copy is in flight: the option comes back once it is on screen (see useDuplicateRoutineExercise).
+  isDuplicating = false,
+  // ...and it is a copy of this row, which shows it: the menu closed on tap.
+  isDuplicateSource = false,
   onMoveToDay,
   onReplace,
   onRemoveFromSuperset,
@@ -42,7 +46,7 @@ function ExerciseCard({
     { icon: History, label: t('routine:exercise.viewHistory'), onClick: () => setShowHistory(true) },
     { icon: Pencil, label: t('common:buttons.edit'), onClick: onEdit },
     { icon: Repeat2, label: t('routine:exercise.replace'), onClick: onReplace },
-    { icon: Copy, label: t('routine:exercise.duplicateExercise'), onClick: onDuplicate },
+    { icon: Copy, label: t('routine:exercise.duplicateExercise'), onClick: onDuplicate, disabled: isDuplicating },
     { icon: FolderInput, label: t('routine:exercise.moveToDay'), onClick: onMoveToDay },
     totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onClick: () => setShowReorder(true), disabled: isReordering },
     // Superset members only (whoever renders the row decides whether to pass it).
@@ -115,7 +119,9 @@ function ExerciseCard({
                 {rest_seconds > 0 && <span style={{ color: colors.textSecondary, fontSize: 12 }}>{rest_seconds}s</span>}
               </div>
             </div>
-            <ChevronRight size={16} color={colors.textMuted} className="shrink-0" />
+            {isDuplicateSource
+              ? <LoadingSpinner inline className="shrink-0" />
+              : <ChevronRight size={16} color={colors.textMuted} className="shrink-0" />}
           </div>
         </div>
       </div>

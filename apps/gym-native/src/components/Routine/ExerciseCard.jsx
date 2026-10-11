@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, History, Pencil, Trash2, Copy, FolderInput, Repeat2, ArrowUpDown, Link2Off } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
-import { DragHandle, ExerciseName, Modal, ReorderModal } from '../ui'
+import { DragHandle, ExerciseName, LoadingSpinner, Modal, ReorderModal } from '../ui'
 import { ExerciseHistoryModal } from '../Workout'
 import { colors } from '../../lib/styles'
 import { useSwipeToDelete } from '../../hooks/useSwipeToDelete'
@@ -17,6 +17,10 @@ export default function ExerciseCard({
   onEdit,
   onDelete,
   onDuplicate,
+  // A copy is in flight: the option comes back once it is on screen (see useDuplicateRoutineExercise).
+  isDuplicating = false,
+  // ...and it is a copy of this row, which shows it: the menu closed on tap.
+  isDuplicateSource = false,
   onMoveToDay,
   onReplace,
   onRemoveFromSuperset,
@@ -55,7 +59,7 @@ export default function ExerciseCard({
     { icon: History, label: t('routine:exercise.viewHistory'), onPress: () => setShowHistory(true) },
     { icon: Pencil, label: t('common:buttons.edit'), onPress: onEdit },
     { icon: Repeat2, label: t('routine:exercise.replace'), onPress: onReplace },
-    { icon: Copy, label: t('routine:exercise.duplicateExercise'), onPress: onDuplicate },
+    { icon: Copy, label: t('routine:exercise.duplicateExercise'), onPress: onDuplicate, disabled: isDuplicating },
     { icon: FolderInput, label: t('routine:exercise.moveToDay'), onPress: onMoveToDay },
     onReorderToPosition && totalExercises > 1 && { icon: ArrowUpDown, label: t('routine:reorder'), onPress: () => setShowReorder(true), disabled: isReordering },
     // Superset members only (whoever renders the row decides whether to pass it).
@@ -114,7 +118,7 @@ export default function ExerciseCard({
             )}
           </View>
         </View>
-        <ChevronRight size={16} color={colors.textMuted} />
+        {isDuplicateSource ? <LoadingSpinner inline /> : <ChevronRight size={16} color={colors.textMuted} />}
       </Pressable>
     </View>
   )
