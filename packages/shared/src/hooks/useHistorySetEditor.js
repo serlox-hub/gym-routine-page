@@ -3,6 +3,7 @@ import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 import { getSetFieldValues, buildSetFieldsPayload } from '../lib/setColumns.js'
 import { SetField, distanceToMeters, metersToDistanceUnit } from '../lib/measurementFields.js'
+import { useUpsertCompletedSet } from './useWorkoutHistory.js'
 
 /**
  * Estado y persistencia de la edición de una serie desde el HISTORIAL (sesión ya cerrada, NO la
@@ -13,8 +14,13 @@ import { SetField, distanceToMeters, metersToDistanceUnit } from '../lib/measure
  *
  * NO reutiliza `useSetVideoUpload`: ese hook lee el `sessionId` de la sesión ACTIVA del store, y
  * aquí se edita una sesión arbitraria pasada por prop — usarlo escribiría contra la sesión
- * equivocada (o contra `null` sin sesión activa). `onUpsert` (`useUpsertCompletedSet`) sí acepta
- * cualquier `sessionId` explícito, así que sirve para editar cualquier sesión pasada.
+ * equivocada (o contra `null` sin sesión activa). `useUpsertCompletedSet` sí acepta cualquier
+ * `sessionId` explícito, así que sirve para editar cualquier sesión pasada.
+ *
+ * Owns its write and whether the details sheet is open, because where a failed write shows depends
+ * on it (issue #175): inside the open sheet, since on native the toast paints under a React Native
+ * `Modal`; otherwise as a toast. The sheet's own write is the last one made while it is open, matched
+ * by reference against the mutation's `variables` (same pattern as `useAddSessionExerciseAttempt`).
  *
  * `videoUrl`/`notes` (como `rir`/`setType`) viven en estado LOCAL, no se leen de
  * `set.video_url`/`set.notes` en cada escritura: esas props solo se refrescan tras el refetch que
@@ -22,10 +28,10 @@ import { SetField, distanceToMeters, metersToDistanceUnit } from '../lib/measure
  * una nota o un vídeo recién guardados con el dato viejo.
  *
  * @param {{set: Object, columns: Array, distanceUnit?: string, sessionId: string|number,
- *   sessionExerciseId: string|number, onUpsert: Function,
+ *   sessionExerciseId: string|number,
  *   uploadVideo: (file: any, onProgress: (pct: number) => void) => Promise<string>}} params
  */
-export function useHistorySetEditor({ set, columns, distanceUnit, sessionId, sessionExerciseId, onUpsert, uploadVideo }) {
+export function useHistorySetEditor({ set, columns, distanceUnit, sessionId, sessionExerciseId, uploadVideo }) {
   const [values, setValues] = useState(() => getSetFieldValues(set, columns))
   const [rir, setRir] = useState(set.rir_actual ?? null)
   const [setType, setSetType] = useState(set.set_type ?? 'normal')
@@ -38,6 +44,17 @@ export function useHistorySetEditor({ set, columns, distanceUnit, sessionId, ses
   // Descarta el resultado de una subida superada (se quita el vídeo, o se elige otro archivo,
   // antes de que la subida en vuelo resuelva) — mismo patrón de guard que `useSetVideoUpload`.
   const uploadTokenRef = useRef(0)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [sheetAttempt, setSheetAttempt] = useState(null)
+  // Mirrors for what runs outside render: `shouldToastError`, and the write after a video upload.
+  const isSheetOpenRef = useRef(false)
+  const sheetAttemptRef = useRef(null)
+  const upsertSet = useUpsertCompletedSet({
+    shouldToastError: (_, variables) => variables !== sheetAttemptRef.current,
+  })
+
+  // Unmounted, nobody shows the failure inline: it is toasted.
+  useEffect(() => () => { sheetAttemptRef.current = null }, [])
 
   // Re-siembra la distancia cuando cambia la unidad de DISPLAY (p. ej. la query de
   // `useResolvedDistanceUnit` resuelve un tick después del montaje, o el usuario cambia el
@@ -56,6 +73,29 @@ export function useHistorySetEditor({ set, columns, distanceUnit, sessionId, ses
       return { ...current, [SetField.DISTANCE]: metersToDistanceUnit(distanceToMeters(currentValue, previousUnit), distanceUnit) }
     })
   }, [distanceUnit])
+
+  const openSheet = () => {
+    isSheetOpenRef.current = true
+    setIsSheetOpen(true)
+  }
+
+  // A failure that arrives after closing is toasted.
+  const closeSheet = () => {
+    isSheetOpenRef.current = false
+    sheetAttemptRef.current = null
+    setIsSheetOpen(false)
+    setSheetAttempt(null)
+  }
+
+  const save = (payload) => {
+    if (isSheetOpenRef.current) {
+      sheetAttemptRef.current = payload
+      setSheetAttempt(payload)
+    }
+    upsertSet.mutate(payload)
+  }
+
+  const isOwnSheetSave = sheetAttempt != null && upsertSet.variables === sheetAttempt
 
   // Solo los campos del ejercicio: las columnas que no viajan en el payload no se tocan en el upsert.
   const buildPayload = (overrides = {}) => ({
@@ -78,19 +118,19 @@ export function useHistorySetEditor({ set, columns, distanceUnit, sessionId, ses
   const handleSave = () => {
     const next = buildSetFieldsPayload(values, columns)
     const stored = buildSetFieldsPayload(getSetFieldValues(set, columns), columns)
-    if (Object.keys(next).some(key => next[key] !== stored[key])) onUpsert(buildPayload())
+    if (Object.keys(next).some(key => next[key] !== stored[key])) save(buildPayload())
   }
 
   // RIR y tipo de serie se fijan desde la hoja de detalles (mismos controles que la sesión activa,
   // `SetDetailsModal`), persistiendo en vivo — paridad con sesión.
   const handleRirChange = (value) => {
     setRir(value)
-    onUpsert(buildPayload({ rirActual: value }))
+    save(buildPayload({ rirActual: value }))
   }
 
   const handleSetTypeChange = (newType) => {
     setSetType(newType)
-    onUpsert(buildPayload({ setType: newType }))
+    save(buildPayload({ setType: newType }))
   }
 
   const handleSelectVideo = async (file) => {
@@ -103,7 +143,7 @@ export function useHistorySetEditor({ set, columns, distanceUnit, sessionId, ses
       const uploadedUrl = await uploadVideo(file, setUploadProgress)
       if (token !== uploadTokenRef.current) return
       setVideoUrl(uploadedUrl)
-      onUpsert(buildPayload({ videoUrl: uploadedUrl }))
+      save(buildPayload({ videoUrl: uploadedUrl }))
       setPendingVideoFile(null)
     } catch (err) {
       if (token !== uploadTokenRef.current) return
@@ -130,14 +170,14 @@ export function useHistorySetEditor({ set, columns, distanceUnit, sessionId, ses
     setVideoUploadError(false)
     setPendingVideoFile(null)
     setVideoUrl(null)
-    onUpsert(buildPayload({ videoUrl: null }))
+    save(buildPayload({ videoUrl: null }))
   }
 
   // Al cerrar la hoja: RIR, tipo y vídeo ya persistieron en vivo; el cierre solo autoguarda la
   // nota, igual que en sesión.
   const handleNotesSubmit = ({ notes: nextNotes }) => {
     setNotes(nextNotes)
-    onUpsert(buildPayload({ notes: nextNotes }))
+    save(buildPayload({ notes: nextNotes }))
   }
 
   return {
@@ -147,6 +187,9 @@ export function useHistorySetEditor({ set, columns, distanceUnit, sessionId, ses
     hasRir: rir != null,
     hasNotes: !!notes,
     isUploadingVideo, uploadProgress, videoUploadError,
+    isSheetOpen, openSheet, closeSheet,
+    isSheetSaving: isOwnSheetSave && upsertSet.isPending,
+    sheetSaveFailed: isOwnSheetSave && upsertSet.isError,
     handleSave,
     handleRirChange,
     handleSetTypeChange,

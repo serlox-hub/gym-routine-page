@@ -198,6 +198,8 @@
     "endDateTime": "End date & time",
     "rescheduleNotCompleted": "Only a finished session can change its date",
     "startDateTimeHint": "Up to {{days}} days before the session ended",
+    "saveFailed": "Couldn't save the change. Try again.",
+    "deleteSetFailed": "Couldn't delete the set. Try again.",
     "sessionsThisDay": "sessions on this day",
     "deleteSession": "Delete session",
     "viewDetail": "View detail",

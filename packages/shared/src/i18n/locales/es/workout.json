@@ -198,6 +198,8 @@
     "endDateTime": "Fecha y hora de fin",
     "rescheduleNotCompleted": "Solo se puede cambiar la fecha de una sesión terminada",
     "startDateTimeHint": "Como mucho {{days}} días antes del fin de la sesión",
+    "saveFailed": "No se ha podido guardar el cambio. Vuelve a intentarlo.",
+    "deleteSetFailed": "No se ha podido borrar la serie. Vuelve a intentarlo.",
     "sessionsThisDay": "sesiones este día",
     "deleteSession": "Eliminar sesión",
     "viewDetail": "Ver detalle",
