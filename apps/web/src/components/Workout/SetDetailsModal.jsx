@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Video, X, ChevronRight } from 'lucide-react'
-import { Modal, Button, IconButton, LoadingSpinner } from '../ui/index.js'
+import { Modal, Button, IconButton, LoadingSpinner, SaveStatus } from '../ui/index.js'
 import VideoPlayer from './VideoPlayer.jsx'
 import { colors } from '../../lib/styles.js'
 import { useCanUploadVideo } from '../../hooks/useAuth.js'
@@ -49,6 +49,8 @@ function SetDetailsModal({
   showEffortScale = true,
   setType = 'normal',
   onSetTypeChange,
+  isSaving = false,
+  saveError = null,
 }) {
   const { t } = useTranslation()
   const canUploadVideo = useCanUploadVideo()
@@ -139,6 +141,11 @@ function SetDetailsModal({
           {t('workout:set.detailsTitle', { number: setNumber || '' })}
         </span>
         <IconButton icon={X} iconSize={16} filled label={t('common:buttons.close')} onClick={handleClose} />
+      </div>
+      {/* Under the fixed header, so a write that failed stays in sight wherever the sheet is scrolled.
+          Only the history passes it (issue #175). */}
+      <div className="px-5 shrink-0">
+        <SaveStatus isPending={isSaving} error={saveError} className="mt-2" />
       </div>
 
       <div className="px-5 mt-3 overflow-y-auto" style={{ flex: 1, minHeight: 0 }}>

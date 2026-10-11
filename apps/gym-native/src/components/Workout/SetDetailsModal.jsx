@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Video, X, ChevronRight, Maximize2 } from 'lucide-react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useVideoPlayer, VideoView } from 'expo-video'
-import { Modal, Button, IconButton } from '../ui'
+import { Modal, Button, IconButton, SaveStatus } from '../ui'
 import { useCanUploadVideo } from '../../hooks/useAuth'
 import { usePreference } from '../../hooks/usePreferences'
 import { getVideoUrl } from '../../lib/videoStorage'
@@ -84,6 +84,8 @@ export default function SetDetailsModal({
   showEffortScale = true,
   setType = 'normal',
   onSetTypeChange,
+  isSaving = false,
+  saveError = null,
 }) {
   const { t } = useTranslation()
   const canUploadVideo = useCanUploadVideo()
@@ -159,6 +161,12 @@ export default function SetDetailsModal({
           {t('workout:set.detailsTitle', { number: setNumber || '' })}
         </Text>
         <IconButton icon={X} iconSize={16} filled label={t('common:buttons.close')} onPress={handleClose} />
+      </View>
+      {/* Under the fixed header, so a write that failed stays in sight wherever the sheet is scrolled.
+          Inline, not a toast: the toast paints under this Modal. Only the history passes it
+          (issue #175). */}
+      <View style={{ paddingHorizontal: 20 }}>
+        <SaveStatus isPending={isSaving} error={saveError} className="mt-2" />
       </View>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 8 }} style={{ flexShrink: 1 }}>

@@ -50,29 +50,29 @@ import { colors, design } from '../../lib/styles'
 // (getSetColumns + SetValueInput): antes tenía su propia lista peso/reps/tiempo/distancia, así que
 // nivel, kcal y ritmo NO se podían editar y el tiempo se pedía en segundos crudos. Guarda al salir
 // de cada campo (onCommit), no con un check como la sesión.
-function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onUpsert, onDelete, weightUnit, distanceUnit }) {
+function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, onDelete, weightUnit, distanceUnit }) {
   const { t } = useTranslation()
   const trackedFields = resolveTrackedFields(exercise)
   const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
-  const [showDetails, setShowDetails] = useState(false)
 
-  // Estado + persistencia (compartido web/native; ver useHistorySetEditor). `showDetails` (si la
-  // hoja está abierta) es UI local: no forma parte de la edición de la serie en sí.
+  // Estado + persistencia (compartido web/native; ver useHistorySetEditor). Si la hoja está abierta
+  // también vive allí: decide dónde se ve un guardado fallido (dentro de la hoja o en un toast).
   const {
     values, setValues,
     rir, setType, videoUrl, notes,
     hasVideo, hasRir, hasNotes,
     isUploadingVideo, uploadProgress, videoUploadError,
+    isSheetOpen, openSheet, closeSheet, isSheetSaving, sheetSaveFailed,
     handleSave, handleRirChange, handleSetTypeChange,
     handleSelectVideo, handleRetryVideoUpload, handleRemoveVideo, handleNotesSubmit,
   } = useHistorySetEditor({
-    set, columns, distanceUnit, sessionId, sessionExerciseId, onUpsert,
+    set, columns, distanceUnit, sessionId, sessionExerciseId,
     uploadVideo: (file, onProgress) => uploadVideo(file?.uri, onProgress),
   })
 
   const handleNotesClose = (payload) => {
     handleNotesSubmit(payload)
-    setShowDetails(false)
+    closeSheet()
   }
 
   const badgeStyle = {
@@ -127,7 +127,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         {
           label: t('common:buttons.edit'),
           icon: SlidersHorizontal,
-          onPress: () => setShowDetails(true),
+          onPress: openSheet,
         },
         {
           label: t('common:buttons.delete'),
@@ -184,8 +184,8 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
       {/* Misma hoja que en sesión, con las 4 secciones (esfuerzo, tipo, nota, vídeo): sin
           `onComplete` (la serie ya está completada, no hay nada que completar de una). */}
       <SetDetailsModal
-        isOpen={showDetails}
-        onClose={() => setShowDetails(false)}
+        isOpen={isSheetOpen}
+        onClose={closeSheet}
         onSubmit={handleNotesClose}
         setNumber={set.set_number}
         isUploadingVideo={isUploadingVideo}
@@ -199,12 +199,14 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
         trackedFields={trackedFields}
         setType={setType}
         onSetTypeChange={handleSetTypeChange}
+        isSaving={isSheetSaving}
+        saveError={sheetSaveFailed ? t('workout:history.saveFailed') : null}
       />
     </>
   )
 }
 
-function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, gymId, isEditing, navigation, onUpsertSet, onDeleteSet, onAddSet, onSelectSet }) {
+function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, prsByExercise, gymId, isEditing, navigation, onDeleteSet, onAddSet, onSelectSet }) {
   const { t } = useTranslation()
   const weightUnit = useResolvedWeightUnit(exercise.id, gymId)
   const distanceUnit = useResolvedDistanceUnit(exercise)
@@ -270,7 +272,6 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
                 sessionId={sessionId}
                 sessionExerciseId={sessionExerciseId}
                 isSetPR={prSetNums?.has(set.set_number)}
-                onUpsert={onUpsertSet}
                 onDelete={onDeleteSet}
                 weightUnit={weightUnit}
                 distanceUnit={distanceUnit}
@@ -436,6 +437,9 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   const commitEnd = (nextDate) => {
     const { completedAtISO, durationMinutes } = resolveSessionEnd(nextDate, session.started_at)
     setEditCompletedAt(completedAtISO)
+    // Tapping outside the picker confirms: without the guard, doing it offline reports a failed
+    // save of nothing.
+    if (isSameTimestamp(completedAtISO, session.completed_at)) return
     updateMetadata.mutate({
       sessionId,
       completedAt: completedAtISO,
@@ -515,12 +519,14 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   }
 
   const handleSaveNotes = () => {
+    const notes = editNotes.trim() || null
+    if (notes === (session.notes || null)) return
     updateMetadata.mutate({
       sessionId,
       completedAt: session.completed_at,
       durationMinutes: session.duration_minutes,
       overallFeeling: session.overall_feeling,
-      notes: editNotes.trim() || null,
+      notes,
     })
   }
 
@@ -568,10 +574,6 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
   // Split by block only when there is a warm-up: the sets-per-muscle-group bars leave it out, so
   // the list has to show which exercises those are.
   const showBlockHeaders = exerciseBlocks.some(block => block.blockName === BLOCK_NAMES.WARMUP)
-
-  const handleUpsertSet = (setData) => {
-    upsertSet.mutate(setData)
-  }
 
   const handleDeleteSet = (setData) => {
     deleteSet.mutate(setData)
@@ -636,9 +638,6 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
             <Text style={{ color: colors.textMuted, fontSize: 10, marginTop: 4 }}>
               {t('workout:history.startDateTimeHint', { days: MAX_SESSION_DURATION_DAYS })}
             </Text>
-            {rescheduleSession.isError && (
-              <ErrorMessage message={rescheduleSession.error.message} />
-            )}
           </View>
           <View>
             <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>{t('workout:history.endDateTime')}</Text>
@@ -758,7 +757,6 @@ function SessionInlineDetail({ sessionId, navigation: navigationProp, onSessionD
                   gymId={session.gym_id ?? null}
                   isEditing={isEditing}
                   navigation={navigation}
-                  onUpsertSet={handleUpsertSet}
                   onDeleteSet={handleDeleteSet}
                   onAddSet={handleAddSet}
                   onSelectSet={setSelectedSet}

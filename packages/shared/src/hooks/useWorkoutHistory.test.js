@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query'
 import React from 'react'
-import { useExerciseHistory, useExerciseHistorySummary, usePreviousWorkout, useRescheduleSession, useUpdateSessionMetadata, useCorrectSessionExercise } from './useWorkoutHistory.js'
+import { useExerciseHistory, useExerciseHistorySummary, usePreviousWorkout, useRescheduleSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useCorrectSessionExercise } from './useWorkoutHistory.js'
 
 // Mock the workoutApi module
 vi.mock('../api/workoutApi.js', () => ({
@@ -31,7 +31,11 @@ vi.mock('../api/exerciseApi.js', () => ({ fetchUserExerciseGymUnit: vi.fn() }))
 vi.mock('../api/preferencesApi.js', () => ({ fetchPreferences: vi.fn() }))
 vi.mock('./useAuth.js', () => ({ useUserId: () => 'user-1' }))
 
-import { fetchExerciseHistory, fetchExerciseHistorySummary, fetchPreviousWorkout, rescheduleSession, updateSessionMetadata, correctSessionExercise } from '../api/workoutApi.js'
+const notify = vi.fn()
+vi.mock('../notifications.js', () => ({ getNotifier: () => ({ show: notify }) }))
+
+import { fetchExerciseHistory, fetchExerciseHistorySummary, fetchPreviousWorkout, rescheduleSession, updateSessionMetadata, upsertCompletedSet, deleteCompletedSet, correctSessionExercise } from '../api/workoutApi.js'
+import { t } from '../i18n/index.js'
 import { recalculateSessionStats } from '../api/exerciseStatsApi.js'
 import { fetchUserExerciseGymUnit } from '../api/exerciseApi.js'
 import { fetchPreferences } from '../api/preferencesApi.js'
@@ -355,6 +359,135 @@ describe('invalidaciones al mover una sesión en el tiempo', () => {
     expect(keys).toContain('weekly-session-stats')
     expect(keys).toContain('weekly-prs')
     expect(keys).toContain('last-session-for-routine')
+  })
+})
+
+// Editing a past session saves on blur with no "saving" state: a failure the user is not told about
+// reads as a kept change (issue #175).
+describe('a failed save of a past session tells the user', () => {
+  const CASES = [
+    {
+      name: 'useRescheduleSession',
+      useHook: useRescheduleSession,
+      api: rescheduleSession,
+      variables: { sessionId: 's-1', startedAt: '2026-03-09T18:00:00.000Z', durationMinutes: 60 },
+      messageKey: 'workout:history.saveFailed',
+    },
+    {
+      name: 'useUpdateSessionMetadata',
+      useHook: useUpdateSessionMetadata,
+      api: updateSessionMetadata,
+      variables: { sessionId: 's-1', completedAt: '2026-03-09T19:00:00.000Z', durationMinutes: 60, notes: 'x' },
+      messageKey: 'workout:history.saveFailed',
+    },
+    {
+      name: 'useUpsertCompletedSet',
+      useHook: useUpsertCompletedSet,
+      api: upsertCompletedSet,
+      variables: { sessionId: 's-1', sessionExerciseId: 5, setNumber: 1, weight: 80 },
+      messageKey: 'workout:history.saveFailed',
+    },
+    {
+      name: 'useDeleteCompletedSet',
+      useHook: useDeleteCompletedSet,
+      api: deleteCompletedSet,
+      variables: { sessionId: 's-1', sessionExerciseId: 5, setNumber: 1 },
+      messageKey: 'workout:history.deleteSetFailed',
+    },
+  ]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    onlineManager.setOnline(true)
+  })
+
+  it.each(CASES)('$name shows its error notice when the call fails', async ({ useHook, api, variables, messageKey }) => {
+    api.mockRejectedValue(new Error('network'))
+    const { result } = renderHook(() => useHook(), { wrapper: createWrapper() })
+
+    result.current.mutate(variables)
+    await waitFor(() => expect(result.current.isError).toBe(true))
+
+    expect(notify).toHaveBeenCalledWith(t(messageKey), 'error')
+  })
+
+  // With the default networkMode the mutation would pause offline, never reach onError, and the
+  // change would be lost silently when the page closes.
+  it.each(CASES)('$name fails at once offline instead of pausing', async ({ useHook, api, variables, messageKey }) => {
+    api.mockRejectedValue(new TypeError('Failed to fetch'))
+    onlineManager.setOnline(false)
+    const { result } = renderHook(() => useHook(), { wrapper: createWrapper() })
+
+    result.current.mutate(variables)
+    await waitFor(() => expect(result.current.isError).toBe(true))
+
+    expect(api).toHaveBeenCalled()
+    expect(notify).toHaveBeenCalledWith(t(messageKey), 'error')
+  })
+
+  it('a successful save shows no notice', async () => {
+    updateSessionMetadata.mockResolvedValue({ id: 's-1' })
+    const { result } = renderHook(() => useUpdateSessionMetadata(), { wrapper: createWrapper() })
+
+    result.current.mutate(CASES[1].variables)
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(notify).not.toHaveBeenCalled()
+  })
+
+  // `useHistorySetEditor` decides from this callback whether a failed write is shown inline (the
+  // open details sheet) or toasted, by comparing `variables` against the write it made itself.
+  describe('useUpsertCompletedSet shouldToastError', () => {
+    const variables = { sessionId: 's-1', sessionExerciseId: 5, setNumber: 1, weight: 80 }
+
+    it('is asked with the error and the very object that was written, which is also the mutation\'s `variables`', async () => {
+      const error = new Error('network')
+      upsertCompletedSet.mockRejectedValue(error)
+      const shouldToastError = vi.fn(() => true)
+      const { result } = renderHook(() => useUpsertCompletedSet({ shouldToastError }), { wrapper: createWrapper() })
+
+      result.current.mutate(variables)
+      await waitFor(() => expect(result.current.isError).toBe(true))
+
+      expect(shouldToastError).toHaveBeenCalledTimes(1)
+      expect(shouldToastError.mock.calls[0][0]).toBe(error)
+      expect(shouldToastError.mock.calls[0][1]).toBe(variables)
+      expect(result.current.variables).toBe(variables)
+    })
+
+    it('shows no notice when it returns false, and the mutation still ends in error', async () => {
+      upsertCompletedSet.mockRejectedValue(new Error('network'))
+      const { result } = renderHook(() => useUpsertCompletedSet({ shouldToastError: () => false }), { wrapper: createWrapper() })
+
+      result.current.mutate(variables)
+      await waitFor(() => expect(result.current.isError).toBe(true))
+
+      expect(notify).not.toHaveBeenCalled()
+    })
+
+    it('shows the notice when it returns true', async () => {
+      upsertCompletedSet.mockRejectedValue(new Error('network'))
+      const { result } = renderHook(() => useUpsertCompletedSet({ shouldToastError: () => true }), { wrapper: createWrapper() })
+
+      result.current.mutate(variables)
+      await waitFor(() => expect(result.current.isError).toBe(true))
+
+      expect(notify).toHaveBeenCalledWith(t('workout:history.saveFailed'), 'error')
+    })
+
+    it('still fails at once offline instead of pausing, with no notice when it returns false', async () => {
+      upsertCompletedSet.mockRejectedValue(new TypeError('Failed to fetch'))
+      onlineManager.setOnline(false)
+      const { result } = renderHook(() => useUpsertCompletedSet({ shouldToastError: () => false }), { wrapper: createWrapper() })
+
+      result.current.mutate(variables)
+      await waitFor(() => expect(result.current.isError).toBe(true))
+
+      expect(notify).not.toHaveBeenCalled()
+    })
   })
 })
 

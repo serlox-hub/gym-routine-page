@@ -26,6 +26,8 @@ import {
 } from '../api/exerciseStatsApi.js'
 import { transformSessionDetailData, buildPreviousWorkoutRef } from '../lib/workoutTransforms.js'
 import { localizeExercisesInList, localizeExercise, resolveWeightUnit } from '../lib/exerciseUtils.js'
+import { getNotifier } from '../notifications.js'
+import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 
 // ============================================
@@ -186,10 +188,25 @@ export function useSessionPRs(sessionId) {
 // HISTORY MUTATIONS
 // ============================================
 
+// A past session saves on blur or tap with no "saving" state, so a failed save has to say so or
+// the user takes the change as kept. Offline, the default `networkMode: 'online'` pauses the
+// mutation instead of failing it: onError never runs, and the change is lost when the page closes.
+// `shouldToastError` returning false skips the toast, for a failure the screen already shows inline.
+function notifyOnFailure(messageKey, shouldToastError) {
+  return {
+    networkMode: 'always',
+    onError: (error, variables) => {
+      if (shouldToastError && !shouldToastError(error, variables)) return
+      getNotifier()?.show(t(messageKey), 'error')
+    },
+  }
+}
+
 export function useUpdateSessionMetadata() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    ...notifyOnFailure('workout:history.saveFailed'),
     mutationFn: ({ sessionId, completedAt, durationMinutes, overallFeeling, notes }) => {
       return updateSessionMetadata({ sessionId, completedAt, durationMinutes, overallFeeling, notes })
     },
@@ -213,6 +230,7 @@ export function useRescheduleSession() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    ...notifyOnFailure('workout:history.saveFailed'),
     mutationFn: ({ sessionId, startedAt, durationMinutes }) => {
       return rescheduleSession({ sessionId, startedAt, durationMinutes })
     },
@@ -230,10 +248,12 @@ export function useRescheduleSession() {
   })
 }
 
-export function useUpsertCompletedSet() {
+/** @param {{ shouldToastError?: (error: Error, variables: object) => boolean }} [options] */
+export function useUpsertCompletedSet({ shouldToastError } = {}) {
   const queryClient = useQueryClient()
 
   return useMutation({
+    ...notifyOnFailure('workout:history.saveFailed', shouldToastError),
     mutationFn: async (setData) => {
       const result = await upsertCompletedSet(setData)
       // Recalcular stats y PRs para que ediciones post-sesión no dejen exercise_session_stats desincronizado
@@ -253,6 +273,7 @@ export function useDeleteCompletedSet() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    ...notifyOnFailure('workout:history.deleteSetFailed'),
     mutationFn: async ({ sessionId, sessionExerciseId, setNumber }) => {
       const result = await deleteCompletedSet({ sessionId, sessionExerciseId, setNumber })
       try { await recalculateSessionStats(sessionId) } catch { /* no bloquear UI */ }
