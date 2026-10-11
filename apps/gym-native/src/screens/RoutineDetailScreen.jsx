@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { View, Text, Pressable, Alert } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Animated, { useAnimatedRef } from 'react-native-reanimated'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, Repeat, Layers, CalendarDays } from 'lucide-react-native'
 import {
   useRoutine, useRoutineDays, useRoutineAllExercises,
-  useCreateRoutineDay, useDeleteRoutine, useDeleteRoutineDay,
+  useAddRoutineDay, useDeleteRoutine, useDeleteRoutineDay,
   useReorderRoutineDays, useAddExerciseToDay, useUpdateRoutineExercise,
   useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay,
   useSetFavoriteRoutine,
@@ -55,7 +55,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
   const { data: allRoutineExercises } = useRoutineAllExercises(routineId)
-  const createDay = useCreateRoutineDay()
+  const { addDay, isPending: isAddingDay } = useAddRoutineDay(routineId)
   const deleteRoutine = useDeleteRoutine()
   const deleteDay = useDeleteRoutineDay()
   const reorderDays = useReorderRoutineDays()
@@ -86,20 +86,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
     )
   }
 
-  const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
-  const nextDayNumber = maxDayNumber + 1
   const daysCount = days?.length || 0
-
-  const handleAddDay = async () => {
-    try {
-      await createDay.mutateAsync({
-        routineId: routineId,
-        day: { name: t('routine:day.title', { number: nextDayNumber }), sort_order: nextDayNumber },
-      })
-    } catch (err) {
-      Alert.alert('Error', err?.message || 'Unknown error')
-    }
-  }
 
   const handleDeleteRoutine = async () => {
     try {
@@ -322,9 +309,13 @@ export default function RoutineDetailScreen({ route, navigation }) {
           />
         )}
 
-        <Pressable onPress={handleAddDay}
+        <Pressable onPress={addDay}
+          disabled={isAddingDay}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isAddingDay }}
+          className={isAddingDay ? 'opacity-50' : ''}
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}>
-          <Plus size={18} color={colors.success} />
+          {isAddingDay ? <LoadingSpinner inline /> : <Plus size={18} color={colors.success} />}
           <Text style={{ color: colors.success, fontSize: 14, fontWeight: '500' }}>{t('routine:day.add')}</Text>
         </Pressable>
 
