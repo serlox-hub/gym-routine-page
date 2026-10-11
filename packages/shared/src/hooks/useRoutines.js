@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import {
@@ -33,6 +33,7 @@ import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
 import { localizeExercisesInList } from '../lib/exerciseUtils.js'
+import { calculateNextSortOrder } from '../lib/arrayUtils.js'
 import { getTemplateImportData } from '../lib/routineTemplates.js'
 import { applyExerciseOrderToBlocks, placeInSupersetForBlocks } from '../lib/routineDayLayout.js'
 import { validateRoutineForm, prepareRoutineData } from '../lib/validation.js'
@@ -123,10 +124,49 @@ export function useCreateRoutineDay() {
 
   return useMutation({
     mutationFn: ({ routineId, day }) => apiCreateRoutineDay({ routineId, day }),
+    // The days list is returned, not fired and forgotten: `useAddRoutineDay` numbers the next day
+    // from it, so `isPending` holds until it has been refetched. A tap in between would number
+    // from the old list and create two days with the same number. The routines list (its
+    // "N days") does not need to hold the button.
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
+    },
+    onError: () => {
+      getNotifier()?.show(t('routine:day.addError'), 'error')
     },
   })
+}
+
+// The routine screen's "Add day" button, for both apps: the guard against a double tap is what
+// keeps a routine from getting the same day twice, and only shared code has a test runner on both.
+export function useAddRoutineDay(routineId) {
+  const queryClient = useQueryClient()
+  const { mutateAsync, isPending } = useCreateRoutineDay()
+  // A ref, not `isPending`: TanStack Query publishes the pending state on a timer, so a second
+  // tap right after the first still reads it as false and would create the same day twice.
+  const addingRef = useRef(false)
+
+  const addDay = useCallback(async () => {
+    if (addingRef.current) return
+    addingRef.current = true
+    // From the cache at tap time, not from the screen's render: the refetch lands here before the
+    // screen re-renders with it.
+    const days = queryClient.getQueryData([QUERY_KEYS.ROUTINE_DAYS, String(routineId)])
+    const nextDayNumber = calculateNextSortOrder(days)
+    try {
+      await mutateAsync({
+        routineId,
+        day: { name: t('routine:day.title', { number: nextDayNumber }), sort_order: nextDayNumber },
+      })
+    } catch {
+      // useCreateRoutineDay's onError tells the user
+    } finally {
+      addingRef.current = false
+    }
+  }, [queryClient, mutateAsync, routineId])
+
+  return { addDay, isPending }
 }
 
 export function useUpdateRoutine() {
@@ -249,6 +289,7 @@ export function useDeleteRoutineDay() {
     mutationFn: ({ dayId }) => apiDeleteRoutineDay(dayId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
     },
   })
 }
@@ -260,6 +301,7 @@ export function useDuplicateRoutineDay() {
     mutationFn: ({ dayId, newName }) => apiDuplicateRoutineDay({ dayId, newName }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, String(variables.routineId)] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ROUTINES] })
       getNotifier()?.show(t('routine:day.duplicated'), 'success')
     },
   })

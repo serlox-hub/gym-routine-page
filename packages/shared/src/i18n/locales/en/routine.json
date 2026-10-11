@@ -49,6 +49,7 @@
     "title": "Day {{number}}",
     "name": "Day name",
     "add": "Add day",
+    "addError": "Could not add the day. Try again.",
     "rename": "Rename",
     "delete": "Delete day",
     "duplicate": "Duplicate day",

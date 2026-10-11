@@ -51,7 +51,9 @@ import {
   fetchRoutineBlocks,
   fetchRoutineAllExercises,
   createRoutine,
+  createRoutineDay,
   deleteRoutine,
+  deleteRoutineDay,
   updateRoutineExercise,
   addExerciseToDay,
   duplicateRoutineDay,
@@ -74,7 +76,10 @@ import {
   useRoutineBlocks,
   useRoutineAllExercises,
   useCreateRoutine,
+  useCreateRoutineDay,
+  useAddRoutineDay,
   useDeleteRoutine,
+  useDeleteRoutineDay,
   useUpdateRoutineExercise,
   useAddExerciseToDay,
   useDuplicateRoutine,
@@ -323,6 +328,180 @@ describe('useRoutines — mutations', () => {
     })
 
     expect(duplicateRoutineDay).toHaveBeenCalledWith({ dayId: 'day-1', newName: 'Día 1 (copia)' })
+  })
+})
+
+describe('useCreateRoutineDay', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const variables = { routineId: 7, day: { name: 'Día 3', sort_order: 3 } }
+
+  // The screen numbers the next day from the days list: re-enabling the button before that list
+  // is back would let a second tap reuse the number.
+  it('stays pending until the days list has been refetched', async () => {
+    createRoutineDay.mockResolvedValueOnce({ id: 'day-3' })
+    const queryClient = createQueryClient()
+    let finishRefetch
+    vi.spyOn(queryClient, 'invalidateQueries').mockReturnValue(new Promise(resolve => { finishRefetch = resolve }))
+
+    const { result } = renderHook(() => useCreateRoutineDay(), { wrapper: createWrapper(queryClient) })
+
+    act(() => { result.current.mutate(variables) })
+
+    await waitFor(() => expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, '7'] }))
+    // The routines list shows "N days": it is refreshed too, without holding the button.
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINES] })
+    expect(result.current.isPending).toBe(true)
+
+    await act(async () => { finishRefetch() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  })
+
+  it('tells the user when the day could not be created', async () => {
+    createRoutineDay.mockRejectedValueOnce(new Error('network down'))
+
+    const { result } = renderHook(() => useCreateRoutineDay(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync(variables).catch(() => {})
+    })
+
+    expect(notify).toHaveBeenCalledWith(t('routine:day.addError'), 'error')
+  })
+})
+
+// The routines list shows "N days" per routine: deleting or duplicating a day changes that number.
+describe('useDeleteRoutineDay / useDuplicateRoutineDay — invalidación', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  function spyOnInvalidation() {
+    const queryClient = createQueryClient()
+    vi.spyOn(queryClient, 'invalidateQueries')
+    return queryClient
+  }
+
+  it('useDeleteRoutineDay: refresca los días de la rutina y la lista de rutinas', async () => {
+    deleteRoutineDay.mockResolvedValueOnce(undefined)
+    const queryClient = spyOnInvalidation()
+
+    const { result } = renderHook(() => useDeleteRoutineDay(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ dayId: 'day-1', routineId: 7 })
+    })
+
+    expect(deleteRoutineDay).toHaveBeenCalledWith('day-1')
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, '7'] })
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINES] })
+  })
+
+  it('useDeleteRoutineDay: no invalida nada si el borrado falla', async () => {
+    deleteRoutineDay.mockRejectedValueOnce(new Error('network down'))
+    const queryClient = spyOnInvalidation()
+
+    const { result } = renderHook(() => useDeleteRoutineDay(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ dayId: 'day-1', routineId: 7 }).catch(() => {})
+    })
+
+    expect(queryClient.invalidateQueries).not.toHaveBeenCalled()
+  })
+
+  it('useDuplicateRoutineDay: refresca los días de la rutina y la lista de rutinas', async () => {
+    duplicateRoutineDay.mockResolvedValueOnce({ id: 'day-copy' })
+    const queryClient = spyOnInvalidation()
+
+    const { result } = renderHook(() => useDuplicateRoutineDay(), { wrapper: createWrapper(queryClient) })
+
+    await act(async () => {
+      await result.current.mutateAsync({ dayId: 'day-1', newName: 'Día 1 (copia)', routineId: 7 })
+    })
+
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, '7'] })
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINES] })
+    expect(notify).toHaveBeenCalledWith(t('routine:day.duplicated'), 'success')
+  })
+})
+
+describe('useAddRoutineDay', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  function renderAddRoutineDay(routineId, cachedDays) {
+    const queryClient = createQueryClient()
+    if (cachedDays) queryClient.setQueryData([QUERY_KEYS.ROUTINE_DAYS, '7'], cachedDays)
+    return renderHook(() => useAddRoutineDay(routineId), { wrapper: createWrapper(queryClient) })
+  }
+
+  it('names and numbers the new day after the last one in the cached days list', async () => {
+    createRoutineDay.mockResolvedValueOnce({ id: 'day-3' })
+    const { result } = renderAddRoutineDay(7, [{ id: 'day-1', sort_order: 1 }, { id: 'day-2', sort_order: 2 }])
+
+    await act(async () => { await result.current.addDay() })
+
+    expect(createRoutineDay).toHaveBeenCalledWith({
+      routineId: 7,
+      day: { name: t('routine:day.title', { number: 3 }), sort_order: 3 },
+    })
+  })
+
+  it('creates "Day 1" when the routine has no days yet', async () => {
+    createRoutineDay.mockResolvedValueOnce({ id: 'day-1' })
+    const { result } = renderAddRoutineDay(7, [])
+
+    await act(async () => { await result.current.addDay() })
+
+    expect(createRoutineDay).toHaveBeenCalledWith({
+      routineId: 7,
+      day: { name: t('routine:day.title', { number: 1 }), sort_order: 1 },
+    })
+  })
+
+  // Web route params are strings, native ones numbers: both must find the same cached list.
+  it('reads the cached days list when the routine id comes as a string', async () => {
+    createRoutineDay.mockResolvedValueOnce({ id: 'day-2' })
+    const { result } = renderAddRoutineDay('7', [{ id: 'day-1', sort_order: 1 }])
+
+    await act(async () => { await result.current.addDay() })
+
+    expect(createRoutineDay).toHaveBeenCalledWith({
+      routineId: '7',
+      day: { name: t('routine:day.title', { number: 2 }), sort_order: 2 },
+    })
+  })
+
+  // TanStack Query publishes `isPending` on a timer, so the second tap lands on a button that
+  // still looks idle: only the hook's own guard stops it.
+  it('creates a single day when tapped again before the first save finishes', async () => {
+    createRoutineDay.mockReturnValue(new Promise(() => {}))
+    const { result } = renderAddRoutineDay(7, [])
+
+    act(() => {
+      result.current.addDay()
+      result.current.addDay()
+    })
+
+    await waitFor(() => expect(createRoutineDay).toHaveBeenCalledTimes(1))
+    await act(async () => {})
+    expect(createRoutineDay).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets the user try again after a failed save, and tells them it failed', async () => {
+    createRoutineDay.mockRejectedValueOnce(new Error('network down'))
+    createRoutineDay.mockResolvedValueOnce({ id: 'day-1' })
+    const { result } = renderAddRoutineDay(7, [])
+
+    await act(async () => { await result.current.addDay() })
+    expect(notify).toHaveBeenCalledWith(t('routine:day.addError'), 'error')
+
+    await act(async () => { await result.current.addDay() })
+    expect(createRoutineDay).toHaveBeenCalledTimes(2)
   })
 })
 

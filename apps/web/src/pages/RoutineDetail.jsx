@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Pin, Repeat, Layers, CalendarDays } from 'lucide-react'
-import { useRoutine, useRoutineDays, useRoutineAllExercises, useCreateRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
+import { useRoutine, useRoutineDays, useRoutineAllExercises, useAddRoutineDay, useDeleteRoutine, useAddExerciseToDay, useDeleteRoutineDay, useReorderRoutineDays, useUpdateRoutineExercise, useDuplicateRoutineExercise, useDuplicateRoutineDay, useMoveRoutineExerciseToDay, useSetFavoriteRoutine } from '../hooks/useRoutines.js'
 import { LoadingSpinner, ErrorMessage, ConfirmModal, SortableList, PageHeader } from '../components/ui/index.js'
 import { DayCard, AddExerciseModal, EditRoutineExerciseModal, RoutineHeader, MoveToDayModal, VolumeSummary } from '../components/Routine/index.js'
 import { moveItemToPosition } from '@gym/shared'
@@ -44,7 +44,7 @@ function RoutineDetail() {
   const { data: routine, isLoading: loadingRoutine, error: routineError } = useRoutine(routineId)
   const { data: days, isLoading: loadingDays, error: daysError } = useRoutineDays(routineId)
   const { data: allRoutineExercises } = useRoutineAllExercises(routineId)
-  const createDay = useCreateRoutineDay()
+  const { addDay, isPending: isAddingDay } = useAddRoutineDay(parseInt(routineId))
   const deleteRoutine = useDeleteRoutine()
   const addExercise = useAddExerciseToDay()
   const updateExercise = useUpdateRoutineExercise()
@@ -67,20 +67,6 @@ function RoutineDetail() {
         {isLoading ? <LoadingSpinner /> : <ErrorMessage message={error.message} />}
       </div>
     )
-  }
-
-  const maxDayNumber = days?.reduce((max, day) => Math.max(max, day.sort_order), 0) || 0
-  const nextDayNumber = maxDayNumber + 1
-
-  const handleAddDay = async () => {
-    try {
-      await createDay.mutateAsync({
-        routineId: parseInt(routineId),
-        day: { name: t('routine:day.title', { number: nextDayNumber }), sort_order: nextDayNumber },
-      })
-    } catch {
-      // Error handled by TanStack Query
-    }
   }
 
   const handleDeleteRoutine = async () => {
@@ -374,11 +360,12 @@ function RoutineDetail() {
         )}
 
         <button
-          onClick={handleAddDay}
-          className="w-full flex items-center gap-2 justify-center py-3 rounded-xl"
+          onClick={addDay}
+          disabled={isAddingDay}
+          className="w-full flex items-center gap-2 justify-center py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ border: `1px dashed ${colors.border}`, color: colors.success, backgroundColor: 'transparent' }}
         >
-          <Plus size={18} />
+          {isAddingDay ? <LoadingSpinner inline /> : <Plus size={18} />}
           <span className="text-sm font-medium">{t('routine:day.add')}</span>
         </button>
       </main>
