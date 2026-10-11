@@ -54,6 +54,9 @@ import {
   createRoutineDay,
   deleteRoutine,
   deleteRoutineDay,
+  updateRoutineDay,
+  deleteRoutineExercise,
+  duplicateRoutineExercise,
   updateRoutineExercise,
   addExerciseToDay,
   duplicateRoutineDay,
@@ -80,6 +83,9 @@ import {
   useAddRoutineDay,
   useDeleteRoutine,
   useDeleteRoutineDay,
+  useUpdateRoutineDay,
+  useDeleteRoutineExercise,
+  useDuplicateRoutineExercise,
   useUpdateRoutineExercise,
   useAddExerciseToDay,
   useDuplicateRoutine,
@@ -425,6 +431,153 @@ describe('useDeleteRoutineDay / useDuplicateRoutineDay — invalidación', () =>
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINE_DAYS, '7'] })
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: [QUERY_KEYS.ROUTINES] })
     expect(notify).toHaveBeenCalledWith(t('routine:day.duplicated'), 'success')
+  })
+})
+
+// Issue #174: each action waits for the list it changes, so the modal closes (or the menu option
+// comes back) onto the new list, and its failure is told once: inline in the modal that waits for
+// it, or as a toast when nothing on screen does.
+describe('mutations that wait for the list they change', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Holds the refetch of `heldKey` until `finish()`; any other invalidation resolves at once, so a
+  // hook that held the wrong list would settle early.
+  function holdRefetch(queryClient, heldKey) {
+    let finish
+    const held = new Promise(resolve => { finish = resolve })
+    vi.spyOn(queryClient, 'invalidateQueries').mockImplementation(({ queryKey }) =>
+      JSON.stringify(queryKey) === JSON.stringify(heldKey) ? held : Promise.resolve())
+    return () => finish()
+  }
+
+  const CASES = [
+    {
+      name: 'useDeleteRoutineExercise',
+      useHook: useDeleteRoutineExercise,
+      api: deleteRoutineExercise,
+      variables: { exerciseId: 're-1', dayId: 3 },
+      heldKey: [QUERY_KEYS.ROUTINE_BLOCKS, '3'],
+    },
+    {
+      name: 'useUpdateRoutineDay',
+      useHook: useUpdateRoutineDay,
+      api: updateRoutineDay,
+      variables: { dayId: 'day-1', routineId: 7, data: { name: 'Pierna' } },
+      heldKey: [QUERY_KEYS.ROUTINE_DAYS, '7'],
+    },
+    {
+      name: 'useDeleteRoutineDay',
+      useHook: useDeleteRoutineDay,
+      api: deleteRoutineDay,
+      variables: { dayId: 'day-1', routineId: 7 },
+      heldKey: [QUERY_KEYS.ROUTINE_DAYS, '7'],
+    },
+    {
+      name: 'useDeleteRoutine',
+      useHook: useDeleteRoutine,
+      api: deleteRoutine,
+      variables: 7,
+      heldKey: [QUERY_KEYS.ROUTINES],
+    },
+    {
+      name: 'useDuplicateRoutineExercise',
+      useHook: useDuplicateRoutineExercise,
+      api: duplicateRoutineExercise,
+      variables: { routineExercise: { id: 're-1' }, dayId: 3 },
+      heldKey: [QUERY_KEYS.ROUTINE_BLOCKS, '3'],
+    },
+  ]
+
+  it.each(CASES)('$name stays pending until its list has been refetched', async ({ useHook, api, variables, heldKey }) => {
+    api.mockResolvedValueOnce(undefined)
+    const queryClient = createQueryClient()
+    const finishRefetch = holdRefetch(queryClient, heldKey)
+
+    const { result } = renderHook(() => useHook(), { wrapper: createWrapper(queryClient) })
+
+    act(() => { result.current.mutate(variables) })
+
+    await waitFor(() => expect(queryClient.invalidateQueries).toHaveBeenCalledWith(expect.objectContaining({ queryKey: heldKey })))
+    expect(result.current.isPending).toBe(true)
+
+    await act(async () => { finishRefetch() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  })
+
+  // These run inside a modal that cannot close while they are pending: it shows the failure.
+  it.each([
+    { name: 'useCreateRoutine', useHook: useCreateRoutine, api: createRoutine, variables: { name: 'Mi rutina' } },
+    ...CASES.filter(({ name }) => name !== 'useDuplicateRoutineExercise'),
+  ])('$name leaves its failure to the modal: no toast', async ({ useHook, api, variables }) => {
+    api.mockRejectedValueOnce(new Error('network down'))
+
+    const { result } = renderHook(() => useHook(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync(variables).catch(() => {})
+    })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(notify).not.toHaveBeenCalled()
+  })
+
+  // The exercise menu closes on tap: nothing on screen waits for the copy, so the toast tells.
+  it('useDuplicateRoutineExercise tells the user when the copy could not be made', async () => {
+    duplicateRoutineExercise.mockRejectedValueOnce(new Error('network down'))
+
+    const { result } = renderHook(() => useDuplicateRoutineExercise(), { wrapper: createWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ routineExercise: { id: 're-1' }, dayId: 3 }).catch(() => {})
+    })
+
+    expect(notify).toHaveBeenCalledWith(t('routine:exercise.duplicateError'), 'error')
+  })
+
+  // The "deleted" toast goes out with the screen the user lands on, not over the open modal.
+  it('useDeleteRoutine says the routine is deleted only once the routines list is back', async () => {
+    deleteRoutine.mockResolvedValueOnce(undefined)
+    const queryClient = createQueryClient()
+    const finishRefetch = holdRefetch(queryClient, [QUERY_KEYS.ROUTINES])
+
+    const { result } = renderHook(() => useDeleteRoutine(), { wrapper: createWrapper(queryClient) })
+
+    act(() => { result.current.mutate(7) })
+    await waitFor(() => expect(queryClient.invalidateQueries).toHaveBeenCalled())
+    expect(notify).not.toHaveBeenCalled()
+
+    await act(async () => { finishRefetch() })
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(t('routine:deleted'), 'success'))
+  })
+
+  // `holdRefetch` mocks `invalidateQueries`, so it cannot tell WHICH queries get refetched. From the
+  // routine page nothing observes the routines list (Home is unmounted) and the default refetches
+  // only observed queries: Home would mount with the deleted routine still cached.
+  it('useDeleteRoutine has refetched the routines list, even with nothing observing it, by the time it resolves', async () => {
+    const queryClient = createQueryClient()
+    const routinesKey = [QUERY_KEYS.ROUTINES]
+    const idsInCache = () => queryClient.getQueryData(routinesKey)?.map(routine => routine.id)
+
+    // Home was open once and then left: the list stays cached, with no observer.
+    fetchRoutines.mockResolvedValueOnce(FAKE_ROUTINES)
+    const home = renderHook(() => useRoutines(), { wrapper: createWrapper(queryClient) })
+    await waitFor(() => expect(home.result.current.isSuccess).toBe(true))
+    home.unmount()
+    expect(queryClient.getQueryCache().find({ queryKey: routinesKey }).getObserversCount()).toBe(0)
+    expect(idsInCache()).toEqual(['routine-1', 'routine-2'])
+
+    deleteRoutine.mockResolvedValueOnce(undefined)
+    fetchRoutines.mockResolvedValueOnce(FAKE_ROUTINES.filter(routine => routine.id !== 'routine-1'))
+    let idsWhenToastShown
+    notify.mockImplementationOnce(() => { idsWhenToastShown = idsInCache() })
+
+    const { result } = renderHook(() => useDeleteRoutine(), { wrapper: createWrapper(queryClient) })
+    await act(async () => { await result.current.mutateAsync('routine-1') })
+
+    expect(idsInCache()).toEqual(['routine-2'])
+    expect(idsWhenToastShown).toEqual(['routine-2'])
   })
 })
 

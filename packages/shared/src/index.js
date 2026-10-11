@@ -116,6 +116,7 @@ export { ExpandedExerciseProvider, useExpandedExercise } from './hooks/useExpand
 export * from './hooks/useDurationDigits.js'
 export { useLazyMountToggle } from './hooks/useLazyMountToggle.js'
 export { useSlowPending, SLOW_PENDING_MS } from './hooks/useSlowPending.js'
+export { useOneAtATimeMutation } from './hooks/useOneAtATimeMutation.js'
 export * from './hooks/useTrainingGoals.js'
 export * from './hooks/useHomeScreen.js'
 export * from './hooks/useOnboardingGate.js'

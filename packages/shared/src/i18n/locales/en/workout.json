@@ -129,6 +129,7 @@
     "expand": "Expand exercise",
     "removeFromSession": "Remove from session",
     "removeFromSessionConfirm": "Remove \"{{name}}\" from this session? It will still be available in the routine.",
+    "removeFailed": "Could not remove the exercise from the session. Try again.",
     "updateFailed": "Could not save the exercise. Try again.",
     "reorderFailed": "Could not reorder the exercise. Try again.",
     "replaceScopeTitle": "Just today or in the routine too?",

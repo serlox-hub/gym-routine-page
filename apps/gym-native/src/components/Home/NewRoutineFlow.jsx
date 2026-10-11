@@ -8,8 +8,8 @@ import { File } from 'expo-file-system'
 import { useUserId, useIsPremium } from '../../hooks/useAuth'
 import { useCreateRoutine } from '../../hooks/useRoutines'
 import { usePromptExerciseCatalog } from '../../hooks/useExercises'
-import { ImportOptionsModal, LoadingSpinner, Modal } from '../ui'
-import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData, parseRoutineJson } from '@gym/shared'
+import { ImportOptionsModal, LoadingSpinner, Modal, SaveStatus } from '../ui'
+import { QUERY_KEYS, ROUTINE_TEMPLATES, importRoutine, useOneAtATimeMutation, buildChatbotPrompt, buildAdaptRoutinePrompt, GOAL_OPTIONS, LEVEL_OPTIONS, getTemplateDisplay, getTemplateImportData, parseRoutineJson } from '@gym/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { colors } from '../../lib/styles'
 import CopyPromptButton from './CopyPromptButton'
@@ -20,36 +20,54 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 // MENU VIEW
 // ============================================
 
-function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
+function MenuView({ onNavigate, onCreateManually, isCreating, createError, isPremium, t }) {
   return (
     <View style={{ padding: 20 }}>
       <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700', marginBottom: 16 }}>{t('routine:new')}</Text>
+      <SaveStatus isPending={isCreating} error={createError} className="mb-4" />
+      {/* While a routine is being created every entry waits: the other three end up closing the
+          sheet, which would drop the create's result and its failure. */}
       <View style={{ gap: 10 }}>
+        {/* On solid lime only what is painted on it dims, never the control (translucent lime
+            turns olive). */}
         <Pressable onPress={() => isPremium && onNavigate('chatbot')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, backgroundColor: isPremium ? colors.success : colors.bgSecondary, borderWidth: 1, borderColor: isPremium ? colors.success : colors.border, opacity: isPremium ? 1 : 0.7 }}>
-          <Sparkles size={20} color={isPremium ? colors.bgPrimary : colors.success} />
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: isPremium ? colors.bgPrimary : colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{t('routine:newFlow.createWithAI')}</Text>
-            <Text style={{ color: isPremium ? colors.bgPrimary : colors.textMuted, fontSize: 12, opacity: 0.8 }}>{t('routine:newFlow.createWithAIDesc')}</Text>
-          </View>
-          {!isPremium && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.successBg, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <Lock size={10} color={colors.success} />
-              <Text style={{ color: colors.success, fontSize: 11, fontWeight: '600' }}>Premium</Text>
+          disabled={isCreating}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isCreating }}
+          style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 12, backgroundColor: isPremium ? colors.success : colors.bgSecondary, borderWidth: 1, borderColor: isPremium ? colors.success : colors.border, opacity: isPremium ? 1 : 0.7 }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: isCreating ? 0.5 : 1 }}>
+            <Sparkles size={20} color={isPremium ? colors.bgPrimary : colors.success} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: isPremium ? colors.bgPrimary : colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{t('routine:newFlow.createWithAI')}</Text>
+              <Text style={{ color: isPremium ? colors.bgPrimary : colors.textMuted, fontSize: 12, opacity: 0.8 }}>{t('routine:newFlow.createWithAIDesc')}</Text>
             </View>
-          )}
-          <ChevronRight size={18} color={isPremium ? colors.bgPrimary : colors.textMuted} />
+            {!isPremium && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.successBg, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Lock size={10} color={colors.success} />
+                <Text style={{ color: colors.success, fontSize: 11, fontWeight: '600' }}>Premium</Text>
+              </View>
+            )}
+            <ChevronRight size={18} color={isPremium ? colors.bgPrimary : colors.textMuted} />
+          </View>
         </Pressable>
-        <Pressable onPress={onCreateManually} className="active:opacity-70"
+        <Pressable onPress={onCreateManually}
+          disabled={isCreating}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isCreating }}
+          className={isCreating ? 'opacity-50' : 'active:opacity-70'}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
           <Pencil size={20} color={colors.success} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{t('routine:newFlow.createManually')}</Text>
             <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t('routine:newFlow.createManuallyDesc')}</Text>
           </View>
-          <ChevronRight size={18} color={colors.textMuted} />
+          {isCreating ? <LoadingSpinner inline /> : <ChevronRight size={18} color={colors.textMuted} />}
         </Pressable>
-        <Pressable onPress={() => onNavigate('templates')} className="active:opacity-70"
+        <Pressable onPress={() => onNavigate('templates')}
+          disabled={isCreating}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isCreating }}
+          className={isCreating ? 'opacity-50' : 'active:opacity-70'}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: colors.border }}>
           <LayoutGrid size={20} color={colors.success} />
           <View style={{ flex: 1 }}>
@@ -59,7 +77,11 @@ function MenuView({ onNavigate, onCreateManually, isPremium, t }) {
           <ChevronRight size={18} color={colors.textMuted} />
         </Pressable>
       </View>
-      <Pressable onPress={() => onNavigate('import')} className="active:opacity-70"
+      <Pressable onPress={() => onNavigate('import')}
+        disabled={isCreating}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isCreating }}
+        className={isCreating ? 'opacity-50' : 'active:opacity-70'}
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16, paddingVertical: 8 }}>
         <Upload size={14} color={colors.textMuted} />
         <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('routine:newFlow.import')}</Text>
@@ -525,7 +547,7 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
   const userId = useUserId()
   const isPremium = useIsPremium()
   const queryClient = useQueryClient()
-  const createRoutine = useCreateRoutine()
+  const createRoutine = useOneAtATimeMutation(useCreateRoutine())
   const [stack, setStack] = useState(['menu'])
   const [showImportOptions, setShowImportOptions] = useState(false)
   const [pendingImportData, setPendingImportData] = useState(null)
@@ -553,17 +575,20 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
     setStack(s => s.slice(0, -1))
   }
 
+  // The sheet stays mounted between openings: a failed create would still show on the next one.
+  // Closing cannot happen mid-create (see the Modal below), so the reset never drops a call in flight.
   const handleClose = () => {
     onClose()
+    createRoutine.reset()
     setTimeout(() => { setStack(['menu']); slideAnim.setValue(0); setChatbotStep(1); setAdaptStep(1) }, 300)
   }
 
+  // A failure shows in the menu (`createError`); `run` drops a second tap while one is in flight.
   const handleCreateManually = async () => {
-    try {
-      const newRoutine = await createRoutine.mutateAsync({ name: t('routine:defaultName') })
-      handleClose()
-      navigation.navigate('RoutineDetail', { routineId: newRoutine.id, openDetails: true })
-    } catch { /* error handled by mutation */ }
+    const newRoutine = await createRoutine.run({ name: t('routine:defaultName') })
+    if (!newRoutine) return
+    handleClose()
+    navigation.navigate('RoutineDetail', { routineId: newRoutine.id, openDetails: true })
   }
 
   const handleImport = (data) => {
@@ -604,7 +629,8 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={handleClose} position="bottom">
+      {/* Not closable while a routine is being created: its failure is shown here, nowhere else. */}
+      <Modal isOpen={isOpen} onClose={createRoutine.isPending ? undefined : handleClose} position="bottom">
         {/* Header */}
         {titleKey && (
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
@@ -625,7 +651,16 @@ function NewRoutineFlow({ isOpen, onClose, navigation }) {
           }}>
             {stack.map((screen, i) => (
               <View key={`${screen}-${i}`} style={{ width: SCREEN_WIDTH }}>
-                {screen === 'menu' && <MenuView onNavigate={push} onCreateManually={handleCreateManually} isPremium={isPremium} t={t} />}
+                {screen === 'menu' && (
+                  <MenuView
+                    onNavigate={push}
+                    onCreateManually={handleCreateManually}
+                    isCreating={createRoutine.isPending}
+                    createError={createRoutine.isError ? t('routine:createError') : null}
+                    isPremium={isPremium}
+                    t={t}
+                  />
+                )}
                 {screen === 'templates' && <TemplatesView onSelect={handleTemplateSelect} t={t} />}
                 {screen === 'chatbot' && <ChatbotView onImport={handleImport} step={chatbotStep} setStep={setChatbotStep} t={t} />}
                 {screen === 'import' && <ImportView onImport={handleImport} onNavigate={push} t={t} />}

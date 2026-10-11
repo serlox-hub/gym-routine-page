@@ -11,7 +11,6 @@ import {
   useAbandonSession,
   useSessionExercises,
   useAddSessionExerciseFlow,
-  useRemoveSessionExercise,
   useReplaceSessionExercise,
   useReorderSessionExercises,
   useWakeLock,
@@ -64,7 +63,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const abandonSessionMutation = useAbandonSession()
   const addFlow = useAddSessionExerciseFlow()
   const addFailedMessage = addFlow.isFailed ? t('workout:exercise.addFailed') : null
-  const removeSessionExerciseMutation = useRemoveSessionExercise()
   const replaceSessionExerciseMutation = useReplaceSessionExercise()
   const reorderSessionExercisesMutation = useReorderSessionExercises()
 
@@ -159,10 +157,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     abandonSessionMutation.mutate()
   }
 
-  const handleRemoveExercise = (sessionExerciseId) => {
-    removeSessionExerciseMutation.mutate(sessionExerciseId)
-  }
-
   const handleReplaceExercise = (sessionExerciseId, newExercise, applyToRoutine) => {
     replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExercise, applyToRoutine })
   }
@@ -241,7 +235,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
             exercisesByBlock={exercisesByBlock}
             onCompleteSet={handleCompleteSet}
             onUncompleteSet={handleUncompleteSet}
-            onRemove={handleRemoveExercise}
             onReplace={handleReplaceExercise}
             flatExercises={flatExercises}
             onReorderBlock={handleReorderBlock}

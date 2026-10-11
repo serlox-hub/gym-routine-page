@@ -30,7 +30,7 @@ function getSliceStyle(row) {
   return { backgroundColor: colors.bgSecondary, borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.purple }
 }
 
-function BlockExerciseList({ exercisesByBlock, flatExercises = [], onCompleteSet, onUncompleteSet, onRemove, onReplace, onReorderBlock, isReordering = false, existingSupersets = [], scrollRef }) {
+function BlockExerciseList({ exercisesByBlock, flatExercises = [], onCompleteSet, onUncompleteSet, onReplace, onReorderBlock, isReordering = false, existingSupersets = [], scrollRef }) {
   // Los ejercicios de cada bloque, en orden: es lo que consume `ExerciseRowList`.
   const exercisesByWarmup = useMemo(() => ({
     true: flatExercises.filter(e => e.isWarmup),
@@ -92,7 +92,6 @@ function BlockExerciseList({ exercisesByBlock, flatExercises = [], onCompleteSet
                   sessionExercise={sessionExercise}
                   onCompleteSet={onCompleteSet}
                   onUncompleteSet={onUncompleteSet}
-                  onRemove={onRemove}
                   onReplace={onReplace}
                   isSuperset={isMember}
                   reorder={reorder}

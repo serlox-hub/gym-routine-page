@@ -234,6 +234,8 @@ export function useReplaceSessionExercise() {
   })
 }
 
+// No `onError` toast: the confirm modal shows the failure inline. `isPending` holds until the
+// session's exercises have been refetched, so the modal closes onto a list without the exercise.
 export function useRemoveSessionExercise() {
   const queryClient = useQueryClient()
   const sessionId = useWorkoutStore(state => state.sessionId)
@@ -246,8 +248,8 @@ export function useRemoveSessionExercise() {
     },
     onSuccess: (_, sessionExerciseId) => {
       clearExerciseFromStore(sessionExerciseId)
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES, sessionId] })
     },
   })
 }

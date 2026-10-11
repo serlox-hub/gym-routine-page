@@ -11,12 +11,12 @@ import ExerciseCardNotes from './ExerciseCardNotes.jsx'
 import NotesToggleBar from './NotesToggleBar.jsx'
 import SetsList from './SetsList.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { usePreviousWorkout, useUpdateSessionExerciseFields } from '../../hooks/useWorkout.js'
+import { usePreviousWorkout, useUpdateSessionExerciseFields, useRemoveSessionExercise } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
 import { getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields, canApplyToRoutine } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
-function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onRemove, onReplace, isSuperset = false, reorder, isReordering = false, onRemoveFromSuperset, dragHandleProps = null, isDragging = false, existingSupersets = [] }) {
+function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onReplace, isSuperset = false, reorder, isReordering = false, onRemoveFromSuperset, dragHandleProps = null, isDragging = false, existingSupersets = [] }) {
   const { t } = useTranslation()
   const { id, sessionExerciseId, exercise, series, reps, target_field, level, rir, notes, rest_seconds } = sessionExercise
   const [showHistory, setShowHistory] = useState(false)
@@ -64,6 +64,8 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const { open: showNotes, mounted: notesMounted, toggle: toggleNotes } = useLazyMountToggle(collapsed)
 
   const updateFieldsMutation = useUpdateSessionExerciseFields()
+  // The card's own mutation, not the screen's: the remove modal shows only this exercise's call.
+  const removeMutation = useRemoveSessionExercise()
   const addSet = () => setExerciseSetCount(exerciseKey, setsCount + 1)
   const removeSet = () => { if (setsCount > 0) setExerciseSetCount(exerciseKey, setsCount - 1) }
   const handleSaveEdit = (sessionExerciseId, fields, newSeries) => {
@@ -83,6 +85,16 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
     setPendingReplacement(null)
   }
 
+  // Reset on open: the modal cannot close while the removal is pending, so nothing in flight is
+  // dropped. It closes once the session list no longer has the exercise (see useRemoveSessionExercise).
+  const openRemoveConfirm = () => {
+    removeMutation.reset()
+    setShowRemoveConfirm(true)
+  }
+  const confirmRemove = () => {
+    removeMutation.mutate(exerciseKey, { onSuccess: () => setShowRemoveConfirm(false) })
+  }
+
   const menuItems = [
     { label: t('workout:history.title'), icon: Info, onClick: () => setShowHistory(true) },
     { label: t('common:buttons.edit'), icon: Pencil, onClick: () => setShowEdit(true) },
@@ -97,7 +109,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       })),
     },
     onRemoveFromSuperset && { label: t('routine:superset.removeFrom'), icon: Link2Off, onClick: onRemoveFromSuperset, disabled: isReordering },
-    onRemove && { label: t('workout:exercise.removeFromSession'), icon: Trash2, onClick: () => setShowRemoveConfirm(true), danger: true },
+    { label: t('workout:exercise.removeFromSession'), icon: Trash2, onClick: openRemoveConfirm, danger: true },
   ]
 
   const Wrapper = isSuperset ? 'div' : Card
@@ -148,7 +160,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
       <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} trackedFields={trackedFields} distanceUnit={distanceUnit} routineDayId={routineDayId} />
       <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={handlePickReplacement} />
       <ConfirmModal isOpen={!!pendingReplacement} title={t('workout:exercise.replaceScopeTitle')} message={t('workout:exercise.replaceScopeMessage', { name: getExerciseName(exercise) })} cancelText={t('workout:exercise.replaceOnlyToday')} confirmText={t('workout:exercise.replaceAlsoRoutine')} variant="primary" onCancel={() => confirmReplacement(false)} onConfirm={() => confirmReplacement(true)} onDismiss={() => setPendingReplacement(null)} />
-      <ConfirmModal isOpen={showRemoveConfirm} title={t('workout:exercise.removeFromSession')} message={t('workout:exercise.removeFromSessionConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={() => { setShowRemoveConfirm(false); onRemove(exerciseKey) }} onCancel={() => setShowRemoveConfirm(false)} />
+      <ConfirmModal isOpen={showRemoveConfirm} title={t('workout:exercise.removeFromSession')} message={t('workout:exercise.removeFromSessionConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={confirmRemove} onCancel={() => setShowRemoveConfirm(false)} isLoading={removeMutation.isPending} saveStatus error={removeMutation.isError ? t('workout:exercise.removeFailed') : null} />
       <EditSessionExerciseModal isOpen={showEdit} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} sessionExercise={sessionExercise} existingSupersets={existingSupersets} />
     </Wrapper>
   )

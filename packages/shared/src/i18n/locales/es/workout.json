@@ -129,6 +129,7 @@
     "expand": "Expandir ejercicio",
     "removeFromSession": "Quitar de la sesión",
     "removeFromSessionConfirm": "¿Quitar \"{{name}}\" de esta sesión? Seguirá disponible en la rutina.",
+    "removeFailed": "No se pudo quitar el ejercicio de la sesión. Inténtalo de nuevo.",
     "updateFailed": "No se pudo guardar el ejercicio. Inténtalo de nuevo.",
     "reorderFailed": "No se pudo reordenar el ejercicio. Inténtalo de nuevo.",
     "replaceScopeTitle": "¿Solo hoy o también en la rutina?",

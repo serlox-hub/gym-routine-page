@@ -16,7 +16,7 @@ import {
   DayCard, RoutineHeader, MoveToDayModal,
   AddExerciseModal, EditRoutineExerciseModal, VolumeSummary,
 } from '../components/Routine'
-import { moveItemToPosition } from '@gym/shared'
+import { moveItemToPosition, useOneAtATimeMutation } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore'
 import { colors, design } from '../lib/styles'
 
@@ -61,7 +61,9 @@ export default function RoutineDetailScreen({ route, navigation }) {
   const reorderDays = useReorderRoutineDays()
   const addExercise = useAddExerciseToDay()
   const updateExercise = useUpdateRoutineExercise()
-  const duplicateExercise = useDuplicateRoutineExercise()
+  const duplicateExercise = useOneAtATimeMutation(useDuplicateRoutineExercise())
+  // The menu closes on tap, so the row being copied is what shows the copy in flight.
+  const duplicatingExerciseId = duplicateExercise.isPending ? duplicateExercise.variables?.routineExercise?.id : null
   const duplicateDay = useDuplicateRoutineDay()
   const moveExercise = useMoveRoutineExerciseToDay()
   const setFavoriteMutation = useSetFavoriteRoutine()
@@ -88,11 +90,23 @@ export default function RoutineDetailScreen({ route, navigation }) {
 
   const daysCount = days?.length || 0
 
+  // Both delete modals show their own call: reset on open, and they cannot close while it is
+  // pending (`ConfirmModal`), so the reset never drops a call in flight.
+  const openDeleteRoutine = () => {
+    deleteRoutine.reset()
+    setShowDeleteConfirm(true)
+  }
+
+  const openDeleteDay = (dayId) => {
+    deleteDay.reset()
+    setDayToDelete(days.find(d => d.id === dayId))
+  }
+
   const handleDeleteRoutine = async () => {
     try {
       await deleteRoutine.mutateAsync(parseInt(routineId))
       navigation.goBack()
-    } catch { /* handled by TanStack Query */ }
+    } catch { /* the confirm modal shows the failure */ }
   }
 
   const handleDeleteDay = async () => {
@@ -100,7 +114,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
     try {
       await deleteDay.mutateAsync({ dayId: dayToDelete.id, routineId })
       setDayToDelete(null)
-    } catch { /* handled by TanStack Query */ }
+    } catch { /* the confirm modal shows the failure */ }
   }
 
   // El arrastre y la lista de posiciones del ReorderModal entran por aquí: un solo camino a
@@ -147,7 +161,7 @@ export default function RoutineDetailScreen({ route, navigation }) {
         routine={routine}
         routineId={routineId}
         initialDetailsOpen={initialDetailsOpen}
-        onDelete={() => setShowDeleteConfirm(true)}
+        onDelete={openDeleteRoutine}
         navigation={navigation}
       />
 
@@ -282,13 +296,12 @@ export default function RoutineDetailScreen({ route, navigation }) {
                   setIsReplacingExercise(true)
                   setShowEditExercise(true)
                 }}
-                onDuplicateExercise={async (re, dayId) => {
-                  try {
-                    await duplicateExercise.mutateAsync({ routineExercise: re, dayId })
-                  } catch { /* handled by TanStack Query */ }
-                }}
+                // useDuplicateRoutineExercise's onError tells the user; `run` drops a tap while a
+                // copy is in flight.
+                onDuplicateExercise={(re, dayId) => duplicateExercise.run({ routineExercise: re, dayId })}
+                duplicatingExerciseId={duplicatingExerciseId}
                 onMoveExerciseToDay={handleOpenMoveModal}
-                onDelete={(dayId) => setDayToDelete(days.find(d => d.id === dayId))}
+                onDelete={openDeleteDay}
                 onDuplicate={handleDuplicateDay}
                 isDuplicatingDay={duplicateDay.isPending}
                 onReorderToPosition={(newIndex) => handleReorderDay(day.id, newIndex)}
@@ -332,6 +345,9 @@ export default function RoutineDetailScreen({ route, navigation }) {
         confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteRoutine}
         onCancel={() => setShowDeleteConfirm(false)}
+        isLoading={deleteRoutine.isPending}
+        saveStatus
+        error={deleteRoutine.isError ? t('routine:deleteError') : null}
       />
 
       <ConfirmModal
@@ -341,6 +357,9 @@ export default function RoutineDetailScreen({ route, navigation }) {
         confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteDay}
         onCancel={() => setDayToDelete(null)}
+        isLoading={deleteDay.isPending}
+        saveStatus
+        error={deleteDay.isError ? t('routine:day.deleteError') : null}
       />
 
       <MoveToDayModal

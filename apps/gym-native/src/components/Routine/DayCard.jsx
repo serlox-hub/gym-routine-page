@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { View, Text, TextInput, Pressable, ScrollView, Animated } from 'react-native'
+import { View, Text, TextInput, Pressable, ScrollView, Animated, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Trash2, Play, Pencil, ArrowUpDown, Copy } from 'lucide-react-native'
-import { Card, ConfirmModal, DragHandle, DropdownMenu, IconButton, LoadingSpinner, Modal, ReorderModal } from '../ui'
+import { Card, ConfirmModal, DragHandle, DropdownMenu, IconButton, LoadingSpinner, Modal, ReorderModal, SaveStatus } from '../ui'
 import { useRoutineBlocks, useReorderRoutineExercises, useSetRoutineExerciseSupersetGroup, useDeleteRoutineExercise, useUpdateRoutineDay } from '../../hooks/useRoutines'
 import { useStartSession } from '../../hooks/useWorkout'
 import useWorkoutStore from '../../stores/workoutStore'
@@ -21,6 +21,7 @@ export default function DayCard({
   onEditExercise,
   onReplaceExercise,
   onDuplicateExercise,
+  duplicatingExerciseId = null,
   onMoveExerciseToDay,
   onDelete,
   onDuplicate,
@@ -129,19 +130,36 @@ export default function DayCard({
   // Both writes renumber the whole day: while one is in flight, no drag and no menu.
   const isReorderingExercises = reorderExercises.isPending || setSupersetGroup.isPending
 
+  // Both modals wait for their write and show its failure: reset on open so they show this
+  // opening's call, which is safe because neither can close while it is pending.
+  const openDeleteExercise = (routineExercise) => {
+    deleteExercise.reset()
+    setExerciseToDelete(routineExercise)
+  }
+
   const handleDeleteExercise = () => {
     if (!exerciseToDelete) return
-    deleteExercise.mutate({ exerciseId: exerciseToDelete.id, dayId: id })
-    setExerciseToDelete(null)
+    deleteExercise.mutate({ exerciseId: exerciseToDelete.id, dayId: id }, { onSuccess: () => setExerciseToDelete(null) })
+  }
+
+  const openRename = () => {
+    updateDay.reset()
+    setRenameValue(name)
+    setShowRenameModal(true)
   }
 
   const handleRenameDay = () => {
+    // "Done" on the keyboard while the save is in flight.
+    if (updateDay.isPending) return
     const trimmed = renameValue.trim()
-    if (trimmed && trimmed !== name) {
-      updateDay.mutate({ dayId: id, routineId, data: { name: trimmed } })
+    if (!trimmed || trimmed === name) {
+      setShowRenameModal(false)
+      return
     }
-    setShowRenameModal(false)
+    updateDay.mutate({ dayId: id, routineId, data: { name: trimmed } }, { onSuccess: () => setShowRenameModal(false) })
   }
+
+  const isRenameDisabled = !renameValue.trim() || updateDay.isPending
 
   return (
     <>
@@ -211,10 +229,7 @@ export default function DayCard({
                       {
                         icon: Pencil,
                         label: t('routine:day.rename'),
-                        onClick: () => {
-                          setRenameValue(name)
-                          setShowRenameModal(true)
-                        },
+                        onClick: openRename,
                       },
                       { icon: Copy, label: t('routine:day.duplicate'), onClick: () => onDuplicate(id), disabled: isDuplicatingDay },
                       ...(totalDays > 1 ? [{
@@ -249,8 +264,9 @@ export default function DayCard({
                         onReorderBlock={handleReorderWarmupBlock}
                         onRemoveExerciseFromSuperset={handleRemoveFromSuperset}
                         scrollRef={scrollRef}
-                        onDeleteExercise={(re) => setExerciseToDelete(re)}
+                        onDeleteExercise={openDeleteExercise}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
+                        duplicatingExerciseId={duplicatingExerciseId}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                       />
                     ) : (
@@ -267,8 +283,9 @@ export default function DayCard({
                         onReorderBlock={handleReorderMainBlock}
                         onRemoveExerciseFromSuperset={handleRemoveFromSuperset}
                         scrollRef={scrollRef}
-                        onDeleteExercise={(re) => setExerciseToDelete(re)}
+                        onDeleteExercise={openDeleteExercise}
                         onDuplicateExercise={(re) => onDuplicateExercise(re, id)}
+                        duplicatingExerciseId={duplicatingExerciseId}
                         onMoveExerciseToDay={(re) => onMoveExerciseToDay(re, id)}
                       />
                     ) : (
@@ -294,6 +311,9 @@ export default function DayCard({
         confirmText={t('common:buttons.delete')}
         onConfirm={handleDeleteExercise}
         onCancel={() => setExerciseToDelete(null)}
+        isLoading={deleteExercise.isPending}
+        saveStatus
+        error={deleteExercise.isError ? t('routine:exercise.removeError') : null}
       />
 
       <ReorderModal
@@ -308,7 +328,7 @@ export default function DayCard({
         }}
       />
 
-      <Modal isOpen={showRenameModal} onClose={() => setShowRenameModal(false)} position="bottom">
+      <Modal isOpen={showRenameModal} onClose={updateDay.isPending ? undefined : () => setShowRenameModal(false)} position="bottom">
         <ScrollView keyboardShouldPersistTaps="handled">
           <View style={{ padding: 20, gap: 16 }}>
             <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('routine:day.rename')}</Text>
@@ -318,10 +338,20 @@ export default function DayCard({
                 autoFocus placeholderTextColor={colors.textMuted}
                 returnKeyType="done" onSubmitEditing={handleRenameDay}
                 style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary, borderRadius: 12, padding: 14, fontSize: 14 }} />
+              <SaveStatus
+                isPending={updateDay.isPending}
+                error={updateDay.isError ? t('routine:day.renameError') : null}
+                className="mt-3"
+              />
             </View>
-            <Pressable onPress={handleRenameDay} disabled={!renameValue.trim()}
-              style={{ backgroundColor: colors.success, borderRadius: 12, minHeight: design.minTouchTarget, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', opacity: renameValue.trim() ? 1 : 0.4 }}>
-              <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.save')}</Text>
+            <Pressable onPress={handleRenameDay} disabled={isRenameDisabled}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isRenameDisabled }}
+              style={{ backgroundColor: colors.success, borderRadius: 12, minHeight: design.minTouchTarget, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', opacity: isRenameDisabled ? 0.4 : 1 }}>
+              {/* Foreground on solid lime is always bgPrimary (CLAUDE.md), so not `LoadingSpinner inline`. */}
+              {updateDay.isPending
+                ? <ActivityIndicator size="small" color={colors.bgPrimary} />
+                : <Text style={{ color: colors.bgPrimary, fontSize: 14, fontWeight: '600' }}>{t('common:buttons.save')}</Text>}
             </Pressable>
           </View>
         </ScrollView>

@@ -6,7 +6,10 @@ import { i18n, initI18n } from '@gym/shared'
 i18n.use(initReactI18next)
 initI18n()
 
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
+
+// The card's own remove mutation, varied per test.
+const { removeMutation } = vi.hoisted(() => ({ removeMutation: { current: {} } }))
 
 // Mockea solo los hooks con estado de red (useQuery/useMutation sin QueryClientProvider en el
 // árbol de test explotaría con "No QueryClient set"), deja el resto de @gym/shared real:
@@ -24,6 +27,7 @@ vi.mock('@gym/shared', async () => {
 vi.mock('../../hooks/useWorkout.js', () => ({
   usePreviousWorkout: () => ({ data: undefined, isFetched: true }),
   useUpdateSessionExerciseFields: () => ({ mutate: vi.fn() }),
+  useRemoveSessionExercise: () => removeMutation.current,
 }))
 
 vi.mock('../../hooks/useExercises.js', () => ({
@@ -69,7 +73,6 @@ function renderCard(sessionExerciseOverrides = {}, props = {}) {
       sessionExercise={buildSessionExercise(sessionExerciseOverrides)}
       onCompleteSet={vi.fn()}
       onUncompleteSet={vi.fn()}
-      onRemove={vi.fn()}
       onReplace={vi.fn()}
       {...props}
     />
@@ -85,6 +88,7 @@ function openReplacePicker() {
 describe('WorkoutExerciseCard — flujo de reemplazo', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    removeMutation.current = { mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false }
   })
 
   it('con fila ligada a la rutina, elegir sustituto abre el diálogo de ámbito y NO llama a onReplace todavía', () => {
@@ -146,5 +150,66 @@ describe('WorkoutExerciseCard — flujo de reemplazo', () => {
     expect(onReplace).toHaveBeenCalledTimes(1)
     expect(onReplace).toHaveBeenCalledWith(1, { id: 99, name_es: 'Sentadilla' }, false)
     expect(screen.queryByText('¿Solo hoy o también en la rutina?')).not.toBeInTheDocument()
+  })
+})
+
+// Issue #174: the modal waits for the removal and shows its failure, instead of closing at once
+// while the exercise stays on screen until the server answers.
+describe('WorkoutExerciseCard — remove from session', () => {
+  const REMOVE_TITLE = i18n.t('workout:exercise.removeFromSession')
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    removeMutation.current = { mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false }
+  })
+
+  function openRemoveConfirm() {
+    const menuTrigger = document.querySelector('svg.lucide-ellipsis-vertical').closest('button')
+    fireEvent.click(menuTrigger)
+    fireEvent.click(screen.getByText(REMOVE_TITLE))
+  }
+
+  const confirmButton = () => screen.getByRole('button', { name: i18n.t('common:buttons.delete') })
+  const isModalOpen = () => screen.queryByText(i18n.t('workout:exercise.removeFromSessionConfirm', { name: 'Press banca' })) !== null
+
+  it('resets the previous call on open, removes this card\'s exercise and closes once it succeeds', () => {
+    renderCard()
+    openRemoveConfirm()
+    expect(removeMutation.current.reset).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(confirmButton())
+
+    expect(removeMutation.current.mutate).toHaveBeenCalledWith(1, expect.any(Object))
+    expect(isModalOpen()).toBe(true)
+
+    const { onSuccess } = removeMutation.current.mutate.mock.calls[0][1]
+    act(() => { onSuccess() })
+    expect(isModalOpen()).toBe(false)
+  })
+
+  it('stays open while the removal is in flight, with both buttons disabled and no way to dismiss it', () => {
+    removeMutation.current = { ...removeMutation.current, isPending: true }
+    renderCard()
+    openRemoveConfirm()
+
+    const loadingButton = screen.getByRole('button', { name: i18n.t('common:buttons.loading') })
+    expect(loadingButton.disabled).toBe(true)
+    expect(screen.getByRole('button', { name: i18n.t('common:buttons.cancel') }).disabled).toBe(true)
+
+    fireEvent.click(loadingButton)
+    const overlay = screen.getByText(i18n.t('workout:exercise.removeFromSessionConfirm', { name: 'Press banca' })).closest('.rounded-lg').parentElement
+    fireEvent.mouseDown(overlay)
+
+    expect(removeMutation.current.mutate).not.toHaveBeenCalled()
+    expect(isModalOpen()).toBe(true)
+  })
+
+  it('shows the failure inside the modal', () => {
+    removeMutation.current = { ...removeMutation.current, isError: true }
+    renderCard()
+    openRemoveConfirm()
+
+    expect(screen.getByText(i18n.t('workout:exercise.removeFailed'))).toBeInTheDocument()
+    expect(isModalOpen()).toBe(true)
   })
 })
