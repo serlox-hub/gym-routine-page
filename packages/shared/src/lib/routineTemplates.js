@@ -7,8 +7,13 @@
  * grupo muscular). El test `routineTemplates.test.js` valida `plantilla ⊆ catálogo` y falla
  * en CI ante cualquier deriva → NO usar nombres genéricos, usar siempre el nombre canónico.
  *
- * Metadata estructurada (`goal`/`daysPerWeek`/`level`/`equipment`): la consume
- * `recommendTemplate` (onboarding, data-driven) y `getTemplateDisplay` (tags i18n).
+ * Structured metadata (`goal`/`daysPerWeek`/`minDays`/`level`/`equipment`) feeds
+ * `recommendTemplate` (onboarding) and `getTemplateDisplay` (i18n tags).
+ * `minDays` is the lowest weekly frequency at which the program still serves its goal, not the
+ * lowest its structure tolerates: `endurance-circuit` has interchangeable days, but once a week
+ * it no longer trains endurance. Full body programs rotate their days at a lower frequency;
+ * splits need the whole week (`minDays === daysPerWeek`). Every template declares it, or
+ * `recommendTemplate` silently drops it (`undefined <= n` is false).
  *
  * Nombres/descripciones son i18n (`routine:templates.items.<id>.*`) — ver getTemplateDisplay
  * (picker) y getTemplateImportData (localiza el nombre/descr. de la rutina al instanciarla).
@@ -101,7 +106,7 @@ function e(name, series, reps, rir, rest, notes) {
  * (solo `name_es`): al coincidir con el catálogo, importRoutine los enlaza por nombre y
  * hereda tracked_fields/grupo muscular/GIF del ejercicio del sistema.
  */
-function makeTemplate({ id, goal, daysPerWeek, level, equipment = 'full', name, description, days }) {
+function makeTemplate({ id, goal, daysPerWeek, minDays, level, equipment = 'full', name, description, days }) {
   const exerciseNames = new Set()
   const builtDays = days.map((d, i) => {
     const blocks = [{
@@ -113,7 +118,7 @@ function makeTemplate({ id, goal, daysPerWeek, level, equipment = 'full', name, 
     return { name: d.name, sort_order: i, estimated_duration_min: d.durationMin ?? 60, blocks }
   })
   return {
-    id, goal, daysPerWeek, level, equipment,
+    id, goal, daysPerWeek, minDays, level, equipment,
     data: {
       // v5: las plantillas solo llevan name_es (no el name_en opcional de v6). Es decorativo:
       // importRoutine ignora `version` y casa por nombre (ver exerciseMatch / DECISIONS).
@@ -126,7 +131,7 @@ function makeTemplate({ id, goal, daysPerWeek, level, equipment = 'full', name, 
 
 export const ROUTINE_TEMPLATES = [
   makeTemplate({
-    id: 'full-body-2', goal: GOAL_VALUES.GENERAL, daysPerWeek: 2, level: 'beginner',
+    id: 'full-body-2', goal: GOAL_VALUES.GENERAL, daysPerWeek: 2, minDays: 1, level: 'beginner',
     name: 'Full Body 2 días', description: 'Cuerpo completo 2 días/semana. Mínimo tiempo, máximo básico.',
     days: [
       { name: 'Día 1 - Full Body A', durationMin: 70, main: [
@@ -140,7 +145,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'full-body', goal: GOAL_VALUES.GENERAL, daysPerWeek: 3, level: 'beginner',
+    id: 'full-body', goal: GOAL_VALUES.GENERAL, daysPerWeek: 3, minDays: 1, level: 'beginner',
     name: 'Full Body', description: 'Cuerpo completo 3 días/semana. Ideal para empezar.',
     days: [
       { name: 'Día 1 - Full Body A', main: [
@@ -158,7 +163,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'ppl-3', goal: GOAL_VALUES.HYPERTROPHY, daysPerWeek: 3, level: 'intermediate',
+    id: 'ppl-3', goal: GOAL_VALUES.HYPERTROPHY, daysPerWeek: 3, minDays: 3, level: 'intermediate',
     name: 'Push Pull Legs (3 días)', description: 'Empuje / tirón / pierna a frecuencia 1×. Buen salto desde full body.',
     days: [
       { name: 'Día 1 - Push', main: [
@@ -176,7 +181,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'upper-lower', goal: GOAL_VALUES.HYPERTROPHY, daysPerWeek: 4, level: 'intermediate',
+    id: 'upper-lower', goal: GOAL_VALUES.HYPERTROPHY, daysPerWeek: 4, minDays: 4, level: 'intermediate',
     name: 'Upper / Lower', description: '4 días dividido en tren superior e inferior. Volumen y recuperación equilibrados.',
     days: [
       { name: 'Día 1 - Upper (Fuerza)', main: [
@@ -198,7 +203,9 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: '531', goal: GOAL_VALUES.STRENGTH, daysPerWeek: 4, level: 'intermediate',
+    // minDays high on purpose: 5/3/1 has official 3- and 2-day variants, but a recommender
+    // should not promise a lower frequency than this template was written for.
+    id: '531', goal: GOAL_VALUES.STRENGTH, daysPerWeek: 4, minDays: 4, level: 'intermediate',
     name: '5/3/1 Wendler', description: 'Fuerza progresiva 4 días (método 5/3/1 + BBB). Progreso lento y constante.',
     days: [
       { name: 'Día 1 - Press Banca', main: [
@@ -220,7 +227,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'weider-5', goal: GOAL_VALUES.HYPERTROPHY, daysPerWeek: 5, level: 'advanced',
+    id: 'weider-5', goal: GOAL_VALUES.HYPERTROPHY, daysPerWeek: 5, minDays: 5, level: 'advanced',
     name: 'Split Weider (5 días)', description: 'Un grupo muscular por día. Máxima frecuencia de asistencia y volumen por grupo.',
     days: [
       { name: 'Día 1 - Pecho', main: [
@@ -246,7 +253,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'ppl', goal: GOAL_VALUES.HYPERTROPHY, daysPerWeek: 6, level: 'advanced',
+    id: 'ppl', goal: GOAL_VALUES.HYPERTROPHY, daysPerWeek: 6, minDays: 6, level: 'advanced',
     name: 'Push Pull Legs (PPL)', description: '6 días empuje/tirón/pierna a frecuencia 2×. Máximo volumen para hipertrofia.',
     days: [
       { name: 'Día 1 - Push', main: [
@@ -276,7 +283,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'home-bodyweight', goal: GOAL_VALUES.GENERAL, daysPerWeek: 3, level: 'beginner', equipment: 'bodyweight',
+    id: 'home-bodyweight', goal: GOAL_VALUES.GENERAL, daysPerWeek: 3, minDays: 1, level: 'beginner', equipment: 'bodyweight',
     name: 'En casa (peso corporal)', description: 'Sin equipo de gimnasio. Cuerpo completo con tu propio peso, 3 días/semana.',
     days: [
       { name: 'Día 1 - Full Body A', main: [
@@ -294,7 +301,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'strength-5x5', goal: GOAL_VALUES.STRENGTH, daysPerWeek: 3, level: 'beginner',
+    id: 'strength-5x5', goal: GOAL_VALUES.STRENGTH, daysPerWeek: 3, minDays: 2, level: 'beginner',
     name: 'Fuerza 5x5', description: 'Fuerza para principiantes: 5x5 en los básicos, 3 días, progresión lineal.',
     days: [
       { name: 'Día 1 - Fuerza A', main: [
@@ -309,7 +316,8 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'strength-hf', goal: GOAL_VALUES.STRENGTH, daysPerWeek: 5, level: 'advanced',
+    // minDays high on purpose: the focus rotates, so 4 days might do, but see `531`.
+    id: 'strength-hf', goal: GOAL_VALUES.STRENGTH, daysPerWeek: 5, minDays: 5, level: 'advanced',
     name: 'Fuerza alta frecuencia', description: 'Fuerza para avanzados, 5 días con foco rotatorio en los básicos pesados + accesorios.',
     days: [
       { name: 'Día 1 - Sentadilla', main: [
@@ -330,7 +338,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'endurance-circuit', goal: GOAL_VALUES.ENDURANCE, daysPerWeek: 3, level: 'beginner',
+    id: 'endurance-circuit', goal: GOAL_VALUES.ENDURANCE, daysPerWeek: 3, minDays: 2, level: 'beginner',
     name: 'Resistencia (circuito)', description: 'Cuerpo completo en circuito: reps altas y descansos cortos, 3 días. Para resistencia muscular.',
     days: [
       { name: 'Día 1 - Circuito A', main: [
@@ -348,7 +356,7 @@ export const ROUTINE_TEMPLATES = [
     ],
   }),
   makeTemplate({
-    id: 'home-dumbbell', goal: GOAL_VALUES.GENERAL, daysPerWeek: 3, level: 'beginner', equipment: 'dumbbell',
+    id: 'home-dumbbell', goal: GOAL_VALUES.GENERAL, daysPerWeek: 3, minDays: 1, level: 'beginner', equipment: 'dumbbell',
     name: 'En casa con mancuernas', description: 'Cuerpo completo solo con mancuernas, 3 días. Ideal para gimnasio en casa.',
     days: [
       { name: 'Día 1 - Full Body A', main: [

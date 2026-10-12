@@ -184,7 +184,11 @@
     "start": "Empezar con esta",
     "skip": "Saltar por ahora",
     "creating": "Preparando tu rutina...",
-    "daysNote": "Esta rutina tiene {{actual}} días y pediste {{requested}}. Podrás cambiar los días cuando quieras.",
+    "daysNote": {
+      "spare": "Esta rutina es de {{actual}} días y tienes {{requested}}. Los días que sobran son de descanso.",
+      "rotates": "Esta rutina es de {{actual}} días y tienes {{requested}}. Cada vez que entrenes, la app te propone el día siguiente.",
+      "tooFew": "Esta rutina necesita al menos {{min}} días a la semana y tienes {{requested}}."
+    },
     "equipmentQuestion": "¿Dónde vas a entrenar?",
     "equipment": {
       "full": "Gimnasio completo",

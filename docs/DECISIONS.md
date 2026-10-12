@@ -188,7 +188,6 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **Las plantillas usan nombres canónicos del catálogo** y `routineTemplates.test.js` falla ante cualquier deriva. Con nombres genéricos, `importRoutine` creaba ejercicios custom sin GIF ni grupo.
 - **Plantilla nueva solo si cambia el programa** (selección o estructura). Variar reps, RIR o descanso no justifica otra.
 - **La app no adapta plantillas en runtime** (epic #47, capa de adaptación rechazada): el RIR no es resoluble a nivel de plantilla (no se sabe si es RIR o índice de RPE), el primer ejercicio del día no es el principal y aplanar rangos degrada la variación curada. Si una combinación no tiene contenido, se escribe la plantilla. Un `rir` numérico escrito a mano en un ejercicio sin reps es un índice de RPE.
-- **Pendiente en #47:** que los días sean restricción dura y el equipo filtre en vez de anular. Hoy `recommendTemplate` elige los días más cercanos y el equipo no-gimnasio ignora objetivo y nivel.
 
 ## 2026-08 · Lint y checks mecanizados (issue #20 y siguientes)
 - **La regla de color solo mira `Literal`:** así los `rgba(${RGB_*}, x)` quedan exentos sin allowlist. Falso negativo asumido: un hex dentro de un template literal mixto.

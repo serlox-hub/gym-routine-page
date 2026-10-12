@@ -68,6 +68,15 @@ describe('ROUTINE_TEMPLATES estructura y metadata', () => {
     }
   })
 
+  // Without it, recommendTemplate drops the template from every recommendation silently.
+  it('every template declares minDays, between 1 and daysPerWeek', () => {
+    for (const tpl of ROUTINE_TEMPLATES) {
+      expect(Number.isInteger(tpl.minDays), `${tpl.id} minDays`).toBe(true)
+      expect(tpl.minDays, tpl.id).toBeGreaterThanOrEqual(1)
+      expect(tpl.minDays, tpl.id).toBeLessThanOrEqual(tpl.daysPerWeek)
+    }
+  })
+
   it('cada día tiene un bloque principal con al menos un ejercicio', () => {
     for (const tpl of ROUTINE_TEMPLATES)
       for (const day of tpl.data.routine.days) {

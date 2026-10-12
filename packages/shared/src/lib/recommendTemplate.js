@@ -1,75 +1,106 @@
 import { ROUTINE_TEMPLATES } from './routineTemplates.js'
 import { GOAL_VALUES, LEVEL_VALUES, EQUIPMENT_VALUES } from './routineWizardOptions.js'
 
-// De un pool de plantillas, la de daysPerWeek más cercano al objetivo (empate → la primera).
-function pickClosestByDays(pool, targetDays) {
-  if (!pool.length) return null
-  if (targetDays == null) return pool[0]
-  return pool.reduce((best, tpl) =>
-    Math.abs(tpl.daysPerWeek - targetDays) < Math.abs(best.daysPerWeek - targetDays) ? tpl : best
-  )
+const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 }
+
+// Maps, not objects: a garbage answer like 'toString' must not hit the prototype.
+const TEMPLATE_EQUIPMENT = new Map([
+  [EQUIPMENT_VALUES.FULL, 'full'],
+  [EQUIPMENT_VALUES.DUMBBELL, 'dumbbell'],
+  [EQUIPMENT_VALUES.BODYWEIGHT, 'bodyweight'],
+])
+
+const DECLARED_LEVEL_RANK = new Map([
+  [LEVEL_VALUES.BEGINNER, LEVEL_RANK.beginner],
+  [LEVEL_VALUES.INTERMEDIATE, LEVEL_RANK.intermediate],
+  [LEVEL_VALUES.ADVANCED, LEVEL_RANK.advanced],
+])
+
+function parseAvailableDays(value) {
+  const days = Number(value)
+  return Number.isInteger(days) && days > 0 ? days : null
+}
+
+// Most days that fit (if none fits, the fewest), then the level closest to the declared one
+// (an exact match before a lower one), then id, so the same answers always give the same template.
+function compareCandidates(days) {
+  const fits = tpl => days == null || tpl.daysPerWeek <= days
+  return (a, b) => {
+    if (fits(a) !== fits(b)) return fits(a) ? -1 : 1
+    if (a.daysPerWeek !== b.daysPerWeek) {
+      return fits(a) ? b.daysPerWeek - a.daysPerWeek : a.daysPerWeek - b.daysPerWeek
+    }
+    const levelOrder = LEVEL_RANK[b.level] - LEVEL_RANK[a.level]
+    if (levelOrder !== 0) return levelOrder
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+  }
 }
 
 /**
- * Recomienda una plantilla a partir de las respuestas del onboarding. Data-driven sobre la
- * metadata estructurada de ROUTINE_TEMPLATES (goal/level/daysPerWeek), así añadir plantillas
- * NO requiere tocar esta función.
- *
- * Reglas (en orden):
- *  0. Equipo no-gimnasio (peso corporal / mancuernas) → plantilla de ese equipo según días.
- *  1. Objetivo fuerza → plantilla de fuerza según días (novato → solo la de principiante, 5x5).
- *  2. Objetivo resistencia → plantilla de resistencia (circuito).
- *  3. Principiante → full body general según días (nunca un split alto).
- *  4. Resto (interm/avanz, hipertrofia/otros objetivos) → plantilla de hipertrofia según días.
- * Sin señal de equipo, las plantillas de casa (peso corporal / mancuernas) se EXCLUYEN de la
- * recomendación automática; quedan disponibles para elegir en el selector.
+ * Recommends a template from the onboarding answers. A funnel over the template metadata, so a
+ * new template needs no change here:
+ *  1. Equipment narrows the pool, it never decides on its own (no answer = full gym).
+ *  2. Days are a hard filter: no template whose `minDays` exceeds them.
+ *  3. Level is a ceiling: never a template above the declared one (no answer = no ceiling).
+ *  4. Within the pool, the declared goals. None matches → general health. None → the whole pool.
+ *  5. First by `compareCandidates`.
+ * A result is guaranteed because every equipment has a beginner template with `minDays: 1`
+ * (asserted in recommendTemplate.test.js).
  *
  * @param {object} answers
- * @param {string} [answers.objetivo] - valor de GOAL_VALUES
- * @param {string|number} [answers.diasPorSemana] - días por semana ('1'..'7')
- * @param {string} [answers.nivelExperiencia] - valor de LEVEL_VALUES
- * @param {string} [answers.equipamiento] - valor de EQUIPMENT_VALUES
- * @returns {string} id de plantilla (siempre uno existente en ROUTINE_TEMPLATES)
+ * @param {string[]} [answers.objetivos] - GOAL_VALUES values
+ * @param {string|number} [answers.diasPorSemana] - available days per week (no answer = no limit)
+ * @param {string} [answers.nivelExperiencia] - LEVEL_VALUES value
+ * @param {string} [answers.equipamiento] - EQUIPMENT_VALUES value
+ * @param {object[]} [templates] - candidates (tests pass their own)
+ * @returns {{ templateId: string, daysShortfall: number }} `daysShortfall`: available days the
+ *   template leaves free. Never negative: a template with more days than available rotates them.
  */
-export function recommendTemplate({ objetivo, diasPorSemana, nivelExperiencia, equipamiento } = {}) {
-  const days = Number(diasPorSemana) || null
-  const isBeginner = nivelExperiencia === LEVEL_VALUES.BEGINNER
-  const byEquipment = (eq) => ROUTINE_TEMPLATES.filter(tpl => tpl.equipment === eq)
+export function recommendTemplate(
+  { objetivos, diasPorSemana, nivelExperiencia, equipamiento } = {},
+  templates = ROUTINE_TEMPLATES,
+) {
+  const days = parseAvailableDays(diasPorSemana)
+  const levelCeiling = DECLARED_LEVEL_RANK.get(nivelExperiencia) ?? LEVEL_RANK.advanced
+  const equipment = TEMPLATE_EQUIPMENT.get(equipamiento) ?? 'full'
+  const goals = Array.isArray(objetivos) ? objetivos : []
 
-  // 0. Equipo no-gimnasio → pool por equipo (ignora objetivo/nivel)
-  if (equipamiento === EQUIPMENT_VALUES.BODYWEIGHT) {
-    const chosen = pickClosestByDays(byEquipment('bodyweight'), days)
-    if (chosen) return chosen.id
+  const pool = templates.filter(tpl =>
+    tpl.equipment === equipment &&
+    (days == null || tpl.minDays <= days) &&
+    LEVEL_RANK[tpl.level] <= levelCeiling
+  )
+  const byGoal = pool.filter(tpl => goals.includes(tpl.goal))
+  const general = pool.filter(tpl => tpl.goal === GOAL_VALUES.GENERAL)
+  const candidates = byGoal.length ? byGoal : general.length ? general : pool
+
+  const [chosen] = [...candidates].sort(compareCandidates(days))
+  return {
+    templateId: chosen.id,
+    daysShortfall: days == null ? 0 : Math.max(0, days - chosen.daysPerWeek),
   }
-  if (equipamiento === EQUIPMENT_VALUES.DUMBBELL) {
-    const chosen = pickClosestByDays(byEquipment('dumbbell'), days)
-    if (chosen) return chosen.id
-  }
+}
 
-  const gym = byEquipment('full')
+export const TEMPLATE_DAYS_NOTE = {
+  SPARE: 'spare',
+  ROTATES: 'rotates',
+  TOO_FEW: 'tooFew',
+}
 
-  // 1. Fuerza → plantillas de fuerza por días; el novato solo recibe la de principiante (5x5)
-  if (objetivo === GOAL_VALUES.STRENGTH) {
-    let pool = gym.filter(tpl => tpl.goal === GOAL_VALUES.STRENGTH)
-    if (isBeginner) pool = pool.filter(tpl => tpl.level === 'beginner')
-    const chosen = pickClosestByDays(pool, days)
-    if (chosen) return chosen.id
-  }
-
-  // 2. Resistencia → plantilla(s) de resistencia (circuito)
-  if (objetivo === GOAL_VALUES.ENDURANCE) {
-    const chosen = pickClosestByDays(gym.filter(tpl => tpl.goal === GOAL_VALUES.ENDURANCE), days)
-    if (chosen) return chosen.id
-  }
-
-  // 3/4. Principiante → full body general; interm/avanz → hipertrofia (ambos por días)
-  const pool = isBeginner
-    ? gym.filter(tpl => tpl.level === 'beginner' && tpl.goal === GOAL_VALUES.GENERAL)
-    : gym.filter(tpl => tpl.goal === GOAL_VALUES.HYPERTROPHY)
-
-  const chosen =
-    pickClosestByDays(pool, days) ||
-    gym.find(tpl => tpl.id === 'full-body') ||
-    ROUTINE_TEMPLATES[0]
-  return chosen.id
+/**
+ * Which onboarding note a template needs against the days the user has. It runs on the template
+ * the user has selected, not only the recommended one: a recommendation can only give SPARE or
+ * ROTATES, TOO_FEW is reachable only by picking a template by hand.
+ *
+ * @param {{ daysPerWeek: number, minDays: number }} [template]
+ * @param {string|number} [diasPorSemana] - available days per week
+ * @returns {string|null} a TEMPLATE_DAYS_NOTE value, or null when there is nothing to say
+ */
+export function getTemplateDaysNote(template, diasPorSemana) {
+  const days = parseAvailableDays(diasPorSemana)
+  if (!template || days == null) return null
+  if (template.minDays > days) return TEMPLATE_DAYS_NOTE.TOO_FEW
+  if (template.daysPerWeek > days) return TEMPLATE_DAYS_NOTE.ROTATES
+  if (template.daysPerWeek < days) return TEMPLATE_DAYS_NOTE.SPARE
+  return null
 }
