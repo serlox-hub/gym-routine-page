@@ -153,7 +153,6 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **Se convierten los pesos ya registrados**, con toast y sin modal: es corregir "me equivoqué de gym", no una mudanza.
 - **El bloqueo era la detección, no la escritura:** se prefetchean todas las unidades del usuario (`useAllUserExerciseGymUnits`, `staleTime: Infinity`) para detectar en local y offline.
 - **RPC atómico `change_session_gym` con los pesos calculados por el cliente**: cliente y servidor coinciden exactos, sin re-derivar unidades en SQL. La cola `pendingGymChange` se persiste y guarda el snapshot completo, así que varios cambios offline convergen.
-- **`applyWeightConversions` convierte también `pendingSets`**, o una serie completada offline se subiría sin convertir.
 
 ## 2026-07 · Editar inicio y fin de una sesión desde el historial
 - **Cada extremo se edita y se guarda por separado**, con su resolución única: `resolveSessionEnd` (fin, acotado a [inicio, min(ahora, inicio + `MAX_SESSION_DURATION_MINUTES`)]; lo usan el historial y `useEndSession`) y `resolveSessionStart` (inicio, acotado por `getSessionStartBounds`). La duración nunca se teclea: siempre `fin - inicio`. Descartado un único campo "mover de día" que desplazara los dos a la vez: arregla la sesión apuntada el día equivocado, pero no la que empezó con el cronómetro lanzado antes de tiempo. Coste aceptado: mover primero el inicio deja una duración de ~25h hasta que se mueve el fin.

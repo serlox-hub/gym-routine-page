@@ -76,12 +76,12 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
   const [level, setLevelState] = useState(initValues.level)
   const [pace, setPaceState] = useState(initValues.pace)
 
-  // Detalles de la serie (esfuerzo, notas, tipo): grupo que se persiste junto (la API
-  // updateSetDetails reescribe rir_actual + notes + set_type). Estado local para feedback
-  // inmediato. Se pueden editar ANTES de completar: se cachean en el store y se aplican en
-  // buildCompletedSetData al completar (mismo patrón que las mediciones). El vídeo NO va en
-  // este grupo (se adjunta a una serie ya completada; ver SetRow).
-  // Ojo: `??` (no `||`) porque 0 y -1 (F) son valores de RIR válidos; setType por defecto 'normal'.
+  // Set details (effort, notes, type): a group persisted together (the store's updateSetDetails
+  // replaces rir and notes together, and the queued upsert sends the whole set). Local state for
+  // immediate feedback. They can be edited BEFORE completing: they are cached in the store and
+  // applied by buildCompletedSetData on completion (same pattern as the measurements). The video
+  // is NOT in this group (it attaches to a set that is already completed; see SetRow).
+  // `??` (not `||`) because 0 and -1 (F) are valid RIR values; setType defaults to 'normal'.
   const [rir, setRirState] = useState(() => cachedData?.rirActual ?? setData?.rirActual ?? null)
   const [notes, setNotesState] = useState(() => cachedData?.notes ?? setData?.notes ?? null)
   const [setType, setSetTypeState] = useState(() => cachedData?.setType ?? setData?.setType ?? 'normal')
@@ -107,9 +107,9 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
   const setLevel = useUserEditedSetter(setLevelState, pristineRef)
   const setPace = useUserEditedSetter(setPaceState, pristineRef)
 
-  // Persiste el grupo de detalles: completada → updateSetDetails (in situ, sin desmarcar y
-  // sin videoUrl → la API preserva el vídeo); no completada → caché en el store (merge, no
-  // pisa mediciones porque setMeasurementValuesChanged solo compara claves de medición).
+  // Persists the details group: completed → updateSetDetails (in place, without unchecking, and
+  // without videoUrl so the stored video stays); not completed → store cache (a merge, which does
+  // not overwrite measurements because setMeasurementValuesChanged only compares measurement keys).
   const persistDetails = useCallback((group) => {
     pristineRef.current = false
     if (isCompleted) {

@@ -14,8 +14,7 @@ vi.mock('./_stores.js', () => {
     updateCompletedSetValues: vi.fn(),
     updateSetDetails: vi.fn(),
     updateSetDbId: vi.fn(),
-    addPendingSet: vi.fn(),
-    removePendingSet: vi.fn(),
+    markSetDirty: vi.fn(),
   }
   const useWorkoutStore = vi.fn((selector) => (selector ? selector(mockStore) : mockStore))
   useWorkoutStore._mockStore = mockStore
@@ -23,17 +22,9 @@ vi.mock('./_stores.js', () => {
   return { useWorkoutStore, getWorkoutStore }
 })
 
-vi.mock('../api/workoutApi.js', () => ({
-  upsertCompletedSet: vi.fn().mockResolvedValue({ id: 'db-1' }),
-  updateSetVideo: vi.fn().mockResolvedValue({}),
-  updateSetDetails: vi.fn().mockResolvedValue({}),
-  deleteCompletedSet: vi.fn().mockResolvedValue({}),
-}))
-
 import { useSetInputs } from './useSetInputs.js'
 import { SET_EDIT_DEBOUNCE_MS } from '../lib/constants.js'
 import { useWorkoutStore } from './_stores.js'
-import * as workoutApi from '../api/workoutApi.js'
 
 const store = useWorkoutStore._mockStore
 const KEY = 'ex-1-1'
@@ -74,7 +65,7 @@ describe('useSetInputs — grupo de detalles (rir/notes/setType)', () => {
     expect(result.current.setType).toBe('dropset')
   })
 
-  it('serie NO completada: setRir cachea el grupo (merge en el store), no llama a la API', () => {
+  it('serie NO completada: setRir cachea el grupo (merge en el store), no lo persiste', () => {
     const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
     act(() => { result.current.setRir(2) })
 
@@ -83,19 +74,19 @@ describe('useSetInputs — grupo de detalles (rir/notes/setType)', () => {
     expect(calls.length).toBeGreaterThanOrEqual(1)
     // El grupo entero se cachea junto (preservación cruzada: notes/setType acompañan al rir)
     expect(calls[calls.length - 1]).toEqual(['ex-1', 1, expect.objectContaining({ rirActual: 2, notes: null, setType: 'normal' })])
-    expect(workoutApi.updateSetDetails).not.toHaveBeenCalled()
+    expect(store.updateSetDetails).not.toHaveBeenCalled()
   })
 
-  it('serie COMPLETADA: setRir persiste vía API preservando notes/setType, sin cachear', async () => {
+  it('serie COMPLETADA: setRir persiste (store + cola) preservando notes/setType, sin cachear', () => {
     store.completedSets = { [KEY]: { rirActual: null, notes: 'nota', setType: 'dropset' } }
     const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
 
     act(() => { result.current.setRir(3) })
 
-    await waitFor(() => expect(workoutApi.updateSetDetails).toHaveBeenCalled())
-    expect(workoutApi.updateSetDetails).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionExerciseId: 'ex-1', setNumber: 1, rirActual: 3, notes: 'nota', setType: 'dropset' })
+    expect(store.updateSetDetails).toHaveBeenCalledWith(
+      'ex-1', 1, expect.objectContaining({ rirActual: 3, notes: 'nota', setType: 'dropset' })
     )
+    expect(store.markSetDirty).toHaveBeenCalledWith('ex-1', 1)
     expect(detailCacheCalls()).toHaveLength(0)
   })
 
@@ -111,7 +102,7 @@ describe('useSetInputs — grupo de detalles (rir/notes/setType)', () => {
     )
   })
 
-  it('serie NO completada: setSetType cachea el grupo preservando rir/notes, no llama a la API', () => {
+  it('serie NO completada: setSetType cachea el grupo preservando rir/notes, no lo persiste', () => {
     store.cachedSetData = { [KEY]: { rirActual: 2, notes: 'nota' } }
     const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
 
@@ -121,19 +112,19 @@ describe('useSetInputs — grupo de detalles (rir/notes/setType)', () => {
     const calls = detailCacheCalls()
     // El grupo entero se cachea junto (preservación cruzada: rir/notes acompañan al setType)
     expect(calls[calls.length - 1]).toEqual(['ex-1', 1, expect.objectContaining({ setType: 'dropset', rirActual: 2, notes: 'nota' })])
-    expect(workoutApi.updateSetDetails).not.toHaveBeenCalled()
+    expect(store.updateSetDetails).not.toHaveBeenCalled()
   })
 
-  it('serie COMPLETADA: setSetType persiste vía API preservando rir/notes, sin cachear', async () => {
+  it('serie COMPLETADA: setSetType persiste (store + cola) preservando rir/notes, sin cachear', () => {
     store.completedSets = { [KEY]: { rirActual: 2, notes: 'nota', setType: 'normal' } }
     const { result } = renderHook(() => useSetInputs(PARAMS), { wrapper: wrapper() })
 
     act(() => { result.current.setSetType('dropset') })
 
-    await waitFor(() => expect(workoutApi.updateSetDetails).toHaveBeenCalled())
-    expect(workoutApi.updateSetDetails).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionExerciseId: 'ex-1', setNumber: 1, rirActual: 2, notes: 'nota', setType: 'dropset' })
+    expect(store.updateSetDetails).toHaveBeenCalledWith(
+      'ex-1', 1, expect.objectContaining({ rirActual: 2, notes: 'nota', setType: 'dropset' })
     )
+    expect(store.markSetDirty).toHaveBeenCalledWith('ex-1', 1)
     expect(detailCacheCalls()).toHaveLength(0)
   })
 })
@@ -216,8 +207,8 @@ describe('useSetInputs — la unidad de distancia cambia después de sembrar', (
     await new Promise(resolve => setTimeout(resolve, SET_EDIT_DEBOUNCE_MS + 100))
 
     // Sin la re-sincronización, el commit convertiría los 5000 del input como si fueran km.
-    for (const [payload] of workoutApi.upsertCompletedSet.mock.calls) {
-      expect(payload.distanceMeters).toBe(5000)
+    for (const [, , values] of store.updateCompletedSetValues.mock.calls) {
+      expect(values.distanceMeters).toBe(5000)
     }
   })
 })
@@ -583,7 +574,7 @@ describe('useSetInputs — reemplazo del ejercicio de la fila (issue #72)', () =
     // El vaciado de cachedSetData rearma el debounce con un commit que cierra sobre el 80 viejo
     await new Promise(resolve => setTimeout(resolve, SET_EDIT_DEBOUNCE_MS + 100))
     expect(measurementCacheCalls()).toHaveLength(0)
-    expect(workoutApi.upsertCompletedSet).not.toHaveBeenCalled()
+    expect(store.updateCompletedSetValues).not.toHaveBeenCalled()
 
     // Y cuando por fin responde el refetch, la fila se siembra con el ejercicio NUEVO
     rerender({ ...PARAMS, exerciseId: 20, previousSet: NEW_PREVIOUS })

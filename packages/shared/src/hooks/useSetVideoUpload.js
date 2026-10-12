@@ -11,8 +11,8 @@ import { t } from '../i18n/index.js'
  *
  * Dos caminos según si la serie YA está completada en el momento de subir (se decide en cada
  * llamada a `upload`/`retry`, no al montar, porque `isCompleted` cambia a mitad de vida):
- * - **Completada:** el vídeo se adjunta con `updateSetVideo` (UPDATE directo) al terminar,
- *   igual que siempre.
+ * - **Completed:** when the upload ends, `updateSetVideo` stores the video and queues the set,
+ *   so the set's queued upsert carries it (lib/pendingSetsSync.js).
  * - **NO completada (issue #31):** nunca se escribe a `completed_sets` (esa fila puede no
  *   existir todavía). El archivo elegido en la hoja se sube ya mismo a MinIO —eso no depende de
  *   ninguna fila— y la key resultante se guarda en `preCompleteUrl`, solo en memoria. Quien

@@ -1,12 +1,6 @@
-import { useRef, useCallback, useEffect } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { QUERY_KEYS, SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
-import {
-  upsertCompletedSet,
-  updateSetVideo,
-  updateSetDetails as updateSetDetailsApi,
-  deleteCompletedSet,
-} from '../api/workoutApi.js'
+import { useCallback, useEffect, useMemo } from 'react'
+import { SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
+import { countPendingSets, drainPendingSets } from '../lib/pendingSetsSync.js'
 import { useWorkoutStore, getWorkoutStore } from './_stores.js'
 import { getHaptics } from '../haptics.js'
 import { createSetKey } from '../lib/setUtils.js'
@@ -14,306 +8,137 @@ import { createSetKey } from '../lib/setUtils.js'
 // ============================================
 // SET MUTATIONS
 // ============================================
+// Every change to a set of the active session does two things: update the store, then mark the
+// set in the sync queue and kick the drainer (lib/pendingSetsSync.js), the only path a set takes
+// to the server. `mutate` keeps the name the callers use, but it is synchronous and cannot fail:
+// a send that fails stays queued.
 
-function getSetCompletedAt(sessionExerciseId, setNumber) {
-  return getWorkoutStore().getState().completedSets?.[createSetKey(sessionExerciseId, setNumber)]?.completedAt
+function syncSet(sessionExerciseId, setNumber) {
+  getWorkoutStore().getState().markSetDirty(sessionExerciseId, setNumber)
+  drainPendingSets()
+}
+
+// An edit of a set that is not completed changed nothing in the store, so there is nothing to sync.
+function syncCompletedSet(sessionExerciseId, setNumber) {
+  if (!getWorkoutStore().getState().completedSets[createSetKey(sessionExerciseId, setNumber)]) return
+  syncSet(sessionExerciseId, setNumber)
 }
 
 export function useCompleteSet() {
-  const queryClient = useQueryClient()
-  const sessionId = useWorkoutStore(state => state.sessionId)
   const completeSet = useWorkoutStore(state => state.completeSet)
-  const updateSetDbId = useWorkoutStore(state => state.updateSetDbId)
-  const addPendingSet = useWorkoutStore(state => state.addPendingSet)
 
-  return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) => {
-      return upsertCompletedSet({
-        // onMutate ya marcó la serie en el store con su hora: es la que se guarda como performed_at
-        performedAt: getSetCompletedAt(sessionExerciseId, setNumber),
-        sessionId,
-        sessionExerciseId,
-        setNumber,
-        weight,
-        weightUnit,
-        repsCompleted,
-        timeSeconds,
-        distanceMeters,
-        paceSeconds,
-        level,
-        caloriesBurned,
-        rirActual,
-        notes,
-        videoUrl,
-        setType,
-      })
-    },
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
-    onMutate: async (variables) => {
-      // Optimistic update: marcar serie como completada inmediatamente
-      completeSet(variables.sessionExerciseId, variables.setNumber, {
-        weight: variables.weight,
-        weightUnit: variables.weightUnit,
-        repsCompleted: variables.repsCompleted,
-        timeSeconds: variables.timeSeconds,
-        distanceMeters: variables.distanceMeters,
-        paceSeconds: variables.paceSeconds,
-        level: variables.level,
-        caloriesBurned: variables.caloriesBurned,
-        rirActual: variables.rirActual,
-        notes: variables.notes,
-        videoUrl: variables.videoUrl,
-        setType: variables.setType,
-        dbId: null, // Temporal hasta confirmación del servidor
-      })
+  const mutate = useCallback((variables) => {
+    completeSet(variables.sessionExerciseId, variables.setNumber, {
+      weight: variables.weight,
+      weightUnit: variables.weightUnit,
+      repsCompleted: variables.repsCompleted,
+      timeSeconds: variables.timeSeconds,
+      distanceMeters: variables.distanceMeters,
+      paceSeconds: variables.paceSeconds,
+      level: variables.level,
+      caloriesBurned: variables.caloriesBurned,
+      rirActual: variables.rirActual,
+      notes: variables.notes,
+      videoUrl: variables.videoUrl,
+      setType: variables.setType,
+      dbId: null, // Until the server answers
+    })
+    getHaptics()?.onSetComplete?.()
+    syncSet(variables.sessionExerciseId, variables.setNumber)
+  }, [completeSet])
 
-      getHaptics()?.onSetComplete?.()
-
-      return { sessionExerciseId: variables.sessionExerciseId, setNumber: variables.setNumber }
-    },
-    onSuccess: (data, variables) => {
-      try {
-        // Actualizar con el dbId real del servidor
-        if (data?.id) {
-          updateSetDbId(variables.sessionExerciseId, variables.setNumber, data.id)
-        }
-        getWorkoutStore().getState().removePendingSet(variables.sessionExerciseId, variables.setNumber)
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
-      } catch {
-        // No bloquear el flujo si falla la actualizacion post-sync
-      }
-    },
-    onError: (_error, variables) => {
-      try {
-        // No hacer rollback — mantener el optimistic update y encolar para reintentar
-        addPendingSet(variables.sessionExerciseId, variables.setNumber, {
-          sessionId,
-          sessionExerciseId: variables.sessionExerciseId,
-          setNumber: variables.setNumber,
-          weight: variables.weight,
-          weightUnit: variables.weightUnit,
-          repsCompleted: variables.repsCompleted,
-          timeSeconds: variables.timeSeconds,
-          distanceMeters: variables.distanceMeters,
-          paceSeconds: variables.paceSeconds,
-          level: variables.level,
-          caloriesBurned: variables.caloriesBurned,
-          rirActual: variables.rirActual,
-          notes: variables.notes,
-          videoUrl: variables.videoUrl,
-          setType: variables.setType,
-          performedAt: getSetCompletedAt(variables.sessionExerciseId, variables.setNumber),
-        })
-      } catch {
-        // No bloquear si falla encolar el pending set
-      }
-    },
-  })
-}
-
-export function useSyncPendingSets({ onVisibilityChange, onConnectivityChange } = {}) {
-  const sessionId = useWorkoutStore(state => state.sessionId)
-  const pendingSets = useWorkoutStore(state => state.pendingSets)
-  const updateSetDbId = useWorkoutStore(state => state.updateSetDbId)
-  const removePendingSet = useWorkoutStore(state => state.removePendingSet)
-  const syncingRef = useRef(false)
-
-  const syncPending = useCallback(async () => {
-    const pending = getWorkoutStore().getState().pendingSets
-    if (Object.keys(pending).length === 0 || syncingRef.current) return
-    syncingRef.current = true
-
-    for (const [_key, payload] of Object.entries(pending)) {
-      try {
-        const data = await upsertCompletedSet({
-          sessionId: payload.sessionId,
-          sessionExerciseId: payload.sessionExerciseId,
-          setNumber: payload.setNumber,
-          weight: payload.weight,
-          weightUnit: payload.weightUnit,
-          repsCompleted: payload.repsCompleted,
-          timeSeconds: payload.timeSeconds,
-          distanceMeters: payload.distanceMeters,
-          paceSeconds: payload.paceSeconds,
-          level: payload.level,
-          caloriesBurned: payload.caloriesBurned,
-          rirActual: payload.rirActual,
-          notes: payload.notes,
-          videoUrl: payload.videoUrl,
-          setType: payload.setType,
-          performedAt: payload.performedAt,
-        })
-
-        updateSetDbId(payload.sessionExerciseId, payload.setNumber, data.id)
-        removePendingSet(payload.sessionExerciseId, payload.setNumber)
-      } catch {
-        // Seguirá en la cola para el próximo intento
-      }
-    }
-    syncingRef.current = false
-  }, [updateSetDbId, removePendingSet])
-
-  // Reintentar cada 10 segundos si hay pendientes
-  const pendingCount = Object.keys(pendingSets).length
-  useEffect(() => {
-    if (!sessionId || pendingCount === 0) return
-
-    syncPending()
-    const interval = setInterval(syncPending, SYNC_RETRY_INTERVAL_MS)
-    return () => clearInterval(interval)
-  }, [sessionId, pendingCount, syncPending])
-
-  // Reintentar cuando la app vuelve al primer plano (callback inyectado por plataforma)
-  useEffect(() => {
-    if (!onVisibilityChange) return
-    const cleanup = onVisibilityChange(syncPending)
-    return cleanup
-  }, [onVisibilityChange, syncPending])
-
-  // Reintentar cuando la conexión vuelve (callback inyectado por plataforma)
-  useEffect(() => {
-    if (!onConnectivityChange) return
-    const cleanup = onConnectivityChange(syncPending)
-    return cleanup
-  }, [onConnectivityChange, syncPending])
-
-  return Object.keys(pendingSets).length
+  return useMemo(() => ({ mutate }), [mutate])
 }
 
 // Persist an in-place edit of an already-completed set's measurement values
 // (weight/reps/time/...) without uncompleting it. No rest timer, no completion
-// haptic — this is an edit, not a completion. Reuses the same optimistic + offline
-// queue machinery as useCompleteSet so edits survive connectivity drops.
+// haptic — this is an edit, not a completion.
 export function useUpdateCompletedSet() {
-  const queryClient = useQueryClient()
-  const sessionId = useWorkoutStore(state => state.sessionId)
   const updateCompletedSetValues = useWorkoutStore(state => state.updateCompletedSetValues)
-  const addPendingSet = useWorkoutStore(state => state.addPendingSet)
 
-  return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, weight, weightUnit, repsCompleted, timeSeconds, distanceMeters, paceSeconds, level, caloriesBurned, rirActual, notes, videoUrl, setType }) => {
-      return upsertCompletedSet({
-        // La misma hora que el insert (editar la conserva en el store). Hace falta mandarla:
-        // si el insert sigue pendiente offline, esta edición lo sustituye en la cola y sería
-        // la que inserte la fila.
-        performedAt: getSetCompletedAt(sessionExerciseId, setNumber),
-        sessionId,
-        sessionExerciseId,
-        setNumber,
-        weight,
-        weightUnit,
-        repsCompleted,
-        timeSeconds,
-        distanceMeters,
-        paceSeconds,
-        level,
-        caloriesBurned,
-        rirActual,
-        notes,
-        videoUrl,
-        setType,
-      })
-    },
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
-    onMutate: (variables) => {
-      // Optimistic in-place update of the measurement values
-      updateCompletedSetValues(variables.sessionExerciseId, variables.setNumber, {
-        weight: variables.weight,
-        repsCompleted: variables.repsCompleted,
-        timeSeconds: variables.timeSeconds,
-        distanceMeters: variables.distanceMeters,
-        paceSeconds: variables.paceSeconds,
-        level: variables.level,
-        caloriesBurned: variables.caloriesBurned,
-      })
-    },
-    onSuccess: (_data, variables) => {
-      try {
-        getWorkoutStore().getState().removePendingSet(variables.sessionExerciseId, variables.setNumber)
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
-      } catch {
-        // No bloquear el flujo si falla la actualización post-sync
-      }
-    },
-    onError: (_error, variables) => {
-      try {
-        // Mantener el optimistic update y encolar para reintentar (mismo formato que useCompleteSet)
-        addPendingSet(variables.sessionExerciseId, variables.setNumber, {
-          sessionId,
-          sessionExerciseId: variables.sessionExerciseId,
-          setNumber: variables.setNumber,
-          weight: variables.weight,
-          weightUnit: variables.weightUnit,
-          repsCompleted: variables.repsCompleted,
-          timeSeconds: variables.timeSeconds,
-          distanceMeters: variables.distanceMeters,
-          paceSeconds: variables.paceSeconds,
-          level: variables.level,
-          caloriesBurned: variables.caloriesBurned,
-          rirActual: variables.rirActual,
-          notes: variables.notes,
-          videoUrl: variables.videoUrl,
-          setType: variables.setType,
-          performedAt: getSetCompletedAt(variables.sessionExerciseId, variables.setNumber),
-        })
-      } catch {
-        // No bloquear si falla encolar el pending set
-      }
-    },
-  })
+  const mutate = useCallback((variables) => {
+    updateCompletedSetValues(variables.sessionExerciseId, variables.setNumber, {
+      weight: variables.weight,
+      repsCompleted: variables.repsCompleted,
+      timeSeconds: variables.timeSeconds,
+      distanceMeters: variables.distanceMeters,
+      paceSeconds: variables.paceSeconds,
+      level: variables.level,
+      caloriesBurned: variables.caloriesBurned,
+    })
+    syncCompletedSet(variables.sessionExerciseId, variables.setNumber)
+  }, [updateCompletedSetValues])
+
+  return useMemo(() => ({ mutate }), [mutate])
 }
 
+// The video, the effort, the notes and the set type go out in the queued upsert too, which carries
+// the store's whole set. A separate UPDATE would hit no row while the set's upsert is still queued,
+// and could land after a newer upsert and write the old value back.
 export function useUpdateSetVideo() {
-  const queryClient = useQueryClient()
-  const sessionId = useWorkoutStore(state => state.sessionId)
   const updateSetVideoStore = useWorkoutStore(state => state.updateSetVideo)
 
-  return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, videoUrl }) => {
-      return updateSetVideo({ sessionId, sessionExerciseId, setNumber, videoUrl })
-    },
-    onSuccess: (data, variables) => {
-      updateSetVideoStore(variables.sessionExerciseId, variables.setNumber, variables.videoUrl)
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
-    },
-  })
+  const mutate = useCallback(({ sessionExerciseId, setNumber, videoUrl }) => {
+    updateSetVideoStore(sessionExerciseId, setNumber, videoUrl)
+    syncCompletedSet(sessionExerciseId, setNumber)
+  }, [updateSetVideoStore])
+
+  return useMemo(() => ({ mutate }), [mutate])
 }
 
 export function useUpdateSetDetails() {
-  const queryClient = useQueryClient()
-  const sessionId = useWorkoutStore(state => state.sessionId)
   const updateSetDetails = useWorkoutStore(state => state.updateSetDetails)
 
-  return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber, rirActual, notes, videoUrl, setType }) => {
-      return updateSetDetailsApi({ sessionId, sessionExerciseId, setNumber, rirActual, notes, videoUrl, setType })
-    },
-    onSuccess: (_result, variables) => {
-      updateSetDetails(variables.sessionExerciseId, variables.setNumber, {
-        rirActual: variables.rirActual,
-        notes: variables.notes,
-        videoUrl: variables.videoUrl,
-        setType: variables.setType,
-      })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
-    },
-  })
+  const mutate = useCallback(({ sessionExerciseId, setNumber, rirActual, notes, videoUrl, setType }) => {
+    updateSetDetails(sessionExerciseId, setNumber, { rirActual, notes, videoUrl, setType })
+    syncCompletedSet(sessionExerciseId, setNumber)
+  }, [updateSetDetails])
+
+  return useMemo(() => ({ mutate }), [mutate])
 }
 
+// Unchecking is local at once, like checking: the queue sends the delete when it can.
 export function useUncompleteSet() {
-  const queryClient = useQueryClient()
-  const sessionId = useWorkoutStore(state => state.sessionId)
   const uncompleteSet = useWorkoutStore(state => state.uncompleteSet)
 
-  return useMutation({
-    mutationFn: async ({ sessionExerciseId, setNumber }) => {
-      return deleteCompletedSet({ sessionId, sessionExerciseId, setNumber })
-    },
-    onSuccess: (_, variables) => {
-      uncompleteSet(variables.sessionExerciseId, variables.setNumber)
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPLETED_SETS] })
-    },
-  })
+  const mutate = useCallback(({ sessionExerciseId, setNumber }) => {
+    uncompleteSet(sessionExerciseId, setNumber)
+    syncSet(sessionExerciseId, setNumber)
+  }, [uncompleteSet])
+
+  return useMemo(() => ({ mutate }), [mutate])
+}
+
+// ============================================
+// SYNC TRIGGERS
+// ============================================
+
+/**
+ * Drains the queue while it holds sets a drain will still try: every SYNC_RETRY_INTERVAL_MS, when
+ * the app comes back to the foreground and when the connection returns (callbacks injected per
+ * platform). Every change already drains at once; this is what catches up after a failure.
+ * @returns {number} queued sets not marked `failed`
+ */
+export function useSyncPendingSets({ onVisibilityChange, onConnectivityChange } = {}) {
+  const sessionId = useWorkoutStore(state => state.sessionId)
+  const sendableCount = useWorkoutStore(state => countPendingSets(state.pendingSets).sendable)
+
+  useEffect(() => {
+    if (!sessionId || sendableCount === 0) return
+    drainPendingSets()
+    const interval = setInterval(drainPendingSets, SYNC_RETRY_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [sessionId, sendableCount])
+
+  useEffect(() => {
+    if (!onVisibilityChange) return
+    return onVisibilityChange(drainPendingSets)
+  }, [onVisibilityChange])
+
+  useEffect(() => {
+    if (!onConnectivityChange) return
+    return onConnectivityChange(drainPendingSets)
+  }, [onConnectivityChange])
+
+  return sendableCount
 }

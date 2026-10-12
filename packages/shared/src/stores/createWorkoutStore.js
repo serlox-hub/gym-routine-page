@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { createSetKey } from '../lib/setUtils.js'
+import { createPendingSetToken, getPendingSetToken } from '../lib/pendingSetsSync.js'
 
 /**
  * Fields cleared by EVERY session transition (start / end / restore).
@@ -62,8 +64,9 @@ export function workoutStoreState(set, get) {
     // Current set count per exercise (for tracking added/removed sets)
     // Key: sessionExerciseId -> number of sets
     exerciseSetCounts: {},
-    // Sets pending sync (failed to save to server)
-    // Key: `${sessionExerciseId}-${setNumber}` -> mutation payload
+    // Sync queue of the sets (lib/pendingSetsSync.js): "this set changed", not what to send.
+    // Key: `${sessionExerciseId}-${setNumber}` -> { sessionId, sessionExerciseId, setNumber, token, failed? }
+    // Persisted: a check made offline survives the app being killed.
     pendingSets: {},
 
     // Contador que se incrementa cuando se convierten pesos por un cambio de unidad
@@ -211,21 +214,22 @@ export function workoutStoreState(set, get) {
       }
     }),
 
-    // Aplica en bloque la conversión de peso de varias series completadas (al mover la sesión
-    // a un gym con distinta unidad). Actualiza completedSets, cachedSetData y también
-    // pendingSets (una serie completada offline que aún no sincronizó lleva el peso viejo en su
-    // payload; sin convertirlo, al sincronizar insertaría el peso sin convertir en BD). BUMPEA
-    // weightConversionNonce para que los SetRow montados re-siembren su input local.
+    // Converts the weight of several completed sets at once (the session moves to a gym with
+    // another unit). BUMPS weightConversionNonce so the mounted SetRows re-seed their local input.
+    // A converted set that is still queued gets a new token: a request already in flight with the
+    // old weight then cannot remove its entry, and the converted weight is sent after it.
     applyWeightConversions: (conversions) => set(state => {
       if (!conversions?.length) return state
       const completedSets = { ...state.completedSets }
       const cachedSetData = { ...state.cachedSetData }
       const pendingSets = { ...state.pendingSets }
       for (const c of conversions) {
-        const key = `${c.sessionExerciseId}-${c.setNumber}`
+        const key = createSetKey(c.sessionExerciseId, c.setNumber)
         if (completedSets[key]) completedSets[key] = { ...completedSets[key], weight: c.newWeight }
         if (cachedSetData[key]) cachedSetData[key] = { ...cachedSetData[key], weight: c.newWeight }
-        if (pendingSets[key]) pendingSets[key] = { ...pendingSets[key], weight: c.newWeight }
+        if (pendingSets[key] && state.sessionId) {
+          pendingSets[key] = buildPendingSetEntry(state.sessionId, c.sessionExerciseId, c.setNumber)
+        }
       }
       return { completedSets, cachedSetData, pendingSets, weightConversionNonce: state.weightConversionNonce + 1 }
     }),
@@ -288,10 +292,8 @@ export function workoutStoreState(set, get) {
     }),
 
     // Update RIR/notes (and optionally setType/videoUrl) of a completed set without
-    // uncompleting. setType/videoUrl solo se aplican si llegan definidos (no pisar con
-    // undefined cuando la mutación solo actualiza el esfuerzo). Nota: hoy ningún caller pasa
-    // videoUrl por aquí (el vídeo va por updateSetVideo); la guarda se mantiene para que el
-    // store quede consistente con la API si en el futuro se reusa esta mutación con vídeo.
+    // uncompleting. setType/videoUrl solo se aplican si llegan definidos, para no pisar con
+    // undefined el vídeo o el tipo cuando la llamada solo trae el esfuerzo.
     updateSetDetails: (sessionExerciseId, setNumber, { rirActual, notes, videoUrl, setType }) => set(state => {
       const key = `${sessionExerciseId}-${setNumber}`
       const existing = state.completedSets[key]
@@ -322,18 +324,47 @@ export function workoutStoreState(set, get) {
       }
     }),
 
-    // Add a set to the pending sync queue
-    addPendingSet: (sessionExerciseId, setNumber, payload) => set(state => ({
-      pendingSets: {
-        ...state.pendingSets,
-        [`${sessionExerciseId}-${setNumber}`]: payload,
-      },
-    })),
+    // Marks a set as changed in the sync queue, with a new token (and no `failed`). The caller then
+    // calls drainPendingSets(). No-op without a session: there is nothing to sync it to.
+    markSetDirty: (sessionExerciseId, setNumber) => set(state => {
+      if (!state.sessionId) return state
+      return {
+        pendingSets: {
+          ...state.pendingSets,
+          [createSetKey(sessionExerciseId, setNumber)]: buildPendingSetEntry(state.sessionId, sessionExerciseId, setNumber),
+        },
+      }
+    }),
 
-    // Remove a set from the pending sync queue
-    removePendingSet: (sessionExerciseId, setNumber) => set(state => {
-      const { [`${sessionExerciseId}-${setNumber}`]: _, ...rest } = state.pendingSets
+    // The drainer's request for this token landed. A different token means the set changed during
+    // the request, and the entry stays to be sent again.
+    clearPendingSetIfToken: (sessionExerciseId, setNumber, token) => set(state => {
+      const key = createSetKey(sessionExerciseId, setNumber)
+      if (!hasPendingSetToken(state.pendingSets[key], token)) return state
+      const { [key]: _, ...rest } = state.pendingSets
       return { pendingSets: rest }
+    }),
+
+    // The server rejected this token's request. Drains skip the entry until the set is marked again.
+    markPendingSetFailed: (sessionExerciseId, setNumber, token) => set(state => {
+      const key = createSetKey(sessionExerciseId, setNumber)
+      const entry = state.pendingSets[key]
+      if (!hasPendingSetToken(entry, token)) return state
+      return { pendingSets: { ...state.pendingSets, [key]: { ...entry, failed: true } } }
+    }),
+
+    // "Finish without them" (useEndSession): the sets the server rejected leave the queue and the
+    // session, so the stats and records computed from completedSets do not count them. Local only,
+    // as the owner decided in #179: a rejected edit of a set the server already had, or a rejected
+    // uncheck, leaves that row on the server, and it shows in history.
+    discardFailedPendingSets: () => set(state => {
+      const pendingSets = {}
+      const completedSets = { ...state.completedSets }
+      for (const [key, entry] of Object.entries(state.pendingSets)) {
+        if (entry?.failed) delete completedSets[key]
+        else pendingSets[key] = entry
+      }
+      return { pendingSets, completedSets }
     }),
 
     // Check if session is active
@@ -402,12 +433,9 @@ export function workoutStoreState(set, get) {
       for (const [key, val] of Object.entries(state.cachedSetData)) {
         if (val.sessionExerciseId !== sessionExerciseId) newCached[key] = val
       }
-      // La cola offline también, y es la que más duele: se PERSISTE y lleva el payload completo
-      // de upsert indexado por `${sessionExerciseId}-${setNumber}`, clave que sobrevive al
-      // reemplazo porque el session_exercise_id no cambia. Sin vaciarla, el reintento de
-      // useSyncPendingSets reinserta en BD una serie del ejercicio VIEJO atribuida al NUEVO
-      // (invisible en pantalla, visible en historial y PRs); y viniendo de useRemoveSessionExercise
-      // el upsert choca contra la FK de un session_exercises ya borrado y reintenta cada 10 s.
+      // The sync queue too: its key survives the replace because the session_exercise_id does not
+      // change, so an entry left behind would still be sent for the NEW exercise. A drainer request
+      // already in flight cannot remove a later mark of the same set: tokens are never reused.
       const newPending = {}
       for (const [key, val] of Object.entries(state.pendingSets)) {
         if (val.sessionExerciseId !== sessionExerciseId) newPending[key] = val
@@ -427,6 +455,14 @@ export function workoutStoreState(set, get) {
       }
     }),
   }
+}
+
+function buildPendingSetEntry(sessionId, sessionExerciseId, setNumber) {
+  return { sessionId, sessionExerciseId, setNumber, token: createPendingSetToken() }
+}
+
+function hasPendingSetToken(entry, token) {
+  return Boolean(entry) && getPendingSetToken(entry) === token
 }
 
 /**

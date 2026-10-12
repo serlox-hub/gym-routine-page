@@ -35,6 +35,7 @@ import { usePreference } from './usePreferences.js'
 import { useSetSelectedGym } from './useGyms.js'
 import { useAllUserExerciseGymUnits } from './useExercises.js'
 import { isSessionAlreadyInProgressError } from '../lib/workoutStartAction.js'
+import { countPendingSets, drainPendingSets, getUnsavedSetsError } from '../lib/pendingSetsSync.js'
 import { resolveSessionEnd, getLastSetCompletedAt, pickLatestTimestamp } from '../lib/dateUtils.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
@@ -205,7 +206,22 @@ export function useEndSession({ onSuccess: onSuccessCb } = {}) {
   const userId = useUserId()
 
   return useMutation({
-    mutationFn: async ({ overallFeeling, notes, completedAt }) => {
+    // Offline, the default `networkMode: 'online'` pauses the mutation before mutationFn runs: no
+    // drain, no "not saved yet" message, a modal that cannot be closed while pending, and a workout
+    // that ends on its own when the network returns. Same trap as `notifyOnFailure`
+    // (useWorkoutHistory.js).
+    networkMode: 'always',
+    mutationFn: async ({ overallFeeling, notes, completedAt, discardUnsavedSets = false }) => {
+      // Before any server read or write: deleting the exercises "without sets" and computing the
+      // stats must see every set, and endSession() empties the queue.
+      await drainPendingSets()
+      // A drain already running when the user tapped "Done" may have spent a set's sends for this
+      // drain and left it queued with signal. A fresh drain gets a fresh budget.
+      if (countPendingSets(getWorkoutStore().getState().pendingSets).sendable > 0) await drainPendingSets()
+      const unsavedSetsError = getUnsavedSetsError(getWorkoutStore().getState().pendingSets, { discardUnsavedSets })
+      if (unsavedSetsError) throw unsavedSetsError
+      if (discardUnsavedSets) getWorkoutStore().getState().discardFailedPendingSets()
+
       // Capturar sets del store antes de que se limpie
       const completedSets = getWorkoutStore().getState().completedSets
 

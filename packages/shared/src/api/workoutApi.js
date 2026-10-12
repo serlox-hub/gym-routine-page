@@ -22,8 +22,6 @@ export {
 
 export {
   upsertCompletedSet,
-  updateSetVideo,
-  updateSetDetails,
   deleteCompletedSet,
 } from './completedSetsApi.js'
 

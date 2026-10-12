@@ -25,7 +25,7 @@ import GymSelector from './GymSelector.jsx'
 import { AddExerciseModal } from '../Routine/index.js'
 import WeightConverterModal from './WeightConverterModal.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { calculateExerciseLevelProgress, getExerciseName, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, usePreference, useUserExerciseDistanceUnits, useSessionWeightUnitByExercise, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExerciseName, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, usePreference, useUserExerciseDistanceUnits, useSessionWeightUnitByExercise, useSelectedGym, useChangeSessionGym, getGymDisplayName, describeEndSessionError } from '@gym/shared'
 
 function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const navigate = useNavigate()
@@ -136,8 +136,11 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     setShowEndModal(true)
   }
 
-  const handleConfirmEnd = ({ overallFeeling, notes, completedAt }) => {
-    endSessionMutation.mutate({ overallFeeling, notes, completedAt }, {
+  // Sets still unsaved (network) or rejected by the server get their own message (issue #179).
+  const endSessionError = describeEndSessionError(endSessionMutation.isError ? endSessionMutation.error : null)
+
+  const handleConfirmEnd = ({ overallFeeling, notes, completedAt, discardUnsavedSets }) => {
+    endSessionMutation.mutate({ overallFeeling, notes, completedAt, discardUnsavedSets }, {
       onSuccess: ({ session, detectedPRs }) => {
         const completedSetsSnapshot = useWorkoutStore.getState().completedSets
         const summaryData = buildWorkoutSummaryFromEndSession(
@@ -321,7 +324,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
-        error={endSessionMutation.isError ? t('workout:session.endFailed') : null}
+        error={endSessionError ? t(endSessionError.key, endSessionError.params) : null}
+        discardableSetsCount={endSessionError?.discardableSetsCount ?? 0}
         setsPending={progress.setsPending}
         lastSetAt={lastSetAt}
         isLastSetResolved={isLastSetResolved}

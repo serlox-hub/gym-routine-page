@@ -71,7 +71,7 @@ describe('EndSessionModal — aviso de sesión inactiva', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Hecho' }))
 
-    expect(onConfirm).toHaveBeenCalledWith({ overallFeeling: null, notes: null, completedAt: lastSetAt })
+    expect(onConfirm).toHaveBeenCalledWith({ overallFeeling: null, notes: null, completedAt: lastSetAt, discardUnsavedSets: false })
   })
 
   it('elegir "terminé ahora" y confirmar envía completedAt sin definir', () => {
@@ -81,7 +81,7 @@ describe('EndSessionModal — aviso de sesión inactiva', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Terminé ahora' }))
     fireEvent.click(screen.getByRole('button', { name: 'Hecho' }))
 
-    expect(onConfirm).toHaveBeenCalledWith({ overallFeeling: null, notes: null, completedAt: undefined })
+    expect(onConfirm).toHaveBeenCalledWith({ overallFeeling: null, notes: null, completedAt: undefined, discardUnsavedSets: false })
   })
 
   it('sin aviso, confirmar siempre envía completedAt sin definir', () => {
@@ -90,7 +90,7 @@ describe('EndSessionModal — aviso de sesión inactiva', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Hecho' }))
 
-    expect(onConfirm).toHaveBeenCalledWith({ overallFeeling: null, notes: null, completedAt: undefined })
+    expect(onConfirm).toHaveBeenCalledWith({ overallFeeling: null, notes: null, completedAt: undefined, discardUnsavedSets: false })
   })
 
   it('cancelar reinicia la opción elegida a la de la última serie', () => {
@@ -102,6 +102,54 @@ describe('EndSessionModal — aviso de sesión inactiva', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(screen.getByRole('button', { name: /Terminé a las/, pressed: true })).toBeInTheDocument()
+  })
+})
+
+describe('EndSessionModal — terminar sin las series rechazadas', () => {
+  const discardLabel = count => i18n.t('workout:session.unsavedSetsDiscard', { count })
+
+  it('sin series rechazadas (por defecto) no pinta el botón', () => {
+    renderModal({})
+
+    expect(screen.queryByRole('button', { name: discardLabel(1) })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: discardLabel(2) })).not.toBeInTheDocument()
+  })
+
+  it('con series rechazadas pinta el botón y confirma con discardUnsavedSets en true', () => {
+    const onConfirm = vi.fn()
+    renderModal({ discardableSetsCount: 1, onConfirm })
+
+    fireEvent.click(screen.getByRole('button', { name: discardLabel(1) }))
+
+    expect(onConfirm).toHaveBeenCalledTimes(1)
+    expect(onConfirm).toHaveBeenCalledWith({ overallFeeling: null, notes: null, completedAt: undefined, discardUnsavedSets: true })
+  })
+
+  it('con varias series rechazadas el botón va en plural', () => {
+    renderModal({ discardableSetsCount: 2 })
+
+    expect(screen.getByRole('button', { name: discardLabel(2) })).toBeInTheDocument()
+    expect(discardLabel(2)).not.toBe(discardLabel(1))
+  })
+
+  it('"Hecho" sigue confirmando sin descartar aunque el botón esté visible', () => {
+    const onConfirm = vi.fn()
+    renderModal({ discardableSetsCount: 1, onConfirm })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hecho' }))
+
+    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ discardUnsavedSets: false }))
+  })
+
+  it('mientras se guarda el botón está desactivado y no confirma', () => {
+    const onConfirm = vi.fn()
+    renderModal({ discardableSetsCount: 1, onConfirm, isPending: true })
+
+    const discard = screen.getByRole('button', { name: discardLabel(1) })
+    fireEvent.click(discard)
+
+    expect(discard).toBeDisabled()
+    expect(onConfirm).not.toHaveBeenCalled()
   })
 })
 

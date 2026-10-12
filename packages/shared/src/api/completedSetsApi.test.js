@@ -6,8 +6,6 @@ import { getClient } from './_client.js'
 
 import {
   upsertCompletedSet,
-  updateSetVideo,
-  updateSetDetails,
   deleteCompletedSet,
 } from './completedSetsApi.js'
 
@@ -186,121 +184,6 @@ describe('upsertCompletedSet', () => {
     const payload = mock.upsert.mock.calls[0][0]
     expect(payload.level).toBe(8)
     expect(payload.calories_burned).toBe(120)
-  })
-})
-
-// ============================================
-// updateSetVideo
-// ============================================
-
-describe('updateSetVideo', () => {
-  it('returns updated set with new video URL', async () => {
-    const updatedSet = {
-      id: 'set-1',
-      session_id: 'session-1',
-      session_exercise_id: 'se-1',
-      set_number: 1,
-      video_url: 'https://example.com/video.mp4',
-    }
-    const mock = makeQueryMock({ data: updatedSet, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    const result = await updateSetVideo({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-      setNumber: 1,
-      videoUrl: 'https://example.com/video.mp4',
-    })
-    expect(result).toEqual(updatedSet)
-    expect(result.video_url).toBe('https://example.com/video.mp4')
-  })
-
-  it('handles null video URL (removing video)', async () => {
-    const updatedSet = {
-      id: 'set-1',
-      session_id: 'session-1',
-      session_exercise_id: 'se-1',
-      set_number: 1,
-      video_url: null,
-    }
-    const mock = makeQueryMock({ data: updatedSet, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    const result = await updateSetVideo({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-      setNumber: 1,
-      videoUrl: null,
-    })
-    expect(result.video_url).toBeNull()
-  })
-
-  it('throws when Supabase returns error', async () => {
-    const mock = makeQueryMock({ data: null, error: new Error('update failed') })
-    getClient.mockReturnValue({ from: () => mock })
-    await expect(updateSetVideo({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-      setNumber: 1,
-      videoUrl: 'https://example.com/video.mp4',
-    })).rejects.toThrow('update failed')
-  })
-})
-
-// ============================================
-// updateSetDetails
-// ============================================
-
-describe('updateSetDetails', () => {
-  it('completes without throwing on success (no return value)', async () => {
-    const mock = makeQueryMock({ data: null, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    await expect(updateSetDetails({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-      setNumber: 1,
-      rirActual: 2,
-      notes: 'Buena serie',
-      videoUrl: undefined,
-    })).resolves.toBeUndefined()
-  })
-
-  it('throws when Supabase returns error', async () => {
-    const mock = makeQueryMock({ data: null, error: new Error('update failed') })
-    getClient.mockReturnValue({ from: () => mock })
-    await expect(updateSetDetails({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-      setNumber: 1,
-      rirActual: 1,
-      notes: null,
-    })).rejects.toThrow('update failed')
-  })
-
-  it('includes videoUrl in update when provided', async () => {
-    const mock = makeQueryMock({ data: null, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    // Should not throw; videoUrl is included in updateData when defined
-    await expect(updateSetDetails({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-      setNumber: 1,
-      rirActual: 0,
-      notes: null,
-      videoUrl: 'https://example.com/video.mp4',
-    })).resolves.toBeUndefined()
-  })
-
-  it('partial update: only rirActual and notes updated (videoUrl omitted)', async () => {
-    const mock = makeQueryMock({ data: null, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    // videoUrl is undefined — should NOT be included in updateData
-    await expect(updateSetDetails({
-      sessionId: 'session-1',
-      sessionExerciseId: 'se-1',
-      setNumber: 2,
-      rirActual: 3,
-      notes: 'Solo notas',
-      videoUrl: undefined,
-    })).resolves.toBeUndefined()
   })
 })
 
