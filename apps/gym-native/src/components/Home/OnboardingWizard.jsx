@@ -8,6 +8,7 @@ import {
   LEVEL_OPTIONS,
   EQUIPMENT_OPTIONS,
   recommendTemplate,
+  getTemplateDaysNote,
   getTemplateDisplay,
   getNotifier,
 } from '@gym/shared'
@@ -32,16 +33,22 @@ function OnboardingWizard({ onComplete }) {
   const [selectedId, setSelectedId] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const recommendedId = recommendTemplate(answers)
+  const { templateId: recommendedId } = recommendTemplate({
+    objetivos: [answers.objetivo],
+    diasPorSemana: answers.diasPorSemana,
+    nivelExperiencia: answers.nivelExperiencia,
+    equipamiento: answers.equipamiento,
+  })
   const activeId = selectedId ?? recommendedId
+  const recommendedTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === recommendedId)
   // La recomendada primero: es lo primero visible en el paso final, sin scroll.
   const orderedTemplates = [
-    ...ROUTINE_TEMPLATES.filter(tpl => tpl.id === recommendedId),
+    recommendedTemplate,
     ...ROUTINE_TEMPLATES.filter(tpl => tpl.id !== recommendedId),
   ]
+  // Sobre la plantilla marcada, no la recomendada: elegir otra a mano cambia la nota.
   const activeTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === activeId)
-  const requestedDays = Number(answers.diasPorSemana)
-  const daysMismatch = activeTemplate && requestedDays > 0 && activeTemplate.daysPerWeek !== requestedDays
+  const daysNote = getTemplateDaysNote(activeTemplate, answers.diasPorSemana)
 
   const canNext =
     (step === 1 && answers.objetivo) ||
@@ -159,11 +166,11 @@ function OnboardingWizard({ onComplete }) {
                 <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('routine:onboarding.recommendedTitle')}</Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 4 }}>{t('routine:onboarding.recommendedSubtitle')}</Text>
               </View>
-              {daysMismatch && (
+              {daysNote && (
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderRadius: 8, backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}>
                   <Info size={14} color={colors.textMuted} style={{ marginTop: 1 }} />
                   <Text style={{ color: colors.textSecondary, fontSize: 12, flex: 1 }}>
-                    {t('routine:onboarding.daysNote', { requested: requestedDays, actual: activeTemplate.daysPerWeek })}
+                    {t(`routine:onboarding.daysNote.${daysNote}`, { requested: Number(answers.diasPorSemana), actual: activeTemplate.daysPerWeek, min: activeTemplate.minDays })}
                   </Text>
                 </View>
               )}
