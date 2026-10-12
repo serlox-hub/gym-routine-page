@@ -19,7 +19,7 @@ import { AddExerciseModal } from '../Routine'
 import WeightConverterModal from './WeightConverterModal'
 import PRNotification from './PRNotification'
 import useWorkoutStore from '../../stores/workoutStore'
-import { calculateExerciseLevelProgress, getExerciseName, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, useUserExerciseDistanceUnits, useSessionWeightUnitByExercise, useSelectedGym, useChangeSessionGym, getGymDisplayName } from '@gym/shared'
+import { calculateExerciseLevelProgress, getExerciseName, getExistingSupersetIds, mergeBlockOrder, transformSessionExercises, useSessionPRDetection, useSessionTimer, ExpandedExerciseProvider, buildWorkoutSummaryFromEndSession, useLastSetAt, useUserExerciseDistanceUnits, useSessionWeightUnitByExercise, useSelectedGym, useChangeSessionGym, getGymDisplayName, describeEndSessionError } from '@gym/shared'
 import { usePreference } from '../../hooks/usePreferences'
 import { PRProvider } from './PRContext'
 import { useStableHandlers } from '../../hooks/useStableHandlers'
@@ -144,8 +144,11 @@ export default function WorkoutSessionLayout({ title }) {
     )
   }
 
-  const handleConfirmEnd = ({ overallFeeling, notes, completedAt }) => {
-    endSessionMutation.mutate({ overallFeeling, notes, completedAt })
+  // Sets still unsaved (network) or rejected by the server get their own message (issue #179).
+  const endSessionError = describeEndSessionError(endSessionMutation.isError ? endSessionMutation.error : null)
+
+  const handleConfirmEnd = ({ overallFeeling, notes, completedAt, discardUnsavedSets }) => {
+    endSessionMutation.mutate({ overallFeeling, notes, completedAt, discardUnsavedSets })
   }
 
   const handleEndWorkout = () => {
@@ -321,7 +324,8 @@ export default function WorkoutSessionLayout({ title }) {
         onClose={() => setShowEndModal(false)}
         onConfirm={handleConfirmEnd}
         isPending={endSessionMutation.isPending}
-        error={endSessionMutation.isError ? t('workout:session.endFailed') : null}
+        error={endSessionError ? t(endSessionError.key, endSessionError.params) : null}
+        discardableSetsCount={endSessionError?.discardableSetsCount ?? 0}
         setsPending={progress.setsPending}
         lastSetAt={lastSetAt}
         isLastSetResolved={isLastSetResolved}

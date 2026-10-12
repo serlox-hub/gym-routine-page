@@ -422,20 +422,27 @@ describe('createWorkoutStore', () => {
       expect(state.weightConversionNonce).toBe(nonceBefore + 1)
     })
 
-    it('también convierte el peso de una serie encolada en pendingSets', () => {
+    // A request already in flight with the old weight must not be able to clear the entry.
+    it('gives a queued converted set a new token, and queues nothing else', () => {
       act(() => {
+        useWorkoutStore.getState().startSession(7, null)
         useWorkoutStore.getState().completeSet(1, 1, { weight: 190 })
-        useWorkoutStore.getState().addPendingSet(1, 1, { sessionExerciseId: 1, setNumber: 1, weight: 190 })
+        useWorkoutStore.getState().completeSet(1, 2, { weight: 190 })
+        useWorkoutStore.getState().markSetDirty(1, 1)
       })
+      const before = useWorkoutStore.getState().pendingSets['1-1']
 
       act(() => {
         useWorkoutStore.getState().applyWeightConversions([
           { sessionExerciseId: 1, setNumber: 1, newWeight: 86.18 },
+          { sessionExerciseId: 1, setNumber: 2, newWeight: 86.18 },
         ])
       })
 
-      // Sin esto, al sincronizar la cola insertaría el peso viejo (190) en BD
-      expect(useWorkoutStore.getState().pendingSets['1-1'].weight).toBe(86.18)
+      const { pendingSets } = useWorkoutStore.getState()
+      expect(pendingSets['1-1']).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String) })
+      expect(pendingSets['1-1'].token).not.toBe(before.token)
+      expect(pendingSets['1-2']).toBeUndefined()
     })
 
     it('no toca el estado ni el nonce con una lista vacía', () => {
@@ -451,6 +458,104 @@ describe('createWorkoutStore', () => {
       const state = useWorkoutStore.getState()
       expect(state.completedSets['1-1'].weight).toBe(190)
       expect(state.weightConversionNonce).toBe(nonceBefore)
+    })
+  })
+
+  describe('sync queue (pendingSets, issue 179)', () => {
+    const LEGACY_ENTRY = { sessionId: 7, sessionExerciseId: 1, setNumber: 1, weight: 100, performedAt: 'x' }
+
+    function entry(key = '1-1') {
+      return useWorkoutStore.getState().pendingSets[key]
+    }
+
+    beforeEach(() => {
+      act(() => { useWorkoutStore.getState().startSession(7, null) })
+    })
+
+    it('markSetDirty queues the set under the current session with a new token each time', () => {
+      act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+      const first = entry()
+      act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+
+      expect(first).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String) })
+      expect(entry().token).not.toBe(first.token)
+    })
+
+    it('markSetDirty does nothing without a session', () => {
+      act(() => {
+        useWorkoutStore.getState().endSession()
+        useWorkoutStore.getState().markSetDirty(1, 1)
+      })
+      expect(useWorkoutStore.getState().pendingSets).toEqual({})
+    })
+
+    it('clearPendingSetIfToken removes the entry only with its current token', () => {
+      act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+      const { token } = entry()
+
+      act(() => { useWorkoutStore.getState().clearPendingSetIfToken(1, 1, 'stale') })
+      expect(entry()).toBeDefined()
+
+      act(() => { useWorkoutStore.getState().clearPendingSetIfToken(1, 1, token) })
+      expect(entry()).toBeUndefined()
+    })
+
+    it('markPendingSetFailed flags the entry only with its current token, and a new mark clears it', () => {
+      act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+      const { token } = entry()
+
+      act(() => { useWorkoutStore.getState().markPendingSetFailed(1, 1, 'stale') })
+      expect(entry().failed).toBeUndefined()
+
+      act(() => { useWorkoutStore.getState().markPendingSetFailed(1, 1, token) })
+      expect(entry().failed).toBe(true)
+
+      act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+      expect(entry().failed).toBeUndefined()
+    })
+
+    it('a missing entry is left alone by both', () => {
+      const before = useWorkoutStore.getState()
+      act(() => {
+        useWorkoutStore.getState().clearPendingSetIfToken(1, 1, 'legacy')
+        useWorkoutStore.getState().markPendingSetFailed(1, 1, 'legacy')
+      })
+      expect(useWorkoutStore.getState().pendingSets).toBe(before.pendingSets)
+    })
+
+    // Entries persisted before #179 must still sync after the update.
+    it('an entry without token matches the legacy token, and a mark replaces it', () => {
+      act(() => { useWorkoutStore.setState({ pendingSets: { '1-1': LEGACY_ENTRY } }) })
+      act(() => { useWorkoutStore.getState().markPendingSetFailed(1, 1, 'legacy') })
+      expect(entry()).toEqual({ ...LEGACY_ENTRY, failed: true })
+
+      act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+      expect(entry()).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String) })
+
+      act(() => { useWorkoutStore.setState({ pendingSets: { '1-1': LEGACY_ENTRY } }) })
+      act(() => { useWorkoutStore.getState().clearPendingSetIfToken(1, 1, 'legacy') })
+      expect(entry()).toBeUndefined()
+    })
+
+    it('discardFailedPendingSets drops the rejected sets from the queue and from the session', () => {
+      act(() => {
+        useWorkoutStore.getState().completeSet(1, 1, { weight: 100 })
+        useWorkoutStore.getState().completeSet(1, 2, { weight: 200 })
+        useWorkoutStore.getState().markSetDirty(1, 1)
+        useWorkoutStore.getState().markSetDirty(1, 2)
+      })
+      act(() => { useWorkoutStore.getState().markPendingSetFailed(1, 2, entry('1-2').token) })
+
+      act(() => { useWorkoutStore.getState().discardFailedPendingSets() })
+
+      const state = useWorkoutStore.getState()
+      expect(Object.keys(state.pendingSets)).toEqual(['1-1'])
+      expect(Object.keys(state.completedSets)).toEqual(['1-1'])
+    })
+
+    it('is persisted: a check made offline survives a restart', () => {
+      act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+      expect(workoutPartialize(useWorkoutStore.getState()).pendingSets).toEqual({ '1-1': entry() })
     })
   })
 
@@ -611,17 +716,23 @@ describe('createWorkoutStore', () => {
 
     it('vacía también la cola offline de esa fila (la que llega a BD)', () => {
       act(() => {
-        useWorkoutStore.getState().addPendingSet(1, 1, { sessionExerciseId: 1, setNumber: 1, weight: 100 })
-        useWorkoutStore.getState().addPendingSet(2, 1, { sessionExerciseId: 2, setNumber: 1, weight: 50 })
+        useWorkoutStore.getState().startSession(7, null)
+        useWorkoutStore.getState().markSetDirty(1, 1)
+        useWorkoutStore.getState().markSetDirty(2, 1)
+        // An entry persisted before #179: full payload, no token
+        useWorkoutStore.setState(state => ({
+          pendingSets: { ...state.pendingSets, '1-2': { sessionId: 7, sessionExerciseId: 1, setNumber: 2, weight: 100 } },
+        }))
       })
 
       act(() => { useWorkoutStore.getState().clearExercise(1) })
 
       const { pendingSets } = useWorkoutStore.getState()
-      // Sin esto, useSyncPendingSets reinsertaría la serie del ejercicio VIEJO bajo el
-      // session_exercise_id que ahora es del NUEVO: invisible en pantalla, visible en historial.
+      // Without this the queue would still send the OLD exercise's set under the session_exercise_id
+      // that now belongs to the NEW one.
       expect(pendingSets['1-1']).toBeUndefined()
-      expect(pendingSets['2-1'].weight).toBe(50)
+      expect(pendingSets['1-2']).toBeUndefined()
+      expect(pendingSets['2-1']).toBeDefined()
     })
 
     it('cada reemplazo de la misma fila incrementa su contador', () => {
@@ -701,9 +812,10 @@ describe('createWorkoutStore', () => {
 
     it('startSession applies both shapes', () => {
       act(() => {
+        useWorkoutStore.getState().startSession(6, 1)
         useWorkoutStore.getState().completeSet(1, 1, { weight: 80 })
         useWorkoutStore.getState().setExerciseSetCount(1, 5)
-        useWorkoutStore.getState().addPendingSet(1, 1, { weight: 80 })
+        useWorkoutStore.getState().markSetDirty(1, 1)
         useWorkoutStore.getState().setPendingGymChange({ gymId: 3, weights: [] })
         useWorkoutStore.getState().setExpandedExerciseKey('se-1')
         useWorkoutStore.getState().startRestTimer(90, { setNumber: 1 })
@@ -738,7 +850,7 @@ describe('createWorkoutStore', () => {
       act(() => {
         useWorkoutStore.getState().startSession(7, 2, 3, 4)
         useWorkoutStore.getState().setExerciseSetCount(1, 5)
-        useWorkoutStore.getState().addPendingSet(1, 1, { weight: 80 })
+        useWorkoutStore.getState().markSetDirty(1, 1)
         useWorkoutStore.getState().setExpandedExerciseKey('se-1')
         useWorkoutStore.getState().startRestTimer(90, { setNumber: 1 })
         useWorkoutStore.getState().restoreSession({
@@ -755,7 +867,7 @@ describe('createWorkoutStore', () => {
       }
       expect(state.expandedExerciseKey).toBe('se-1')
       expect(state.exerciseSetCounts[1]).toBe(5)
-      expect(state.pendingSets['1-1']).toEqual({ weight: 80 })
+      expect(state.pendingSets['1-1']).toEqual(expect.objectContaining({ sessionId: 7, sessionExerciseId: 1, setNumber: 1 }))
     })
 
     it('each call returns fresh nested objects, so no two resets share a map', () => {

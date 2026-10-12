@@ -370,6 +370,29 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     await expectTouchTargets(page.locator('body'))
   })
 
+  test('end session modal offering to finish without a set the server rejected', async ({ page }) => {
+    await prepare()
+    await login(page)
+    await startSession(page)
+    // A PostgREST error with a code (issue #179): the set stays queued as rejected.
+    await page.route('**/rest/v1/completed_sets*', route => (route.request().method() === 'POST'
+      ? route.fulfill({
+        status: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        contentType: 'application/json',
+        body: JSON.stringify({ code: '23514', message: 'rejected by the e2e', details: null, hint: null }),
+      })
+      : route.continue()))
+    await completeWeightSet(page, '40')
+
+    // State 9: the end session modal with its "finish without it".
+    await page.getByRole('button', { name: 'Terminar entrenamiento' }).click()
+    const endModal = endSessionModal(page)
+    await endModal.getByRole('button', { name: 'Hecho' }).click()
+    await expect(endModal.getByRole('button', { name: 'Terminar sin ella' })).toBeVisible()
+    await expectTouchTargets(endModal)
+  })
+
   test('history: a session, its edit mode, two sessions in a day and the exercise chart', async ({ page }) => {
     await prepare()
     await login(page)

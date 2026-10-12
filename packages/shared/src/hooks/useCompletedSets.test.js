@@ -1,272 +1,271 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import React from 'react'
+import { createJSONStorage } from 'zustand/middleware'
 
-// Mock the stores module
-vi.mock('./_stores.js', () => {
-  const mockStore = {
-    sessionId: 'session-123',
-    pendingSets: {},
-    updateSetDbId: vi.fn(),
-    removePendingSet: vi.fn(),
-    completeSet: vi.fn(),
-    addPendingSet: vi.fn(),
-    updateSetVideo: vi.fn(),
-    updateSetDetails: vi.fn(),
-    uncompleteSet: vi.fn(),
-    updateCompletedSetValues: vi.fn(),
-  }
+vi.mock('../api/completedSetsApi.js', () => ({
+  upsertCompletedSet: vi.fn(),
+  deleteCompletedSet: vi.fn(),
+}))
 
-  const useWorkoutStore = vi.fn((selector) => selector ? selector(mockStore) : mockStore)
-  useWorkoutStore._mockStore = mockStore
-
-  const getWorkoutStore = vi.fn(() => ({
-    getState: vi.fn(() => mockStore),
-  }))
-
-  return { useWorkoutStore, getWorkoutStore }
+vi.mock('../haptics.js', () => {
+  const onSetComplete = vi.fn()
+  return { getHaptics: () => ({ onSetComplete }), _onSetComplete: onSetComplete }
 })
 
-// Mock the workoutApi
-vi.mock('../api/workoutApi.js', () => ({
-  upsertCompletedSet: vi.fn().mockResolvedValue({ id: 'db-id-1' }),
-  updateSetVideo: vi.fn().mockResolvedValue({}),
-  updateSetDetails: vi.fn().mockResolvedValue({}),
-  deleteCompletedSet: vi.fn().mockResolvedValue({}),
-}))
+import { upsertCompletedSet, deleteCompletedSet } from '../api/completedSetsApi.js'
+import * as hapticsMock from '../haptics.js'
+import { createWorkoutStore } from '../stores/createWorkoutStore.js'
+import { initStores } from './_stores.js'
+import { drainPendingSets } from '../lib/pendingSetsSync.js'
+import { SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
+import {
+  useCompleteSet,
+  useUncompleteSet,
+  useUpdateCompletedSet,
+  useUpdateSetDetails,
+  useUpdateSetVideo,
+  useSyncPendingSets,
+} from './useCompletedSets.js'
 
-// Mock constants
-vi.mock('../lib/constants.js', () => ({
-  QUERY_KEYS: {
-    COMPLETED_SETS: 'completed_sets',
-  },
-}))
+const SESSION = 7
+const SE = 11
+const KEY = `${SE}-1`
+const networkError = () => ({ message: 'TypeError: Failed to fetch', details: '', hint: '', code: '' })
 
-import { useSyncPendingSets, useCompleteSet, useUpdateCompletedSet } from './useCompletedSets.js'
-
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  })
-  return ({ children }) => React.createElement(QueryClientProvider, { client: queryClient }, children)
+function memStorage() {
+  const raw = new Map()
+  return createJSONStorage(() => ({
+    getItem: (k) => (raw.has(k) ? raw.get(k) : null),
+    setItem: (k, v) => { raw.set(k, v) },
+    removeItem: (k) => { raw.delete(k) },
+  }))
 }
 
-describe('useSyncPendingSets', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+let store
+let online
+
+function state() {
+  return store.getState()
+}
+
+function mutateWith(useHook, variables) {
+  const { result } = renderHook(() => useHook())
+  act(() => { result.current.mutate(variables) })
+}
+
+beforeEach(async () => {
+  await drainPendingSets()
+  vi.clearAllMocks()
+  online = true
+  upsertCompletedSet.mockReset().mockImplementation(async (payload) => {
+    if (!online) throw networkError()
+    return { id: `row-${payload.setNumber}` }
+  })
+  deleteCompletedSet.mockReset().mockImplementation(async () => {
+    if (!online) throw networkError()
+  })
+  store = createWorkoutStore(memStorage())
+  initStores({ authStore: null, workoutStore: store })
+  state().startSession(SESSION, null)
+})
+
+describe('useCompleteSet', () => {
+  it('checks the set at once, fires the haptic, and the queue upserts it', async () => {
+    mutateWith(useCompleteSet, { sessionExerciseId: SE, setNumber: 1, weight: 100, repsCompleted: 8, rirActual: 2 })
+
+    expect(state().completedSets[KEY]).toEqual(expect.objectContaining({ weight: 100, repsCompleted: 8, dbId: null }))
+    expect(hapticsMock._onSetComplete).toHaveBeenCalledTimes(1)
+    expect(state().pendingSets[KEY]).toBeDefined()
+
+    await drainPendingSets()
+    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({
+      sessionId: SESSION, sessionExerciseId: SE, setNumber: 1, weight: 100, repsCompleted: 8, rirActual: 2,
+      performedAt: state().completedSets[KEY].completedAt,
+    }))
+    expect(state().completedSets[KEY].dbId).toBe('row-1')
+    expect(state().pendingSets).toEqual({})
   })
 
-  it('llama a onVisibilityChange con una función de callback', () => {
-    const onVisibilityChange = vi.fn().mockReturnValue(() => {})
-    const onConnectivityChange = vi.fn().mockReturnValue(() => {})
+  // Item 4 of #179: the check is in persisted storage from the tap, whatever the network says.
+  it('offline, the check stays and the set waits in the persisted queue', async () => {
+    online = false
+    mutateWith(useCompleteSet, { sessionExerciseId: SE, setNumber: 1, weight: 100 })
+    await drainPendingSets()
 
-    renderHook(
-      () => useSyncPendingSets({ onVisibilityChange, onConnectivityChange }),
-      { wrapper: createWrapper() }
-    )
-
-    expect(onVisibilityChange).toHaveBeenCalledOnce()
-    expect(onVisibilityChange).toHaveBeenCalledWith(expect.any(Function))
+    expect(state().completedSets[KEY]).toBeDefined()
+    expect(state().pendingSets[KEY]).toEqual(expect.objectContaining({ sessionId: SESSION, token: expect.any(String) }))
+    expect(state().pendingSets[KEY].failed).toBeUndefined()
   })
 
-  it('llama a onConnectivityChange con una función de callback', () => {
-    const onVisibilityChange = vi.fn().mockReturnValue(() => {})
-    const onConnectivityChange = vi.fn().mockReturnValue(() => {})
-
-    renderHook(
-      () => useSyncPendingSets({ onVisibilityChange, onConnectivityChange }),
-      { wrapper: createWrapper() }
-    )
-
-    expect(onConnectivityChange).toHaveBeenCalledOnce()
-    expect(onConnectivityChange).toHaveBeenCalledWith(expect.any(Function))
-  })
-
-  it('invoca la limpieza retornada por onVisibilityChange al desmontar', () => {
-    const cleanupSpy = vi.fn()
-    const onVisibilityChange = vi.fn().mockReturnValue(cleanupSpy)
-
-    const { unmount } = renderHook(
-      () => useSyncPendingSets({ onVisibilityChange }),
-      { wrapper: createWrapper() }
-    )
-
-    unmount()
-    expect(cleanupSpy).toHaveBeenCalledOnce()
-  })
-
-  it('invoca la limpieza retornada por onConnectivityChange al desmontar', () => {
-    const cleanupSpy = vi.fn()
-    const onConnectivityChange = vi.fn().mockReturnValue(cleanupSpy)
-
-    const { unmount } = renderHook(
-      () => useSyncPendingSets({ onConnectivityChange }),
-      { wrapper: createWrapper() }
-    )
-
-    unmount()
-    expect(cleanupSpy).toHaveBeenCalledOnce()
-  })
-
-  it('no falla cuando no se proveen callbacks', () => {
-    expect(() => {
-      renderHook(
-        () => useSyncPendingSets(),
-        { wrapper: createWrapper() }
-      )
-    }).not.toThrow()
-  })
-
-  it('no registra listeners cuando los callbacks no se proveen', () => {
-    const onVisibilityChange = vi.fn()
-    const onConnectivityChange = vi.fn()
-
-    renderHook(
-      () => useSyncPendingSets(),
-      { wrapper: createWrapper() }
-    )
-
-    expect(onVisibilityChange).not.toHaveBeenCalled()
-    expect(onConnectivityChange).not.toHaveBeenCalled()
-  })
-
-  it('el callback de visibilidad puede invocar syncPending sin errores', async () => {
-    const { upsertCompletedSet } = await import('../api/workoutApi.js')
-    const { getWorkoutStore } = await import('./_stores.js')
-
-    // Simular sets pendientes
-    const pendingPayload = {
-      sessionId: 'session-123',
-      sessionExerciseId: 'ex-1',
-      setNumber: 1,
-      weight: 100,
-      weightUnit: 'kg',
-      repsCompleted: 5,
-    }
-    getWorkoutStore.mockReturnValue({
-      getState: vi.fn(() => ({
-        pendingSets: { 'ex-1-1': pendingPayload },
-        updateSetDbId: vi.fn(),
-        removePendingSet: vi.fn(),
-      })),
-    })
-
-    let capturedCallback = null
-    const onVisibilityChange = vi.fn().mockImplementation((cb) => {
-      capturedCallback = cb
-      return () => {}
-    })
-
-    renderHook(
-      () => useSyncPendingSets({ onVisibilityChange }),
-      { wrapper: createWrapper() }
-    )
-
-    expect(capturedCallback).not.toBeNull()
-
-    await act(async () => {
-      await capturedCallback()
-    })
-
-    expect(upsertCompletedSet).toHaveBeenCalled()
-  })
-
-  // issue #11: la cola offline debe reenviar level y caloriesBurned al upsert
-  it('reenvía level y caloriesBurned al sincronizar sets pendientes', async () => {
-    const { upsertCompletedSet } = await import('../api/workoutApi.js')
-    const { getWorkoutStore } = await import('./_stores.js')
-
-    const pendingPayload = {
-      sessionId: 'session-123',
-      sessionExerciseId: 'ex-2',
-      setNumber: 1,
-      level: 8,
-      caloriesBurned: 120,
-    }
-    getWorkoutStore.mockReturnValue({
-      getState: vi.fn(() => ({
-        pendingSets: { 'ex-2-1': pendingPayload },
-        updateSetDbId: vi.fn(),
-        removePendingSet: vi.fn(),
-      })),
-    })
-
-    let capturedCallback = null
-    const onVisibilityChange = vi.fn().mockImplementation((cb) => {
-      capturedCallback = cb
-      return () => {}
-    })
-
-    renderHook(
-      () => useSyncPendingSets({ onVisibilityChange }),
-      { wrapper: createWrapper() }
-    )
-
-    await act(async () => {
-      await capturedCallback()
-    })
-
-    expect(upsertCompletedSet).toHaveBeenCalledWith(
-      expect.objectContaining({ level: 8, caloriesBurned: 120 })
-    )
+  it('keeps the same mutate across renders', () => {
+    const { result, rerender } = renderHook(() => useCompleteSet())
+    const first = result.current.mutate
+    rerender()
+    expect(result.current.mutate).toBe(first)
   })
 })
 
-describe('performedAt', () => {
-  const completedAt = '2026-01-01T10:00:00.000Z'
+describe('useUncompleteSet', () => {
+  // Item 3 of #179: unchecking offline used to leave the check on, with no message.
+  it('unchecks at once, also offline, and the queue deletes the row when it can', async () => {
+    mutateWith(useCompleteSet, { sessionExerciseId: SE, setNumber: 1, weight: 100 })
+    await drainPendingSets()
+    online = false
 
-  beforeEach(async () => {
-    vi.clearAllMocks()
-    const { getWorkoutStore } = await import('./_stores.js')
-    getWorkoutStore.mockReturnValue({
-      getState: vi.fn(() => ({
-        pendingSets: {},
-        completedSets: { 'ex-1-1': { completedAt } },
-        removePendingSet: vi.fn(),
-      })),
-    })
+    mutateWith(useUncompleteSet, { sessionExerciseId: SE, setNumber: 1 })
+    expect(state().completedSets[KEY]).toBeUndefined()
+    await drainPendingSets()
+    expect(state().pendingSets[KEY]).toBeDefined()
+
+    online = true
+    deleteCompletedSet.mockClear()
+    await drainPendingSets()
+    expect(deleteCompletedSet).toHaveBeenCalledWith({ sessionId: SESSION, sessionExerciseId: SE, setNumber: 1 })
+    expect(state().pendingSets).toEqual({})
+  })
+})
+
+describe('useUpdateCompletedSet', () => {
+  it('edits the values in place and upserts them with the original time', async () => {
+    mutateWith(useCompleteSet, { sessionExerciseId: SE, setNumber: 1, weight: 100, repsCompleted: 8 })
+    await drainPendingSets()
+    const { completedAt } = state().completedSets[KEY]
+    upsertCompletedSet.mockClear()
+
+    mutateWith(useUpdateCompletedSet, { sessionExerciseId: SE, setNumber: 1, weight: 102, repsCompleted: 8 })
+    await drainPendingSets()
+
+    expect(state().completedSets[KEY].weight).toBe(102)
+    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({ weight: 102, performedAt: completedAt }))
   })
 
-  it('completar manda la hora del store como performedAt', async () => {
-    const { upsertCompletedSet } = await import('../api/workoutApi.js')
-    const { result } = renderHook(() => useCompleteSet(), { wrapper: createWrapper() })
+  it('on a set that is not checked, sends nothing', async () => {
+    mutateWith(useUpdateCompletedSet, { sessionExerciseId: SE, setNumber: 1, weight: 102 })
+    await drainPendingSets()
 
-    await act(async () => {
-      await result.current.mutateAsync({ sessionExerciseId: 'ex-1', setNumber: 1, weight: 100 })
-    })
+    expect(state().pendingSets).toEqual({})
+    expect(upsertCompletedSet).not.toHaveBeenCalled()
+    expect(deleteCompletedSet).not.toHaveBeenCalled()
+  })
+})
 
-    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({ performedAt: completedAt }))
+describe('useUpdateSetDetails', () => {
+  // Acceptance 11 of #179: the old UPDATE hit no row while the upsert was still queued.
+  it('on a set whose upsert has not landed, the upsert that lands carries the new RIR and notes', async () => {
+    online = false
+    mutateWith(useCompleteSet, { sessionExerciseId: SE, setNumber: 1, weight: 100, repsCompleted: 8, rirActual: null })
+    await drainPendingSets()
+
+    mutateWith(useUpdateSetDetails, { sessionExerciseId: SE, setNumber: 1, rirActual: 1, notes: 'heavy', setType: 'dropset' })
+    await drainPendingSets()
+
+    online = true
+    upsertCompletedSet.mockClear()
+    await drainPendingSets()
+    expect(upsertCompletedSet).toHaveBeenCalledTimes(1)
+    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({
+      weight: 100, rirActual: 1, notes: 'heavy', setType: 'dropset',
+    }))
+    expect(state().pendingSets).toEqual({})
   })
 
-  // Si el insert sigue pendiente offline, esta edición lo sustituye en la cola: tiene que llevar la hora
-  it('editar manda la misma hora que el insert', async () => {
-    const { upsertCompletedSet } = await import('../api/workoutApi.js')
-    const { result } = renderHook(() => useUpdateCompletedSet(), { wrapper: createWrapper() })
+  it('on a set that is not checked, sends nothing', async () => {
+    mutateWith(useUpdateSetDetails, { sessionExerciseId: SE, setNumber: 1, rirActual: 1, notes: null })
+    await drainPendingSets()
+    expect(upsertCompletedSet).not.toHaveBeenCalled()
+  })
+})
 
-    await act(async () => {
-      await result.current.mutateAsync({ sessionExerciseId: 'ex-1', setNumber: 1, weight: 102 })
-    })
+describe('useUpdateSetVideo', () => {
+  it('stores the video and the queued upsert carries it, also to remove it', async () => {
+    mutateWith(useCompleteSet, { sessionExerciseId: SE, setNumber: 1, weight: 100 })
+    await drainPendingSets()
+    upsertCompletedSet.mockClear()
 
-    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({ performedAt: completedAt }))
+    mutateWith(useUpdateSetVideo, { sessionExerciseId: SE, setNumber: 1, videoUrl: 'videos/a.mp4' })
+    await drainPendingSets()
+    expect(state().completedSets[KEY].videoUrl).toBe('videos/a.mp4')
+    expect(upsertCompletedSet).toHaveBeenLastCalledWith(expect.objectContaining({ videoUrl: 'videos/a.mp4' }))
+
+    mutateWith(useUpdateSetVideo, { sessionExerciseId: SE, setNumber: 1, videoUrl: null })
+    await drainPendingSets()
+    expect(upsertCompletedSet).toHaveBeenLastCalledWith(expect.objectContaining({ videoUrl: null }))
+  })
+})
+
+describe('useSyncPendingSets', () => {
+  function queueOffline() {
+    online = false
+    mutateWith(useCompleteSet, { sessionExerciseId: SE, setNumber: 1, weight: 100 })
+    return drainPendingSets()
+  }
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
-  it('sincronizar reenvía la performedAt encolada', async () => {
-    const { upsertCompletedSet } = await import('../api/workoutApi.js')
-    const { getWorkoutStore } = await import('./_stores.js')
-    getWorkoutStore.mockReturnValue({
-      getState: vi.fn(() => ({
-        pendingSets: { 'ex-1-1': { sessionId: 's', sessionExerciseId: 'ex-1', setNumber: 1, performedAt: completedAt } },
-        updateSetDbId: vi.fn(),
-        removePendingSet: vi.fn(),
-      })),
-    })
-    let capturedCallback = null
-    const onVisibilityChange = vi.fn().mockImplementation((cb) => { capturedCallback = cb; return () => {} })
-    renderHook(() => useSyncPendingSets({ onVisibilityChange }), { wrapper: createWrapper() })
+  it('subscribes to visibility and connectivity, and unsubscribes on unmount', () => {
+    const offVisibility = vi.fn()
+    const offConnectivity = vi.fn()
+    const onVisibilityChange = vi.fn(() => offVisibility)
+    const onConnectivityChange = vi.fn(() => offConnectivity)
 
-    await act(async () => { await capturedCallback() })
+    const { unmount } = renderHook(() => useSyncPendingSets({ onVisibilityChange, onConnectivityChange }))
+    expect(onVisibilityChange).toHaveBeenCalledWith(expect.any(Function))
+    expect(onConnectivityChange).toHaveBeenCalledWith(expect.any(Function))
 
-    expect(upsertCompletedSet).toHaveBeenCalledWith(expect.objectContaining({ performedAt: completedAt }))
+    unmount()
+    expect(offVisibility).toHaveBeenCalledOnce()
+    expect(offConnectivity).toHaveBeenCalledOnce()
+  })
+
+  it('works without platform callbacks', () => {
+    expect(() => renderHook(() => useSyncPendingSets())).not.toThrow()
+  })
+
+  it('drains the queue when the app comes back to the foreground', async () => {
+    await queueOffline()
+    let onVisible
+    renderHook(() => useSyncPendingSets({ onVisibilityChange: (cb) => { onVisible = cb; return () => {} } }))
+    await drainPendingSets()
+
+    online = true
+    upsertCompletedSet.mockClear()
+    await act(async () => { await onVisible() })
+    expect(upsertCompletedSet).toHaveBeenCalledTimes(1)
+    expect(state().pendingSets).toEqual({})
+  })
+
+  it('drains the queue when the connection returns', async () => {
+    await queueOffline()
+    let onOnline
+    renderHook(() => useSyncPendingSets({ onConnectivityChange: (cb) => { onOnline = cb; return () => {} } }))
+    await drainPendingSets()
+
+    online = true
+    await act(async () => { await onOnline() })
+    expect(state().pendingSets).toEqual({})
+  })
+
+  it('retries on an interval while sets are queued', async () => {
+    await queueOffline()
+    vi.useFakeTimers()
+    renderHook(() => useSyncPendingSets())
+    await act(async () => { await vi.advanceTimersByTimeAsync(0) })
+
+    online = true
+    upsertCompletedSet.mockClear()
+    await act(async () => { await vi.advanceTimersByTimeAsync(SYNC_RETRY_INTERVAL_MS) })
+    expect(upsertCompletedSet).toHaveBeenCalledTimes(1)
+    expect(state().pendingSets).toEqual({})
+  })
+
+  it('returns how many queued sets a drain will still try', async () => {
+    await queueOffline()
+    state().markSetDirty(SE, 2)
+    state().markPendingSetFailed(SE, 2, state().pendingSets[`${SE}-2`].token)
+
+    const { result } = renderHook(() => useSyncPendingSets())
+    expect(result.current).toBe(1)
   })
 })

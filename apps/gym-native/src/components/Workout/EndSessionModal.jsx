@@ -9,7 +9,9 @@ import { shouldWarnIdleSession, getLastSetEndChoice, IDLE_SESSION_WARNING_MINUTE
 
 const END_CHOICE = { LAST_SET: 'lastSet', NOW: 'now' }
 
-export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending, error = null, setsPending = 0, lastSetAt = null, isLastSetResolved = false }) {
+// `discardableSetsCount`: sets the server rejected that the user may finish without (issue #179).
+// Above 0 it offers that choice, which confirms with `discardUnsavedSets: true`.
+export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending, error = null, setsPending = 0, lastSetAt = null, isLastSetResolved = false, discardableSetsCount = 0 }) {
   const { t } = useTranslation()
   const { value: showSessionNotes } = usePreference('show_session_notes')
   const [notes, setNotes] = useState('')
@@ -18,11 +20,12 @@ export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending,
   const showIdleWarning = isOpen && isLastSetResolved && shouldWarnIdleSession(lastSetAt)
   const lastSetChoice = showIdleWarning ? getLastSetEndChoice(lastSetAt) : null
 
-  const handleConfirm = () => {
+  const handleConfirm = ({ discardUnsavedSets = false } = {}) => {
     onConfirm({
       overallFeeling: null,
       notes: notes.trim() || null,
       completedAt: showIdleWarning && endChoice === END_CHOICE.LAST_SET ? lastSetAt : undefined,
+      discardUnsavedSets,
     })
   }
 
@@ -107,11 +110,22 @@ export default function EndSessionModal({ isOpen, onClose, onConfirm, isPending,
 
       <SaveStatus isPending={isPending} error={error} className="mb-5" />
 
+      {discardableSetsCount > 0 && (
+        <Button
+          variant="danger"
+          className="mb-3"
+          onPress={() => handleConfirm({ discardUnsavedSets: true })}
+          disabled={isPending}
+        >
+          {t('workout:session.unsavedSetsDiscard', { count: discardableSetsCount })}
+        </Button>
+      )}
+
       <View className="flex-row gap-3">
         <Button variant="secondary" className="flex-1" onPress={handleClose} disabled={isPending}>
           {t('common:buttons.cancel')}
         </Button>
-        <Button className="flex-1" onPress={handleConfirm} loading={isPending}>
+        <Button className="flex-1" onPress={() => handleConfirm()} loading={isPending}>
           {t('workout:session.end')}
         </Button>
       </View>

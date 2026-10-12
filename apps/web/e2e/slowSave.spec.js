@@ -26,6 +26,10 @@ const ADD_RPC = '**/rest/v1/rpc/add_session_exercise'
 const SLOW_TEXT = 'Conexión lenta, sigo intentándolo...'
 const ADD_FAILED = 'No se pudo añadir el ejercicio. Inténtalo de nuevo.'
 const END_FAILED = 'No se pudo finalizar el entrenamiento. Inténtalo de nuevo.'
+const UNSAVED_NETWORK = 'Hay 1 serie sin guardar todavía. Inténtalo de nuevo cuando tengas cobertura.'
+const UNSAVED_REJECTED = 'No se pudo guardar 1 serie. Puedes terminar sin ella.'
+const FINISH_WITHOUT = 'Terminar sin ella'
+const SET_WRITES = '**/rest/v1/completed_sets*'
 const SCOPE_TITLE = '¿Solo hoy o también en la rutina?'
 const ADD_TITLE = 'Añadir ejercicio'
 // Playwright's default `expect` timeout is 5 s, the same as the slow threshold.
@@ -251,29 +255,110 @@ test.describe('Free workout: the add modal shows the failure', () => {
   })
 })
 
+/**
+ * Checks the `index`-th set of the first card (it starts expanded), which needs weight and reps.
+ * Without a completed set the finish button is disabled.
+ */
+async function completeSet(page, index) {
+  const inputs = page.locator('main input')
+  await inputs.nth(index * 2).fill('50')
+  await inputs.nth(index * 2 + 1).fill('10')
+  // After the first, the button of a checked set reads "unmark": the first "complete" is the next set.
+  await page.getByRole('button', { name: 'Completar serie' }).first().click()
+  // The rest timer opens full screen over the page: tapping above its sheet minimizes it.
+  await tapOutside(page)
+}
+
+/** Waits for the queued upsert of a set to land (issue #179: checking a set no longer awaits it). */
+function setSaved(page) {
+  return page.waitForResponse(response => response.url().includes('/rest/v1/completed_sets')
+    && response.request().method() === 'POST' && response.ok())
+}
+
+async function openEndModal(page) {
+  await page.getByRole('button', { name: 'Terminar entrenamiento' }).click()
+  return modal(page, 'Finalizar entrenamiento')
+}
+
 test.describe('Ending the workout', () => {
   test('a failed end shows the error in the end modal, and "Hecho" again ends the workout', async ({ page }) => {
     await startRoutineSession(page)
 
-    // A completed set: without one the finish button is disabled. The first card starts expanded.
-    const inputs = page.locator('main input')
-    await inputs.nth(0).fill('50')
-    await inputs.nth(1).fill('10')
-    await page.getByRole('button', { name: 'Completar serie' }).first().click()
-    // The rest timer opens full screen over the page: tapping above its sheet minimizes it.
-    await tapOutside(page)
+    // The set's own write lands first: the failure under test is the end's, not a queued set's.
+    const saved = setSaved(page)
+    await completeSet(page, 0)
+    await saved
 
     const failWrites = route => (route.request().method() === 'GET' ? route.continue() : route.abort())
     await page.route('**/rest/v1/**', failWrites)
 
-    await page.getByRole('button', { name: 'Terminar entrenamiento' }).click()
-    const endModal = modal(page, 'Finalizar entrenamiento')
+    const endModal = await openEndModal(page)
     await endModal.getByRole('button', { name: 'Hecho' }).click()
 
     await expect(endModal.getByText(END_FAILED)).toBeVisible()
 
     await page.unroute('**/rest/v1/**', failWrites)
     await endModal.getByRole('button', { name: 'Hecho' }).click()
+    await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
+  })
+
+  // Issue #179: ending waits for the queued sets. Without network it says so and keeps the workout.
+  test('a set not saved yet keeps the workout open, and it ends once the set gets through', async ({ page }) => {
+    await startRoutineSession(page)
+    const abortSetWrites = route => (route.request().method() === 'GET' ? route.continue() : route.abort())
+    await page.route(SET_WRITES, abortSetWrites)
+    await completeSet(page, 0)
+
+    const endModal = await openEndModal(page)
+    await endModal.getByRole('button', { name: 'Hecho' }).click()
+
+    await expect(endModal.getByText(UNSAVED_NETWORK)).toBeVisible()
+    await expect(endModal.getByRole('button', { name: FINISH_WITHOUT })).toHaveCount(0)
+    await expectNoToast(page)
+
+    await page.unroute(SET_WRITES, abortSetWrites)
+    await endModal.getByRole('button', { name: 'Hecho' }).click()
+    await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
+  })
+
+  // Offline for the browser, not just aborted requests: TanStack's default networkMode would pause
+  // the end before it runs, and the modal would wait for the network instead of saying why.
+  test('offline, ending says the set is not saved yet instead of waiting for the network', async ({ page, context }) => {
+    await startRoutineSession(page)
+    await context.setOffline(true)
+    await completeSet(page, 0)
+
+    const endModal = await openEndModal(page)
+    await endModal.getByRole('button', { name: 'Hecho' }).click()
+    await expect(endModal.getByText(UNSAVED_NETWORK)).toBeVisible()
+
+    await context.setOffline(false)
+    await endModal.getByRole('button', { name: 'Hecho' }).click()
+    await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
+  })
+
+  test('a set the server rejects can be left out: the end modal offers finishing without it', async ({ page }) => {
+    await startRoutineSession(page)
+    const saved = setSaved(page)
+    await completeSet(page, 0)
+    await saved
+
+    // A PostgREST error with a code: the server answered, so retrying the same set would not help.
+    await page.route(SET_WRITES, route => (route.request().method() === 'POST'
+      ? route.fulfill({
+        status: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        contentType: 'application/json',
+        body: JSON.stringify({ code: '23514', message: 'rejected by the e2e', details: null, hint: null }),
+      })
+      : route.continue()))
+    await completeSet(page, 1)
+
+    const endModal = await openEndModal(page)
+    await endModal.getByRole('button', { name: 'Hecho' }).click()
+    await expect(endModal.getByText(UNSAVED_REJECTED)).toBeVisible()
+
+    await endModal.getByRole('button', { name: FINISH_WITHOUT }).click()
     await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
   })
 })
