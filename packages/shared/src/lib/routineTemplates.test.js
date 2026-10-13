@@ -105,6 +105,13 @@ describe('i18n de plantillas', () => {
       expect(loc.templates?.tagBodyweight).toBeTruthy()
     }
   })
+
+  // endurance-circuit is muscular endurance: the template tag and the goal selector must not
+  // drift back to a bare "Endurance", which also reads as running or cycling.
+  it('the endurance tag says the same as the endurance goal option, in es and en', () => {
+    for (const loc of [esRoutine, enRoutine])
+      expect(loc.templates.goalTags.endurance).toBe(loc.chatbot.goals.endurance)
+  })
 })
 
 describe('getTemplateDisplay / getTemplateImportData', () => {

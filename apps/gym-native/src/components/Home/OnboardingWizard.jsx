@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, Check, Sparkles, Info } from 'lucide-react-native'
+import { ChevronLeft, ChevronRight, Check, Sparkles } from 'lucide-react-native'
 import {
   ROUTINE_TEMPLATES,
-  GOAL_OPTIONS,
   LEVEL_OPTIONS,
   EQUIPMENT_OPTIONS,
   recommendTemplate,
+  formatGoalGuidance,
   getTemplateDaysNote,
   getTemplateDisplay,
   getNotifier,
@@ -15,13 +15,17 @@ import {
 import { useCreateRoutineFromTemplate } from '../../hooks/useRoutines'
 import { Modal, LoadingSpinner } from '../ui'
 import { colors } from '../../lib/styles'
+import OnboardingGoalStep from './OnboardingGoalStep'
+import OnboardingNote from './OnboardingNote'
 
 const TOTAL_STEPS = 5
 
 /**
- * Onboarding de primer uso (native): 4 preguntas → recomienda e instancia una plantilla,
- * la fija como favorita (para que aparezca en "Entrenamiento de hoy") y marca el flag.
- * Se monta solo cuando useOnboardingGate().shouldShow es true.
+ * First-use onboarding (native): 4 questions → recommends and creates a template, pins it as
+ * favorite (so it shows in "Today's workout") and sets the flag. Mounted only when
+ * useOnboardingGate().shouldShow.
+ * Goals are asked last: whether a goal has a routine of its own depends on the days, level and
+ * equipment, so the goal step can only mark the ones that do not once those are answered.
  */
 function OnboardingWizard({ onComplete }) {
   const { t } = useTranslation()
@@ -29,16 +33,11 @@ function OnboardingWizard({ onComplete }) {
 
   const [open, setOpen] = useState(true)
   const [step, setStep] = useState(1)
-  const [answers, setAnswers] = useState({ objetivo: '', diasPorSemana: '', nivelExperiencia: '', equipamiento: '' })
+  const [answers, setAnswers] = useState({ objetivos: [], diasPorSemana: '', nivelExperiencia: '', equipamiento: '' })
   const [selectedId, setSelectedId] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const { templateId: recommendedId } = recommendTemplate({
-    objetivos: [answers.objetivo],
-    diasPorSemana: answers.diasPorSemana,
-    nivelExperiencia: answers.nivelExperiencia,
-    equipamiento: answers.equipamiento,
-  })
+  const { templateId: recommendedId, guidance } = recommendTemplate(answers)
   const activeId = selectedId ?? recommendedId
   const recommendedTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === recommendedId)
   // La recomendada primero: es lo primero visible en el paso final, sin scroll.
@@ -51,10 +50,10 @@ function OnboardingWizard({ onComplete }) {
   const daysNote = getTemplateDaysNote(activeTemplate, answers.diasPorSemana)
 
   const canNext =
-    (step === 1 && answers.objetivo) ||
-    (step === 2 && answers.diasPorSemana) ||
-    (step === 3 && answers.nivelExperiencia) ||
-    (step === 4 && answers.equipamiento)
+    (step === 1 && answers.diasPorSemana) ||
+    (step === 2 && answers.nivelExperiencia) ||
+    (step === 3 && answers.equipamiento) ||
+    (step === 4 && answers.objetivos.length > 0)
 
   const finish = () => { onComplete(); setOpen(false) }
 
@@ -70,7 +69,6 @@ function OnboardingWizard({ onComplete }) {
     }
   }
 
-  const GOALS = GOAL_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey) }))
   const LEVELS = LEVEL_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey), desc: t(o.descKey) }))
   const EQUIPMENTS = EQUIPMENT_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey), desc: t(o.descKey) }))
 
@@ -104,21 +102,7 @@ function OnboardingWizard({ onComplete }) {
                 <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700' }}>{t('routine:onboarding.welcomeTitle')}</Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 4 }}>{t('routine:onboarding.welcomeSubtitle')}</Text>
               </View>
-              <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600', marginTop: 4 }}>{t('routine:chatbot.goalQuestion')}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {GOALS.map(g => (
-                  <Pressable key={g.value} onPress={() => setAnswers(a => ({ ...a, objetivo: g.value }))}
-                    style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: answers.objetivo === g.value ? colors.successBg : colors.bgTertiary, borderWidth: 1, borderColor: answers.objetivo === g.value ? colors.success : colors.border }}>
-                    <Text style={{ fontSize: 13, color: answers.objetivo === g.value ? colors.success : colors.textPrimary }}>{g.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600' }}>{t('routine:chatbot.daysPerWeek')}</Text>
+              <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600', marginTop: 4 }}>{t('routine:chatbot.daysPerWeek')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {[1, 2, 3, 4, 5, 6, 7].map(n => (
                   <Pressable key={n} onPress={() => setAnswers(a => ({ ...a, diasPorSemana: String(n) }))}
@@ -130,7 +114,7 @@ function OnboardingWizard({ onComplete }) {
             </>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <>
               <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600' }}>{t('routine:chatbot.experience')}</Text>
               <View style={{ gap: 8 }}>
@@ -145,7 +129,7 @@ function OnboardingWizard({ onComplete }) {
             </>
           )}
 
-          {step === 4 && (
+          {step === 3 && (
             <>
               <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600' }}>{t('routine:onboarding.equipmentQuestion')}</Text>
               <View style={{ gap: 8 }}>
@@ -160,19 +144,27 @@ function OnboardingWizard({ onComplete }) {
             </>
           )}
 
+          {step === 4 && (
+            <OnboardingGoalStep
+              answers={answers}
+              recommendedTemplate={recommendedTemplate}
+              onChange={objetivos => setAnswers(a => ({ ...a, objetivos }))}
+            />
+          )}
+
           {step === 5 && (
             <>
               <View>
                 <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('routine:onboarding.recommendedTitle')}</Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 4 }}>{t('routine:onboarding.recommendedSubtitle')}</Text>
               </View>
+              {guidance && (
+                <OnboardingNote>{formatGoalGuidance(guidance, recommendedTemplate, t)}</OnboardingNote>
+              )}
               {daysNote && (
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderRadius: 8, backgroundColor: colors.bgTertiary, borderWidth: 1, borderColor: colors.border }}>
-                  <Info size={14} color={colors.textMuted} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.textSecondary, fontSize: 12, flex: 1 }}>
-                    {t(`routine:onboarding.daysNote.${daysNote}`, { requested: Number(answers.diasPorSemana), actual: activeTemplate.daysPerWeek, min: activeTemplate.minDays })}
-                  </Text>
-                </View>
+                <OnboardingNote>
+                  {t(`routine:onboarding.daysNote.${daysNote}`, { requested: Number(answers.diasPorSemana), actual: activeTemplate.daysPerWeek, min: activeTemplate.minDays })}
+                </OnboardingNote>
               )}
               <View style={{ gap: 8 }}>
                 {orderedTemplates.map(template => {

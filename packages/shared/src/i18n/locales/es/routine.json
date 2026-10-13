@@ -121,7 +121,7 @@
     "goalTags": {
       "hypertrophy": "Hipertrofia",
       "strength": "Fuerza",
-      "endurance": "Resistencia",
+      "endurance": "Resistencia muscular",
       "general": "General"
     },
     "items": {
@@ -190,6 +190,15 @@
       "tooFew": "Esta rutina necesita al menos {{min}} días a la semana y tienes {{requested}}."
     },
     "equipmentQuestion": "¿Dónde vas a entrenar?",
+    "goalQuestion": "¿Qué buscas con el entrenamiento?",
+    "goalHint": "Puedes marcar hasta {{max}}.",
+    "goalMaxReached": "Ya tienes {{max}} marcados. Desmarca uno para elegir otro.",
+    "guidance": {
+      "noTemplate": "No hay una rutina pensada para \"{{goal}}\". Te recomendamos {{template}}.",
+      "equipment": "No hay una rutina de \"{{goal}}\" con el equipo que tienes. Te recomendamos {{template}}.",
+      "level": "Las rutinas de \"{{goal}}\" son para un nivel más avanzado que el tuyo. Te recomendamos {{template}}.",
+      "days": "Una rutina de \"{{goal}}\" necesita al menos {{minDays}} días a la semana, y tienes {{days}}. Te recomendamos {{template}}."
+    },
     "equipment": {
       "full": "Gimnasio completo",
       "fullDesc": "Barras, mancuernas y máquinas",
@@ -227,8 +236,7 @@
       "hypertrophy": "Hipertrofia",
       "strength": "Fuerza",
       "fatLoss": "Pérdida de grasa",
-      "endurance": "Resistencia",
-      "maintenance": "Mantenimiento",
+      "endurance": "Resistencia muscular",
       "general": "Acondicionamiento general"
     },
     "levels": {

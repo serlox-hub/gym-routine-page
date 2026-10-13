@@ -469,6 +469,7 @@ Extract when logic:
 | Form de config de ejercicio en rutina/sesión | `routineExerciseForm.js` | `buildExerciseConfigForm()`, `validateExerciseConfigForm()`, `parseExerciseConfigForm()` |
 | Form de override de ejercicio del sistema (notas + unidad) | `exerciseOverrideForm.js` | `buildExerciseOverrideForm()` |
 | AI prompts / routine JSON format (with the system catalog, and whether the prompt can be copied yet) / parsing the routine JSON the user pastes or uploads | `routineIO.js` | `buildChatbotPrompt()`, `ROUTINE_JSON_FORMAT`, `formatExerciseCatalog()`, `getPromptCatalogStatus()`, `parseRoutineJson()` |
+| Onboarding recommendation (the funnel, up to two goals, why a goal falls back, which goal chips are dimmed or blocked, the days note) | `recommendTemplate.js`, `routineWizardOptions.js` | `recommendTemplate()`, `getGoalGuidance()`, `formatGoalGuidance()`, `getGoalChips()`, `getTemplateDaysNote()`, `toggleGoal()` |
 | Matching ejercicio→catálogo (import) | `exerciseMatch.js` | `normalizeExerciseName()`, `buildExerciseIndex()`, `resolveExerciseId()` |
 | Gesto de fila (swipe para borrar) | `swipeGesture.js` | `shouldClaimSwipe()`, `clampSwipeOffset()` |
 | Past session → new routine day (History) | `sessionToRoutineDay.js` | `buildRoutineDayFromSession()`, `getConvertToRoutineDayState()`, `getRoutineDayErrorKey()` |

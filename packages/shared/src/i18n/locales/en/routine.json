@@ -121,7 +121,7 @@
     "goalTags": {
       "hypertrophy": "Hypertrophy",
       "strength": "Strength",
-      "endurance": "Endurance",
+      "endurance": "Muscular endurance",
       "general": "General"
     },
     "items": {
@@ -190,6 +190,15 @@
       "tooFew": "This routine needs at least {{min}} days a week and you have {{requested}}."
     },
     "equipmentQuestion": "Where will you train?",
+    "goalQuestion": "What are you training for?",
+    "goalHint": "You can pick up to {{max}}.",
+    "goalMaxReached": "You already picked {{max}}. Unpick one to choose another.",
+    "guidance": {
+      "noTemplate": "There's no routine built for \"{{goal}}\". We recommend {{template}}.",
+      "equipment": "There's no \"{{goal}}\" routine for the equipment you have. We recommend {{template}}.",
+      "level": "\"{{goal}}\" routines are for a more advanced level than yours. We recommend {{template}}.",
+      "days": "A \"{{goal}}\" routine needs at least {{minDays}} days a week, and you have {{days}}. We recommend {{template}}."
+    },
     "equipment": {
       "full": "Full gym",
       "fullDesc": "Barbells, dumbbells and machines",
@@ -227,8 +236,7 @@
       "hypertrophy": "Hypertrophy",
       "strength": "Strength",
       "fatLoss": "Fat loss",
-      "endurance": "Endurance",
-      "maintenance": "Maintenance",
+      "endurance": "Muscular endurance",
       "general": "General conditioning"
     },
     "levels": {
