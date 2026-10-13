@@ -33,6 +33,14 @@ const minutesAgo = minutes => new Date(Date.now() - minutes * 60000).toISOString
 describe('EndSessionModal — aviso de sesión inactiva', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Mediodía local fijo: con el reloj real, "hace 90 minutos" cae en el día anterior si la
+    // suite corre entre las 00:00 y las 01:30, y la opción pasa a nombrar la fecha.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 5, 15, 12, 0))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('no muestra el aviso si la última serie aún no está resuelta (aunque sea antigua)', () => {
