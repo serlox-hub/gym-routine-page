@@ -32,6 +32,18 @@ export const GOAL_OPTIONS = [
   { value: GOAL_VALUES.GENERAL, labelKey: 'routine:chatbot.goals.general' },
 ]
 
+/**
+ * A goal as the user saw it: its translated label, or the value as it is when it is not one of
+ * GOAL_OPTIONS (a custom goal is free text). Takes `t` so a component follows a language change live.
+ * @param {string} goal
+ * @param {Function} t
+ * @returns {string}
+ */
+export function getGoalLabel(goal, t) {
+  const option = GOAL_OPTIONS.find(o => o.value === goal)
+  return option ? t(option.labelKey) : goal
+}
+
 // The onboarding lets the user mark up to two goals. "Crear con IA" still takes one.
 export const MAX_GOALS = 2
 

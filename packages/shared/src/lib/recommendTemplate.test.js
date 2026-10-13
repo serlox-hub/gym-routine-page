@@ -7,6 +7,9 @@ import {
   GOAL_GUIDANCE,
   getTemplateDaysNote,
   TEMPLATE_DAYS_NOTE,
+  formatTemplateDaysNote,
+  getViableTemplates,
+  pickTemplate,
 } from './recommendTemplate.js'
 import { ROUTINE_TEMPLATES } from './routineTemplates.js'
 import { GOAL_VALUES, GOAL_OPTIONS, MAX_GOALS, LEVEL_VALUES, EQUIPMENT_VALUES } from './routineWizardOptions.js'
@@ -267,6 +270,56 @@ describe('recommendTemplate: the funnel (synthetic templates)', () => {
     expect(recommendTemplate(answer({ nivelExperiencia: INTERMEDIATE }), templates).templateId).toBe('b-intermediate')
     expect(recommendTemplate(answer({ nivelExperiencia: ADVANCED }), templates).templateId).toBe('b-intermediate')
     expect(recommendTemplate(answer({ nivelExperiencia: BEGINNER }), templates).templateId).toBe('a-beginner')
+  })
+})
+
+describe('getViableTemplates', () => {
+  it('keeps the declared equipment, no minDays above the days and no level above the declared one', () => {
+    const templates = [
+      fixture('ok'),
+      fixture('bodyweight', { equipment: 'bodyweight' }),
+      fixture('needs-5', { minDays: 5, daysPerWeek: 5 }),
+      fixture('advanced', { level: 'advanced' }),
+    ]
+    const answers = { diasPorSemana: '4', nivelExperiencia: INTERMEDIATE, equipamiento: EQUIPMENT_VALUES.FULL }
+    expect(getViableTemplates(answers, templates).map(tpl => tpl.id)).toEqual(['ok'])
+  })
+
+  it('the goals play no part', () => {
+    const templates = [fixture('general'), fixture('strength', { goal: GOAL_VALUES.STRENGTH })]
+    expect(getViableTemplates({ objetivos: [GOAL_VALUES.STRENGTH] }, templates)).toEqual(templates)
+  })
+
+  it('without answers: the full gym templates, with no day or level limit', () => {
+    const viable = getViableTemplates({})
+    expect(viable.length).toBeGreaterThan(0)
+    expect(viable.every(tpl => tpl.equipment === 'full')).toBe(true)
+    expect(viable).toHaveLength(ROUTINE_TEMPLATES.filter(tpl => tpl.equipment === 'full').length)
+  })
+
+  it('the recommendation always comes from them', () => {
+    for (const equipment of Object.values(EQUIPMENT_VALUES))
+      for (const level of LEVELS)
+        for (const days of DAYS) {
+          const answers = { objetivos: [GOAL_VALUES.HYPERTROPHY], diasPorSemana: days, nivelExperiencia: level, equipamiento: equipment }
+          const viableIds = getViableTemplates(answers).map(tpl => tpl.id)
+          expect(viableIds, `${equipment}/${level}/${days}`).toContain(recommendTemplate(answers).templateId)
+        }
+  })
+})
+
+describe('pickTemplate', () => {
+  it('the first in the funnel order: most days that fit, then the closest level, then id', () => {
+    const candidates = [fixture('b', { daysPerWeek: 4 }), fixture('a', { daysPerWeek: 4 }), fixture('five', { daysPerWeek: 5 })]
+    expect(pickTemplate(candidates, 4).id).toBe('a')
+    expect(pickTemplate(candidates, '7').id).toBe('five')
+  })
+
+  it('null without candidates, and it does not reorder the list it gets', () => {
+    expect(pickTemplate([], 3)).toBeNull()
+    const candidates = [fixture('b'), fixture('a')]
+    pickTemplate(candidates, 3)
+    expect(candidates.map(tpl => tpl.id)).toEqual(['b', 'a'])
   })
 })
 
@@ -611,6 +664,23 @@ describe('getTemplateDaysNote', () => {
     for (const tpl of ROUTINE_TEMPLATES) {
       if (tpl.minDays > 1) expect(getTemplateDaysNote(tpl, tpl.minDays - 1), tpl.id).toBe(TOO_FEW)
       expect(getTemplateDaysNote(tpl, tpl.minDays), tpl.id).not.toBe(TOO_FEW)
+    }
+  })
+})
+
+describe('formatTemplateDaysNote', () => {
+  const fakeT = (key, params) => `${key}${JSON.stringify(params)}`
+
+  it('the note key with the available days and the days of the template it is about', () => {
+    const tpl = fixture('split', { daysPerWeek: 4, minDays: 4 })
+    expect(formatTemplateDaysNote(TEMPLATE_DAYS_NOTE.TOO_FEW, tpl, '3', fakeT))
+      .toBe(`routine:onboarding.daysNote.tooFew${JSON.stringify({ requested: 3, actual: 4, min: 4 })}`)
+  })
+
+  it('every note has its sentence in es and en', () => {
+    for (const note of Object.values(TEMPLATE_DAYS_NOTE)) {
+      expect(esRoutine.onboarding.daysNote[note], note).toEqual(expect.any(String))
+      expect(enRoutine.onboarding.daysNote[note], note).toEqual(expect.any(String))
     }
   })
 })

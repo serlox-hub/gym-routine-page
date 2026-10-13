@@ -1,5 +1,5 @@
 import { ROUTINE_TEMPLATES, getTemplateDisplay } from './routineTemplates.js'
-import { GOAL_VALUES, GOAL_OPTIONS, MAX_GOALS, LEVEL_VALUES, EQUIPMENT_VALUES } from './routineWizardOptions.js'
+import { GOAL_VALUES, GOAL_OPTIONS, MAX_GOALS, LEVEL_VALUES, EQUIPMENT_VALUES, getGoalLabel } from './routineWizardOptions.js'
 
 const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 }
 
@@ -69,6 +69,47 @@ function explainFallback(goal, templates, { fitsEquipment, fitsLevel, days }) {
   return { reasonKey: GOAL_GUIDANCE.DAYS, params: { goal, minDays, days } }
 }
 
+// The answers as the funnel reads them: anything it does not recognize counts as no answer.
+function readAnswers({ objetivos, diasPorSemana, nivelExperiencia, equipamiento } = {}) {
+  const days = parseAvailableDays(diasPorSemana)
+  const levelCeiling = DECLARED_LEVEL_RANK.get(nivelExperiencia) ?? LEVEL_RANK.advanced
+  const equipment = TEMPLATE_EQUIPMENT.get(equipamiento) ?? 'full'
+  const goals = [...new Set(Array.isArray(objetivos) ? objetivos : [])]
+    .filter(goal => KNOWN_GOALS.has(goal))
+    .sort((a, b) => goalSpecificity(a) - goalSpecificity(b))
+  return {
+    days,
+    goals,
+    fitsEquipment: tpl => tpl.equipment === equipment,
+    fitsDays: tpl => days == null || tpl.minDays <= days,
+    fitsLevel: tpl => LEVEL_RANK[tpl.level] <= levelCeiling,
+  }
+}
+
+/**
+ * The templates the user can do: the declared equipment, no `minDays` above the available days and
+ * no level above the declared one (steps 1 to 3 of `recommendTemplate`). The goals play no part.
+ *
+ * @param {object} answers - same as `recommendTemplate`
+ * @param {object[]} [templates]
+ * @returns {object[]}
+ */
+export function getViableTemplates(answers, templates = ROUTINE_TEMPLATES) {
+  const { fitsEquipment, fitsDays, fitsLevel } = readAnswers(answers)
+  return templates.filter(tpl => fitsEquipment(tpl) && fitsDays(tpl) && fitsLevel(tpl))
+}
+
+/**
+ * The first of `candidates` in the funnel's order (`compareCandidates`), or null when there are none.
+ *
+ * @param {object[]} candidates
+ * @param {string|number} [diasPorSemana] - available days per week
+ * @returns {object|null}
+ */
+export function pickTemplate(candidates, diasPorSemana) {
+  return [...candidates].sort(compareCandidates(parseAvailableDays(diasPorSemana)))[0] ?? null
+}
+
 /**
  * Recommends a template from the onboarding answers. A funnel over the template metadata, so a
  * new template needs no change here:
@@ -94,28 +135,16 @@ function explainFallback(goal, templates, { fitsEquipment, fitsLevel, days }) {
  *   a template, then why, for the most specific of them (`params.goal` is its GOAL_VALUES value,
  *   `formatGoalGuidance` turns it into the sentence).
  */
-export function recommendTemplate(
-  { objetivos, diasPorSemana, nivelExperiencia, equipamiento } = {},
-  templates = ROUTINE_TEMPLATES,
-) {
-  const days = parseAvailableDays(diasPorSemana)
-  const levelCeiling = DECLARED_LEVEL_RANK.get(nivelExperiencia) ?? LEVEL_RANK.advanced
-  const equipment = TEMPLATE_EQUIPMENT.get(equipamiento) ?? 'full'
-  const goals = [...new Set(Array.isArray(objetivos) ? objetivos : [])]
-    .filter(goal => KNOWN_GOALS.has(goal))
-    .sort((a, b) => goalSpecificity(a) - goalSpecificity(b))
-
-  const fitsEquipment = tpl => tpl.equipment === equipment
-  const fitsDays = tpl => days == null || tpl.minDays <= days
-  const fitsLevel = tpl => LEVEL_RANK[tpl.level] <= levelCeiling
-  const pool = templates.filter(tpl => fitsEquipment(tpl) && fitsDays(tpl) && fitsLevel(tpl))
+export function recommendTemplate(answers = {}, templates = ROUTINE_TEMPLATES) {
+  const { days, goals, fitsEquipment, fitsLevel } = readAnswers(answers)
+  const pool = getViableTemplates(answers, templates)
   const byGoal = goals
     .map(goal => pool.filter(tpl => tpl.goal === goal))
     .find(goalCandidates => goalCandidates.length > 0)
   const general = pool.filter(tpl => tpl.goal === GOAL_VALUES.GENERAL)
   const candidates = byGoal ?? (general.length ? general : pool)
 
-  const [chosen] = [...candidates].sort(compareCandidates(days))
+  const chosen = pickTemplate(candidates, days)
   return {
     templateId: chosen.id,
     daysShortfall: days == null ? 0 : Math.max(0, days - chosen.daysPerWeek),
@@ -170,10 +199,9 @@ export function getGoalChips(answers = {}, templates = ROUTINE_TEMPLATES) {
  * @returns {string}
  */
 export function formatGoalGuidance(guidance, template, t) {
-  const goalOption = GOAL_OPTIONS.find(o => o.value === guidance.params.goal)
   return t(guidance.reasonKey, {
     ...guidance.params,
-    goal: goalOption ? t(goalOption.labelKey) : guidance.params.goal,
+    goal: getGoalLabel(guidance.params.goal, t),
     template: getTemplateDisplay(template, t).name,
   })
 }
@@ -200,4 +228,21 @@ export function getTemplateDaysNote(template, diasPorSemana) {
   if (template.daysPerWeek > days) return TEMPLATE_DAYS_NOTE.ROTATES
   if (template.daysPerWeek < days) return TEMPLATE_DAYS_NOTE.SPARE
   return null
+}
+
+/**
+ * The days note as a sentence. Takes `t` (useTranslation) so it follows a language change live.
+ *
+ * @param {string} note - a TEMPLATE_DAYS_NOTE value (from `getTemplateDaysNote`)
+ * @param {{ daysPerWeek: number, minDays: number }} template - the template the note is about
+ * @param {string|number} diasPorSemana - available days per week
+ * @param {Function} t
+ * @returns {string}
+ */
+export function formatTemplateDaysNote(note, template, diasPorSemana, t) {
+  return t(`routine:onboarding.daysNote.${note}`, {
+    requested: parseAvailableDays(diasPorSemana),
+    actual: template.daysPerWeek,
+    min: template.minDays,
+  })
 }
