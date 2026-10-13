@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
+import { initI18n } from '../i18n/index.js'
 import { buildChatbotPrompt, buildAdaptRoutinePrompt, formatExerciseCatalog, getPromptCatalogStatus, parseRoutineJson, PROMPT_CATALOG_STATUS, ROUTINE_JSON_FORMAT, ROUTINE_JSON_RULES } from './routineIO.js'
 
 describe('routineIO - funciones puras (shared)', () => {
@@ -66,6 +67,41 @@ describe('routineIO - funciones puras (shared)', () => {
       const prompt = buildChatbotPrompt(params)
 
       expect(prompt).toContain('Hipertrofia')
+    })
+
+    describe('línea del objetivo', () => {
+      afterEach(() => initI18n({ lng: 'es' }))
+
+      it.each([
+        ['Resistencia', 'Resistencia muscular'],
+        ['Salud general', 'Acondicionamiento general'],
+        ['Hipertrofia', 'Hipertrofia'],
+        ['Pérdida de grasa', 'Pérdida de grasa'],
+      ])('escribe el valor %s con la etiqueta que vio el usuario: %s', (objetivo, etiqueta) => {
+        expect(buildChatbotPrompt({ objetivo, diasPorSemana: '3' })).toContain(`- Objetivo: ${etiqueta}\n`)
+      })
+
+      it('sigue el idioma activo', () => {
+        initI18n({ lng: 'en' })
+
+        const prompt = buildChatbotPrompt({ objetivo: 'Resistencia', diasPorSemana: '3' })
+
+        expect(prompt).toContain('- Goal: Muscular endurance\n')
+        expect(prompt).not.toContain('Resistencia')
+      })
+
+      it.each([
+        ['un objetivo libre', 'Correr una maratón en 6 meses'],
+        ['un valor que ya no se ofrece', 'Mantenimiento'],
+        ['una etiqueta ya traducida', 'Resistencia muscular'],
+      ])('deja %s tal cual', (_name, objetivo) => {
+        expect(buildChatbotPrompt({ objetivo, diasPorSemana: '3' })).toContain(`- Objetivo: ${objetivo}\n`)
+      })
+
+      it('sin objetivo no escribe la línea', () => {
+        expect(buildChatbotPrompt({ objetivo: '', diasPorSemana: '3' })).not.toContain('- Objetivo:')
+        expect(buildChatbotPrompt({ diasPorSemana: '3' })).not.toContain('- Objetivo:')
+      })
     })
 
     it('incluye estructura JSON correcta en el prompt', () => {
