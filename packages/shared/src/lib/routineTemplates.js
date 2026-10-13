@@ -21,7 +21,7 @@
  * `template.data` sin pasar por el helper.
  */
 import { BLOCK_NAMES } from './constants.js'
-import { GOAL_VALUES, GOAL_OPTIONS } from './routineWizardOptions.js'
+import { GOAL_VALUES, getGoalLabel } from './routineWizardOptions.js'
 
 // Nombres canónicos del catálogo usados por las plantillas (fuente única para evitar typos)
 const E = {
@@ -400,9 +400,8 @@ const EQUIPMENT_TAG_KEY = {
  */
 export function getTemplateDisplay(template, t) {
   const goalTagKey = GOAL_TAG_KEY[template.goal]
-  const goalOption = GOAL_OPTIONS.find(o => o.value === template.goal)
   const tags = [
-    goalTagKey ? t(goalTagKey) : (goalOption ? t(goalOption.labelKey) : template.goal),
+    goalTagKey ? t(goalTagKey) : getGoalLabel(template.goal, t),
     t('common:home.nDays', { count: template.daysPerWeek }),
   ]
   const equipmentTagKey = EQUIPMENT_TAG_KEY[template.equipment]
@@ -412,6 +411,20 @@ export function getTemplateDisplay(template, t) {
     description: t(`routine:templates.items.${template.id}.description`),
     tags,
   }
+}
+
+// Day names are static Spanish data (`'Día 1 - Fuerza A'`) and translating them is out of scope of
+// #45. Only the prefix goes: the rest can still be Spanish (`Fuerza A`, `Pecho`), as it is in the
+// routine the user creates from the template.
+const DAY_NUMBER_PREFIX = /^Día \d+ - /
+
+/**
+ * The template's days as the onboarding week preview shows them: in order and without the
+ * "Día N - " prefix, which the preview's numbered list makes redundant.
+ * @returns {string[]}
+ */
+export function getTemplateDayNames(template) {
+  return template.data.routine.days.map(day => day.name.replace(DAY_NUMBER_PREFIX, ''))
 }
 
 /**

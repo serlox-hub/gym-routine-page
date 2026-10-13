@@ -199,6 +199,32 @@
       "level": "\"{{goal}}\" routines are for a more advanced level than yours. We recommend {{template}}.",
       "days": "A \"{{goal}}\" routine needs at least {{minDays}} days a week, and you have {{days}}. We recommend {{template}}."
     },
+    "reason": {
+      "hypertrophy": "To build muscle, {{template}} trains different muscles on different days. That way each one gets more work than would fit in a single session.",
+      "strength": "To get stronger, {{template}} focuses on the heavy basics and adds weight little by little.",
+      "endurance": "For muscular endurance, {{template}} chains exercises back to back, with high reps and short rests.",
+      "general": "{{template}} trains your whole body every session. It's the simplest way to get in shape without focusing on just one thing.",
+      "onYourDays": {
+        "hypertrophy": "To build muscle on {{yourDays}} a week, {{template}} trains different muscles on different days. That way each one gets more work than would fit in a single session.",
+        "strength": "To get stronger on {{yourDays}} a week, {{template}} focuses on the heavy basics and adds weight little by little.",
+        "endurance": "For muscular endurance on {{yourDays}} a week, {{template}} chains exercises back to back, with high reps and short rests.",
+        "general": "On {{yourDays}} a week, {{template}} trains your whole body every session. It's the simplest way to get in shape without focusing on just one thing."
+      },
+      "fatLoss": "For fat loss, what you eat matters most. {{template}} trains your whole body and helps you hold on to your muscle meanwhile.",
+      "noTemplate": "There's no routine built for \"{{goal}}\". {{template}} trains your whole body and is a solid base for almost any goal.",
+      "equipment": "\"{{goal}}\" routines need more equipment than you have. {{template}} is built for what you have and trains your whole body every session.",
+      "level": "\"{{goal}}\" routines are for a more advanced level than yours. Until you get there, {{template}} trains your whole body every session, which is what moves you forward fastest at the start.",
+      "days": "A \"{{goal}}\" routine needs at least {{minDays}} days a week, and you have {{days}}. {{template}} trains your whole body every session, so nothing goes untrained."
+    },
+    "weekTitle": "The week",
+    "alternativesTitle": "These could also work for you",
+    "why": {
+      "otherGoal": "If you'd rather put \"{{goal}}\" first.",
+      "fewerDays": "If {{days}} a week suits you better.",
+      "general": "If you'd rather keep it general, without focusing on just one thing."
+    },
+    "seeAll": "See all routines",
+    "othersTitle": "All other routines",
     "equipment": {
       "full": "Full gym",
       "fullDesc": "Barbells, dumbbells and machines",

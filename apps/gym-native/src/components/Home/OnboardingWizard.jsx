@@ -1,22 +1,19 @@
 import { useState } from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, Check, Sparkles } from 'lucide-react-native'
+import { ChevronLeft, ChevronRight } from 'lucide-react-native'
 import {
   ROUTINE_TEMPLATES,
   LEVEL_OPTIONS,
   EQUIPMENT_OPTIONS,
   recommendTemplate,
-  formatGoalGuidance,
-  getTemplateDaysNote,
-  getTemplateDisplay,
   getNotifier,
 } from '@gym/shared'
 import { useCreateRoutineFromTemplate } from '../../hooks/useRoutines'
 import { Modal, LoadingSpinner } from '../ui'
 import { colors } from '../../lib/styles'
 import OnboardingGoalStep from './OnboardingGoalStep'
-import OnboardingNote from './OnboardingNote'
+import OnboardingRecommendationStep from './OnboardingRecommendationStep'
 
 const TOTAL_STEPS = 5
 
@@ -37,17 +34,9 @@ function OnboardingWizard({ onComplete }) {
   const [selectedId, setSelectedId] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const { templateId: recommendedId, guidance } = recommendTemplate(answers)
-  const activeId = selectedId ?? recommendedId
-  const recommendedTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === recommendedId)
-  // La recomendada primero: es lo primero visible en el paso final, sin scroll.
-  const orderedTemplates = [
-    recommendedTemplate,
-    ...ROUTINE_TEMPLATES.filter(tpl => tpl.id !== recommendedId),
-  ]
-  // Sobre la plantilla marcada, no la recomendada: elegir otra a mano cambia la nota.
-  const activeTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === activeId)
-  const daysNote = getTemplateDaysNote(activeTemplate, answers.diasPorSemana)
+  const recommendation = recommendTemplate(answers)
+  const activeId = selectedId ?? recommendation.templateId
+  const recommendedTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === recommendation.templateId)
 
   const canNext =
     (step === 1 && answers.diasPorSemana) ||
@@ -153,55 +142,12 @@ function OnboardingWizard({ onComplete }) {
           )}
 
           {step === 5 && (
-            <>
-              <View>
-                <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('routine:onboarding.recommendedTitle')}</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 4 }}>{t('routine:onboarding.recommendedSubtitle')}</Text>
-              </View>
-              {guidance && (
-                <OnboardingNote>{formatGoalGuidance(guidance, recommendedTemplate, t)}</OnboardingNote>
-              )}
-              {daysNote && (
-                <OnboardingNote>
-                  {t(`routine:onboarding.daysNote.${daysNote}`, { requested: Number(answers.diasPorSemana), actual: activeTemplate.daysPerWeek, min: activeTemplate.minDays })}
-                </OnboardingNote>
-              )}
-              <View style={{ gap: 8 }}>
-                {orderedTemplates.map(template => {
-                  const isSelected = activeId === template.id
-                  const isRecommended = recommendedId === template.id
-                  const { name, tags } = getTemplateDisplay(template, t)
-                  return (
-                    <Pressable key={template.id} onPress={() => setSelectedId(template.id)}
-                      style={{ padding: 14, borderRadius: 12, backgroundColor: colors.bgSecondary, borderWidth: 1, borderColor: isSelected ? colors.success : colors.border }}>
-                      <View style={{ flexDirection: 'row', gap: 12 }}>
-                        <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, marginTop: 2, borderColor: isSelected ? colors.success : colors.border, backgroundColor: isSelected ? colors.success : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                          {isSelected && <Check size={12} color={colors.bgPrimary} />}
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: '600' }}>{name}</Text>
-                            {isRecommended && (
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.successBg, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
-                                <Sparkles size={10} color={colors.success} />
-                                <Text style={{ color: colors.success, fontSize: 11, fontWeight: '600' }}>{t('routine:onboarding.recommendedBadge')}</Text>
-                              </View>
-                            )}
-                          </View>
-                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                            {tags.map(tag => (
-                              <View key={tag} style={{ backgroundColor: colors.bgTertiary, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
-                                <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{tag}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        </View>
-                      </View>
-                    </Pressable>
-                  )
-                })}
-              </View>
-            </>
+            <OnboardingRecommendationStep
+              answers={answers}
+              recommendation={recommendation}
+              activeId={activeId}
+              onSelect={setSelectedId}
+            />
           )}
         </ScrollView>
 

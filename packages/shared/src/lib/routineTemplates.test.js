@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { ROUTINE_TEMPLATES, getTemplateDisplay, getTemplateImportData } from './routineTemplates.js'
+import { ROUTINE_TEMPLATES, getTemplateDisplay, getTemplateImportData, getTemplateDayNames } from './routineTemplates.js'
 import { GOAL_VALUES } from './routineWizardOptions.js'
 import { BLOCK_NAMES } from './constants.js'
 import esRoutine from '../i18n/locales/es/routine.json'
@@ -137,5 +137,28 @@ describe('getTemplateDisplay / getTemplateImportData', () => {
     expect(data.routine.description).toBe('routine:templates.items.full-body.description')
     expect(data.routine.days).toHaveLength(3)
     expect(data.exercises.length).toBeGreaterThan(0)
+  })
+})
+
+describe('getTemplateDayNames', () => {
+  it('lists the days in order without the "Día N - " prefix', () => {
+    const tpl = ROUTINE_TEMPLATES.find(t => t.id === 'upper-lower')
+    expect(getTemplateDayNames(tpl)).toEqual(['Upper (Fuerza)', 'Lower (Fuerza)', 'Upper (Volumen)', 'Lower (Volumen)'])
+  })
+
+  it('no real template keeps the prefix or ends up with an empty name', () => {
+    for (const tpl of ROUTINE_TEMPLATES) {
+      const names = getTemplateDayNames(tpl)
+      expect(names, tpl.id).toHaveLength(tpl.data.routine.days.length)
+      for (const name of names) {
+        expect(name, tpl.id).not.toMatch(/^Día/)
+        expect(name.trim(), tpl.id).not.toBe('')
+      }
+    }
+  })
+
+  it('a name without the prefix stays as it is', () => {
+    const tpl = { data: { routine: { days: [{ name: 'Push' }, { name: 'Día libre' }] } } }
+    expect(getTemplateDayNames(tpl)).toEqual(['Push', 'Día libre'])
   })
 })

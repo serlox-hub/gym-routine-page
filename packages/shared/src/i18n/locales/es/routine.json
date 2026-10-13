@@ -199,6 +199,32 @@
       "level": "Las rutinas de \"{{goal}}\" son para un nivel más avanzado que el tuyo. Te recomendamos {{template}}.",
       "days": "Una rutina de \"{{goal}}\" necesita al menos {{minDays}} días a la semana, y tienes {{days}}. Te recomendamos {{template}}."
     },
+    "reason": {
+      "hypertrophy": "Para ganar músculo, {{template}} reparte los músculos entre los días. Así cada uno recibe más trabajo del que cabría en una sola sesión.",
+      "strength": "Para ganar fuerza, {{template}} se centra en los básicos pesados y sube la carga poco a poco.",
+      "endurance": "Para la resistencia muscular, {{template}} encadena ejercicios con muchas repeticiones y descansos cortos.",
+      "general": "{{template}} trabaja todo el cuerpo en cada sesión. Es lo más sencillo para ponerte en forma sin centrarte en una sola cosa.",
+      "onYourDays": {
+        "hypertrophy": "Para ganar músculo con {{yourDays}} a la semana, {{template}} reparte los músculos entre esos días. Así cada uno recibe más trabajo del que cabría en una sola sesión.",
+        "strength": "Para ganar fuerza con {{yourDays}} a la semana, {{template}} se centra en los básicos pesados y sube la carga poco a poco.",
+        "endurance": "Para ganar resistencia muscular con {{yourDays}} a la semana, {{template}} encadena ejercicios con muchas repeticiones y descansos cortos.",
+        "general": "Con {{yourDays}} a la semana, {{template}} trabaja todo el cuerpo en cada sesión. Es lo más sencillo para ponerte en forma sin centrarte en una sola cosa."
+      },
+      "fatLoss": "Para perder grasa, lo que más cuenta es lo que comes. {{template}} trabaja todo el cuerpo y te ayuda a no perder músculo mientras tanto.",
+      "noTemplate": "No hay una rutina pensada para \"{{goal}}\". {{template}} trabaja todo el cuerpo y es una buena base para casi cualquier objetivo.",
+      "equipment": "Las rutinas de \"{{goal}}\" necesitan más equipo del que tienes. {{template}} está pensada para lo que tienes y trabaja todo el cuerpo en cada sesión.",
+      "level": "Las rutinas de \"{{goal}}\" son para un nivel más avanzado que el tuyo. Hasta que llegues, {{template}} trabaja todo el cuerpo en cada sesión, que es lo que más hace avanzar al principio.",
+      "days": "Una rutina de \"{{goal}}\" necesita al menos {{minDays}} días a la semana, y tienes {{days}}. {{template}} trabaja todo el cuerpo en cada sesión, así que nada se queda sin entrenar."
+    },
+    "weekTitle": "La semana",
+    "alternativesTitle": "También te pueden encajar",
+    "why": {
+      "otherGoal": "Si prefieres dar prioridad a \"{{goal}}\".",
+      "fewerDays": "Si te viene mejor entrenar {{days}} a la semana.",
+      "general": "Si prefieres algo más general, sin centrarte en una sola cosa."
+    },
+    "seeAll": "Ver todas las rutinas",
+    "othersTitle": "El resto de rutinas",
     "equipment": {
       "full": "Gimnasio completo",
       "fullDesc": "Barras, mancuernas y máquinas",
