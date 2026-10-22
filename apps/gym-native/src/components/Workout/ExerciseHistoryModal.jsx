@@ -145,17 +145,16 @@ function HistoryTab({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUn
             </Pressable>
 
             {/* Sets */}
-            <View style={{ paddingHorizontal: 14, paddingBottom: 12, gap: 6 }}>
+            <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
               {session.sets.map(set => (
-                <View key={set.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                // As tall as the note and video buttons, so a set without them is as tall as one with them.
+                <View key={set.id} style={{ minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Text style={{ color: colors.textMuted, fontSize: 12, width: 14, textAlign: 'right' }}>
                     {set.set_number}
                   </Text>
                   <Text style={{ color: colors.textPrimary, fontSize: 13, flex: 1 }}>
                     {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                   </Text>
-                  {/* No negative margin: the 44pt boxes make a set with a note or video 44 tall,
-                      so two consecutive ones do not overlap in the 6pt gap. */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                     {set.notes && (
                       <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onPress={() => onSelectSet(set)} />
