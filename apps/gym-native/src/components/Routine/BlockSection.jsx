@@ -40,6 +40,7 @@ function getSegmentStyle(row) {
 export default function BlockSection({
   block,
   routineDayId,
+  routineId,
   isReordering = false,
   onAddExercise,
   onEditExercise,
@@ -91,6 +92,7 @@ export default function BlockSection({
               <ExerciseCard
                 routineExercise={routineExercise}
                 routineDayId={routineDayId}
+                routineId={routineId}
                 isReordering={isReordering}
                 onEdit={() => onEditExercise?.(routineExercise)}
                 onReplace={() => onReplaceExercise?.(routineExercise)}

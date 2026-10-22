@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { fetchAllRows } from './fetchAllRows.js'
 import { calculateSessionExerciseStats, mergeExerciseStats } from '../lib/sessionStatsCalculation.js'
 import { resolveTrackedFields } from '../lib/measurementFields.js'
 import { RECENT_STATS_LOOKBACK } from '../lib/recentExercises.js'
@@ -120,44 +121,45 @@ export async function fetchExerciseBests(exerciseIds, { beforeDate, gymId } = {}
 // ============================================
 
 export async function fetchExerciseChartData({ exerciseId, routineDayId, gymId }) {
-  let query = getClient()
-    .from('exercise_session_stats')
-    .select(`
-      session_date,
-      gym_id,
-      best_weight,
-      best_reps,
-      best_1rm,
-      total_volume,
-      total_sets,
-      best_time_seconds,
-      best_distance_meters,
-      best_pace_seconds,
-      is_pr_weight,
-      is_pr_reps,
-      is_pr_1rm,
-      is_pr_volume,
-      session:workout_sessions!inner (
-        routine_day_id
-      )
-    `)
-    .eq('exercise_id', exerciseId)
-    .order('session_date', { ascending: true })
+  return fetchAllRows(() => {
+    let query = getClient()
+      .from('exercise_session_stats')
+      .select(`
+        id,
+        session_date,
+        gym_id,
+        best_weight,
+        best_reps,
+        best_1rm,
+        total_volume,
+        total_sets,
+        best_time_seconds,
+        best_distance_meters,
+        best_pace_seconds,
+        is_pr_weight,
+        is_pr_reps,
+        is_pr_1rm,
+        is_pr_volume,
+        session:workout_sessions!inner (
+          routine_day_id
+        )
+      `)
+      .eq('exercise_id', exerciseId)
+      .order('session_date', { ascending: true })
+      .order('id', { ascending: true })
 
-  if (routineDayId) {
-    query = query.eq('session.routine_day_id', routineDayId)
-  }
+    if (routineDayId) {
+      query = query.eq('session.routine_day_id', routineDayId)
+    }
 
-  // Filtro por gym (vista de un solo gimnasio). Para el overlay se omite y se
-  // agrupa por gym_id en el cliente.
-  if (gymId != null) {
-    query = query.eq('gym_id', gymId)
-  }
+    // Filtro por gym (vista de un solo gimnasio). Para el overlay se omite y se
+    // agrupa por gym_id en el cliente.
+    if (gymId != null) {
+      query = query.eq('gym_id', gymId)
+    }
 
-  const { data, error } = await query
-
-  if (error) throw error
-  return data
+    return query
+  })
 }
 
 // ============================================

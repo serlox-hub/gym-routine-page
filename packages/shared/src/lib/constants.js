@@ -7,6 +7,10 @@ export const APP_URL = 'www.diariogym.com'
 // Summary Card
 export const SUMMARY_MAX_EXERCISES = 8
 
+// Exercise history modal: sessions shown at first and added by each "See more", from memory
+// (the whole history is already downloaded).
+export const EXERCISE_HISTORY_PAGE_SIZE = 30
+
 // Sesión activa: debounce para persistir ediciones de series (peso/reps/…) mientras
 // se teclea, evitando spam de escrituras a store/DB/AsyncStorage. Compartido web+native.
 export const SET_EDIT_DEBOUNCE_MS = 600

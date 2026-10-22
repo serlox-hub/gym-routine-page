@@ -1,11 +1,24 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, FileText, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { IconButton } from '../ui/index.js'
-import { DEFAULT_TRACKED_FIELDS, formatSetValue, formatShortDate, calculateTotalVolume, formatEffortBadge } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, EXERCISE_HISTORY_PAGE_SIZE, ROUTINE_MEMBERSHIP, formatSetValue, formatShortDate, calculateTotalVolume, formatEffortBadge, getRoutineMembershipBadgeKey } from '@gym/shared'
 
-function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUnit = 'kg', distanceUnit = 'm', onSelectSet, onSessionClick, hasNextPage, isFetchingNextPage, onLoadMore }) {
+// The same day stands out; another day of the routine only says so.
+const BADGE_STYLES = {
+  [ROUTINE_MEMBERSHIP.DAY]: { color: colors.teal, border: `1px solid ${colors.teal}` },
+  [ROUTINE_MEMBERSHIP.ROUTINE]: { color: colors.textSecondary, border: `1px solid ${colors.border}` },
+}
+
+/**
+ * `sessions` arrive already filtered; "See more" reveals them from memory. The parent remounts it
+ * (key) when its filters change, so the list starts again at one page.
+ * `membershipOf(session)` gives a ROUTINE_MEMBERSHIP value for its mark, or null for none.
+ */
+function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUnit = 'kg', distanceUnit = 'm', onSelectSet, onSessionClick, membershipOf }) {
   const { t } = useTranslation()
+  const [visibleCount, setVisibleCount] = useState(EXERCISE_HISTORY_PAGE_SIZE)
 
   if (!sessions || sessions.length === 0) {
     return (
@@ -21,8 +34,10 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
         {t('workout:history.recentSessions')}
       </span>
 
-      {sessions.map(session => {
+      {sessions.slice(0, visibleCount).map(session => {
         const volume = calculateTotalVolume(session.sets)
+        const membership = membershipOf?.(session) ?? null
+        const badgeKey = getRoutineMembershipBadgeKey(membership)
         return (
           <div
             key={session.sessionId}
@@ -40,9 +55,19 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
               style={{ padding: '12px 14px 8px' }}
               onClick={() => onSessionClick(session.sessionId, session.date)}
             >
-              <span style={{ color: colors.textPrimary, fontSize: 15, fontWeight: 700 }}>
-                {formatShortDate(session.date)}
-              </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span style={{ color: colors.textPrimary, fontSize: 15, fontWeight: 700 }}>
+                  {formatShortDate(session.date)}
+                </span>
+                {badgeKey && (
+                  <span
+                    className="shrink-0 rounded-full px-2 py-0.5 whitespace-nowrap"
+                    style={{ ...BADGE_STYLES[membership], fontSize: 11, fontWeight: 600 }}
+                  >
+                    {t(badgeKey)}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 {volume > 0 && (
                   <span style={{ color: colors.textMuted, fontSize: 12 }}>
@@ -87,14 +112,13 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
         )
       })}
 
-      {hasNextPage && (
+      {sessions.length > visibleCount && (
         <button
-          onClick={onLoadMore}
-          disabled={isFetchingNextPage}
-          className="w-full min-h-11 py-2 rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50"
+          onClick={() => setVisibleCount(count => count + EXERCISE_HISTORY_PAGE_SIZE)}
+          className="w-full min-h-11 py-2 rounded-lg text-sm font-medium hover:opacity-80"
           style={{ backgroundColor: colors.bgTertiary, color: colors.success }}
         >
-          {isFetchingNextPage ? t('common:buttons.loading') : t('common:buttons.seeMore')}
+          {t('common:buttons.seeMore')}
         </button>
       )}
     </div>

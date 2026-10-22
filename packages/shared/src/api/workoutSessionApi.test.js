@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { makeQueryMock, makeClientMock } from './_testUtils.js'
+import { makeQueryMock, makeRangedQueryMock, makeClientMock } from './_testUtils.js'
 
 vi.mock('./_client.js', () => ({ getClient: vi.fn() }))
 import { getClient } from './_client.js'
@@ -22,7 +22,6 @@ import {
   fetchWorkoutHistory,
   fetchSessionDetail,
   fetchExerciseHistorySummary,
-  fetchExerciseHistory,
   fetchPreviousWorkout,
   fetchCompletedSessionCount,
   rescheduleSession,
@@ -414,7 +413,7 @@ describe('fetchExerciseHistorySummary', () => {
     const data = [
       { id: 'se-1', session: { id: 's-1', started_at: '2026-01-01T10:00:00Z' }, completed_sets: [{ weight: 100, reps_completed: 5 }] },
     ]
-    const mock = makeQueryMock({ data, error: null })
+    const mock = makeRangedQueryMock(data)
     getClient.mockReturnValue({ from: () => mock })
     const result = await fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: null })
     expect(result).toHaveLength(1)
@@ -425,78 +424,59 @@ describe('fetchExerciseHistorySummary', () => {
     const data = [
       { id: 'se-2', session: { id: 's-2', started_at: '2026-01-10T10:00:00Z', routine_day_id: 'day-1' }, completed_sets: [] },
     ]
-    const mock = makeQueryMock({ data, error: null })
+    const mock = makeRangedQueryMock(data)
     getClient.mockReturnValue({ from: () => mock })
     const result = await fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: 'day-1' })
     expect(result).toHaveLength(1)
+    expect(mock.eq).toHaveBeenCalledWith('session.routine_day_id', 'day-1')
   })
 
   it('throws when Supabase returns error', async () => {
-    const mock = makeQueryMock({ data: null, error: new Error('query failed') })
+    const mock = makeRangedQueryMock([], new Error('query failed'))
     getClient.mockReturnValue({ from: () => mock })
     await expect(
       fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: null })
     ).rejects.toThrow('query failed')
   })
 
-  // El overlay multi-gym convierte por gym → el SELECT debe traer session.gym_id
+  // The multi-gym overlay converts per gym, so the SELECT needs session.gym_id.
   it('incluye gym_id de la sesión en el select', async () => {
-    const mock = makeQueryMock({ data: [], error: null })
+    const mock = makeRangedQueryMock([])
     getClient.mockReturnValue({ from: () => mock })
     await fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: null })
     expect(mock.select.mock.calls[0][0]).toContain('gym_id')
   })
-})
 
-// ============================================
-// fetchExerciseHistory
-// ============================================
-
-describe('fetchExerciseHistory', () => {
-  it('returns paginated history data for range', async () => {
-    const data = [
-      { id: 'se-1', session: { started_at: '2026-01-01T10:00:00Z' }, completed_sets: [{ set_number: 1, weight: 80 }] },
-    ]
-    const mock = makeQueryMock({ data, error: null })
+  // The history modal renders its list from this query: the routine day marks each session, and
+  // each set row shows its effort and opens its note or video.
+  it('selects what the history list shows', async () => {
+    const mock = makeRangedQueryMock([])
     getClient.mockReturnValue({ from: () => mock })
-    const result = await fetchExerciseHistory({ exerciseId: 'ex-1', routineDayId: null, from: 0, to: 29 })
-    expect(result).toHaveLength(1)
-  })
-
-  it('returns paginated history filtered by routineDayId', async () => {
-    const data = [
-      { id: 'se-2', session: { started_at: '2026-01-10T10:00:00Z', routine_day_id: 'day-1' }, completed_sets: [] },
-    ]
-    const mock = makeQueryMock({ data, error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    const result = await fetchExerciseHistory({ exerciseId: 'ex-1', routineDayId: 'day-1', from: 0, to: 9 })
-    expect(result).toHaveLength(1)
-  })
-
-  // issue #11: el historial de ejercicio debe traer level y calories_burned
-  it('incluye level y calories_burned en el select', async () => {
-    const mock = makeQueryMock({ data: [], error: null })
-    getClient.mockReturnValue({ from: () => mock })
-    await fetchExerciseHistory({ exerciseId: 'ex-1', routineDayId: null, from: 0, to: 29 })
+    await fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: null })
     const selectArg = mock.select.mock.calls[0][0]
-    expect(selectArg).toContain('level')
-    expect(selectArg).toContain('calories_burned')
+    for (const field of ['routine_day_id', 'rir_actual', 'notes', 'video_url', 'level', 'calories_burned']) {
+      expect(selectArg).toContain(field)
+    }
+    expect(selectArg).toMatch(/completed_sets!inner \(\s*id,/)
   })
 
-  // El overlay multi-gym convierte por gym → el SELECT debe traer session.gym_id
-  it('incluye gym_id de la sesión en el select', async () => {
-    const mock = makeQueryMock({ data: [], error: null })
+  it('orders newest first with the row id as tiebreaker, so pages neither skip nor repeat', async () => {
+    const mock = makeRangedQueryMock([])
     getClient.mockReturnValue({ from: () => mock })
-    await fetchExerciseHistory({ exerciseId: 'ex-1', routineDayId: null, from: 0, to: 29 })
-    expect(mock.select.mock.calls[0][0]).toContain('gym_id')
+    await fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: null })
+    expect(mock.order.mock.calls).toEqual([
+      ['session(started_at)', { ascending: false }],
+      ['id', { ascending: false }],
+    ])
   })
 
-  it('throws when Supabase returns error', async () => {
-    const mock = makeQueryMock({ data: null, error: new Error('range error') })
+  it('reads every page, not only the first 1000 rows', async () => {
+    const data = Array.from({ length: 1500 }, (_, i) => ({ id: `se-${i}`, session: {}, completed_sets: [] }))
+    const mock = makeRangedQueryMock(data)
     getClient.mockReturnValue({ from: () => mock })
-    await expect(
-      fetchExerciseHistory({ exerciseId: 'ex-1', routineDayId: null, from: 0, to: 29 })
-    ).rejects.toThrow('range error')
+    const result = await fetchExerciseHistorySummary({ exerciseId: 'ex-1', routineDayId: null })
+    expect(result).toHaveLength(1500)
+    expect(mock.range).toHaveBeenCalledTimes(3)
   })
 })
 

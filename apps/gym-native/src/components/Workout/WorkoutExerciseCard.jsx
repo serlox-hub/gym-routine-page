@@ -46,6 +46,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
   const { expanded, toggle: toggleExpanded } = useExpandedExercise(exerciseKey)
   const collapsed = !expanded
   const routineDayId = useWorkoutStore(state => state.routineDayId)
+  const routineId = useWorkoutStore(state => state.routineId)
   const sessionId = useWorkoutStore(state => state.sessionId)
   // Número de filas = series configuradas en la rutina (session_exercises.series).
   // El usuario puede añadir/quitar filas manualmente (queda en exerciseSetCounts).
@@ -148,7 +149,9 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
           <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} previousLoaded={previousFetched} progressionEnabled={progressionEnabled} trackedFields={trackedFields} weightUnit={weightUnit} distanceUnit={distanceUnit} rest_seconds={rest_seconds} reps={reps} targetField={target_field} levelTarget={level} effortTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
         </>
       )}
-      <ExerciseHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} trackedFields={trackedFields} distanceUnit={distanceUnit} routineDayId={routineDayId} />
+      {/* Mounted only while open: its whole-history download would otherwise run for every card
+          as the session starts. */}
+      {showHistory && <ExerciseHistoryModal isOpen onClose={() => setShowHistory(false)} exerciseId={exercise.id} exerciseName={getExerciseName(exercise)} trackedFields={trackedFields} distanceUnit={distanceUnit} routineDayId={routineDayId} routineId={routineId} />}
       <ConfirmModal isOpen={showRemoveConfirm} title={t('workout:exercise.removeFromSession')} message={t('workout:exercise.removeFromSessionConfirm', { name: getExerciseName(exercise) })} confirmText={t('common:buttons.delete')} onConfirm={confirmRemove} onCancel={() => setShowRemoveConfirm(false)} isLoading={removeMutation.isPending} saveStatus error={removeMutation.isError ? t('workout:exercise.removeFailed') : null} />
       <ExercisePickerModal isOpen={showReplace} onClose={() => setShowReplace(false)} title={t('routine:exercise.replace')} subtitle={`${t('routine:exercise.replacing')}: ${getExerciseName(exercise)}`} initialMuscleGroup={exercise.muscle_group?.id} onSelect={handlePickReplacement} />
       <ConfirmModal isOpen={!!pendingReplacement} title={t('workout:exercise.replaceScopeTitle')} message={t('workout:exercise.replaceScopeMessage', { name: getExerciseName(exercise) })} cancelText={t('workout:exercise.replaceOnlyToday')} confirmText={t('workout:exercise.replaceAlsoRoutine')} variant="primary" onCancel={() => confirmReplacement(false)} onConfirm={() => confirmReplacement(true)} onDismiss={() => setPendingReplacement(null)} />

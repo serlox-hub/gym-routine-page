@@ -2,7 +2,7 @@ export {
   useWorkoutHistory,
   useSessionDetail,
   useExerciseHistorySummary,
-  useExerciseHistory,
+  useExerciseHistoryFilter,
   useExerciseChartData,
   useExerciseAllTimeStats,
   useSessionPRs,

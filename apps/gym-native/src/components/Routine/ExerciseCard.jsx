@@ -13,6 +13,7 @@ import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 export default function ExerciseCard({
   routineExercise,
   routineDayId,
+  routineId,
   isReordering = false,
   onEdit,
   onDelete,
@@ -163,8 +164,8 @@ export default function ExerciseCard({
           ))}
         </View>
       </Modal>
-      {/* Montado solo al abrirlo: sus queries de historial corren aunque el modal esté cerrado,
-          y esta fila se repite por cada ejercicio de la rutina. */}
+      {/* Mounted only while open: its history queries run even while it is closed, and this row
+          repeats for every exercise of the routine. */}
       {showHistory && (
         <ExerciseHistoryModal
           isOpen
@@ -174,6 +175,7 @@ export default function ExerciseCard({
           trackedFields={trackedFields}
           distanceUnit={distanceUnit}
           routineDayId={routineDayId}
+          routineId={routineId}
           onSessionClick={(sessionId, date) => {
             setShowHistory(false)
             navigation.navigate('MainTabs', { screen: 'History', params: { sessionId, date } })

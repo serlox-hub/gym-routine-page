@@ -61,7 +61,6 @@ export {
   useUpdateUserSetting,
   // Workout history
   useWorkoutHistory,
-  useExerciseHistory,
   useExerciseHistorySummary,
   usePreviousWorkout,
 } from '@gym/shared'

@@ -309,6 +309,8 @@ export function getSensationLabels() {
 - A function no API role should call: add it to `INTERNAL_ONLY` in the same file.
 A forgotten GRANT means 42501 for every logged-in user. `npm run db:check-grants -w apps/web` catches it (CI runs it after `supabase start`; locally it refuses to answer until the database holds exactly the tree's migrations, so run `npx supabase db reset` after writing one); `schema.sql` and `db:check-drift` cannot, because `db:dump` only dumps `public` and the default that closes new functions is global.
 
+**Reads that must see every row** (a whole history, its records): PostgREST cuts each response at `max_rows` (1000 locally; production's value is not in the repo) without any error. They go through `api/fetchAllRows.js`, selecting `id` (pages are deduped by it) and with an order that ends on a unique key, or pages skip and repeat rows. Known reads that still don't: `fetchExerciseBests` (PR detection), `fetchBodyWeightHistory`, `fetchBodyMeasurementHistory`.
+
 ```
 muscle_groups ← exercises (muscle_group_id)
     ↓
@@ -483,6 +485,7 @@ Extract when logic:
 | Home records card: the week's records by session and exercise, and their count (the card's number) | `weeklyPRs.js` | `buildWeeklyPRs()` |
 | Exercise picker "Recent" section (latest done exercises) | `recentExercises.js` | `getRecentExercises()`, `getVisibleRecentExercises()` |
 | Exercise picker filters (option lists, "Clear filters" offer) | `exerciseFilters.js` | `getMuscleGroupFilterSections()`, `getEquipmentFilterSections()`, `hasActiveExerciseFilters()`, `shouldOfferClearFilters()` |
+| Exercise history routine filter (each session's mark, the selector's segments) | `routineMembership.js` | `classifyRoutineMembership()`, `filterByRoutineMembership()`, `getHistoryFilterOptions()`, `getRoutineMembershipBadgeKey()` (orchestrated by `useExerciseHistoryFilter`) |
 | Text utilities | `textUtils.js` | `sanitizeFilename()` |
 
 All these files live in `packages/shared/src/lib/` and are exported via `@gym/shared`.
