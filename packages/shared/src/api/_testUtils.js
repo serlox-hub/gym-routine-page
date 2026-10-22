@@ -48,6 +48,19 @@ export function makeQueryMock(resolveWith) {
 }
 
 /**
+ * Like `makeQueryMock`, but `.range(from, to)` answers with that slice of `rows`, as PostgREST
+ * does, so a query read through `fetchAllRows` reaches its empty last page. With `error`, every
+ * page fails with it.
+ */
+export function makeRangedQueryMock(rows, error = null) {
+  const chain = makeQueryMock({ data: error ? null : rows, error })
+  chain.range = vi.fn((from, to) => Promise.resolve(
+    error ? { data: null, error } : { data: rows.slice(from, to + 1), error: null }
+  ))
+  return chain
+}
+
+/**
  * Creates a Supabase client mock with per-table response discrimination.
  * `tableResponses` is a map of `table -> { data, error }`.
  * Tables not listed default to `{ data: null, error: null }`.

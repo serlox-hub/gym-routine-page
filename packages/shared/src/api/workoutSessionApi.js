@@ -1,4 +1,5 @@
 import { getClient } from './_client.js'
+import { fetchAllRows } from './fetchAllRows.js'
 import { recalculateSessionStats, recalculateExercisePRs } from './exerciseStatsApi.js'
 import { SESSION_STATUS } from '../lib/constants.js'
 import { isSameTimestamp } from '../lib/dateUtils.js'
@@ -338,94 +339,52 @@ export async function fetchSessionDetail(sessionId) {
   return data
 }
 
+// Every session of the exercise, unpaginated: the history modal filters it by routine day on the
+// client, and its records must cover the whole history.
 export async function fetchExerciseHistorySummary({ exerciseId, routineDayId, gymId }) {
-  let query = getClient()
-    .from('session_exercises')
-    .select(`
-      id,
-      session:workout_sessions!inner (
+  return fetchAllRows(() => {
+    let query = getClient()
+      .from('session_exercises')
+      .select(`
         id,
-        started_at,
-        status,
-        routine_day_id,
-        gym_id
-      ),
-      completed_sets!inner (
-        weight,
-        reps_completed,
-        time_seconds,
-        distance_meters,
-        pace_seconds,
-        level,
-        calories_burned,
-        set_number,
-        set_type
-      )
-    `)
-    .eq('exercise_id', exerciseId)
-    .eq('session.status', 'completed')
-    .order('session(started_at)', { ascending: false })
+        session:workout_sessions!inner (
+          id,
+          started_at,
+          status,
+          routine_day_id,
+          gym_id
+        ),
+        completed_sets!inner (
+          id,
+          weight,
+          reps_completed,
+          time_seconds,
+          distance_meters,
+          pace_seconds,
+          level,
+          calories_burned,
+          rir_actual,
+          notes,
+          video_url,
+          set_number,
+          set_type
+        )
+      `)
+      .eq('exercise_id', exerciseId)
+      .eq('session.status', 'completed')
+      .order('session(started_at)', { ascending: false })
+      .order('id', { ascending: false })
 
-  if (routineDayId) {
-    query = query.eq('session.routine_day_id', routineDayId)
-  }
+    if (routineDayId) {
+      query = query.eq('session.routine_day_id', routineDayId)
+    }
 
-  if (gymId != null) {
-    query = query.eq('session.gym_id', gymId)
-  }
+    if (gymId != null) {
+      query = query.eq('session.gym_id', gymId)
+    }
 
-  const { data, error } = await query
-
-  if (error) throw error
-  return data
-}
-
-export async function fetchExerciseHistory({ exerciseId, routineDayId, from, to, gymId }) {
-  let query = getClient()
-    .from('session_exercises')
-    .select(`
-      id,
-      session:workout_sessions!inner (
-        id,
-        started_at,
-        status,
-        routine_day_id,
-        gym_id
-      ),
-      completed_sets!inner (
-        id,
-        set_number,
-        weight,
-        reps_completed,
-        time_seconds,
-        distance_meters,
-        pace_seconds,
-        level,
-        calories_burned,
-        rir_actual,
-        notes,
-        video_url,
-        set_type,
-        performed_at
-      )
-    `)
-    .eq('exercise_id', exerciseId)
-    .eq('session.status', 'completed')
-    .order('session(started_at)', { ascending: false })
-    .range(from, to)
-
-  if (routineDayId) {
-    query = query.eq('session.routine_day_id', routineDayId)
-  }
-
-  if (gymId != null) {
-    query = query.eq('session.gym_id', gymId)
-  }
-
-  const { data, error } = await query
-
-  if (error) throw error
-  return data
+    return query
+  })
 }
 
 // ============================================

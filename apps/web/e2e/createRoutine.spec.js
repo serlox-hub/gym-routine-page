@@ -102,9 +102,13 @@ test.describe('Detalle de rutina sin modo edición', () => {
 
     // El historial se monta solo al abrirlo: si el menú dejara de encenderlo, aquí no habría nada.
     await expect(page.getByRole('heading', { name: exerciseName, level: 3 })).toBeVisible({ timeout: 10000 })
-    // Se abre con `routineDayId`, así que ofrece los dos ámbitos.
-    await expect(page.getByRole('button', { name: 'Rutina' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Global' })).toBeVisible()
+    // Opened with `routineDayId` it offers the routine filter, on "Todo". "Esta rutina" only shows
+    // when the routine's days are known, so it also proves `routineId` got here through
+    // `BlockSection` (issue #184).
+    for (const name of ['Todo', 'Esta rutina', 'Este día']) {
+      await expect(page.getByRole('button', { name, exact: true })).toBeVisible()
+    }
+    await expect(page.getByRole('button', { name: 'Todo', exact: true })).toHaveAttribute('aria-pressed', 'true')
   })
 
   test('el asa de arrastre solo se pinta a partir de dos días', async ({ page }) => {

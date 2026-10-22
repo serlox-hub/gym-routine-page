@@ -146,7 +146,7 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **Tabla propia (`user_exercise_gym_units`)**, separada de `user_exercise_overrides`, porque las notas son por ejercicio y meter `gym_id` las fragmentaría.
 - **"Todos los gyms" en el historial convierte al vuelo** gráfica, lista y stats a la unidad del gym por defecto (`convertSessionsToDisplayUnit`). Espera a `useExerciseUnitsByGym` y toma la unidad destino de ahí, no de `useResolvedWeightUnit`, para no pintar un instante con la unidad equivocada.
 - ⚠️ **Coherencia:** la conversión del gym por defecto es no-op porque `useResolvedWeightUnit` y `useExerciseUnitsByGym` leen la misma fuente. Si divergen, se rompe.
-- **Trade-off:** `fetchExerciseHistorySummary` no pagina, para que máx peso y 1RM sean exactos. Puede crecer en usuarios muy activos.
+- **Trade-off:** `fetchExerciseHistorySummary` trae TODO el historial del ejercicio (por dentro pasa por `fetchAllRows`, sin el corte de `max_rows`), y de ahí salen lista, récords y gráfica del modal de historial. «Ver más» solo revela de 30 en 30 desde memoria. La lista paginada (1f3fec8) se quitó en #184: con el filtro Todo / Esta rutina / Este día en cliente, «Este día» enseñaba páginas casi vacías. Descartado filtrar en servidor: más consultas y un `.in()` de días en lista, resumen y gráfica. Puede crecer en usuarios muy activos.
 - ⚠️ **`fetchExerciseAllTimeStats({ gymId: null })` agregaría pesos crudos entre gyms.** Hoy no tiene consumidor; si se usa así, convertir o filtrar.
 
 ## 2026-07 · Cambio de gym a mitad de sesión

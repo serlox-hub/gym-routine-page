@@ -2,33 +2,32 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
-import { useExerciseHistory, useExerciseHistorySummary, useExerciseChartData } from '../../hooks/useWorkout.js'
+import { useExerciseHistorySummary, useExerciseChartData, useExerciseHistoryFilter } from '../../hooks/useWorkout.js'
 import { useSelectedGym } from '@gym/shared'
 import { ExerciseName, LoadingSpinner, Modal } from '../ui/index.js'
 import SetNotesView from './SetNotesView.jsx'
 import HistoryChart from './HistoryChart.jsx'
 import HistoryTable from './HistoryTable.jsx'
+import HistoryFilterSelector from './HistoryFilterSelector.jsx'
 import GymSelector from './GymSelector.jsx'
 import { colors } from '../../lib/styles.js'
 import { DEFAULT_TRACKED_FIELDS, calculateExerciseStats, useResolvedWeightUnit, useExerciseUnitsByGym, usePreference, convertSessionsToDisplayUnit } from '@gym/shared'
 
-const SCOPE = { GLOBAL: 'global', DAY: 'day' }
 // gymFilter: null → un gym (el seleccionado), 'all' → overlay de todos los gyms
 const ALL_GYMS = 'all'
 
-function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, trackedFields = DEFAULT_TRACKED_FIELDS, distanceUnit = 'm', routineDayId = null }) {
+// Opened from a routine day (`routineDayId`), every session is listed and marked against that day
+// and its routine (`routineId`), with a filter. The callers that pass a day mount it only while
+// open, so each opening starts on "All" with one page.
+function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, trackedFields = DEFAULT_TRACKED_FIELDS, distanceUnit = 'm', routineDayId = null, routineId = null }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [selectedSet, setSelectedSet] = useState(null)
-  const [scope, setScope] = useState(routineDayId ? SCOPE.DAY : SCOPE.GLOBAL)
 
   const { gyms, gymId: defaultGymId, hasMultiple } = useSelectedGym()
   // Filtro de gym para las gráficas: id concreto, o ALL_GYMS para overlay
   const [gymFilter, setGymFilter] = useState(defaultGymId)
   const [showGymSelector, setShowGymSelector] = useState(false)
-
-  const isDay = scope === SCOPE.DAY
-  const chartDayId = isDay ? routineDayId : null
 
   const isOverlay = gymFilter === ALL_GYMS
   // En overlay ("Todos"), lista+stats+gráfica van cross-gym (gymId=null) y se convierten al
@@ -37,29 +36,23 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, track
   const unitGymId = isOverlay ? defaultGymId : gymFilter
   const historyGymId = hasMultiple ? (isOverlay ? null : gymFilter) : null
 
-  // Fetch both scopes in parallel — switch is instant
-  const { data: daySummary, isLoading: loadingDaySummary } = useExerciseHistorySummary(exerciseId, routineDayId, historyGymId)
-  const { data: globalSummary, isLoading: loadingGlobalSummary } = useExerciseHistorySummary(exerciseId, null, historyGymId)
-  const { data: dayHistoryPages, isLoading: loadingDayHistory, fetchNextPage: fetchDayNext, hasNextPage: hasDayNext, isFetchingNextPage: fetchingDayNext } = useExerciseHistory(exerciseId, routineDayId, historyGymId)
-  const { data: globalHistoryPages, isLoading: loadingGlobalHistory, fetchNextPage: fetchGlobalNext, hasNextPage: hasGlobalNext, isFetchingNextPage: fetchingGlobalNext } = useExerciseHistory(exerciseId, null, historyGymId)
+  // Every session of the exercise in one download, with no day filter: list, records and chart
+  // are filtered by routine day in memory, so switching the filter sends no request.
+  const { data: summary, isLoading: loadingSummary } = useExerciseHistorySummary(exerciseId, null, historyGymId)
 
   // Chart data por gym: cuando hay overlay usamos todas las filas (gymId=null)
   const chartGymId = hasMultiple ? (isOverlay ? null : gymFilter) : null
-  const { data: chartRows, isLoading: loadingChart } = useExerciseChartData(exerciseId, chartDayId, chartGymId)
+  const { data: allChartRows, isLoading: loadingChart } = useExerciseChartData(exerciseId, null, chartGymId)
+  const routineFilter = useExerciseHistoryFilter({ routineDayId, routineId, sessions: summary, chartRows: allChartRows })
 
   const resolvedWeightUnit = useResolvedWeightUnit(exerciseId, unitGymId)
   const { value: globalWeightUnit } = usePreference('weight_unit')
   const { data: explicitUnitsByGym = {}, isLoading: loadingUnits } = useExerciseUnitsByGym(exerciseId, isOverlay)
 
-  const summarySessions = isDay ? daySummary : globalSummary
-  const historyPages = isDay ? dayHistoryPages : globalHistoryPages
-  const historySessions = useMemo(() => historyPages?.pages.flat() ?? [], [historyPages])
   // En overlay se espera a las unidades por gym: sin ellas la conversión caería al fallback
   // global y mostraría pesos mal convertidos un instante para gyms con unidad explícita.
-  const isLoading = (isDay ? (loadingDaySummary || loadingDayHistory) : (loadingGlobalSummary || loadingGlobalHistory)) || (hasMultiple && loadingChart) || (isOverlay && loadingUnits)
-  const fetchNextPage = isDay ? fetchDayNext : fetchGlobalNext
-  const hasNextPage = isDay ? hasDayNext : hasGlobalNext
-  const isFetchingNextPage = isDay ? fetchingDayNext : fetchingGlobalNext
+  // The routine's days too: without them the marks and the selector would change under the user.
+  const isLoading = loadingSummary || routineFilter.isLoading || (hasMultiple && loadingChart) || (isOverlay && loadingUnits)
 
   const handleSessionClick = (sessionId, date) => { onClose(); navigate('/history', { state: { sessionId, date } }) }
 
@@ -91,50 +84,26 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, track
 
   // En overlay, las series vienen de varios gyms (unidades mezcladas): se convierten a la
   // unidad de display antes de stats/tabla. Con un gym concreto no hay nada que convertir.
-  const displaySummary = useMemo(
-    () => (isOverlay ? convertSessionsToDisplayUnit(summarySessions, unitByGym, weightUnit) : summarySessions),
-    [isOverlay, summarySessions, unitByGym, weightUnit]
+  const displaySessions = useMemo(
+    () => (isOverlay ? convertSessionsToDisplayUnit(routineFilter.sessions, unitByGym, weightUnit) : routineFilter.sessions),
+    [isOverlay, routineFilter.sessions, unitByGym, weightUnit]
   )
-  const displayHistory = useMemo(
-    () => (isOverlay ? convertSessionsToDisplayUnit(historySessions, unitByGym, weightUnit) : historySessions),
-    [isOverlay, historySessions, unitByGym, weightUnit]
-  )
-  const stats = useMemo(() => calculateExerciseStats(displaySummary, trackedFields), [displaySummary, trackedFields])
+  const stats = useMemo(() => calculateExerciseStats(displaySessions, trackedFields), [displaySessions, trackedFields])
+  const hasFilterSelector = routineFilter.options.length > 0
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} position="bottom" maxWidth="max-w-lg" className="max-h-[85vh] flex flex-col" noBorder>
       <div className="p-4 shrink-0" style={{ borderBottom: `1px solid ${colors.border}` }}>
-        <div className="flex items-center gap-3">
-          <ExerciseName as="h3" fontSize={16} fontWeight="700" className="flex-1 min-w-0">{exerciseName}</ExerciseName>
-          {routineDayId && (
-            // The buttons are the 44px boxes; the track and the sliding pill are painted behind
-            // them at their old size (inset-y-2 = 28px track).
-            <div className="shrink-0 grid grid-cols-2 px-0.5 relative">
-              <div className="absolute inset-x-0 inset-y-2 rounded-full" style={{ backgroundColor: colors.bgTertiary }} />
-              <div
-                className="absolute top-2.5 bottom-2.5 rounded-full transition-transform duration-200 ease-in-out"
-                style={{
-                  width: 'calc(50% - 1px)',
-                  backgroundColor: colors.success,
-                  left: 2,
-                  transform: isDay ? 'translateX(0)' : 'translateX(100%)',
-                }}
-              />
-              <button onClick={() => setScope(SCOPE.DAY)} className="relative z-10 min-h-11 px-3 text-xs font-semibold"
-                style={{ color: isDay ? colors.bgPrimary : colors.textSecondary }}>
-                {t('exercise:scopeRoutine')}
-              </button>
-              <button onClick={() => setScope(SCOPE.GLOBAL)} className="relative z-10 min-h-11 px-3 text-xs font-semibold"
-                style={{ color: !isDay ? colors.bgPrimary : colors.textSecondary }}>
-                {t('exercise:scopeGlobal')}
-              </button>
-            </div>
-          )}
-        </div>
+        <ExerciseName as="h3" fontSize={16} fontWeight="700">{exerciseName}</ExerciseName>
+        {hasFilterSelector && (
+          <div className="mt-1">
+            <HistoryFilterSelector options={routineFilter.options} value={routineFilter.filter} onChange={routineFilter.setFilter} />
+          </div>
+        )}
         {/* The buttons are the 44px boxes, the pills inside keep their size. mt-1, not mt-3: the
-            box adds ~10px above the pill. */}
+            box adds ~10px above the pill. None under the selector, whose box already leaves 8px. */}
         {hasMultiple && (
-          <div className="flex items-center gap-2 mt-1">
+          <div className={`flex items-center gap-2 ${hasFilterSelector ? '' : 'mt-1'}`}>
             <button
               onClick={() => setShowGymSelector(true)}
               className="min-h-11 inline-flex items-center hover:opacity-80 transition-opacity"
@@ -173,17 +142,18 @@ function ExerciseHistoryModal({ isOpen, onClose, exerciseId, exerciseName, track
         ) : (
           <>
             <HistoryChart
-              sessions={displaySummary}
+              sessions={displaySessions}
               stats={stats}
               trackedFields={trackedFields}
               weightUnit={weightUnit}
               distanceUnit={distanceUnit}
-              chartRows={hasMultiple ? chartRows : undefined}
+              chartRows={hasMultiple ? routineFilter.chartRows : undefined}
               overlayGyms={isOverlay ? overlayGyms : undefined}
               unitByGym={isOverlay ? unitByGym : undefined}
             />
-            <HistoryTable sessions={displayHistory} trackedFields={trackedFields} weightUnit={weightUnit} distanceUnit={distanceUnit} onSelectSet={setSelectedSet}
-              onSessionClick={handleSessionClick} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onLoadMore={fetchNextPage} />
+            {/* Keyed by both filters: changing either starts the list again at one page. */}
+            <HistoryTable key={`${routineFilter.filter}:${gymFilter}`} sessions={displaySessions} trackedFields={trackedFields} weightUnit={weightUnit}
+              distanceUnit={distanceUnit} onSelectSet={setSelectedSet} onSessionClick={handleSessionClick} membershipOf={routineFilter.membershipOf} />
           </>
         )}
       </div>

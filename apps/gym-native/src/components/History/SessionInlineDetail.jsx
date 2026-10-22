@@ -328,18 +328,20 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
           })
         )}
       </View>
-      <ExerciseHistoryModal
-        isOpen={showHistory}
-        onClose={() => setShowHistory(false)}
-        exerciseId={exercise.id}
-        exerciseName={getExerciseName(exercise)}
-        trackedFields={trackedFields}
-        distanceUnit={distanceUnit}
-        onSessionClick={(sid, date) => {
-          setShowHistory(false)
-          navigation.navigate('MainTabs', { screen: 'History', params: { sessionId: sid, date } })
-        }}
-      />
+      {showHistory && (
+        <ExerciseHistoryModal
+          isOpen
+          onClose={() => setShowHistory(false)}
+          exerciseId={exercise.id}
+          exerciseName={getExerciseName(exercise)}
+          trackedFields={trackedFields}
+          distanceUnit={distanceUnit}
+          onSessionClick={(sid, date) => {
+            setShowHistory(false)
+            navigation.navigate('MainTabs', { screen: 'History', params: { sessionId: sid, date } })
+          }}
+        />
+      )}
     </Card>
   )
 }

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { makeClientMock } from './_testUtils.js'
+import { makeClientMock, makeRangedQueryMock } from './_testUtils.js'
 
 vi.mock('./_client.js', () => ({ getClient: vi.fn() }))
 import { getClient } from './_client.js'
 
-import { recalculateSessionStats, fetchRecentExerciseStats, fetchWeeklyPRs } from './exerciseStatsApi.js'
+import { recalculateSessionStats, fetchRecentExerciseStats, fetchWeeklyPRs, fetchExerciseChartData } from './exerciseStatsApi.js'
 import { RECENT_STATS_LOOKBACK } from '../lib/recentExercises.js'
 
 beforeEach(() => {
@@ -173,5 +173,51 @@ describe('fetchWeeklyPRs', () => {
     const error = { message: 'boom' }
     getClient.mockReturnValue(makeClientMock({ exercise_session_stats: { data: null, error } }))
     await expect(fetchWeeklyPRs('a', 'b')).rejects.toBe(error)
+  })
+})
+
+describe('fetchExerciseChartData', () => {
+  it('orders by date with the row id as tiebreaker, so pages neither skip nor repeat', async () => {
+    const mock = makeRangedQueryMock([])
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchExerciseChartData({ exerciseId: 1, routineDayId: null, gymId: null })
+    expect(mock.order.mock.calls).toEqual([
+      ['session_date', { ascending: true }],
+      ['id', { ascending: true }],
+    ])
+  })
+
+  // The history modal filters the chart by routine day on the client, and pages dedupe by id.
+  it('selects the row id and the session routine day', async () => {
+    const mock = makeRangedQueryMock([])
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchExerciseChartData({ exerciseId: 1, routineDayId: null, gymId: null })
+    const selectArg = mock.select.mock.calls[0][0]
+    expect(selectArg).toMatch(/^\s*id,/)
+    expect(selectArg).toContain('routine_day_id')
+  })
+
+  it('reads every page, not only the first 1000 rows', async () => {
+    const rows = Array.from({ length: 1001 }, (_, i) => ({ id: `stat-${i}`, session_date: '2026-01-01' }))
+    const mock = makeRangedQueryMock(rows)
+    getClient.mockReturnValue({ from: () => mock })
+    await expect(fetchExerciseChartData({ exerciseId: 1, routineDayId: null, gymId: null })).resolves.toHaveLength(1001)
+  })
+
+  it('filters by gym only when one is given', async () => {
+    const mock = makeRangedQueryMock([])
+    getClient.mockReturnValue({ from: () => mock })
+    await fetchExerciseChartData({ exerciseId: 1, routineDayId: null, gymId: 7 })
+    expect(mock.eq).toHaveBeenCalledWith('gym_id', 7)
+
+    mock.eq.mockClear()
+    await fetchExerciseChartData({ exerciseId: 1, routineDayId: null, gymId: null })
+    expect(mock.eq).not.toHaveBeenCalledWith('gym_id', expect.anything())
+  })
+
+  it('throws the Supabase error', async () => {
+    const error = new Error('boom')
+    getClient.mockReturnValue({ from: () => makeRangedQueryMock([], error) })
+    await expect(fetchExerciseChartData({ exerciseId: 1, routineDayId: null, gymId: null })).rejects.toBe(error)
   })
 })

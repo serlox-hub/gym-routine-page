@@ -257,6 +257,7 @@ export default function DayCard({
                       <BlockSection
                         block={warmupBlock}
                         routineDayId={id}
+                        routineId={routineId}
                         isReordering={isReorderingExercises}
                         onAddExercise={() => onAddWarmup(id, existingSupersets)}
                         onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}
@@ -276,6 +277,7 @@ export default function DayCard({
                       <BlockSection
                         block={mainBlock}
                         routineDayId={id}
+                        routineId={routineId}
                         isReordering={isReorderingExercises}
                         onAddExercise={() => onAddExercise(id, existingSupersets)}
                         onEditExercise={(re) => onEditExercise(re, id, existingSupersets)}

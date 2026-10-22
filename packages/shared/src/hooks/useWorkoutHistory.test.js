@@ -1,15 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query'
 import React from 'react'
-import { useExerciseHistory, useExerciseHistorySummary, usePreviousWorkout, useRescheduleSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useCorrectSessionExercise } from './useWorkoutHistory.js'
+import { useExerciseHistorySummary, useExerciseHistoryFilter, usePreviousWorkout, useRescheduleSession, useUpdateSessionMetadata, useUpsertCompletedSet, useDeleteCompletedSet, useCorrectSessionExercise } from './useWorkoutHistory.js'
 
 // Mock the workoutApi module
 vi.mock('../api/workoutApi.js', () => ({
   fetchWorkoutHistory: vi.fn(),
   fetchSessionDetail: vi.fn(),
   fetchExerciseHistorySummary: vi.fn(),
-  fetchExerciseHistory: vi.fn(),
   fetchPreviousWorkout: vi.fn(),
   deleteWorkoutSession: vi.fn(),
   updateSessionMetadata: vi.fn(),
@@ -31,10 +30,14 @@ vi.mock('../api/exerciseApi.js', () => ({ fetchUserExerciseGymUnit: vi.fn() }))
 vi.mock('../api/preferencesApi.js', () => ({ fetchPreferences: vi.fn() }))
 vi.mock('./useAuth.js', () => ({ useUserId: () => 'user-1' }))
 
+// The routine's days, as `useRoutineDays` returns them, varied per test.
+const { routineDaysQuery } = vi.hoisted(() => ({ routineDaysQuery: vi.fn() }))
+vi.mock('./useRoutines.js', () => ({ useRoutineDays: routineDaysQuery }))
+
 const notify = vi.fn()
 vi.mock('../notifications.js', () => ({ getNotifier: () => ({ show: notify }) }))
 
-import { fetchExerciseHistory, fetchExerciseHistorySummary, fetchPreviousWorkout, rescheduleSession, updateSessionMetadata, upsertCompletedSet, deleteCompletedSet, correctSessionExercise } from '../api/workoutApi.js'
+import { fetchExerciseHistorySummary, fetchPreviousWorkout, rescheduleSession, updateSessionMetadata, upsertCompletedSet, deleteCompletedSet, correctSessionExercise } from '../api/workoutApi.js'
 import { t } from '../i18n/index.js'
 import { recalculateSessionStats } from '../api/exerciseStatsApi.js'
 import { fetchUserExerciseGymUnit } from '../api/exerciseApi.js'
@@ -69,161 +72,6 @@ const FAKE_SESSIONS = [
   },
 ]
 
-describe('useExerciseHistory', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('retorna { pages: [...] } shape con useInfiniteQuery', async () => {
-    fetchExerciseHistory.mockResolvedValueOnce(FAKE_SESSIONS)
-
-    const { result } = renderHook(
-      () => useExerciseHistory('exercise-123'),
-      { wrapper: createWrapper() }
-    )
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    expect(result.current.data).toBeDefined()
-    expect(result.current.data.pages).toBeDefined()
-    expect(Array.isArray(result.current.data.pages)).toBe(true)
-  })
-
-  it('la primera página contiene los resultados de la API', async () => {
-    fetchExerciseHistory.mockResolvedValueOnce(FAKE_SESSIONS)
-
-    const { result } = renderHook(
-      () => useExerciseHistory('exercise-123'),
-      { wrapper: createWrapper() }
-    )
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    const firstPage = result.current.data.pages[0]
-    expect(Array.isArray(firstPage)).toBe(true)
-    expect(firstPage).toHaveLength(2)
-    expect(firstPage[0].sessionId).toBe('session-1')
-    expect(firstPage[0].date).toBe('2024-01-15T10:00:00Z')
-    expect(Array.isArray(firstPage[0].sets)).toBe(true)
-  })
-
-  it('propaga gymId por sesión (null si la sesión no tiene gym_id)', async () => {
-    fetchExerciseHistory.mockResolvedValueOnce(FAKE_SESSIONS)
-
-    const { result } = renderHook(
-      () => useExerciseHistory('exercise-123'),
-      { wrapper: createWrapper() }
-    )
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    const firstPage = result.current.data.pages[0]
-    expect(firstPage[0].gymId).toBe('gym-1')
-    expect(firstPage[1].gymId).toBeNull()
-  })
-
-  it('data.pages.flat() produce array plano de sesiones', async () => {
-    fetchExerciseHistory.mockResolvedValueOnce(FAKE_SESSIONS)
-
-    const { result } = renderHook(
-      () => useExerciseHistory('exercise-123'),
-      { wrapper: createWrapper() }
-    )
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    const flatSessions = result.current.data.pages.flat()
-    expect(Array.isArray(flatSessions)).toBe(true)
-    expect(flatSessions).toHaveLength(2)
-  })
-
-  it('hasNextPage es false cuando la página tiene menos de 30 items', async () => {
-    fetchExerciseHistory.mockResolvedValueOnce(FAKE_SESSIONS) // 2 items < 30
-
-    const { result } = renderHook(
-      () => useExerciseHistory('exercise-123'),
-      { wrapper: createWrapper() }
-    )
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    expect(result.current.hasNextPage).toBe(false)
-  })
-
-  it('hasNextPage es true cuando la página tiene exactamente 30 items', async () => {
-    const fullPage = Array.from({ length: 30 }, (_, i) => ({
-      session: { id: `session-${i}`, started_at: '2024-01-15T10:00:00Z' },
-      completed_sets: [{ id: `set-${i}`, set_number: 1 }],
-    }))
-    fetchExerciseHistory.mockResolvedValueOnce(fullPage)
-
-    const { result } = renderHook(
-      () => useExerciseHistory('exercise-123'),
-      { wrapper: createWrapper() }
-    )
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    expect(result.current.hasNextPage).toBe(true)
-  })
-
-  it('la primera página está vacía cuando la API devuelve []', async () => {
-    fetchExerciseHistory.mockResolvedValueOnce([])
-
-    const { result } = renderHook(
-      () => useExerciseHistory('exercise-123'),
-      { wrapper: createWrapper() }
-    )
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    expect(result.current.data.pages[0]).toEqual([])
-    expect(result.current.hasNextPage).toBe(false)
-  })
-
-  it('fetchNextPage agrega una segunda página a data.pages', async () => {
-    const page1 = Array.from({ length: 30 }, (_, i) => ({
-      session: { id: `session-p1-${i}`, started_at: '2024-01-15T10:00:00Z' },
-      completed_sets: [{ id: `set-p1-${i}`, set_number: 1 }],
-    }))
-    const page2 = [
-      {
-        session: { id: 'session-p2-0', started_at: '2024-01-01T10:00:00Z' },
-        completed_sets: [{ id: 'set-p2-0', set_number: 1 }],
-      },
-    ]
-
-    fetchExerciseHistory
-      .mockResolvedValueOnce(page1)
-      .mockResolvedValueOnce(page2)
-
-    const { result } = renderHook(
-      () => useExerciseHistory('exercise-123'),
-      { wrapper: createWrapper() }
-    )
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.pages).toHaveLength(1)
-
-    result.current.fetchNextPage()
-
-    await waitFor(() => expect(result.current.data.pages).toHaveLength(2))
-
-    const allSessions = result.current.data.pages.flat()
-    expect(allSessions).toHaveLength(31)
-  })
-
-  it('no ejecuta la query si exerciseId es falsy', () => {
-    const { result } = renderHook(
-      () => useExerciseHistory(null),
-      { wrapper: createWrapper() }
-    )
-
-    expect(result.current.fetchStatus).toBe('idle')
-    expect(fetchExerciseHistory).not.toHaveBeenCalled()
-  })
-})
-
 describe('useExerciseHistorySummary', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -241,6 +89,122 @@ describe('useExerciseHistorySummary', () => {
 
     expect(result.current.data[0].gymId).toBe('gym-1')
     expect(result.current.data[1].gymId).toBeNull()
+  })
+
+  // The history modal marks and filters each session by its routine day. A session whose day was
+  // deleted has routine_day_id NULL (FK ON DELETE SET NULL), and a free session never had one.
+  it('propaga routineDayId por sesión (null si la sesión no tiene día)', async () => {
+    fetchExerciseHistorySummary.mockResolvedValueOnce([
+      { ...FAKE_SESSIONS[0], session: { ...FAKE_SESSIONS[0].session, routine_day_id: 12 } },
+      FAKE_SESSIONS[1],
+    ])
+
+    const { result } = renderHook(
+      () => useExerciseHistorySummary('exercise-123'),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data.map(item => item.routineDayId)).toEqual([12, null])
+    expect(result.current.data[0]).toEqual({
+      sessionId: 'session-1',
+      date: '2024-01-15T10:00:00Z',
+      gymId: 'gym-1',
+      routineDayId: 12,
+      sets: FAKE_SESSIONS[0].completed_sets,
+    })
+  })
+})
+
+describe('useExerciseHistoryFilter', () => {
+  const SESSIONS = [
+    { sessionId: 'same', routineDayId: 1 },
+    { sessionId: 'other-day', routineDayId: 2 },
+    { sessionId: 'elsewhere', routineDayId: 9 },
+    { sessionId: 'free', routineDayId: null },
+  ]
+  const CHART_ROWS = [
+    { id: 'r-same', session: { routine_day_id: 1 } },
+    { id: 'r-other-day', session: { routine_day_id: 2 } },
+    { id: 'r-free', session: { routine_day_id: null } },
+  ]
+  const ROUTINE_DAYS = [{ id: 1 }, { id: 2 }]
+  const values = (options) => options.map(option => option.value)
+  const sessionIds = (sessions) => sessions.map(session => session.sessionId)
+
+  function renderFilter(params) {
+    return renderHook(() => useExerciseHistoryFilter({ sessions: SESSIONS, chartRows: CHART_ROWS, ...params }))
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    routineDaysQuery.mockReturnValue({ data: ROUTINE_DAYS, isLoading: false })
+  })
+
+  it('without a routine day: no selector, no marks, everything listed, the routine not asked for', () => {
+    const { result } = renderFilter({ routineDayId: null, routineId: 5 })
+
+    expect(result.current.options).toEqual([])
+    expect(result.current.membershipOf(SESSIONS[0])).toBeNull()
+    expect(result.current.sessions).toBe(SESSIONS)
+    expect(result.current.chartRows).toBe(CHART_ROWS)
+    expect(routineDaysQuery).toHaveBeenCalledWith(null)
+  })
+
+  it('with a routine day: three segments on ALL, and each session marked against the day and routine', () => {
+    const { result } = renderFilter({ routineDayId: '1', routineId: 5 })
+
+    expect(routineDaysQuery).toHaveBeenCalledWith(5)
+    expect(values(result.current.options)).toEqual(['all', 'routine', 'day'])
+    expect(result.current.filter).toBe('all')
+    expect(SESSIONS.map(result.current.membershipOf)).toEqual(['day', 'routine', 'other', 'other'])
+  })
+
+  it('filters the sessions and the chart rows with the same rule', () => {
+    const { result } = renderFilter({ routineDayId: 1, routineId: 5 })
+
+    act(() => result.current.setFilter('routine'))
+    expect(sessionIds(result.current.sessions)).toEqual(['same', 'other-day'])
+    expect(result.current.chartRows.map(row => row.id)).toEqual(['r-same', 'r-other-day'])
+
+    act(() => result.current.setFilter('day'))
+    expect(sessionIds(result.current.sessions)).toEqual(['same'])
+    expect(result.current.chartRows.map(row => row.id)).toEqual(['r-same'])
+  })
+
+  it('days that failed to load (or no routine id): no "this routine" segment and no "other day" mark', () => {
+    routineDaysQuery.mockReturnValue({ data: undefined, isLoading: false })
+    const { result } = renderFilter({ routineDayId: 1, routineId: null })
+
+    expect(values(result.current.options)).toEqual(['all', 'day'])
+    expect(SESSIONS.map(result.current.membershipOf)).toEqual(['day', 'other', 'other', 'other'])
+  })
+
+  it('while the days load: no selector yet, and it reports loading', () => {
+    routineDaysQuery.mockReturnValue({ data: undefined, isLoading: true })
+    const { result } = renderFilter({ routineDayId: 1, routineId: 5 })
+
+    expect(result.current.options).toEqual([])
+    expect(result.current.isLoading).toBe(true)
+  })
+
+  it('a selected segment that goes away falls back to ALL', () => {
+    const { result, rerender } = renderFilter({ routineDayId: 1, routineId: 5 })
+    act(() => result.current.setFilter('routine'))
+
+    routineDaysQuery.mockReturnValue({ data: undefined, isLoading: false })
+    rerender()
+
+    expect(result.current.filter).toBe('all')
+    expect(result.current.sessions).toBe(SESSIONS)
+  })
+
+  it('day id 0 is a day', () => {
+    routineDaysQuery.mockReturnValue({ data: [{ id: 0 }], isLoading: false })
+    const { result } = renderFilter({ routineDayId: 0, routineId: 5 })
+
+    expect(values(result.current.options)).toEqual(['all', 'routine', 'day'])
   })
 })
 

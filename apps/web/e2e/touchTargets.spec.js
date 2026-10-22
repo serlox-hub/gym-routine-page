@@ -333,7 +333,11 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     await cardMenu.click()
     await page.getByRole('button', { name: 'Histórico' }).click()
     const historyModal = modal(page, page.getByRole('button', { name: 'Comparar' }))
-    await expect(historyModal.getByRole('button', { name: 'Rutina', exact: true })).toBeVisible()
+    // The routine filter (issue #184): three segments, on "Todo" at every opening.
+    for (const name of ['Todo', 'Esta rutina', 'Este día']) {
+      await expect(historyModal.getByRole('button', { name, exact: true })).toBeVisible()
+    }
+    await expect(historyModal.getByRole('button', { name: 'Todo', exact: true })).toHaveAttribute('aria-pressed', 'true')
     await expectTouchTargets(historyModal)
     await tapOutside(page)
     await expect(historyModal).toBeHidden()

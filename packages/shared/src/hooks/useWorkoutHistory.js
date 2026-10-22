@@ -1,10 +1,10 @@
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useMemo, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '../lib/constants.js'
 import {
   fetchWorkoutHistory,
   fetchSessionDetail,
   fetchExerciseHistorySummary,
-  fetchExerciseHistory,
   fetchPreviousWorkout,
   updateSessionMetadata,
   rescheduleSession,
@@ -25,10 +25,18 @@ import {
   recalculateSessionStats,
 } from '../api/exerciseStatsApi.js'
 import { transformSessionDetailData, buildPreviousWorkoutRef } from '../lib/workoutTransforms.js'
+import {
+  HISTORY_FILTER,
+  classifyRoutineMembership,
+  filterByRoutineMembership,
+  getHistoryFilterOptions,
+  resolveHistoryFilter,
+} from '../lib/routineMembership.js'
 import { localizeExercisesInList, localizeExercise, resolveWeightUnit } from '../lib/exerciseUtils.js'
 import { getNotifier } from '../notifications.js'
 import { t } from '../i18n/index.js'
 import { useUserId } from './useAuth.js'
+import { useRoutineDays } from './useRoutines.js'
 
 // ============================================
 // HISTORY QUERIES
@@ -99,6 +107,7 @@ export function useExerciseHistorySummary(exerciseId, routineDayId = null, gymId
         sessionId: se.session.id,
         date: se.session.started_at,
         gymId: se.session.gym_id ?? null,
+        routineDayId: se.session.routine_day_id ?? null,
         sets: se.completed_sets.sort((a, b) => a.set_number - b.set_number)
       }))
     },
@@ -106,31 +115,54 @@ export function useExerciseHistorySummary(exerciseId, routineDayId = null, gymId
   })
 }
 
-const EXERCISE_HISTORY_PAGE_SIZE = 30
+// ============================================
+// EXERCISE HISTORY FILTER
+// ============================================
 
-export function useExerciseHistory(exerciseId, routineDayId = null, gymId = null) {
-  return useInfiniteQuery({
-    queryKey: [QUERY_KEYS.EXERCISE_HISTORY, exerciseId, routineDayId, gymId],
-    queryFn: async ({ pageParam = 0 }) => {
-      const from = pageParam * EXERCISE_HISTORY_PAGE_SIZE
-      const to = from + EXERCISE_HISTORY_PAGE_SIZE - 1
+const getSessionRoutineDayId = (session) => session.routineDayId
+const getChartRowRoutineDayId = (row) => row.session?.routine_day_id
 
-      const data = await fetchExerciseHistory({ exerciseId, routineDayId, from, to, gymId })
+/**
+ * The history modal's routine filter: the selector's segments, the one in effect, each session's
+ * mark, and the summary sessions and chart rows it keeps. It filters on the client, so switching
+ * segments sends no request. Starts on ALL on every mount (the modal mounts on open).
+ * @param {{ routineDayId: number|string|null, routineId: number|string|null, sessions?: Array, chartRows?: Array }} params
+ *   `sessions` from `useExerciseHistorySummary`, `chartRows` from `useExerciseChartData`.
+ * @returns {{ options: Array<{ value: string, labelKey: string }>, filter: string, setFilter: Function,
+ *   membershipOf: (session: object) => string|null, sessions: Array|undefined, chartRows: Array|undefined,
+ *   isLoading: boolean }} `membershipOf` gives null when there is no current day (no mark at all).
+ */
+export function useExerciseHistoryFilter({ routineDayId, routineId, sessions, chartRows }) {
+  const hasRoutineDay = routineDayId != null
+  // Without a current day nothing is compared against the routine: it is not even asked for.
+  // `isLoading`, not `isPending`: a disabled query stays pending forever.
+  const { data: routineDays, isLoading } = useRoutineDays(hasRoutineDay ? routineId : null)
+  // Unknown (no routine id, or the query failed before any data) is NOT "no days": the selector
+  // drops "this routine" and no session is marked "other day" rather than guess.
+  const routineDayIds = useMemo(() => (Array.isArray(routineDays) ? routineDays.map(day => day.id) : null), [routineDays])
 
-      return data.map(se => ({
-        sessionId: se.session.id,
-        date: se.session.started_at,
-        gymId: se.session.gym_id ?? null,
-        sets: se.completed_sets.sort((a, b) => a.set_number - b.set_number)
-      }))
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < EXERCISE_HISTORY_PAGE_SIZE) return undefined
-      return allPages.length
-    },
-    enabled: !!exerciseId,
-  })
+  // No selector until the days arrive, rather than two segments that turn into three.
+  const options = useMemo(
+    () => (isLoading ? [] : getHistoryFilterOptions({ hasRoutineDay, routineDaysKnown: routineDayIds != null })),
+    [isLoading, hasRoutineDay, routineDayIds]
+  )
+  const [selected, setFilter] = useState(HISTORY_FILTER.ALL)
+  const filter = resolveHistoryFilter(selected, options)
+
+  const membershipOf = useCallback(
+    (session) => (hasRoutineDay ? classifyRoutineMembership(session.routineDayId, routineDayId, routineDayIds) : null),
+    [hasRoutineDay, routineDayId, routineDayIds]
+  )
+  const filteredSessions = useMemo(
+    () => filterByRoutineMembership(sessions, filter, getSessionRoutineDayId, routineDayId, routineDayIds),
+    [sessions, filter, routineDayId, routineDayIds]
+  )
+  const filteredChartRows = useMemo(
+    () => filterByRoutineMembership(chartRows, filter, getChartRowRoutineDayId, routineDayId, routineDayIds),
+    [chartRows, filter, routineDayId, routineDayIds]
+  )
+
+  return { options, filter, setFilter, membershipOf, sessions: filteredSessions, chartRows: filteredChartRows, isLoading }
 }
 
 // La referencia "Anterior" se segrega por gym (unidades/máquina) y prioriza el mismo día de rutina
