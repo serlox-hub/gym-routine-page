@@ -59,6 +59,20 @@ describe('HistoryTable — note and video buttons', () => {
   })
 })
 
+describe('HistoryTable — set row height', () => {
+  // jsdom does not lay anything out: this guards the class that gives the 44px floor,
+  // and e2e/touchTargets.spec.js measures the rendered heights (issue #185).
+  const rowOf = (text) => screen.getByText(text).parentElement
+
+  it('every set row has the 44px minimum, whether or not it carries a note or a video', () => {
+    renderTable([plainSet, noteSet, noteAndVideoSet])
+
+    for (const set of [plainSet, noteSet, noteAndVideoSet]) {
+      expect(rowOf(`80kg × ${set.reps_completed} reps`)).toHaveClass('min-h-11')
+    }
+  })
+})
+
 describe('HistoryTable — routine marks', () => {
   const sessions = [
     { sessionId: 1, date: '2026-09-03', routineDayId: 1, sets: [plainSet] },

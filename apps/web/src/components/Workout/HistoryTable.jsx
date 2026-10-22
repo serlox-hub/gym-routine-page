@@ -79,17 +79,16 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
             </div>
 
             {/* Sets */}
-            <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column' }}>
               {session.sets.map(set => (
-                <div key={set.id} className="flex items-center gap-3" style={{ fontSize: 13 }}>
+                // As tall as the note and video buttons, so a set without them is as tall as one with them.
+                <div key={set.id} className="flex items-center gap-3 min-h-11" style={{ fontSize: 13 }}>
                   <span style={{ color: colors.textMuted, fontSize: 12, width: 14, textAlign: 'right' }}>
                     {set.set_number}
                   </span>
                   <span className="flex-1" style={{ color: colors.textPrimary }}>
                     {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                   </span>
-                  {/* No negative margin: the 44px boxes make a set with a note or video 44 tall,
-                      so two consecutive ones do not overlap in the 6px gap. */}
                   <div className="flex items-center gap-0.5">
                     {set.notes && (
                       <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')}

@@ -119,6 +119,14 @@ async function seedWeeklyRecord(supabase, userId) {
   if (statsError) throw statsError
 }
 
+/** A note on the user's set at `weight`: its history row gets the note button. */
+async function addSetNote(supabase, weight) {
+  const { data, error } = await supabase
+    .from('completed_sets').update({ notes: 'Nota E2E' }).eq('weight', weight).select('id')
+  if (error) throw error
+  expect(data).toHaveLength(1)
+}
+
 async function prepare() {
   const { supabase, userId } = await signedInClient()
   await ensureTimeExercise(supabase, userId)
@@ -420,6 +428,8 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
 
     // History state 3: a second session the same day, so the day shows a chip per session.
     await finishSession(page, '50')
+    const { supabase } = await signedInClient()
+    await addSetNote(supabase, 40)
     await page.goto('/history')
     const sessionChips = page.getByRole('button', { name: new RegExp(`^${DAY_NAME} · `) })
     await expect(sessionChips).toHaveCount(2)
@@ -431,6 +441,14 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     const historyModal = modal(page, page.getByRole('button', { name: '1M', exact: true }))
     await expect(historyModal.getByRole('button', { name: 'Volumen total' })).toBeVisible()
     await expectTouchTargets(historyModal)
+
+    // A set row with a note is as tall as one without (issue #185).
+    const noteRow = historyModal.getByText('40kg × 10 reps', { exact: true }).locator('..')
+    const plainRow = historyModal.getByText('50kg × 10 reps', { exact: true }).locator('..')
+    await expect(noteRow.getByRole('button', { name: 'Notas' })).toBeVisible()
+    await expect(plainRow.getByRole('button', { name: 'Notas' })).toHaveCount(0)
+    const [noteBox, plainBox] = await Promise.all([noteRow.boundingBox(), plainRow.boundingBox()])
+    expect(plainBox.height).toBe(noteBox.height)
   })
 
   test('body metrics: weight, measurements, the type selector and the config modal', async ({ page }) => {
