@@ -1,5 +1,5 @@
 import { t, getCurrentLocale } from '../i18n/index.js'
-import { GOAL_OPTIONS } from './routineWizardOptions.js'
+import { getGoalLabel } from './routineWizardOptions.js'
 
 export const ROUTINE_JSON_FORMAT = `\`\`\`json
 {
@@ -162,8 +162,7 @@ function catalogSection(catalog) {
 // The goal as the user saw it: the value 'Resistencia' alone reads as running to the AI, the
 // label says muscular endurance. A custom goal is free text and goes as typed.
 function describeGoal(objetivo) {
-  const option = GOAL_OPTIONS.find(o => o.value === objetivo)
-  return option ? t(option.labelKey) : objetivo
+  return getGoalLabel(objetivo, t)
 }
 
 export function buildChatbotPrompt({ objetivo, diasPorSemana, nivelExperiencia, duracionSesion, equipamiento, notas }, catalog) {

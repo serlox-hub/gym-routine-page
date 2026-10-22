@@ -1,21 +1,18 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, Check, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   ROUTINE_TEMPLATES,
   LEVEL_OPTIONS,
   EQUIPMENT_OPTIONS,
   recommendTemplate,
-  formatGoalGuidance,
-  getTemplateDaysNote,
-  getTemplateDisplay,
   getNotifier,
 } from '@gym/shared'
 import { useCreateRoutineFromTemplate } from '../../hooks/useRoutines.js'
 import { Modal, LoadingSpinner } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import OnboardingGoalStep from './OnboardingGoalStep.jsx'
-import OnboardingNote from './OnboardingNote.jsx'
+import OnboardingRecommendationStep from './OnboardingRecommendationStep.jsx'
 
 const TOTAL_STEPS = 5
 
@@ -35,17 +32,9 @@ function OnboardingWizard({ onComplete }) {
   const [selectedId, setSelectedId] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const { templateId: recommendedId, guidance } = recommendTemplate(answers)
-  const activeId = selectedId ?? recommendedId
-  const recommendedTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === recommendedId)
-  // La recomendada primero: es lo primero visible en el paso final, sin scroll.
-  const orderedTemplates = [
-    recommendedTemplate,
-    ...ROUTINE_TEMPLATES.filter(tpl => tpl.id !== recommendedId),
-  ]
-  // Sobre la plantilla marcada, no la recomendada: elegir otra a mano cambia la nota.
-  const activeTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === activeId)
-  const daysNote = getTemplateDaysNote(activeTemplate, answers.diasPorSemana)
+  const recommendation = recommendTemplate(answers)
+  const activeId = selectedId ?? recommendation.templateId
+  const recommendedTemplate = ROUTINE_TEMPLATES.find(tpl => tpl.id === recommendation.templateId)
 
   const canNext =
     (step === 1 && answers.diasPorSemana) ||
@@ -160,54 +149,12 @@ function OnboardingWizard({ onComplete }) {
           )}
 
           {step === 5 && (
-            <>
-              <div>
-                <h3 style={{ color: colors.textPrimary, fontSize: 18, fontWeight: 700 }}>{t('routine:onboarding.recommendedTitle')}</h3>
-                <p style={{ color: colors.textSecondary, fontSize: 13, marginTop: 4 }}>{t('routine:onboarding.recommendedSubtitle')}</p>
-              </div>
-              {guidance && (
-                <OnboardingNote>{formatGoalGuidance(guidance, recommendedTemplate, t)}</OnboardingNote>
-              )}
-              {daysNote && (
-                <OnboardingNote>
-                  {t(`routine:onboarding.daysNote.${daysNote}`, { requested: Number(answers.diasPorSemana), actual: activeTemplate.daysPerWeek, min: activeTemplate.minDays })}
-                </OnboardingNote>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {orderedTemplates.map(template => {
-                  const isSelected = activeId === template.id
-                  const isRecommended = recommendedId === template.id
-                  const { name, tags } = getTemplateDisplay(template, t)
-                  return (
-                    <button key={template.id} onClick={() => setSelectedId(template.id)}
-                      className="w-full text-left rounded-xl transition-all"
-                      style={{ padding: '14px 16px', backgroundColor: colors.bgSecondary, border: `1px solid ${isSelected ? colors.success : colors.border}` }}>
-                      <div className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5"
-                          style={{ borderColor: isSelected ? colors.success : colors.border, backgroundColor: isSelected ? colors.success : 'transparent' }}>
-                          {isSelected && <Check size={12} color={colors.bgPrimary} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span style={{ color: colors.textPrimary, fontSize: 14, fontWeight: 600 }}>{name}</span>
-                            {isRecommended && (
-                              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.successBg, color: colors.success, fontSize: 11, fontWeight: 600 }}>
-                                <Sparkles size={10} /> {t('routine:onboarding.recommendedBadge')}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            {tags.map(tag => (
-                              <span key={tag} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}>{tag}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </>
+            <OnboardingRecommendationStep
+              answers={answers}
+              recommendation={recommendation}
+              activeId={activeId}
+              onSelect={setSelectedId}
+            />
           )}
         </div>
 

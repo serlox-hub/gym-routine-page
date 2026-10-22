@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { GOAL_OPTIONS, GOAL_VALUES, MAX_GOALS, toggleGoal } from './routineWizardOptions.js'
+import { GOAL_OPTIONS, GOAL_VALUES, MAX_GOALS, toggleGoal, getGoalLabel } from './routineWizardOptions.js'
 
 const { HYPERTROPHY, STRENGTH, FAT_LOSS, ENDURANCE, GENERAL } = GOAL_VALUES
 
@@ -52,5 +52,18 @@ describe('toggleGoal', () => {
     expect(toggleGoal('Fuerza', HYPERTROPHY)).toEqual([HYPERTROPHY])
     expect(toggleGoal([STRENGTH, STRENGTH, 'nope'], GENERAL)).toEqual([STRENGTH, GENERAL])
     expect(toggleGoal([HYPERTROPHY, STRENGTH, FAT_LOSS], GENERAL)).toEqual([HYPERTROPHY, STRENGTH])
+  })
+})
+
+describe('getGoalLabel', () => {
+  const fakeT = key => `t(${key})`
+
+  it('an offered goal goes as its translated label', () => {
+    for (const { value, labelKey } of GOAL_OPTIONS) expect(getGoalLabel(value, fakeT)).toBe(`t(${labelKey})`)
+  })
+
+  it('anything else goes as it is (a custom goal is free text)', () => {
+    expect(getGoalLabel('Mantenimiento', fakeT)).toBe('Mantenimiento')
+    expect(getGoalLabel(undefined, fakeT)).toBeUndefined()
   })
 })
