@@ -235,6 +235,37 @@ export function findPreviousRepRecord(repCount, historicalMap) {
 }
 
 // ============================================
+// HISTORY WITHOUT A WEIGHT (0 kg sets)
+// ============================================
+
+// A 0 kg set is stored as "no value": a history whose sets were all at 0 kg has null bestWeight,
+// best1rm and bestPerReps. For these stats, with history in this gym, a missing previous value
+// counts as 0, or the first weighted session would never be a PR. recalculate_exercise_prs
+// (migration 070) applies the same rule. Other stats still need a previous value: 0 kg is a real
+// load (bodyweight) with no counterpart in reps, time or distance, and recalculate_exercise_prs
+// does not know what the exercise tracks, so extending the rule there would flag volume, time or
+// distance records the JS paths never flag (DECISIONS, tracked_fields).
+const ZERO_WHEN_MISSING_STATS = new Set(['bestWeight', 'best1rm'])
+
+function hasWeightHistory(bests) {
+  return bests.bestWeight > 0 || bests.best1rm > 0
+}
+
+/**
+ * The bestPerReps map a rep PR is measured against, or null when rep PRs are not judged. A
+ * history without any weight (only 0 kg sets) is measured against an empty map, so every
+ * weighted rep count is new. A history WITH a weight but no map is inconsistent data (rows from
+ * before best_per_reps, see migration 043): no rep PR rather than a false one.
+ * @param {Object} bests - bests before the session (fetchExerciseBests), never null
+ * @returns {Object<string, number>|null}
+ */
+function getRepPRHistory(bests) {
+  const map = bests.bestPerReps
+  if (map && Object.keys(map).length > 0) return map
+  return hasWeightHistory(bests) ? null : {}
+}
+
+// ============================================
 // PR DETECTION (END OF SESSION)
 // ============================================
 
@@ -300,10 +331,11 @@ export function detectNewPersonalRecords(currentStats, previousBests, trackedFie
   for (const { stat, flag, unit, metric } of PR_FIELDS) {
     if (prMetrics && !prMetrics.includes(metric)) continue
     const current = currentStats[stat]
-    const previous = previousBests[stat]
-    if (current && previous && current > previous) {
+    const previous = previousBests[stat] || null
+    const comparable = previous || ZERO_WHEN_MISSING_STATS.has(stat)
+    if (current && comparable && current > (previous || 0)) {
       flags[flag] = true
-      const improvement = Math.round(((current - previous) / previous) * 100)
+      const improvement = previous ? Math.round(((current - previous) / previous) * 100) : null
       details.push({ type: stat, label: getPRLabel(stat), newValue: current, oldValue: previous, unit, improvement })
     }
   }
@@ -326,14 +358,11 @@ export function detectNewPersonalRecords(currentStats, previousBests, trackedFie
     }
   }
 
-  // Rep-PR-por-rep-count (modelo Strong/Hevy). Solo dispara si previousBests
-  // tiene al menos una entrada en bestPerReps — sin eso no hay historial
-  // rep-by-rep para comparar (caso de primera sesión o transitorio).
+  // Rep PR per rep count (Strong/Hevy model), against the history getRepPRHistory picks.
   if (!prMetrics || prMetrics.includes('repPR')) {
     const currentBPR = currentStats.bestPerReps
-    const previousBPR = previousBests.bestPerReps
-    const hasRepPRHistory = previousBPR && Object.keys(previousBPR).length > 0
-    if (currentBPR && hasRepPRHistory) {
+    const previousBPR = getRepPRHistory(previousBests)
+    if (currentBPR && previousBPR) {
       const prCounts = []
       for (const [repsKey, weight] of Object.entries(currentBPR)) {
         const repCount = parseInt(repsKey, 10)
@@ -414,8 +443,8 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, tracked
     const threshold = Math.max(runningBests[key] || 0, preSessionBests[key] || 0)
 
     if (higherIsBetter) {
-      if (value > threshold && threshold > 0) {
-        newRecords.push({ type: key, value, previousValue: preSessionBests[key], label, unit })
+      if (value > threshold && (threshold > 0 || ZERO_WHEN_MISSING_STATS.has(key))) {
+        newRecords.push({ type: key, value, previousValue: preSessionBests[key] || null, label, unit })
         updatedRunningBests[key] = value
       } else if (value > (updatedRunningBests[key] || 0)) {
         updatedRunningBests[key] = value
@@ -435,19 +464,12 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, tracked
     }
   }
 
-  // Rep-PR-por-rep-count (modelo Strong/Hevy): el set @ W kg × N reps es PR si W
-  // supera el mejor peso a N reps o más, o si es la primera vez a N reps con
-  // historial general del ejercicio.
-  //
-  // Guard: solo dispara si preSessionBests.bestPerReps tiene al menos una entrada.
-  // Esto evita falsos positivos en la primera sesión del ejercicio (no hay historial
-  // de rep-by-rep) o durante el período transitorio antes de que el backfill llene
-  // best_per_reps en filas existentes.
+  // Rep PR per rep count (Strong/Hevy model): a W × N set is a PR when W beats the best weight
+  // at N reps or more, including the first time at N reps. Against the history getRepPRHistory picks.
   if (metrics.includes('repPR') && setData.weight && setData.reps_completed) {
-    const preSessionPerRep = preSessionBests.bestPerReps
-    const hasRepPRHistory = preSessionPerRep && Object.keys(preSessionPerRep).length > 0
+    const preSessionPerRep = getRepPRHistory(preSessionBests)
 
-    if (hasRepPRHistory) {
+    if (preSessionPerRep) {
       const N = setData.reps_completed
       const runningPerRep = runningBests.bestPerReps || {}
       // Dominancia: comparar contra el mejor peso a N reps o más (M >= N), tanto de
