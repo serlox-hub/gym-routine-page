@@ -24,15 +24,127 @@ describe('buildWeeklyPRs', () => {
     expect(buildWeeklyPRs([])).toEqual({ count: 0, sessions: [] })
   })
 
-  it('counts records, not exercises', () => {
+  it('heaviest-ever 65 × 8 → one "record at 8 reps": the weight and 1RM PRs are the same set', () => {
     const { count, sessions } = buildWeeklyPRs([row({
-      best_weight: 100, best_1rm: 117, is_pr_weight: true, is_pr_1rm: true,
-      best_per_reps: { 5: 100 }, pr_rep_counts: [5],
+      best_weight: 65, best_1rm: 82, is_pr_weight: true, is_pr_1rm: true,
+      best_per_reps: { 8: 65 }, pr_rep_counts: [8],
     })])
-    expect(count).toBe(3)
+    expect(count).toBe(1)
     expect(sessions).toHaveLength(1)
     expect(sessions[0].exercises).toHaveLength(1)
+    expect(sessions[0].exercises[0].details).toEqual([expect.objectContaining({ type: 'repPR', repCount: 8, newValue: 65 })])
+  })
+
+  it('counts records, not exercises: two rep PRs on one exercise are two', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 70, best_1rm: 89, is_pr_weight: true, is_pr_1rm: true,
+      best_per_reps: { 8: 70, 12: 60 }, pr_rep_counts: [8, 12],
+    })])
+    expect(count).toBe(2)
+    expect(sessions[0].exercises).toHaveLength(1)
+    expect(sessions[0].exercises[0].details.map(d => [d.type, d.repCount])).toEqual([['repPR', 8], ['repPR', 12]])
+  })
+
+  it('without a rep PR (legacy history, no best_per_reps) the weight and 1RM PRs stay', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 100, best_1rm: 117, is_pr_weight: true, is_pr_1rm: true,
+    })])
+    expect(count).toBe(2)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestWeight', 'best1rm'])
+  })
+
+  it('a record that is not the same set (volume) stays next to the rep PR, in order', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 65, best_1rm: 82, total_volume: 1500,
+      is_pr_weight: true, is_pr_1rm: true, is_pr_volume: true,
+      best_per_reps: { 8: 65 }, pr_rep_counts: [8],
+    })])
+    expect(count).toBe(2)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['totalVolume', 'repPR'])
+  })
+
+  it('a rep PR of another, lighter set does not hide the weight and 1RM PRs', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 70, best_1rm: 89, is_pr_weight: true, is_pr_1rm: true,
+      best_per_reps: { 8: 70, 15: 40 }, pr_rep_counts: [15],
+    })])
+    expect(count).toBe(3)
     expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestWeight', 'best1rm', 'repPR'])
+  })
+
+  it('a row converted from lb to kg (best_per_reps still in lb, #192) keeps every record', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 65, best_1rm: 82.55, is_pr_weight: true, is_pr_1rm: true,
+      best_per_reps: { 8: 143.3 }, pr_rep_counts: [8],
+    })])
+    expect(count).toBe(3)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestWeight', 'best1rm', 'repPR'])
+  })
+
+  it('a row converted from kg to lb (best_per_reps still in kg, #192) keeps every record too', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 143.3, best_1rm: 181.7, is_pr_weight: true, is_pr_1rm: true,
+      best_per_reps: { 8: 65 }, pr_rep_counts: [8],
+    })])
+    expect(count).toBe(3)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestWeight', 'best1rm', 'repPR'])
+  })
+
+  it('a 1RM PR without a weight PR is dropped when it is the rep PR set 1RM', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 100, best_1rm: 112, is_pr_1rm: true,
+      best_per_reps: { 12: 80 }, pr_rep_counts: [12],
+    })])
+    expect(count).toBe(1)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['repPR'])
+  })
+
+  it('a single (1 rep): the 1RM is the weight itself, unrounded, so 102.5 × 1 is one record', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 102.5, best_1rm: 102.5, is_pr_weight: true, is_pr_1rm: true,
+      best_per_reps: { 1: 102.5 }, pr_rep_counts: [1],
+    })])
+    expect(count).toBe(1)
+    expect(sessions[0].exercises[0].details).toEqual([expect.objectContaining({ type: 'repPR', repCount: 1, newValue: 102.5 })])
+  })
+
+  it('the weight and 1RM PRs match whichever rep PR is their set, not only the first', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 70, best_1rm: 89, is_pr_weight: true, is_pr_1rm: true,
+      best_per_reps: { 8: 70, 12: 60 }, pr_rep_counts: [12, 8],
+    })])
+    expect(count).toBe(2)
+    expect(sessions[0].exercises[0].details.map(d => [d.type, d.repCount])).toEqual([['repPR', 12], ['repPR', 8]])
+  })
+
+  it('a reps PR is the same set as the rep PR at that rep count', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 60, best_reps: 12, best_1rm: 84, is_pr_reps: true,
+      best_per_reps: { 12: 60 }, pr_rep_counts: [12],
+    })])
+    expect(count).toBe(1)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['repPR'])
+  })
+
+  it('a reps PR from a set without weight (no rep PR of its own) stays next to the rep PR', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_reps: 15, is_pr_reps: true,
+      best_per_reps: { 12: 60 }, pr_rep_counts: [12],
+    })])
+    expect(count).toBe(2)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestReps', 'repPR'])
+  })
+
+  it('records of exercises without rep PRs (weight, reps, time, distance) are kept as they are', () => {
+    const { count, sessions } = buildWeeklyPRs([
+      weightPR({ exercise_id: 1 }),
+      row({ exercise_id: 2, best_reps: 20, is_pr_reps: true }),
+      row({ exercise_id: 3, best_time_seconds: 90, is_pr_time: true }),
+      row({ exercise_id: 4, best_distance_meters: 5000, is_pr_distance: true }),
+    ])
+    expect(count).toBe(4)
+    expect(sessions[0].exercises.map(e => e.details.map(d => d.type)))
+      .toEqual([['bestWeight'], ['bestReps'], ['bestTimeSeconds'], ['bestDistanceMeters']])
   })
 
   it('groups by session (newest first) and keeps each exercise once', () => {
