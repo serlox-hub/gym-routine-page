@@ -7,8 +7,9 @@ import { calculateEpley1RM } from './workoutCalculations.js'
 // summary carousel already show only the rep PR. On weight × reps a reps PR only comes from
 // recalculate_exercise_prs (docs/DECISIONS.md, `tracked_fields` entry, «Divergencia conocida»).
 // Equal, not "per type" nor ">=", because the stored bests can disagree: convert_user_weights
-// converts best_weight and best_1rm but not best_per_reps (#192). Then nothing matches and every
-// record stays, in both directions of the conversion.
+// scales best_1rm, while the 1RM of a set is rounded to a whole number (calculateEpley1RM). After
+// a conversion the 1RM matches no rep PR and stays, in both directions: one chip too many, never
+// a record hidden. The same mismatch fires false 1RM PRs after kg → lb (#194).
 const COVERED_BY_REP_PR = {
   bestWeight: (detail, repPR) => repPR.newValue === detail.newValue,
   best1rm: (detail, repPR) => calculateEpley1RM(repPR.newValue, repPR.repCount) === detail.newValue,
