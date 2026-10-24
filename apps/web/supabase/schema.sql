@@ -905,24 +905,24 @@ BEGIN
       AND gym_id IS NOT DISTINCT FROM p_gym_id
       AND session_date >= p_after_date;
 
-    -- PR de peso (heaviest ever, cualquier rep count)
+    -- PR de peso (heaviest ever, cualquier rep count). Over every row: a 0 kg-only history counts.
     WITH ranked AS (
         SELECT id, best_weight,
-            MAX(best_weight) OVER (ORDER BY session_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
-            ROW_NUMBER() OVER (ORDER BY session_date) AS rn
+            MAX(best_weight) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
+            ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
         FROM exercise_session_stats
         WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
-          AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_weight IS NOT NULL
+          AND gym_id IS NOT DISTINCT FROM p_gym_id
     )
     UPDATE exercise_session_stats ess SET is_pr_weight = TRUE
-    FROM ranked r WHERE ess.id = r.id AND r.rn > 1 AND r.best_weight > r.prev_max
+    FROM ranked r WHERE ess.id = r.id AND r.rn > 1 AND r.best_weight > COALESCE(r.prev_max, 0)
       AND ess.session_date >= p_after_date;
 
     -- PR de reps
     WITH ranked AS (
         SELECT id, best_reps,
-            MAX(best_reps) OVER (ORDER BY session_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
-            ROW_NUMBER() OVER (ORDER BY session_date) AS rn
+            MAX(best_reps) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
+            ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
         FROM exercise_session_stats
         WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
           AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_reps IS NOT NULL
@@ -931,24 +931,24 @@ BEGIN
     FROM ranked r WHERE ess.id = r.id AND r.rn > 1 AND r.best_reps > r.prev_max
       AND ess.session_date >= p_after_date;
 
-    -- PR de 1RM
+    -- PR de 1RM. Over every row, like the weight.
     WITH ranked AS (
         SELECT id, best_1rm,
-            MAX(best_1rm) OVER (ORDER BY session_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
-            ROW_NUMBER() OVER (ORDER BY session_date) AS rn
+            MAX(best_1rm) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
+            ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
         FROM exercise_session_stats
         WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
-          AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_1rm IS NOT NULL
+          AND gym_id IS NOT DISTINCT FROM p_gym_id
     )
     UPDATE exercise_session_stats ess SET is_pr_1rm = TRUE
-    FROM ranked r WHERE ess.id = r.id AND r.rn > 1 AND r.best_1rm > r.prev_max
+    FROM ranked r WHERE ess.id = r.id AND r.rn > 1 AND r.best_1rm > COALESCE(r.prev_max, 0)
       AND ess.session_date >= p_after_date;
 
     -- PR de volumen
     WITH ranked AS (
         SELECT id, total_volume,
-            MAX(total_volume) OVER (ORDER BY session_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
-            ROW_NUMBER() OVER (ORDER BY session_date) AS rn
+            MAX(total_volume) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
+            ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
         FROM exercise_session_stats
         WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
           AND gym_id IS NOT DISTINCT FROM p_gym_id AND total_volume IS NOT NULL
@@ -960,8 +960,8 @@ BEGIN
     -- PR de tiempo
     WITH ranked AS (
         SELECT id, best_time_seconds,
-            MAX(best_time_seconds) OVER (ORDER BY session_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
-            ROW_NUMBER() OVER (ORDER BY session_date) AS rn
+            MAX(best_time_seconds) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
+            ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
         FROM exercise_session_stats
         WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
           AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_time_seconds IS NOT NULL
@@ -973,8 +973,8 @@ BEGIN
     -- PR de distancia
     WITH ranked AS (
         SELECT id, best_distance_meters,
-            MAX(best_distance_meters) OVER (ORDER BY session_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
-            ROW_NUMBER() OVER (ORDER BY session_date) AS rn
+            MAX(best_distance_meters) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
+            ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
         FROM exercise_session_stats
         WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
           AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_distance_meters IS NOT NULL
@@ -986,8 +986,8 @@ BEGIN
     -- PR de pace (menor = mejor)
     WITH ranked AS (
         SELECT id, best_pace_seconds,
-            MIN(best_pace_seconds) OVER (ORDER BY session_date ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_min,
-            ROW_NUMBER() OVER (ORDER BY session_date) AS rn
+            MIN(best_pace_seconds) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_min,
+            ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
         FROM exercise_session_stats
         WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
           AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_pace_seconds IS NOT NULL
@@ -996,40 +996,51 @@ BEGIN
     FROM ranked r WHERE ess.id = r.id AND r.rn > 1 AND r.best_pace_seconds < r.prev_min
       AND ess.session_date >= p_after_date;
 
-    -- pr_rep_counts (modelo Strong/Hevy CON dominancia), restringido al gym
-    WITH unnested AS (
+    -- pr_rep_counts (modelo Strong/Hevy CON dominancia), restringido al gym. Ranked over every
+    -- row, so "earlier" is the row's position (rn), never a session_date comparison.
+    WITH history AS (
+        SELECT id, session_date, best_per_reps,
+            (best_weight > 0 OR best_1rm > 0) AS has_weight,
+            ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
+        FROM exercise_session_stats
+        WHERE exercise_id = p_exercise_id
+          AND user_id = auth.uid()
+          AND gym_id IS NOT DISTINCT FROM p_gym_id
+    ),
+    unnested AS (
         SELECT
-            ess.id AS ess_id,
-            ess.session_date,
+            h.id AS ess_id,
+            h.session_date,
+            h.rn,
             (kv.key)::SMALLINT AS rep_count,
             (kv.value)::NUMERIC AS weight
-        FROM exercise_session_stats ess,
-             LATERAL jsonb_each_text(ess.best_per_reps) kv
-        WHERE ess.exercise_id = p_exercise_id
-          AND ess.user_id = auth.uid()
-          AND ess.gym_id IS NOT DISTINCT FROM p_gym_id
-          AND ess.best_per_reps IS NOT NULL
+        FROM history h,
+             LATERAL jsonb_each_text(h.best_per_reps) kv
+        WHERE h.best_per_reps IS NOT NULL
     ),
     enriched AS (
         SELECT
             u.ess_id,
             u.session_date,
+            u.rn,
             u.rep_count,
             u.weight,
             (SELECT MAX(p.weight) FROM unnested p
-              WHERE p.session_date < u.session_date
+              WHERE p.rn < u.rn
                 AND p.rep_count >= u.rep_count) AS prev_envelope,
             (SELECT MAX(p.weight) FROM unnested p
               WHERE p.ess_id = u.ess_id
                 AND p.rep_count > u.rep_count) AS same_session_dom,
-            DENSE_RANK() OVER (ORDER BY u.session_date) AS exercise_session_rank
+            EXISTS (SELECT 1 FROM unnested p WHERE p.rn < u.rn) AS has_rep_history,
+            EXISTS (SELECT 1 FROM history h WHERE h.rn < u.rn AND h.has_weight) AS has_weight_history
         FROM unnested u
     ),
     prs AS (
         SELECT ess_id, rep_count
         FROM enriched
-        WHERE exercise_session_rank > 1
+        WHERE rn > 1
           AND session_date >= p_after_date
+          AND (has_rep_history OR NOT has_weight_history)
           AND weight > GREATEST(COALESCE(prev_envelope, 0), COALESCE(same_session_dom, 0))
     ),
     aggregated AS (

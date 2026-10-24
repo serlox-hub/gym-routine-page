@@ -16,6 +16,19 @@ import {
   WEIGHT_PR_TYPES,
 } from './sessionStatsCalculation.js'
 
+// What fetchExerciseBests returns for a history of one session at 0 kg × 18.
+const ZERO_KG_ONLY_BESTS = {
+  bestWeight: null,
+  bestReps: 18,
+  best1rm: null,
+  totalVolume: null,
+  bestTimeSeconds: null,
+  bestDistanceMeters: null,
+  bestPaceSeconds: null,
+  bestPerReps: null,
+  sessionCount: 1,
+}
+
 describe('sessionStatsCalculation', () => {
 
   // ============================================
@@ -432,11 +445,27 @@ describe('sessionStatsCalculation', () => {
       expect(details).toHaveLength(4)
     })
 
-    it('no marca PR si previous no tiene el campo', () => {
+    it('weight PR when the history has no weight (a missing previous weight counts as 0)', () => {
       const current = { bestWeight: 100 }
       const previous = { bestReps: 10 }
       const { flags } = detectNewPersonalRecords(current, previous)
-      expect(flags.isPrWeight).toBe(false)
+      expect(flags.isPrWeight).toBe(true)
+    })
+
+    it('no PR of a field that is not weight-based when previous does not have it', () => {
+      const current = { bestReps: 10 }
+      const previous = { bestWeight: 100 }
+      const { flags } = detectNewPersonalRecords(current, previous)
+      expect(flags.isPrReps).toBe(false)
+    })
+
+    it('no time or distance PR when previous does not have them (only weight and 1RM treat it as 0)', () => {
+      const current = { bestTimeSeconds: 600, bestDistanceMeters: 5000 }
+      const previous = { bestWeight: 100 }
+      const { flags, details } = detectNewPersonalRecords(current, previous)
+      expect(flags.isPrTime).toBe(false)
+      expect(flags.isPrDistance).toBe(false)
+      expect(details).toHaveLength(0)
     })
 
     it('no marca PR si current no tiene el campo', () => {
@@ -478,6 +507,38 @@ describe('sessionStatsCalculation', () => {
       const previous = { bestWeight: 100 }
       const { flags } = detectNewPersonalRecords(current, previous)
       expect(flags.isPrWeight).toBe(true)
+    })
+
+    // Issue #189: 0 kg is stored as "no value", so the history looks empty but it exists.
+    describe('after a history of only 0 kg sets', () => {
+      const weightedStats = () => calculateSessionExerciseStats([{ weight: 5, reps_completed: 12 }], ['weight', 'reps'])
+
+      it('5 × 12 is a weight, 1RM and rep PR, with no previous value', () => {
+        const { flags, details } = detectNewPersonalRecords(weightedStats(), ZERO_KG_ONLY_BESTS, ['weight', 'reps'])
+
+        expect(flags).toMatchObject({ isPrWeight: true, isPr1rm: true, prRepCounts: [12], isPrVolume: false, isPrReps: false })
+        expect(details.find(d => d.type === 'bestWeight')).toMatchObject({ newValue: 5, oldValue: null, improvement: null })
+        expect(details.find(d => d.type === 'best1rm')).toMatchObject({ oldValue: null, improvement: null })
+        expect(details.find(d => d.type === 'repPR')).toMatchObject({ repCount: 12, newValue: 5, oldValue: null, oldRepCount: null, improvement: null })
+        for (const detail of details) {
+          for (const value of Object.values(detail)) {
+            if (typeof value === 'number') expect(Number.isFinite(value)).toBe(true)
+          }
+        }
+      })
+
+      it('the same session without any history is no PR', () => {
+        const { flags, details } = detectNewPersonalRecords(weightedStats(), null, ['weight', 'reps'])
+        expect(flags).toEqual(expect.objectContaining({ isPrWeight: false, isPr1rm: false, prRepCounts: null }))
+        expect(details).toHaveLength(0)
+      })
+
+      it('another 0 kg session is no PR', () => {
+        const zeroKgStats = calculateSessionExerciseStats([{ weight: 0, reps_completed: 20 }], ['weight', 'reps'])
+        const { flags, details } = detectNewPersonalRecords(zeroKgStats, ZERO_KG_ONLY_BESTS, ['weight', 'reps'])
+        expect(Object.values(flags).filter(Boolean)).toEqual([])
+        expect(details).toHaveLength(0)
+      })
     })
   })
 
@@ -531,19 +592,37 @@ describe('sessionStatsCalculation', () => {
 
     it('no detecta PR si no supera pre-session ni running best', () => {
       const set = { weight: 80, reps_completed: 6 } // 1RM=96
-      const runningBests = { best1rm: 130 }
-      const preBests = { best1rm: 130 }
+      const runningBests = { bestWeight: 100, best1rm: 130 }
+      const preBests = { bestWeight: 100, best1rm: 130 }
 
       const { newRecords } = evaluateSetForPR(set, runningBests, preBests, ['weight', 'reps'])
       expect(newRecords).toHaveLength(0)
     })
 
-    it('no detecta PR si pre-session best es 0 (primera sesión)', () => {
+    it('after a history of only 0 kg sets, 100 × 8 is a weight, 1RM and rep PR at 8', () => {
       const set = { weight: 100, reps_completed: 8 }
-      const runningBests = {}
-      const preBests = { best1rm: 0 }
 
-      const { newRecords } = evaluateSetForPR(set, runningBests, preBests, ['weight', 'reps'])
+      const { newRecords } = evaluateSetForPR(set, {}, ZERO_KG_ONLY_BESTS, ['weight', 'reps'])
+
+      expect(newRecords.map(r => r.type).sort()).toEqual(['best1rm', 'bestWeight', 'repPR'])
+      expect(newRecords.find(r => r.type === 'bestWeight')).toMatchObject({ value: 100, previousValue: null })
+      expect(newRecords.find(r => r.type === 'repPR')).toMatchObject({ repCount: 8, previousValue: null, previousRepCount: null })
+    })
+
+    it('a missing previous reps, time or distance best is no PR (only weight and 1RM treat it as 0)', () => {
+      const historyWithoutValues = { ...ZERO_KG_ONLY_BESTS, bestReps: null }
+
+      const reps = evaluateSetForPR({ reps_completed: 15 }, {}, historyWithoutValues, ['reps'])
+      const time = evaluateSetForPR({ time_seconds: 90 }, {}, historyWithoutValues, ['time'])
+      const distance = evaluateSetForPR({ distance_meters: 5000 }, {}, historyWithoutValues, ['distance'])
+
+      expect(reps.newRecords).toHaveLength(0)
+      expect(time.newRecords).toHaveLength(0)
+      expect(distance.newRecords).toHaveLength(0)
+    })
+
+    it('without any history (preSessionBests null), 100 × 8 is no PR', () => {
+      const { newRecords } = evaluateSetForPR({ weight: 100, reps_completed: 8 }, {}, null, ['weight', 'reps'])
       expect(newRecords).toHaveLength(0)
     })
 
@@ -1148,6 +1227,23 @@ describe('sessionStatsCalculation', () => {
       expect(flags.prRepCounts).toBeNull()
     })
 
+    it('no prRepCounts when the history has a weight but no bestPerReps', () => {
+      const current = { bestWeight: 100, bestPerReps: { '5': 100 } }
+      const previous = { bestWeight: 90, best1rm: null, bestPerReps: null }
+      const { flags } = detectNewPersonalRecords(current, previous, ['weight', 'reps'])
+      expect(flags.prRepCounts).toBeNull()
+    })
+
+    it('an empty bestPerReps map is no rep history: rep PR when the history has no weight, none when it has one', () => {
+      const current = { bestWeight: 5, bestPerReps: { '12': 5 } }
+
+      const zeroKgOnly = detectNewPersonalRecords(current, { ...ZERO_KG_ONLY_BESTS, bestPerReps: {} }, ['weight', 'reps'])
+      const withWeight = detectNewPersonalRecords(current, { bestWeight: 4, bestPerReps: {} }, ['weight', 'reps'])
+
+      expect(zeroKgOnly.flags.prRepCounts).toEqual([12])
+      expect(withWeight.flags.prRepCounts).toBeNull()
+    })
+
     it('NO marca prRepCounts si current no tiene bestPerReps', () => {
       const current = { best1rm: 130 }
       const previous = { bestPerReps: { '5': 100 } }
@@ -1304,6 +1400,29 @@ describe('sessionStatsCalculation', () => {
       const sets = [{ setNumber: 1, weight: 200, repsCompleted: 10 }]
       expect(computeExercisePRSets(sets, null, ['weight', 'reps'])).toEqual([])
       expect(computeExercisePRSets(sets, 'none', ['weight', 'reps'])).toEqual([])
+    })
+
+    it('after a history of only 0 kg sets, a heavier second set is a PR too, still with no previous value', () => {
+      const sets = [
+        { setNumber: 1, weight: 5, repsCompleted: 12 },
+        { setNumber: 2, weight: 6, repsCompleted: 12 },
+      ]
+      const result = computeExercisePRSets(sets, ZERO_KG_ONLY_BESTS, ['weight', 'reps'])
+      expect(result.map(r => r.setNumber)).toEqual([1, 2])
+      for (const { records } of result) {
+        expect(records.map(r => r.type).sort()).toEqual(['best1rm', 'bestWeight', 'repPR'])
+        for (const record of records) expect(record.previousValue).toBeNull()
+      }
+    })
+
+    it('after a history of only 0 kg sets, only the first of two 5 × 12 sets is a PR', () => {
+      const sets = [
+        { setNumber: 1, weight: 5, repsCompleted: 12 },
+        { setNumber: 2, weight: 5, repsCompleted: 12 },
+      ]
+      const result = computeExercisePRSets(sets, ZERO_KG_ONLY_BESTS, ['weight', 'reps'])
+      expect(result.map(r => r.setNumber)).toEqual([1])
+      expect(result[0].records.map(r => r.type).sort()).toEqual(['best1rm', 'bestWeight', 'repPR'])
     })
   })
 })
