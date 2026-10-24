@@ -321,7 +321,7 @@ BEGIN
           AND ws.gym_id = p_gym_id
           AND cs.weight IS NOT NULL;
     ELSE
-        -- scope = global: excluye los (ejercicio, gym) con unidad explícita propia
+        -- scope = global: skips the (exercise, gym) pairs with their own explicit unit
         UPDATE completed_sets cs
         SET weight = ROUND(weight * p_factor, 2)
         FROM session_exercises se, workout_sessions ws
@@ -338,25 +338,35 @@ BEGIN
     END IF;
 
     -- ============================================
-    -- 2. EXERCISE_SESSION_STATS (best_weight, best_1rm, total_volume)
-    -- Todos los sets del scope se multiplican por la misma constante => los flags
-    -- is_pr_* no cambian (se preserva el ranking); solo cambian los valores.
+    -- 2. EXERCISE_SESSION_STATS (best_weight, best_1rm, total_volume, best_per_reps)
+    -- Every set of the scope is multiplied by the same constant, so the is_pr_* flags and
+    -- pr_rep_counts stay valid (the ranking holds); only the values change.
+    -- best_per_reps NULL stays NULL: no keys to aggregate.
+    -- best_1rm scaled is no longer a whole number, unlike the 1RM of a new set (#194).
     -- ============================================
     IF p_scope = 'exercise' THEN
         UPDATE exercise_session_stats ess
         SET
-            best_weight  = CASE WHEN best_weight  IS NOT NULL THEN ROUND(best_weight  * p_factor, 2) END,
-            best_1rm     = CASE WHEN best_1rm     IS NOT NULL THEN ROUND(best_1rm     * p_factor, 2) END,
-            total_volume = CASE WHEN total_volume IS NOT NULL THEN ROUND(total_volume * p_factor, 2) END
+            best_weight   = CASE WHEN best_weight  IS NOT NULL THEN ROUND(best_weight  * p_factor, 2) END,
+            best_1rm      = CASE WHEN best_1rm     IS NOT NULL THEN ROUND(best_1rm     * p_factor, 2) END,
+            total_volume  = CASE WHEN total_volume IS NOT NULL THEN ROUND(total_volume * p_factor, 2) END,
+            best_per_reps = (
+                SELECT jsonb_object_agg(kv.key, ROUND(kv.value::NUMERIC * p_factor, 2))
+                FROM jsonb_each_text(ess.best_per_reps) kv
+            )
         WHERE ess.user_id = v_user_id
           AND ess.exercise_id = p_exercise_id
           AND ess.gym_id = p_gym_id;
     ELSE
         UPDATE exercise_session_stats ess
         SET
-            best_weight  = CASE WHEN best_weight  IS NOT NULL THEN ROUND(best_weight  * p_factor, 2) END,
-            best_1rm     = CASE WHEN best_1rm     IS NOT NULL THEN ROUND(best_1rm     * p_factor, 2) END,
-            total_volume = CASE WHEN total_volume IS NOT NULL THEN ROUND(total_volume * p_factor, 2) END
+            best_weight   = CASE WHEN best_weight  IS NOT NULL THEN ROUND(best_weight  * p_factor, 2) END,
+            best_1rm      = CASE WHEN best_1rm     IS NOT NULL THEN ROUND(best_1rm     * p_factor, 2) END,
+            total_volume  = CASE WHEN total_volume IS NOT NULL THEN ROUND(total_volume * p_factor, 2) END,
+            best_per_reps = (
+                SELECT jsonb_object_agg(kv.key, ROUND(kv.value::NUMERIC * p_factor, 2))
+                FROM jsonb_each_text(ess.best_per_reps) kv
+            )
         WHERE ess.user_id = v_user_id
           AND NOT EXISTS (
               SELECT 1 FROM user_exercise_gym_units u
@@ -367,9 +377,9 @@ BEGIN
     END IF;
 
     -- ============================================
-    -- 3. BODY_WEIGHT_RECORDS (solo en scope=global)
-    -- body_weight_records.weight_unit se eliminó en la 038: solo se multiplica el
-    -- peso (p_old_unit se conserva en la firma por compatibilidad pero se ignora).
+    -- 3. BODY_WEIGHT_RECORDS (scope=global only)
+    -- body_weight_records.weight_unit was dropped in 038: only the weight is multiplied
+    -- (p_old_unit stays in the signature but is ignored).
     -- ============================================
     IF p_scope = 'global' THEN
         UPDATE body_weight_records
@@ -1604,6 +1614,10 @@ CREATE TABLE IF NOT EXISTS "public"."exercise_session_stats" (
 
 
 ALTER TABLE "public"."exercise_session_stats" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."exercise_session_stats" IS 'Every weight-valued column (best_weight, best_1rm, total_volume, best_per_reps) is converted by convert_user_weights when the user changes a weight unit: a new one must be added there, or it stays in the old unit.';
+
 
 
 COMMENT ON COLUMN "public"."exercise_session_stats"."best_per_reps" IS 'Mejor peso de esta sesión por número exacto de reps. Ej: {"1": 120, "5": 100}. NULL si no aplica (no weight_reps o sesión sin sets válidos).';

@@ -72,22 +72,22 @@ describe('buildWeeklyPRs', () => {
     expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestWeight', 'best1rm', 'repPR'])
   })
 
-  it('a row converted from lb to kg (best_per_reps still in lb, #192) keeps every record', () => {
+  it('a 65 kg × 8 row converted to lb drops the weight PR but keeps the scaled 1RM (180.78, not 182)', () => {
     const { count, sessions } = buildWeeklyPRs([row({
-      best_weight: 65, best_1rm: 82.55, is_pr_weight: true, is_pr_1rm: true,
+      best_weight: 143.3, best_1rm: 180.78, is_pr_weight: true, is_pr_1rm: true,
       best_per_reps: { 8: 143.3 }, pr_rep_counts: [8],
     })])
-    expect(count).toBe(3)
-    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestWeight', 'best1rm', 'repPR'])
+    expect(count).toBe(2)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['best1rm', 'repPR'])
   })
 
-  it('a row converted from kg to lb (best_per_reps still in kg, #192) keeps every record too', () => {
+  it('a 143.3 lb × 8 row converted to kg drops the weight PR but keeps the scaled 1RM (82.55, not 82)', () => {
     const { count, sessions } = buildWeeklyPRs([row({
-      best_weight: 143.3, best_1rm: 181.7, is_pr_weight: true, is_pr_1rm: true,
+      best_weight: 65, best_1rm: 82.55, is_pr_weight: true, is_pr_1rm: true,
       best_per_reps: { 8: 65 }, pr_rep_counts: [8],
     })])
-    expect(count).toBe(3)
-    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestWeight', 'best1rm', 'repPR'])
+    expect(count).toBe(2)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['best1rm', 'repPR'])
   })
 
   it('a 1RM PR without a weight PR is dropped when it is the rep PR set 1RM', () => {
