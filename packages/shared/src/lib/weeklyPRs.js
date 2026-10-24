@@ -1,11 +1,35 @@
 import { buildPRDetailsFromStats } from './workoutSummary.js'
 import { resolveWeightUnit, resolveDistanceUnit } from './exerciseUtils.js'
+import { calculateEpley1RM } from './workoutCalculations.js'
+
+// A weight, 1RM or reps PR equal to one of the row's rep PRs is that same set: the heaviest set,
+// the best 1RM set and (with weight) the most-reps set always win a rep PR too. The toast and the
+// summary carousel already show only the rep PR. On weight × reps a reps PR only comes from
+// recalculate_exercise_prs (docs/DECISIONS.md, `tracked_fields` entry, «Divergencia conocida»).
+// Equal, not "per type" nor ">=", because the stored bests can disagree: convert_user_weights
+// converts best_weight and best_1rm but not best_per_reps (#192). Then nothing matches and every
+// record stays, in both directions of the conversion.
+const COVERED_BY_REP_PR = {
+  bestWeight: (detail, repPR) => repPR.newValue === detail.newValue,
+  best1rm: (detail, repPR) => calculateEpley1RM(repPR.newValue, repPR.repCount) === detail.newValue,
+  bestReps: (detail, repPR) => repPR.repCount === detail.newValue,
+}
+
+function dropCoveredByRepPR(details) {
+  const repPRs = details.filter(detail => detail.type === 'repPR')
+  if (repPRs.length === 0) return details
+  return details.filter(detail => {
+    const covers = COVERED_BY_REP_PR[detail.type]
+    return !covers || !repPRs.some(repPR => covers(detail, repPR))
+  })
+}
 
 /**
  * The week's records grouped by session (newest first) and exercise. `count` is the number of
- * records, not of exercises (a weight PR and a 1RM PR on one exercise are two): it is the number on
- * the home's records card. Names come untranslated (the exercise row, the day name or null for a
- * free workout): the component resolves them while rendering, so a language change shows at once.
+ * records, not of exercises (a rep PR at 8 and one at 12 on one exercise are two; a weight, 1RM or
+ * reps PR equal to a rep PR is dropped, it is the same set): it is the number on the home's
+ * records card. Names come untranslated (the exercise row, the day name or null for a free
+ * workout): the component resolves them while rendering, so a language change shows at once.
  *
  * @param {Array} rows - exercise_session_stats rows of the week with `exercise` and `session` joined (fetchWeeklyPRs)
  * @param {Object} options
@@ -23,10 +47,10 @@ export function buildWeeklyPRs(rows, { gymUnitRows = [], globalWeightUnit, dista
     const gymUnit = gymUnitRows.find(r =>
       r.exercise_id === row.exercise_id && String(r.gym_id) === String(row.gym_id)
     )?.weight_unit
-    const details = buildPRDetailsFromStats(row, {
+    const details = dropCoveredByRepPR(buildPRDetailsFromStats(row, {
       unit: resolveWeightUnit(gymUnit ?? null, { weight_unit: globalWeightUnit }),
       distanceUnit: resolveDistanceUnit(distanceUnitOverrides[row.exercise_id], row.exercise),
-    })
+    }))
     if (details.length === 0) continue
     count += details.length
 
