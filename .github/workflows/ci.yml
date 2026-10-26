@@ -99,6 +99,12 @@ jobs:
       - name: Check function EXECUTE grants
         run: npm run db:check-grants -w apps/web
 
+      # Which records an exercise gets is decided twice (issue #196): getPRMetrics in JS (end of
+      # session, live trophy) and pr_metrics in SQL (recalculate_exercise_prs, after an edit). This
+      # compares them on every field combination, so a change to one alone fails here.
+      - name: Check PR rule parity (JS getPRMetrics vs SQL pr_metrics)
+        run: npm run db:check-pr-parity -w apps/web
+
       # Credenciales fijas del usuario que crea `apps/web/supabase/seed.sql` en cada reset. No son
       # secretos: esa BD vive y muere dentro del job y usa el JWT secret público de la CLI.
       - name: Run e2e tests

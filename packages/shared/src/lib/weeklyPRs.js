@@ -4,8 +4,8 @@ import { calculateEpley1RM } from './workoutCalculations.js'
 
 // A weight, 1RM or reps PR equal to one of the row's rep PRs is that same set: the heaviest set,
 // the best 1RM set and (with weight) the most-reps set always win a rep PR too. The toast and the
-// summary carousel already show only the rep PR. On weight × reps a reps PR only comes from
-// recalculate_exercise_prs (docs/DECISIONS.md, `tracked_fields` entry, «Divergencia conocida»).
+// summary carousel already show only the rep PR. No rule marks a reps PR on weight × reps any more:
+// the bestReps entry covers rows recalculate_exercise_prs marked before issue #196 (not backfilled).
 // Equal, not "per type" nor ">=", because the stored bests can disagree: convert_user_weights
 // scales best_1rm, while the 1RM of a set is rounded to a whole number (calculateEpley1RM). After
 // a conversion the 1RM matches no rep PR and stays, in both directions: one chip too many, never

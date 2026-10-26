@@ -37,6 +37,11 @@ describe('findGrantViolations', () => {
     expect(violations[0]).toContain('authenticated cannot execute duplicate_routine_day(integer,text)')
   })
 
+  it('lets authenticated miss EXECUTE on an internal-only function', () => {
+    const helper = rpc({ name: 'pr_metrics', signature: 'pr_metrics(measurement_field[])', authenticated: false })
+    expect(findGrantViolations({ functions: [helper], defaultGrantees: CLOSED_DEFAULT })).toEqual([])
+  })
+
   it('reports both problems of the same function', () => {
     const violations = findGrantViolations({
       functions: [rpc({ anon: true, authenticated: false })],

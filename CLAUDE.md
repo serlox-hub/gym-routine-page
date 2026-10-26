@@ -311,6 +311,8 @@ A forgotten GRANT means 42501 for every logged-in user. `npm run db:check-grants
 
 **Reads that must see every row** (a whole history, its records): PostgREST cuts each response at `max_rows` (1000 locally; production's value is not in the repo) without any error. They go through `api/fetchAllRows.js`, selecting `id` (pages are deduped by it) and with an order that ends on a unique key, or pages skip and repeat rows. Known reads that still don't: `fetchExerciseBests` (PR detection), `fetchBodyWeightHistory`, `fetchBodyMeasurementHistory`.
 
+**The PR rule lives twice** (issue #196): which records an exercise gets is `getPRMetrics` (`lib/sessionStatsCalculation.js`: end of session, live trophy) and its SQL mirror `pr_metrics` (`recalculate_exercise_prs`, after an edit). Change both together: `npm run db:check-pr-parity -w apps/web` (CI, after `supabase start`) compares them on every field combination.
+
 ```
 muscle_groups ← exercises (muscle_group_id)
     ↓

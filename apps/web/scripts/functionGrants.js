@@ -11,7 +11,7 @@ const ANON_ALLOWED = new Set(['is_admin', 'get_shared_routine'])
 
 // Functions `authenticated` may NOT execute. Add one only if no API role should call it (an
 // internal helper called from other functions).
-const INTERNAL_ONLY = new Set()
+const INTERNAL_ONLY = new Set(['pr_metrics'])
 
 /**
  * @param {object} state
