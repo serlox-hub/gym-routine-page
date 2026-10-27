@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { Zap, Pause, X, Target, ChevronRight, Timer } from 'lucide-react'
 import {
-  useTrainingGoal, useViewedTrainingCycle, getTodayDateStr, getPaginationDots, STREAK_MAX_BACK,
+  useTrainingGoal, useViewedTrainingCycle, useHomeCycleOffset, useHomeWeekStore, getTodayDateStr,
+  getPaginationDots, STREAK_MAX_BACK,
 } from '@gym/shared'
 import { Card, Skeleton } from '../ui/index.js'
 import { colors, gradients, design } from '../../lib/styles.js'
@@ -68,7 +69,9 @@ function StreakCard() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const goal = useTrainingGoal()
-  const [cycleOffset, setCycleOffset] = useState(0)
+  // In a store, not local state: the stats row under the card shows the same week
+  const cycleOffset = useHomeCycleOffset()
+  const setCycleOffset = useHomeWeekStore(state => state.setCycleOffset)
   const [slideClass, setSlideClass] = useState('')
   const pointerStart = useRef(null)
   const dragOffset = useRef(0)
@@ -100,7 +103,7 @@ function StreakCard() {
       }, design.slideAnimDuration)
     }, design.slideAnimDuration)
     return true
-  }, [cycleOffset])
+  }, [cycleOffset, setCycleOffset])
 
   const handlePointerDown = (e) => {
     if (isAnimating.current) return

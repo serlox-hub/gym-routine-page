@@ -2,18 +2,20 @@ import { View, Text, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useNavigation } from '@react-navigation/native'
 import { Trophy, X } from 'lucide-react-native'
-import { formatWeekdayDate } from '@gym/shared'
+import { formatWeekdayDate, getViewedWeekLabel, VIEWED_WEEK_LABELS } from '@gym/shared'
 import { Modal, LoadingSpinner, IconButton } from '../ui'
 import { colors } from '../../lib/styles'
 import WeeklyPRExerciseCard from './WeeklyPRExerciseCard'
 
 /**
- * The week's records, by session and exercise (records card of the home). An exercise opens its
- * session in the history.
+ * The viewed week's records, by session and exercise (records card of the home). An exercise opens
+ * its session in the history. `cycleOffset` only picks the title and the empty-state copy.
  */
-export default function WeeklyPRsModal({ isOpen, onClose, sessions, count, isLoading, isError }) {
+export default function WeeklyPRsModal({ isOpen, onClose, sessions, count, isLoading, isError, cycleOffset = 0 }) {
   const { t } = useTranslation()
   const navigation = useNavigation()
+  const title = getViewedWeekLabel(cycleOffset, VIEWED_WEEK_LABELS.prsTitle)
+  const empty = getViewedWeekLabel(cycleOffset, VIEWED_WEEK_LABELS.prsEmpty)
 
   const openSession = (session) => {
     onClose()
@@ -29,7 +31,7 @@ export default function WeeklyPRsModal({ isOpen, onClose, sessions, count, isLoa
         <View className="items-center gap-3 px-5 py-10">
           <Trophy size={32} color={colors.textMuted} />
           <Text className="text-sm text-center" style={{ color: colors.textSecondary }}>
-            {isError ? t('common:home.weeklyPRsError') : t('common:home.weeklyPRsEmpty')}
+            {isError ? t('common:home.weeklyPRsError') : t(empty.key, empty.values)}
           </Text>
         </View>
       )
@@ -62,7 +64,7 @@ export default function WeeklyPRsModal({ isOpen, onClose, sessions, count, isLoa
           <Trophy size={20} color={colors.gold} />
         </View>
         <View className="flex-1">
-          <Text className="text-base font-semibold text-primary">{t('common:home.weeklyPRsTitle')}</Text>
+          <Text className="text-base font-semibold text-primary">{t(title.key, title.values)}</Text>
           {showList && (
             <Text className="text-sm" style={{ color: colors.textSecondary }}>
               {t('common:home.weeklyPRsCount', { count })} {t('common:home.weeklyPRsSessions', { count: sessions.length })}

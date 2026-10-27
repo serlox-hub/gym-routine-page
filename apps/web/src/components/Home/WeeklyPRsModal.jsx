@@ -1,18 +1,20 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Trophy, X } from 'lucide-react'
-import { formatWeekdayDate } from '@gym/shared'
+import { formatWeekdayDate, getViewedWeekLabel, VIEWED_WEEK_LABELS } from '@gym/shared'
 import { Modal, LoadingSpinner, IconButton } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 import WeeklyPRExerciseCard from './WeeklyPRExerciseCard.jsx'
 
 /**
- * The week's records, by session and exercise (records card of the home). An exercise opens its
- * session in the history.
+ * The viewed week's records, by session and exercise (records card of the home). An exercise opens
+ * its session in the history. `cycleOffset` only picks the title and the empty-state copy.
  */
-function WeeklyPRsModal({ isOpen, onClose, sessions, count, isLoading, isError }) {
+function WeeklyPRsModal({ isOpen, onClose, sessions, count, isLoading, isError, cycleOffset = 0 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const title = getViewedWeekLabel(cycleOffset, VIEWED_WEEK_LABELS.prsTitle)
+  const empty = getViewedWeekLabel(cycleOffset, VIEWED_WEEK_LABELS.prsEmpty)
 
   const openSession = (session) => {
     onClose()
@@ -28,7 +30,7 @@ function WeeklyPRsModal({ isOpen, onClose, sessions, count, isLoading, isError }
         <div className="flex flex-col items-center gap-3 px-5 py-10 text-center">
           <Trophy size={32} color={colors.textMuted} />
           <p className="text-sm" style={{ color: colors.textSecondary }}>
-            {isError ? t('common:home.weeklyPRsError') : t('common:home.weeklyPRsEmpty')}
+            {isError ? t('common:home.weeklyPRsError') : t(empty.key, empty.values)}
           </p>
         </div>
       )
@@ -59,7 +61,7 @@ function WeeklyPRsModal({ isOpen, onClose, sessions, count, isLoading, isError }
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold" style={{ color: colors.textPrimary }}>
-            {t('common:home.weeklyPRsTitle')}
+            {t(title.key, title.values)}
           </h3>
           {showList && (
             <p className="text-sm" style={{ color: colors.textSecondary }}>

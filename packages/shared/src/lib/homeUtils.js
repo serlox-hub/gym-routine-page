@@ -4,7 +4,7 @@
 
 import {
   STREAK_CYCLE_LENGTH, countSessionsByCycle, getCurrentCycleDays, getCurrentCycleKey,
-  getCurrentCycleProgress, getCycleDateRange,
+  getCurrentCycleProgress, getCycleDateRange, getCycleKey,
 } from './streakUtils.js'
 import { formatShortDate, toDateLocale } from './dateUtils.js'
 
@@ -103,8 +103,7 @@ export function getViewedCycle(goal, cycleOffset = 0, now = new Date(), { dayLab
   const restCycles = goal.restCycles ?? []
   const weekStartDay = goal.weekStartDay ?? 'monday'
   const { daysPerCycle } = goal
-  const referenceDate = new Date(now)
-  referenceDate.setDate(referenceDate.getDate() + cycleOffset * STREAK_CYCLE_LENGTH)
+  const referenceDate = getCycleReferenceDate(cycleOffset, now)
 
   const cycleKey = getCurrentCycleKey(STREAK_CYCLE_LENGTH, referenceDate, weekStartDay)
   const cycleDays = getCurrentCycleDays(sessions, STREAK_CYCLE_LENGTH, referenceDate, weekStartDay, now, dayLabels)
@@ -121,6 +120,118 @@ export function getViewedCycle(goal, cycleOffset = 0, now = new Date(), { dayLab
     progress: { ...progress, percent: daysPerCycle ? Math.min((progress.completed / daysPerCycle) * 100, 100) : 0 },
     isRest: restCycles.includes(cycleKey),
   }
+}
+
+// ============================================
+// VIEWED WEEK (streak card + stats row)
+// ============================================
+
+/**
+ * Reference date of the week `cycleOffset` weeks from `now` (negative = past). The streak card
+ * and the stats row both start from it, so they always agree on which days the week has.
+ * @param {number} cycleOffset - Integer in [STREAK_MAX_BACK, 0]
+ * @param {Date} [now]
+ * @returns {Date} now + cycleOffset * STREAK_CYCLE_LENGTH days, same time of day
+ */
+export function getCycleReferenceDate(cycleOffset, now = new Date()) {
+  const referenceDate = new Date(now)
+  referenceDate.setDate(referenceDate.getDate() + cycleOffset * STREAK_CYCLE_LENGTH)
+  return referenceDate
+}
+
+/**
+ * Query range of the week `cycleOffset` weeks from `now`, as instants: `session_date` is an
+ * instant, and a bare date would be read as midnight UTC and drop the last day.
+ * @param {number} cycleOffset
+ * @param {Date} [now]
+ * @param {string} [weekStartDay]
+ * @returns {{ from: string, to: string }} ISO strings: local start of the first day, local 23:59:59 of the last
+ */
+export function getWeekQueryRange(cycleOffset, now = new Date(), weekStartDay = 'monday') {
+  const { start, end } = getCycleDateRange(STREAK_CYCLE_LENGTH, getCycleReferenceDate(cycleOffset, now), weekStartDay)
+  return {
+    from: start.toISOString(),
+    to: new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59).toISOString(),
+  }
+}
+
+/**
+ * Which relative wording names the viewed week.
+ * @param {number} cycleOffset - Any value >= 0 counts as the current week
+ * @returns {{ kind: 'current' } | { kind: 'last' } | { kind: 'ago', weeks: number }}
+ */
+export function getRelativeWeek(cycleOffset) {
+  if (cycleOffset >= 0) return { kind: 'current' }
+  if (cycleOffset === -1) return { kind: 'last' }
+  return { kind: 'ago', weeks: -cycleOffset }
+}
+
+// i18n keys of each home label that names the viewed week, one per getRelativeWeek kind
+export const VIEWED_WEEK_LABELS = {
+  totalTime: { current: 'common:home.thisWeek', last: 'common:home.lastWeek', ago: 'common:home.weeksAgo' },
+  prs: { current: 'common:home.prsThisWeek', last: 'common:home.prsLastWeek', ago: 'common:home.prsWeeksAgo' },
+  prsTitle: { current: 'common:home.weeklyPRsTitle', last: 'common:home.weeklyPRsTitleLastWeek', ago: 'common:home.weeklyPRsTitleWeeksAgo' },
+  prsEmpty: { current: 'common:home.weeklyPRsEmpty', last: 'common:home.weeklyPRsEmptyLastWeek', ago: 'common:home.weeklyPRsEmptyWeeksAgo' },
+}
+
+/**
+ * i18n key and values of a label that names the viewed week: `t(label.key, label.values)`.
+ * @param {number} cycleOffset
+ * @param {{ current: string, last: string, ago: string }} keys - One of VIEWED_WEEK_LABELS
+ * @returns {{ key: string, values?: { count: number } }}
+ */
+export function getViewedWeekLabel(cycleOffset, keys) {
+  const week = getRelativeWeek(cycleOffset)
+  if (week.kind === 'ago') return { key: keys.ago, values: { count: week.weeks } }
+  return { key: keys[week.kind] }
+}
+
+/**
+ * Total minutes of the week `cycleOffset` weeks from `now`: the same week, and the same sessions,
+ * as the streak card's bars (getViewedCycle). Sessions without duration count 0.
+ * @param {Array<{ completed_at: string, duration_minutes: number|null }>} sessions - From useTrainingGoal()
+ * @param {number} cycleOffset
+ * @param {Date} [now]
+ * @param {string} [weekStartDay]
+ * @returns {number}
+ */
+export function getCycleTotalMinutes(sessions, cycleOffset, now = new Date(), weekStartDay = 'monday') {
+  const cycleKey = getCurrentCycleKey(STREAK_CYCLE_LENGTH, getCycleReferenceDate(cycleOffset, now), weekStartDay)
+  const inCycle = (sessions || []).filter(s =>
+    s.completed_at && getCycleKey(new Date(s.completed_at), STREAK_CYCLE_LENGTH, weekStartDay) === cycleKey
+  )
+  return calculateWeeklyDurationMinutes(inCycle)
+}
+
+// Away from Home longer than this, coming back shows the current week again
+export const HOME_WEEK_RESET_MS = 15 * 60 * 1000
+
+/**
+ * Whether the viewed week goes back to the current one on returning to Home: after more than
+ * HOME_WEEK_RESET_MS away, or when a new week started meanwhile (the offset is relative, so
+ * "last week" would silently become another week).
+ * @param {number|null} leftAt - Epoch ms when the user left Home; null while on Home
+ * @param {number} [now] - Epoch ms
+ * @param {string} [weekStartDay]
+ * @returns {boolean}
+ */
+export function shouldResetViewedWeek(leftAt, now = Date.now(), weekStartDay = 'monday') {
+  if (leftAt == null) return false
+  if (now - leftAt > HOME_WEEK_RESET_MS) return true
+  return getCurrentCycleKey(STREAK_CYCLE_LENGTH, new Date(leftAt), weekStartDay)
+    !== getCurrentCycleKey(STREAK_CYCLE_LENGTH, new Date(now), weekStartDay)
+}
+
+/**
+ * The offset Home renders: 0 if the stored week is due for reset, else the stored one. Lets the
+ * first render after returning show the current week before enterHome commits it.
+ * @param {{ cycleOffset: number, leftAt: number|null }} state - Of useHomeWeekStore
+ * @param {number} [now] - Epoch ms
+ * @param {string} [weekStartDay]
+ * @returns {number}
+ */
+export function selectViewedCycleOffset(state, now = Date.now(), weekStartDay = 'monday') {
+  return shouldResetViewedWeek(state.leftAt, now, weekStartDay) ? 0 : state.cycleOffset
 }
 
 /**

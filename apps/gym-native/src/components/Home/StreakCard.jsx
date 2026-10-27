@@ -6,7 +6,8 @@ import LinearGradient from 'react-native-linear-gradient'
 import { Zap, Pause, X, Target, ChevronRight, Timer } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import {
-  useTrainingGoal, useViewedTrainingCycle, getTodayDateStr, getPaginationDots, STREAK_MAX_BACK,
+  useTrainingGoal, useViewedTrainingCycle, useHomeCycleOffset, useHomeWeekStore, getTodayDateStr,
+  getPaginationDots, STREAK_MAX_BACK,
 } from '@gym/shared'
 import { Card, Skeleton } from '../ui'
 import { colors, gradients, design } from '../../lib/styles'
@@ -72,7 +73,9 @@ function StreakCard({ onScrubbingChange }) {
   const { width: screenWidth } = useWindowDimensions()
   const navigation = useNavigation()
   const goal = useTrainingGoal()
-  const [cycleOffset, setCycleOffset] = useState(0)
+  // In a store, not local state: the stats row under the card shows the same week
+  const cycleOffset = useHomeCycleOffset()
+  const setCycleOffset = useHomeWeekStore(state => state.setCycleOffset)
   const [focusedBarIndex, setFocusedBarIndex] = useState(-1)
   const translateX = useRef(new Animated.Value(0)).current
   const touchStartX = useRef(0)
@@ -107,7 +110,7 @@ function StreakCard({ onScrubbingChange }) {
         isAnimating.current = false
       })
     })
-  }, [screenWidth, translateX])
+  }, [screenWidth, translateX, setCycleOffset])
 
   const handleTouchStart = (e) => {
     if (isAnimating.current) return

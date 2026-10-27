@@ -7,6 +7,15 @@ import {
   getPaginationDots,
   calculateWeeklyDurationMinutes,
   formatDurationHoursMinutes,
+  getCycleReferenceDate,
+  getWeekQueryRange,
+  getRelativeWeek,
+  getViewedWeekLabel,
+  VIEWED_WEEK_LABELS,
+  getCycleTotalMinutes,
+  shouldResetViewedWeek,
+  selectViewedCycleOffset,
+  HOME_WEEK_RESET_MS,
 } from './homeUtils.js'
 
 const FORMAT = { dayLabels: ['D', 'L', 'M', 'X', 'J', 'V', 'S'], locale: 'es' }
@@ -239,6 +248,184 @@ describe('getViewedCycle', () => {
     expect(result.chartData).toHaveLength(7)
     expect(result.chartData.every(d => d.durationMinutes === 0)).toBe(true)
     expect(result.progress.completed).toBe(0)
+  })
+})
+
+// ============================================
+// Viewed week (streak card + stats row)
+// ============================================
+
+describe('getCycleReferenceDate', () => {
+  // Thursday 19 March 2026, 12:00 local
+  const now = new Date(2026, 2, 19, 12, 0)
+
+  it('offset 0 is now itself', () => {
+    expect(getCycleReferenceDate(0, now).getTime()).toBe(now.getTime())
+  })
+
+  it('goes back whole weeks keeping the weekday and the time of day', () => {
+    expect(getCycleReferenceDate(-1, now)).toEqual(new Date(2026, 2, 12, 12, 0))
+    expect(getCycleReferenceDate(-12, now)).toEqual(new Date(2025, 11, 25, 12, 0))
+  })
+
+  it('does not mutate now', () => {
+    getCycleReferenceDate(-3, now)
+    expect(now).toEqual(new Date(2026, 2, 19, 12, 0))
+  })
+
+  it('is the reference getViewedCycle uses', () => {
+    const viewed = getViewedCycle({ weekStartDay: 'monday' }, -12, now, FORMAT)
+    expect(viewed.cycleKey).toBe('2025-12-22')
+  })
+})
+
+describe('getWeekQueryRange', () => {
+  const now = new Date(2026, 2, 19, 12, 0)
+
+  it('offset 0 is the current week: local start of its first day to 23:59:59 of its last', () => {
+    expect(getWeekQueryRange(0, now, 'monday')).toEqual({
+      from: new Date(2026, 2, 16, 0, 0, 0).toISOString(),
+      to: new Date(2026, 2, 22, 23, 59, 59).toISOString(),
+    })
+  })
+
+  it('offset -1 with a monday start is the previous monday to sunday', () => {
+    expect(getWeekQueryRange(-1, now, 'monday')).toEqual({
+      from: new Date(2026, 2, 9, 0, 0, 0).toISOString(),
+      to: new Date(2026, 2, 15, 23, 59, 59).toISOString(),
+    })
+  })
+
+  it('offset -1 with a sunday start is the previous sunday to saturday', () => {
+    expect(getWeekQueryRange(-1, now, 'sunday')).toEqual({
+      from: new Date(2026, 2, 8, 0, 0, 0).toISOString(),
+      to: new Date(2026, 2, 14, 23, 59, 59).toISOString(),
+    })
+  })
+
+  it('defaults to a monday start', () => {
+    expect(getWeekQueryRange(0, now)).toEqual(getWeekQueryRange(0, now, 'monday'))
+  })
+})
+
+describe('getRelativeWeek', () => {
+  it('0 and any positive value are the current week', () => {
+    expect(getRelativeWeek(0)).toEqual({ kind: 'current' })
+    expect(getRelativeWeek(1)).toEqual({ kind: 'current' })
+  })
+
+  it('-1 is last week', () => {
+    expect(getRelativeWeek(-1)).toEqual({ kind: 'last' })
+  })
+
+  it('-2 and further back are N weeks ago', () => {
+    expect(getRelativeWeek(-2)).toEqual({ kind: 'ago', weeks: 2 })
+    expect(getRelativeWeek(-12)).toEqual({ kind: 'ago', weeks: 12 })
+  })
+})
+
+describe('getViewedWeekLabel', () => {
+  it('the current week keeps the existing key, with no values', () => {
+    expect(getViewedWeekLabel(0, VIEWED_WEEK_LABELS.totalTime)).toEqual({ key: 'common:home.thisWeek' })
+  })
+
+  it('last week uses its own key', () => {
+    expect(getViewedWeekLabel(-1, VIEWED_WEEK_LABELS.prs)).toEqual({ key: 'common:home.prsLastWeek' })
+  })
+
+  it('further back passes the number of weeks as count', () => {
+    expect(getViewedWeekLabel(-3, VIEWED_WEEK_LABELS.prsTitle))
+      .toEqual({ key: 'common:home.weeklyPRsTitleWeeksAgo', values: { count: 3 } })
+  })
+})
+
+describe('getCycleTotalMinutes', () => {
+  const now = new Date(2026, 2, 19, 12, 0)
+  const sessions = [
+    { completed_at: new Date(2026, 2, 16, 10, 0).toISOString(), duration_minutes: 30 }, // this week
+    { completed_at: new Date(2026, 2, 18, 19, 0).toISOString(), duration_minutes: 50 }, // this week
+    { completed_at: new Date(2026, 2, 9, 10, 0).toISOString(), duration_minutes: 45 }, // last week, first day
+    { completed_at: new Date(2026, 2, 15, 23, 30).toISOString(), duration_minutes: 20 }, // last week, last day
+    { completed_at: new Date(2026, 2, 12, 10, 0).toISOString(), duration_minutes: null }, // last week, no duration
+    { completed_at: new Date(2026, 2, 2, 10, 0).toISOString(), duration_minutes: 60 }, // two weeks ago
+  ]
+
+  it('sums only the sessions of the viewed week', () => {
+    expect(getCycleTotalMinutes(sessions, 0, now, 'monday')).toBe(80)
+    expect(getCycleTotalMinutes(sessions, -1, now, 'monday')).toBe(65)
+    expect(getCycleTotalMinutes(sessions, -2, now, 'monday')).toBe(60)
+  })
+
+  it('follows the week start: with sunday, sunday the 15th belongs to the current week', () => {
+    expect(getCycleTotalMinutes(sessions, 0, now, 'sunday')).toBe(100)
+    expect(getCycleTotalMinutes(sessions, -1, now, 'sunday')).toBe(45)
+  })
+
+  it('a week without sessions, an empty list or no list is 0', () => {
+    expect(getCycleTotalMinutes(sessions, -5, now, 'monday')).toBe(0)
+    expect(getCycleTotalMinutes([], 0, now, 'monday')).toBe(0)
+    expect(getCycleTotalMinutes(null, 0, now, 'monday')).toBe(0)
+  })
+
+  it('equals the sum of the streak card bars for the same inputs', () => {
+    for (const weekStartDay of ['monday', 'sunday']) {
+      for (const offset of [0, -1, -2]) {
+        const bars = getViewedCycle({ sessions, weekStartDay }, offset, now, FORMAT).chartData
+        const barsTotal = bars.reduce((sum, bar) => sum + bar.durationMinutes, 0)
+        expect(getCycleTotalMinutes(sessions, offset, now, weekStartDay)).toBe(barsTotal)
+      }
+    }
+  })
+})
+
+describe('shouldResetViewedWeek', () => {
+  // Wednesday 18 March 2026, 12:00 local: the monday and sunday weeks both started days before
+  const leftAt = new Date(2026, 2, 18, 12, 0).getTime()
+  const MINUTE = 60 * 1000
+
+  it('never left Home: no reset', () => {
+    expect(shouldResetViewedWeek(null, leftAt, 'monday')).toBe(false)
+  })
+
+  it('back in 14:59 within the same week: no reset', () => {
+    expect(shouldResetViewedWeek(leftAt, leftAt + 14 * MINUTE + 59 * 1000, 'monday')).toBe(false)
+  })
+
+  it('exactly the window: no reset yet', () => {
+    expect(shouldResetViewedWeek(leftAt, leftAt + HOME_WEEK_RESET_MS, 'monday')).toBe(false)
+  })
+
+  it('back in 15:01: reset', () => {
+    expect(shouldResetViewedWeek(leftAt, leftAt + 15 * MINUTE + 1000, 'monday')).toBe(true)
+  })
+
+  it('back in one minute but across the start of a monday week: reset', () => {
+    const sundayNight = new Date(2026, 2, 22, 23, 59, 30).getTime()
+    expect(shouldResetViewedWeek(sundayNight, sundayNight + MINUTE, 'monday')).toBe(true)
+    // The same minute is mid-week with a sunday start
+    expect(shouldResetViewedWeek(sundayNight, sundayNight + MINUTE, 'sunday')).toBe(false)
+  })
+
+  it('back in one minute but across the start of a sunday week: reset', () => {
+    const saturdayNight = new Date(2026, 2, 21, 23, 59, 30).getTime()
+    expect(shouldResetViewedWeek(saturdayNight, saturdayNight + MINUTE, 'sunday')).toBe(true)
+    expect(shouldResetViewedWeek(saturdayNight, saturdayNight + MINUTE, 'monday')).toBe(false)
+  })
+})
+
+describe('selectViewedCycleOffset', () => {
+  const now = new Date(2026, 2, 18, 12, 0).getTime()
+
+  it('on Home (leftAt null) returns the stored offset', () => {
+    expect(selectViewedCycleOffset({ cycleOffset: -4, leftAt: null }, now, 'monday')).toBe(-4)
+  })
+
+  it('back within the window returns the stored offset', () => {
+    expect(selectViewedCycleOffset({ cycleOffset: -4, leftAt: now - 60 * 1000 }, now, 'monday')).toBe(-4)
+  })
+
+  it('due for reset returns the current week', () => {
+    expect(selectViewedCycleOffset({ cycleOffset: -4, leftAt: now - HOME_WEEK_RESET_MS - 1 }, now, 'monday')).toBe(0)
   })
 })
 

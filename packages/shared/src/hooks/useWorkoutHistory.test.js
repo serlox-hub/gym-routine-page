@@ -307,7 +307,6 @@ describe('invalidaciones al mover una sesión en el tiempo', () => {
       'previous-workout',
       'weekly-prs',
       'last-session-for-routine',
-      'weekly-session-stats',
       'training-goal-sessions',
     ]))
   })
@@ -320,7 +319,7 @@ describe('invalidaciones al mover una sesión en el tiempo', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     const keys = invalidatedKeys(spy)
-    expect(keys).toContain('weekly-session-stats')
+    expect(keys).toContain('training-goal-sessions')
     expect(keys).toContain('weekly-prs')
     expect(keys).toContain('last-session-for-routine')
   })

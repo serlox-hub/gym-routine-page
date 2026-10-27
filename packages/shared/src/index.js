@@ -80,6 +80,9 @@ export { queryClient } from './lib/queryClient.js'
 export { createWorkoutStore, workoutStoreState, workoutPartialize, buildSessionTransitionReset, buildSessionSetDataReset } from './stores/createWorkoutStore.js'
 export { createAuthStore } from './stores/createAuthStore.js'
 
+// Stores without platform dependencies (one shared instance)
+export { useHomeWeekStore } from './stores/homeWeekStore.js'
+
 // Notifications
 export { initNotifications, getNotifier } from './notifications.js'
 
