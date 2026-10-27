@@ -11,6 +11,7 @@ import useWorkoutStore from '../../stores/workoutStore'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton } from '../ui'
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
 import SetValueInput from '../Workout/SetInputs'
+import SetNumberMark from '../Workout/SetNumberMark'
 import ConvertToRoutineDayModal from './ConvertToRoutineDayModal'
 import MuscleGroupSetsChart from './MuscleGroupSetsChart'
 import CorrectSessionExerciseAction from './CorrectSessionExerciseAction'
@@ -153,13 +154,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
             abajo, siempre visible) ya es la puerta a la hoja donde se fija el tipo. Duplicarla
             aquí con un tap sobre el número era una segunda entrada silenciosa a lo mismo. */}
         <View style={{ width: 24, alignItems: 'center' }}>
-          <Text style={{
-            color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted,
-            fontSize: 12, textAlign: 'center',
-            fontWeight: isSetPR || setType === 'dropset' ? '700' : '400',
-          }}>
-            {setType === 'dropset' ? 'D' : set.set_number}
-          </Text>
+          <SetNumberMark setNumber={set.set_number} setType={setType} isPR={isSetPR} style={{ textAlign: 'center' }} />
         </View>
 
         {columns.map(({ field, decimal, unit }) => (
@@ -294,9 +289,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
               key={set.id}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
             >
-              <Text style={{ color: isSetPR ? colors.warning : colors.textMuted, fontSize: 12, width: 14, textAlign: 'right', fontWeight: isSetPR ? '700' : '400' }}>
-                {set.set_type === 'dropset' ? 'D' : set.set_number}
-              </Text>
+              <SetNumberMark setNumber={set.set_number} setType={set.set_type} isPR={isSetPR} style={{ width: 14, textAlign: 'right' }} />
               <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ color: colors.textPrimary, fontSize: 13 }}>
                   {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { colors } from '../../lib/styles.js'
 import SetNotesView from './SetNotesView.jsx'
-import { formatPreviousSetValue, formatPreviousSetEffort } from '@gym/shared'
+import { SET_TYPES, formatPreviousSetValue, formatPreviousSetEffort } from '@gym/shared'
 
 // Referencia de la MISMA serie en la última sesión. Vive en la subfila (SetRowMeta), no en una
 // columna: como columna medía 46px, tenía que elidir y ocultar las unidades, y con tres campos
@@ -15,6 +15,8 @@ function PreviousSetLine({ previousSet, trackedFields, weightUnit = 'kg', distan
   const [showDetail, setShowDetail] = useState(false)
 
   const hasDetail = !!previousSet?.notes || !!previousSet?.videoUrl
+  // Shown whatever `show_set_type` says: that preference hides the marking, not the history.
+  const isDropset = previousSet?.setType === SET_TYPES.DROPSET
   const valueText = previousSet ? formatPreviousSetValue(previousSet, trackedFields, { weightUnit, distanceUnit }) : ''
   const effortText = formatPreviousSetEffort(previousSet, trackedFields, showRir)
 
@@ -35,6 +37,15 @@ function PreviousSetLine({ previousSet, trackedFields, weightUnit = 'kg', distan
         <span style={{ color: colors.textMuted, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
           {t('workout:set.previous')}
         </span>
+        {/* The «D» of the SET cell in SetRow, scaled down to this line. */}
+        {isDropset && (
+          <span
+            className="shrink-0"
+            style={{ backgroundColor: colors.orangeBg, color: colors.orange, borderRadius: 4, fontSize: 10, fontWeight: 800, lineHeight: '14px', padding: '0 4px' }}
+          >
+            {t('workout:set.type.dropsetShort')}
+          </span>
+        )}
         <span className="truncate" style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 500, minWidth: 0 }}>
           {valueText}
         </span>

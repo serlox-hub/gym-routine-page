@@ -276,7 +276,7 @@ function SetRow({
       )
     }
     return isDropset
-      ? <View style={dropChipStyle}><Text style={{ color: colors.orange, fontSize: 12, fontWeight: '800' }}>D</Text></View>
+      ? <View style={dropChipStyle}><Text style={{ color: colors.orange, fontSize: 12, fontWeight: '800' }}>{t('workout:set.type.dropsetShort')}</Text></View>
       : <Text style={setNumberTextStyle}>{setNumber}</Text>
   }
 

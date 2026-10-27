@@ -7,12 +7,14 @@ i18n.use(initReactI18next)
 initI18n()
 
 import { render, screen, fireEvent } from '@testing-library/react'
+import { colors } from '../../lib/styles.js'
 
 // What useHistorySetEditor returns for the set row. The hook owns the upload and save logic and is
 // tested on its own: here it is only the source of the flags the row paints (note, failed upload).
-const { editorState, editorMounts, session } = vi.hoisted(() => ({
+const { editorState, editorMounts, prState, session } = vi.hoisted(() => ({
   editorState: {},
   editorMounts: { count: 0 },
+  prState: { data: undefined },
   session: {
     id: 1,
     started_at: '2026-09-01T10:00:00.000Z',
@@ -37,7 +39,7 @@ vi.mock('../../hooks/useWorkout.js', () => {
   const mutation = () => ({ mutate: vi.fn(), isPending: false, isError: false })
   return {
     useSessionDetail: () => ({ data: session, isLoading: false, error: null }),
-    useSessionPRs: () => ({ data: undefined }),
+    useSessionPRs: () => prState,
     useDeleteSession: mutation,
     useUpdateSessionMetadata: mutation,
     useRescheduleSession: mutation,
@@ -133,6 +135,7 @@ function enterEditMode() {
 
 beforeEach(() => {
   editorMounts.count = 0
+  prState.data = undefined
   setSession([buildSet()])
   setEditor()
 })
@@ -201,6 +204,56 @@ describe('SessionInlineDetail: set row in read mode', () => {
 
     expect(screen.queryByRole('button', { name: 'Notas' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Vídeo' })).not.toBeInTheDocument()
+  })
+})
+
+// Issue 197: the session detail marks a dropset with «D» (orange) in the read-only rows and in the
+// edit rows alike, and a PR keeps its colour on top of it.
+describe('SessionInlineDetail: dropset mark', () => {
+  it('read mode: a dropset shows «D» where the number would be, the other sets their number', () => {
+    setSession([
+      buildSet({ id: 1, set_number: 1 }),
+      buildSet({ id: 2, set_number: 2, set_type: 'dropset' }),
+      buildSet({ id: 3, set_number: 3, set_type: 'normal' }),
+    ])
+    render(<SessionInlineDetail sessionId={1} />)
+
+    expect(screen.getAllByText('D')).toHaveLength(1)
+    expect(screen.getByText('D')).toHaveStyle({ color: colors.orange })
+    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.queryByText('2')).not.toBeInTheDocument()
+  })
+
+  it('read mode: a dropset that is the PR set keeps the «D» in the PR colour', () => {
+    prState.data = [{ exercise_id: 3, is_pr_reps: true }]
+    setSession([
+      buildSet({ id: 1, set_number: 1, reps_completed: 8 }),
+      buildSet({ id: 2, set_number: 2, reps_completed: 12, set_type: 'dropset' }),
+    ])
+    render(<SessionInlineDetail sessionId={1} />)
+
+    expect(screen.getByText('D')).toHaveStyle({ color: colors.warning, fontWeight: '700' })
+    expect(screen.getByText('1')).toHaveStyle({ color: colors.textMuted })
+  })
+
+  it('edit mode: the «D» follows the type the editor holds, not the saved one', () => {
+    setSession([buildSet({ set_number: 2, set_type: 'normal' })])
+    setEditor({ setType: 'dropset' })
+    render(<SessionInlineDetail sessionId={1} />)
+    enterEditMode()
+
+    expect(screen.getByText('D')).toHaveStyle({ color: colors.orange })
+    expect(screen.queryByText('2')).not.toBeInTheDocument()
+  })
+
+  it('edit mode: a normal set shows its number', () => {
+    setSession([buildSet({ set_number: 2 })])
+    render(<SessionInlineDetail sessionId={1} />)
+    enterEditMode()
+
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.queryByText('D')).not.toBeInTheDocument()
   })
 })
 

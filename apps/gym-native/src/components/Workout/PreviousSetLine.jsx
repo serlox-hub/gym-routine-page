@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { formatPreviousSetValue, formatPreviousSetEffort } from '@gym/shared'
+import { SET_TYPES, formatPreviousSetValue, formatPreviousSetEffort } from '@gym/shared'
 import SetNotesView from './SetNotesView'
 import { colors, design } from '../../lib/styles'
 
@@ -22,6 +22,8 @@ export default function PreviousSetLine({
   const [showDetail, setShowDetail] = useState(false)
 
   const hasDetail = !!previousSet?.notes || !!previousSet?.videoUrl
+  // Shown whatever `show_set_type` says: that preference hides the marking, not the history.
+  const isDropset = previousSet?.setType === SET_TYPES.DROPSET
   const valueText = previousSet ? formatPreviousSetValue(previousSet, trackedFields, { weightUnit, distanceUnit }) : ''
   const effortText = formatPreviousSetEffort(previousSet, trackedFields, showRir)
 
@@ -43,6 +45,14 @@ export default function PreviousSetLine({
         <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: '500' }}>
           {t('workout:set.previous')}
         </Text>
+        {/* The «D» of the SET cell in SetRow, scaled down to this line. */}
+        {isDropset && (
+          <View style={{ backgroundColor: colors.orangeBg, borderRadius: 4, paddingHorizontal: 4 }}>
+            <Text style={{ color: colors.orange, fontSize: 10, fontWeight: '800', lineHeight: 14 }}>
+              {t('workout:set.type.dropsetShort')}
+            </Text>
+          </View>
+        )}
         <Text numberOfLines={1} style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '500', flexShrink: 1 }}>
           {valueText}
         </Text>

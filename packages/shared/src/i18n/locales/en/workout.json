@@ -105,7 +105,8 @@
     "type": {
       "label": "Set type",
       "normal": "Normal",
-      "dropset": "Dropset"
+      "dropset": "Dropset",
+      "dropsetShort": "D"
     },
     "startTimer": "Start {{time}}",
     "stopTimer": "Stop",
