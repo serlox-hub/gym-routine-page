@@ -1,15 +1,13 @@
-import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { findGrantViolations } from './functionGrants.js'
-import { readLocalMigrationDrift } from './localMigrations.js'
+import { queryLocalDatabase } from './localDatabase.js'
 
 // Checks who can execute the functions in `public` on the LOCAL database (issue #115). It exists
 // because nothing else sees it: `db:dump` only dumps `public`, so schema.sql and the drift check miss
 // the global default privileges, and no e2e calls the admin, feedback, unit conversion or day
-// duplication RPCs. It answers only on a database that holds exactly the migrations of the tree
-// (CI runs it right after `supabase start`; locally it refuses otherwise and asks for a reset).
+// duplication RPCs. Like every check through queryLocalDatabase, it answers only on a database that
+// holds exactly the migrations of the tree.
 const appDir = path.resolve(import.meta.dirname, '..')
-const STACK_HINT = 'Is the stack up? `npx supabase start` from apps/web.'
 
 // Trigger functions are not callable through the API, so they are left out.
 const QUERY = `
@@ -32,35 +30,16 @@ SELECT
      AND d.defaclobjtype = 'f') AS default_grantees
 `
 
-// With the new migration unapplied its function does not exist yet, so everything would pass.
-const drift = readLocalMigrationDrift(appDir)
-if (drift == null) {
-  console.error(`Could not read the migrations of the local database. ${STACK_HINT}`)
-  process.exit(1)
-}
-if (drift.unapplied.length > 0 || drift.foreign.length > 0) {
-  console.error('The local database does not hold the migrations of this tree, so its grants say nothing about them.')
-  if (drift.unapplied.length > 0) console.error(`  Not applied (in the tree): ${drift.unapplied.join(', ')}`)
-  if (drift.foreign.length > 0) console.error(`  Applied but missing from the tree: ${drift.foreign.join(', ')}`)
-  console.error('Rebuild it with `npx supabase db reset` from apps/web (it wipes the local database).')
+let rows
+try {
+  rows = queryLocalDatabase(appDir, QUERY)
+} catch (error) {
+  console.error(error.message)
   process.exit(1)
 }
 
-// `--agent no` pins the output shape. In agent mode (detected from env vars like CLAUDECODE) the CLI
-// wraps the rows in `{ boundary, rows, warning }`; anywhere else, CI included, it prints the bare array.
-const result = spawnSync(
-  'npx',
-  ['supabase', 'db', 'query', '--local', '--output-format', 'json', '--agent', 'no', QUERY],
-  { cwd: appDir, encoding: 'utf8' }
-)
+const [row] = rows
 
-if (result.status !== 0) {
-  console.error(result.stderr?.trim() || '(no output)')
-  console.error(`\nCould not query the local database. ${STACK_HINT}`)
-  process.exit(1)
-}
-
-const [row] = JSON.parse(result.stdout)
 const violations = findGrantViolations({ functions: row.functions, defaultGrantees: row.default_grantees })
 
 if (violations.length > 0) {

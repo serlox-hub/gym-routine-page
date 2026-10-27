@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process'
 // Whether the LOCAL database holds exactly the migrations of the tree. Any check that reads that
 // database (schema drift, function grants) only means something when it does: with the migration
 // you just wrote still unapplied, whatever it creates does not exist yet and the check passes.
-// Shared by scripts/checkSchemaDrift.mjs (root) and checkFunctionGrants.js.
+// Shared by scripts/checkSchemaDrift.mjs (root) and localDatabase.js.
 //
 // Known gap: a migration EDITED after being applied (same version, other content) looks in sync.
 // Only a `db reset` covers it. CI builds the database from scratch, so it does not have the gap.

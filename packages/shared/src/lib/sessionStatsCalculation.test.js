@@ -8,7 +8,6 @@ import {
   evaluateSetForPR,
   computeExercisePRSets,
   computeExercisePRSetNumbers,
-  recalculatePRFlags,
   mergeExerciseStats,
   bestAtRepsOrAbove,
   findBeatenRepRecord,
@@ -123,6 +122,41 @@ describe('sessionStatsCalculation', () => {
       expect(getPRMetrics(['distance', 'time'])).toEqual([])
       expect(getPRMetrics(['level', 'time'])).toEqual([])
       expect(getPRMetrics(['level', 'distance'])).toEqual([])
+    })
+
+    it('weight solo peso, y pace solo ritmo', () => {
+      expect(getPRMetrics(['weight'])).toEqual(['weight'])
+      expect(getPRMetrics(['pace'])).toEqual(['pace'])
+    })
+
+    it('el ritmo gana a cualquier otro campo que lo acompañe', () => {
+      expect(getPRMetrics(['time', 'pace'])).toEqual(['pace'])
+      expect(getPRMetrics(['level', 'distance', 'pace'])).toEqual(['pace'])
+    })
+
+    it('nivel y calorías no tienen columna en stats: ni solos disparan PR', () => {
+      expect(getPRMetrics(['level'])).toEqual([])
+      expect(getPRMetrics(['calories'])).toEqual([])
+    })
+
+    it('peso × reps con un tercer campo ya no es peso × reps: sin PRs', () => {
+      expect(getPRMetrics(['weight', 'reps', 'time'])).toEqual([])
+      expect(getPRMetrics(['weight', 'reps', 'level'])).toEqual([])
+    })
+
+    it('ignora el orden y los duplicados de la lista guardada', () => {
+      expect(getPRMetrics(['reps', 'weight'])).toEqual(['1rm', 'weight', 'repPR'])
+      expect(getPRMetrics(['time', 'time'])).toEqual(['time'])
+    })
+
+    it('sin campos usables cae a peso × reps, como el resto de lecturas', () => {
+      expect(getPRMetrics(null)).toEqual(['1rm', 'weight', 'repPR'])
+      expect(getPRMetrics([])).toEqual(['1rm', 'weight', 'repPR'])
+      expect(getPRMetrics([null])).toEqual(['1rm', 'weight', 'repPR'])
+    })
+
+    it('descarta un valor inválido y juzga el resto', () => {
+      expect(getPRMetrics(['weight', null])).toEqual(['weight'])
     })
   })
 
@@ -893,96 +927,6 @@ describe('sessionStatsCalculation', () => {
       const paceSet = { distance_meters: 5000, pace_seconds: 280 }
       const paceResult = evaluateSetForPR(paceSet, {}, { bestDistanceMeters: 5000, bestPaceSeconds: 300 }, ['distance', 'pace'], 'lb')
       expect(paceResult.newRecords.find(r => r.type === 'bestPaceSeconds').unit).toBe('s/km')
-    })
-  })
-
-  // ============================================
-  // recalculatePRFlags
-  // ============================================
-
-  describe('recalculatePRFlags', () => {
-    it('retorna vacío para array vacío', () => {
-      expect(recalculatePRFlags([])).toEqual([])
-    })
-
-    it('retorna vacío si es null', () => {
-      expect(recalculatePRFlags(null)).toEqual([])
-    })
-
-    it('primera sesión siempre tiene flags false', () => {
-      const sessions = [
-        { sessionId: 's1', exerciseId: 'e1', bestWeight: 100, bestReps: 10, best1rm: 133 },
-      ]
-      const results = recalculatePRFlags(sessions)
-      expect(results[0].isPrWeight).toBe(false)
-      expect(results[0].isPrReps).toBe(false)
-      expect(results[0].isPr1rm).toBe(false)
-    })
-
-    it('segunda sesión marca PRs correctamente', () => {
-      const sessions = [
-        { sessionId: 's1', exerciseId: 'e1', bestWeight: 100, bestReps: 10 },
-        { sessionId: 's2', exerciseId: 'e1', bestWeight: 110, bestReps: 8 },
-      ]
-      const results = recalculatePRFlags(sessions)
-      expect(results[1].isPrWeight).toBe(true)
-      expect(results[1].isPrReps).toBe(false) // 8 < 10
-    })
-
-    it('recalcula correctamente después de borrar sesión intermedia', () => {
-      // Original: s1(100), s2(110), s3(105)
-      // s2 borrado: s1(100), s3(105) → s3 ahora es PR de peso
-      const sessionsAfterDelete = [
-        { sessionId: 's1', exerciseId: 'e1', bestWeight: 100 },
-        { sessionId: 's3', exerciseId: 'e1', bestWeight: 105 },
-      ]
-      const results = recalculatePRFlags(sessionsAfterDelete)
-      expect(results[0].isPrWeight).toBe(false) // primera
-      expect(results[1].isPrWeight).toBe(true)  // 105 > 100
-    })
-
-    it('maneja PRs progresivos', () => {
-      const sessions = [
-        { sessionId: 's1', exerciseId: 'e1', bestWeight: 80 },
-        { sessionId: 's2', exerciseId: 'e1', bestWeight: 90 },
-        { sessionId: 's3', exerciseId: 'e1', bestWeight: 100 },
-        { sessionId: 's4', exerciseId: 'e1', bestWeight: 95 },
-      ]
-      const results = recalculatePRFlags(sessions)
-      expect(results[0].isPrWeight).toBe(false) // primera
-      expect(results[1].isPrWeight).toBe(true)  // 90 > 80
-      expect(results[2].isPrWeight).toBe(true)  // 100 > 90
-      expect(results[3].isPrWeight).toBe(false) // 95 < 100
-    })
-
-    it('maneja PR de pace (menor = mejor)', () => {
-      const sessions = [
-        { sessionId: 's1', exerciseId: 'e1', bestPaceSeconds: 350 },
-        { sessionId: 's2', exerciseId: 'e1', bestPaceSeconds: 320 },
-        { sessionId: 's3', exerciseId: 'e1', bestPaceSeconds: 330 },
-      ]
-      const results = recalculatePRFlags(sessions)
-      expect(results[0].isPrPace).toBe(false) // primera
-      expect(results[1].isPrPace).toBe(true)  // 320 < 350
-      expect(results[2].isPrPace).toBe(false) // 330 > 320
-    })
-
-    it('no marca PR si campo es null', () => {
-      const sessions = [
-        { sessionId: 's1', exerciseId: 'e1', bestWeight: 100 },
-        { sessionId: 's2', exerciseId: 'e1', bestWeight: null },
-      ]
-      const results = recalculatePRFlags(sessions)
-      expect(results[1].isPrWeight).toBe(false)
-    })
-
-    it('preserva sessionId y exerciseId en resultados', () => {
-      const sessions = [
-        { sessionId: 'abc', exerciseId: 'xyz', bestWeight: 100 },
-      ]
-      const results = recalculatePRFlags(sessions)
-      expect(results[0].sessionId).toBe('abc')
-      expect(results[0].exerciseId).toBe('xyz')
     })
   })
 

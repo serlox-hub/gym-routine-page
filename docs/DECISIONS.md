@@ -106,7 +106,7 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **Toda lectura normaliza** (`normalizeTrackedFields`): el orden en BD es irrelevante a propósito.
 - **`trackedFieldsFromLegacyType` no se borra nunca:** un JSON exportado hace meses tiene que seguir importándose. Detalle en `docs/routine-io.md`.
 - **En ritmo menor es mejor** (`lowerIsBetter`), y el ritmo va detrás de la distancia en `CHART_FIELD_PRIORITY` para que distancia × ritmo se resuma por distancia.
-- ⚠️ **Divergencia conocida:** el RPC `recalculate_exercise_prs` marca flags de PR por columna sin saber qué mide el ejercicio (puede marcar `is_pr_time` donde `getPRMetrics` es `[]`, o `is_pr_weight` en un peso × tiempo, también tras un historial solo de 0 kg desde la 070). Se ve tras cualquier recálculo: editar o borrar una serie, cambiar el gym o el inicio de una sesión, corregir un ejercicio.
+- **The recalculation after an edit applies the same rule** (issue #196): `recalculate_exercise_prs` judges only the metrics of `pr_metrics(tracked_fields)`, the SQL mirror of `getPRMetrics`. Until migration 072 it marked every column that improved, whatever the exercise tracks (the «Divergencia conocida» migration 071 cites). Flags saved that way stay until something recalculates them: there was no backfill. Still diverges on a session without a gym: `fetchExerciseBests` with `gymId` null compares against every gym, the SQL only against gym-less rows (`gym_id IS NOT DISTINCT FROM NULL`), so a trophy there can still change after an edit.
 
 ## 2026-08 · Papeles de los campos: objetivo y progresable (issue #28)
 - **El campo objetivo se guarda en `routine_exercises.target_field`** (+ snapshot en sesión), no en `exercises`: permite "bici 20 min" el lunes y "5 km" el jueves.

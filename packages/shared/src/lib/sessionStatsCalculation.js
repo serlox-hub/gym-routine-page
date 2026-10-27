@@ -41,6 +41,8 @@ export function getTrackableMetrics(trackedFields) {
  * mejor ni peor. Dos excepciones, que son las dos formas de colapsar dos dimensiones en una:
  * peso × reps con el 1RM estimado (modelo Strong/Hevy, más heaviest-ever y rep-PR por rep count),
  * y el ritmo, que ya normaliza el tiempo por la distancia.
+ * The SQL `pr_metrics` (migration 072) mirrors it for recalculate_exercise_prs: change both
+ * together, `npm run db:check-pr-parity -w apps/web` compares them.
  * @param {string[]} trackedFields
  * @returns {string[]}
  */
@@ -241,10 +243,9 @@ export function findPreviousRepRecord(repCount, historicalMap) {
 // A 0 kg set is stored as "no value": a history whose sets were all at 0 kg has null bestWeight,
 // best1rm and bestPerReps. For these stats, with history in this gym, a missing previous value
 // counts as 0, or the first weighted session would never be a PR. recalculate_exercise_prs
-// (migration 070) applies the same rule. Other stats still need a previous value: 0 kg is a real
-// load (bodyweight) with no counterpart in reps, time or distance, and recalculate_exercise_prs
-// does not know what the exercise tracks, so extending the rule there would flag volume, time or
-// distance records the JS paths never flag (DECISIONS, tracked_fields).
+// (migration 070) applies the same rule. Other stats still need a previous value: only the weight
+// has a real 0 (a bodyweight set) that is stored as missing. A missing reps, time or distance was
+// never measured, so counting it as 0 would make the first session that measures it a record.
 const ZERO_WHEN_MISSING_STATS = new Set(['bestWeight', 'best1rm'])
 
 function hasWeightHistory(bests) {
@@ -553,79 +554,6 @@ export function computeExercisePRSets(completedSets, preSessionBests, trackedFie
  */
 export function computeExercisePRSetNumbers(completedSets, preSessionBests, trackedFields) {
   return computeExercisePRSets(completedSets, preSessionBests, trackedFields).map(r => r.setNumber)
-}
-
-// ============================================
-// PR FLAGS RECALCULATION (AFTER DELETE)
-// ============================================
-
-export function recalculatePRFlags(sessionsOrderedByDate) {
-  if (!sessionsOrderedByDate || sessionsOrderedByDate.length === 0) return []
-
-  const runningBests = {}
-  const results = []
-
-  for (let i = 0; i < sessionsOrderedByDate.length; i++) {
-    const session = sessionsOrderedByDate[i]
-    const isFirst = i === 0
-    // prRepCounts no se recalcula aquí — esta función es la versión cliente
-    // simplificada; la fuente de verdad es el RPC recalculate_exercise_prs.
-    const flags = {
-      isPrWeight: false,
-      isPrReps: false,
-      isPr1rm: false,
-      isPrVolume: false,
-      isPrTime: false,
-      isPrDistance: false,
-      isPrPace: false,
-      prRepCounts: null,
-    }
-
-    if (!isFirst) {
-      // Higher-is-better fields
-      for (const [stat, flag] of [
-        ['bestWeight', 'isPrWeight'],
-        ['bestReps', 'isPrReps'],
-        ['best1rm', 'isPr1rm'],
-        ['totalVolume', 'isPrVolume'],
-        ['bestTimeSeconds', 'isPrTime'],
-        ['bestDistanceMeters', 'isPrDistance'],
-      ]) {
-        const current = session[stat]
-        const previous = runningBests[stat]
-        if (current && previous && current > previous) {
-          flags[flag] = true
-        }
-      }
-
-      // Pace: lower is better
-      const currentPace = session.bestPaceSeconds
-      const previousPace = runningBests.bestPaceSeconds
-      if (currentPace && previousPace && currentPace < previousPace) {
-        flags.isPrPace = true
-      }
-    }
-
-    // Update running bests
-    for (const stat of ['bestWeight', 'bestReps', 'best1rm', 'totalVolume', 'bestTimeSeconds', 'bestDistanceMeters']) {
-      const val = session[stat]
-      if (val && (!runningBests[stat] || val > runningBests[stat])) {
-        runningBests[stat] = val
-      }
-    }
-    // Pace: track minimum
-    if (session.bestPaceSeconds && (!runningBests.bestPaceSeconds || session.bestPaceSeconds < runningBests.bestPaceSeconds)) {
-      runningBests.bestPaceSeconds = session.bestPaceSeconds
-    }
-
-    results.push({
-      sessionId: session.sessionId,
-      exerciseId: session.exerciseId,
-      ...flags,
-    })
-  }
-
-  return results
 }
 
 // ============================================
