@@ -73,6 +73,18 @@ describe('HistoryTable — set row height', () => {
   })
 })
 
+describe('HistoryTable — dropset mark', () => {
+  const numberCellOf = (text) => screen.getByText(text).parentElement.firstElementChild
+
+  it('a dropset shows «D» instead of its number, the other sets their number', () => {
+    renderTable([plainSet, { ...noteSet, set_type: 'dropset' }, { ...noteAndVideoSet, set_type: 'normal' }])
+
+    expect(numberCellOf('80kg × 8 reps')).toHaveTextContent(/^1$/)
+    expect(numberCellOf('80kg × 7 reps')).toHaveTextContent(/^D$/)
+    expect(numberCellOf('80kg × 6 reps')).toHaveTextContent(/^3$/)
+  })
+})
+
 describe('HistoryTable — routine marks', () => {
   const sessions = [
     { sessionId: 1, date: '2026-09-03', routineDayId: 1, sets: [plainSet] },

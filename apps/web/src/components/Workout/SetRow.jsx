@@ -281,7 +281,7 @@ function SetRow({
       )
     }
     return isDropset
-      ? <span style={dropChipStyle}>D</span>
+      ? <span style={dropChipStyle}>{t('workout:set.type.dropsetShort')}</span>
       : <span style={setNumberStyle}>{setNumber}</span>
   }
 

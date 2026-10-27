@@ -7,6 +7,7 @@ import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTracke
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
+import SetNumberMark from '../Workout/SetNumberMark.jsx'
 import SetValueInput from '../Workout/SetInputs.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
@@ -168,12 +169,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
         {/* Identidad pura (número / «D» dropset), sin interacción: el menú «···» → Editar (más
             abajo, siempre visible) ya es la puerta a la hoja donde se fija el tipo. Duplicarla
             aquí con un tap sobre el número era una segunda entrada silenciosa a lo mismo. */}
-        <span
-          className="shrink-0"
-          style={{ color: isSetPR ? colors.warning : setType === 'dropset' ? colors.orange : colors.textMuted, fontSize: 12, textAlign: 'center', fontWeight: isSetPR || setType === 'dropset' ? 700 : 400 }}
-        >
-          {setType === 'dropset' ? 'D' : set.set_number}
-        </span>
+        <SetNumberMark setNumber={set.set_number} setType={setType} isPR={isSetPR} className="shrink-0" style={{ textAlign: 'center' }} />
 
         {columns.map(({ field, decimal, unit }) => (
           <div key={field} className="flex items-center gap-1 min-w-0">
@@ -295,9 +291,7 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
               className="flex items-center gap-3"
               style={{ fontSize: 13 }}
             >
-              <span style={{ color: isSetPR ? colors.warning : colors.textMuted, fontSize: 12, width: 14, textAlign: 'right', fontWeight: isSetPR ? 700 : 400 }}>
-                {set.set_type === 'dropset' ? 'D' : set.set_number}
-              </span>
+              <SetNumberMark setNumber={set.set_number} setType={set.set_type} isPR={isSetPR} style={{ width: 14, textAlign: 'right' }} />
               <span className="flex-1 flex items-center gap-2" style={{ color: colors.textPrimary }}>
                 {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                 {isSetPR && (

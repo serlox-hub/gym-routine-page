@@ -5,6 +5,7 @@ import { ChevronRight, ChevronDown, FileText, Video } from 'lucide-react-native'
 import { useExerciseHistorySummary, useExerciseChartData, useExerciseHistoryFilter } from '../../hooks/useWorkout'
 import { ExerciseName, IconButton, LoadingSpinner, Modal } from '../ui'
 import SetNotesView from './SetNotesView'
+import SetNumberMark from './SetNumberMark'
 import GymSelector from './GymSelector'
 import HistoryFilterSelector from './HistoryFilterSelector'
 import { colors, design } from '../../lib/styles'
@@ -149,9 +150,7 @@ function HistoryTab({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUn
               {session.sets.map(set => (
                 // As tall as the note and video buttons, so a set without them is as tall as one with them.
                 <View key={set.id} style={{ minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Text style={{ color: colors.textMuted, fontSize: 12, width: 14, textAlign: 'right' }}>
-                    {set.set_number}
-                  </Text>
+                  <SetNumberMark setNumber={set.set_number} setType={set.set_type} style={{ width: 14, textAlign: 'right' }} />
                   <Text style={{ color: colors.textPrimary, fontSize: 13, flex: 1 }}>
                     {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                   </Text>

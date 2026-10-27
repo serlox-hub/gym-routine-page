@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronRight, FileText, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { IconButton } from '../ui/index.js'
+import SetNumberMark from './SetNumberMark.jsx'
 import { DEFAULT_TRACKED_FIELDS, EXERCISE_HISTORY_PAGE_SIZE, ROUTINE_MEMBERSHIP, formatSetValue, formatShortDate, calculateTotalVolume, formatEffortBadge, getRoutineMembershipBadgeKey } from '@gym/shared'
 
 // The same day stands out; another day of the routine only says so.
@@ -83,9 +84,7 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
               {session.sets.map(set => (
                 // As tall as the note and video buttons, so a set without them is as tall as one with them.
                 <div key={set.id} className="flex items-center gap-3 min-h-11" style={{ fontSize: 13 }}>
-                  <span style={{ color: colors.textMuted, fontSize: 12, width: 14, textAlign: 'right' }}>
-                    {set.set_number}
-                  </span>
+                  <SetNumberMark setNumber={set.set_number} setType={set.set_type} style={{ width: 14, textAlign: 'right' }} />
                   <span className="flex-1" style={{ color: colors.textPrimary }}>
                     {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
                   </span>
