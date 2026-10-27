@@ -218,10 +218,10 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
   const weightUnit = useResolvedWeightUnit(exercise.id, gymId)
   const distanceUnit = useResolvedDistanceUnit(exercise)
   const prData = prsByExercise[exercise.id]
-  const prSetNums = prData ? findPRSetNumbers(sets, prData) : null
+  const trackedFields = resolveTrackedFields(exercise)
+  const prSetNums = prData ? findPRSetNumbers(sets, prData, trackedFields) : null
   const maxSetNumber = sets.length > 0 ? Math.max(...sets.map(s => s.set_number)) : 0
   const [showHistory, setShowHistory] = useState(false)
-  const trackedFields = resolveTrackedFields(exercise)
   const isHistoryClickable = !exercise.deleted_at && !isEditing
 
   return (

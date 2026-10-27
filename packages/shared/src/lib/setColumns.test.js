@@ -131,3 +131,19 @@ describe('getSetFieldValues / buildSetFieldsPayload', () => {
     expect(buildSetFieldsPayload(getSetFieldValues(row, columns), columns).distanceMeters).toBe(5000)
   })
 })
+
+describe('assistance column (issue #202)', () => {
+  const ASSISTED = [SetField.ASSISTANCE, SetField.REPS]
+
+  it('header says assistance with the weight unit, decimal like the weight', () => {
+    const [column] = getSetColumns(ASSISTED, { weightUnit: 'lb' })
+    expect(column).toEqual({ field: SetField.ASSISTANCE, label: 'ASIST. LB', unit: 'lb', decimal: true })
+  })
+
+  it('reads and writes the weight column, 0 kept', () => {
+    const columns = getSetColumns(ASSISTED)
+    expect(getSetFieldValues({ weight: 0, reps_completed: 8 }, columns)).toEqual({ assistance: 0, reps: 8 })
+    expect(buildSetFieldsPayload({ assistance: '0', reps: '8' }, columns)).toEqual({ weight: 0, repsCompleted: 8 })
+    expect(buildSetFieldsPayload({ assistance: '22,5', reps: '' }, columns)).toEqual({ weight: 22.5, repsCompleted: null })
+  })
+})

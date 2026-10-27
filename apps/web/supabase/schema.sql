@@ -25,6 +25,7 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 CREATE TYPE "public"."measurement_field" AS ENUM (
     'weight',
+    'assistance',
     'reps',
     'time',
     'distance',
@@ -338,18 +339,20 @@ BEGIN
     END IF;
 
     -- ============================================
-    -- 2. EXERCISE_SESSION_STATS (best_weight, best_1rm, total_volume, best_per_reps)
+    -- 2. EXERCISE_SESSION_STATS (best_weight, best_1rm, total_volume, best_assistance, best_per_reps)
     -- Every set of the scope is multiplied by the same constant, so the is_pr_* flags and
-    -- pr_rep_counts stay valid (the ranking holds); only the values change.
+    -- pr_rep_counts stay valid (the ranking holds, also the inverted one of assistance); only the
+    -- values change.
     -- best_per_reps NULL stays NULL: no keys to aggregate.
     -- best_1rm scaled is no longer a whole number, unlike the 1RM of a new set (#194).
     -- ============================================
     IF p_scope = 'exercise' THEN
         UPDATE exercise_session_stats ess
         SET
-            best_weight   = CASE WHEN best_weight  IS NOT NULL THEN ROUND(best_weight  * p_factor, 2) END,
-            best_1rm      = CASE WHEN best_1rm     IS NOT NULL THEN ROUND(best_1rm     * p_factor, 2) END,
-            total_volume  = CASE WHEN total_volume IS NOT NULL THEN ROUND(total_volume * p_factor, 2) END,
+            best_weight     = CASE WHEN best_weight     IS NOT NULL THEN ROUND(best_weight     * p_factor, 2) END,
+            best_1rm        = CASE WHEN best_1rm        IS NOT NULL THEN ROUND(best_1rm        * p_factor, 2) END,
+            total_volume    = CASE WHEN total_volume    IS NOT NULL THEN ROUND(total_volume    * p_factor, 2) END,
+            best_assistance = CASE WHEN best_assistance IS NOT NULL THEN ROUND(best_assistance * p_factor, 2) END,
             best_per_reps = (
                 SELECT jsonb_object_agg(kv.key, ROUND(kv.value::NUMERIC * p_factor, 2))
                 FROM jsonb_each_text(ess.best_per_reps) kv
@@ -360,9 +363,10 @@ BEGIN
     ELSE
         UPDATE exercise_session_stats ess
         SET
-            best_weight   = CASE WHEN best_weight  IS NOT NULL THEN ROUND(best_weight  * p_factor, 2) END,
-            best_1rm      = CASE WHEN best_1rm     IS NOT NULL THEN ROUND(best_1rm     * p_factor, 2) END,
-            total_volume  = CASE WHEN total_volume IS NOT NULL THEN ROUND(total_volume * p_factor, 2) END,
+            best_weight     = CASE WHEN best_weight     IS NOT NULL THEN ROUND(best_weight     * p_factor, 2) END,
+            best_1rm        = CASE WHEN best_1rm        IS NOT NULL THEN ROUND(best_1rm        * p_factor, 2) END,
+            total_volume    = CASE WHEN total_volume    IS NOT NULL THEN ROUND(total_volume    * p_factor, 2) END,
+            best_assistance = CASE WHEN best_assistance IS NOT NULL THEN ROUND(best_assistance * p_factor, 2) END,
             best_per_reps = (
                 SELECT jsonb_object_agg(kv.key, ROUND(kv.value::NUMERIC * p_factor, 2))
                 FROM jsonb_each_text(ess.best_per_reps) kv
@@ -899,21 +903,32 @@ COMMENT ON FUNCTION "public"."is_admin"("check_user_id" "uuid") IS 'TRUE only wh
 CREATE OR REPLACE FUNCTION "public"."pr_metrics"("p_fields" "public"."measurement_field"[]) RETURNS "text"[]
     LANGUAGE "sql" IMMUTABLE
     AS $$
-    -- Normalised like normalizeTrackedFields: NULL elements dropped, duplicates collapsed, nothing
-    -- left falls back to weight × reps. Its cut to 3 fields is not mirrored: exercises_tracked_fields_len
-    -- keeps every stored list within 3.
+    -- Normalised like normalizeTrackedFields: NULL elements dropped, duplicates collapsed, weight
+    -- dropped beside assistance, nothing left falls back to weight × reps. Its cut to 3 fields is
+    -- not mirrored: exercises_tracked_fields_len keeps every stored list within 3.
     WITH given AS (
         SELECT ARRAY(SELECT DISTINCT f FROM unnest(p_fields) AS f WHERE f IS NOT NULL) AS fields
+    ),
+    paired AS (
+        SELECT CASE WHEN 'assistance' = ANY (fields)
+                    THEN array_remove(fields, 'weight'::measurement_field)
+                    ELSE fields END AS fields
+        FROM given
     ),
     normalized AS (
         SELECT CASE WHEN cardinality(fields) = 0
                     THEN ARRAY['weight', 'reps']::measurement_field[]
                     ELSE fields END AS fields
-        FROM given
+        FROM paired
     )
     SELECT CASE
         WHEN cardinality(fields) = 2 AND fields @> ARRAY['weight', 'reps']::measurement_field[]
             THEN ARRAY['1rm', 'weight', 'repPR']
+        -- Assistance has a record only with reps, alone with them. Before pace, like the JS.
+        WHEN 'assistance' = ANY (fields)
+            THEN CASE WHEN cardinality(fields) = 2 AND 'reps' = ANY (fields)
+                      THEN ARRAY['assistance', 'repPR']
+                      ELSE ARRAY[]::TEXT[] END
         WHEN 'pace' = ANY (fields)
             THEN ARRAY['pace']
         -- Level and calories have no column in exercise_session_stats, so no record.
@@ -932,13 +947,88 @@ COMMENT ON FUNCTION "public"."pr_metrics"("p_fields" "public"."measurement_field
 
 
 
+CREATE OR REPLACE FUNCTION "public"."rebuild_assistance_stats"("p_exercise_id" integer) RETURNS "void"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    r RECORD;
+BEGIN
+    WITH sets AS (
+        SELECT se.session_id, cs.reps_completed, cs.weight
+        FROM completed_sets cs
+        JOIN session_exercises se ON se.id = cs.session_exercise_id
+        WHERE se.exercise_id = p_exercise_id
+          AND cs.weight IS NOT NULL
+          AND cs.reps_completed > 0
+    ),
+    per_reps AS (
+        SELECT session_id, reps_completed, MIN(weight) AS least
+        FROM sets
+        GROUP BY session_id, reps_completed
+    ),
+    rebuilt AS (
+        SELECT session_id,
+            MIN(least) AS best_assistance,
+            jsonb_object_agg(reps_completed::TEXT, least) AS best_per_reps
+        FROM per_reps
+        GROUP BY session_id
+    )
+    UPDATE exercise_session_stats ess
+    SET best_assistance = fixed.best_assistance,
+        best_per_reps = fixed.best_per_reps,
+        best_weight = NULL,
+        best_1rm = NULL,
+        total_volume = NULL,
+        is_pr_weight = FALSE,
+        is_pr_1rm = FALSE,
+        is_pr_volume = FALSE
+    -- LEFT JOIN: a row whose sets are all gone or without reps keeps no assistance (NULL).
+    FROM (
+        SELECT s.id, rb.best_assistance, rb.best_per_reps
+        FROM exercise_session_stats s
+        LEFT JOIN rebuilt rb ON rb.session_id = s.session_id
+        WHERE s.exercise_id = p_exercise_id
+    ) AS fixed
+    WHERE ess.id = fixed.id;
+
+    FOR r IN
+        SELECT DISTINCT user_id, gym_id FROM exercise_session_stats WHERE exercise_id = p_exercise_id
+    LOOP
+        PERFORM recalculate_exercise_prs_for_user(r.user_id, p_exercise_id, '-infinity'::TIMESTAMPTZ, r.gym_id);
+    END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."rebuild_assistance_stats"("p_exercise_id" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."rebuild_assistance_stats"("p_exercise_id" integer) IS 'Rebuilds the exercise_session_stats of an exercise that tracks assistance from its completed_sets and recalculates its PRs for every user and gym. Internal: migration 074 runs it for the assisted pull-up; the e2e runs it on a seeded history.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint DEFAULT NULL::bigint) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    PERFORM recalculate_exercise_prs_for_user(auth.uid(), p_exercise_id, p_after_date, p_gym_id);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."recalculate_exercise_prs_for_user"("p_user_id" "uuid", "p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 DECLARE
     -- A missing exercise reads as NULL fields (weight × reps): the callers run this after an edit,
     -- and raising here would abort the edit.
     v_metrics TEXT[] := pr_metrics((SELECT tracked_fields FROM exercises WHERE id = p_exercise_id));
+    -- Rep PRs rank the load field: weight (heavier wins) or assistance (less wins). Only
+    -- {weight,reps} and {assistance,reps} get repPR, and only the second gets 'assistance'.
+    v_lower_is_better BOOLEAN := 'assistance' = ANY (v_metrics);
 BEGIN
     -- Reset flags y pr_rep_counts desde la fecha indicada (solo ese gym).
     UPDATE exercise_session_stats
@@ -949,9 +1039,10 @@ BEGIN
         is_pr_time = FALSE,
         is_pr_distance = FALSE,
         is_pr_pace = FALSE,
+        is_pr_assistance = FALSE,
         pr_rep_counts = NULL
     WHERE exercise_id = p_exercise_id
-      AND user_id = auth.uid()
+      AND user_id = p_user_id
       AND gym_id IS NOT DISTINCT FROM p_gym_id
       AND session_date >= p_after_date;
 
@@ -962,7 +1053,7 @@ BEGIN
                 MAX(best_weight) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
                 ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
             FROM exercise_session_stats
-            WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
+            WHERE exercise_id = p_exercise_id AND user_id = p_user_id
               AND gym_id IS NOT DISTINCT FROM p_gym_id
         )
         UPDATE exercise_session_stats ess SET is_pr_weight = TRUE
@@ -977,7 +1068,7 @@ BEGIN
                 MAX(best_reps) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
                 ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
             FROM exercise_session_stats
-            WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
+            WHERE exercise_id = p_exercise_id AND user_id = p_user_id
               AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_reps IS NOT NULL
         )
         UPDATE exercise_session_stats ess SET is_pr_reps = TRUE
@@ -992,7 +1083,7 @@ BEGIN
                 MAX(best_1rm) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
                 ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
             FROM exercise_session_stats
-            WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
+            WHERE exercise_id = p_exercise_id AND user_id = p_user_id
               AND gym_id IS NOT DISTINCT FROM p_gym_id
         )
         UPDATE exercise_session_stats ess SET is_pr_1rm = TRUE
@@ -1007,7 +1098,7 @@ BEGIN
                 MAX(best_time_seconds) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
                 ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
             FROM exercise_session_stats
-            WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
+            WHERE exercise_id = p_exercise_id AND user_id = p_user_id
               AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_time_seconds IS NOT NULL
         )
         UPDATE exercise_session_stats ess SET is_pr_time = TRUE
@@ -1022,7 +1113,7 @@ BEGIN
                 MAX(best_distance_meters) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max,
                 ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
             FROM exercise_session_stats
-            WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
+            WHERE exercise_id = p_exercise_id AND user_id = p_user_id
               AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_distance_meters IS NOT NULL
         )
         UPDATE exercise_session_stats ess SET is_pr_distance = TRUE
@@ -1037,7 +1128,7 @@ BEGIN
                 MIN(best_pace_seconds) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_min,
                 ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
             FROM exercise_session_stats
-            WHERE exercise_id = p_exercise_id AND user_id = auth.uid()
+            WHERE exercise_id = p_exercise_id AND user_id = p_user_id
               AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_pace_seconds IS NOT NULL
         )
         UPDATE exercise_session_stats ess SET is_pr_pace = TRUE
@@ -1045,16 +1136,36 @@ BEGIN
           AND ess.session_date >= p_after_date;
     END IF;
 
+    -- Assistance PR (lower is better, 0 included). Only rows with an assistance: the first one has
+    -- nothing to beat, like the end of a session (detectNewPersonalRecords needs a previous one).
+    IF 'assistance' = ANY (v_metrics) THEN
+        WITH ranked AS (
+            SELECT id, best_assistance,
+                MIN(best_assistance) OVER (ORDER BY session_date, id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_min,
+                ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
+            FROM exercise_session_stats
+            WHERE exercise_id = p_exercise_id AND user_id = p_user_id
+              AND gym_id IS NOT DISTINCT FROM p_gym_id AND best_assistance IS NOT NULL
+        )
+        UPDATE exercise_session_stats ess SET is_pr_assistance = TRUE
+        FROM ranked r WHERE ess.id = r.id AND r.rn > 1 AND r.best_assistance < r.prev_min
+          AND ess.session_date >= p_after_date;
+    END IF;
+
     -- pr_rep_counts (modelo Strong/Hevy CON dominancia), restringido al gym. Ranked over every
-    -- row, so "earlier" is the row's position (rn), never a session_date comparison.
+    -- row, so "earlier" is the row's position (rn), never a session_date comparison. The load is
+    -- the weight (the heaviest wins, a missing record counts as 0) or the assistance (the least
+    -- wins, a missing record is no record: 0 is the best value, so it cannot stand for "none").
     IF 'repPR' = ANY (v_metrics) THEN
         WITH history AS (
             SELECT id, session_date, best_per_reps,
-                (best_weight > 0 OR best_1rm > 0) AS has_weight,
+                CASE WHEN v_lower_is_better
+                     THEN best_assistance IS NOT NULL
+                     ELSE (best_weight > 0 OR best_1rm > 0) END AS has_load,
                 ROW_NUMBER() OVER (ORDER BY session_date, id) AS rn
             FROM exercise_session_stats
             WHERE exercise_id = p_exercise_id
-              AND user_id = auth.uid()
+              AND user_id = p_user_id
               AND gym_id IS NOT DISTINCT FROM p_gym_id
         ),
         unnested AS (
@@ -1063,10 +1174,11 @@ BEGIN
                 h.session_date,
                 h.rn,
                 (kv.key)::SMALLINT AS rep_count,
-                (kv.value)::NUMERIC AS weight
+                (kv.value)::NUMERIC AS load
             FROM history h,
                  LATERAL jsonb_each_text(h.best_per_reps) kv
             WHERE h.best_per_reps IS NOT NULL
+              AND kv.value IS NOT NULL
         ),
         enriched AS (
             SELECT
@@ -1074,15 +1186,17 @@ BEGIN
                 u.session_date,
                 u.rn,
                 u.rep_count,
-                u.weight,
-                (SELECT MAX(p.weight) FROM unnested p
-                  WHERE p.rn < u.rn
-                    AND p.rep_count >= u.rep_count) AS prev_envelope,
-                (SELECT MAX(p.weight) FROM unnested p
-                  WHERE p.ess_id = u.ess_id
-                    AND p.rep_count > u.rep_count) AS same_session_dom,
+                u.load,
+                CASE WHEN v_lower_is_better
+                     THEN (SELECT MIN(p.load) FROM unnested p WHERE p.rn < u.rn AND p.rep_count >= u.rep_count)
+                     ELSE (SELECT MAX(p.load) FROM unnested p WHERE p.rn < u.rn AND p.rep_count >= u.rep_count)
+                END AS prev_envelope,
+                CASE WHEN v_lower_is_better
+                     THEN (SELECT MIN(p.load) FROM unnested p WHERE p.ess_id = u.ess_id AND p.rep_count > u.rep_count)
+                     ELSE (SELECT MAX(p.load) FROM unnested p WHERE p.ess_id = u.ess_id AND p.rep_count > u.rep_count)
+                END AS same_session_dom,
                 EXISTS (SELECT 1 FROM unnested p WHERE p.rn < u.rn) AS has_rep_history,
-                EXISTS (SELECT 1 FROM history h WHERE h.rn < u.rn AND h.has_weight) AS has_weight_history
+                EXISTS (SELECT 1 FROM history h WHERE h.rn < u.rn AND h.has_load) AS has_load_history
             FROM unnested u
         ),
         prs AS (
@@ -1090,8 +1204,13 @@ BEGIN
             FROM enriched
             WHERE rn > 1
               AND session_date >= p_after_date
-              AND (has_rep_history OR NOT has_weight_history)
-              AND weight > GREATEST(COALESCE(prev_envelope, 0), COALESCE(same_session_dom, 0))
+              AND (has_rep_history OR NOT has_load_history)
+              AND CASE WHEN v_lower_is_better
+                       -- LEAST skips a NULL side, and is NULL only when both are: no record.
+                       THEN LEAST(prev_envelope, same_session_dom) IS NULL
+                            OR load < LEAST(prev_envelope, same_session_dom)
+                       ELSE load > GREATEST(COALESCE(prev_envelope, 0), COALESCE(same_session_dom, 0))
+                  END
         ),
         aggregated AS (
             SELECT ess_id, array_agg(rep_count ORDER BY rep_count) AS pr_rcs
@@ -1107,7 +1226,11 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) OWNER TO "postgres";
+ALTER FUNCTION "public"."recalculate_exercise_prs_for_user"("p_user_id" "uuid", "p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."recalculate_exercise_prs_for_user"("p_user_id" "uuid", "p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) IS 'Recalculates the is_pr_* flags and pr_rep_counts of one user''s exercise in one gym from p_after_date, judging only pr_metrics(tracked_fields). Internal: the RPC recalculate_exercise_prs passes auth.uid(); migrations pass any user.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."reorder_routine_days"("day_orders" "jsonb") RETURNS "void"
@@ -1650,22 +1773,28 @@ CREATE TABLE IF NOT EXISTS "public"."exercise_session_stats" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "best_per_reps" "jsonb",
     "pr_rep_counts" smallint[],
-    "gym_id" bigint
+    "gym_id" bigint,
+    "best_assistance" numeric,
+    "is_pr_assistance" boolean DEFAULT false NOT NULL
 );
 
 
 ALTER TABLE "public"."exercise_session_stats" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."exercise_session_stats" IS 'Every weight-valued column (best_weight, best_1rm, total_volume, best_per_reps) is converted by convert_user_weights when the user changes a weight unit: a new one must be added there, or it stays in the old unit.';
+COMMENT ON TABLE "public"."exercise_session_stats" IS 'Every weight-valued column (best_weight, best_1rm, total_volume, best_assistance, best_per_reps) is converted by convert_user_weights when the user changes a weight unit: a new one must be added there, or it stays in the old unit.';
 
 
 
-COMMENT ON COLUMN "public"."exercise_session_stats"."best_per_reps" IS 'Mejor peso de esta sesión por número exacto de reps. Ej: {"1": 120, "5": 100}. NULL si no aplica (no weight_reps o sesión sin sets válidos).';
+COMMENT ON COLUMN "public"."exercise_session_stats"."best_per_reps" IS 'Best load of this session per exact rep count. Ej: {"1": 120, "5": 100}. The heaviest weight on weight × reps, the LEAST assistance (0 included) on assistance × reps. NULL when it does not apply.';
 
 
 
 COMMENT ON COLUMN "public"."exercise_session_stats"."pr_rep_counts" IS 'Rep counts de esta sesión que superaron el récord histórico previo. NULL si no hubo rep-PRs.';
+
+
+
+COMMENT ON COLUMN "public"."exercise_session_stats"."best_assistance" IS 'Least assistance of the session (assisted exercises, tracked_fields with assistance), over sets with reps. 0 is a value: a set without help, the best there is. NULL without any such set.';
 
 
 
@@ -1684,7 +1813,8 @@ CREATE TABLE IF NOT EXISTS "public"."exercises" (
     "tracked_fields" "public"."measurement_field"[] DEFAULT '{weight,reps}'::"public"."measurement_field"[] NOT NULL,
     "distance_unit" "text" DEFAULT 'm'::"text" NOT NULL,
     CONSTRAINT "exercises_distance_unit_check" CHECK (("distance_unit" = ANY (ARRAY['m'::"text", 'km'::"text"]))),
-    CONSTRAINT "exercises_tracked_fields_len" CHECK ((("array_length"("tracked_fields", 1) >= 1) AND ("array_length"("tracked_fields", 1) <= 3)))
+    CONSTRAINT "exercises_tracked_fields_len" CHECK ((("array_length"("tracked_fields", 1) >= 1) AND ("array_length"("tracked_fields", 1) <= 3))),
+    CONSTRAINT "exercises_weight_or_assistance" CHECK ((NOT ("tracked_fields" @> ARRAY['weight'::"public"."measurement_field", 'assistance'::"public"."measurement_field"])))
 );
 
 
@@ -3032,9 +3162,17 @@ REVOKE ALL ON FUNCTION "public"."pr_metrics"("p_fields" "public"."measurement_fi
 
 
 
+REVOKE ALL ON FUNCTION "public"."rebuild_assistance_stats"("p_exercise_id" integer) FROM PUBLIC;
+
+
+
 REVOKE ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."recalculate_exercise_prs"("p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."recalculate_exercise_prs_for_user"("p_user_id" "uuid", "p_exercise_id" integer, "p_after_date" timestamp with time zone, "p_gym_id" bigint) FROM PUBLIC;
 
 
 

@@ -1,12 +1,12 @@
 import { formatSetValue } from './setUtils.js'
-import { buildPRsByExerciseMap } from './workoutCalculations.js'
+import { buildPRsByExerciseMap, calculateExerciseVolume, findLeastAssistanceSet } from './workoutCalculations.js'
 import { getExerciseName, resolveDistanceUnit } from './exerciseUtils.js'
-import { metersToDistanceUnit } from './measurementFields.js'
+import { metersToDistanceUnit, resolveTrackedFields, tracksAssistance } from './measurementFields.js'
 import { fetchSessionDetail } from '../api/workoutSessionApi.js'
 import { fetchSessionPRs, fetchExerciseBests } from '../api/exerciseStatsApi.js'
 import { fetchUserExerciseWeightUnits, fetchUserExerciseDistanceUnits } from '../api/exerciseApi.js'
 import { transformSessionDetailData } from './workoutTransforms.js'
-import { findPreviousRepRecord, WEIGHT_PR_TYPES } from './sessionStatsCalculation.js'
+import { findPreviousRepRecord, isRepPRLowerBetter, WEIGHT_PR_TYPES } from './sessionStatsCalculation.js'
 import { t, getCurrentLocale } from '../i18n/index.js'
 
 /**
@@ -22,18 +22,16 @@ export function formatDurationHumanReadable(minutes) {
 }
 
 /**
- * Calcula volumen total (peso × reps) de todos los sets que tengan peso y reps.
- * No depende de tracked_fields ya que no siempre está disponible en el query.
+ * Total volume (weight × reps) of the exercises that have volume (weight × reps). An exercise
+ * without `tracked_fields` in the query reads as weight × reps (resolveTrackedFields' fallback); an
+ * assisted one never adds up: its `weight` column is help, not load.
+ * @param {Array<{exercise?: object, sets?: Array}>} exercises
  */
 export function calculateSessionTotalVolume(exercises) {
   if (!exercises?.length) return 0
   let total = 0
   for (const ex of exercises) {
-    for (const set of (ex.sets || [])) {
-      const w = set.weight || 0
-      const r = set.reps_completed || 0
-      if (w > 0 && r > 0) total += w * r
-    }
+    total += calculateExerciseVolume(ex.sets || [], resolveTrackedFields(ex.exercise))
   }
   return Math.round(total)
 }
@@ -49,9 +47,16 @@ export function calculateSessionTotalSets(exercises) {
 /**
  * Encuentra la mejor serie de un ejercicio para mostrar en el resumen.
  * Retorna el string formateado de la serie con más volumen/reps.
+ * On an assisted machine, the set with the LEAST assistance (on a tie, more reps).
  */
 function getBestSetFormatted(sets, exercise, weightUnit = 'kg', distanceUnit = 'm') {
   if (!sets?.length) return ''
+
+  const trackedFields = resolveTrackedFields(exercise)
+  if (tracksAssistance(trackedFields)) {
+    const least = findLeastAssistanceSet(sets, trackedFields) ?? sets[0]
+    return formatSetValue({ ...least, weight_unit: weightUnit }, { distanceUnit })
+  }
 
   let best = sets[0]
   let bestScore = 0
@@ -138,11 +143,7 @@ export function buildWorkoutSummaryFromEndSession(session, detectedPRs, complete
 
     const exercise = se.exercises || se.exercise || {}
 
-    for (const s of sets) {
-      const w = s.weight || 0
-      const r = s.reps_completed || 0
-      if (w > 0 && r > 0) totalVolume += w * r
-    }
+    totalVolume += calculateExerciseVolume(sets, resolveTrackedFields(exercise))
 
     totalSets += sets.length
 
@@ -248,7 +249,7 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
     if (!pr) continue
     const unit = getUnit(exercise?.id)
     const distanceUnit = resolveDistanceUnit(distanceUnitByExerciseId[exercise?.id], exercise)
-    const details = buildPRDetailsFromStats(pr, { unit, distanceUnit, prevBests: previousBests[exercise?.id] })
+    const details = buildPRDetailsFromStats(pr, { unit, distanceUnit, trackedFields: resolveTrackedFields(exercise), prevBests: previousBests[exercise?.id] })
 
     if (details.length > 0) {
       prs.push({ exerciseName: getExerciseName(exercise), details })
@@ -275,16 +276,22 @@ export function buildWorkoutSummaryFromSession(session, sessionPRs, { weightUnit
  * showed one).
  *
  * @param {Object} pr - exercise_session_stats row (bests + flags)
- * @param {{unit: string, distanceUnit: 'm'|'km', prevBests?: Object}} options - weight unit of the
- *   exercise in the session's gym, its distance unit, and its bests before the session (fills oldValue)
+ * @param {{unit: string, distanceUnit: 'm'|'km', trackedFields?: string[], prevBests?: Object}} options -
+ *   weight unit of the exercise in the session's gym, its distance unit, what it tracks (an
+ *   assisted exercise ranks its rep PRs by least assistance) and its bests before the session
+ *   (fills oldValue)
  * @returns {Array<Object>} details with the shape of buildPRDetail
  */
-export function buildPRDetailsFromStats(pr, { unit, distanceUnit, prevBests = {} }) {
+export function buildPRDetailsFromStats(pr, { unit, distanceUnit, trackedFields, prevBests = {} }) {
   if (!pr) return []
   const details = []
 
   if (pr.is_pr_weight && pr.best_weight) {
     details.push(buildPRDetail({ type: 'bestWeight', newValue: pr.best_weight, oldValue: prevBests.bestWeight, unit }))
+  }
+  // `!= null`: 0 kg of assistance (a set without help) is the best record there is.
+  if (pr.is_pr_assistance && pr.best_assistance != null) {
+    details.push(buildPRDetail({ type: 'bestAssistance', newValue: Number(pr.best_assistance), oldValue: prevBests.bestAssistance, unit }))
   }
   if (pr.is_pr_1rm && pr.best_1rm) {
     details.push(buildPRDetail({ type: 'best1rm', newValue: pr.best_1rm, oldValue: prevBests.best1rm, unit }))
@@ -311,11 +318,12 @@ export function buildPRDetailsFromStats(pr, { unit, distanceUnit, prevBests = {}
 
   if (Array.isArray(pr.pr_rep_counts) && pr.best_per_reps) {
     const prevPerReps = prevBests.bestPerReps || {}
+    const lowerIsBetter = trackedFields ? isRepPRLowerBetter(trackedFields) : false
     for (const repCount of pr.pr_rep_counts) {
       const key = String(repCount)
       const newValue = pr.best_per_reps[key]
       if (newValue == null) continue
-      const previous = findPreviousRepRecord(repCount, prevPerReps)
+      const previous = findPreviousRepRecord(repCount, prevPerReps, { lowerIsBetter })
       details.push(buildPRDetail({
         type: 'repPR',
         newValue,

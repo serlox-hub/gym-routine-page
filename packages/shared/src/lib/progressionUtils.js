@@ -7,6 +7,7 @@
  * sin cifra concreta: el salto depende del equipo —mancuernas, placas, máquina— y un número fijo
  * sería erróneo en la mayoría; ver DECISIONS #13). No hay acción "bajar": quedarse dentro
  * o por debajo del objetivo → sin sugerencia.
+ * The assistance progresses DOWN ("Baja la asistencia", issue #202): see getProgressionDirection.
  *
  * Papeles de los campos (issue #28): el progresable es el peso cuando el ejercicio lo mide y el
  * NIVEL cuando no (en una máquina de cardio el nivel juega el papel del peso), y el objetivo es
@@ -39,6 +40,20 @@ import { metEffortTarget } from './effortScale.js'
 import { SET_TYPES } from './constants.js'
 import { parseDecimal } from './numberUtils.js'
 import { t } from '../i18n/index.js'
+
+/**
+ * Which way a field is better: 'lower' for assistance (less help from the machine is more
+ * strength, and 0 is a real value, the best one), 'higher' for everything else. Every comparison
+ * or aggregation of set values that decides what is "better" (PRs, bests, charts, the progression
+ * nudge) goes through here: assuming more is better is exactly what scored the help as load
+ * (issue #202). Pace is also lower-is-better in PRs and charts, but its direction in progression
+ * is issue #48.
+ * @param {string|null} field
+ * @returns {'higher'|'lower'}
+ */
+export function getProgressionDirection(field) {
+  return field === SetField.ASSISTANCE ? 'lower' : 'higher'
+}
 
 // Sufijos de unidad admitidos al leer un objetivo, por campo, con su factor a la unidad de BD
 // (segundos para el tiempo, metros para la distancia). Sin sufijo NO hay unidad por defecto en
@@ -155,13 +170,16 @@ export function didSetHitTop({ previousSet, target, trackedFields, targetField }
  * objetivo (`didSetHitTop`) con el gate de esfuerzo (`metEffortTarget`) y el "nudge cumplido": se
  * apaga cuando el valor tecleado hoy ya supera al de la serie anterior. Los flags de UI
  * (preferencia on/off, serie completada) se quedan en el componente; esto es la parte pura.
+ * With assistance (direction 'lower') the nudge is done when today's value is BELOW the previous
+ * one, and with the previous assistance already at 0 there is nothing to lower: no suggestion.
  * @param {object} params
  * @param {object|null|undefined} params.previousSet
  * @param {string|number|null} params.target
  * @param {string[]} params.trackedFields
  * @param {string|null} [params.targetField]
  * @param {number|string|null} params.currentProgressable - valor tecleado hoy en la columna del
- *   progresable (peso o nivel). Vacío/NaN cuenta como "aún no ha subido" → sigue sugiriendo.
+ *   progresable (peso, asistencia o nivel). Vacío/NaN cuenta como "aún no ha subido" → sigue
+ *   sugiriendo.
  * @param {number|null} [params.effortTarget] - esfuerzo objetivo de la rutina (`rir`); null → gate inactivo.
  * @returns {boolean}
  */
@@ -169,19 +187,37 @@ export function shouldSuggestProgression({ previousSet, target, trackedFields, t
   if (!didSetHitTop({ previousSet, target, trackedFields, targetField })) return false
   if (!metEffortTarget(previousSet.rir, effortTarget, trackedFields)) return false
   const progressable = getProgressableField(trackedFields)
-  const previousValue = previousSet[getFieldMeta(progressable).displayKey]
-  return !(parseDecimal(currentProgressable) > Number(previousValue))
+  const previousValue = Number(previousSet[getFieldMeta(progressable).displayKey])
+  const current = parseDecimal(currentProgressable)
+  if (getProgressionDirection(progressable) === 'lower') {
+    return previousValue > 0 && !(current < previousValue)
+  }
+  return !(current > previousValue)
+}
+
+// i18n group of the nudge by direction: "Sube el peso" (increase), "Baja la asistencia" (decrease).
+function getProgressionKey(progressable) {
+  return getProgressionDirection(progressable) === 'lower' ? 'decrease' : 'increase'
 }
 
 /**
- * Texto del aviso ("Sube el peso" / "Sube el nivel"). Depende del progresable, así que no puede
- * ser una cadena fija: en un cardio lo que se sube es el nivel.
+ * Texto del aviso ("Sube el peso" / "Sube el nivel" / "Baja la asistencia"). Depende del
+ * progresable, así que no puede ser una cadena fija: en un cardio lo que se sube es el nivel.
  * @param {string[]} trackedFields
  * @returns {string} '' si el ejercicio no tiene nada que subir
  */
 export function getProgressionLabel(trackedFields) {
   const progressable = getProgressableField(trackedFields)
-  return progressable ? t(`workout:progression.increase.${progressable}`) : ''
+  return progressable ? t(`workout:progression.${getProgressionKey(progressable)}.${progressable}`) : ''
+}
+
+/**
+ * Accessible name of the button that explains the nudge ("Por qué subir" / "Por qué bajar").
+ * @param {string[]} trackedFields
+ * @returns {string}
+ */
+export function getProgressionWhyLabel(trackedFields) {
+  return t(`workout:progression.whyLabel.${getProgressionKey(getProgressableField(trackedFields))}`)
 }
 
 /**

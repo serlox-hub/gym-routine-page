@@ -27,6 +27,10 @@ import {
   sameTrackedFields,
   sortTrackedFields,
   toggleTrackedField,
+  getBlockingTrackedField,
+  getTrackedFieldsSelectionError,
+  formatTrackedFieldConflict,
+  tracksAssistance,
   trackedFieldsFromLegacyType,
   tracksDistance,
   tracksLevel,
@@ -48,10 +52,11 @@ describe('normalizeTrackedFields', () => {
     expect(normalizeTrackedFields(['weight', 'weight', 'nope'])).toEqual(['weight'])
   })
 
+  // FIELD_ORDER holds weight AND assistance: weight is dropped before the cut (see below).
   it('recorta al máximo de campos', () => {
     const all = normalizeTrackedFields(FIELD_ORDER)
     expect(all).toHaveLength(MAX_TRACKED_FIELDS)
-    expect(all).toEqual(FIELD_ORDER.slice(0, MAX_TRACKED_FIELDS))
+    expect(all).toEqual([SetField.ASSISTANCE, SetField.LEVEL, SetField.DISTANCE])
   })
 
   it('sin nada usable cae al default (peso × reps)', () => {
@@ -359,5 +364,95 @@ describe('etiquetas del objetivo', () => {
   it('el placeholder de distancia distingue metros de kilómetros', () => {
     expect(getTargetPlaceholder(SetField.DISTANCE, ['distance'])).toBe('Ej: 40m')
     expect(getTargetPlaceholder(SetField.DISTANCE, BIKE)).toBe('Ej: 5km')
+  })
+})
+
+// ============================================
+// ASSISTANCE (issue #202)
+// ============================================
+
+describe('assistance field', () => {
+  const ASSISTED = [SetField.ASSISTANCE, SetField.REPS]
+
+  it('sits right after weight in FIELD_ORDER and is a valid field', () => {
+    expect(FIELD_ORDER.indexOf(SetField.ASSISTANCE)).toBe(FIELD_ORDER.indexOf(SetField.WEIGHT) + 1)
+    expect(isValidField('assistance')).toBe(true)
+  })
+
+  it('normalizeTrackedFields keeps assistance and drops weight when both come', () => {
+    expect(normalizeTrackedFields(['reps', 'weight', 'assistance'])).toEqual(ASSISTED)
+    expect(normalizeTrackedFields(['weight', 'assistance'])).toEqual([SetField.ASSISTANCE])
+    expect(normalizeTrackedFields(['assistance', 'reps'])).toEqual(ASSISTED)
+  })
+
+  it('drops weight before the cut to the maximum, so a third field survives', () => {
+    expect(normalizeTrackedFields(['weight', 'assistance', 'reps', 'time']))
+      .toEqual([SetField.ASSISTANCE, SetField.REPS, SetField.TIME])
+  })
+
+  it('sortTrackedFields (the form) keeps the pair, so the form can reject it', () => {
+    expect(sortTrackedFields(['assistance', 'weight'])).toEqual([SetField.WEIGHT, SetField.ASSISTANCE])
+  })
+
+  it('tracksAssistance answers on the normalized list', () => {
+    expect(tracksAssistance(ASSISTED)).toBe(true)
+    expect(tracksAssistance(['weight', 'reps'])).toBe(false)
+    expect(tracksWeight(['weight', 'assistance', 'reps'])).toBe(false)
+  })
+
+  it('getBlockingTrackedField: weight and assistance block each other, nothing else blocks', () => {
+    expect(getBlockingTrackedField(['assistance', 'reps'], 'weight')).toBe(SetField.ASSISTANCE)
+    expect(getBlockingTrackedField(['weight', 'reps'], 'assistance')).toBe(SetField.WEIGHT)
+    expect(getBlockingTrackedField(['reps'], 'weight')).toBeNull()
+    expect(getBlockingTrackedField(['weight', 'reps'], 'time')).toBeNull()
+    // A field already selected is never blocked: it can always be unselected.
+    expect(getBlockingTrackedField(['weight', 'assistance'], 'weight')).toBeNull()
+  })
+
+  it('toggleTrackedField refuses to add the blocked one and still removes', () => {
+    expect(toggleTrackedField(['assistance', 'reps'], 'weight')).toEqual(ASSISTED)
+    expect(toggleTrackedField(['weight', 'reps'], 'assistance')).toEqual(['weight', 'reps'])
+    expect(toggleTrackedField(ASSISTED, 'assistance')).toEqual(['reps'])
+    expect(toggleTrackedField(['reps'], 'assistance')).toEqual(ASSISTED)
+  })
+
+  it('getTrackedFieldsSelectionError: none for a valid list, a message for empty or the pair', () => {
+    expect(getTrackedFieldsSelectionError(ASSISTED)).toBeNull()
+    expect(getTrackedFieldsSelectionError([])).toBe('Elige al menos una medida')
+    expect(getTrackedFieldsSelectionError(['weight', 'assistance', 'reps']))
+      .toBe(formatTrackedFieldConflict(SetField.WEIGHT, SetField.ASSISTANCE))
+    expect(isTrackedFieldsSelectionValid(['weight', 'assistance'])).toBe(false)
+    expect(isTrackedFieldsSelectionValid(ASSISTED)).toBe(true)
+  })
+
+  it('formatTrackedFieldConflict names both fields', () => {
+    expect(formatTrackedFieldConflict(SetField.ASSISTANCE, SetField.WEIGHT))
+      .toBe('No puedes medir asistencia y peso a la vez. Quita peso para marcar asistencia.')
+  })
+
+  it('is labelled and formatted in the weight unit, 0 included', () => {
+    expect(getFieldName(SetField.ASSISTANCE)).toBe('Asistencia')
+    expect(getFieldHeader(SetField.ASSISTANCE)).toBe('ASIST. KG')
+    expect(getFieldHeader(SetField.ASSISTANCE, { weightUnit: 'lb' })).toBe('ASIST. LB')
+    expect(getFieldUnit(SetField.ASSISTANCE, { weightUnit: 'lb' })).toBe('lb')
+    expect(formatFieldValue(SetField.ASSISTANCE, 20, { weightUnit: 'kg' })).toBe('20kg')
+    expect(formatFieldValue(SetField.ASSISTANCE, 0, { weightUnit: 'kg' })).toBe('0kg')
+    expect(parseFieldValue(SetField.ASSISTANCE, '22,5')).toBe(22.5)
+    expect(parseFieldValue(SetField.ASSISTANCE, '0')).toBe(0)
+    expect(formatTrackedFieldsLabel(ASSISTED)).toBe('Asistencia × Reps')
+  })
+
+  it('is progressable after weight and before level', () => {
+    expect(getProgressableField(ASSISTED)).toBe(SetField.ASSISTANCE)
+    expect(getProgressableField(['assistance', 'level'])).toBe(SetField.ASSISTANCE)
+    expect(getProgressableField(['weight', 'reps'])).toBe(SetField.WEIGHT)
+  })
+
+  it('summarizes the chart, never falling back to reps', () => {
+    expect(getPrimaryChartField(ASSISTED)).toBe(SetField.ASSISTANCE)
+  })
+
+  it('is never the target field', () => {
+    expect(getTargetableFields(ASSISTED)).toEqual([SetField.REPS])
   })
 })

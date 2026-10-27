@@ -28,9 +28,11 @@ nothing. `name_en` because it is the importer's first key, and because the cache
 
 ## Qué mide cada ejercicio: `tracked_fields` (v7) vs `measurement_type` (v6 y anteriores)
 
-Desde v7 el catálogo del export lleva `tracked_fields` (array de 1 a 3 campos: `weight`, `reps`,
-`time`, `distance`, `calories`, `level`, `pace`). Hasta v6 llevaba `measurement_type`, uno de 12
-tipos cerrados. `importRoutine` acepta las dos formas vía `importedTrackedFields()`
+Desde v7 el catálogo del export lleva `tracked_fields` (array de 1 a 3 campos: `weight`,
+`assistance`, `reps`, `time`, `distance`, `calories`, `level`, `pace`). Hasta v6 llevaba
+`measurement_type`, uno de 12 tipos cerrados. `assistance` (issue #202) entró sin subir la versión:
+la forma del JSON no cambia, solo un valor más en el mismo array. Un importador anterior lo
+descarta al normalizar (campo desconocido), como cualquier valor que no conozca. `importRoutine` acepta las dos formas vía `importedTrackedFields()`
 (`routineIOApi.js`), que traduce el tipo antiguo con `trackedFieldsFromLegacyType()`
 (`lib/measurementFields.js`).
 

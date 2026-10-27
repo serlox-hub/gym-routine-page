@@ -110,7 +110,7 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ## 2026-08 · Papeles de los campos: objetivo y progresable (issue #28)
 - **El campo objetivo se guarda en `routine_exercises.target_field`** (+ snapshot en sesión), no en `exercises`: permite "bici 20 min" el lunes y "5 km" el jueves.
-- **El progresable es derivado** (`getProgressableField`: peso si lo mide, si no nivel), sin columna. Nadie pidió elegirlo.
+- **El progresable es derivado** (`getProgressableField`: peso si lo mide, si no asistencia, si no nivel), sin columna. Nadie pidió elegirlo.
 - **`reps` no se renombra a `target`:** es el valor ("8-12", "20min") y renombrarlo tocaría store, API, export y UI sin cambiar el modelo.
 - **El objetivo se pinta crudo en su columna** ("5km" bajo una cabecera M): normalizarlo convertiría lo que escribió el usuario en "5000". Avisado en `SetRow`.
 - **El nivel prescrito solo siembra si no hay nada mejor:** lo de la última vez manda. `useSetInputs` espera a `previousLoaded` o el prescrito ganaría la carrera.

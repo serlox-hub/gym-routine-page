@@ -4,7 +4,7 @@ import { makeClientMock, makeRangedQueryMock } from './_testUtils.js'
 vi.mock('./_client.js', () => ({ getClient: vi.fn() }))
 import { getClient } from './_client.js'
 
-import { recalculateSessionStats, fetchRecentExerciseStats, fetchWeeklyPRs, fetchExerciseChartData } from './exerciseStatsApi.js'
+import { recalculateSessionStats, fetchRecentExerciseStats, fetchWeeklyPRs, fetchExerciseChartData, fetchExerciseBests, fetchSessionsWithPRs, fetchExerciseAllTimeStats, upsertExerciseSessionStats } from './exerciseStatsApi.js'
 import { RECENT_STATS_LOOKBACK } from '../lib/recentExercises.js'
 
 beforeEach(() => {
@@ -219,5 +219,95 @@ describe('fetchExerciseChartData', () => {
     const error = new Error('boom')
     getClient.mockReturnValue({ from: () => makeRangedQueryMock([], error) })
     await expect(fetchExerciseChartData({ exerciseId: 1, routineDayId: null, gymId: null })).rejects.toBe(error)
+  })
+})
+
+// ============================================
+// ASSISTANCE: LEAST IS BEST, 0 KEPT (issue #202)
+// ============================================
+
+describe('assistance in the stats API', () => {
+  const ASSISTED = { tracked_fields: ['assistance', 'reps'] }
+  const WEIGHTED = { tracked_fields: ['weight', 'reps'] }
+
+  it('fetchExerciseBests keeps the least assistance and the least per rep count, 0 included', async () => {
+    const rows = [
+      { exercise_id: 1, best_assistance: 20, best_per_reps: { 8: 20, 5: 10 }, exercise: ASSISTED },
+      { exercise_id: 1, best_assistance: 0, best_per_reps: { 8: 25, 5: 0 }, exercise: ASSISTED },
+      { exercise_id: 1, best_assistance: null, best_per_reps: null, exercise: ASSISTED },
+      { exercise_id: 2, best_weight: 80, best_per_reps: { 8: 80 }, exercise: WEIGHTED },
+      { exercise_id: 2, best_weight: 90, best_per_reps: { 8: 90, 5: 0 }, exercise: WEIGHTED },
+    ]
+    const client = makeClientMock({ exercise_session_stats: { data: rows, error: null } })
+    getClient.mockReturnValue(client)
+
+    const bests = await fetchExerciseBests([1, 2])
+
+    expect(bests[1].bestAssistance).toBe(0)
+    expect(bests[1].bestPerReps).toEqual({ 8: 20, 5: 0 })
+    expect(bests[1].sessionCount).toBe(3)
+    // Weight still keeps the heaviest, and a 0 kg entry is still "no value" there.
+    expect(bests[2].bestWeight).toBe(90)
+    expect(bests[2].bestPerReps).toEqual({ 8: 90 })
+    const select = client.from.mock.results[0].value.select.mock.calls[0][0]
+    expect(select).toContain('best_assistance')
+    expect(select).toContain('tracked_fields')
+  })
+
+  it('fetchWeeklyPRs and fetchSessionsWithPRs include assistance PRs', async () => {
+    const client = makeClientMock({ exercise_session_stats: { data: [{ session_id: 's1' }], error: null } })
+    getClient.mockReturnValue(client)
+
+    await fetchWeeklyPRs('a', 'b')
+    const result = await fetchSessionsWithPRs(['s1'])
+
+    const [weekly, sessions] = client.from.mock.results.map(r => r.value.or.mock.calls[0][0])
+    expect(weekly).toContain('is_pr_assistance.eq.true')
+    expect(sessions).toContain('is_pr_assistance.eq.true')
+    expect(result).toEqual({ s1: true })
+    expect(client.from.mock.results[0].value.select.mock.calls[0][0]).toContain('tracked_fields')
+  })
+
+  it('fetchExerciseAllTimeStats returns the least assistance, 0 kept, null without any', async () => {
+    getClient.mockReturnValue(makeClientMock({ exercise_session_stats: {
+      data: [{ best_assistance: 20 }, { best_assistance: 0 }, { best_assistance: null }], error: null,
+    } }))
+    expect((await fetchExerciseAllTimeStats({ exerciseId: 1 })).leastAssistance).toBe(0)
+
+    getClient.mockReturnValue(makeClientMock({ exercise_session_stats: { data: [{ best_weight: 50 }], error: null } }))
+    expect((await fetchExerciseAllTimeStats({ exerciseId: 2 })).leastAssistance).toBeNull()
+  })
+
+  it('upsertExerciseSessionStats writes best_assistance (0 kept) and is_pr_assistance', async () => {
+    const client = makeClientMock({ exercise_session_stats: { data: [], error: null } })
+    getClient.mockReturnValue(client)
+
+    await upsertExerciseSessionStats([{ userId: 'u', exerciseId: 1, sessionId: 's', sessionDate: 'd', totalSets: 1, bestAssistance: 0, isPrAssistance: true }])
+
+    const [row] = client.from.mock.results[0].value.upsert.mock.calls[0][0]
+    expect(row.best_assistance).toBe(0)
+    expect(row.is_pr_assistance).toBe(true)
+  })
+
+  it('recalculateSessionStats rebuilds an assisted exercise with the least assistance', async () => {
+    const client = buildClient({
+      session: { user_id: USER_ID, started_at: STARTED_AT },
+      sessionExercises: [
+        { id: 'se-warm', exercise_id: 7, exercise: ASSISTED },
+        { id: 'se-main', exercise_id: 7, exercise: ASSISTED },
+      ],
+      sets: [
+        { session_exercise_id: 'se-warm', weight: 40, reps_completed: 8 },
+        { session_exercise_id: 'se-main', weight: 0, reps_completed: 8 },
+      ],
+    })
+    getClient.mockReturnValue(client)
+
+    await recalculateSessionStats(SESSION_ID)
+
+    const upsertCall = client.from.mock.results
+      .map(r => r.value.upsert?.mock.calls[0]?.[0])
+      .find(Boolean)
+    expect(upsertCall[0]).toMatchObject({ best_assistance: 0, best_per_reps: { 8: 0 }, best_weight: null, best_1rm: null, total_volume: null })
   })
 })

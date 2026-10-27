@@ -5,7 +5,10 @@ import {
   shouldSuggestProgression,
   getProgressionLabel,
   getProgressionReason,
+  getProgressionDirection,
+  getProgressionWhyLabel,
 } from './progressionUtils.js'
+import { getProgressableField } from './measurementFields.js'
 import { SetField } from './measurementFields.js'
 import { SET_TYPES } from './constants.js'
 
@@ -251,5 +254,58 @@ describe('textos del aviso', () => {
 
   it('sin progresable no hay explicación', () => {
     expect(getProgressionReason({ previousSet: { reps: 12 }, target: '8-12', trackedFields: ['reps'] })).toBe('')
+  })
+})
+
+// ============================================
+// DIRECTION: ASSISTANCE GOES DOWN (issue #202)
+// ============================================
+
+describe('assistance progression', () => {
+  const ASSISTED = ['assistance', 'reps']
+  // Hit the top of 8-12 with 30 kg of help: the nudge is to lower it.
+  const hitTop = { weight: 30, reps: 12 }
+  const params = (currentProgressable, previousSet = hitTop) =>
+    ({ previousSet, target: '8-12', trackedFields: ASSISTED, currentProgressable })
+
+  it('getProgressionDirection: lower for assistance, higher for everything else', () => {
+    expect(getProgressionDirection(SetField.ASSISTANCE)).toBe('lower')
+    expect(getProgressionDirection(SetField.WEIGHT)).toBe('higher')
+    expect(getProgressionDirection(SetField.LEVEL)).toBe('higher')
+    expect(getProgressionDirection(SetField.PACE)).toBe('higher')
+    expect(getProgressionDirection(null)).toBe('higher')
+  })
+
+  it('getProgressableField: weight, then assistance, then level', () => {
+    expect(getProgressableField(['weight', 'reps'])).toBe(SetField.WEIGHT)
+    expect(getProgressableField(ASSISTED)).toBe(SetField.ASSISTANCE)
+    expect(getProgressableField(['level', 'time'])).toBe(SetField.LEVEL)
+  })
+
+  it('suggests while nothing lower is typed', () => {
+    expect(shouldSuggestProgression(params(''))).toBe(true)
+    expect(shouldSuggestProgression(params('30'))).toBe(true)
+  })
+
+  it('a lower assistance marks the nudge done, a higher one does not', () => {
+    expect(shouldSuggestProgression(params('25'))).toBe(false)
+    expect(shouldSuggestProgression(params('0'))).toBe(false)
+    expect(shouldSuggestProgression(params('35'))).toBe(true)
+  })
+
+  it('with the previous assistance already at 0 there is nothing to lower: no suggestion', () => {
+    expect(shouldSuggestProgression(params('', { weight: 0, reps: 12 }))).toBe(false)
+  })
+
+  it('does not fire without hitting the top', () => {
+    expect(shouldSuggestProgression(params('', { weight: 30, reps: 10 }))).toBe(false)
+  })
+
+  it('the label and the reason say lower the assistance', () => {
+    expect(getProgressionLabel(ASSISTED)).toBe('Baja la asistencia')
+    expect(getProgressionReason({ previousSet: hitTop, target: '8-12', trackedFields: ASSISTED }))
+      .toBe('Llegaste al tope del objetivo (8-12) con 12 reps. Si quieres seguir progresando, baja la asistencia.')
+    expect(getProgressionWhyLabel(ASSISTED)).toBe('Por qué bajar')
+    expect(getProgressionWhyLabel(WR)).toBe('Por qué subir')
   })
 })

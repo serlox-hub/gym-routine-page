@@ -563,3 +563,47 @@ describe('workoutSummary', () => {
     })
   })
 })
+
+describe('assisted exercises (issue #202)', () => {
+  const session = { day_name: 'Pull', started_at: '2026-10-27T10:00:00Z', duration_minutes: 40 }
+  const sessionExercises = [
+    { id: 'se-1', exercise_id: 1, exercises: { id: 1, name: 'Remo', tracked_fields: ['weight', 'reps'] } },
+    { id: 'se-2', exercise_id: 2, exercises: { id: 2, name: 'Dominadas asistidas', tracked_fields: ['assistance', 'reps'] } },
+  ]
+  const completedSets = {
+    'se-1-1': { sessionExerciseId: 'se-1', weight: 50, repsCompleted: 10, setNumber: 1 },
+    'se-2-1': { sessionExerciseId: 'se-2', weight: 30, repsCompleted: 8, setNumber: 1 },
+    'se-2-2': { sessionExerciseId: 'se-2', weight: 20, repsCompleted: 6, setNumber: 2 },
+    'se-2-3': { sessionExerciseId: 'se-2', weight: 20, repsCompleted: 8, setNumber: 3 },
+  }
+
+  it('end of session: assisted sets add no volume, and the best set is the least assistance (ties: more reps)', () => {
+    const summary = buildWorkoutSummaryFromEndSession(session, [], completedSets, sessionExercises)
+    expect(summary.totalVolumeKg).toBe(500)
+    expect(summary.exercises[1].bestSet).toBe('20kg × 8 reps')
+  })
+
+  it('0 kg of assistance is the best set', () => {
+    const sets = { 'se-2-1': { sessionExerciseId: 'se-2', weight: 10, repsCompleted: 8, setNumber: 1 }, 'se-2-2': { sessionExerciseId: 'se-2', weight: 0, repsCompleted: 5, setNumber: 2 } }
+    const summary = buildWorkoutSummaryFromEndSession(session, [], sets, sessionExercises)
+    expect(summary.exercises[0].bestSet).toBe('0kg × 5 reps')
+  })
+
+  it('calculateSessionTotalVolume (history) skips assisted exercises', () => {
+    expect(calculateSessionTotalVolume([
+      { exercise: { tracked_fields: ['weight', 'reps'] }, sets: [{ weight: 50, reps_completed: 10 }] },
+      { exercise: { tracked_fields: ['assistance', 'reps'] }, sets: [{ weight: 30, reps_completed: 8 }] },
+    ])).toBe(500)
+  })
+
+  it('buildPRDetailsFromStats: an assistance PR of 0 kg and its rep PR against the least previous assistance', () => {
+    const details = buildPRDetailsFromStats(
+      { is_pr_assistance: true, best_assistance: 0, pr_rep_counts: [8], best_per_reps: { '8': 0 } },
+      { unit: 'kg', distanceUnit: 'm', trackedFields: ['assistance', 'reps'], prevBests: { bestAssistance: 20, bestPerReps: { '8': 25, '10': 20 } } },
+    )
+    expect(details).toEqual([
+      { type: 'bestAssistance', newValue: 0, oldValue: 20, unit: 'kg' },
+      { type: 'repPR', newValue: 0, oldValue: 20, oldRepCount: 10, unit: 'kg', repCount: 8 },
+    ])
+  })
+})

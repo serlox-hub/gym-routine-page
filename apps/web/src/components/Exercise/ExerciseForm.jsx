@@ -6,7 +6,7 @@ import { useMuscleGroups } from '../../hooks/useExercises.js'
 import { colors } from '../../lib/styles.js'
 import {
   DEFAULT_TRACKED_FIELDS,
-  isTrackedFieldsSelectionValid,
+  getTrackedFieldsSelectionError,
   SetField,
   getMuscleGroupColor,
   getMuscleGroupName,
@@ -138,8 +138,9 @@ function ExerciseForm({
       return
     }
 
-    if (!isTrackedFieldsSelectionValid(f.tracked_fields)) {
-      setError(t('validation:trackedFieldsRequired'))
+    const fieldsError = getTrackedFieldsSelectionError(f.tracked_fields)
+    if (fieldsError) {
+      setError(fieldsError)
       return
     }
 

@@ -7,7 +7,7 @@ import { useMuscleGroups } from '../../hooks/useExercises'
 import { colors, design, inputStyle } from '../../lib/styles'
 import {
   DEFAULT_TRACKED_FIELDS,
-  isTrackedFieldsSelectionValid,
+  getTrackedFieldsSelectionError,
   SetField,
   getMuscleGroupColor,
   getMuscleGroupName,
@@ -98,7 +98,8 @@ export default function ExerciseForm({
     setError(null)
     const { form: f, selectedMuscleGroupId: mgId } = formRef.current
     if (!f.name.trim()) { setError(t('exercise:nameRequired')); return }
-    if (!isTrackedFieldsSelectionValid(f.tracked_fields)) { setError(t('validation:trackedFieldsRequired')); return }
+    const fieldsError = getTrackedFieldsSelectionError(f.tracked_fields)
+    if (fieldsError) { setError(fieldsError); return }
     if (!mgId) { setError(t('exercise:muscleGroupRequired')); return }
     onSubmit(f, mgId)
   }

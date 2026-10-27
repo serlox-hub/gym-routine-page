@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, Info, X } from 'lucide-react'
-import { getProgressionLabel, getProgressionReason } from '@gym/shared'
+import { getProgressionLabel, getProgressionReason, getProgressionWhyLabel } from '@gym/shared'
 import { IconButton, Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
@@ -28,7 +28,7 @@ function ProgressionHint({ previousSet, target, targetField, trackedFields, dist
           icon={Info}
           iconSize={12}
           color={colors.textMuted}
-          label={t('workout:progression.whyLabel')}
+          label={getProgressionWhyLabel(trackedFields)}
           onClick={() => setShowWhy(true)}
           className="-ml-3"
         />

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, Info, X } from 'lucide-react-native'
-import { getProgressionLabel, getProgressionReason } from '@gym/shared'
+import { getProgressionLabel, getProgressionReason, getProgressionWhyLabel } from '@gym/shared'
 import { IconButton, Modal } from '../ui'
 import { colors, design } from '../../lib/styles'
 
@@ -30,7 +30,7 @@ export default function ProgressionHint({ previousSet, target, targetField, trac
           icon={Info}
           iconSize={12}
           color={colors.textMuted}
-          label={t('workout:progression.whyLabel')}
+          label={getProgressionWhyLabel(trackedFields)}
           onPress={() => setShowWhy(true)}
           style={{ marginLeft: -12 }}
         />

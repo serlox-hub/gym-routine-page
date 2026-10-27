@@ -10,7 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { CHART_RANGES, tracksReps, tracksWeight, filterRecordsByRange, transformSessionsToChartData, convertWeightValue } from '@gym/shared'
+import { CHART_RANGES, tracksReps, tracksWeight, filterRecordsByRange, transformSessionsToChartData, buildStatsRowChartPoint, getProgressChartBestLabel } from '@gym/shared'
 import { ChartRangeToggle } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
@@ -22,22 +22,6 @@ const TABS = {
 
 // Paleta para las líneas por gimnasio en el modo overlay
 const GYM_LINE_COLORS = [colors.success, colors.purple, colors.teal, colors.pink, colors.orange, colors.gold]
-
-// Mapea filas de exercise_session_stats (useExerciseChartData) al formato del gráfico.
-// En overlay, cada fila viene en la unidad de su gym (unitByGym) y se convierte a la
-// unidad de display común; en modo single, unitByGym es undefined => sin conversión.
-function statRowToPoint(row, displayUnit, unitByGym) {
-  const srcUnit = unitByGym?.[row.gym_id] || displayUnit
-  const conv = (v) => convertWeightValue(Number(v) || 0, srcUnit, displayUnit)
-  return {
-    date: new Date(row.session_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
-    rawDate: row.session_date,
-    best: conv(row.best_weight),
-    volume: Math.round(conv(row.total_volume)),
-    e1rm: conv(row.best_1rm),
-    unit: displayUnit,
-  }
-}
 
 function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, trackedFields, weightUnit = 'kg', distanceUnit = 'm' }) {
   const { t } = useTranslation()
@@ -51,7 +35,7 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, tr
   const isStatRows = Array.isArray(chartRows)
 
   const TAB_CONFIG = {
-    [TABS.WEIGHT]: { dataKey: 'best', color: colors.success, label: t('workout:summary.maxWeight') },
+    [TABS.WEIGHT]: { dataKey: 'best', color: colors.success, label: getProgressChartBestLabel(trackedFields) },
     [TABS.VOLUME]: { dataKey: 'volume', color: colors.success, label: t('workout:summary.totalVolume') },
     [TABS.E1RM]: { dataKey: 'e1rm', color: colors.success, label: t('workout:summary.best1rm') },
   }
@@ -67,7 +51,7 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, tr
     )
     const byDate = new Map()
     filtered.forEach(row => {
-      const point = statRowToPoint(row, weightUnit, unitByGym)
+      const point = buildStatsRowChartPoint(row, trackedFields, weightUnit, unitByGym)
       const entry = byDate.get(point.date) || { date: point.date, rawDate: point.rawDate }
       entry[`gym_${row.gym_id}`] = point[dataKey]
       byDate.set(point.date, entry)
@@ -82,7 +66,7 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, tr
         color: GYM_LINE_COLORS[i % GYM_LINE_COLORS.length],
       }))
     return { data, series }
-  }, [isOverlay, isStatRows, chartRows, overlayGyms, unitByGym, range, weightUnit, dataKey])
+  }, [isOverlay, isStatRows, chartRows, overlayGyms, unitByGym, range, trackedFields, weightUnit, dataKey])
 
   // Datos para modo single (una línea): filas de stats o sesiones crudas
   const singleData = useMemo(() => {
@@ -94,12 +78,16 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, tr
         'session_date'
       )
       return filtered
-        .map(row => statRowToPoint(row, weightUnit))
+        // A row without the line's value (best null: an assisted session with no valid set) is no
+        // point. Painted at 0 it would be the best assistance there is.
+        .map(row => buildStatsRowChartPoint(row, trackedFields, weightUnit))
+        .filter(point => point[dataKey] != null)
         .sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate))
     }
     const filteredSessions = filterRecordsByRange(sessions, range, 'date')
     return transformSessionsToChartData(filteredSessions, trackedFields, { weightUnit, distanceUnit })
-  }, [isOverlay, isStatRows, chartRows, sessions, range, trackedFields, weightUnit, distanceUnit])
+      .filter(point => point[dataKey] != null)
+  }, [isOverlay, isStatRows, chartRows, sessions, range, trackedFields, weightUnit, distanceUnit, dataKey])
 
   const chartData = isOverlay ? overlayData.data : singleData
   const enoughSource = isStatRows ? (chartRows?.length ?? 0) >= 2 : (sessions?.length ?? 0) >= 2

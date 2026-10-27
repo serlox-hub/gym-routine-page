@@ -478,7 +478,7 @@ async function computeSessionStats({ sessionId, sessionDate, userId, gymId = nul
       if (!statsPerExercise[info.exerciseId]) {
         statsPerExercise[info.exerciseId] = stats
       } else {
-        mergeExerciseStats(statsPerExercise[info.exerciseId], stats)
+        mergeExerciseStats(statsPerExercise[info.exerciseId], stats, info.trackedFields)
       }
     }
 

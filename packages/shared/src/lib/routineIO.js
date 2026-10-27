@@ -64,13 +64,14 @@ EXERCISE FIELDS (in "exercises"):
 - name_en: exercise name in English (REQUIRED). For an exercise in the EXERCISE CATALOG, the exact name listed there
 - tracked_fields (REQUIRED): what gets logged for each set, as an array of 1 to 3 of these:
   - "weight": load lifted
+  - "assistance": help from an assisted machine (less is better, 0 = no help). Never together with "weight"
   - "reps": repetitions
   - "time": duration of the set
   - "distance": distance covered
   - "pace": pace (min per distance unit)
   - "level": machine resistance level
   - "calories": calories burned
-  Examples: bench press ["weight","reps"], pull-ups ["reps"], plank ["time"],
+  Examples: bench press ["weight","reps"], pull-ups ["reps"], machine assisted pull-ups ["assistance","reps"], plank ["time"],
   farmer walk ["weight","distance"], stationary bike ["level","distance","time"],
   treadmill ["distance","time"], rowing machine ["level","calories"],
   running with target pace ["distance","pace"]

@@ -84,8 +84,8 @@ function SetRow({
 
   // Estado + persistencia de inputs (compartido web/native; ver useSetInputs)
   const {
-    weight, setWeight, reps, setReps, time, setTime, distance, setDistance,
-    calories, setCalories, level, setLevel, pace, setPace,
+    time,
+    formData, fieldState,
     rir, setRir,
     notes, setType, saveDetails, setSetType,
     isCompleted, setData, isValid, getMissingFields, targetPlaceholder, targetField: resolvedTargetField, progressableValue, suggestedFields,
@@ -144,7 +144,7 @@ function SetRow({
     const finalNotes = notesOverride !== undefined ? notesOverride : notes
     const data = buildCompletedSetData(
       trackedFields,
-      { weight, reps, time, distance, calories, level, pace },
+      formData,
       { sessionExerciseId, exerciseId, setNumber, weightUnit, distanceUnit, rirActual: rir, notes: finalNotes, setType, videoUrl: preCompleteUrl ?? undefined },
     )
     onComplete(data, descansoSeg, { setNumber, totalSets, exerciseName })
@@ -187,15 +187,6 @@ function SetRow({
   // Columnas de valor del ejercicio (1 a 3) + su estado. La cabecera (SetsList) lleva la unidad,
   // así que en la fila solo van inputs desnudos: es lo que deja que encojan sin desbordar.
   const columns = getSetColumns(trackedFields, { weightUnit, distanceUnit })
-  const fieldState = {
-    weight: [weight, setWeight],
-    reps: [reps, setReps],
-    time: [time, setTime],
-    distance: [distance, setDistance],
-    calories: [calories, setCalories],
-    level: [level, setLevel],
-    pace: [pace, setPace],
-  }
 
   // Detalles desde el estado local (reflejan lo fijado antes o después de completar)
   const hasVideo = !!setData?.videoUrl

@@ -1,9 +1,11 @@
 import { buildPRDetailsFromStats } from './workoutSummary.js'
 import { resolveWeightUnit, resolveDistanceUnit } from './exerciseUtils.js'
 import { calculateEpley1RM } from './workoutCalculations.js'
+import { resolveTrackedFields } from './measurementFields.js'
 
-// A weight, 1RM or reps PR equal to one of the row's rep PRs is that same set: the heaviest set,
-// the best 1RM set and (with weight) the most-reps set always win a rep PR too. The toast and the
+// A weight, assistance, 1RM or reps PR equal to one of the row's rep PRs is that same set: the
+// heaviest set, the least assisted set, the best 1RM set and (with weight) the most-reps set always
+// win a rep PR too. The toast and the
 // summary carousel already show only the rep PR. No rule marks a reps PR on weight × reps any more:
 // the bestReps entry covers rows recalculate_exercise_prs marked before issue #196 (not backfilled).
 // Equal, not "per type" nor ">=", because the stored bests can disagree: convert_user_weights
@@ -12,6 +14,7 @@ import { calculateEpley1RM } from './workoutCalculations.js'
 // a record hidden. The same mismatch fires false 1RM PRs after kg → lb (#194).
 const COVERED_BY_REP_PR = {
   bestWeight: (detail, repPR) => repPR.newValue === detail.newValue,
+  bestAssistance: (detail, repPR) => repPR.newValue === detail.newValue,
   best1rm: (detail, repPR) => calculateEpley1RM(repPR.newValue, repPR.repCount) === detail.newValue,
   bestReps: (detail, repPR) => repPR.repCount === detail.newValue,
 }
@@ -51,6 +54,7 @@ export function buildWeeklyPRs(rows, { gymUnitRows = [], globalWeightUnit, dista
     const details = dropCoveredByRepPR(buildPRDetailsFromStats(row, {
       unit: resolveWeightUnit(gymUnit ?? null, { weight_unit: globalWeightUnit }),
       distanceUnit: resolveDistanceUnit(distanceUnitOverrides[row.exercise_id], row.exercise),
+      trackedFields: resolveTrackedFields(row.exercise),
     }))
     if (details.length === 0) continue
     count += details.length

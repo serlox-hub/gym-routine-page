@@ -1118,3 +1118,87 @@ describe('duplicateRoutine', () => {
     expect(result.name).toBe('Mi Copia Personalizada')
   })
 })
+
+// Issue #202: `assistance` is a new value of the same array, so ROUTINE_EXPORT_VERSION stays.
+describe('importRoutine with assistance', () => {
+  function mockImportClient(insertCalls) {
+    getClient.mockImplementation(() => ({
+      from: (table) => {
+        if (!insertCalls[table]) insertCalls[table] = []
+        if (table === 'muscle_groups') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            then: (resolve) => resolve({ data: [{ id: 'mg-back', name_es: 'Espalda' }], error: null }),
+          }
+        }
+        if (table === 'exercises') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            // Empty catalog: the exercise is created, and its insert shows the fields it writes.
+            then: (resolve) => resolve({ data: [], error: null }),
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: 'ex-new' }, error: null }),
+              }
+            }),
+          }
+        }
+        if (table === 'routines' || table === 'routine_days') {
+          return {
+            insert: vi.fn((record) => {
+              insertCalls[table].push(record)
+              return {
+                select: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: { id: `${table}-1`, ...record }, error: null }),
+              }
+            }),
+          }
+        }
+        return {
+          insert: vi.fn((record) => {
+            insertCalls[table].push(record)
+            return Promise.resolve({ data: null, error: null })
+          }),
+        }
+      },
+    }))
+  }
+
+  const jsonWith = (exercise, version = ROUTINE_EXPORT_VERSION) => ({
+    version,
+    exercises: [{ name_es: 'Dominadas asistidas caseras', muscle_group_name: 'Espalda', ...exercise }],
+    routine: {
+      name: 'R', description: null,
+      days: [{ name: 'D1', sort_order: 0, blocks: [
+        { name: 'Principal', sort_order: 1, exercises: [
+          { exercise_name: 'Dominadas asistidas caseras', series: 3, reps: '8-12', target_field: 'reps' },
+        ] },
+      ] }],
+    },
+  })
+
+  it.each([
+    ['assistance × reps is kept', ['assistance', 'reps'], ['assistance', 'reps']],
+    ['weight beside assistance is dropped', ['weight', 'assistance', 'reps'], ['assistance', 'reps']],
+  ])('%s', async (_name, trackedFields, expected) => {
+    const insertCalls = {}
+    mockImportClient(insertCalls)
+
+    await importRoutine(jsonWith({ tracked_fields: trackedFields }), 'user-123', {})
+
+    expect(insertCalls.exercises[0].tracked_fields).toEqual(expected)
+  })
+
+  it('an old file without assistance still imports as weight × reps', async () => {
+    const insertCalls = {}
+    mockImportClient(insertCalls)
+
+    await importRoutine(jsonWith({ measurement_type: 'weight_reps' }, 6), 'user-123', {})
+
+    expect(insertCalls.exercises[0].tracked_fields).toEqual(['weight', 'reps'])
+  })
+})

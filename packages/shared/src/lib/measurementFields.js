@@ -17,6 +17,7 @@ import { formatDuration, formatSecondsAsMMSS } from './timeUtils.js'
 
 export const SetField = {
   WEIGHT: 'weight',
+  ASSISTANCE: 'assistance',
   REPS: 'reps',
   TIME: 'time',
   DISTANCE: 'distance',
@@ -47,9 +48,12 @@ export const DISTANCE_UNITS = ['m', 'km']
  * leerlos, así que el orden con el que se guardaron en BD da igual.
  * Reproduce el orden que tenían los 12 tipos históricos: peso·reps, peso·tiempo, nivel·kcal,
  * distancia·tiempo, distancia·ritmo…
+ * Assistance sits right after weight and takes its place: the two never go together (see
+ * EXCLUSIVE_FIELDS).
  */
 export const FIELD_ORDER = [
   SetField.WEIGHT,
+  SetField.ASSISTANCE,
   SetField.LEVEL,
   SetField.DISTANCE,
   SetField.REPS,
@@ -75,6 +79,17 @@ export const FIELD_ORDER = [
  */
 export const MAX_TRACKED_FIELDS = 3
 
+/**
+ * Fields that cannot be tracked together, each with the one that blocks it. Weight and assistance
+ * share the column `completed_sets.weight`: on an assisted machine that number is the help, not the
+ * load. The database rejects the pair (CHECK `exercises_weight_or_assistance`), the picker blocks
+ * it and reading keeps the assistance (`normalizeTrackedFields`).
+ */
+const EXCLUSIVE_FIELDS = {
+  [SetField.WEIGHT]: SetField.ASSISTANCE,
+  [SetField.ASSISTANCE]: SetField.WEIGHT,
+}
+
 export const DEFAULT_TRACKED_FIELDS = [SetField.WEIGHT, SetField.REPS]
 
 /**
@@ -94,9 +109,16 @@ export const MAX_PRESCRIBED_LEVEL = 999
  *
  * Los tres nombres NO coinciden entre sí, y ese desajuste es justo lo que cada pantalla se
  * inventaba por su cuenta antes de que existiera este mapa.
+ *
+ * ASSISTANCE (an assisted pull-up machine) lives in the weight column and uses its unit (kg/lb, per
+ * gym), but it points the other way: less assistance is better, and 0 is a real value (a rep
+ * without help), the best one. See `getProgressionDirection` (progressionUtils.js). A shared column
+ * and not its own: the assisted pull-up history was already there, and unit conversion, gyms and
+ * the exercise correction keep working without touching it.
  */
 const FIELD_META = {
   [SetField.WEIGHT]: { column: 'weight', payloadKey: 'weight', displayKey: 'weight', decimal: true },
+  [SetField.ASSISTANCE]: { column: 'weight', payloadKey: 'weight', displayKey: 'weight', decimal: true },
   [SetField.REPS]: { column: 'reps_completed', payloadKey: 'repsCompleted', displayKey: 'reps', decimal: false },
   [SetField.TIME]: { column: 'time_seconds', payloadKey: 'timeSeconds', displayKey: 'timeSeconds', decimal: false },
   [SetField.DISTANCE]: { column: 'distance_meters', payloadKey: 'distanceMeters', displayKey: 'distanceMeters', decimal: true },
@@ -117,6 +139,13 @@ export function isValidField(field) {
 // NORMALIZACIÓN Y RESOLUCIÓN
 // ============================================
 
+// Without invalid fields or duplicates, in FIELD_ORDER, not cut yet.
+function orderTrackedFields(fields) {
+  if (!Array.isArray(fields)) return []
+  const valid = new Set(fields.filter(isValidField))
+  return FIELD_ORDER.filter(f => valid.has(f))
+}
+
 /**
  * Ordena y limpia una selección de campos SIN imponer un mínimo: sin inválidos, sin duplicados y
  * en `FIELD_ORDER`. Puede devolver la lista vacía, que es un estado legítimo mientras se edita
@@ -127,23 +156,55 @@ export function isValidField(field) {
  * @returns {string[]}
  */
 export function sortTrackedFields(fields) {
-  if (!Array.isArray(fields)) return []
-  const valid = new Set(fields.filter(isValidField))
-  return FIELD_ORDER.filter(f => valid.has(f)).slice(0, MAX_TRACKED_FIELDS)
+  return orderTrackedFields(fields).slice(0, MAX_TRACKED_FIELDS)
 }
 
 /**
  * Deja una lista de campos en su forma canónica: sin inválidos, sin duplicados, en `FIELD_ORDER`
  * y recortada a `MAX_TRACKED_FIELDS`. Si no queda nada usable cae al default (peso × reps).
+ * With weight AND assistance (the database rejects the pair, but a hand-edited JSON can bring it)
+ * it keeps the assistance: the more specific of the two, and keeping the weight would score the
+ * help as load again. Weight is dropped BEFORE the cut, so it does not cost a third field.
  *
  * Se aplica en TODA lectura (no solo al guardar) para que un valor sucio en BD, un JSON importado
  * a mano o un orden distinto no puedan hacer que dos pantallas pinten columnas diferentes.
+ * The SQL `pr_metrics` mirrors this normalization (weight dropped beside assistance).
  * @param {string[]|null|undefined} fields
  * @returns {string[]}
  */
 export function normalizeTrackedFields(fields) {
-  const ordered = sortTrackedFields(fields)
-  return ordered.length > 0 ? ordered : [...DEFAULT_TRACKED_FIELDS]
+  const ordered = orderTrackedFields(fields)
+  const kept = ordered.includes(SetField.ASSISTANCE)
+    ? ordered.filter(f => f !== SetField.WEIGHT)
+    : ordered
+  const result = kept.slice(0, MAX_TRACKED_FIELDS)
+  return result.length > 0 ? result : [...DEFAULT_TRACKED_FIELDS]
+}
+
+/**
+ * The selected field that keeps `field` from being selected (weight ↔ assistance), or null. The
+ * picker paints it as a blocked chip that explains why when pressed.
+ * @param {string[]} fields - current selection
+ * @param {string} field
+ * @returns {string|null}
+ */
+export function getBlockingTrackedField(fields, field) {
+  const blocker = EXCLUSIVE_FIELDS[field]
+  const selected = sortTrackedFields(fields)
+  return blocker && selected.includes(blocker) && !selected.includes(field) ? blocker : null
+}
+
+/**
+ * Notice of the blocked chip: why `field` cannot be selected while `blocker` is.
+ * @param {string} field
+ * @param {string} blocker - output of getBlockingTrackedField
+ * @returns {string}
+ */
+export function formatTrackedFieldConflict(field, blocker) {
+  return t('exercise:trackedFieldsConflict', {
+    field: getFieldName(field).toLowerCase(),
+    other: getFieldName(blocker).toLowerCase(),
+  })
 }
 
 /**
@@ -159,13 +220,27 @@ export function toggleTrackedField(fields, field) {
   const current = sortTrackedFields(fields)
   if (current.includes(field)) return current.filter(f => f !== field)
   if (current.length >= MAX_TRACKED_FIELDS || !isValidField(field)) return current
+  if (getBlockingTrackedField(current, field)) return current
   return sortTrackedFields([...current, field])
 }
 
-/** ¿La selección del formulario se puede guardar? (entre 1 y MAX_TRACKED_FIELDS campos válidos) */
-export function isTrackedFieldsSelectionValid(fields) {
+/**
+ * Why the form's selection cannot be saved, or null when it can (1 to MAX_TRACKED_FIELDS valid
+ * fields, without weight and assistance together).
+ * @param {string[]} fields
+ * @returns {string|null} message for the user
+ */
+export function getTrackedFieldsSelectionError(fields) {
   const selected = sortTrackedFields(fields)
-  return selected.length >= 1 && selected.length <= MAX_TRACKED_FIELDS
+  if (selected.length < 1) return t('validation:trackedFieldsRequired')
+  const conflict = selected.find(field => selected.includes(EXCLUSIVE_FIELDS[field]))
+  if (conflict) return formatTrackedFieldConflict(conflict, EXCLUSIVE_FIELDS[conflict])
+  return null
+}
+
+/** Can the form's selection be saved? (see getTrackedFieldsSelectionError) */
+export function isTrackedFieldsSelectionValid(fields) {
+  return getTrackedFieldsSelectionError(fields) == null
 }
 
 /**
@@ -188,6 +263,7 @@ export function sameTrackedFields(a, b) {
 }
 
 export const tracksWeight = (fields) => normalizeTrackedFields(fields).includes(SetField.WEIGHT)
+export const tracksAssistance = (fields) => normalizeTrackedFields(fields).includes(SetField.ASSISTANCE)
 export const tracksReps = (fields) => normalizeTrackedFields(fields).includes(SetField.REPS)
 export const tracksTime = (fields) => normalizeTrackedFields(fields).includes(SetField.TIME)
 export const tracksDistance = (fields) => normalizeTrackedFields(fields).includes(SetField.DISTANCE)
@@ -223,6 +299,8 @@ export function formatTrackedFieldsLabel(fields) {
 export function getFieldHeader(field, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
   switch (field) {
     case SetField.WEIGHT: return (weightUnit || 'kg').toUpperCase()
+    // The unit goes in the header too: it is the only place of the row that says it (setColumns).
+    case SetField.ASSISTANCE: return `${t('workout:set.assistanceShort')} ${weightUnit || 'kg'}`.toUpperCase()
     case SetField.REPS: return t('workout:set.reps').toUpperCase()
     case SetField.TIME: return 'MM:SS'
     case SetField.DISTANCE: return (distanceUnit || 'm').toUpperCase()
@@ -240,7 +318,9 @@ export function getFieldHeader(field, { weightUnit = 'kg', distanceUnit = 'm' } 
  */
 export function getFieldUnit(field, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
   switch (field) {
-    case SetField.WEIGHT: return weightUnit || 'kg'
+    case SetField.WEIGHT:
+    case SetField.ASSISTANCE:
+      return weightUnit || 'kg'
     case SetField.REPS: return t('workout:set.reps').toLowerCase()
     case SetField.TIME: return 'min'
     case SetField.DISTANCE: return distanceUnit || 'm'
@@ -279,7 +359,9 @@ export function metersToDistanceUnit(meters, distanceUnit) {
  */
 export function parseFieldValue(field, value, { distanceUnit = 'm' } = {}) {
   switch (field) {
-    case SetField.WEIGHT: return parseDecimal(value)
+    case SetField.WEIGHT:
+    case SetField.ASSISTANCE:
+      return parseDecimal(value)
     case SetField.DISTANCE: return distanceToMeters(value, distanceUnit)
     default: return parseInt(value)
   }
@@ -302,6 +384,7 @@ function formatNumber(value) {
 export function formatFieldValue(field, value, { weightUnit = 'kg', distanceUnit = 'm', repsUnit = false } = {}) {
   switch (field) {
     case SetField.WEIGHT:
+    case SetField.ASSISTANCE:
       return `${formatNumber(value)}${weightUnit || 'kg'}`
     case SetField.REPS:
       return `${value}${repsUnit ? ` ${t('workout:set.reps').toLowerCase()}` : ''}`
@@ -388,23 +471,26 @@ export function resolveTargetField(targetField, trackedFields) {
 }
 
 /**
- * Campo PROGRESABLE del ejercicio: el que se sube con el tiempo. Derivado, no configurable — el
- * peso cuando lo mide y el nivel cuando no (en una máquina de cardio el nivel juega exactamente
- * el papel del peso). null si no mide ninguno de los dos: no hay nada que subir.
+ * The PROGRESSABLE field of the exercise: the one that moves over time. Derived, not configurable:
+ * the weight when it tracks it, else the assistance (which goes DOWN, see getProgressionDirection),
+ * else the level (on a cardio machine the level plays exactly the weight's role). null when it
+ * tracks none of them: nothing to progress.
  * @param {string[]|null} trackedFields
  * @returns {string|null}
  */
 export function getProgressableField(trackedFields) {
   const tracked = normalizeTrackedFields(trackedFields)
   if (tracked.includes(SetField.WEIGHT)) return SetField.WEIGHT
+  if (tracked.includes(SetField.ASSISTANCE)) return SetField.ASSISTANCE
   if (tracked.includes(SetField.LEVEL)) return SetField.LEVEL
   return null
 }
 
 // Qué campo resume una serie en gráficas y tarjetas de historial. El peso manda cuando lo hay
-// (es el dato que progresa); si no, el nivel; si no, la magnitud del trabajo.
+// (es el dato que progresa); si no, el nivel; si no, la magnitud del trabajo. Assistance takes the
+// weight's place on assisted exercises.
 const CHART_FIELD_PRIORITY = [
-  SetField.WEIGHT, SetField.LEVEL, SetField.DISTANCE, SetField.CALORIES, SetField.TIME,
+  SetField.WEIGHT, SetField.ASSISTANCE, SetField.LEVEL, SetField.DISTANCE, SetField.CALORIES, SetField.TIME,
   SetField.PACE, SetField.REPS,
 ]
 

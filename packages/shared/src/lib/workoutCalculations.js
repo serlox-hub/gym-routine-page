@@ -3,8 +3,9 @@
  */
 
 import { t } from '../i18n/index.js'
-import { PACE_DISTANCE_UNIT, SetField, getPrimaryChartField, metersToDistanceUnit, tracksDistance, tracksLevel, tracksPace, tracksReps, tracksTime, tracksWeight } from './measurementFields.js'
+import { PACE_DISTANCE_UNIT, SetField, getPrimaryChartField, metersToDistanceUnit, tracksAssistance, tracksDistance, tracksLevel, tracksPace, tracksReps, tracksTime, tracksWeight } from './measurementFields.js'
 import { formatSecondsToMMSS } from './timeUtils.js'
+import { convertWeightValue } from './weightConversion.js'
 
 /**
  * Calcula el 1RM estimado usando la fórmula Epley
@@ -43,10 +44,68 @@ export function calculateTotalVolume(sets) {
   }, 0)
 }
 
+// Weight × reps: the strength model's derived numbers (estimated 1RM, volume) exist only with both.
+// Same condition as getTrackableMetrics (sessionStatsCalculation.js). Assistance × reps is left
+// out: its `weight` column is help, and help × reps is no load moved.
+function hasStrengthMetrics(trackedFields) {
+  return tracksWeight(trackedFields) && tracksReps(trackedFields)
+}
+
+/**
+ * Volume (weight × reps) of the sets of ONE exercise, or 0 when the exercise has no volume
+ * (anything but weight × reps, assistance included).
+ * @param {Array<{weight: number, reps_completed: number}>} sets
+ * @param {string[]} trackedFields
+ * @returns {number}
+ */
+export function calculateExerciseVolume(sets, trackedFields) {
+  return hasStrengthMetrics(trackedFields) ? calculateTotalVolume(sets) : 0
+}
+
+/**
+ * The set with the LEAST assistance: on an assisted machine less help is better, and 0 is a real
+ * value (a set without help), the best one. On a tie the set with more reps wins. Only a set with
+ * an assistance counts and, when the exercise tracks reps, with at least one rep (a 0-rep set
+ * without help is no record).
+ * @param {Array<{weight?: number|null, reps_completed?: number|null, reps?: number|null}>} sets -
+ *   completed_sets rows (`reps` is the name in sets already transformed for the history)
+ * @param {string[]} trackedFields
+ * @returns {object|null} the set, or null when none counts
+ */
+export function findLeastAssistanceSet(sets, trackedFields) {
+  const needsReps = tracksReps(trackedFields)
+  let best = null
+  let bestReps = 0
+  for (const set of sets || []) {
+    if (set?.weight == null) continue
+    const assistance = Number(set.weight)
+    const reps = Number(set.reps_completed ?? set.reps ?? 0)
+    if (Number.isNaN(assistance) || (needsReps && !(reps > 0))) continue
+    const bestAssistance = best == null ? null : Number(best.weight)
+    if (best == null || assistance < bestAssistance || (assistance === bestAssistance && reps > bestReps)) {
+      best = set
+      bestReps = reps
+    }
+  }
+  return best
+}
+
+/**
+ * Least assistance of some sets (see findLeastAssistanceSet), or null when none counts. Never 0
+ * for "no data": 0 means without help.
+ * @returns {number|null}
+ */
+export function getLeastAssistance(sets, trackedFields) {
+  const set = findLeastAssistanceSet(sets, trackedFields)
+  return set == null ? null : Number(set.weight)
+}
+
 // Campo que resume la serie → unidad con la que se etiqueta en la gráfica. El peso es el único
 // cuya unidad depende de la configuración (kg/lb); el resto son fijas.
 const CHART_FIELD_METRIC = {
   [SetField.WEIGHT]: { column: 'weight', unit: null },
+  // Less is better and 0 is a value: summarized by getLeastAssistance, not by the generic loop.
+  [SetField.ASSISTANCE]: { column: 'weight', unit: null },
   [SetField.LEVEL]: { column: 'level', unit: 'nv' },
   // La unidad de la distancia la decide el ejercicio (m/km): esta es solo el valor por defecto.
   [SetField.DISTANCE]: { column: 'distance_meters', unit: 'm' },
@@ -64,13 +123,19 @@ const CHART_FIELD_METRIC = {
  * (ver getPrimaryChartField: peso si lo hay, si no nivel, si no la magnitud del trabajo).
  * @param {Array} sets - Array de series
  * @param {string[]} trackedFields - campos del ejercicio
- * @returns {{value: number, unit: string}}
+ * @returns {{value: number|null, unit: string}} value 0 without data, except assistance (null)
  */
 export function getBestValueFromSets(sets, trackedFields, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
   if (!sets || sets.length === 0) return { value: 0, unit: '' }
 
   const field = getPrimaryChartField(trackedFields)
   const { column, unit, lowerIsBetter } = CHART_FIELD_METRIC[field]
+
+  // null, not 0, without a value: 0 kg of assistance is the best mark there is.
+  if (field === SetField.ASSISTANCE) {
+    const least = getLeastAssistance(sets, trackedFields)
+    return least == null ? { value: null, unit: '' } : { value: least, unit: weightUnit }
+  }
 
   let bestValue = 0
   sets.forEach(set => {
@@ -111,7 +176,8 @@ export function getBest1RMFromSets(sets) {
  * Transforma sesiones a datos para gráficos de progreso
  * @param {Array} sessions - Array de sesiones con sets
  * @param {string[]} trackedFields - campos del ejercicio
- * @returns {Array<{date: string, best: number, volume: number, e1rm: number, unit: string}>}
+ * @returns {Array<{date: string, best: number|null, volume: number, e1rm: number, unit: string}>}
+ *   best null: a session of an assisted exercise without any valid set (see getBestValueFromSets)
  */
 export function transformSessionsToChartData(sessions, trackedFields, { weightUnit = 'kg', distanceUnit = 'm' } = {}) {
   if (!sessions || sessions.length === 0) return []
@@ -123,8 +189,8 @@ export function transformSessionsToChartData(sessions, trackedFields, { weightUn
     const dateLabel = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 
     const { value: bestValue, unit } = getBestValueFromSets(session.sets, trackedFields, { weightUnit, distanceUnit })
-    const totalVolume = calculateTotalVolume(session.sets)
-    const bestE1RM = getBest1RMFromSets(session.sets)
+    const totalVolume = calculateExerciseVolume(session.sets, trackedFields)
+    const bestE1RM = hasStrengthMetrics(trackedFields) ? getBest1RMFromSets(session.sets) : 0
 
     return {
       date: dateLabel,
@@ -134,6 +200,44 @@ export function transformSessionsToChartData(sessions, trackedFields, { weightUn
       unit,
     }
   })
+}
+
+/**
+ * Point of the progress chart from an `exercise_session_stats` row (the per-gym chart). The main
+ * line is the best weight, or the LEAST assistance on an assisted machine; `best` is null when the
+ * row lacks that value (a session without any valid set), never 0: 0 is the best assistance.
+ * In the overlay each row comes in its gym's unit (unitByGym) and is converted to the display one;
+ * without unitByGym nothing is converted.
+ * @param {object} row - row of fetchExerciseChartData
+ * @param {string[]} trackedFields
+ * @param {'kg'|'lb'} displayUnit
+ * @param {Object<string,'kg'|'lb'>} [unitByGym]
+ * @returns {{date: string, rawDate: string, best: number|null, volume: number, e1rm: number, unit: string}}
+ */
+export function buildStatsRowChartPoint(row, trackedFields, displayUnit, unitByGym) {
+  const srcUnit = unitByGym?.[row.gym_id] || displayUnit
+  const conv = (v) => convertWeightValue(Number(v) || 0, srcUnit, displayUnit)
+  const assisted = tracksAssistance(trackedFields)
+  return {
+    date: new Date(row.session_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+    rawDate: row.session_date,
+    best: assisted
+      ? (row.best_assistance == null ? null : conv(row.best_assistance))
+      : conv(row.best_weight),
+    volume: Math.round(conv(row.total_volume)),
+    e1rm: conv(row.best_1rm),
+    unit: displayUnit,
+  }
+}
+
+/**
+ * Label of the progress chart's main line: "Máx Peso", or "Menor asistencia" on an assisted machine
+ * (there the line going down is the one improving).
+ * @param {string[]} trackedFields
+ * @returns {string}
+ */
+export function getProgressChartBestLabel(trackedFields) {
+  return tracksAssistance(trackedFields) ? t('workout:summary.leastAssistance') : t('workout:summary.maxWeight')
 }
 
 /**
@@ -285,9 +389,13 @@ export function getExerciseStatCards(stats, trackedFields, { weightUnit = 'kg', 
     if (condition) cards.push({ label: t(`workout:summary.${key}`), value })
   }
 
-  if (tracksWeight(trackedFields) && tracksReps(trackedFields)) {
+  if (hasStrengthMetrics(trackedFields)) {
     push(stats.best1RM > 0, 'best1rm', `${stats.best1RM} ${weightUnit}`)
     push(stats.maxWeight > 0, 'maxWeight', `${stats.maxWeight} ${weightUnit}`)
+  } else if (tracksAssistance(trackedFields) && tracksReps(trackedFields)) {
+    // `!= null`, not `> 0`: 0 kg of assistance is the best mark, not "no data".
+    push(stats.leastAssistance != null, 'leastAssistance', `${stats.leastAssistance} ${weightUnit}`)
+    push(stats.maxReps > 0, 'maxReps', stats.maxReps)
   } else if (tracksReps(trackedFields)) {
     push(stats.maxReps > 0, 'maxReps', stats.maxReps)
     push(stats.avgReps > 0, 'avgReps', stats.avgReps)
@@ -304,6 +412,8 @@ export function getExerciseStatCards(stats, trackedFields, { weightUnit = 'kg', 
     push(stats.avgPace > 0, 'avgPace', `${formatSecondsToMMSS(stats.avgPace)}/${PACE_DISTANCE_UNIT}`)
   } else if (tracksWeight(trackedFields)) {
     push(stats.maxWeight > 0, 'maxWeight', `${stats.maxWeight} ${weightUnit}`)
+  } else if (tracksAssistance(trackedFields)) {
+    push(stats.leastAssistance != null, 'leastAssistance', `${stats.leastAssistance} ${weightUnit}`)
   } else if (tracksLevel(trackedFields)) {
     push(stats.maxLevel > 0, 'maxLevel', stats.maxLevel)
     push(stats.avgLevel > 0, 'avgLevel', stats.avgLevel)
@@ -325,6 +435,8 @@ export function getExerciseStatCards(stats, trackedFields, { weightUnit = 'kg', 
  * Las cuatro últimas ramas (ritmo, peso solo, nivel, calorías) cubren combinaciones que el enum
  * anterior no permitía y que con la selección libre de campos sí existen; sin ellas, esos
  * ejercicios se quedaban sin resumen ninguno.
+ * The assistance branches (with reps, or without them) are the only ones where LESS is better and
+ * 0 is a value: `leastAssistance` is null without data, never 0.
  * @param {Array} sessions - Array de sesiones con sets (filas de completed_sets, snake_case)
  * @param {string[]} trackedFields - campos del ejercicio
  * @returns {object|null} solo las claves de la rama que aplica; el resto a 0
@@ -339,6 +451,7 @@ export function calculateExerciseStats(sessions, trackedFields) {
     best1RM: 0, maxWeight: 0, maxReps: 0, avgReps: 0, totalVolume: 0,
     maxTime: 0, avgTime: 0, maxDistance: 0, avgDistance: 0,
     maxLevel: 0, avgLevel: 0, maxCalories: 0, avgCalories: 0, bestPace: 0, avgPace: 0,
+    leastAssistance: null,
     sessionCount: sessions.length,
   }
 
@@ -356,11 +469,14 @@ export function calculateExerciseStats(sessions, trackedFields) {
     if (avgKey) stats[avgKey] = avg(values, decimals)
   }
 
-  if (tracksWeight(trackedFields) && tracksReps(trackedFields)) {
+  if (hasStrengthMetrics(trackedFields)) {
     stats.best1RM = getBest1RMFromSets(allSets)
     stats.maxWeight = Math.max(...allSets.map(set => set.weight || 0))
     stats.maxReps = Math.max(...allSets.map(set => set.reps_completed || 0))
     stats.totalVolume = calculateTotalVolume(allSets)
+  } else if (tracksAssistance(trackedFields) && tracksReps(trackedFields)) {
+    stats.leastAssistance = getLeastAssistance(allSets, trackedFields)
+    stats.maxReps = Math.max(...allSets.map(set => set.reps_completed || 0))
   } else if (tracksReps(trackedFields)) {
     // Sin filtrar el 0: aquí una serie a 0 reps sí es un dato (la media lo refleja).
     const reps = allSets.map(set => set.reps_completed || 0)
@@ -382,6 +498,8 @@ export function calculateExerciseStats(sessions, trackedFields) {
     }
   } else if (tracksWeight(trackedFields)) {
     fill('weight', 'maxWeight', null, 1)
+  } else if (tracksAssistance(trackedFields)) {
+    stats.leastAssistance = getLeastAssistance(allSets, trackedFields)
   } else if (tracksLevel(trackedFields)) {
     fill('level', 'maxLevel', 'avgLevel')
   } else {
@@ -407,7 +525,7 @@ export function buildPRsByExerciseMap(sessionPRs) {
     // desde el histórico.
     const hasRepPR = Array.isArray(pr.pr_rep_counts) && pr.pr_rep_counts.length > 0
     const hasPR = pr.is_pr_weight || pr.is_pr_reps || pr.is_pr_1rm || pr.is_pr_volume ||
-      pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace || hasRepPR
+      pr.is_pr_time || pr.is_pr_distance || pr.is_pr_pace || pr.is_pr_assistance || hasRepPR
     if (hasPR) map[pr.exercise_id] = pr
   }
   return map

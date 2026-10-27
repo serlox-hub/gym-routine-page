@@ -31,6 +31,7 @@
   "muscleGroupRequired": "Muscle group is required",
   "trackedFields": "What this exercise tracks",
   "trackedFieldsHelp": "Up to 3. Add or remove as needed.",
+  "trackedFieldsConflict": "You can't track {{field}} and {{other}} together. Remove {{other}} to pick {{field}}.",
   "weightUnit": "Weight unit",
   "weightUnitKg": "Kilograms (kg)",
   "weightUnitLb": "Pounds (lb)",

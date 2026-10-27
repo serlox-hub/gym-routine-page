@@ -710,3 +710,45 @@ describe('useSetInputs — reemplazo del ejercicio de la fila (issue #72)', () =
     expect(result.current.reps).toBe(15)
   })
 })
+
+// Assistance lives in the weight column, so it shares the weight's state (issue #202).
+describe('useSetInputs: assistance', () => {
+  const ASSISTED = { ...PARAMS, trackedFields: ['assistance', 'reps'] }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.completedSets = {}
+    store.cachedSetData = {}
+  })
+
+  it('the assistance column edits the weight state, and formData carries it under both names', () => {
+    const { result } = renderHook(() => useSetInputs(ASSISTED), { wrapper: wrapper() })
+    act(() => { result.current.fieldState.assistance[1]('0') })
+    act(() => { result.current.fieldState.reps[1]('8') })
+
+    expect(result.current.fieldState.assistance[0]).toBe('0')
+    expect(result.current.formData).toMatchObject({ weight: '0', assistance: '0', reps: '8' })
+    // 0 is a value: nothing is missing.
+    expect(result.current.isValid()).toBe(true)
+  })
+
+  it('a pending set caches the assistance as weight, 0 kept', async () => {
+    vi.useFakeTimers()
+    try {
+      const { result } = renderHook(() => useSetInputs(ASSISTED), { wrapper: wrapper() })
+      act(() => { result.current.fieldState.assistance[1]('0') })
+      await act(async () => { vi.advanceTimersByTime(SET_EDIT_DEBOUNCE_MS + 10) })
+      const lastCall = store.setCachedSetData.mock.calls.at(-1)
+      expect(lastCall[2]).toMatchObject({ weight: 0 })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('seeds the assistance from the previous set and marks it as a suggestion', async () => {
+    const { result } = renderHook(() => useSetInputs({ ...ASSISTED, previousSet: { weight: 30, reps: 8 } }), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.fieldState.assistance[0]).toBe(30))
+    expect(result.current.suggestedFields.assistance).toBe(true)
+    expect(result.current.progressableValue).toBe(30)
+  })
+})

@@ -1,5 +1,6 @@
-import { SetField, normalizeTrackedFields } from './measurementFields.js'
-import { calculateEpley1RM } from './workoutCalculations.js'
+import { SetField, getProgressableField, normalizeTrackedFields } from './measurementFields.js'
+import { calculateEpley1RM, findLeastAssistanceSet, getLeastAssistance } from './workoutCalculations.js'
+import { getProgressionDirection } from './progressionUtils.js'
 import { t } from '../i18n/index.js'
 
 // ============================================
@@ -11,6 +12,7 @@ import { t } from '../i18n/index.js'
 // serie pero no alimentan stats, gráficas ni PRs. Añadir esa dimensión es otro ticket.
 const FIELD_METRIC = {
   [SetField.WEIGHT]: 'weight',
+  [SetField.ASSISTANCE]: 'assistance',
   [SetField.REPS]: 'reps',
   [SetField.TIME]: 'time',
   [SetField.DISTANCE]: 'distance',
@@ -20,6 +22,7 @@ const FIELD_METRIC = {
 /**
  * Métricas calculadas para stats y gráficas. Peso + reps juntos habilitan además las derivadas
  * del modelo de fuerza (1RM estimado, volumen y rep-PR), que no significan nada sin las dos.
+ * Assistance + reps enables only the rep PR: assistance is help, not load, so no 1RM nor volume.
  * @param {string[]} trackedFields
  * @returns {string[]}
  */
@@ -28,6 +31,8 @@ export function getTrackableMetrics(trackedFields) {
   const metrics = fields.map(f => FIELD_METRIC[f]).filter(Boolean)
   if (fields.includes(SetField.WEIGHT) && fields.includes(SetField.REPS)) {
     metrics.push('1rm', 'volume', 'repPR')
+  } else if (fields.includes(SetField.ASSISTANCE) && fields.includes(SetField.REPS)) {
+    metrics.push('repPR')
   }
   return metrics
 }
@@ -41,6 +46,8 @@ export function getTrackableMetrics(trackedFields) {
  * mejor ni peor. Dos excepciones, que son las dos formas de colapsar dos dimensiones en una:
  * peso × reps con el 1RM estimado (modelo Strong/Hevy, más heaviest-ever y rep-PR por rep count),
  * y el ritmo, que ya normaliza el tiempo por la distancia.
+ * Assistance × reps is the weight × reps model inverted (least assistance ever and rep PRs where
+ * less assistance wins, no 1RM). Assistance alone or with anything else has no record.
  * The SQL `pr_metrics` (migration 072) mirrors it for recalculate_exercise_prs: change both
  * together, `npm run db:check-pr-parity -w apps/web` compares them.
  * @param {string[]} trackedFields
@@ -51,12 +58,25 @@ export function getPRMetrics(trackedFields) {
   if (fields.length === 2 && fields.includes(SetField.WEIGHT) && fields.includes(SetField.REPS)) {
     return ['1rm', 'weight', 'repPR']
   }
+  if (fields.includes(SetField.ASSISTANCE)) {
+    return fields.length === 2 && fields.includes(SetField.REPS) ? ['assistance', 'repPR'] : []
+  }
   if (fields.includes(SetField.PACE)) return ['pace']
   if (fields.length === 1) {
     const metric = FIELD_METRIC[fields[0]]
     return metric ? [metric] : []
   }
   return []
+}
+
+/**
+ * Does this exercise's rep PR go to LESS load? Yes on assistance × reps (getProgressionDirection of
+ * its load field, the progressable one). On weight × reps, more weight wins.
+ * @param {string[]} trackedFields
+ * @returns {boolean}
+ */
+export function isRepPRLowerBetter(trackedFields) {
+  return getProgressionDirection(getProgressableField(trackedFields)) === 'lower'
 }
 
 // ============================================
@@ -112,28 +132,45 @@ export function calculateSessionExerciseStats(sets, trackedFields) {
     stats.bestPaceSeconds = paces.length > 0 ? Math.min(...paces) : null
   }
 
+  // Least assistance (see getLeastAssistance): null without data, 0 is the best mark.
+  if (metrics.includes('assistance')) {
+    stats.bestAssistance = getLeastAssistance(sets, trackedFields)
+  }
+
   if (metrics.includes('repPR')) {
-    // Mejor peso de la sesión por cada rep_count exacto. Ej: { "5": 100, "8": 80 }
-    const perRep = {}
-    for (const s of sets) {
-      if (s.weight && s.reps_completed && s.weight > 0 && s.reps_completed > 0) {
-        const key = String(s.reps_completed)
-        if (!perRep[key] || s.weight > perRep[key]) {
-          perRep[key] = s.weight
-        }
-      }
-    }
-    stats.bestPerReps = Object.keys(perRep).length > 0 ? perRep : null
+    stats.bestPerReps = buildBestPerReps(sets, isRepPRLowerBetter(trackedFields))
   }
 
   return stats
 }
 
+// Best load of the session per exact rep count. E.g. { "5": 100, "8": 80 }. With weight, the
+// heaviest of the sets with weight > 0 (a 0 kg set is stored as "no value", see below). With
+// assistance, the LEAST, and 0 counts: it is a set without help.
+function buildBestPerReps(sets, lowerIsBetter) {
+  const perRep = {}
+  for (const s of sets) {
+    if (s.weight == null || !(s.reps_completed > 0)) continue
+    const load = Number(s.weight)
+    if (Number.isNaN(load) || (!lowerIsBetter && !(load > 0))) continue
+    const key = String(s.reps_completed)
+    if (perRep[key] == null || (lowerIsBetter ? load < perRep[key] : load > perRep[key])) {
+      perRep[key] = load
+    }
+  }
+  return Object.keys(perRep).length > 0 ? perRep : null
+}
+
 /**
  * Combina dos stats del mismo ejercicio (ej. calentamiento + principal).
  * Maxima los `best*`, suma `totalVolume` y `totalSets`, mínima `bestPaceSeconds`.
+ * The least `bestAssistance` wins, and `bestPerReps` follows the exercise's rep-PR direction (the
+ * least with assistance): that is why it needs the exercise's fields.
+ * @param {object} target - mutated
+ * @param {object} source
+ * @param {string[]} trackedFields
  */
-export function mergeExerciseStats(target, source) {
+export function mergeExerciseStats(target, source, trackedFields) {
   if (source.bestWeight && (!target.bestWeight || source.bestWeight > target.bestWeight)) {
     target.bestWeight = source.bestWeight
   }
@@ -156,11 +193,16 @@ export function mergeExerciseStats(target, source) {
   if (source.bestPaceSeconds && (!target.bestPaceSeconds || source.bestPaceSeconds < target.bestPaceSeconds)) {
     target.bestPaceSeconds = source.bestPaceSeconds
   }
+  if (source.bestAssistance != null && (target.bestAssistance == null || source.bestAssistance < target.bestAssistance)) {
+    target.bestAssistance = source.bestAssistance
+  }
   if (source.bestPerReps) {
+    const lowerIsBetter = isRepPRLowerBetter(trackedFields)
     if (!target.bestPerReps) target.bestPerReps = {}
-    for (const [reps, weight] of Object.entries(source.bestPerReps)) {
-      if (!target.bestPerReps[reps] || weight > target.bestPerReps[reps]) {
-        target.bestPerReps[reps] = weight
+    for (const [reps, load] of Object.entries(source.bestPerReps)) {
+      const current = target.bestPerReps[reps]
+      if (current == null || (lowerIsBetter ? load < current : load > current)) {
+        target.bestPerReps[reps] = load
       }
     }
   }
@@ -170,38 +212,48 @@ export function mergeExerciseStats(target, source) {
 // REP-PR DOMINANCE HELPER
 // ============================================
 
-// Regla de dominancia: hacer más reps al mismo peso es estrictamente mejor, así
+// Regla de dominancia: hacer más reps con la misma carga es estrictamente mejor, así
 // que un set W×N "cubre" implícitamente W×M para todo M < N. Por eso el récord a
-// N reps debe compararse contra el mejor peso conseguido a N reps *o más*, no solo
+// N reps debe compararse contra la mejor carga conseguida a N reps *o más*, no solo
 // a exactamente N. Esto evita marcar como PR un 100×8 cuando ya se hizo 100×9.
+// The load is the weight (more is better) or the assistance (LESS is better, and 0 is the best):
+// a set A×N is a rep PR when no earlier set has assistance <= A at N reps or more.
 
-// Higher weight wins; on a weight tie, more reps wins (by the same dominance rule,
-// that set covers the others).
-function isBetterRepEntry(candidate, best) {
-  return !best
-    || candidate.weight > best.weight
-    || (candidate.weight === best.weight && candidate.reps > best.reps)
+// The better load wins (heavier, or less assistance); on a tie, more reps wins (by the same
+// dominance rule, that set covers the others).
+function isBetterRepEntry(candidate, best, lowerIsBetter) {
+  if (!best) return true
+  if (candidate.weight === best.weight) return candidate.reps > best.reps
+  return lowerIsBetter ? candidate.weight < best.weight : candidate.weight > best.weight
+}
+
+// A weight entry needs a positive weight (0 kg is stored as "no value"); an assistance entry only
+// needs a number, 0 included.
+function isRankableLoad(load, lowerIsBetter) {
+  return lowerIsBetter ? load != null && !Number.isNaN(Number(load)) : load > 0
 }
 
 /**
- * The best entry at minReps reps or more across one or more bestPerReps maps: its weight and
- * its rep count. Ties on weight resolve to the highest rep count. Entries without a positive
- * weight never win.
+ * The best entry at minReps reps or more across one or more bestPerReps maps: its load and its rep
+ * count. Ties on load resolve to the highest rep count. With weight (default) the heaviest wins and
+ * an entry without a positive weight never wins; with `{ lowerIsBetter: true }` (assistance) the
+ * least assistance wins and 0 can win.
  * @param {number} minReps
  * @param {boolean} strictlyGreater - true: only rep counts > minReps qualify; false: >= minReps
- * @param {...Object<string, number>} maps - bestPerReps objects (rep count → best weight)
+ * @param {Array<Object<string, number>|null>} maps - bestPerReps objects (rep count → best load)
+ * @param {{lowerIsBetter?: boolean}} [options]
  * @returns {{ weight: number, reps: number } | null}  null when no entry qualifies
  */
-export function bestAtRepsOrAbove(minReps, strictlyGreater, ...maps) {
+export function bestAtRepsOrAbove(minReps, strictlyGreater, maps, { lowerIsBetter = false } = {}) {
   let best = null
   for (const map of maps) {
     if (!map) continue
-    for (const [repsKey, weight] of Object.entries(map)) {
+    for (const [repsKey, load] of Object.entries(map)) {
       const reps = parseInt(repsKey, 10)
       const qualifies = strictlyGreater ? reps > minReps : reps >= minReps
-      if (!qualifies || !(weight > 0)) continue
-      const candidate = { weight, reps }
-      if (isBetterRepEntry(candidate, best)) best = candidate
+      if (!qualifies || !isRankableLoad(load, lowerIsBetter)) continue
+      const candidate = { weight: Number(load), reps }
+      if (isBetterRepEntry(candidate, best, lowerIsBetter)) best = candidate
     }
   }
   return best
@@ -210,17 +262,18 @@ export function bestAtRepsOrAbove(minReps, strictlyGreater, ...maps) {
 /**
  * The record a rep PR at repCount beats: the best of historicalMap at >= repCount reps and
  * sessionMap at > repCount reps (the session's own entry at repCount is the new record).
- * Higher weight wins; on a weight tie, higher reps.
+ * The better load wins; on a load tie, higher reps.
  * @param {number} repCount
  * @param {Object<string, number>|null} historicalMap - bestPerReps before the session
  * @param {Object<string, number>|null} sessionMap - bestPerReps of the session
+ * @param {{lowerIsBetter?: boolean}} [options]
  * @returns {{ weight: number, reps: number } | null}
  */
-export function findBeatenRepRecord(repCount, historicalMap, sessionMap) {
-  const historical = bestAtRepsOrAbove(repCount, false, historicalMap)
-  const sameSession = bestAtRepsOrAbove(repCount, true, sessionMap)
+export function findBeatenRepRecord(repCount, historicalMap, sessionMap, { lowerIsBetter = false } = {}) {
+  const historical = bestAtRepsOrAbove(repCount, false, [historicalMap], { lowerIsBetter })
+  const sameSession = bestAtRepsOrAbove(repCount, true, [sessionMap], { lowerIsBetter })
   if (!sameSession) return historical
-  return isBetterRepEntry(sameSession, historical) ? sameSession : historical
+  return isBetterRepEntry(sameSession, historical, lowerIsBetter) ? sameSession : historical
 }
 
 /**
@@ -230,10 +283,24 @@ export function findBeatenRepRecord(repCount, historicalMap, sessionMap) {
  * PR, and every other record type also shows its pre-session best.
  * @param {number} repCount
  * @param {Object<string, number>|null} historicalMap - bestPerReps before the session
+ * @param {{lowerIsBetter?: boolean}} [options]
  * @returns {{ weight: number, reps: number } | null}
  */
-export function findPreviousRepRecord(repCount, historicalMap) {
-  return bestAtRepsOrAbove(repCount, false, historicalMap)
+export function findPreviousRepRecord(repCount, historicalMap, { lowerIsBetter = false } = {}) {
+  return bestAtRepsOrAbove(repCount, false, [historicalMap], { lowerIsBetter })
+}
+
+/**
+ * Does `load` at its rep count beat `record` (the entry it has to clear, or null)? Without a record
+ * every load wins (the first time at that rep count); with assistance, only a strictly lower one.
+ * @param {number} load
+ * @param {{ weight: number } | null} record
+ * @param {boolean} lowerIsBetter
+ * @returns {boolean}
+ */
+function beatsRepRecord(load, record, lowerIsBetter) {
+  if (lowerIsBetter) return record == null || load < record.weight
+  return load > (record?.weight ?? 0)
 }
 
 // ============================================
@@ -256,14 +323,18 @@ function hasWeightHistory(bests) {
  * The bestPerReps map a rep PR is measured against, or null when rep PRs are not judged. A
  * history without any weight (only 0 kg sets) is measured against an empty map, so every
  * weighted rep count is new. A history WITH a weight but no map is inconsistent data (rows from
- * before best_per_reps, see migration 043): no rep PR rather than a false one.
+ * before best_per_reps, see migration 043): no rep PR rather than a false one. With assistance the
+ * same rule reads `bestAssistance`: every assisted set lands in the map (0 included), so an
+ * assistance without a map is the inconsistent case.
  * @param {Object} bests - bests before the session (fetchExerciseBests), never null
+ * @param {boolean} lowerIsBetter - the exercise ranks rep PRs by assistance
  * @returns {Object<string, number>|null}
  */
-function getRepPRHistory(bests) {
+function getRepPRHistory(bests, lowerIsBetter) {
   const map = bests.bestPerReps
   if (map && Object.keys(map).length > 0) return map
-  return hasWeightHistory(bests) ? null : {}
+  const hasLoadHistory = lowerIsBetter ? bests.bestAssistance != null : hasWeightHistory(bests)
+  return hasLoadHistory ? null : {}
 }
 
 // ============================================
@@ -275,6 +346,7 @@ function getRepPRHistory(bests) {
 // idioma activo (no se puede hacer a nivel de módulo).
 const PR_LABEL_KEY = {
   bestWeight: 'workout:pr.weight',
+  bestAssistance: 'workout:pr.assistance',
   bestReps: 'workout:pr.reps',
   best1rm: 'workout:pr.oneRM',
   totalVolume: 'workout:pr.volume',
@@ -290,7 +362,7 @@ export function getPRLabel(stat) {
 
 // This module does not know the exercise's weight unit in the session's gym, so weight PRs
 // carry this placeholder. buildWorkoutSummaryFromEndSession relabels every WEIGHT_PR_TYPES
-// detail with the real unit (labelPRDetailUnit).
+// detail with the real unit (labelPRDetailUnit). Assistance is in the weight unit too.
 const PLACEHOLDER_WEIGHT_UNIT = 'kg'
 
 const PR_FIELDS = [
@@ -302,9 +374,13 @@ const PR_FIELDS = [
   { stat: 'bestDistanceMeters', flag: 'isPrDistance', unit: 'm', metric: 'distance' },
 ]
 
+// Lower is better, like pace, but 0 is a value (a set without help): compared with `!= null`.
+const ASSISTANCE_FIELD = { stat: 'bestAssistance', flag: 'isPrAssistance', unit: PLACEHOLDER_WEIGHT_UNIT, metric: 'assistance' }
+
 // Derived, so a new weight metric in PR_FIELDS is relabelled without touching another list.
 export const WEIGHT_PR_TYPES = new Set([
   ...PR_FIELDS.filter(field => field.unit === PLACEHOLDER_WEIGHT_UNIT).map(field => field.stat),
+  ASSISTANCE_FIELD.stat,
   'repPR',
 ])
 
@@ -318,6 +394,7 @@ const DEFAULT_FLAGS = {
   isPrTime: false,
   isPrDistance: false,
   isPrPace: false,
+  isPrAssistance: false,
   prRepCounts: null,
 }
 
@@ -359,30 +436,48 @@ export function detectNewPersonalRecords(currentStats, previousBests, trackedFie
     }
   }
 
+  // Assistance: lower is better, 0 included. Needs an earlier assistance to compare with.
+  if (prMetrics?.includes('assistance')) {
+    const current = currentStats[ASSISTANCE_FIELD.stat]
+    const previous = previousBests[ASSISTANCE_FIELD.stat]
+    if (current != null && previous != null && current < previous) {
+      flags[ASSISTANCE_FIELD.flag] = true
+      details.push({
+        type: ASSISTANCE_FIELD.stat,
+        label: getPRLabel(ASSISTANCE_FIELD.stat),
+        newValue: current,
+        oldValue: previous,
+        unit: ASSISTANCE_FIELD.unit,
+        improvement: Math.round(((previous - current) / previous) * 100),
+      })
+    }
+  }
+
   // Rep PR per rep count (Strong/Hevy model), against the history getRepPRHistory picks.
   if (!prMetrics || prMetrics.includes('repPR')) {
+    const lowerIsBetter = trackedFields ? isRepPRLowerBetter(trackedFields) : false
     const currentBPR = currentStats.bestPerReps
-    const previousBPR = getRepPRHistory(previousBests)
+    const previousBPR = getRepPRHistory(previousBests, lowerIsBetter)
     if (currentBPR && previousBPR) {
       const prCounts = []
-      for (const [repsKey, weight] of Object.entries(currentBPR)) {
+      for (const [repsKey, load] of Object.entries(currentBPR)) {
         const repCount = parseInt(repsKey, 10)
-        // Dominancia: el récord a N reps se compara contra el mejor peso a N reps
+        // Dominancia: el récord a N reps se compara contra la mejor carga a N reps
         // o más — tanto del histórico (M >= N) como de la propia sesión (M > N,
-        // porque más reps al mismo peso domina). El mismo rep count ya está
-        // agregado como máximo en currentBPR[N].
-        if (weight > (findBeatenRepRecord(repCount, previousBPR, currentBPR)?.weight ?? 0)) {
+        // porque más reps con la misma carga domina). El mismo rep count ya está
+        // agregado como el mejor en currentBPR[N].
+        if (beatsRepRecord(load, findBeatenRepRecord(repCount, previousBPR, currentBPR, { lowerIsBetter }), lowerIsBetter)) {
           prCounts.push(repCount)
-          const previous = findPreviousRepRecord(repCount, previousBPR)
+          const previous = findPreviousRepRecord(repCount, previousBPR, { lowerIsBetter })
           const oldValue = previous?.weight ?? null
           const improvement = oldValue
-            ? Math.round(((weight - oldValue) / oldValue) * 100)
+            ? Math.round((Math.abs(load - oldValue) / oldValue) * 100)
             : null
           details.push({
             type: 'repPR',
             repCount,
             label: t('workout:pr.repPR', { repCount }),
-            newValue: weight,
+            newValue: load,
             oldValue,
             // The previous set can have more reps than repCount (dominance), so its own count.
             oldRepCount: previous?.reps ?? null,
@@ -465,38 +560,55 @@ export function evaluateSetForPR(setData, runningBests, preSessionBests, tracked
     }
   }
 
-  // Rep PR per rep count (Strong/Hevy model): a W × N set is a PR when W beats the best weight
-  // at N reps or more, including the first time at N reps. Against the history getRepPRHistory picks.
-  if (metrics.includes('repPR') && setData.weight && setData.reps_completed) {
-    const preSessionPerRep = getRepPRHistory(preSessionBests)
+  // Assistance: lower is better and 0 is a value, so `!= null` and never `|| Infinity` (pace's
+  // pattern above would read a 0 record as "no record"). A PR needs an assistance before the
+  // session: the first assisted session has nothing to beat.
+  const reps = setData.reps_completed
+  if (metrics.includes('assistance') && setData.weight != null && reps > 0) {
+    const value = Number(setData.weight)
+    const previous = preSessionBests[ASSISTANCE_FIELD.stat] ?? null
+    const running = runningBests[ASSISTANCE_FIELD.stat] ?? null
+    if (previous != null && value < Math.min(previous, running ?? previous)) {
+      newRecords.push({ type: ASSISTANCE_FIELD.stat, value, previousValue: previous, label: getPRLabel(ASSISTANCE_FIELD.stat), unit: weightUnit })
+    }
+    if (running == null || value < running) updatedRunningBests[ASSISTANCE_FIELD.stat] = value
+  }
+
+  // Rep PR per rep count (Strong/Hevy model): a W × N set is a PR when W beats the best load
+  // at N reps or more, including the first time at N reps (heavier W, or less assistance A).
+  // Against the history getRepPRHistory picks.
+  const lowerIsBetter = isRepPRLowerBetter(trackedFields)
+  const load = setData.weight == null ? null : Number(setData.weight)
+  if (metrics.includes('repPR') && isRankableLoad(load, lowerIsBetter) && reps > 0) {
+    const preSessionPerRep = getRepPRHistory(preSessionBests, lowerIsBetter)
 
     if (preSessionPerRep) {
-      const N = setData.reps_completed
+      const N = reps
       const runningPerRep = runningBests.bestPerReps || {}
-      // Dominancia: comparar contra el mejor peso a N reps o más (M >= N), tanto de
+      // Dominancia: comparar contra la mejor carga a N reps o más (M >= N), tanto de
       // los sets ya hechos en la sesión como del histórico. Así un 100×8 posterior a
       // un 100×9 no dispara PR (running[9]=100 ya cubre 8 reps).
       // Not findBeatenRepRecord: the running map holds this session's sets AT N (earlier PRs), so
       // the session side must be >= N here, not > N as on the end-of-session card.
-      const threshold = bestAtRepsOrAbove(N, false, runningPerRep, preSessionPerRep)?.weight ?? 0
+      const record = bestAtRepsOrAbove(N, false, [runningPerRep, preSessionPerRep], { lowerIsBetter })
 
-      if (setData.weight > threshold) {
-        const previous = findPreviousRepRecord(N, preSessionPerRep)
+      if (beatsRepRecord(load, record, lowerIsBetter)) {
+        const previous = findPreviousRepRecord(N, preSessionPerRep, { lowerIsBetter })
         newRecords.push({
           type: 'repPR',
           repCount: N,
-          value: setData.weight,
+          value: load,
           previousValue: previous?.weight ?? null,
           previousRepCount: previous?.reps ?? null,
           label: t('workout:pr.repPR', { repCount: N }),
           unit: weightUnit,
         })
+      }
+      // PR or not, the running map keeps the session's best load at N (internal running bests).
+      const current = runningPerRep[N]
+      if (current == null || (lowerIsBetter ? load < current : load > current)) {
         if (!updatedRunningBests.bestPerReps) updatedRunningBests.bestPerReps = { ...runningPerRep }
-        updatedRunningBests.bestPerReps[N] = setData.weight
-      } else if ((runningPerRep[N] || 0) < setData.weight) {
-        // No es PR pero mejora el running bests interno
-        if (!updatedRunningBests.bestPerReps) updatedRunningBests.bestPerReps = { ...runningPerRep }
-        updatedRunningBests.bestPerReps[N] = setData.weight
+        updatedRunningBests.bestPerReps[N] = load
       }
     }
   }
@@ -560,7 +672,7 @@ export function computeExercisePRSetNumbers(completedSets, preSessionBests, trac
 // FIND PR SET IN HISTORY (for session detail view)
 // ============================================
 
-export function findPRSetNumbers(sets, prData) {
+export function findPRSetNumbers(sets, prData, trackedFields) {
   if (!sets || sets.length === 0 || !prData) return new Set()
 
   const prSetNumbers = new Set()
@@ -614,6 +726,12 @@ export function findPRSetNumbers(sets, prData) {
     if (bestSetNumber) prSetNumbers.add(bestSetNumber)
   }
 
+  // The set with the least assistance (0 included), the one the record came from.
+  if (prData.is_pr_assistance) {
+    const best = findLeastAssistanceSet(sets, trackedFields)
+    if (best) prSetNumbers.add(best.set_number)
+  }
+
   return prSetNumbers
 }
 
@@ -623,8 +741,8 @@ export function findPRSetNumbers(sets, prData) {
 
 // Prioridad de records cuando una serie dispara varios PRs simultáneos.
 // repPR (más específico) > best1rm (señal de fuerza global) > bestWeight (heaviest).
-// Resto en orden de aparición.
-const RECORD_PRIORITY = { repPR: 0, best1rm: 1, bestWeight: 2 }
+// Resto en orden de aparición. bestAssistance ranks like bestWeight: it is its assisted twin.
+const RECORD_PRIORITY = { repPR: 0, best1rm: 1, bestWeight: 2, bestAssistance: 2 }
 
 export function formatPRNotificationText(notification) {
   const records = notification.records
