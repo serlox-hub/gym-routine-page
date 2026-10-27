@@ -415,18 +415,6 @@ export async function fetchLastCompletedSessionForRoutine(routineId) {
   return dayData ? data[0] : null
 }
 
-export async function fetchWeeklySessionStats(from, to) {
-  const { data, error } = await getClient()
-    .from('workout_sessions')
-    .select('duration_minutes')
-    .eq('status', 'completed')
-    .gte('completed_at', from)
-    .lte('completed_at', to)
-
-  if (error) throw error
-  return data || []
-}
-
 // ============================================
 // EXERCISE HISTORY
 // ============================================

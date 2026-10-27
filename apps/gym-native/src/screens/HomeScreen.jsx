@@ -3,11 +3,13 @@ import { ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useOnboardingGate } from '@gym/shared'
 import { GreetingHeader, StreakCard, StatsRow, TodaysWorkout, RemindersBanner, OnboardingWizard } from '../components/Home'
+import { useHomeWeekLifecycle } from '../hooks/useHomeWeekLifecycle'
 import { design } from '../lib/styles'
 
 export default function HomeScreen({ navigation }) {
   const [scrollEnabled, setScrollEnabled] = useState(true)
   const onboarding = useOnboardingGate()
+  useHomeWeekLifecycle()
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScrollView

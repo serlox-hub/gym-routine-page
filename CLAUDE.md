@@ -42,8 +42,9 @@ gym-routine-page/
         ├── hooks/              # Shared React hooks
         │   ├── _stores.js      # initStores() + store accessors
         │   └── useRoutines.js  # etc.
-        ├── stores/             # Zustand store factories
+        ├── stores/             # Zustand store factories (+ homeWeekStore, one shared instance)
         │   ├── createAuthStore.js
+        │   ├── homeWeekStore.js
         │   └── createWorkoutStore.js
         ├── i18n/               # Internationalization
         │   ├── index.js        # initI18n(), t(), getCurrentLocale()
@@ -172,6 +173,7 @@ import { useRestoreActiveSession } from '../hooks/useSession'
 - **Server state**: TanStack Query (in hooks, via @gym/shared)
 - **UI state**: React useState
 - **Cross-component state**: Zustand stores (instances in apps, factories in @gym/shared)
+  - Exception: a store with no platform dependency is one module-level instance in `@gym/shared` (`stores/homeWeekStore.js`, the week Home shows, read by the streak card and the stats row). Memory only, no `persist`: a reload starts on the current week. Components read its offset through `useHomeCycleOffset()`, never raw, because that one applies the 15-minute reset on the first render back (issue #200).
 - **Query key IDs must always be `String()`** — web route params are strings, native route params are numbers. To avoid type mismatches between query registration and invalidation, all hooks in `useRoutines.js` normalize IDs with `String()` before using them in query keys. Always follow this pattern.
 - **"No lo sé todavía" no es "no"**: el estado de la sesión activa se resuelve preguntando al servidor, así que hasta que responde hay tres estados, no dos. `activeSessionSynced` (workout store, **no persistido**) lo distingue, y los botones de arranque lo tratan como `BUSY`. Sin esa distinción se puede arrancar un entrenamiento encima de otro. Aplica a cualquier decisión que dependa de estado de servidor todavía sin confirmar. Ver `docs/DECISIONS.md` (issue #30).
 
@@ -485,6 +487,7 @@ Extract when logic:
 | Routine share link (URL, way back after login, public preview) | `routineShare.js` | `buildRoutineShareUrl()`, `savePendingSharedRoutine()`, `takePendingSharedRoutine()`, `buildSharedRoutinePreview()` |
 | Exercise search (words in any order, typo tolerant) | `textUtils.js` | `tokenizeSearchQuery()`, `matchWordPrefix()`, `createSearchRanker()` (one per search, memoizes the typo matching), `compareSearchRanks()` (run by `filterExercises()`) |
 | Home records card: the week's records by session and exercise, and their count (the card's number) | `weeklyPRs.js` | `buildWeeklyPRs()` |
+| Week Home shows (streak card + stats row): its reference date, query range, total minutes, relative labels, when it goes back to the current week | `homeUtils.js` | `getCycleReferenceDate()`, `getWeekQueryRange()`, `getCycleTotalMinutes()`, `getViewedWeekLabel()`, `shouldResetViewedWeek()`, `selectViewedCycleOffset()` |
 | Exercise picker "Recent" section (latest done exercises) | `recentExercises.js` | `getRecentExercises()`, `getVisibleRecentExercises()` |
 | Exercise picker filters (option lists, "Clear filters" offer) | `exerciseFilters.js` | `getMuscleGroupFilterSections()`, `getEquipmentFilterSections()`, `hasActiveExerciseFilters()`, `shouldOfferClearFilters()` |
 | Exercise history routine filter (each session's mark, the selector's segments) | `routineMembership.js` | `classifyRoutineMembership()`, `filterByRoutineMembership()`, `getHistoryFilterOptions()`, `getRoutineMembershipBadgeKey()` (orchestrated by `useExerciseHistoryFilter`) |

@@ -118,7 +118,6 @@ export const QUERY_KEYS = {
   MUSCLE_GROUPS: 'muscle-groups',
   EQUIPMENT_TYPES: 'equipment-types',
   LAST_SESSION_FOR_ROUTINE: 'last-session-for-routine',
-  WEEKLY_SESSION_STATS: 'weekly-session-stats',
   WEEKLY_PRS: 'weekly-prs',
   GYMS: 'gyms',
 }
