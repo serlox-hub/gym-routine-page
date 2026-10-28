@@ -120,8 +120,8 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ## 2026-07 · Progresión automática (issue #13)
 - **Doble progresión por serie:** cada serie se compara con la misma serie de la última sesión. Solo necesita la última sesión, que ya se trae.
-- **El aviso es direccional ("Sube el peso" / "Sube el nivel"), sin cifra.** El salto depende del equipo (mancuernas de 2 en 2, stacks no lineales) y un número equivocado destruye más confianza que no darlo. Por eso se eliminó el incremento configurable (`weight_increment`, `resolveWeightIncrement`): no volver a añadirlo.
-- **Sin acción "bajar":** una serie corta es ruido o fatiga normal, y bajar por varianza puede entrar en espiral. Necesita su propio diseño intra-sesión.
+- **El aviso es direccional ("Sube el peso" / "Sube el nivel" / "Baja la asistencia", que progresa hacia abajo, #202), sin cifra.** El salto depende del equipo (mancuernas de 2 en 2, stacks no lineales) y un número equivocado destruye más confianza que no darlo. Por eso se eliminó el incremento configurable (`weight_increment`, `resolveWeightIncrement`): no volver a añadirlo.
+- **Sin acción "bajar la carga" por regresión:** una serie corta es ruido o fatiga normal, y bajar por varianza puede entrar en espiral. Necesita su propio diseño intra-sesión.
 - **Solo aviso, nunca rellena inputs**, y se apaga al completar o al teclear un valor mayor. Vive en `SetRow` porque necesita lo tecleado en vivo.
 - **Gate de esfuerzo:** llegar al tope de reps con más esfuerzo del prescrito no gana la subida. `metEffortTarget` usa `== null`, no falsy: un RIR 0 es el caso donde más importa. Invierte el sentido en RPE. Sin RIR real u objetivo, degrada a solo reps. El objetivo es el snapshot de la sesión, así que editar la rutina a mitad no lo cambia.
 

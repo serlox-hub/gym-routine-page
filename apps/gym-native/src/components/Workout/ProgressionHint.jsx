@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { TrendingUp, Info, X } from 'lucide-react-native'
-import { getProgressionLabel, getProgressionReason, getProgressionWhyLabel } from '@gym/shared'
+import { TrendingUp, TrendingDown, Info, X } from 'lucide-react-native'
+import {
+  getProgressableField, getProgressionDirection, getProgressionLabel, getProgressionReason, getProgressionWhyLabel,
+} from '@gym/shared'
 import { IconButton, Modal } from '../ui'
 import { colors, design } from '../../lib/styles'
 
-// Aviso de progresión por serie (issue #13): "↗ Sube el peso" / "↗ Sube el nivel" (direccional,
+// Aviso de progresión por serie (issue #13): "↗ Sube el peso" / "↗ Sube el nivel" / "↘ Baja la asistencia" (direccional,
 // sin cifra — el salto depende del equipo) a la vista + el porqué a un tap (ⓘ → modal). Qué se
 // sube lo decide el campo progresable del ejercicio (issue #28), así que el texto sale de
 // `getProgressionLabel`, no de una cadena fija. Es un item de la subfila compartida (SetRowMeta),
@@ -14,13 +16,15 @@ import { colors, design } from '../../lib/styles'
 export default function ProgressionHint({ previousSet, target, targetField, trackedFields, distanceUnit }) {
   const { t } = useTranslation()
   const [showWhy, setShowWhy] = useState(false)
+  // The arrow follows the text: down for "Baja la asistencia" (issue #202), up otherwise.
+  const ArrowIcon = getProgressionDirection(getProgressableField(trackedFields)) === 'lower' ? TrendingDown : TrendingUp
 
   return (
     <>
       {/* marginVertical -8: the 44pt box takes the subrow's padding (see SetRowMeta), on this
           direct child of the subrow because Android gives no touches outside the parent. */}
       <View className="flex-row items-center" style={{ gap: 6, marginVertical: -8 }}>
-        <TrendingUp size={12} color={colors.orange} />
+        <ArrowIcon size={12} color={colors.orange} />
         <Text className="text-xs" style={{ color: colors.orange, fontWeight: '600' }}>
           {getProgressionLabel(trackedFields)}
         </Text>
