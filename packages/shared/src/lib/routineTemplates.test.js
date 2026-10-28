@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { ROUTINE_TEMPLATES, getTemplateDisplay, getTemplateImportData, getTemplateDayNames } from './routineTemplates.js'
 import { GOAL_VALUES } from './routineWizardOptions.js'
 import { BLOCK_NAMES } from './constants.js'
+import { normalizeExerciseName } from './exerciseMatch.js'
 import esRoutine from '../i18n/locales/es/routine.json'
 import enRoutine from '../i18n/locales/en/routine.json'
 
@@ -49,6 +50,38 @@ describe('ROUTINE_TEMPLATES ⊆ catálogo (acoplamiento)', () => {
       expect([...used].filter(n => !declared.has(n))).toEqual([]) // usados sin declarar
       expect([...declared].filter(n => !used.has(n))).toEqual([]) // declarados sin usar
     }
+  })
+})
+
+// Cada ejercicio nuevo se añade a mano (JSON + migración). Estos tres fallos no rompen nada a la
+// vista: un nombre repetido hace que el emparejamiento (exerciseMatch) se quede con el primero, y
+// un grupo muscular mal escrito se pierde al copiar la entrada a la migración (que lo une por name_es).
+describe('catálogo del sistema (integridad)', () => {
+  it('name_es y name_en son únicos tras normalizar (son las claves de emparejamiento)', () => {
+    for (const field of ['name_es', 'name_en']) {
+      const seen = new Set()
+      const repeated = []
+      for (const exercise of catalogArr) {
+        const key = normalizeExerciseName(exercise[field])
+        if (!key) repeated.push(`${exercise.name_es}: ${field} vacío`)
+        else if (seen.has(key)) repeated.push(`${field}: "${exercise[field]}"`)
+        seen.add(key)
+      }
+      expect(repeated).toEqual([])
+    }
+  })
+
+  it('muscle_group y secondary_muscles son grupos de _meta.muscle_groups', () => {
+    const groups = new Set(catalog._meta.muscle_groups)
+    const offenders = []
+    for (const exercise of catalogArr)
+      for (const group of [exercise.muscle_group, ...(exercise.secondary_muscles ?? [])])
+        if (!groups.has(group)) offenders.push(`${exercise.name_es}: "${group}"`)
+    expect(offenders).toEqual([])
+  })
+
+  it('_meta.total_exercises coincide con el nº de ejercicios', () => {
+    expect(catalog._meta.total_exercises).toBe(catalogArr.length)
   })
 })
 
