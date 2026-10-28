@@ -2,7 +2,7 @@
   "_meta": {
     "description": "Catálogo de ejercicios del sistema para seed en Supabase",
     "version": 6,
-    "total_exercises": 269,
+    "total_exercises": 270,
     "muscle_groups": [
       "Pecho",
       "Espalda",
@@ -10465,6 +10465,46 @@
         }
       },
       "equipment": "bodyweight"
+    },
+    {
+      "name_es": "Fondos asistidos en máquina",
+      "name_en": "Machine Assisted Dips",
+      "muscle_group": "Tríceps",
+      "secondary_muscles": [
+        "Pecho",
+        "Hombros"
+      ],
+      "instructions": {
+        "es": {
+          "setup": "Selecciona el contrapeso de asistencia. Cuanto más peso, más te ayuda. Sube a la máquina, agarra las asas de fondos y apoya las rodillas en la plataforma con los brazos extendidos.",
+          "execution": "Con el tronco recto, baja despacio llevando los codos hacia atrás hasta que el brazo quede paralelo al suelo (codos a unos 90°). Empuja hasta extender los brazos sin bloquearlos de golpe. Al acabar, apoya los pies antes de soltar las asas.",
+          "cues": [
+            "Codos hacia atrás, no hacia fuera",
+            "Baja hasta unos 90° en los codos",
+            "Hombros abajo, lejos de las orejas"
+          ],
+          "mistakes": [
+            "Bajar de más: el hombro se va hacia delante",
+            "Encoger los hombros en la bajada",
+            "Soltar las asas con las rodillas en la plataforma"
+          ]
+        },
+        "en": {
+          "setup": "Select the counterweight assistance. More weight means more help. Step onto the machine, grip the dip handles and kneel on the pad with your arms straight.",
+          "execution": "Keep your torso upright and lower slowly, driving your elbows back until your upper arms are parallel to the floor (about 90° at the elbows). Press up to full extension without snapping into lockout. When done, plant your feet before letting go.",
+          "cues": [
+            "Elbows back, not flared out",
+            "Lower to about 90° at the elbows",
+            "Shoulders down, away from your ears"
+          ],
+          "mistakes": [
+            "Going too deep: the shoulder rolls forward",
+            "Shrugging on the way down",
+            "Letting go with your knees still on the pad"
+          ]
+        }
+      },
+      "equipment": "machine"
     }
   ]
 }
