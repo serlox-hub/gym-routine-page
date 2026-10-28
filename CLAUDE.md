@@ -433,6 +433,7 @@ Cada cambio debe dejar **en el repositorio** (no solo en memorias externas) lo n
 - ✅ Thin wrappers in apps/ inject platform callbacks, shared hooks do the work
 - ✅ All user-facing text via `t()` — in components via `useTranslation()`, in shared code via `import { t } from '../i18n/index.js'`
 - ✅ Translation keys in both es/ and en/ JSON files
+- ✅ Instrucciones de un ejercicio nuevo del sistema (`instructions`: setup, execution, cues, mistakes): escríbelas con el prompt de `docs/exercise-instructions-prompt.md`
 - ✅ When working on web + React Native shared features, always verify changes work on BOTH platforms. Never assume web-only changes are sufficient
 
 ## Component Architecture: Dumb Components + Testable Utils
