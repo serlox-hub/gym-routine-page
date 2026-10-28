@@ -47,12 +47,19 @@
       "weight": "Sube el peso",
       "level": "Sube el nivel"
     },
+    "decrease": {
+      "assistance": "Baja la asistencia"
+    },
     "title": "¡Listo para progresar!",
     "why": {
       "weight": "Llegaste al tope del objetivo ({{target}}) con {{value}}. Si quieres seguir progresando, sube el peso.",
-      "level": "Llegaste al tope del objetivo ({{target}}) con {{value}}. Si quieres seguir progresando, sube el nivel."
+      "level": "Llegaste al tope del objetivo ({{target}}) con {{value}}. Si quieres seguir progresando, sube el nivel.",
+      "assistance": "Llegaste al tope del objetivo ({{target}}) con {{value}}. Si quieres seguir progresando, baja la asistencia."
     },
-    "whyLabel": "Por qué subir"
+    "whyLabel": {
+      "increase": "Por qué subir",
+      "decrease": "Por qué bajar"
+    }
   },
   "set": {
     "logSet": "REGISTRAR SERIE {{number}}",
@@ -82,6 +89,7 @@
     "distance": "Distancia",
     "distanceM": "Distancia (m)",
     "level": "Nivel",
+    "assistanceShort": "Asist.",
     "pace": "Ritmo",
     "calories": "Calorías",
     "rir": "RIR",
@@ -180,6 +188,7 @@
     "download": "Descargar",
     "bestSet": "Mejor serie",
     "maxWeight": "Máx Peso",
+    "leastAssistance": "Menor asistencia",
     "maxReps": "Máx Reps",
     "avgReps": "Media Reps",
     "maxTime": "Máx Tiempo",
@@ -258,6 +267,7 @@
   },
   "pr": {
     "weight": "Peso",
+    "assistance": "Menor asistencia",
     "reps": "Reps",
     "oneRM": "1RM",
     "volume": "Volumen",

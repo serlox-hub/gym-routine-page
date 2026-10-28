@@ -47,12 +47,19 @@
       "weight": "Add weight",
       "level": "Raise the level"
     },
+    "decrease": {
+      "assistance": "Lower the assistance"
+    },
     "title": "Ready to progress!",
     "why": {
       "weight": "You hit the top of your target ({{target}}) with {{value}}. If you want to keep progressing, add weight.",
-      "level": "You hit the top of your target ({{target}}) with {{value}}. If you want to keep progressing, raise the level."
+      "level": "You hit the top of your target ({{target}}) with {{value}}. If you want to keep progressing, raise the level.",
+      "assistance": "You hit the top of your target ({{target}}) with {{value}}. If you want to keep progressing, lower the assistance."
     },
-    "whyLabel": "Why increase"
+    "whyLabel": {
+      "increase": "Why increase",
+      "decrease": "Why lower"
+    }
   },
   "set": {
     "complete": "Complete set",
@@ -82,6 +89,7 @@
     "distance": "Distance",
     "distanceM": "Distance (m)",
     "level": "Level",
+    "assistanceShort": "Assist.",
     "pace": "Pace",
     "calories": "Calories",
     "rir": "RIR",
@@ -180,6 +188,7 @@
     "download": "Download",
     "bestSet": "Best set",
     "maxWeight": "Max Weight",
+    "leastAssistance": "Least assistance",
     "maxReps": "Max Reps",
     "avgReps": "Avg Reps",
     "maxTime": "Max Time",
@@ -258,6 +267,7 @@
   },
   "pr": {
     "weight": "Weight",
+    "assistance": "Least assistance",
     "reps": "Reps",
     "oneRM": "1RM",
     "volume": "Volume",

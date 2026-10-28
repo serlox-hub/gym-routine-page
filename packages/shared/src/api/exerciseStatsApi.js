@@ -1,6 +1,6 @@
 import { getClient } from './_client.js'
 import { fetchAllRows } from './fetchAllRows.js'
-import { calculateSessionExerciseStats, mergeExerciseStats } from '../lib/sessionStatsCalculation.js'
+import { calculateSessionExerciseStats, isRepPRLowerBetter, mergeExerciseStats } from '../lib/sessionStatsCalculation.js'
 import { resolveTrackedFields } from '../lib/measurementFields.js'
 import { RECENT_STATS_LOOKBACK } from '../lib/recentExercises.js'
 
@@ -24,6 +24,7 @@ export async function upsertExerciseSessionStats(statsArray) {
     best_time_seconds: s.bestTimeSeconds ?? null,
     best_distance_meters: s.bestDistanceMeters ?? null,
     best_pace_seconds: s.bestPaceSeconds ?? null,
+    best_assistance: s.bestAssistance ?? null,
     best_per_reps: s.bestPerReps ?? null,
     gym_id: s.gymId ?? null,
     is_pr_weight: s.isPrWeight ?? false,
@@ -33,6 +34,7 @@ export async function upsertExerciseSessionStats(statsArray) {
     is_pr_time: s.isPrTime ?? false,
     is_pr_distance: s.isPrDistance ?? false,
     is_pr_pace: s.isPrPace ?? false,
+    is_pr_assistance: s.isPrAssistance ?? false,
     pr_rep_counts: s.prRepCounts ?? null,
   }))
 
@@ -52,9 +54,11 @@ export async function upsertExerciseSessionStats(statsArray) {
 export async function fetchExerciseBests(exerciseIds, { beforeDate, gymId } = {}) {
   if (!exerciseIds || exerciseIds.length === 0) return {}
 
+  // tracked_fields says which way the exercise's bests go: an assisted one keeps its LEAST
+  // assistance, per rep count too, and 0 is a value there (a set without help).
   let query = getClient()
     .from('exercise_session_stats')
-    .select('exercise_id, best_weight, best_reps, best_1rm, total_volume, best_time_seconds, best_distance_meters, best_pace_seconds, best_per_reps')
+    .select('exercise_id, best_weight, best_reps, best_1rm, total_volume, best_time_seconds, best_distance_meters, best_pace_seconds, best_assistance, best_per_reps, exercise:exercises ( tracked_fields )')
     .in('exercise_id', exerciseIds)
 
   if (beforeDate) {
@@ -82,6 +86,7 @@ export async function fetchExerciseBests(exerciseIds, { beforeDate, gymId } = {}
         bestTimeSeconds: null,
         bestDistanceMeters: null,
         bestPaceSeconds: null,
+        bestAssistance: null,
         bestPerReps: null,
         sessionCount: 0,
       }
@@ -95,6 +100,7 @@ export async function fetchExerciseBests(exerciseIds, { beforeDate, gymId } = {}
     const t = Number(row.best_time_seconds) || null
     const d = Number(row.best_distance_meters) || null
     const p = Number(row.best_pace_seconds) || null
+    const a = toNullableNumber(row.best_assistance)
     if (w && (!b.bestWeight || w > b.bestWeight)) b.bestWeight = w
     if (r && (!b.bestReps || r > b.bestReps)) b.bestReps = r
     if (e && (!b.best1rm || e > b.best1rm)) b.best1rm = e
@@ -102,18 +108,30 @@ export async function fetchExerciseBests(exerciseIds, { beforeDate, gymId } = {}
     if (t && (!b.bestTimeSeconds || t > b.bestTimeSeconds)) b.bestTimeSeconds = t
     if (d && (!b.bestDistanceMeters || d > b.bestDistanceMeters)) b.bestDistanceMeters = d
     if (p && (!b.bestPaceSeconds || p < b.bestPaceSeconds)) b.bestPaceSeconds = p
+    if (a != null && (b.bestAssistance == null || a < b.bestAssistance)) b.bestAssistance = a
     if (row.best_per_reps && typeof row.best_per_reps === 'object') {
+      const lowerIsBetter = isRepPRLowerBetter(resolveTrackedFields(row.exercise))
       if (!b.bestPerReps) b.bestPerReps = {}
-      for (const [reps, weight] of Object.entries(row.best_per_reps)) {
-        const numWeight = Number(weight) || 0
-        if (numWeight > 0 && (!b.bestPerReps[reps] || numWeight > b.bestPerReps[reps])) {
-          b.bestPerReps[reps] = numWeight
+      for (const [reps, value] of Object.entries(row.best_per_reps)) {
+        const load = toNullableNumber(value)
+        const current = b.bestPerReps[reps]
+        if (lowerIsBetter) {
+          if (load != null && (current == null || load < current)) b.bestPerReps[reps] = load
+        } else if (load > 0 && (!current || load > current)) {
+          b.bestPerReps[reps] = load
         }
       }
     }
   }
 
   return bests
+}
+
+// A stored number, or null when there is none. Unlike `Number(x) || null`, a 0 stays a 0.
+function toNullableNumber(value) {
+  if (value == null) return null
+  const number = Number(value)
+  return Number.isNaN(number) ? null : number
 }
 
 // ============================================
@@ -136,10 +154,12 @@ export async function fetchExerciseChartData({ exerciseId, routineDayId, gymId }
         best_time_seconds,
         best_distance_meters,
         best_pace_seconds,
+        best_assistance,
         is_pr_weight,
         is_pr_reps,
         is_pr_1rm,
         is_pr_volume,
+        is_pr_assistance,
         session:workout_sessions!inner (
           routine_day_id
         )
@@ -191,7 +211,7 @@ export async function fetchRecentExerciseStats(limit = RECENT_STATS_LOOKBACK) {
 export async function fetchExerciseAllTimeStats({ exerciseId, gymId } = {}) {
   let query = getClient()
     .from('exercise_session_stats')
-    .select('best_weight, best_reps, best_1rm, total_volume, best_time_seconds, best_distance_meters, best_pace_seconds')
+    .select('best_weight, best_reps, best_1rm, total_volume, best_time_seconds, best_distance_meters, best_pace_seconds, best_assistance')
     .eq('exercise_id', exerciseId)
 
   if (gymId != null) {
@@ -204,6 +224,8 @@ export async function fetchExerciseAllTimeStats({ exerciseId, gymId } = {}) {
   if (!data || data.length === 0) return null
 
   const num = (v) => Number(v) || 0
+  // Lower is better and 0 is a value: the minimum of the rows that have one, null without any.
+  const assistances = data.map(r => toNullableNumber(r.best_assistance)).filter(a => a != null)
 
   return {
     best1rm: Math.max(...data.map(r => num(r.best_1rm))) || null,
@@ -213,6 +235,7 @@ export async function fetchExerciseAllTimeStats({ exerciseId, gymId } = {}) {
     maxTimeSeconds: Math.max(...data.map(r => num(r.best_time_seconds))) || null,
     maxDistanceMeters: Math.max(...data.map(r => num(r.best_distance_meters))) || null,
     bestPaceSeconds: Math.min(...data.filter(r => r.best_pace_seconds).map(r => Number(r.best_pace_seconds))) || null,
+    leastAssistance: assistances.length > 0 ? Math.min(...assistances) : null,
     sessionCount: data.length,
   }
 }
@@ -273,7 +296,7 @@ export async function recalculateSessionStats(sessionId) {
     if (!statsPerExercise[info.exerciseId]) {
       statsPerExercise[info.exerciseId] = stats
     } else {
-      mergeExerciseStats(statsPerExercise[info.exerciseId], stats)
+      mergeExerciseStats(statsPerExercise[info.exerciseId], stats, info.trackedFields)
     }
   }
 
@@ -338,10 +361,10 @@ export async function fetchSessionPRs(sessionId) {
     .select(`
       exercise_id,
       best_weight, best_reps, best_1rm, total_volume,
-      best_time_seconds, best_distance_meters, best_pace_seconds,
+      best_time_seconds, best_distance_meters, best_pace_seconds, best_assistance,
       best_per_reps,
       is_pr_weight, is_pr_reps, is_pr_1rm, is_pr_volume,
-      is_pr_time, is_pr_distance, is_pr_pace,
+      is_pr_time, is_pr_distance, is_pr_pace, is_pr_assistance,
       pr_rep_counts
     `)
     .eq('session_id', sessionId)
@@ -358,17 +381,17 @@ export async function fetchWeeklyPRs(from, to) {
     .from('exercise_session_stats')
     .select(`
       session_id, session_date, gym_id, exercise_id,
-      exercise:exercises (name:name_es, name_en, distance_unit),
+      exercise:exercises (name:name_es, name_en, distance_unit, tracked_fields),
       session:workout_sessions (day_name),
       best_weight, best_reps, best_1rm, total_volume,
-      best_time_seconds, best_distance_meters, best_per_reps,
+      best_time_seconds, best_distance_meters, best_assistance, best_per_reps,
       is_pr_weight, is_pr_reps, is_pr_1rm, is_pr_volume,
-      is_pr_time, is_pr_distance,
+      is_pr_time, is_pr_distance, is_pr_assistance,
       pr_rep_counts
     `)
     .gte('session_date', from)
     .lte('session_date', to)
-    .or('is_pr_weight.eq.true,is_pr_reps.eq.true,is_pr_1rm.eq.true,is_pr_volume.eq.true,is_pr_time.eq.true,is_pr_distance.eq.true,pr_rep_counts.not.is.null')
+    .or('is_pr_weight.eq.true,is_pr_reps.eq.true,is_pr_1rm.eq.true,is_pr_volume.eq.true,is_pr_time.eq.true,is_pr_distance.eq.true,is_pr_assistance.eq.true,pr_rep_counts.not.is.null')
 
   if (error) throw error
   return data || []
@@ -381,7 +404,7 @@ export async function fetchSessionsWithPRs(sessionIds) {
     .from('exercise_session_stats')
     .select('session_id')
     .in('session_id', sessionIds)
-    .or('is_pr_weight.eq.true,is_pr_reps.eq.true,is_pr_1rm.eq.true,is_pr_volume.eq.true,is_pr_time.eq.true,is_pr_distance.eq.true,is_pr_pace.eq.true')
+    .or('is_pr_weight.eq.true,is_pr_reps.eq.true,is_pr_1rm.eq.true,is_pr_volume.eq.true,is_pr_time.eq.true,is_pr_distance.eq.true,is_pr_pace.eq.true,is_pr_assistance.eq.true')
 
   if (error) throw error
 

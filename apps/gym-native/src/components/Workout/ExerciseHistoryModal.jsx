@@ -16,6 +16,7 @@ import {
   getRoutineMembershipBadgeKey,
   getExerciseStatCards,
   calculateExerciseStats,
+  calculateExerciseVolume,
   formatSetValue,
   formatShortDate,
   formatEffortBadge,
@@ -103,7 +104,7 @@ function HistoryTab({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUn
       </Text>
 
       {sessions.slice(0, visibleCount).map(session => {
-        const volume = session.sets.reduce((sum, s) => sum + ((s.weight || 0) * (s.reps_completed || 0)), 0)
+        const volume = calculateExerciseVolume(session.sets, trackedFields)
         const membership = membershipOf?.(session) ?? null
         const badgeKey = getRoutineMembershipBadgeKey(membership)
         return (

@@ -462,7 +462,7 @@ describe('setUtils', () => {
   describe('getSetInitialInputValues', () => {
     it('devuelve vacíos cuando no hay datos', () => {
       expect(getSetInitialInputValues({})).toEqual({
-        weight: '', reps: '', time: '', distance: '', calories: '', level: '', pace: '',
+        weight: '', assistance: '', reps: '', time: '', distance: '', calories: '', level: '', pace: '',
       })
     })
 
@@ -531,6 +531,12 @@ describe('setUtils', () => {
   })
 
   describe('formatSetValue', () => {
+    // Assistance shares the weight column: the row is printed once, 0 included (issue #202).
+    it('prints the weight column once, even though assistance shares it', () => {
+      expect(formatSetValue({ weight: 20, weight_unit: 'kg', reps_completed: 8 })).toBe('20kg × 8 reps')
+      expect(formatSetValue({ weight: 0, weight_unit: 'lb', reps_completed: 5 })).toBe('0lb × 5 reps')
+    })
+
     it('formatea peso y reps', () => {
       expect(formatSetValue({ weight: 80, weight_unit: 'kg', reps_completed: 12 }))
         .toBe('80kg × 12 reps')
@@ -808,7 +814,7 @@ describe('formatSetTargetHint', () => {
 describe('getSuggestedSetValues', () => {
   it('traduce las columnas de la serie anterior a los campos de la fila', () => {
     expect(getSuggestedSetValues({ weight: 80, reps: 7, timeSeconds: 90, caloriesBurned: 12, level: 5, paceSeconds: 300 }))
-      .toEqual({ weight: 80, reps: 7, time: 90, calories: 12, level: 5, pace: 300 })
+      .toEqual({ weight: 80, assistance: 80, reps: 7, time: 90, calories: 12, level: 5, pace: 300 })
   })
 
   it('convierte la distancia a la unidad de display', () => {
@@ -817,7 +823,7 @@ describe('getSuggestedSetValues', () => {
   })
 
   it('los campos sin dato no aparecen', () => {
-    expect(getSuggestedSetValues({ weight: 80 })).toEqual({ weight: 80 })
+    expect(getSuggestedSetValues({ weight: 80 })).toEqual({ weight: 80, assistance: 80 })
   })
 
   it('sin serie anterior no sugiere nada', () => {
@@ -832,6 +838,7 @@ describe('getSuggestedSetValues', () => {
 
   it('el 0 de la serie anterior es un valor, no un hueco', () => {
     expect(getSuggestedSetValues({ reps: 0 }).reps).toBe(0)
+    expect(getSuggestedSetValues({ weight: 0 }).assistance).toBe(0)
   })
 
   // Cruce contra FIELD_ORDER (mismo patrón que setColumns.test.js). Esta función es la fuente

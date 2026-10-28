@@ -15,6 +15,12 @@ import {
   calculateExerciseStats,
   getExerciseStatCards,
   countSessionSetsByMuscleGroup,
+  calculateExerciseVolume,
+  findLeastAssistanceSet,
+  getLeastAssistance,
+  buildStatsRowChartPoint,
+  getProgressChartBestLabel,
+  buildPRsByExerciseMap,
 } from './workoutCalculations.js'
 
 describe('workoutCalculations', () => {
@@ -809,5 +815,81 @@ describe('countSessionSetsByMuscleGroup', () => {
       exerciseOf({ ...CHEST }, sets(2)),
     ])
     expect(summary(result)).toEqual([[CHEST.id, 4, 1]])
+  })
+})
+
+describe('assisted exercises (issue #202)', () => {
+  const ASSISTED = ['assistance', 'reps']
+  const set = (weight, reps) => ({ weight, reps_completed: reps })
+
+  it('findLeastAssistanceSet: least assistance, ties to more reps, 0 wins, sets without reps skipped', () => {
+    expect(findLeastAssistanceSet([set(20, 6), set(20, 8), set(30, 12)], ASSISTED)).toEqual(set(20, 8))
+    expect(findLeastAssistanceSet([set(10, 8), set(0, 3)], ASSISTED)).toEqual(set(0, 3))
+    expect(findLeastAssistanceSet([set(0, 0), set(null, 8)], ASSISTED)).toBeNull()
+    expect(findLeastAssistanceSet([], ASSISTED)).toBeNull()
+  })
+
+  it('without reps tracked, any set with an assistance counts', () => {
+    expect(getLeastAssistance([{ weight: 15, time_seconds: 30 }], ['assistance', 'time'])).toBe(15)
+  })
+
+  it('getLeastAssistance is null without data, 0 when it is 0', () => {
+    expect(getLeastAssistance([set(0, 5)], ASSISTED)).toBe(0)
+    expect(getLeastAssistance(null, ASSISTED)).toBeNull()
+  })
+
+  it('calculateExerciseVolume: only weight × reps has volume', () => {
+    expect(calculateExerciseVolume([set(50, 10)], ['weight', 'reps'])).toBe(500)
+    expect(calculateExerciseVolume([set(50, 10)], ASSISTED)).toBe(0)
+  })
+
+  it('getBestValueFromSets: least assistance in the weight unit, null without data', () => {
+    expect(getBestValueFromSets([set(30, 8), set(0, 5)], ASSISTED, { weightUnit: 'lb' })).toEqual({ value: 0, unit: 'lb' })
+    expect(getBestValueFromSets([set(0, 0)], ASSISTED)).toEqual({ value: null, unit: '' })
+  })
+
+  it('transformSessionsToChartData: one point per session at its least assistance, no volume nor e1RM', () => {
+    const data = transformSessionsToChartData([
+      { date: '2026-10-20', sets: [set(20, 8)] },
+      { date: '2026-10-13', sets: [set(30, 8), set(40, 8)] },
+    ], ASSISTED)
+    expect(data.map(point => point.best)).toEqual([30, 20])
+    expect(data.every(point => point.volume === 0 && point.e1rm === 0)).toBe(true)
+  })
+
+  it('calculateExerciseStats and its cards: least assistance and max reps, no 1RM', () => {
+    const stats = calculateExerciseStats([{ sets: [set(20, 8), set(0, 5)] }, { sets: [set(30, 10)] }], ASSISTED)
+    expect(stats.leastAssistance).toBe(0)
+    expect(stats.maxReps).toBe(10)
+    expect(stats.best1RM).toBe(0)
+    expect(stats.totalVolume).toBe(0)
+    expect(getExerciseStatCards(stats, ASSISTED, { weightUnit: 'kg' })).toEqual([
+      { label: 'Menor asistencia', value: '0 kg' },
+      { label: 'Máx Reps', value: 10 },
+    ])
+  })
+
+  it('calculateExerciseStats: assistance alone keeps its least value', () => {
+    const stats = calculateExerciseStats([{ sets: [{ weight: 12 }, { weight: 8 }] }], ['assistance'])
+    expect(stats.leastAssistance).toBe(8)
+    expect(getExerciseStatCards(stats, ['assistance'])).toEqual([{ label: 'Menor asistencia', value: '8 kg' }])
+  })
+
+  it('buildStatsRowChartPoint: best_assistance (converted) for assisted, best_weight otherwise', () => {
+    const row = { session_date: '2026-10-20T10:00:00Z', gym_id: 1, best_weight: 80, best_assistance: 10, total_volume: 800, best_1rm: 100 }
+    expect(buildStatsRowChartPoint(row, ASSISTED, 'kg').best).toBe(10)
+    expect(buildStatsRowChartPoint(row, ['weight', 'reps'], 'kg').best).toBe(80)
+    expect(buildStatsRowChartPoint({ ...row, best_assistance: 0 }, ASSISTED, 'kg').best).toBe(0)
+    expect(buildStatsRowChartPoint({ ...row, best_assistance: null }, ASSISTED, 'kg').best).toBeNull()
+    expect(buildStatsRowChartPoint(row, ASSISTED, 'lb', { 1: 'kg' }).best).toBeCloseTo(22.05, 1)
+  })
+
+  it('getProgressChartBestLabel names the line', () => {
+    expect(getProgressChartBestLabel(ASSISTED)).toBe('Menor asistencia')
+    expect(getProgressChartBestLabel(['weight', 'reps'])).toBe('Máx Peso')
+  })
+
+  it('buildPRsByExerciseMap keeps a row with only an assistance PR', () => {
+    expect(buildPRsByExerciseMap([{ exercise_id: 7, is_pr_assistance: true }])).toHaveProperty('7')
   })
 })

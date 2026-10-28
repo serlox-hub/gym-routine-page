@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useWorkoutStore, getWorkoutStore } from './_stores.js'
 import { useUpdateCompletedSet, useUpdateSetDetails } from './useCompletedSets.js'
 import {
@@ -196,8 +196,10 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     // abajo), o pisa el nivel al que progresaste. Si se unifican las dos llamadas "por DRY", ese
     // efecto deja de mandar y el 8 de la rutina sustituye en silencio a tu 9.
     const seed = getSuggestedSetValues(previousSet, { distanceUnit })
+    // Assistance shares the weight's column, and so its state too (see formData).
     const setters = {
-      [SetField.WEIGHT]: setWeightState, [SetField.REPS]: setRepsState, [SetField.TIME]: setTimeState,
+      [SetField.WEIGHT]: setWeightState, [SetField.ASSISTANCE]: setWeightState,
+      [SetField.REPS]: setRepsState, [SetField.TIME]: setTimeState,
       [SetField.DISTANCE]: setDistanceState, [SetField.CALORIES]: setCaloriesState,
       [SetField.LEVEL]: setLevelState, [SetField.PACE]: setPaceState,
     }
@@ -261,7 +263,15 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     setLevelState(current => (current === '' ? levelTarget : current))
   }, [levelTarget, previousLoaded, previousSet, setData, cachedData])
 
-  const getMissingFields = () => getMissingSetFields(trackedFields, { weight, reps, time, distance, calories, level, pace })
+  // The row's values per field (the shape getMissingSetFields/buildCompletedSetData read).
+  // Assistance lives in the weight's column and never goes with it (measurementFields.js), so it
+  // is the SAME state: seeding, the unit conversion of a gym change and the commit need no path of
+  // their own. Memoized so `commit` does not change identity on every render.
+  const formData = useMemo(
+    () => ({ weight, assistance: weight, reps, time, distance, calories, level, pace }),
+    [weight, reps, time, distance, calories, level, pace]
+  )
+  const getMissingFields = () => getMissingSetFields(trackedFields, formData)
   const isValid = () => getMissingFields().length === 0
   // El objetivo de la rutina se pinta como placeholder de SU columna (la del campo objetivo), no
   // solo en la de reps: en un cardio "20min" es la pista de la columna de tiempo.
@@ -272,18 +282,26 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
   // estados de los siete campos, y duplicar el mapeo en web y native garantiza que un día uno
   // de los dos lo corrija y el otro no.
   const progressableField = getProgressableField(trackedFields)
-  const progressableValue = progressableField === SetField.LEVEL ? level : weight
+  const progressableValue = progressableField ? formData[progressableField] : null
+
+  // Value and setter of each column of the row (SetRow paints `fieldState[column.field]`).
+  const fieldState = {
+    [SetField.WEIGHT]: [weight, setWeight],
+    [SetField.ASSISTANCE]: [weight, setWeight],
+    [SetField.REPS]: [reps, setReps],
+    [SetField.TIME]: [time, setTime],
+    [SetField.DISTANCE]: [distance, setDistance],
+    [SetField.CALORIES]: [calories, setCalories],
+    [SetField.LEVEL]: [level, setLevel],
+    [SetField.PACE]: [pace, setPace],
+  }
 
   // Qué campos siguen mostrando LA SUGERENCIA y no un dato del usuario; el consumidor los atenúa
   // para que no se confundan con lo ya registrado. Comparación contra lo que se sembraría ahora
   // mismo, sin rastrear ediciones: ver el porqué en isSuggestedValue.
   const suggestions = getSuggestedSetValues(previousSet, { levelTarget, distanceUnit })
   const suggestedFields = {}
-  for (const [field, value] of Object.entries({
-    [SetField.WEIGHT]: weight, [SetField.REPS]: reps, [SetField.TIME]: time,
-    [SetField.DISTANCE]: distance, [SetField.CALORIES]: calories,
-    [SetField.LEVEL]: level, [SetField.PACE]: pace,
-  })) {
+  for (const [field, value] of Object.entries(formData)) {
     suggestedFields[field] = isSuggestedValue({ value, suggestion: suggestions[field], isCompleted })
   }
 
@@ -300,7 +318,6 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     if (pristineRef.current) return
     const liveNonce = getWorkoutStore().getState().exerciseResetNonces[sessionExerciseId] ?? 0
     if (liveNonce !== lastExerciseResetNonceRef.current) return
-    const formData = { weight, reps, time, distance, calories, level, pace }
     if (isCompleted) {
       if (!isSetDataValid(trackedFields, formData)) return
       const values = getSetMeasurementValues(trackedFields, formData, { distanceUnit })
@@ -317,7 +334,7 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
         setCachedSetData(sessionExerciseId, setNumber, cached)
       }
     }
-  }, [weight, reps, time, distance, calories, level, pace, isCompleted, setData, cachedData, trackedFields, distanceUnit, sessionExerciseId, exerciseId, setNumber, weightUnit, updateCompletedSet, setCachedSetData])
+  }, [formData, isCompleted, setData, cachedData, trackedFields, distanceUnit, sessionExerciseId, exerciseId, setNumber, weightUnit, updateCompletedSet, setCachedSetData])
 
   useEffect(() => {
     const handle = setTimeout(commit, SET_EDIT_DEBOUNCE_MS)
@@ -337,6 +354,8 @@ export function useSetInputs({ sessionExerciseId, setNumber, exerciseId, tracked
     calories, setCalories,
     level, setLevel,
     pace, setPace,
+    formData,
+    fieldState,
     rir, setRir,
     notes, setType, saveDetails, setSetType,
     isCompleted,

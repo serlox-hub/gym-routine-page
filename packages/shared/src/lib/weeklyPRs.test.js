@@ -186,3 +186,24 @@ describe('buildWeeklyPRs', () => {
     expect(buildWeeklyPRs([weightPR()]).sessions[0].exercises[0].exercise).toEqual({ name: 'Sentadilla', name_en: 'Squat', distance_unit: null })
   })
 })
+
+describe('buildWeeklyPRs with assistance (issue #202)', () => {
+  const assisted = (overrides = {}) => row({
+    exercise: { name: 'Dominadas asistidas', name_en: 'Machine Assisted Pull-Ups', distance_unit: null, tracked_fields: ['assistance', 'reps'] },
+    ...overrides,
+  })
+
+  it('a week with only an assistance PR shows it, in the weight unit, 0 included', () => {
+    const { count, sessions } = buildWeeklyPRs([assisted({ best_assistance: 0, is_pr_assistance: true })], { globalWeightUnit: 'lb' })
+    expect(count).toBe(1)
+    expect(sessions[0].exercises[0].details).toEqual([{ type: 'bestAssistance', newValue: 0, oldValue: null, unit: 'lb' }])
+  })
+
+  it('the assistance PR is the same set as the rep PR with the same assistance: one record', () => {
+    const { count, sessions } = buildWeeklyPRs([assisted({
+      best_assistance: 20, is_pr_assistance: true, best_per_reps: { 8: 20 }, pr_rep_counts: [8],
+    })])
+    expect(count).toBe(1)
+    expect(sessions[0].exercises[0].details).toEqual([expect.objectContaining({ type: 'repPR', repCount: 8, newValue: 20 })])
+  })
+})

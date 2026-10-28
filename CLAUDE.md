@@ -313,7 +313,7 @@ A forgotten GRANT means 42501 for every logged-in user. `npm run db:check-grants
 
 **Reads that must see every row** (a whole history, its records): PostgREST cuts each response at `max_rows` (1000 locally; production's value is not in the repo) without any error. They go through `api/fetchAllRows.js`, selecting `id` (pages are deduped by it) and with an order that ends on a unique key, or pages skip and repeat rows. Known reads that still don't: `fetchExerciseBests` (PR detection), `fetchBodyWeightHistory`, `fetchBodyMeasurementHistory`.
 
-**The PR rule lives twice** (issue #196): which records an exercise gets is `getPRMetrics` (`lib/sessionStatsCalculation.js`: end of session, live trophy) and its SQL mirror `pr_metrics` (`recalculate_exercise_prs`, after an edit). Change both together: `npm run db:check-pr-parity -w apps/web` (CI, after `supabase start`) compares them on every field combination.
+**The PR rule lives twice** (issue #196): which records an exercise gets is `getPRMetrics` (`lib/sessionStatsCalculation.js`: end of session, live trophy) and its SQL mirror `pr_metrics` (`recalculate_exercise_prs_for_user`, behind the RPC `recalculate_exercise_prs`, after an edit). Change both together: `npm run db:check-pr-parity -w apps/web` (CI, after `supabase start`) compares them on every field combination.
 
 ```
 muscle_groups ← exercises (muscle_group_id)
@@ -330,6 +330,7 @@ Key relations:
 - `completed_sets` → Series realizadas, cuelgan de `session_exercises`. Tiene columna propia para los 7 campos de medición (`weight`, `reps_completed`, `time_seconds`, `distance_meters`, `calories_burned`, `level`, `pace_seconds`); cuáles se usan lo decide el ejercicio
 - `routine_exercises.target_field` (+ snapshot en `session_exercises`) → **de qué campo habla el objetivo** guardado en `reps` (que es texto libre: "8-12", "20min", "5km"). El valor mantiene el nombre `reps` por historia. `routine_exercises.level` = nivel de máquina prescrito. Papeles de los campos (progresable / objetivo / resultado) en `lib/measurementFields.js`; resolver SIEMPRE con `resolveTargetField(row.target_field, trackedFields)`
 - `exercises.tracked_fields` (`measurement_field[]`, 1 a 3) → **qué mide** el ejercicio. Sustituye al enum `measurement_type` (12 combinaciones cerradas). De ahí se derivan columnas de la fila, validación, formato, métricas de stats y de PR: ver `lib/measurementFields.js` y resolver SIEMPRE con `resolveTrackedFields(exercise)`
+- **Fields have a direction** (`getProgressionDirection`, issue #202): `assistance` (assisted machines; stored in `completed_sets.weight`, in the weight unit, never together with `weight`) is better LOWER, and its 0 (a set without help) is the best value. Code that compares or aggregates set values or `best_*` columns goes through the field's direction and treats 0 as a value (`== null`, never `||`). A new reader of bests is added to `lib/assistanceDirection.test.js` in the same change
 
 Deletion strategy:
 - `exercises` → Soft delete (`deleted_at`). Necesario porque sesiones pasadas referencian ejercicios.
@@ -466,6 +467,7 @@ Extract when logic:
 | Campos de medición del ejercicio | `measurementFields.js` | `resolveTrackedFields()`, `normalizeTrackedFields()`, `tracksReps()` |
 | Papeles de los campos (objetivo / progresable) | `measurementFields.js` | `resolveTargetField()`, `getTargetableFields()`, `getDefaultTargetField()`, `getProgressableField()`, `getDefaultTarget()` |
 | Progresión por serie (doble progresión) | `progressionUtils.js` | `parseTargetRange()`, `shouldSuggestProgression()`, `getProgressionLabel()` |
+| Direction of a field (assistance: lower is better, 0 is a value) and the least assisted set | `progressionUtils.js`, `workoutCalculations.js` | `getProgressionDirection()`, `findLeastAssistanceSet()`, `getLeastAssistance()` |
 | Escala de esfuerzo (RIR/RPE) | `effortScale.js` | `getEffortOptions()`, `isValidEffortValue()`, `formatEffortBadge()`, `metEffortTarget()` |
 | Acción de los botones de arrancar entrenamiento | `workoutStartAction.js` | `getFreeWorkoutAction()`, `getRoutineDayAction()`, `isSessionAlreadyInProgressError()` |
 | Acción del botón de borrar gimnasio (recuento de sesiones sin confirmar ≠ 0) | `gymUtils.js` | `getGymDeleteAction()` |

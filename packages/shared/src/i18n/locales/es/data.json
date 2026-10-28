@@ -36,6 +36,7 @@
   },
   "measurementFields": {
     "weight": "Peso",
+    "assistance": "Asistencia",
     "reps": "Reps",
     "time": "Tiempo",
     "distance": "Distancia",

@@ -12,6 +12,8 @@ import {
   bestAtRepsOrAbove,
   findBeatenRepRecord,
   findPreviousRepRecord,
+  findPRSetNumbers,
+  isRepPRLowerBetter,
   WEIGHT_PR_TYPES,
 } from './sessionStatsCalculation.js'
 
@@ -936,30 +938,30 @@ describe('sessionStatsCalculation', () => {
 
   describe('bestAtRepsOrAbove', () => {
     it('returns the weight and reps of the heaviest qualifying entry', () => {
-      expect(bestAtRepsOrAbove(6, false, { '5': 30, '6': 20, '8': 22, '10': 18 })).toEqual({ weight: 22, reps: 8 })
+      expect(bestAtRepsOrAbove(6, false, [{ '5': 30, '6': 20, '8': 22, '10': 18 }])).toEqual({ weight: 22, reps: 8 })
     })
 
     it('on a weight tie, returns the highest rep count', () => {
-      expect(bestAtRepsOrAbove(6, false, { '6': 20, '8': 20, '7': 20 })).toEqual({ weight: 20, reps: 8 })
+      expect(bestAtRepsOrAbove(6, false, [{ '6': 20, '8': 20, '7': 20 }])).toEqual({ weight: 20, reps: 8 })
     })
 
     it('returns null when no entry qualifies', () => {
-      expect(bestAtRepsOrAbove(9, false, { '5': 30, '8': 20 })).toBeNull()
-      expect(bestAtRepsOrAbove(6, false)).toBeNull()
-      expect(bestAtRepsOrAbove(6, false, null, {})).toBeNull()
+      expect(bestAtRepsOrAbove(9, false, [{ '5': 30, '8': 20 }])).toBeNull()
+      expect(bestAtRepsOrAbove(6, false, [])).toBeNull()
+      expect(bestAtRepsOrAbove(6, false, [null, {}])).toBeNull()
     })
 
     it('strictlyGreater leaves out the entry at exactly minReps', () => {
-      expect(bestAtRepsOrAbove(6, true, { '6': 25, '7': 22 })).toEqual({ weight: 22, reps: 7 })
-      expect(bestAtRepsOrAbove(6, true, { '6': 25 })).toBeNull()
+      expect(bestAtRepsOrAbove(6, true, [{ '6': 25, '7': 22 }])).toEqual({ weight: 22, reps: 7 })
+      expect(bestAtRepsOrAbove(6, true, [{ '6': 25 }])).toBeNull()
     })
 
     it('scans several maps, skipping missing ones', () => {
-      expect(bestAtRepsOrAbove(6, false, { '8': 20 }, null, { '7': 22 })).toEqual({ weight: 22, reps: 7 })
+      expect(bestAtRepsOrAbove(6, false, [{ '8': 20 }, null, { '7': 22 }])).toEqual({ weight: 22, reps: 7 })
     })
 
     it('entries without a positive weight never win', () => {
-      expect(bestAtRepsOrAbove(6, false, { '6': null, '8': 0 })).toBeNull()
+      expect(bestAtRepsOrAbove(6, false, [{ '6': null, '8': 0 }])).toBeNull()
     })
   })
 
@@ -1036,8 +1038,8 @@ describe('sessionStatsCalculation', () => {
       }
     })
 
-    it('holds the weight-based types and leaves out reps, time, distance and pace', () => {
-      expect([...WEIGHT_PR_TYPES].sort()).toEqual(['best1rm', 'bestWeight', 'repPR', 'totalVolume'])
+    it('holds the weight-based types (assistance included) and leaves out reps, time, distance and pace', () => {
+      expect([...WEIGHT_PR_TYPES].sort()).toEqual(['best1rm', 'bestAssistance', 'bestWeight', 'repPR', 'totalVolume'])
     })
   })
 
@@ -1368,5 +1370,224 @@ describe('sessionStatsCalculation', () => {
       expect(result.map(r => r.setNumber)).toEqual([1])
       expect(result[0].records.map(r => r.type).sort()).toEqual(['best1rm', 'bestWeight', 'repPR'])
     })
+  })
+})
+
+// ============================================
+// ASSISTANCE: LESS IS BETTER, 0 IS A VALUE (issue #202)
+// ============================================
+
+describe('assistance × reps', () => {
+  const ASSISTED = ['assistance', 'reps']
+  const set = (weight, reps) => ({ weight, reps_completed: reps })
+  // What fetchExerciseBests returns for one earlier session of 30 kg × 8.
+  const BESTS_30x8 = { bestAssistance: 30, bestReps: 8, bestPerReps: { '8': 30 } }
+
+  describe('metrics', () => {
+    it.each([
+      [['assistance', 'reps'], ['assistance', 'repPR']],
+      [['weight', 'assistance', 'reps'], ['assistance', 'repPR']],
+      [['assistance'], []],
+      [['weight', 'assistance'], []],
+      [['assistance', 'time'], []],
+      [['assistance', 'distance', 'pace'], []],
+    ])('getPRMetrics(%j) is %j', (fields, metrics) => {
+      expect(getPRMetrics(fields)).toEqual(metrics)
+    })
+
+    it('getTrackableMetrics has no 1RM nor volume', () => {
+      expect(getTrackableMetrics(ASSISTED)).toEqual(['assistance', 'reps', 'repPR'])
+    })
+
+    it('isRepPRLowerBetter only for assistance', () => {
+      expect(isRepPRLowerBetter(ASSISTED)).toBe(true)
+      expect(isRepPRLowerBetter(['weight', 'reps'])).toBe(false)
+    })
+  })
+
+  describe('calculateSessionExerciseStats', () => {
+    it('the least assistance over sets with reps, per rep count too, and no weight stats', () => {
+      const stats = calculateSessionExerciseStats([set(30, 8), set(20, 8), set(25, 10)], ASSISTED)
+      expect(stats.bestAssistance).toBe(20)
+      expect(stats.bestPerReps).toEqual({ '8': 20, '10': 25 })
+      expect(stats.bestWeight).toBeUndefined()
+      expect(stats.best1rm).toBeUndefined()
+      expect(stats.totalVolume).toBeUndefined()
+    })
+
+    it('keeps 0 as the best value', () => {
+      const stats = calculateSessionExerciseStats([set(10, 5), set(0, 5)], ASSISTED)
+      expect(stats.bestAssistance).toBe(0)
+      expect(stats.bestPerReps).toEqual({ '5': 0 })
+    })
+
+    it('a set without reps or without assistance does not count: null, not 0', () => {
+      const stats = calculateSessionExerciseStats([set(0, 0), set(null, 8)], ASSISTED)
+      expect(stats.bestAssistance).toBeNull()
+      expect(stats.bestPerReps).toBeNull()
+    })
+  })
+
+  describe('mergeExerciseStats', () => {
+    it('keeps the least assistance, per rep count too, 0 included', () => {
+      const target = { bestAssistance: 20, bestPerReps: { '8': 20, '5': 10 }, totalSets: 2 }
+      mergeExerciseStats(target, { bestAssistance: 0, bestPerReps: { '8': 25, '5': 0 }, totalSets: 1 }, ASSISTED)
+      expect(target.bestAssistance).toBe(0)
+      expect(target.bestPerReps).toEqual({ '8': 20, '5': 0 })
+      expect(target.totalSets).toBe(3)
+    })
+
+    it('a missing assistance never replaces one', () => {
+      const target = { bestAssistance: 0, totalSets: 1 }
+      mergeExerciseStats(target, { bestAssistance: null, totalSets: 1 }, ASSISTED)
+      expect(target.bestAssistance).toBe(0)
+    })
+
+    it('weight still keeps the heaviest per rep count', () => {
+      const target = { bestPerReps: { '8': 80 }, totalSets: 1 }
+      mergeExerciseStats(target, { bestPerReps: { '8': 90 }, totalSets: 1 }, ['weight', 'reps'])
+      expect(target.bestPerReps).toEqual({ '8': 90 })
+    })
+  })
+
+  describe('bestAtRepsOrAbove (lowerIsBetter)', () => {
+    it('the least assistance at minReps or more wins, 0 can win', () => {
+      expect(bestAtRepsOrAbove(6, false, [{ '5': 0, '6': 20, '8': 15, '10': 25 }], { lowerIsBetter: true }))
+        .toEqual({ weight: 15, reps: 8 })
+      expect(bestAtRepsOrAbove(6, false, [{ '8': 0, '10': 25 }], { lowerIsBetter: true }))
+        .toEqual({ weight: 0, reps: 8 })
+    })
+
+    it('on a tie, the higher rep count', () => {
+      expect(bestAtRepsOrAbove(6, false, [{ '6': 20, '9': 20 }], { lowerIsBetter: true }))
+        .toEqual({ weight: 20, reps: 9 })
+    })
+
+    it('null when nothing qualifies', () => {
+      expect(bestAtRepsOrAbove(9, false, [{ '8': 0 }], { lowerIsBetter: true })).toBeNull()
+    })
+  })
+
+  describe('detectNewPersonalRecords', () => {
+    it('20 kg after 30 kg at 8 reps: assistance PR and rep PR at 8', () => {
+      const current = calculateSessionExerciseStats([set(20, 8)], ASSISTED)
+      const { flags, details } = detectNewPersonalRecords(current, BESTS_30x8, ASSISTED)
+      expect(flags.isPrAssistance).toBe(true)
+      expect(flags.prRepCounts).toEqual([8])
+      expect(flags.isPrWeight).toBe(false)
+      expect(flags.isPr1rm).toBe(false)
+      const assistance = details.find(d => d.type === 'bestAssistance')
+      expect(assistance).toMatchObject({ newValue: 20, oldValue: 30, improvement: 33, label: 'Menor asistencia' })
+      expect(details.find(d => d.type === 'repPR')).toMatchObject({ newValue: 20, oldValue: 30, oldRepCount: 8 })
+    })
+
+    it('40 kg after 30 kg at 8 reps: no record at all', () => {
+      const current = calculateSessionExerciseStats([set(40, 8)], ASSISTED)
+      const { flags, details } = detectNewPersonalRecords(current, BESTS_30x8, ASSISTED)
+      expect(flags.isPrAssistance).toBe(false)
+      expect(flags.prRepCounts).toBeNull()
+      expect(details).toEqual([])
+    })
+
+    it('0 kg × 5 after only higher assistance: a PR (0 is a value, not "missing")', () => {
+      const current = calculateSessionExerciseStats([set(0, 5)], ASSISTED)
+      const { flags } = detectNewPersonalRecords(current, BESTS_30x8, ASSISTED)
+      expect(flags.isPrAssistance).toBe(true)
+      expect(flags.prRepCounts).toEqual([5])
+    })
+
+    it('inverted dominance: 20 × 8 after 20 × 10 is no rep PR, 15 × 8 is', () => {
+      const previous = { bestAssistance: 20, bestPerReps: { '10': 20 } }
+      const same = detectNewPersonalRecords(calculateSessionExerciseStats([set(20, 8)], ASSISTED), previous, ASSISTED)
+      expect(same.flags.prRepCounts).toBeNull()
+      const less = detectNewPersonalRecords(calculateSessionExerciseStats([set(15, 8)], ASSISTED), previous, ASSISTED)
+      expect(less.flags.prRepCounts).toEqual([8])
+    })
+
+    it('the first time at a rep count is a rep PR, even with more assistance than elsewhere', () => {
+      const previous = { bestAssistance: 10, bestPerReps: { '5': 10 } }
+      const { flags } = detectNewPersonalRecords(calculateSessionExerciseStats([set(30, 12)], ASSISTED), previous, ASSISTED)
+      expect(flags.isPrAssistance).toBe(false)
+      expect(flags.prRepCounts).toEqual([12])
+    })
+
+    it('a 0 kg history still blocks a rep PR at the same assistance', () => {
+      const previous = { bestAssistance: 0, bestPerReps: { '8': 0 } }
+      const { flags } = detectNewPersonalRecords(calculateSessionExerciseStats([set(0, 8)], ASSISTED), previous, ASSISTED)
+      expect(flags.isPrAssistance).toBe(false)
+      expect(flags.prRepCounts).toBeNull()
+    })
+  })
+
+  describe('evaluateSetForPR (live)', () => {
+    it('lower assistance is a PR, higher is not, and the running best follows the least', () => {
+      const lower = evaluateSetForPR(set(20, 8), {}, BESTS_30x8, ASSISTED)
+      expect(lower.newRecords.map(r => r.type).sort()).toEqual(['bestAssistance', 'repPR'])
+      expect(lower.newRecords.find(r => r.type === 'bestAssistance')).toMatchObject({ value: 20, previousValue: 30 })
+
+      const higher = evaluateSetForPR(set(40, 8), {}, BESTS_30x8, ASSISTED)
+      expect(higher.newRecords).toEqual([])
+
+      // After a 20, a 25 is no PR: the running best is 20.
+      const next = evaluateSetForPR(set(25, 8), lower.updatedRunningBests, BESTS_30x8, ASSISTED)
+      expect(next.newRecords).toEqual([])
+      expect(next.updatedRunningBests.bestAssistance).toBe(20)
+    })
+
+    it('0 kg is a PR and becomes the running best (no `|| Infinity`)', () => {
+      const zero = evaluateSetForPR(set(0, 5), {}, BESTS_30x8, ASSISTED)
+      expect(zero.newRecords.map(r => r.type).sort()).toEqual(['bestAssistance', 'repPR'])
+      expect(zero.updatedRunningBests.bestAssistance).toBe(0)
+      expect(zero.updatedRunningBests.bestPerReps).toEqual({ '5': 0 })
+
+      const again = evaluateSetForPR(set(0, 5), zero.updatedRunningBests, BESTS_30x8, ASSISTED)
+      expect(again.newRecords).toEqual([])
+    })
+
+    it('with a 0 kg record before the session nothing beats it', () => {
+      const bests = { bestAssistance: 0, bestPerReps: { '8': 0 } }
+      expect(evaluateSetForPR(set(0, 8), {}, bests, ASSISTED).newRecords).toEqual([])
+    })
+
+    it('without an earlier assistance there is nothing to beat', () => {
+      const bests = { bestAssistance: null, bestPerReps: null }
+      const { newRecords } = evaluateSetForPR(set(20, 8), {}, bests, ASSISTED)
+      expect(newRecords.map(r => r.type)).toEqual(['repPR'])
+    })
+
+    it('a set without reps is never a record', () => {
+      expect(evaluateSetForPR(set(0, 0), {}, BESTS_30x8, ASSISTED).newRecords).toEqual([])
+    })
+
+    it('computeExercisePRSetNumbers marks the sets that lowered the assistance', () => {
+      const sets = [
+        { setNumber: 1, weight: 40, repsCompleted: 8 },
+        { setNumber: 2, weight: 20, repsCompleted: 8 },
+        { setNumber: 3, weight: 25, repsCompleted: 8 },
+        { setNumber: 4, weight: 0, repsCompleted: 6 },
+      ]
+      expect(computeExercisePRSetNumbers(sets, BESTS_30x8, ASSISTED)).toEqual([2, 4])
+    })
+  })
+
+  describe('findPRSetNumbers', () => {
+    it('marks the set with the least assistance, 0 included', () => {
+      const sets = [
+        { set_number: 1, weight: 20, reps_completed: 8 },
+        { set_number: 2, weight: 0, reps_completed: 5 },
+        { set_number: 3, weight: 0, reps_completed: 0 },
+      ]
+      expect([...findPRSetNumbers(sets, { is_pr_assistance: true }, ASSISTED)]).toEqual([2])
+    })
+  })
+
+  it('formatPRNotificationText labels the assistance record with its unit and the previous one', () => {
+    const text = formatPRNotificationText({
+      exerciseName: 'Dominadas asistidas',
+      records: [
+        { type: 'bestAssistance', value: 20, previousValue: 30, label: 'Menor asistencia', unit: 'kg' },
+      ],
+    })
+    expect(text).toBe('Dominadas asistidas: Menor asistencia 20 kg (anterior: 30)')
   })
 })

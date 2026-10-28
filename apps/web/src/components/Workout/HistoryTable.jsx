@@ -4,7 +4,7 @@ import { ChevronRight, FileText, Video } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
 import { IconButton } from '../ui/index.js'
 import SetNumberMark from './SetNumberMark.jsx'
-import { DEFAULT_TRACKED_FIELDS, EXERCISE_HISTORY_PAGE_SIZE, ROUTINE_MEMBERSHIP, formatSetValue, formatShortDate, calculateTotalVolume, formatEffortBadge, getRoutineMembershipBadgeKey } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, EXERCISE_HISTORY_PAGE_SIZE, ROUTINE_MEMBERSHIP, formatSetValue, formatShortDate, calculateExerciseVolume, formatEffortBadge, getRoutineMembershipBadgeKey } from '@gym/shared'
 
 // The same day stands out; another day of the routine only says so.
 const BADGE_STYLES = {
@@ -36,7 +36,7 @@ function HistoryTable({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weight
       </span>
 
       {sessions.slice(0, visibleCount).map(session => {
-        const volume = calculateTotalVolume(session.sets)
+        const volume = calculateExerciseVolume(session.sets, trackedFields)
         const membership = membershipOf?.(session) ?? null
         const badgeKey = getRoutineMembershipBadgeKey(membership)
         return (

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { TrendingUp, Info, X } from 'lucide-react'
-import { getProgressionLabel, getProgressionReason } from '@gym/shared'
+import { TrendingUp, TrendingDown, Info, X } from 'lucide-react'
+import {
+  getProgressableField, getProgressionDirection, getProgressionLabel, getProgressionReason, getProgressionWhyLabel,
+} from '@gym/shared'
 import { IconButton, Modal } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
 
-// Aviso de progresión por serie (issue #13): "↗ Sube el peso" / "↗ Sube el nivel" (direccional,
+// Aviso de progresión por serie (issue #13): "↗ Sube el peso" / "↗ Sube el nivel" / "↘ Baja la asistencia" (direccional,
 // sin cifra — el salto depende del equipo) a la vista + el porqué a un tap (ⓘ → modal). Qué se
 // sube lo decide el campo progresable del ejercicio (issue #28), así que el texto sale de
 // `getProgressionLabel`, no de una cadena fija. Es un item de la subfila compartida (SetRowMeta),
@@ -13,12 +15,14 @@ import { colors } from '../../lib/styles.js'
 function ProgressionHint({ previousSet, target, targetField, trackedFields, distanceUnit }) {
   const { t } = useTranslation()
   const [showWhy, setShowWhy] = useState(false)
+  // The arrow follows the text: down for "Baja la asistencia" (issue #202), up otherwise.
+  const ArrowIcon = getProgressionDirection(getProgressableField(trackedFields)) === 'lower' ? TrendingDown : TrendingUp
 
   return (
     <>
       {/* -my-2: the 44px box takes the subrow's padding (see SetRowMeta). */}
       <div className="flex items-center gap-1.5 -my-2">
-        <TrendingUp size={12} style={{ color: colors.orange }} />
+        <ArrowIcon size={12} style={{ color: colors.orange }} />
         <span className="text-xs font-semibold" style={{ color: colors.orange }}>
           {getProgressionLabel(trackedFields)}
         </span>
@@ -28,7 +32,7 @@ function ProgressionHint({ previousSet, target, targetField, trackedFields, dist
           icon={Info}
           iconSize={12}
           color={colors.textMuted}
-          label={t('workout:progression.whyLabel')}
+          label={getProgressionWhyLabel(trackedFields)}
           onClick={() => setShowWhy(true)}
           className="-ml-3"
         />

@@ -171,7 +171,11 @@ export function buildCachedMeasurementValues(trackedFields, formData, { distance
 export function getSuggestedSetValues(previousSet, { levelTarget = null, distanceUnit = 'm' } = {}) {
   const suggested = {}
   if (previousSet) {
-    if (previousSet.weight != null) suggested[SetField.WEIGHT] = previousSet.weight
+    // Assistance is the same column as the weight (measurementFields.js): same suggestion.
+    if (previousSet.weight != null) {
+      suggested[SetField.WEIGHT] = previousSet.weight
+      suggested[SetField.ASSISTANCE] = previousSet.weight
+    }
     if (previousSet.reps != null) suggested[SetField.REPS] = previousSet.reps
     if (previousSet.timeSeconds != null) suggested[SetField.TIME] = previousSet.timeSeconds
     if (previousSet.distanceMeters != null) suggested[SetField.DISTANCE] = metersToDistanceUnit(previousSet.distanceMeters, distanceUnit)
@@ -219,7 +223,8 @@ export function isSuggestedValue({ value, suggestion, isCompleted = false } = {}
  * completados. La distancia se convierte de metros a la unidad de display del ejercicio.
  * No incluye el prefill de la sesión anterior (llega de forma asíncrona y se aplica aparte).
  * @param {{setData?: Object, cachedData?: Object, distanceUnit?: string}} params
- * @returns {{weight: string|number, reps: string|number, time: string|number, distance: string|number, calories: string|number, level: string|number, pace: string|number}}
+ * Assistance comes from the same column as the weight.
+ * @returns {{weight: string|number, assistance: string|number, reps: string|number, time: string|number, distance: string|number, calories: string|number, level: string|number, pace: string|number}}
  */
 export function getSetInitialInputValues({ setData, cachedData, distanceUnit = 'm' } = {}) {
   const src = cachedData || setData || {}
@@ -227,6 +232,7 @@ export function getSetInitialInputValues({ setData, cachedData, distanceUnit = '
   const meters = src.distanceMeters
   return {
     weight: val(src.weight),
+    assistance: val(src.weight),
     reps: val(src.repsCompleted),
     time: val(src.timeSeconds),
     distance: val(meters) === '' ? '' : metersToDistanceUnit(meters, distanceUnit),
@@ -281,6 +287,12 @@ export function formatSetTargetHint(trackedFields, target, targetField) {
   return text === '' ? null : text
 }
 
+// One field per completed_sets column: assistance shares the weight's and prints the same ("20kg"),
+// so without this a row read without the exercise's fields would print "20kg × 20kg × 8 reps".
+const FIELDS_BY_COLUMN = FIELD_ORDER.filter((field, index) =>
+  FIELD_ORDER.findIndex(other => getFieldMeta(other).column === getFieldMeta(field).column) === index
+)
+
 /**
  * Formatea el valor de una serie leída de BD (snake_case), para historial y resúmenes.
  * No recibe los campos del ejercicio: pinta lo que la fila tenga a null, en el orden canónico
@@ -292,7 +304,7 @@ export function formatSetTargetHint(trackedFields, target, targetField) {
 export function formatSetValue(set, { distanceUnit = 'm' } = {}) {
   const options = { weightUnit: set.weight_unit || 'kg', distanceUnit, repsUnit: true }
   return joinFieldParts(
-    FIELD_ORDER
+    FIELDS_BY_COLUMN
       .filter(field => set[getFieldMeta(field).column] != null)
       .map(field => ({ field, text: formatFieldValue(field, set[getFieldMeta(field).column], options) }))
   )
