@@ -344,34 +344,41 @@ BEGIN
     -- pr_rep_counts stay valid (the ranking holds, also the inverted one of assistance); only the
     -- values change.
     -- best_per_reps NULL stays NULL: no keys to aggregate.
-    -- best_1rm scaled is no longer a whole number, unlike the 1RM of a new set (#194).
+    -- best_1rm of weight × reps is left as is: scaled, it is no whole number and no longer what its
+    -- sets give (#194). Section 4 recomputes it from the converted sets.
     -- ============================================
     IF p_scope = 'exercise' THEN
         UPDATE exercise_session_stats ess
         SET
             best_weight     = CASE WHEN best_weight     IS NOT NULL THEN ROUND(best_weight     * p_factor, 2) END,
-            best_1rm        = CASE WHEN best_1rm        IS NOT NULL THEN ROUND(best_1rm        * p_factor, 2) END,
+            best_1rm        = CASE WHEN stores_best_1rm(e.tracked_fields) THEN best_1rm
+                                   ELSE ROUND(best_1rm * p_factor, 2) END,
             total_volume    = CASE WHEN total_volume    IS NOT NULL THEN ROUND(total_volume    * p_factor, 2) END,
             best_assistance = CASE WHEN best_assistance IS NOT NULL THEN ROUND(best_assistance * p_factor, 2) END,
             best_per_reps = (
                 SELECT jsonb_object_agg(kv.key, ROUND(kv.value::NUMERIC * p_factor, 2))
                 FROM jsonb_each_text(ess.best_per_reps) kv
             )
-        WHERE ess.user_id = v_user_id
+        FROM exercises e
+        WHERE e.id = ess.exercise_id
+          AND ess.user_id = v_user_id
           AND ess.exercise_id = p_exercise_id
           AND ess.gym_id = p_gym_id;
     ELSE
         UPDATE exercise_session_stats ess
         SET
             best_weight     = CASE WHEN best_weight     IS NOT NULL THEN ROUND(best_weight     * p_factor, 2) END,
-            best_1rm        = CASE WHEN best_1rm        IS NOT NULL THEN ROUND(best_1rm        * p_factor, 2) END,
+            best_1rm        = CASE WHEN stores_best_1rm(e.tracked_fields) THEN best_1rm
+                                   ELSE ROUND(best_1rm * p_factor, 2) END,
             total_volume    = CASE WHEN total_volume    IS NOT NULL THEN ROUND(total_volume    * p_factor, 2) END,
             best_assistance = CASE WHEN best_assistance IS NOT NULL THEN ROUND(best_assistance * p_factor, 2) END,
             best_per_reps = (
                 SELECT jsonb_object_agg(kv.key, ROUND(kv.value::NUMERIC * p_factor, 2))
                 FROM jsonb_each_text(ess.best_per_reps) kv
             )
-        WHERE ess.user_id = v_user_id
+        FROM exercises e
+        WHERE e.id = ess.exercise_id
+          AND ess.user_id = v_user_id
           AND NOT EXISTS (
               SELECT 1 FROM user_exercise_gym_units u
               WHERE u.user_id = v_user_id
@@ -389,6 +396,18 @@ BEGIN
         UPDATE body_weight_records
         SET weight = ROUND(weight * p_factor, 2)
         WHERE user_id = v_user_id;
+    END IF;
+
+    -- ============================================
+    -- 4. BEST_1RM OF WEIGHT × REPS
+    -- Recomputed from the sets section 1 converted, with the formula of a new set, and the PRs of
+    -- every (exercise, gym) it changes recalculated. The global scope rebuilds every row of the user:
+    -- the pairs it skipped still match their unconverted sets, so nothing is written for them.
+    -- ============================================
+    IF p_scope = 'exercise' THEN
+        PERFORM rebuild_best_1rm_for_user(v_user_id, p_exercise_id, p_gym_id);
+    ELSE
+        PERFORM rebuild_best_1rm_for_user(v_user_id);
     END IF;
 END;
 $$;
@@ -758,6 +777,25 @@ COMMENT ON FUNCTION "public"."enable_routine_share"("p_routine_id" integer) IS '
 
 
 
+CREATE OR REPLACE FUNCTION "public"."epley_1rm"("p_weight" numeric, "p_reps" integer) RETURNS numeric
+    LANGUAGE "sql" IMMUTABLE
+    AS $$
+    -- A NULL argument fails every WHEN and gives NULL in the ELSE.
+    SELECT CASE
+        WHEN p_weight <= 0 OR p_reps <= 0 THEN NULL
+        WHEN p_reps = 1 THEN p_weight
+        ELSE js_math_round(p_weight::FLOAT8 * (1 + p_reps::FLOAT8 / 30))::NUMERIC
+    END;
+$$;
+
+
+ALTER FUNCTION "public"."epley_1rm"("p_weight" numeric, "p_reps" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."epley_1rm"("p_weight" numeric, "p_reps" integer) IS 'Estimated 1RM of a set with weight and reps above 0, exactly as calculateEpley1RM in packages/shared/src/lib/workoutCalculations.js; NULL for any other set, which calculateSessionExerciseStats does not count: change both together, `npm run db:check-pr-parity -w apps/web` compares them. Internal: rebuild_best_1rm_for_user calls it.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_set_routine_exercise_user_id"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -900,6 +938,23 @@ COMMENT ON FUNCTION "public"."is_admin"("check_user_id" "uuid") IS 'TRUE only wh
 
 
 
+CREATE OR REPLACE FUNCTION "public"."js_math_round"("x" double precision) RETURNS double precision
+    LANGUAGE "sql" IMMUTABLE
+    AS $$
+    -- Half up on the double itself. round() is half to even on float8, and on numeric it rounds the
+    -- 15-digit decimal the float8 casts to (182.49999999999997 becomes 182.5). floor(x + 0.5) fails
+    -- too: for x = 0.49999999999999994 the sum rounds to 1. x - floor(x) is exact in float8.
+    SELECT CASE WHEN x - floor(x) >= 0.5 THEN floor(x) + 1 ELSE floor(x) END;
+$$;
+
+
+ALTER FUNCTION "public"."js_math_round"("x" double precision) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."js_math_round"("x" double precision) IS 'Math.round of JavaScript on a double: the nearest integer, a half going up. Internal: only epley_1rm calls it.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."pr_metrics"("p_fields" "public"."measurement_field"[]) RETURNS "text"[]
     LANGUAGE "sql" IMMUTABLE
     AS $$
@@ -1004,6 +1059,52 @@ ALTER FUNCTION "public"."rebuild_assistance_stats"("p_exercise_id" integer) OWNE
 
 
 COMMENT ON FUNCTION "public"."rebuild_assistance_stats"("p_exercise_id" integer) IS 'Rebuilds the exercise_session_stats of an exercise that tracks assistance from its completed_sets and recalculates its PRs for every user and gym. Internal: migration 074 runs it for the assisted pull-up; the e2e runs it on a seeded history.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."rebuild_best_1rm_for_user"("p_user_id" "uuid", "p_exercise_id" integer DEFAULT NULL::integer, "p_gym_id" bigint DEFAULT NULL::bigint) RETURNS "void"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        WITH rebuilt AS (
+            SELECT ess.id,
+                -- Joined by session_exercises, never by completed_sets.session_id: it is nullable.
+                -- A best of 0 (0.4 × 2 rounds to 0) is stored as NULL, like `best || null` in the JS.
+                (SELECT NULLIF(MAX(epley_1rm(cs.weight, cs.reps_completed)), 0)
+                 FROM completed_sets cs
+                 JOIN session_exercises se ON se.id = cs.session_exercise_id
+                 WHERE se.session_id = ess.session_id
+                   AND se.exercise_id = ess.exercise_id) AS best_1rm
+            FROM exercise_session_stats ess
+            JOIN exercises e ON e.id = ess.exercise_id
+            WHERE ess.user_id = p_user_id
+              AND (p_exercise_id IS NULL OR ess.exercise_id = p_exercise_id)
+              AND (p_gym_id IS NULL OR ess.gym_id = p_gym_id)
+              AND stores_best_1rm(e.tracked_fields)
+        ),
+        changed AS (
+            UPDATE exercise_session_stats ess
+            SET best_1rm = rebuilt.best_1rm
+            FROM rebuilt
+            WHERE ess.id = rebuilt.id
+              AND ess.best_1rm IS DISTINCT FROM rebuilt.best_1rm
+            RETURNING ess.exercise_id, ess.gym_id
+        )
+        SELECT DISTINCT exercise_id, gym_id FROM changed
+    LOOP
+        PERFORM recalculate_exercise_prs_for_user(p_user_id, r.exercise_id, '-infinity'::TIMESTAMPTZ, r.gym_id);
+    END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."rebuild_best_1rm_for_user"("p_user_id" "uuid", "p_exercise_id" integer, "p_gym_id" bigint) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."rebuild_best_1rm_for_user"("p_user_id" "uuid", "p_exercise_id" integer, "p_gym_id" bigint) IS 'Recomputes best_1rm of one user''s exercise_session_stats (narrowed to one exercise and one gym when given) from completed_sets with epley_1rm, writes only the rows whose value changes, and recalculates the PRs of every (exercise, gym) it wrote. Internal: convert_user_weights calls it after converting; migration 076 ran it for every user; the e2e runs it on a seeded history.';
 
 
 
@@ -1585,6 +1686,25 @@ $$;
 ALTER FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."stores_best_1rm"("p_fields" "public"."measurement_field"[]) RETURNS boolean
+    LANGUAGE "sql" IMMUTABLE
+    AS $$
+    -- Normalised like normalizeTrackedFields where the answer depends on it: NULL elements dropped,
+    -- nothing left falls back to weight × reps. Its cut to 3 fields is not mirrored, like pr_metrics:
+    -- exercises_tracked_fields_len keeps every stored list within 3.
+    SELECT COALESCE(cardinality(array_remove(p_fields, NULL)), 0) = 0
+        OR (p_fields @> ARRAY['weight', 'reps']::measurement_field[]
+            AND NOT COALESCE('assistance' = ANY (p_fields), false));
+$$;
+
+
+ALTER FUNCTION "public"."stores_best_1rm"("p_fields" "public"."measurement_field"[]) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."stores_best_1rm"("p_fields" "public"."measurement_field"[]) IS 'Whether an exercise tracking these fields stores best_1rm: weight and reps, without assistance. Mirrors getTrackableMetrics(fields).includes(''1rm'') in packages/shared/src/lib/sessionStatsCalculation.js: change both together, `npm run db:check-pr-parity -w apps/web` compares them. Internal: rebuild_best_1rm_for_user and convert_user_weights call it.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."update_session_exercise_with_routine"("p_session_exercise_id" integer, "p_fields" "jsonb") RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -1782,7 +1902,7 @@ CREATE TABLE IF NOT EXISTS "public"."exercise_session_stats" (
 ALTER TABLE "public"."exercise_session_stats" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."exercise_session_stats" IS 'Every weight-valued column (best_weight, best_1rm, total_volume, best_assistance, best_per_reps) is converted by convert_user_weights when the user changes a weight unit: a new one must be added there, or it stays in the old unit.';
+COMMENT ON TABLE "public"."exercise_session_stats" IS 'Every weight-valued column (best_weight, best_1rm, total_volume, best_assistance, best_per_reps) is converted by convert_user_weights when the user changes a weight unit: a new one must be added there, or it stays in the old unit. best_1rm of weight × reps is not scaled there but recomputed from the converted sets (rebuild_best_1rm_for_user), so it stays equal to the 1RM a new set gives.';
 
 
 
@@ -3139,6 +3259,10 @@ GRANT ALL ON FUNCTION "public"."enable_routine_share"("p_routine_id" integer) TO
 
 
 
+REVOKE ALL ON FUNCTION "public"."epley_1rm"("p_weight" numeric, "p_reps" integer) FROM PUBLIC;
+
+
+
 REVOKE ALL ON FUNCTION "public"."get_all_feedback"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_all_feedback"() TO "service_role";
@@ -3158,11 +3282,19 @@ GRANT ALL ON FUNCTION "public"."get_shared_routine"("p_token" "text") TO "servic
 
 
 
+REVOKE ALL ON FUNCTION "public"."js_math_round"("x" double precision) FROM PUBLIC;
+
+
+
 REVOKE ALL ON FUNCTION "public"."pr_metrics"("p_fields" "public"."measurement_field"[]) FROM PUBLIC;
 
 
 
 REVOKE ALL ON FUNCTION "public"."rebuild_assistance_stats"("p_exercise_id" integer) FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "public"."rebuild_best_1rm_for_user"("p_user_id" "uuid", "p_exercise_id" integer, "p_gym_id" bigint) FROM PUBLIC;
 
 
 
@@ -3209,6 +3341,10 @@ GRANT ALL ON FUNCTION "public"."routine_export_rows"("p_routine_id" integer) TO 
 REVOKE ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."start_workout_session"("p_routine_day_id" integer, "p_routine_name" "text", "p_day_name" "text", "p_exercises" "jsonb", "p_gym_id" bigint) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."stores_best_1rm"("p_fields" "public"."measurement_field"[]) FROM PUBLIC;
 
 
 

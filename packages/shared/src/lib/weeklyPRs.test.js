@@ -72,7 +72,7 @@ describe('buildWeeklyPRs', () => {
     expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['bestWeight', 'best1rm', 'repPR'])
   })
 
-  it('a 65 kg × 8 row converted to lb drops the weight PR but keeps the scaled 1RM (180.78, not 182)', () => {
+  it('a stored 1RM that disagrees with its rep PR set (180.78 vs 182 of 143.3 × 8) keeps the 1RM chip: one too many, never a record hidden', () => {
     const { count, sessions } = buildWeeklyPRs([row({
       best_weight: 143.3, best_1rm: 180.78, is_pr_weight: true, is_pr_1rm: true,
       best_per_reps: { 8: 143.3 }, pr_rep_counts: [8],
@@ -81,13 +81,22 @@ describe('buildWeeklyPRs', () => {
     expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['best1rm', 'repPR'])
   })
 
-  it('a 143.3 lb × 8 row converted to kg drops the weight PR but keeps the scaled 1RM (82.55, not 82)', () => {
+  it('a stored 1RM just above its rep PR set (82.55 vs 82 of 65 × 8) keeps the 1RM chip too', () => {
     const { count, sessions } = buildWeeklyPRs([row({
       best_weight: 65, best_1rm: 82.55, is_pr_weight: true, is_pr_1rm: true,
       best_per_reps: { 8: 65 }, pr_rep_counts: [8],
     })])
     expect(count).toBe(2)
     expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['best1rm', 'repPR'])
+  })
+
+  it('65 kg × 8 converted to lb (143.3 × 8, best_1rm recomputed to 182) is one record, the rep PR (#194)', () => {
+    const { count, sessions } = buildWeeklyPRs([row({
+      best_weight: 143.3, best_1rm: 182, is_pr_weight: true, is_pr_1rm: true,
+      best_per_reps: { 8: 143.3 }, pr_rep_counts: [8],
+    })])
+    expect(count).toBe(1)
+    expect(sessions[0].exercises[0].details.map(d => d.type)).toEqual(['repPR'])
   })
 
   it('a 1RM PR without a weight PR is dropped when it is the rep PR set 1RM', () => {

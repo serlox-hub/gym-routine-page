@@ -45,6 +45,15 @@ describe('queryLocalDatabase', () => {
     expect(options.cwd).toBe(WEB_DIR)
   })
 
+  it('lets the query answer more than the 1 MB spawnSync buffers by default', () => {
+    fakeCli({ list: IN_SYNC, query: { status: 0, stdout: '[]', stderr: '' } })
+
+    queryLocalDatabase(WEB_DIR, SQL)
+
+    const [[, , options]] = queryCalls()
+    expect(options.maxBuffer).toBeGreaterThan(1024 * 1024)
+  })
+
   it('refuses a migration of the tree the database has not applied, and does not run the query', () => {
     fakeCli({
       list: migrationList([
