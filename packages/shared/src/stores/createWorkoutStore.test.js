@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { act } from '@testing-library/react'
 import { createJSONStorage } from 'zustand/middleware'
 import {
@@ -440,9 +440,36 @@ describe('createWorkoutStore', () => {
       })
 
       const { pendingSets } = useWorkoutStore.getState()
-      expect(pendingSets['1-1']).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String) })
+      expect(pendingSets['1-1']).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String), markedAt: expect.any(Number) })
       expect(pendingSets['1-1'].token).not.toBe(before.token)
       expect(pendingSets['1-2']).toBeUndefined()
+    })
+
+    // Issue #210: the converted weight is a new change to send, so its "not saved yet" counts anew.
+    it('gives a queued converted set a new markedAt and drops its failed flag', () => {
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(1_000_000)
+        act(() => {
+          useWorkoutStore.getState().startSession(7, null)
+          useWorkoutStore.getState().completeSet(1, 1, { weight: 190 })
+          useWorkoutStore.getState().markSetDirty(1, 1)
+        })
+        act(() => {
+          useWorkoutStore.getState().markPendingSetFailed(1, 1, useWorkoutStore.getState().pendingSets['1-1'].token)
+        })
+
+        vi.setSystemTime(1_060_000)
+        act(() => {
+          useWorkoutStore.getState().applyWeightConversions([{ sessionExerciseId: 1, setNumber: 1, newWeight: 86.18 }])
+        })
+
+        const entry = useWorkoutStore.getState().pendingSets['1-1']
+        expect(entry.markedAt).toBe(1_060_000)
+        expect(entry.failed).toBeUndefined()
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('no toca el estado ni el nonce con una lista vacía', () => {
@@ -477,7 +504,7 @@ describe('createWorkoutStore', () => {
       const first = entry()
       act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
 
-      expect(first).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String) })
+      expect(first).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String), markedAt: expect.any(Number) })
       expect(entry().token).not.toBe(first.token)
     })
 
@@ -514,6 +541,25 @@ describe('createWorkoutStore', () => {
       expect(entry().failed).toBeUndefined()
     })
 
+    // Issue #210: "not saved yet" counts from the last change, and a rejection keeps that time.
+    it('markSetDirty stamps markedAt with the time of each mark, and markPendingSetFailed keeps it', () => {
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(1_000_000)
+        act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+        expect(entry().markedAt).toBe(1_000_000)
+
+        vi.setSystemTime(1_020_000)
+        act(() => { useWorkoutStore.getState().markPendingSetFailed(1, 1, entry().token) })
+        expect(entry().markedAt).toBe(1_000_000)
+
+        act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
+        expect(entry().markedAt).toBe(1_020_000)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
     it('a missing entry is left alone by both', () => {
       const before = useWorkoutStore.getState()
       act(() => {
@@ -530,7 +576,7 @@ describe('createWorkoutStore', () => {
       expect(entry()).toEqual({ ...LEGACY_ENTRY, failed: true })
 
       act(() => { useWorkoutStore.getState().markSetDirty(1, 1) })
-      expect(entry()).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String) })
+      expect(entry()).toEqual({ sessionId: 7, sessionExerciseId: 1, setNumber: 1, token: expect.any(String), markedAt: expect.any(Number) })
 
       act(() => { useWorkoutStore.setState({ pendingSets: { '1-1': LEGACY_ENTRY } }) })
       act(() => { useWorkoutStore.getState().clearPendingSetIfToken(1, 1, 'legacy') })

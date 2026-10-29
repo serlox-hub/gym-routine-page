@@ -2,7 +2,7 @@ import { MutationObserver } from '@tanstack/react-query'
 import { upsertCompletedSet, deleteCompletedSet } from '../api/completedSetsApi.js'
 import { getWorkoutStore } from '../hooks/_stores.js'
 import { queryClient } from './queryClient.js'
-import { QUERY_KEYS } from './constants.js'
+import { QUERY_KEYS, SLOW_PENDING_MS } from './constants.js'
 
 // The sync queue of the active session's sets (issue #179). Checking, editing and unchecking a set
 // update the store and mark the set in `pendingSets`; nothing else sends a set's state to the
@@ -138,6 +138,91 @@ export function describeEndSessionError(error) {
     }
   }
   return { key: 'workout:session.endFailed', discardableSetsCount: 0 }
+}
+
+// What the session shows of the queue on a set and on a collapsed exercise card (issue #210).
+// Nothing while a set saves normally, so a saved set and one whose request is still on its way
+// look the same for the first SLOW_PENDING_MS.
+export const SET_SYNC_STATUS = { NONE: 'none', SLOW: 'slow', REJECTED: 'rejected' }
+
+const SET_SYNC_SEVERITY = { [SET_SYNC_STATUS.NONE]: 0, [SET_SYNC_STATUS.SLOW]: 1, [SET_SYNC_STATUS.REJECTED]: 2 }
+
+// An entry persisted before `markedAt` existed has been waiting for an unknown time: the oldest
+// possible mark, so it reads as slow at once.
+const UNKNOWN_MARK = -Infinity
+
+/**
+ * Since when a queued set has been waiting to be sent (its last mark), or null when no drain will
+ * send it: not queued, or rejected. A number, so a store selector compares it by value.
+ */
+export function getSetWaitingSince(entry) {
+  if (!entry || entry.failed) return null
+  return entry.markedAt ?? UNKNOWN_MARK
+}
+
+/** Since when the exercise's oldest set still to send has been waiting: the first to turn slow. */
+export function getExerciseWaitingSince(pendingSets, sessionExerciseId) {
+  let oldest = null
+  for (const entry of Object.values(pendingSets ?? {})) {
+    if (entry?.sessionExerciseId !== sessionExerciseId) continue
+    const waitingSince = getSetWaitingSince(entry)
+    if (waitingSince !== null && (oldest === null || waitingSince < oldest)) oldest = waitingSince
+  }
+  return oldest
+}
+
+/** Whether the server rejected any queued set of the exercise. */
+export function hasRejectedExerciseSet(pendingSets, sessionExerciseId) {
+  return Object.values(pendingSets ?? {}).some(entry => entry?.failed && entry.sessionExerciseId === sessionExerciseId)
+}
+
+/** Worst of several states: rejected > slow > none. */
+export function worstSetSyncStatus(statuses) {
+  let worst = SET_SYNC_STATUS.NONE
+  for (const status of statuses ?? []) {
+    if (SET_SYNC_SEVERITY[status] > SET_SYNC_SEVERITY[worst]) worst = status
+  }
+  return worst
+}
+
+/**
+ * Sync state at `now` from what it depends on: whether a set was rejected, and since when one is
+ * waiting to be sent (`getSetWaitingSince`, `getExerciseWaitingSince`).
+ * @returns {'none'|'slow'|'rejected'}
+ */
+export function getSyncStatus(rejected, waitingSince, now) {
+  const slow = waitingSince !== null && now - waitingSince >= SLOW_PENDING_MS
+  return worstSetSyncStatus([
+    rejected ? SET_SYNC_STATUS.REJECTED : SET_SYNC_STATUS.NONE,
+    slow ? SET_SYNC_STATUS.SLOW : SET_SYNC_STATUS.NONE,
+  ])
+}
+
+const SET_SYNC_LABEL_KEYS = {
+  [SET_SYNC_STATUS.SLOW]: 'workout:set.syncSlow',
+  [SET_SYNC_STATUS.REJECTED]: 'workout:set.syncRejected',
+}
+
+const EXERCISE_SYNC_LABEL_KEYS = {
+  [SET_SYNC_STATUS.SLOW]: 'workout:exercise.syncSlow',
+  [SET_SYNC_STATUS.REJECTED]: 'workout:exercise.syncRejected',
+}
+
+/** i18n key of the line under a set, or null when nothing shows. */
+export function getSetSyncLabelKey(status) {
+  return SET_SYNC_LABEL_KEYS[status] ?? null
+}
+
+/** i18n key naming the mark on a collapsed exercise card, or null when nothing shows. */
+export function getExerciseSyncLabelKey(status) {
+  return EXERCISE_SYNC_LABEL_KEYS[status] ?? null
+}
+
+/** ms until a set waiting since `waitingSince` turns slow, or null when only a new mark can change it. */
+export function getMsUntilSyncSlow(waitingSince, now) {
+  if (waitingSince === null) return null
+  const left = waitingSince + SLOW_PENDING_MS - now
+  return left > 0 ? left : null
 }
 
 function pickNextPendingSet(pendingSets, sendsByKey) {

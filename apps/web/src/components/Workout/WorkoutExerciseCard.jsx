@@ -13,7 +13,7 @@ import SetsList from './SetsList.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreviousWorkout, useUpdateSessionExerciseFields, useRemoveSessionExercise } from '../../hooks/useWorkout.js'
 import { useUserExerciseOverride } from '../../hooks/useExercises.js'
-import { getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields, canApplyToRoutine } from '@gym/shared'
+import { getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields, canApplyToRoutine, useExerciseSyncStatus } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles.js'
 
 function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, onReplace, isSuperset = false, reorder, isReordering = false, onRemoveFromSuperset, dragHandleProps = null, isDragging = false, existingSupersets = [] }) {
@@ -56,6 +56,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
 
   const completedCount = useMemo(() => Object.values(completedSets).filter(set => set.sessionExerciseId === exerciseKey).length, [completedSets, exerciseKey])
   const isCompleted = completedCount === setsCount && setsCount > 0
+  const syncStatus = useExerciseSyncStatus(exerciseKey)
 
   // Notas montadas perezosamente y ocultadas (no desmontadas) al cerrar, para no
   // re-pedir el GIF que contienen al alternarlas; se olvida la apertura al colapsar.
@@ -138,6 +139,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         series={series} reps={reps} level={level} rir={rir} trackedFields={trackedFields} rest_seconds={rest_seconds}
         collapsed={collapsed}
         isCompleted={isCompleted}
+        syncStatus={syncStatus}
         onToggleCollapse={toggleExpanded}
         menuItems={menuItems}
         dragHandleProps={dragHandleProps}

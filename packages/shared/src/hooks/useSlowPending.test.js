@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useSlowPending, SLOW_PENDING_MS } from './useSlowPending.js'
+import { useSlowPending } from './useSlowPending.js'
+import { SLOW_PENDING_MS } from '../lib/constants.js'
 
 describe('useSlowPending', () => {
   beforeEach(() => {

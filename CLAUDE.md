@@ -473,7 +473,7 @@ Extract when logic:
 | Acción de los botones de arrancar entrenamiento | `workoutStartAction.js` | `getFreeWorkoutAction()`, `getRoutineDayAction()`, `isSessionAlreadyInProgressError()` |
 | Acción del botón de borrar gimnasio (recuento de sesiones sin confirmar ≠ 0) | `gymUtils.js` | `getGymDeleteAction()` |
 | Columnas de la fila de serie (sesión) | `setColumns.js` | `getSetColumns()` |
-| Sync queue of the active session's sets, and what ending a workout does with what is left in it | `pendingSetsSync.js` | `drainPendingSets()`, `buildUpsertPayloadFromStore()`, `isRetryableError()`, `getUnsavedSetsError()`, `describeEndSessionError()` |
+| Sync queue of the active session's sets, what ending a workout does with what is left in it, and what a set and a collapsed card show of it (slow / rejected, #210) | `pendingSetsSync.js` | `drainPendingSets()`, `buildUpsertPayloadFromStore()`, `isRetryableError()`, `getUnsavedSetsError()`, `describeEndSessionError()`, `getSetWaitingSince()`, `getExerciseWaitingSince()`, `getSyncStatus()` (read by `useSetSyncStatus`/`useExerciseSyncStatus`) |
 | Input de duración por dígitos (mm:ss) | `durationInput.js` | `durationDigitsToSeconds()`, `secondsToDurationDigits()`, `formatDurationDigits()` |
 | Form de config de ejercicio en rutina/sesión | `routineExerciseForm.js` | `buildExerciseConfigForm()`, `validateExerciseConfigForm()`, `parseExerciseConfigForm()` |
 | Form de override de ejercicio del sistema (notas + unidad) | `exerciseOverrideForm.js` | `buildExerciseOverrideForm()` |

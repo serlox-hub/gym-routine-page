@@ -30,6 +30,9 @@ const UNSAVED_NETWORK = 'Hay 1 serie sin guardar todavía. Inténtalo de nuevo c
 const UNSAVED_REJECTED = 'No se pudo guardar 1 serie. Puedes terminar sin ella.'
 const FINISH_WITHOUT = 'Terminar sin ella'
 const SET_WRITES = '**/rest/v1/completed_sets*'
+const SET_SYNC_SLOW = 'Sin guardar todavía'
+const SET_SYNC_REJECTED = 'No se pudo guardar'
+const CARD_SYNC_REJECTED = 'Hay series que no se pudieron guardar'
 const SCOPE_TITLE = '¿Solo hoy o también en la rutina?'
 const ADD_TITLE = 'Añadir ejercicio'
 // Playwright's default `expect` timeout is 5 s, the same as the slow threshold.
@@ -275,6 +278,39 @@ function setSaved(page) {
     && response.request().method() === 'POST' && response.ok())
 }
 
+/** Every set upsert is rejected with a PostgREST code: the server answered, so retrying would not help. */
+async function rejectSetUpserts(page) {
+  await page.route(SET_WRITES, route => (route.request().method() === 'POST'
+    ? route.fulfill({
+      status: 400,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      contentType: 'application/json',
+      body: JSON.stringify({ code: '23514', message: 'rejected by the e2e', details: null, hint: null }),
+    })
+    : route.continue()))
+}
+
+/** Set upserts wait until the test lets them through. */
+async function holdSetUpserts(page) {
+  let release
+  const released = new Promise(resolve => { release = resolve })
+  await page.route(SET_WRITES, async route => {
+    if (route.request().method() === 'POST') await released
+    await route.continue()
+  })
+  return { release }
+}
+
+/**
+ * The block of the `index`-th set of the open card: its values row and the sub-row under it. Each
+ * is a child of the set list holding the set's check button.
+ */
+function setBlock(page, index) {
+  return page.locator('main div.space-y-3 > div')
+    .filter({ has: page.getByRole('button', { name: /^(Completar|Desmarcar) serie$/ }) })
+    .nth(index)
+}
+
 async function openEndModal(page) {
   await page.getByRole('button', { name: 'Terminar entrenamiento' }).click()
   return modal(page, 'Finalizar entrenamiento')
@@ -343,15 +379,7 @@ test.describe('Ending the workout', () => {
     await completeSet(page, 0)
     await saved
 
-    // A PostgREST error with a code: the server answered, so retrying the same set would not help.
-    await page.route(SET_WRITES, route => (route.request().method() === 'POST'
-      ? route.fulfill({
-        status: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        contentType: 'application/json',
-        body: JSON.stringify({ code: '23514', message: 'rejected by the e2e', details: null, hint: null }),
-      })
-      : route.continue()))
+    await rejectSetUpserts(page)
     await completeSet(page, 1)
 
     const endModal = await openEndModal(page)
@@ -360,5 +388,39 @@ test.describe('Ending the workout', () => {
 
     await endModal.getByRole('button', { name: FINISH_WITHOUT }).click()
     await expect(page).toHaveURL(/\/workout\/summary/, { timeout: 10000 })
+  })
+})
+
+// Issue #210: a set says on itself when it is slow to save or was rejected, and so does its card
+// once collapsed (a collapsed card does not mount its set rows).
+test.describe('Per-set sync state', () => {
+  test('a rejected set says so in its own block, and the collapsed card shows it', async ({ page }) => {
+    await startRoutineSession(page)
+    const saved = setSaved(page)
+    await completeSet(page, 0)
+    await saved
+
+    await rejectSetUpserts(page)
+    await completeSet(page, 1)
+
+    await expect(setBlock(page, 1).getByText(SET_SYNC_REJECTED)).toBeVisible()
+    await expect(setBlock(page, 0).getByText(SET_SYNC_REJECTED)).toHaveCount(0)
+
+    await sessionExercise(page, BASE_EXERCISE).click()
+    await expect(page.getByRole('img', { name: CARD_SYNC_REJECTED })).toBeVisible()
+  })
+
+  test('a set still on its way says so after 5 s, and stops once it lands', async ({ page }) => {
+    await startRoutineSession(page)
+    const upserts = await holdSetUpserts(page)
+    await completeSet(page, 0)
+
+    const slow = setBlock(page, 0).getByText(SET_SYNC_SLOW)
+    // Nothing while a save is still in its normal time.
+    await expect(slow).toHaveCount(0)
+    await expect(slow).toBeVisible(SLOW_TIMEOUT)
+
+    upserts.release()
+    await expect(slow).toBeHidden()
   })
 })

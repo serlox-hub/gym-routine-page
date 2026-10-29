@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown, CheckCircle2 } from 'lucide-react-native'
 import { DragHandle, DropdownMenu, ExerciseName } from '../ui'
 import { colors } from '../../lib/styles'
-import { DEFAULT_TRACKED_FIELDS, SetField, getMuscleGroupName, getExerciseNameLinesHeight, formatEffortBadge, formatFieldValue } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, SET_SYNC_STATUS, SetField, getMuscleGroupName, getExerciseNameLinesHeight, formatEffortBadge, formatFieldValue, getExerciseSyncLabelKey } from '@gym/shared'
+import SetSyncIcon from './SetSyncIcon'
 
 const NAME_FONT_SIZE = 15
 
@@ -26,6 +27,7 @@ function ExerciseCardHeader({
   rest_seconds,
   collapsed,
   isCompleted = false,
+  syncStatus = SET_SYNC_STATUS.NONE,
   onToggleCollapse,
   menuItems,
   dragHandleProps = null,
@@ -42,6 +44,8 @@ function ExerciseCardHeader({
   // La escala depende del lo que mide el ejercicio (RIR con reps, RPE textual en el resto): nunca crudo.
   if (rir != null) setsRepsParts.push(formatEffortBadge(rir, trackedFields))
   const setsRepsText = setsRepsParts.join(' · ')
+  // Only on a collapsed card, which does not mount its set rows: open, each row says it (issue #210).
+  const syncLabelKey = collapsed ? getExerciseSyncLabelKey(syncStatus) : null
 
   return (
     <Pressable onPress={onToggleCollapse} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
@@ -68,6 +72,11 @@ function ExerciseCardHeader({
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {syncLabelKey ? (
+          <View accessible accessibilityRole="image" accessibilityLabel={t(syncLabelKey)}>
+            <SetSyncIcon status={syncStatus} size={18} />
+          </View>
+        ) : null}
         {isCompleted ? <CheckCircle2 size={18} color={colors.success} /> : null}
         {collapsed ? (
           <Pressable

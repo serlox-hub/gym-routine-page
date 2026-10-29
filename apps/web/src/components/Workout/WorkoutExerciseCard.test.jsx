@@ -21,6 +21,8 @@ vi.mock('@gym/shared', async () => {
     usePreference: () => ({ value: undefined }),
     useResolvedWeightUnit: () => 'kg',
     useResolvedDistanceUnit: () => 'm',
+    // Reads the workout store, which these tests never inject.
+    useExerciseSyncStatus: () => actual.SET_SYNC_STATUS.NONE,
   }
 })
 

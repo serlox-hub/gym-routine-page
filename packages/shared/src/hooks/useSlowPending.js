@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
-
-// Well above a normal round trip, well below the auth client's 30 s refresh retry window (issue #121).
-export const SLOW_PENDING_MS = 5000
+import { SLOW_PENDING_MS } from '../lib/constants.js'
 
 /**
  * @param {boolean} isPending

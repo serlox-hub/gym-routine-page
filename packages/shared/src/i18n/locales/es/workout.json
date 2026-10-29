@@ -119,7 +119,9 @@
     "startTimer": "Iniciar {{time}}",
     "stopTimer": "Parar",
     "levelShort": "Nv",
-    "target": "Objetivo"
+    "target": "Objetivo",
+    "syncSlow": "Sin guardar todavía",
+    "syncRejected": "No se pudo guardar"
   },
   "rest": {
     "title": "Descanso",
@@ -164,7 +166,9 @@
     "correctConfirmMessage": "Las series de \"{{oldName}}\" pasarán a \"{{newName}}\" en este entrenamiento. La rutina no cambia.",
     "correctConfirm": "Cambiar",
     "correctFailed": "No se pudo cambiar el ejercicio. Inténtalo de nuevo.",
-    "correctFieldsMismatch": "Este ejercicio tiene que medir lo mismo que \"{{name}}\"."
+    "correctFieldsMismatch": "Este ejercicio tiene que medir lo mismo que \"{{name}}\".",
+    "syncSlow": "Hay series sin guardar todavía",
+    "syncRejected": "Hay series que no se pudieron guardar"
   },
   "summary": {
     "title": "Resumen",

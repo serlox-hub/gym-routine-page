@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDown, CheckCircle2 } from 'lucide-react'
 import { DragHandle, DropdownMenu, ExerciseName } from '../ui/index.js'
 import { colors } from '../../lib/styles.js'
-import { DEFAULT_TRACKED_FIELDS, EXERCISE_NAME_LINE_HEIGHT, SetField, getMuscleGroupName, formatEffortBadge, formatFieldValue } from '@gym/shared'
+import { DEFAULT_TRACKED_FIELDS, EXERCISE_NAME_LINE_HEIGHT, SET_SYNC_STATUS, SetField, getMuscleGroupName, formatEffortBadge, formatFieldValue, getExerciseSyncLabelKey } from '@gym/shared'
+import SetSyncIcon from './SetSyncIcon.jsx'
 
 const NAME_FONT_SIZE = 15
 
@@ -36,6 +37,7 @@ function ExerciseCardHeader({
   rest_seconds,
   collapsed,
   isCompleted = false,
+  syncStatus = SET_SYNC_STATUS.NONE,
   onToggleCollapse,
   menuItems,
   dragHandleProps = null,
@@ -51,6 +53,8 @@ function ExerciseCardHeader({
   // La escala depende del lo que mide el ejercicio (RIR con reps, RPE textual en el resto): nunca crudo.
   if (rir != null) setsRepsParts.push(formatEffortBadge(rir, trackedFields))
   const setsRepsText = setsRepsParts.join(' · ')
+  // Only on a collapsed card, which does not mount its set rows: open, each row says it (issue #210).
+  const syncLabelKey = collapsed ? getExerciseSyncLabelKey(syncStatus) : null
 
   return (
     <div
@@ -81,6 +85,11 @@ function ExerciseCardHeader({
       </div>
 
       <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+        {syncLabelKey && (
+          <span role="img" aria-label={t(syncLabelKey)} className="flex">
+            <SetSyncIcon status={syncStatus} size={18} />
+          </span>
+        )}
         {isCompleted && <CheckCircle2 size={18} color={colors.success} />}
         {collapsed ? (
           <button
