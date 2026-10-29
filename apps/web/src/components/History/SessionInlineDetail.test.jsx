@@ -164,6 +164,16 @@ describe('SessionInlineDetail: set row in edit mode', () => {
     expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument()
   })
 
+  it('the note badge shows the set-note icon, the same one as the workout (issue 209)', () => {
+    setEditor({ hasNotes: true, notes: 'Costó' })
+    render(<SessionInlineDetail sessionId={1} />)
+    enterEditMode()
+
+    const noteBadge = screen.getByRole('img', { name: 'Notas' })
+    expect(noteBadge.querySelector('svg.lucide-sticky-note')).toBeInTheDocument()
+    expect(noteBadge.querySelector('svg.lucide-file-text')).not.toBeInTheDocument()
+  })
+
   it('a failed upload on a set without a note still shows the retry button', () => {
     setEditor({ hasNotes: false, videoUploadError: true })
     render(<SessionInlineDetail sessionId={1} />)

@@ -87,7 +87,15 @@ export const baseConfig = [
         paths: [{
           name: '@supabase/supabase-js',
           message: 'Las apps no acceden a Supabase directamente: usa la capa de API de `@gym/shared`. Única excepción: lib/supabase.js (crea el cliente inyectado por initApi).',
-        }],
+        },
+        // Icono de la nota de una serie (#209): sale de components/ui/icons.js en las dos apps,
+        // para que una nota no se escriba bajo un icono y aparezca bajo otro. FileText no se
+        // veta: NewRoutineFlow lo usa para «importar rutina», que es otro concepto.
+        ...['lucide-react', 'lucide-react-native'].map((name) => ({
+          name,
+          importNames: ['StickyNote', 'StickyNoteIcon', 'LucideStickyNote'],
+          message: 'El icono de la nota de una serie es `NoteIcon` (components/ui/icons.js): no importes el glifo de lucide directamente.',
+        }))],
       }],
     },
     settings: { react: { version: 'detect' } },
@@ -101,6 +109,11 @@ export const baseConfig = [
     // lib/supabase.js es el ÚNICO sitio que puede importar @supabase/supabase-js: crea el cliente
     // que initApi inyecta en @gym/shared. El resto de la app pasa por la capa de API compartida.
     files: ['**/lib/supabase.js'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+  {
+    // components/ui/icons.js es el ÚNICO sitio que importa el glifo de la nota de una serie.
+    files: ['**/components/ui/icons.js'],
     rules: { 'no-restricted-imports': 'off' },
   },
 ]

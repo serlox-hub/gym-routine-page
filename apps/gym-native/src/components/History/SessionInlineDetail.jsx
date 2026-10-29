@@ -4,11 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell, CalendarPlus } from 'lucide-react-native'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, Video, SlidersHorizontal, AlertCircle, Dumbbell, CalendarPlus } from 'lucide-react-native'
 import { useSessionDetail, useDeleteSession, useSessionPRs, useUpdateSessionMetadata, useRescheduleSession, useUpsertCompletedSet, useDeleteCompletedSet, useStartSession } from '../../hooks/useWorkout'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton } from '../ui'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton, NoteIcon } from '../ui'
 import { SetNotesView, ExerciseHistoryModal, SetDetailsModal, GymSelector } from '../Workout'
 import SetValueInput from '../Workout/SetInputs'
 import SetNumberMark from '../Workout/SetNumberMark'
@@ -95,7 +95,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, isSetPR, 
     <>
       {hasNotes && !videoUploadError && (
         <View style={badgeStyle} accessible accessibilityLabel={t('workout:set.notes')}>
-          <FileText size={13} color={colors.textSecondary} />
+          <NoteIcon size={13} color={colors.textSecondary} />
         </View>
       )}
       {videoUploadError && (
