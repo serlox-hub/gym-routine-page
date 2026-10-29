@@ -119,7 +119,9 @@
     "startTimer": "Start {{time}}",
     "stopTimer": "Stop",
     "levelShort": "Lv",
-    "target": "Target"
+    "target": "Target",
+    "syncSlow": "Not saved yet",
+    "syncRejected": "Could not be saved"
   },
   "rest": {
     "title": "Rest",
@@ -164,7 +166,9 @@
     "correctConfirmMessage": "The sets of \"{{oldName}}\" will move to \"{{newName}}\" in this workout. The routine stays the same.",
     "correctConfirm": "Change",
     "correctFailed": "Could not change the exercise. Try again.",
-    "correctFieldsMismatch": "This exercise has to measure the same as \"{{name}}\"."
+    "correctFieldsMismatch": "This exercise has to measure the same as \"{{name}}\".",
+    "syncSlow": "Some sets are not saved yet",
+    "syncRejected": "Some sets could not be saved"
   },
   "summary": {
     "title": "Summary",

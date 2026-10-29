@@ -1,15 +1,17 @@
 import { useTranslation } from 'react-i18next'
-import { formatSetTargetHint } from '@gym/shared'
+import { SET_SYNC_STATUS, formatSetTargetHint, getSetSyncLabelKey } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
 import PreviousSetLine from './PreviousSetLine.jsx'
 import ProgressionHint from './ProgressionHint.jsx'
 import ExecutionTimer from './ExecutionTimer.jsx'
+import SetSyncIcon from './SetSyncIcon.jsx'
 
 /**
  * Subfila de contexto bajo cada serie: SIEMPRE en el mismo sitio, mida lo que mida el ejercicio.
  *
- * Reúne las tres cosas que acompañan a una serie sin ser un dato de la serie: qué se hizo la
- * última vez, el aviso de subir peso y la cuenta atrás de ejecución. Antes la referencia era una
+ * Reúne lo que acompaña a una serie sin ser un dato de la serie: qué se hizo la última vez, el
+ * objetivo cuando no tiene columna, el aviso de subir peso, la cuenta atrás de ejecución y si la
+ * serie tarda en guardarse o el servidor la rechazó (#210). Antes la referencia era una
  * columna del grid (46px, elidida y sin unidades) y el aviso y el timer añadían una línea cada
  * uno. Al bajar los tres a UNA línea compartida, las columnas de valor recuperan el ancho que
  * ocupaba la columna y caben hasta 3 campos sin desbordar la card. La aritmética del reparto vive
@@ -30,13 +32,16 @@ function SetRowMeta({
   target,
   targetField,
   timerSeconds,
+  syncStatus = SET_SYNC_STATUS.NONE,
 }) {
   const { t } = useTranslation()
   const showTimer = timerSeconds > 0
   // El objetivo de la rutina se pinta en el placeholder de SU columna (ver SetRow). Aquí solo
   // queda cuando no hay columna a la que anclarlo. Ver formatSetTargetHint.
   const targetHint = formatSetTargetHint(trackedFields, target, targetField)
-  if (!previousSet && !showProgressionHint && !showTimer && !targetHint) return null
+  // Only when the set is slow to save or was rejected (issue #210): a set that saves shows nothing.
+  const syncLabelKey = getSetSyncLabelKey(syncStatus)
+  if (!previousSet && !showProgressionHint && !showTimer && !targetHint && !syncLabelKey) return null
 
   // Its tap controls (PreviousSetLine, the progression "why", ExecutionTimer) are 44px boxes, and
   // the item holding each one (this row's direct child) has `-my-2`: the box takes this row's
@@ -69,6 +74,12 @@ function SetRowMeta({
         />
       )}
       {showTimer && <ExecutionTimer seconds={timerSeconds} />}
+      {syncLabelKey && (
+        <span className="flex items-center gap-1" style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
+          <SetSyncIcon status={syncStatus} size={14} />
+          {t(syncLabelKey)}
+        </span>
+      )}
     </div>
   )
 }

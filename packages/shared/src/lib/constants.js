@@ -20,6 +20,11 @@ export const SET_EDIT_DEBOUNCE_MS = 600
 // useSyncPendingGymChange.
 export const SYNC_RETRY_INTERVAL_MS = 10000
 
+// When a pending save starts reading as slow: a modal's save (useSlowPending) and a queued set
+// (getSyncStatus). Well above a normal round trip, well below the auth client's 30 s refresh retry
+// window (issue #121).
+export const SLOW_PENDING_MS = 5000
+
 // Sesión activa: cuánto se muestra el toast de PR antes de auto-ocultarse.
 export const PR_NOTIFICATION_DURATION_MS = 4000
 

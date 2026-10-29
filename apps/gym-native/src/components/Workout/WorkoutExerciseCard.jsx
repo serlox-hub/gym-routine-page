@@ -13,7 +13,7 @@ import SetsList from './SetsList'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreviousWorkout, useUpdateSessionExerciseFields, useRemoveSessionExercise } from '../../hooks/useWorkout'
 import { useUserExerciseOverride } from '../../hooks/useExercises'
-import { getHaptics, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields, canApplyToRoutine } from '@gym/shared'
+import { getHaptics, getExerciseName, usePreference, useResolvedWeightUnit, hasExerciseNotes, useExpandedExercise, useLazyMountToggle, useResolvedDistanceUnit, resolveTrackedFields, canApplyToRoutine, useExerciseSyncStatus } from '@gym/shared'
 import { getMuscleGroupBorderStyle } from '../../lib/muscleGroupStyles'
 import { colors } from '../../lib/styles'
 
@@ -72,6 +72,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
     if (newSeries && newSeries !== setsCount) setExerciseSetCount(exerciseKey, newSeries)
   }
   const isCompleted = completedCount === setsCount && setsCount > 0
+  const syncStatus = useExerciseSyncStatus(exerciseKey)
   const prevCompletedRef = useRef(isCompleted)
 
   useEffect(() => {
@@ -129,6 +130,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
         series={series} reps={reps} level={level} rir={rir} trackedFields={trackedFields} rest_seconds={rest_seconds}
         collapsed={collapsed}
         isCompleted={isCompleted}
+        syncStatus={syncStatus}
         onToggleCollapse={toggleExpanded}
         menuItems={menuItems}
         dragHandleProps={dragHandleProps}

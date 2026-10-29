@@ -65,7 +65,8 @@ export function workoutStoreState(set, get) {
     // Key: sessionExerciseId -> number of sets
     exerciseSetCounts: {},
     // Sync queue of the sets (lib/pendingSetsSync.js): "this set changed", not what to send.
-    // Key: `${sessionExerciseId}-${setNumber}` -> { sessionId, sessionExerciseId, setNumber, token, failed? }
+    // Key: `${sessionExerciseId}-${setNumber}` -> { sessionId, sessionExerciseId, setNumber, token, markedAt, failed? }
+    // `markedAt` (ms) only feeds the "not saved yet" mark (getSetWaitingSince, read by useSetSyncStatus): the queue never reads it.
     // Persisted: a check made offline survives the app being killed.
     pendingSets: {},
 
@@ -458,7 +459,7 @@ export function workoutStoreState(set, get) {
 }
 
 function buildPendingSetEntry(sessionId, sessionExerciseId, setNumber) {
-  return { sessionId, sessionExerciseId, setNumber, token: createPendingSetToken() }
+  return { sessionId, sessionExerciseId, setNumber, token: createPendingSetToken(), markedAt: Date.now() }
 }
 
 function hasPendingSetToken(entry, token) {

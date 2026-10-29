@@ -13,6 +13,7 @@ import {
   buildCompletedSetData,
   useSetInputs,
   useSetVideoUpload,
+  useSetSyncStatus,
   shouldSuggestProgression,
   shouldShowAnnotationColumn,
   getSetColumns,
@@ -100,6 +101,7 @@ function SetRow({
 
   const { data: preferences } = usePreferences()
   const [showModal, setShowModal] = useState(false)
+  const syncStatus = useSetSyncStatus(sessionExerciseId, setNumber)
 
   // Subida de vídeo (issue #31): el archivo elegido en la hoja se sube a MinIO EN CUANTO se
   // elige, complete o no la serie todavía — subir no depende de que exista fila en BD. Si la
@@ -379,6 +381,7 @@ function SetRow({
           target={target}
           targetField={targetField}
           timerSeconds={showTimer ? Number(time) : 0}
+          syncStatus={syncStatus}
         />
       </div>
 

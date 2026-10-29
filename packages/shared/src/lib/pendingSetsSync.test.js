@@ -10,7 +10,7 @@ import { upsertCompletedSet, deleteCompletedSet } from '../api/completedSetsApi.
 import { createWorkoutStore } from '../stores/createWorkoutStore.js'
 import { initStores } from '../hooks/_stores.js'
 import { queryClient } from './queryClient.js'
-import { QUERY_KEYS } from './constants.js'
+import { QUERY_KEYS, SLOW_PENDING_MS } from './constants.js'
 import {
   drainPendingSets,
   buildUpsertPayloadFromStore,
@@ -23,6 +23,15 @@ import {
   UnsavedSetsError,
   UNSAVED_SETS_REASON,
   LEGACY_PENDING_SET_TOKEN,
+  SET_SYNC_STATUS,
+  worstSetSyncStatus,
+  getSyncStatus,
+  getSetWaitingSince,
+  getExerciseWaitingSince,
+  hasRejectedExerciseSet,
+  getMsUntilSyncSlow,
+  getSetSyncLabelKey,
+  getExerciseSyncLabelKey,
 } from './pendingSetsSync.js'
 
 const SESSION = 7
@@ -228,6 +237,134 @@ describe('describeEndSessionError', () => {
 
   it('any other error keeps the generic message', () => {
     expect(describeEndSessionError(new Error('boom'))).toEqual({ key: 'workout:session.endFailed', discardableSetsCount: 0 })
+  })
+})
+
+// ============================================
+// Sync state shown on the set and the card (issue #210)
+// ============================================
+
+describe('worstSetSyncStatus', () => {
+  const { NONE, SLOW, REJECTED } = SET_SYNC_STATUS
+
+  it.each([
+    [[], NONE],
+    [[NONE], NONE],
+    [[SLOW], SLOW],
+    [[REJECTED], REJECTED],
+    [[NONE, NONE], NONE],
+    [[NONE, SLOW], SLOW],
+    [[SLOW, NONE], SLOW],
+    [[NONE, REJECTED], REJECTED],
+    [[REJECTED, NONE], REJECTED],
+    [[SLOW, REJECTED], REJECTED],
+    [[REJECTED, SLOW], REJECTED],
+    [[NONE, SLOW, REJECTED], REJECTED],
+  ])('%j is %s', (statuses, expected) => {
+    expect(worstSetSyncStatus(statuses)).toBe(expected)
+  })
+
+  it('is none for a missing list', () => {
+    expect(worstSetSyncStatus(undefined)).toBe(NONE)
+  })
+})
+
+describe('getSetWaitingSince', () => {
+  it('is the mark of a sendable entry', () => {
+    expect(getSetWaitingSince({ token: '1', markedAt: 1000 })).toBe(1000)
+  })
+
+  it('is null when no drain will send it', () => {
+    expect(getSetWaitingSince(undefined)).toBeNull()
+    expect(getSetWaitingSince({ token: '1', markedAt: 1000, failed: true })).toBeNull()
+  })
+
+  it('is older than any mark for an entry persisted before markedAt existed', () => {
+    expect(getSetWaitingSince({ token: '1' })).toBe(-Infinity)
+  })
+})
+
+describe('getExerciseWaitingSince and hasRejectedExerciseSet', () => {
+  const OTHER_SE = SE + 1
+  const queue = {
+    [KEY_1]: { sessionExerciseId: SE, setNumber: 1, token: '1', markedAt: 3000 },
+    [KEY_2]: { sessionExerciseId: SE, setNumber: 2, token: '2', markedAt: 2000 },
+    [`${SE}-3`]: { sessionExerciseId: SE, setNumber: 3, token: '3', markedAt: 1000, failed: true },
+    [`${OTHER_SE}-1`]: { sessionExerciseId: OTHER_SE, setNumber: 1, token: '4', markedAt: 500 },
+  }
+
+  it('the oldest mark among the sets still to send, ignoring rejected ones and other exercises', () => {
+    expect(getExerciseWaitingSince(queue, SE)).toBe(2000)
+  })
+
+  it('a set persisted before markedAt existed is the oldest', () => {
+    expect(getExerciseWaitingSince({ ...queue, [`${SE}-4`]: { sessionExerciseId: SE, setNumber: 4, token: 'x' } }, SE)).toBe(-Infinity)
+  })
+
+  it('null when nothing of the exercise is waiting', () => {
+    expect(getExerciseWaitingSince({ [`${SE}-3`]: queue[`${SE}-3`] }, SE)).toBeNull()
+    expect(getExerciseWaitingSince({}, SE)).toBeNull()
+    expect(getExerciseWaitingSince(undefined, SE)).toBeNull()
+  })
+
+  it('a rejected set of the exercise, and only of the exercise', () => {
+    expect(hasRejectedExerciseSet(queue, SE)).toBe(true)
+    expect(hasRejectedExerciseSet(queue, OTHER_SE)).toBe(false)
+    expect(hasRejectedExerciseSet(undefined, SE)).toBe(false)
+  })
+})
+
+describe('getSyncStatus', () => {
+  it('rejected wins over a set waiting past the threshold', () => {
+    expect(getSyncStatus(true, 0, SLOW_PENDING_MS)).toBe(SET_SYNC_STATUS.REJECTED)
+  })
+
+  it('slow once the oldest wait reaches the threshold, and after it', () => {
+    expect(getSyncStatus(false, 1000, 1000)).toBe(SET_SYNC_STATUS.NONE)
+    expect(getSyncStatus(false, 1000, 1000 + SLOW_PENDING_MS - 1)).toBe(SET_SYNC_STATUS.NONE)
+    expect(getSyncStatus(false, 1000, 1000 + SLOW_PENDING_MS)).toBe(SET_SYNC_STATUS.SLOW)
+    expect(getSyncStatus(false, 1000, 1000 + 20 * SLOW_PENDING_MS)).toBe(SET_SYNC_STATUS.SLOW)
+  })
+
+  it('slow at once for a set persisted before markedAt existed', () => {
+    expect(getSyncStatus(false, getSetWaitingSince({ token: '1' }), 0)).toBe(SET_SYNC_STATUS.SLOW)
+  })
+
+  it('rejected at once for a failed set, with or without markedAt', () => {
+    expect(getSyncStatus(true, getSetWaitingSince({ token: '1', markedAt: 1000, failed: true }), 1000)).toBe(SET_SYNC_STATUS.REJECTED)
+    expect(getSyncStatus(true, getSetWaitingSince({ token: '1', failed: true }), 1000)).toBe(SET_SYNC_STATUS.REJECTED)
+  })
+
+  it('none with nothing waiting and nothing rejected', () => {
+    expect(getSyncStatus(false, null, 1000)).toBe(SET_SYNC_STATUS.NONE)
+  })
+})
+
+describe('getMsUntilSyncSlow', () => {
+  it('is the time left until the threshold', () => {
+    expect(getMsUntilSyncSlow(1000, 1000)).toBe(SLOW_PENDING_MS)
+    expect(getMsUntilSyncSlow(1000, 1000 + SLOW_PENDING_MS - 1)).toBe(1)
+  })
+
+  it('is null once slow, or with nothing waiting', () => {
+    expect(getMsUntilSyncSlow(1000, 1000 + SLOW_PENDING_MS)).toBeNull()
+    expect(getMsUntilSyncSlow(-Infinity, 1000)).toBeNull()
+    expect(getMsUntilSyncSlow(null, 1000)).toBeNull()
+  })
+})
+
+describe('getSetSyncLabelKey and getExerciseSyncLabelKey', () => {
+  it('name what happened to the set, or to some sets of the exercise', () => {
+    expect(getSetSyncLabelKey(SET_SYNC_STATUS.SLOW)).toBe('workout:set.syncSlow')
+    expect(getSetSyncLabelKey(SET_SYNC_STATUS.REJECTED)).toBe('workout:set.syncRejected')
+    expect(getExerciseSyncLabelKey(SET_SYNC_STATUS.SLOW)).toBe('workout:exercise.syncSlow')
+    expect(getExerciseSyncLabelKey(SET_SYNC_STATUS.REJECTED)).toBe('workout:exercise.syncRejected')
+  })
+
+  it('are null when nothing shows', () => {
+    expect(getSetSyncLabelKey(SET_SYNC_STATUS.NONE)).toBeNull()
+    expect(getExerciseSyncLabelKey(SET_SYNC_STATUS.NONE)).toBeNull()
+    expect(getSetSyncLabelKey(undefined)).toBeNull()
   })
 })
 
