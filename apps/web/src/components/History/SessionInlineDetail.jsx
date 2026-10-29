@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Trophy, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell, CalendarPlus } from 'lucide-react'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell, CalendarPlus } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useRescheduleSession, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
 import SetNumberMark from '../Workout/SetNumberMark.jsx'
+import HistorySetRow from '../Workout/HistorySetRow.jsx'
 import SetValueInput from '../Workout/SetInputs.jsx'
 import SetDetailsModal from '../Workout/SetDetailsModal.jsx'
 import ExerciseHistoryModal from '../Workout/ExerciseHistoryModal.jsx'
@@ -19,7 +20,6 @@ import { uploadVideo } from '../../lib/videoStorage.js'
 import {
   SENSATION_LABELS,
   formatFullDate,
-  formatSetValue,
   formatTime,
   resolveSessionEnd,
   resolveSessionStart,
@@ -256,7 +256,8 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
           />
         )}
       </div>
-      <div className="space-y-2">
+      {/* Only the edit rows are 8px apart: the read rows are 44px tall each, which spaces them already. */}
+      <div className={isEditing ? 'space-y-2' : undefined}>
         {isEditing ? (
           <>
             {sets.map(set => (
@@ -283,41 +284,17 @@ function SessionExerciseBlock({ sessionExerciseId, exercise, sets, sessionId, pr
             </button>
           </>
         ) : (
-          sets.map(set => {
-            const isSetPR = prSetNums?.has(set.set_number)
-            return (
-            <div
+          sets.map(set => (
+            <HistorySetRow
               key={set.id}
-              className="flex items-center gap-3"
-              style={{ fontSize: 13 }}
-            >
-              <SetNumberMark setNumber={set.set_number} setType={set.set_type} isPR={isSetPR} style={{ width: 14, textAlign: 'right' }} />
-              <span className="flex-1 flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
-                {isSetPR && (
-                  <span className="inline-flex items-center gap-0.5" style={{ color: colors.warning, fontSize: 10, fontWeight: 600 }}>
-                    <Trophy size={10} /> {t('workout:summary.pr')}
-                  </span>
-                )}
-              </span>
-              {/* No negative margin: the 44px boxes make a set with a note or video 44 tall, so two
-                  consecutive ones do not overlap in the 8px gap. */}
-              <div className="flex items-center gap-0.5">
-                {set.notes && (
-                  <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onClick={() => onSelectSet(set)} />
-                )}
-                {set.video_url && (
-                  <IconButton icon={Video} iconSize={14} color={colors.textMuted} label={t('workout:set.video')} onClick={() => onSelectSet(set)} />
-                )}
-                {set.rir_actual !== null && set.rir_actual !== undefined && (
-                  <span style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                    {formatEffortBadge(set.rir_actual, trackedFields)}
-                  </span>
-                )}
-              </div>
-            </div>
-            )
-          })
+              set={set}
+              weightUnit={weightUnit}
+              distanceUnit={distanceUnit}
+              trackedFields={trackedFields}
+              isPR={prSetNums?.has(set.set_number)}
+              onSelectSet={onSelectSet}
+            />
+          ))
         )}
       </div>
       {showHistory && (
