@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { View, Text, Pressable, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, ChevronDown, FileText, Video } from 'lucide-react-native'
+import { ChevronRight, ChevronDown } from 'lucide-react-native'
 import { useExerciseHistorySummary, useExerciseChartData, useExerciseHistoryFilter } from '../../hooks/useWorkout'
-import { ExerciseName, IconButton, LoadingSpinner, Modal } from '../ui'
+import { ExerciseName, LoadingSpinner, Modal } from '../ui'
 import SetNotesView from './SetNotesView'
-import SetNumberMark from './SetNumberMark'
+import HistorySetRow from './HistorySetRow'
 import GymSelector from './GymSelector'
 import HistoryFilterSelector from './HistoryFilterSelector'
 import { colors, design } from '../../lib/styles'
@@ -17,9 +17,7 @@ import {
   getExerciseStatCards,
   calculateExerciseStats,
   calculateExerciseVolume,
-  formatSetValue,
   formatShortDate,
-  formatEffortBadge,
   useSelectedGym,
   useResolvedWeightUnit,
   useExerciseUnitsByGym,
@@ -149,26 +147,8 @@ function HistoryTab({ sessions, trackedFields = DEFAULT_TRACKED_FIELDS, weightUn
             {/* Sets */}
             <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
               {session.sets.map(set => (
-                // As tall as the note and video buttons, so a set without them is as tall as one with them.
-                <View key={set.id} style={{ minHeight: design.minTouchTarget, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <SetNumberMark setNumber={set.set_number} setType={set.set_type} style={{ width: 14, textAlign: 'right' }} />
-                  <Text style={{ color: colors.textPrimary, fontSize: 13, flex: 1 }}>
-                    {formatSetValue({ ...set, weight_unit: weightUnit }, { distanceUnit })}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                    {set.notes && (
-                      <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onPress={() => onSelectSet(set)} />
-                    )}
-                    {set.video_url && (
-                      <IconButton icon={Video} iconSize={14} color={colors.textMuted} label={t('workout:set.video')} onPress={() => onSelectSet(set)} />
-                    )}
-                    {set.rir_actual !== null && set.rir_actual !== undefined && (
-                      <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 12, minWidth: 16, textAlign: 'center' }}>
-                        {formatEffortBadge(set.rir_actual, trackedFields)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
+                <HistorySetRow key={set.id} set={set} weightUnit={weightUnit} distanceUnit={distanceUnit}
+                  trackedFields={trackedFields} onSelectSet={onSelectSet} />
               ))}
             </View>
           </View>

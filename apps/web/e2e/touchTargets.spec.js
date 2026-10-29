@@ -435,6 +435,22 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     await expect(sessionChips).toHaveCount(2)
     await expectTouchTargets(body)
 
+    // A set row with a note is as tall as one without (issue #187). Each session has one weight set
+    // and the page opens one session at a time: the newest (50 kg) opens first, its chip leads. A
+    // record set's value is followed by its «Récord» badge, so the value is matched as a prefix.
+    const sessionSetRow = value => body.getByText(new RegExp(`^${value}`)).locator('..')
+    const plainSessionRow = sessionSetRow('50kg × 10 reps')
+    await expect(plainSessionRow).toBeVisible()
+    await expect(plainSessionRow.getByRole('button', { name: 'Notas' })).toHaveCount(0)
+    const plainSessionBox = await plainSessionRow.boundingBox()
+    await sessionChips.nth(1).click()
+    const noteSessionRow = sessionSetRow('40kg × 10 reps')
+    await expect(noteSessionRow.getByRole('button', { name: 'Notas' })).toBeVisible()
+    const noteSessionBox = await noteSessionRow.boundingBox()
+    expect(plainSessionBox.height).toBe(noteSessionBox.height)
+    // The session with the note: its note button is one more tap control to measure.
+    await expectTouchTargets(body)
+
     // History state 4: the weight exercise's history, from its card. Two sessions draw its chart,
     // with the metric tabs and the range toggle.
     await page.getByRole('heading', { level: 3, name: WEIGHT_EXERCISE }).click()

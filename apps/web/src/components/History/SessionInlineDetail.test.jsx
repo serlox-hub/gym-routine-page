@@ -207,6 +207,34 @@ describe('SessionInlineDetail: set row in read mode', () => {
   })
 })
 
+describe('SessionInlineDetail: set row height (issue 187)', () => {
+  // jsdom does not lay anything out: this guards the classes that set the heights and gaps, and
+  // e2e/touchTargets.spec.js measures the rendered rows.
+  const sets = [
+    buildSet({ id: 1, set_number: 1, reps_completed: 8 }),
+    buildSet({ id: 2, set_number: 2, reps_completed: 9, notes: 'Costó' }),
+    buildSet({ id: 3, set_number: 3, reps_completed: 10, notes: 'Costó', video_url: 'v/abc.mp4' }),
+  ]
+  const rowOf = (text) => screen.getByText(text).parentElement
+
+  it('read mode: every set row has the 44px minimum and no gap, with or without a note or a video', () => {
+    setSession(sets)
+    render(<SessionInlineDetail sessionId={1} />)
+
+    const rows = sets.map(set => rowOf(`80kg × ${set.reps_completed} reps`))
+    for (const row of rows) expect(row).toHaveClass('min-h-11')
+    expect(rows[0].parentElement).not.toHaveClass('space-y-2')
+  })
+
+  it('edit mode keeps its rows 8px apart', () => {
+    setSession(sets)
+    render(<SessionInlineDetail sessionId={1} />)
+    enterEditMode()
+
+    expect(screen.getByRole('button', { name: 'Añadir serie' }).parentElement).toHaveClass('space-y-2')
+  })
+})
+
 // Issue 197: the session detail marks a dropset with «D» (orange) in the read-only rows and in the
 // edit rows alike, and a PR keeps its colour on top of it.
 describe('SessionInlineDetail: dropset mark', () => {
