@@ -194,7 +194,8 @@ function importedLevel(exportedRoutineExercise) {
  * Prescribed effort of an exercise from the imported JSON, or null when it is off the exercise's
  * scale (RIR -1..3 with reps, RPE 1..5 without). The column has no CHECK, so an off-scale value
  * would be saved without error: it would render like a valid one, the edit picker could not show
- * it, and progression would never be suggested again (`metEffortTarget` could never be met).
+ * it, and the progression nudge's effort gate (`metProgressionEffort`) would compare against a
+ * value off the scale, passing or blocking for the wrong reason.
  * @param {{rir?: unknown}} exportedRoutineExercise
  * @param {string[]|undefined} trackedFields - what the exercise tracks in the DB, not what the JSON
  *   declares: on an existing exercise the database decides the scale
