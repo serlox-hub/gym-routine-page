@@ -9,6 +9,8 @@ import { convertWeightValue } from './weightConversion.js'
 
 /**
  * Calcula el 1RM estimado usando la fórmula Epley
+ * The SQL `epley_1rm` (migration 076) mirrors it to rebuild best_1rm after a weight unit conversion:
+ * change both together, `npm run db:check-pr-parity -w apps/web` compares them.
  * @param {number} weight - Peso levantado
  * @param {number} reps - Repeticiones realizadas
  * @returns {number} 1RM estimado (redondeado)

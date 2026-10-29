@@ -8,6 +8,10 @@ import { readLocalMigrationDrift } from './localMigrations.js'
 // otherwise and ask for a reset.
 const STACK_HINT = 'Is the stack up? `npx supabase start` from apps/web.'
 
+// The epley_1rm grid of `db:check-pr-parity` answers about 2.5 MB, and spawnSync kills the CLI past
+// its default buffer of 1 MB.
+const MAX_OUTPUT_BYTES = 32 * 1024 * 1024
+
 /**
  * @param {string} webDir apps/web, where supabase/config.toml lives.
  * @param {string} sql
@@ -33,7 +37,7 @@ export function queryLocalDatabase(webDir, sql) {
   const result = spawnSync(
     'npx',
     ['supabase', 'db', 'query', '--local', '--output-format', 'json', '--agent', 'no', sql],
-    { cwd: webDir, encoding: 'utf8' }
+    { cwd: webDir, encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES }
   )
   if (result.status !== 0) {
     throw new Error(`${result.stderr?.trim() || '(no output)'}\n\nCould not query the local database. ${STACK_HINT}`)

@@ -313,7 +313,7 @@ A forgotten GRANT means 42501 for every logged-in user. `npm run db:check-grants
 
 **Reads that must see every row** (a whole history, its records): PostgREST cuts each response at `max_rows` (1000 locally; production's value is not in the repo) without any error. They go through `api/fetchAllRows.js`, selecting `id` (pages are deduped by it) and with an order that ends on a unique key, or pages skip and repeat rows. Known reads that still don't: `fetchExerciseBests` (PR detection), `fetchBodyWeightHistory`, `fetchBodyMeasurementHistory`.
 
-**The PR rule lives twice** (issue #196): which records an exercise gets is `getPRMetrics` (`lib/sessionStatsCalculation.js`: end of session, live trophy) and its SQL mirror `pr_metrics` (`recalculate_exercise_prs_for_user`, behind the RPC `recalculate_exercise_prs`, after an edit). Change both together: `npm run db:check-pr-parity -w apps/web` (CI, after `supabase start`) compares them on every field combination.
+**The PR rule lives twice** (issue #196): which records an exercise gets is `getPRMetrics` (`lib/sessionStatsCalculation.js`: end of session, live trophy) and its SQL mirror `pr_metrics` (`recalculate_exercise_prs_for_user`, behind the RPC `recalculate_exercise_prs`, after an edit). Change both together: `npm run db:check-pr-parity -w apps/web` (CI, after `supabase start`) compares them on every field combination. So does the 1RM formula (issue #194): `calculateEpley1RM` (a new set) and `epley_1rm` (`convert_user_weights` recomputes `best_1rm` from the converted sets with it, never scales it); the same check compares them on a grid of 6 million sets, and which exercises store `best_1rm` (`getTrackableMetrics` and `stores_best_1rm`).
 
 ```
 muscle_groups ← exercises (muscle_group_id)

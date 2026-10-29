@@ -23,6 +23,8 @@ const FIELD_METRIC = {
  * Métricas calculadas para stats y gráficas. Peso + reps juntos habilitan además las derivadas
  * del modelo de fuerza (1RM estimado, volumen y rep-PR), que no significan nada sin las dos.
  * Assistance + reps enables only the rep PR: assistance is help, not load, so no 1RM nor volume.
+ * The SQL `stores_best_1rm` (migration 076) mirrors its '1rm' for convert_user_weights: change both
+ * together, `npm run db:check-pr-parity -w apps/web` compares them.
  * @param {string[]} trackedFields
  * @returns {string[]}
  */

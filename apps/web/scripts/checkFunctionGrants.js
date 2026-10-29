@@ -4,9 +4,9 @@ import { queryLocalDatabase } from './localDatabase.js'
 
 // Checks who can execute the functions in `public` on the LOCAL database (issue #115). It exists
 // because nothing else sees it: `db:dump` only dumps `public`, so schema.sql and the drift check miss
-// the global default privileges, and no e2e calls the admin, feedback, unit conversion or day
-// duplication RPCs. Like every check through queryLocalDatabase, it answers only on a database that
-// holds exactly the migrations of the tree.
+// the global default privileges, and no e2e calls the admin, feedback or day duplication RPCs. Like
+// every check through queryLocalDatabase, it answers only on a database that holds exactly the
+// migrations of the tree.
 const appDir = path.resolve(import.meta.dirname, '..')
 
 // Trigger functions are not callable through the API, so they are left out.
