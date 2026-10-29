@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { FileText, Trophy, Video } from 'lucide-react'
+import { Trophy, Video } from 'lucide-react'
 import { formatEffortBadge, formatSetValue } from '@gym/shared'
 import { colors } from '../../lib/styles.js'
-import { IconButton } from '../ui/index.js'
+import { IconButton, NoteIcon } from '../ui/index.js'
 import SetNumberMark from './SetNumberMark.jsx'
 
 // A set already done, read only. The one row of the exercise history and of History's session
@@ -25,7 +25,7 @@ function HistorySetRow({ set, weightUnit, distanceUnit, trackedFields, isPR = fa
       </span>
       <div className="flex items-center gap-0.5">
         {set.notes && (
-          <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onClick={handleSelect} />
+          <IconButton icon={NoteIcon} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onClick={handleSelect} />
         )}
         {set.video_url && (
           <IconButton icon={Video} iconSize={14} color={colors.textMuted} label={t('workout:set.video')} onClick={handleSelect} />

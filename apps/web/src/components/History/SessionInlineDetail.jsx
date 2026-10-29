@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, FileText, Video, SlidersHorizontal, AlertCircle, Dumbbell, CalendarPlus } from 'lucide-react'
+import { Trash2, ChevronRight, Share2, Pencil, Plus, Play, Video, SlidersHorizontal, AlertCircle, Dumbbell, CalendarPlus } from 'lucide-react'
 import { useSessionDetail, useDeleteSession, useUpdateSessionMetadata, useRescheduleSession, useUpsertCompletedSet, useDeleteCompletedSet, useSessionPRs, useStartSession } from '../../hooks/useWorkout.js'
 import { useSelectedGym, useReassignSessionGym, getGymDisplayName, resolveTrackedFields, useHistorySetEditor } from '@gym/shared'
 import useWorkoutStore from '../../stores/workoutStore.js'
-import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton } from '../ui/index.js'
+import { LoadingSpinner, ErrorMessage, Card, ConfirmModal, DropdownMenu, IconButton, NoteIcon } from '../ui/index.js'
 import SetNotesView from '../Workout/SetNotesView.jsx'
 import SetNumberMark from '../Workout/SetNumberMark.jsx'
 import HistorySetRow from '../Workout/HistorySetRow.jsx'
@@ -108,7 +108,7 @@ function EditableSetRow({ set, exercise, sessionId, sessionExerciseId, weightUni
     <>
       {hasNotes && !videoUploadError && (
         <span style={{ ...badgeStyle, cursor: 'default' }} role="img" aria-label={t('workout:set.notes')} title={t('workout:set.notes')}>
-          <FileText size={13} color={colors.textSecondary} />
+          <NoteIcon size={13} color={colors.textSecondary} />
         </span>
       )}
       {videoUploadError && (

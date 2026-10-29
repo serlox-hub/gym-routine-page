@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { FileText, Trophy, Video } from 'lucide-react-native'
+import { Trophy, Video } from 'lucide-react-native'
 import { formatEffortBadge, formatSetValue } from '@gym/shared'
 import { colors, design } from '../../lib/styles'
-import { IconButton } from '../ui'
+import { IconButton, NoteIcon } from '../ui'
 import SetNumberMark from './SetNumberMark'
 
 // A set already done, read only. The one row of the exercise history and of History's session
@@ -28,7 +28,7 @@ function HistorySetRow({ set, weightUnit, distanceUnit, trackedFields, isPR = fa
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
         {set.notes && (
-          <IconButton icon={FileText} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onPress={() => onSelectSet(set)} />
+          <IconButton icon={NoteIcon} iconSize={14} color={colors.textMuted} label={t('workout:set.notes')} onPress={() => onSelectSet(set)} />
         )}
         {set.video_url && (
           <IconButton icon={Video} iconSize={14} color={colors.textMuted} label={t('workout:set.video')} onPress={() => onSelectSet(set)} />

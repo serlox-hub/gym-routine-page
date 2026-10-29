@@ -69,3 +69,15 @@ describe('EffortPicker — fallback de etiqueta/icono cuando la escala de esfuer
     expect(container.querySelector('.lucide-sliders-horizontal')).toBeFalsy()
   })
 })
+
+// History shows a set's note with this same icon (HistorySetRow, SessionInlineDetail): the user
+// finds the note under the icon they wrote it under.
+describe('EffortPicker — note icon (issue 209)', () => {
+  it('a set with a note and no effort shows the set-note icon', () => {
+    const { container } = render(
+      <EffortPicker trackedFields={['weight', 'reps']} value={null} note="Costó" onOpenDetails={() => {}} />
+    )
+
+    expect(container.querySelector('svg.lucide-sticky-note')).toBeInTheDocument()
+  })
+})

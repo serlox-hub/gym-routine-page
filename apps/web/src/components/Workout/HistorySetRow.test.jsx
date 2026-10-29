@@ -140,6 +140,14 @@ describe('HistorySetRow — note and video buttons', () => {
     expect(screen.getByRole('button', { name: 'Vídeo' })).toHaveClass('w-11', 'h-11')
   })
 
+  it('the note button shows the set-note icon, the same one as the workout (issue 209)', () => {
+    renderRow({ notes: 'Costó' })
+
+    const noteButton = screen.getByRole('button', { name: 'Notas' })
+    expect(noteButton.querySelector('svg.lucide-sticky-note')).toBeInTheDocument()
+    expect(noteButton.querySelector('svg.lucide-file-text')).not.toBeInTheDocument()
+  })
+
   it('each button opens that set, with the set it was given', () => {
     const onSelectSet = vi.fn()
     const set = buildSet({ notes: 'Costó', video_url: 'v/abc.mp4' })

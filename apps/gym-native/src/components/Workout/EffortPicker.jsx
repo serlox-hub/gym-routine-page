@@ -1,7 +1,8 @@
 import { Text, Pressable, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { StickyNote, Video, SlidersHorizontal } from 'lucide-react-native'
+import { Video, SlidersHorizontal } from 'lucide-react-native'
 import { colors } from '../../lib/styles'
+import { NoteIcon } from '../ui'
 import { getEffortLabel, formatEffortBadge, effortRendersAsWord } from '@gym/shared'
 
 /**
@@ -58,12 +59,12 @@ export default function EffortPicker({
       }}
     >
       {primary === 'rir' && <Text numberOfLines={1} style={{ color: textColor, fontSize: isWordValue ? 10 : 11, fontWeight: '600' }}>{compactValue}</Text>}
-      {primary === 'note' && <StickyNote size={13} color={colors.textSecondary} />}
+      {primary === 'note' && <NoteIcon size={13} color={colors.textSecondary} />}
       {primary === 'video' && <Video size={13} color={colors.textSecondary} />}
       {primary === 'empty' && (showEffortScale
         ? <Text style={{ color: textColor, fontSize: 11, fontWeight: '600' }}>–</Text>
         : showSetNotes
-          ? <StickyNote size={13} color={colors.textMuted} />
+          ? <NoteIcon size={13} color={colors.textMuted} />
           : <SlidersHorizontal size={13} color={colors.textMuted} />)}
       {/* Bolita «hay algo más» (nota/vídeo además del glifo principal). */}
       {hasMore && (

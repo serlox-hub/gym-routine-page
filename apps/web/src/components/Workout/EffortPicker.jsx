@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { StickyNote, Video, SlidersHorizontal } from 'lucide-react'
+import { Video, SlidersHorizontal } from 'lucide-react'
 import { colors } from '../../lib/styles.js'
+import { NoteIcon } from '../ui/index.js'
 import { getEffortLabel, formatEffortBadge, effortRendersAsWord } from '@gym/shared'
 
 /**
@@ -74,13 +75,13 @@ export default function EffortPicker({
             {compactValue}
           </span>
         )}
-        {primary === 'note' && <StickyNote size={13} color={colors.textSecondary} />}
+        {primary === 'note' && <NoteIcon size={13} color={colors.textSecondary} />}
         {primary === 'video' && <Video size={13} color={colors.textSecondary} />}
         {primary === 'empty' && (
           showEffortScale
             ? '–'
             : showSetNotes
-              ? <StickyNote size={13} color={colors.textMuted} />
+              ? <NoteIcon size={13} color={colors.textMuted} />
               : <SlidersHorizontal size={13} color={colors.textMuted} />
         )}
         {/* Bolita «hay algo más» (nota/vídeo además del glifo principal). */}
