@@ -185,7 +185,7 @@ function StreakCard() {
   }))
 
   return (
-    <section className="mb-4">
+    <section className="mb-4" data-testid="streak-card">
       <style>{`
         .streak-slide-out-left { animation: slideOutLeft 150ms ease-in forwards; }
         .streak-slide-out-right { animation: slideOutRight 150ms ease-in forwards; }

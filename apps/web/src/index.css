@@ -9,6 +9,30 @@
   body {
     @apply bg-surface;
   }
+
+  /* On a touch screen a long press selects no text and opens no iOS callout (issue #215): it only got
+     in the way of taps. Read-only text meant to be copied opts in with `select-text`/`select-all`.
+     Only `pointer: coarse`, so a mouse still selects (public pages, the admin emails). */
+  @media (pointer: coarse) {
+    body {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    /* Explicit, not inherited: on iOS Safari a field under `user-select: none` may refuse the caret. */
+    input,
+    textarea,
+    [contenteditable]:not([contenteditable='false']) {
+      user-select: text;
+      -webkit-user-select: text;
+      -webkit-touch-callout: default;
+    }
+    /* Tailwind's `select-*` set `user-select` only: without the callout, iOS selects but offers no "Copy". */
+    .select-text,
+    .select-all {
+      -webkit-touch-callout: default;
+    }
+  }
 }
 
 /* Sin flechitas en los inputs numéricos: en móvil no se usan (se teclea) y en Chrome reservan

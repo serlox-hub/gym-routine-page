@@ -194,13 +194,28 @@ async function completeFirstSet(page) {
   await page.getByRole('button', { name: 'Completar serie' }).first().click()
 }
 
+/**
+ * `fill` on a set input whose last-session suggestion can land a moment after the row shows (the
+ * seed is an effect, and the previous-session query may still be in flight when the card opens).
+ * Focused while still empty, `CaretEndInput` schedules a caret-to-end for the next frame instead of
+ * its `select()`. If the suggestion lands before that frame, the frame collapses what `fill`
+ * selected and the typing is appended ("40" + "50" = "4050"). A finger never races it, the first
+ * key comes long after. Focusing first and letting that frame pass leaves only `fill`'s own
+ * select-then-type, a far narrower window.
+ */
+async function fillSetInput(input, value) {
+  await input.focus()
+  await input.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
+  await input.fill(value)
+}
+
 /** Opens the weight exercise (which folds the time one) and completes its first set at `weight` × 10. */
 async function completeWeightSet(page, weight) {
   await page.locator('main').getByRole('heading', { level: 4, name: WEIGHT_EXERCISE }).click()
   const inputs = page.locator('main input')
   await expect(inputs).toHaveCount(6)
-  await inputs.nth(0).fill(weight)
-  await inputs.nth(1).fill('10')
+  await fillSetInput(inputs.nth(0), weight)
+  await fillSetInput(inputs.nth(1), '10')
   await completeFirstSet(page)
   await page.getByRole('button', { name: 'Saltar descanso' }).click()
 }

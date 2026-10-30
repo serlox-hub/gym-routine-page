@@ -289,7 +289,7 @@ function ChatbotView({ onImport, step, setStep, t }) {
       {step === 5 && (
         <>
           <p style={{ color: colors.textSecondary, fontSize: 13 }}>{t('routine:chatbot.promptInstructions')}</p>
-          <div className="p-3 rounded-xl text-xs font-mono whitespace-pre-wrap"
+          <div className="p-3 rounded-xl text-xs font-mono whitespace-pre-wrap select-text"
             style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary, maxHeight: 140, overflowY: 'auto', border: `1px solid ${colors.border}` }}>
             {prompt}
           </div>
@@ -527,7 +527,7 @@ function AdaptView({ onImport, step, setStep, t }) {
           {step === 2 && (
             <div className="space-y-3">
               <p>{t('routine:adapt.step2Desc')}</p>
-              <div className="p-3 rounded-xl text-xs font-mono whitespace-pre-wrap"
+              <div className="p-3 rounded-xl text-xs font-mono whitespace-pre-wrap select-text"
                 style={{ backgroundColor: colors.bgPrimary, color: colors.textSecondary, maxHeight: 200, overflowY: 'auto', border: `1px solid ${colors.border}` }}>
                 {adaptPrompt}
               </div>
