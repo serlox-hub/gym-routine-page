@@ -16,14 +16,17 @@
  * tope" era ambiguo en cuanto había una tercera medida. Con el objetivo guardado la señal es
  * "cumpliste lo prescrito", y los demás campos son resultado.
  *
- * Autorregulación por esfuerzo (issue #13, follow-up): el objetivo es una prescripción
- * INCOMPLETA cuando la rutina fija un esfuerzo objetivo. "10 reps @ RIR 2" exige capacidad ~12;
- * hacer 10 @ RIR 0 llega al tope de reps pero 2 de esfuerzo más profundo → capacidad real ~2
- * reps por debajo de lo prescrito, aún NO has ganado la subida. Por eso, cuando hay esfuerzo
- * objetivo (rutina) Y real (serie previa), se exige además que el real no haya sido más duro que
- * el prescrito (`metEffortTarget`, en effortScale.js: la comparación se invierte entre RIR y RPE).
- * Si falta cualquiera de los dos, degrada a solo-objetivo (no bloquea): el esfuerzo es opcional y
- * no debe romper la señal.
+ * Effort autoregulation (issue #13 follow-up, capacity rule since #213): when the routine sets an
+ * effort target, the target alone is an INCOMPLETE prescription. "10 reps @ RIR 2" asks for a
+ * capacity of ~12 (reps done + reserve); 10 @ RIR 0 is a capacity of ~10, 2 short of it: the
+ * increase is NOT earned yet. With a reps target on the RIR scale the gate compares that capacity,
+ * `achieved + actualRir >= top + targetRir`, so reps done beyond the top count as reserve
+ * (17 @ RIR 0 against 10-15 @ RIR 1: 17 >= 16, earned). «F» counts as its stored value, -1, not 0 (see docs/DECISIONS.md, #213).
+ * Every other case (RPE scale, a target that is not reps) only asks that the actual effort was not
+ * harder than prescribed (`metEffortTarget` in effortScale.js, which flips the comparison between
+ * RIR and RPE): extra minutes or metres do not translate into RPE. Without an effort target
+ * (routine) or an actual one (previous set) it degrades to target-only (no gate): effort is
+ * optional and must not break the signal.
  *
  * Toda la lógica es pura para ser DRY web+native y testeable sin React.
  */
@@ -148,26 +151,58 @@ export function parseTargetRange(target, targetField) {
  * @returns {boolean}
  */
 export function didSetHitTop({ previousSet, target, trackedFields, targetField }) {
-  const fields = normalizeTrackedFields(trackedFields)
-  const progressable = getProgressableField(fields)
+  const progressable = getProgressableField(trackedFields)
   if (!progressable) return false
 
-  const field = resolveTargetField(targetField, fields)
-  if (!field || !fields.includes(field)) return false
+  const targetTop = resolveTargetTop(target, trackedFields, targetField)
+  if (!targetTop) return false
 
   if (!previousSet || previousSet.setType === SET_TYPES.DROPSET) return false
-  const achieved = previousSet[getFieldMeta(field).displayKey]
+  const achieved = previousSet[getFieldMeta(targetTop.field).displayKey]
   const from = previousSet[getFieldMeta(progressable).displayKey]
   if (achieved == null || from == null) return false
 
+  return Number(achieved) >= targetTop.top
+}
+
+// The field the target talks about and its top, in one place for the trigger (didSetHitTop) and
+// the effort gate (metProgressionEffort): if they resolved it apart, the gate could count the
+// extra reps over a different top than the one the set reached. null when the exercise does not
+// record that field or the target has no numeric top.
+function resolveTargetTop(target, trackedFields, targetField) {
+  const fields = normalizeTrackedFields(trackedFields)
+  const field = resolveTargetField(targetField, fields)
+  if (!field || !fields.includes(field)) return null
   const range = parseTargetRange(target, field)
-  if (!range) return false
-  return Number(achieved) >= range.max
+  return range ? { field, top: range.max } : null
+}
+
+/**
+ * Effort gate of the nudge. With a reps target on the RIR scale, the reps done beyond the top
+ * count as reserve: actualRir + (achieved - top) >= targetRir. Otherwise `metEffortTarget`.
+ * @param {object} params
+ * @param {object} params.previousSet   display keys, as in didSetHitTop
+ * @param {string|number|null} params.target
+ * @param {string[]} params.trackedFields
+ * @param {string|null} [params.targetField]
+ * @param {number|null} [params.effortTarget]
+ * @returns {boolean}
+ */
+function metProgressionEffort({ previousSet, target, trackedFields, targetField, effortTarget }) {
+  const actual = previousSet.rir
+  const targetTop = resolveTargetTop(target, trackedFields, targetField)
+  // The null checks stay here: Number(null) + extraReps would turn "no effort logged" into a value.
+  if (actual == null || effortTarget == null || targetTop?.field !== SetField.REPS) {
+    return metEffortTarget(actual, effortTarget, trackedFields)
+  }
+  // Reps beyond the top count as reserve: the capacity rule is metEffortTarget on RIR + extra reps.
+  const extraReps = Number(previousSet[getFieldMeta(SetField.REPS).displayKey]) - targetTop.top
+  return metEffortTarget(Number(actual) + extraReps, effortTarget, trackedFields)
 }
 
 /**
  * ¿Mostrar la sugerencia de subir el progresable para esta serie? Combina el disparador del
- * objetivo (`didSetHitTop`) con el gate de esfuerzo (`metEffortTarget`) y el "nudge cumplido": se
+ * objetivo (`didSetHitTop`) con el gate de esfuerzo (`metProgressionEffort`) y el "nudge cumplido": se
  * apaga cuando el valor tecleado hoy ya supera al de la serie anterior. Los flags de UI
  * (preferencia on/off, serie completada) se quedan en el componente; esto es la parte pura.
  * With assistance (direction 'lower') the nudge is done when today's value is BELOW the previous
@@ -185,7 +220,7 @@ export function didSetHitTop({ previousSet, target, trackedFields, targetField }
  */
 export function shouldSuggestProgression({ previousSet, target, trackedFields, targetField, currentProgressable, effortTarget }) {
   if (!didSetHitTop({ previousSet, target, trackedFields, targetField })) return false
-  if (!metEffortTarget(previousSet.rir, effortTarget, trackedFields)) return false
+  if (!metProgressionEffort({ previousSet, target, trackedFields, targetField, effortTarget })) return false
   const progressable = getProgressableField(trackedFields)
   const previousValue = Number(previousSet[getFieldMeta(progressable).displayKey])
   const current = parseDecimal(currentProgressable)

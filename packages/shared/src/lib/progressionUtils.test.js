@@ -236,6 +236,84 @@ describe('shouldSuggestProgression', () => {
   it('false si el ejercicio no tiene nada que subir', () => {
     expect(shouldSuggestProgression({ previousSet: { reps: 12 }, target: '8-12', trackedFields: ['reps'], currentProgressable: '' })).toBe(false)
   })
+
+  // Capacity rule (issue #213): with a reps target on the RIR scale, reps done beyond the top
+  // count as reserve, achieved + actualRir >= top + targetRir.
+  describe('effort gate counts reps beyond the top as reserve', () => {
+    const suggest = ({ reps, rir }, effortTarget, target = '10-15') => shouldSuggestProgression({
+      previousSet: { weight: 40, reps, rir }, target, trackedFields: WR, currentProgressable: '', effortTarget,
+    })
+
+    it('17 @ RIR 0 against 10-15 @ RIR 1 earns the increase (capacity 17 >= 16)', () => {
+      expect(suggest({ reps: 17, rir: 0 }, 1)).toBe(true)
+    })
+
+    it('16 @ RIR 0 against RIR 1 earns it (capacity 16 = 16)', () => {
+      expect(suggest({ reps: 16, rir: 0 }, 1)).toBe(true)
+    })
+
+    it('15 @ RIR 0 against RIR 1 does not: at the top there is no extra, and RIR 0 is not read as missing', () => {
+      expect(suggest({ reps: 15, rir: 0 }, 1)).toBe(false)
+    })
+
+    it('16 @ RIR 0 against RIR 2 does not (capacity 16 < 17)', () => {
+      expect(suggest({ reps: 16, rir: 0 }, 2)).toBe(false)
+    })
+
+    it('15 @ RIR 2 against RIR 1 still earns it', () => {
+      expect(suggest({ reps: 15, rir: 2 }, 1)).toBe(true)
+    })
+
+    it('a missing actual or target effort is still no gate', () => {
+      expect(suggest({ reps: 16, rir: null }, 2)).toBe(true)
+      expect(suggest({ reps: 16, rir: 0 }, null)).toBe(true)
+    })
+
+    it('«F» counts as its stored -1: 16 @ F earns RIR 0, 15 @ F does not', () => {
+      expect(suggest({ reps: 16, rir: -1 }, 0)).toBe(true)
+      expect(suggest({ reps: 15, rir: -1 }, 0)).toBe(false)
+    })
+
+    it('a single-value target counts from that value: 14 @ RIR 0 against 12 @ RIR 1', () => {
+      expect(suggest({ reps: 14, rir: 0 }, 1, '12')).toBe(true)
+    })
+
+    it('the top of the scale works the same: against RIR 3 it takes 3 extra reps at RIR 0', () => {
+      expect(suggest({ reps: 18, rir: 0 }, 3)).toBe(true)
+      expect(suggest({ reps: 17, rir: 0 }, 3)).toBe(false)
+    })
+
+    it('an assisted exercise gets the rule too: the direction of the progressable does not change the effort gate', () => {
+      const params = { target: '8-12', trackedFields: ['assistance', 'reps'], currentProgressable: '', effortTarget: 2 }
+      expect(shouldSuggestProgression({ ...params, previousSet: { weight: 30, reps: 14, rir: 0 } })).toBe(true)
+      expect(shouldSuggestProgression({ ...params, previousSet: { weight: 30, reps: 13, rir: 0 } })).toBe(false)
+    })
+
+    it('a row with targetField null on weight + reps resolves to reps and gets the rule', () => {
+      expect(shouldSuggestProgression({
+        previousSet: { weight: 40, reps: 17, rir: 0 }, target: '10-15', trackedFields: WR, targetField: null,
+        currentProgressable: '', effortTarget: 1,
+      })).toBe(true)
+    })
+
+    it('a target that is not reps adds nothing beyond its top, even on the RIR scale', () => {
+      // Weighted plank with reps: the target is the time, 10 s over the top count for nothing.
+      const params = {
+        target: '60s', trackedFields: ['weight', 'reps', 'time'], targetField: 'time', currentProgressable: '', effortTarget: 1,
+      }
+      expect(shouldSuggestProgression({ ...params, previousSet: { weight: 20, reps: 20, timeSeconds: 70, rir: 0 } })).toBe(false)
+      expect(shouldSuggestProgression({ ...params, previousSet: { weight: 20, reps: 20, timeSeconds: 70, rir: 1 } })).toBe(true)
+    })
+
+    it('on the RPE scale extra minutes do not count: only the effort is compared', () => {
+      // 16 min against 10-15 min. RPE is stored 1-5 (higher is harder).
+      const params = {
+        target: '10-15min', trackedFields: ['level', 'time'], targetField: 'time', currentProgressable: '', effortTarget: 3,
+      }
+      expect(shouldSuggestProgression({ ...params, previousSet: { level: 8, timeSeconds: 960, rir: 4 } })).toBe(false)
+      expect(shouldSuggestProgression({ ...params, previousSet: { level: 8, timeSeconds: 960, rir: 3 } })).toBe(true)
+    })
+  })
 })
 
 describe('textos del aviso', () => {
