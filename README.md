@@ -165,6 +165,7 @@ Sentry captura errores de produccion en ambas apps. Plan gratuito: 5K errores/me
 - En desarrollo no envia nada a Sentry
 - Si no hay DSN configurado, Sentry no se inicializa (sin errores)
 - Web also sends a `slow_write` warning (at most 5 each time the app comes to the foreground) when a write takes over 5 s, with a timeline of its requests, visibility changes and session expiry, to find the cause of slow saves (issue #123, `apps/web/src/lib/netTimeline.js`)
+- Web also sends a `chunk_reload_recovered` info message on the boot that follows an automatic reload after a deploy, and reports the chunk error as an exception tagged `chunk_reload: exhausted` when it cannot reload (it already did in the last 5 minutes, or there is no sessionStorage) (issue #217, `apps/web/src/lib/chunkReload.js`). The message only says the reload happened: an `exhausted` from the same device minutes later means it did not fix it.
 
 **Dashboard:**
 

@@ -12,6 +12,10 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-10 · Recarga automática tras un deploy (#217)
+- **La decide solo el `ErrorBoundary` raíz, sin listener de `vite:preloadError`:** es lo que recomienda la documentación de Vite, pero cancelar ese evento hace que el `import()` resuelva `undefined`. `React.lazy` lanza entonces "Expected the result of a dynamic import() call", que no se reconoce como error de chunk y sustituye al mensaje real cuando salta la guarda.
+- **Trampa:** un `ErrorBoundary` nuevo por debajo del raíz (p. ej. `Sentry.ErrorBoundary` en una ruta) se tragaría el error de chunk y la recarga dejaría de ocurrir sin aviso.
+
 ## 2026-10 · Franja de la hora transparente en iOS (#164)
 - **Se arregla bajando el `fixed` de arriba, no con la meta `apple-mobile-web-app-status-bar-style`:** con la caja de la píldora del temporizador a 4 px del borde, Safari en iOS deja de pintar la franja y la lista se ve detrás al hacer scroll. Descartado cambiar `black-translucent` por `black` en `index.html` (PR #165): se probó en el iPhone y no lo arregla.
 

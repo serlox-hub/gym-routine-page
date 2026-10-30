@@ -7,6 +7,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { supabase, AUTH_STORAGE_KEY } from './lib/supabase.js'
 import { trackVisibility, watchSlowWrites } from './lib/netTimeline.js'
 import { readSessionExpiresAt, reportSlowWrite } from './lib/slowWriteReport.js'
+import { reportChunkReload } from './lib/chunkReload.js'
 import { queryClient, initApi, initStores, initNotifications, i18n, initI18n } from '@gym/shared'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
@@ -27,6 +28,8 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     readSessionExpiresAt: () => readSessionExpiresAt(AUTH_STORAGE_KEY),
   })
 }
+// Tells Sentry when this boot comes from an automatic reload after a deploy (issue #217).
+reportChunkReload()
 
 i18n.use(initReactI18next).use(LanguageDetector)
 initI18n({ detection: { order: ['localStorage', 'navigator'], caches: ['localStorage'] } })
