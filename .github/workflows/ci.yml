@@ -122,6 +122,8 @@ jobs:
           E2E_SLOW_TEST_PASSWORD: e2e-local-password
           E2E_TOUCH_TEST_EMAIL: e2e-touch@local.test
           E2E_TOUCH_TEST_PASSWORD: e2e-local-password
+          E2E_HOME_TEST_EMAIL: e2e-home@local.test
+          E2E_HOME_TEST_PASSWORD: e2e-local-password
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

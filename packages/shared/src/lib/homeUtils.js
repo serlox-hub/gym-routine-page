@@ -314,6 +314,21 @@ export function calculateChartMetrics(chartData) {
 }
 
 /**
+ * Axis max that leaves `labelHeight` px free above the tallest bar in a plot `plotHeight` px tall,
+ * so the minutes printed on top of it fit inside the plot. The bars get shorter, the card does
+ * not grow (issue #216).
+ * @param {number} chartMax - Largest value of the chart (`calculateChartMetrics`)
+ * @param {number} plotHeight - Height of the area the bars grow in, px
+ * @param {number} labelHeight - Room a label needs above its bar, px
+ * @returns {number}
+ */
+export function getChartMaxWithLabelRoom(chartMax, plotHeight, labelHeight) {
+  // Without room to give (or a plot to give it in), the axis as it was: never infinite or negative
+  if (!(labelHeight > 0) || !(plotHeight > labelHeight)) return chartMax
+  return chartMax * plotHeight / (plotHeight - labelHeight)
+}
+
+/**
  * Devuelve la fecha de hoy como string YYYY-MM-DD.
  * @returns {string}
  */
