@@ -1,4 +1,5 @@
 export * from './lib/arrayUtils.js'
+export * from './lib/authSession.js'
 export * from './lib/exerciseUtils.js'
 export * from './lib/exerciseMedia.js'
 export * from './lib/exerciseMatch.js'
