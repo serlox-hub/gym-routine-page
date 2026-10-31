@@ -9,6 +9,18 @@ import { t } from '../i18n/index.js'
 // SESSION - RESTORE
 // ============================================
 
+/**
+ * Si el cliente de auth tiene una sesión utilizable, o sea, si las peticiones salen con el token
+ * del usuario. El store de auth puede conocer al usuario sin que auth-js tenga sesión: tras un
+ * refresh fallido reintentable publica la sesión guardada, caducada (#221). Entonces las
+ * peticiones salen con la anon key y RLS responde cero filas, que fetchActiveSession no puede
+ * distinguir de "no hay sesión activa".
+ */
+export async function hasAuthSession() {
+  const { data } = await getClient().auth.getSession()
+  return Boolean(data?.session)
+}
+
 export async function fetchActiveSession() {
   const { data, error } = await getClient()
     .from('workout_sessions')

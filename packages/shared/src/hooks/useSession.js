@@ -14,6 +14,7 @@ import {
   mergeExerciseStats,
 } from '../lib/sessionStatsCalculation.js'
 import {
+  hasAuthSession,
   fetchActiveSession,
   fetchCompletedSetsForSession,
   startWorkoutSession,
@@ -64,6 +65,9 @@ export async function syncActiveSessionState() {
   const vigente = () => epoch === syncEpoch
 
   try {
+    // Sin token del usuario, RLS respondería "ninguna sesión activa" y endSession() borraría las
+    // series sin sincronizar. Pasa al arrancar con el token caducado y el refresh fallando (#221).
+    if (!(await hasAuthSession())) return
     const activeSession = await fetchActiveSession()
     if (!vigente()) return
     const { sessionId: localSessionId, restoreSession, endSession } = store.getState()

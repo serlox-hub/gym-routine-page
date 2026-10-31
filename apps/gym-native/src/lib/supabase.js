@@ -11,9 +11,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+// The AsyncStorage key the auth client keeps the session under. Same value as supabase-js's own
+// default, but passed to createClient so authStore, which reads it directly, cannot drift from it.
+export const AUTH_STORAGE_KEY = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
+    storageKey: AUTH_STORAGE_KEY,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

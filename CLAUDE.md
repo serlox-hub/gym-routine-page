@@ -473,6 +473,7 @@ Extract when logic:
 | Escala de esfuerzo (RIR/RPE) | `effortScale.js` | `getEffortOptions()`, `isValidEffortValue()`, `formatEffortBadge()`, `metEffortTarget()` |
 | Acción de los botones de arrancar entrenamiento | `workoutStartAction.js` | `getFreeWorkoutAction()`, `getRoutineDayAction()`, `isSessionAlreadyInProgressError()` |
 | Acción del botón de borrar gimnasio (recuento de sesiones sin confirmar ≠ 0) | `gymUtils.js` | `getGymDeleteAction()` |
+| Startup auth check: which `getSession()` failures say nothing about the stored session (no network, a stolen web lock) and must not wipe it (#221) | `authSession.js` | `isInconclusiveSessionError()`, `parseStoredSession()` |
 | Columnas de la fila de serie (sesión) | `setColumns.js` | `getSetColumns()` |
 | Sync queue of the active session's sets, what ending a workout does with what is left in it, and what a set and a collapsed card show of it (slow / rejected, #210) | `pendingSetsSync.js` | `drainPendingSets()`, `buildUpsertPayloadFromStore()`, `isRetryableError()`, `getUnsavedSetsError()`, `describeEndSessionError()`, `getSetWaitingSince()`, `getExerciseWaitingSince()`, `getSyncStatus()` (read by `useSetSyncStatus`/`useExerciseSyncStatus`) |
 | Input de duración por dígitos (mm:ss) | `durationInput.js` | `durationDigitsToSeconds()`, `secondsToDurationDigits()`, `formatDurationDigits()` |

@@ -17,6 +17,7 @@ const useAuthStore = createAuthStore(supabase, {
   onResetPasswordOptions: () => ({
     redirectTo: `${window.location.origin}/reset-password`,
   }),
+  readStoredSession: () => localStorage.getItem(AUTH_STORAGE_KEY),
 })
 
 // Web-only: Google OAuth via browser redirect
