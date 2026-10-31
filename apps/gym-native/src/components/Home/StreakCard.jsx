@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useCallback } from 'react'
+import { useMemo, useRef, useCallback } from 'react'
 import { View, Text, Pressable, Animated, PanResponder, useWindowDimensions } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { BarChart } from 'react-native-gifted-charts'
@@ -7,16 +7,14 @@ import { Zap, Pause, X, Target, ChevronRight, Timer } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import {
   useTrainingGoal, useViewedTrainingCycle, useHomeCycleOffset, useHomeWeekStore, getTodayDateStr,
-  getPaginationDots, STREAK_MAX_BACK,
+  getPaginationDots, getChartMaxWithLabelRoom, STREAK_MAX_BACK,
 } from '@gym/shared'
 import { Card, Skeleton } from '../ui'
 import { colors, gradients, design } from '../../lib/styles'
 import StreakErrorState from './StreakErrorState'
 
 const SWIPE_THRESHOLD = design.swipeThreshold
-const LONG_PRESS_DELAY_MS = 250
 const TAP_MAX_DISTANCE_PX = 10
-const MOVE_CANCEL_THRESHOLD_PX = 8
 
 function SetupBanner() {
   const { t } = useTranslation()
@@ -68,7 +66,7 @@ function PaginationDots({ current, min, max }) {
   )
 }
 
-function StreakCard({ onScrubbingChange }) {
+function StreakCard() {
   const { t, i18n } = useTranslation()
   const { width: screenWidth } = useWindowDimensions()
   const navigation = useNavigation()
@@ -76,7 +74,6 @@ function StreakCard({ onScrubbingChange }) {
   // In a store, not local state: the stats row under the card shows the same week
   const cycleOffset = useHomeCycleOffset()
   const setCycleOffset = useHomeWeekStore(state => state.setCycleOffset)
-  const [focusedBarIndex, setFocusedBarIndex] = useState(-1)
   const translateX = useRef(new Animated.Value(0)).current
   const touchStartX = useRef(0)
   const isAnimating = useRef(false)
@@ -85,17 +82,7 @@ function StreakCard({ onScrubbingChange }) {
   const chartWidthRef = useRef(0)
   const barDataRef = useRef([])
   const chartTouchActiveRef = useRef(false)
-  const longPressTimerRef = useRef(null)
-  const scrubbingRef = useRef(false)
-  const pressInfoRef = useRef({ time: 0, locationX: 0, pageX: 0 })
-  const onScrubbingChangeRef = useRef(onScrubbingChange)
-  onScrubbingChangeRef.current = onScrubbingChange
-
-  const setScrubbing = (active) => {
-    if (scrubbingRef.current === active) return
-    scrubbingRef.current = active
-    onScrubbingChangeRef.current?.(active)
-  }
+  const pressXRef = useRef(0)
 
   const triggerSwipe = useCallback((direction) => {
     const newOffset = offsetRef.current + direction
@@ -147,39 +134,14 @@ function StreakCard({ onScrubbingChange }) {
     onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: (e) => {
       chartTouchActiveRef.current = true
-      const { locationX, pageX } = e.nativeEvent
-      pressInfoRef.current = { time: Date.now(), locationX, pageX }
-      const idx = barIndexFromX(locationX)
-      longPressTimerRef.current = setTimeout(() => {
-        setScrubbing(true)
-        const item = barDataRef.current[idx]
-        setFocusedBarIndex(item?.durationMinutes > 0 ? idx : -1)
-      }, LONG_PRESS_DELAY_MS)
+      pressXRef.current = e.nativeEvent.locationX
     },
-    onPanResponderMove: (e, gs) => {
-      if (scrubbingRef.current) {
-        const idx = barIndexFromX(e.nativeEvent.locationX)
-        const item = barDataRef.current[idx]
-        const next = item?.durationMinutes > 0 ? idx : -1
-        setFocusedBarIndex((prev) => (prev === next ? prev : next))
-        return
-      }
-      if (Math.abs(gs.dx) > MOVE_CANCEL_THRESHOLD_PX) {
-        clearTimeout(longPressTimerRef.current)
-      }
-    },
+    // A tap however long the finger stays down: only the distance tells it from a swipe (like web)
     onPanResponderRelease: (e, gs) => {
-      clearTimeout(longPressTimerRef.current)
-      if (scrubbingRef.current) {
-        setScrubbing(false)
-        setFocusedBarIndex(-1)
-        return
-      }
-      const elapsed = Date.now() - pressInfoRef.current.time
       const dx = Math.abs(gs.dx)
       const dy = Math.abs(gs.dy)
-      if (dx < TAP_MAX_DISTANCE_PX && dy < TAP_MAX_DISTANCE_PX && elapsed < LONG_PRESS_DELAY_MS) {
-        const idx = barIndexFromX(pressInfoRef.current.locationX)
+      if (dx < TAP_MAX_DISTANCE_PX && dy < TAP_MAX_DISTANCE_PX) {
+        const idx = barIndexFromX(pressXRef.current)
         const item = barDataRef.current[idx]
         if (item?.durationMinutes > 0 && item.dateStr) {
           navigation.navigate('History', { date: item.dateStr })
@@ -191,9 +153,6 @@ function StreakCard({ onScrubbingChange }) {
       }
     },
     onPanResponderTerminate: () => {
-      clearTimeout(longPressTimerRef.current)
-      setScrubbing(false)
-      setFocusedBarIndex(-1)
       chartTouchActiveRef.current = false
     },
   }), [navigation, triggerSwipe])
@@ -227,6 +186,8 @@ function StreakCard({ onScrubbingChange }) {
 
   const todayStr = getTodayDateStr()
 
+  const axisMax = getChartMaxWithLabelRoom(chartMax, design.chartHeight.native, design.chartBarLabelHeight)
+
   const barData = chartData.map(d => {
     const showLime = !isRest && d.durationMinutes > 0
     return {
@@ -242,6 +203,15 @@ function StreakCard({ onScrubbingChange }) {
         fontSize: design.labelSize,
         fontWeight: d.dateStr <= todayStr ? '600' : '500',
       },
+      // An empty day's bar is a placeholder (`emptyBarValue`), not minutes: no label. The library
+      // stacks the label at the bottom of a box over the bar, so it sits right on top of it.
+      topLabelComponent: d.durationMinutes > 0
+        ? () => (
+          <Text style={{ color: colors.textMuted, fontSize: design.labelSize, fontWeight: '500' }}>
+            {d.durationMinutes}
+          </Text>
+        )
+        : null,
     }
   })
   barDataRef.current = barData
@@ -339,7 +309,7 @@ function StreakCard({ onScrubbingChange }) {
           >
             <BarChart
               data={barData}
-              maxValue={chartMax}
+              maxValue={axisMax}
               height={design.chartHeight.native}
               barWidth={36}
               spacing={8}
@@ -357,15 +327,6 @@ function StreakCard({ onScrubbingChange }) {
               noOfSections={3}
               adjustToWidth
               showGradient={!isRest}
-              focusedBarIndex={focusedBarIndex}
-              renderTooltip={(item) => {
-                if (!item.durationMinutes) return null
-                return (
-                  <View style={{ backgroundColor: colors.bgTertiary, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: colors.border, position: 'absolute', bottom: -30 }}>
-                    <Text style={{ color: colors.textPrimary, fontSize: 11 }}>{item.durationMinutes} min</Text>
-                  </View>
-                )
-              }}
             />
           </View>
         </Animated.View>

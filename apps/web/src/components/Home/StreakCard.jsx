@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, LabelList, ResponsiveContainer, Cell } from 'recharts'
 import { Zap, Pause, X, Target, ChevronRight, Timer } from 'lucide-react'
 import {
   useTrainingGoal, useViewedTrainingCycle, useHomeCycleOffset, useHomeWeekStore, getTodayDateStr,
-  getPaginationDots, STREAK_MAX_BACK,
+  getPaginationDots, getChartMaxWithLabelRoom, STREAK_MAX_BACK,
 } from '@gym/shared'
 import { Card, Skeleton } from '../ui/index.js'
 import { colors, gradients, design } from '../../lib/styles.js'
@@ -43,6 +43,13 @@ function SetupBanner() {
 const SWIPE_THRESHOLD = design.swipeThreshold
 // Más recorrido que esto ya es arrastre, no toque: al soltar no abre el día (mismo valor que native)
 const TAP_MAX_DISTANCE_PX = 10
+// Recharts' default, set on the XAxis: the bars grow in the chart's height minus this, and the room
+// for their minutes is taken from that plot
+const X_AXIS_HEIGHT = 30
+// From a bar's top to its minutes' baseline (digits have no descender). Native lays the text box on
+// the bar, which leaves about the same gap below the digits
+const BAR_LABEL_GAP_PX = 3
+const PLOT_HEIGHT = design.chartHeight.web - X_AXIS_HEIGHT
 function PaginationDots({ current, min, max }) {
   return (
     <div className="flex items-center justify-center gap-1.5 mt-3">
@@ -179,6 +186,8 @@ function StreakCard() {
 
   const todayStr = getTodayDateStr()
 
+  const axisMax = getChartMaxWithLabelRoom(chartMax, PLOT_HEIGHT, design.chartBarLabelHeight)
+
   const webChartData = chartData.map(d => ({
     ...d,
     barValue: d.durationMinutes > 0 ? d.durationMinutes : emptyBarValue,
@@ -297,22 +306,9 @@ function StreakCard() {
                 }}
                 axisLine={false}
                 tickLine={false}
+                height={X_AXIS_HEIGHT}
               />
-              <YAxis domain={[0, chartMax]} hide />
-              <Tooltip
-                cursor={false}
-                position={{ y: design.chartHeight.web - 20 }}
-                content={({ active, payload }) => {
-                  if (!active || !payload?.[0]) return null
-                  const mins = payload[0].payload.durationMinutes
-                  if (!mins) return null
-                  return (
-                    <div className="rounded px-2 py-1" style={{ backgroundColor: colors.bgTertiary, border: `1px solid ${colors.border}` }}>
-                      <span style={{ color: colors.textPrimary, fontSize: 11 }}>{mins} min</span>
-                    </div>
-                  )
-                }}
-              />
+              <YAxis domain={[0, axisMax]} hide />
               <Bar
                 dataKey="barValue"
                 radius={[design.barRadius, design.barRadius, design.barRadius, design.barRadius]}
@@ -321,6 +317,9 @@ function StreakCard() {
                 // las de la semana vieja entrarían deslizando y luego se transformarían en las nuevas.
                 // Apagada del todo (tampoco crecen al cargar) por paridad: native no anima las barras
                 isAnimationActive={false}
+                // The bar's whole column takes the tap, not just its painted rect: native resolves it by
+                // column, so tapping the minutes above a bar (or a short bar's empty top) opens the day too
+                background={{ fill: 'transparent' }}
                 onClick={(data) => {
                   if (moved.current) return
                   if (data?.durationMinutes > 0 && data.dateStr) {
@@ -338,6 +337,24 @@ function StreakCard() {
                     />
                   )
                 })}
+                {/* An empty day's bar is a placeholder (`emptyBarValue`), not minutes: no label */}
+                <LabelList
+                  dataKey="durationMinutes"
+                  position="top"
+                  content={({ viewBox, value }) => (value > 0 ? (
+                    <text
+                      x={viewBox.x + viewBox.width / 2}
+                      y={viewBox.y - BAR_LABEL_GAP_PX}
+                      textAnchor="middle"
+                      fill={colors.textMuted}
+                      fontSize={design.labelSize}
+                      fontWeight={500}
+                      pointerEvents="none"
+                    >
+                      {value}
+                    </text>
+                  ) : null)}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

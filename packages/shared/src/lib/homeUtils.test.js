@@ -16,6 +16,7 @@ import {
   shouldResetViewedWeek,
   selectViewedCycleOffset,
   HOME_WEEK_RESET_MS,
+  getChartMaxWithLabelRoom,
 } from './homeUtils.js'
 
 const FORMAT = { dayLabels: ['D', 'L', 'M', 'X', 'J', 'V', 'S'], locale: 'es' }
@@ -548,5 +549,37 @@ describe('getPaginationDots', () => {
     expect(dots.map(d => d.dotIndex)).toEqual([4, 5, 6, 7, 8])
     expect(dots[2]).toMatchObject({ isActive: true, size: 8 })
     expect(dots.map(d => d.size)).toEqual([4, 6, 8, 6, 4])
+  })
+})
+
+// ============================================
+// getChartMaxWithLabelRoom
+// ============================================
+
+describe('getChartMaxWithLabelRoom', () => {
+  it('raises the axis so the tallest bar stops labelHeight px below the top', () => {
+    const axisMax = getChartMaxWithLabelRoom(106, 90, 16)
+    expect(axisMax).toBeCloseTo(106 * 90 / 74)
+    // Height in px of the tallest bar: what is left of the plot after the label's room
+    expect(106 / axisMax * 90).toBeCloseTo(74)
+  })
+
+  it('works with the 60 minute floor', () => {
+    expect(getChartMaxWithLabelRoom(60, 100, 20)).toBe(75)
+  })
+
+  it('returns chartMax when the label needs no room', () => {
+    expect(getChartMaxWithLabelRoom(60, 90, 0)).toBe(60)
+  })
+
+  it('returns chartMax when the label does not fit in the plot', () => {
+    expect(getChartMaxWithLabelRoom(60, 16, 16)).toBe(60)
+    expect(getChartMaxWithLabelRoom(60, 10, 16)).toBe(60)
+    expect(getChartMaxWithLabelRoom(60, 0, 16)).toBe(60)
+  })
+
+  it('returns chartMax for a negative or missing label height', () => {
+    expect(getChartMaxWithLabelRoom(60, 90, -5)).toBe(60)
+    expect(getChartMaxWithLabelRoom(60, 90, undefined)).toBe(60)
   })
 })
