@@ -5,12 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { Plus, ArrowRightLeft, X, Flag, ChevronDown } from 'lucide-react-native'
 import {
-  useCompleteSet, useUncompleteSet, useEndSession, useAbandonSession,
+  useCompleteSet, useUncompleteSet, useEndSession, useAbandonSessionFlow,
   useSessionExercises, useAddSessionExerciseFlow,
   useReplaceSessionExercise, useReorderSessionExercises, useWakeLock,
 } from '../../hooks/useWorkout'
-import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui'
+import { LoadingSpinner, Button, ConfirmModal, PageHeader } from '../ui'
 import RestTimer from './RestTimer'
+import AbandonSessionModal from './AbandonSessionModal'
+import SessionLoadError from './SessionLoadError'
 import BlockExerciseList from './BlockExerciseList'
 import EndSessionModal from './EndSessionModal'
 import ExerciseProgressBar from './ExerciseProgressBar'
@@ -41,9 +43,8 @@ export default function WorkoutSessionLayout({ title }) {
   useWakeLock()
 
   const hasCompletedSets = Object.keys(completedSets).length > 0
-  const { data: sessionExercises, isLoading, error } = useSessionExercises(sessionId)
+  const { data: sessionExercises, isLoading, error, refetch } = useSessionExercises(sessionId)
 
-  const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
   const [showConverter, setShowConverter] = useState(false)
 
@@ -74,7 +75,7 @@ export default function WorkoutSessionLayout({ title }) {
       })
     },
   })
-  const abandonSessionMutation = useAbandonSession()
+  const abandonFlow = useAbandonSessionFlow()
   const addFlow = useAddSessionExerciseFlow()
   const addFailedMessage = addFlow.isFailed ? t('workout:exercise.addFailed') : null
   const replaceSessionExerciseMutation = useReplaceSessionExercise()
@@ -126,21 +127,20 @@ export default function WorkoutSessionLayout({ title }) {
     },
   })
 
+  const handleBack = () => useWorkoutStore.getState().hideWorkout()
+
   if (!sessionId) return null
 
   if (isLoading && !sessionExercises) return <LoadingSpinner />
-  if (error) {
+  // A failed background refetch keeps its data: the workout already on screen stays there.
+  if (error && !sessionExercises) {
     return (
-      <SafeAreaView className="flex-1 bg-surface p-4">
-        <ErrorMessage message={error.message} className="mb-4" />
-        <Button
-          variant="danger"
-          onPress={() => abandonSessionMutation.mutate()}
-          loading={abandonSessionMutation.isPending}
-        >
-          {abandonSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.abandon')}
-        </Button>
-      </SafeAreaView>
+      <SessionLoadError
+        title={title}
+        onBack={handleBack}
+        onRetry={() => refetch()}
+        abandon={abandonFlow}
+      />
     )
   }
 
@@ -156,11 +156,6 @@ export default function WorkoutSessionLayout({ title }) {
     // on every render. It cannot be pending here: the modal cannot close while pending.
     endSessionMutation.reset()
     setShowEndModal(true)
-  }
-
-  const handleAbandonWorkout = () => {
-    setShowCancelModal(false)
-    abandonSessionMutation.mutate()
   }
 
   const hasExercises = flatExercises.length > 0
@@ -182,10 +177,10 @@ export default function WorkoutSessionLayout({ title }) {
 
       <PageHeader
         title={title}
-        onBack={() => useWorkoutStore.getState().hideWorkout()}
+        onBack={handleBack}
         menuItems={[
           { icon: ArrowRightLeft, label: t('workout:set.weightConverter'), onClick: () => setShowConverter(true) },
-          { icon: X, label: t('workout:session.abandon'), onClick: () => setShowCancelModal(true), danger: true },
+          { icon: X, label: t('workout:session.abandon'), onClick: abandonFlow.open, danger: true },
         ]}
       />
 
@@ -280,15 +275,7 @@ export default function WorkoutSessionLayout({ title }) {
         </PRProvider>
       </KeyboardAvoidingView>
 
-      <ConfirmModal
-        isOpen={showCancelModal}
-        title={t('workout:session.abandonConfirm')}
-        message={t('workout:session.abandonMessage')}
-        confirmText={t('workout:session.abandon')}
-        cancelText={t('common:buttons.continue')}
-        onConfirm={handleAbandonWorkout}
-        onCancel={() => setShowCancelModal(false)}
-      />
+      <AbandonSessionModal abandon={abandonFlow} />
 
       <AddExerciseModal
         isOpen={addFlow.isModalOpen}

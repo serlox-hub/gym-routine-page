@@ -3,10 +3,10 @@ import {
   useSyncPendingGymChange as _useSyncPendingGymChange,
   useStartSession,
   useEndSession,
-  useAbandonSession,
+  useAbandonSessionFlow,
 } from '@gym/shared'
 
-export { useStartSession, useEndSession, useAbandonSession }
+export { useStartSession, useEndSession, useAbandonSessionFlow }
 
 export function useRestoreActiveSession() {
   return _useRestoreActiveSession({

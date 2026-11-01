@@ -8,7 +8,7 @@ import {
   useCompleteSet,
   useUncompleteSet,
   useEndSession,
-  useAbandonSession,
+  useAbandonSessionFlow,
   useSessionExercises,
   useAddSessionExerciseFlow,
   useReplaceSessionExercise,
@@ -16,8 +16,10 @@ import {
   useWakeLock,
 } from '../../hooks/useWorkout.js'
 import { Plus, ArrowRightLeft, X, Flag, ChevronDown } from 'lucide-react'
-import { LoadingSpinner, ErrorMessage, Button, ConfirmModal, PageHeader } from '../ui/index.js'
+import { LoadingSpinner, Button, ConfirmModal, PageHeader } from '../ui/index.js'
 import RestTimer from './RestTimer.jsx'
+import AbandonSessionModal from './AbandonSessionModal.jsx'
+import SessionLoadError from './SessionLoadError.jsx'
 import BlockExerciseList from './BlockExerciseList.jsx'
 import EndSessionModal from './EndSessionModal.jsx'
 import ExerciseProgressBar from './ExerciseProgressBar.jsx'
@@ -44,9 +46,8 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
 
   const hasCompletedSets = Object.keys(completedSets).length > 0
 
-  const { data: sessionExercises, isLoading, error } = useSessionExercises(sessionId)
+  const { data: sessionExercises, isLoading, error, refetch } = useSessionExercises(sessionId)
 
-  const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
   const [showConverter, setShowConverter] = useState(false)
   const [showGymSelector, setShowGymSelector] = useState(false)
@@ -60,7 +61,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   const { prSets, prNotification, dismissPR } = useSessionPRDetection()
   const { lastSetAt, isResolved: isLastSetResolved } = useLastSetAt({ enabled: showEndModal })
   const endSessionMutation = useEndSession()
-  const abandonSessionMutation = useAbandonSession()
+  const abandonFlow = useAbandonSessionFlow()
   const addFlow = useAddSessionExerciseFlow()
   const addFailedMessage = addFlow.isFailed ? t('workout:exercise.addFailed') : null
   const replaceSessionExerciseMutation = useReplaceSessionExercise()
@@ -100,19 +101,15 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
   if (!sessionId) return null
 
   if (isLoading) return <LoadingSpinner />
-  if (error) {
+  // A failed background refetch keeps its data: the workout already on screen stays there.
+  if (error && !sessionExercises) {
     return (
-      <div className="p-4 max-w-2xl mx-auto">
-        <ErrorMessage message={error.message} className="mb-4" />
-        <button
-          onClick={() => abandonSessionMutation.mutate()}
-          disabled={abandonSessionMutation.isPending}
-          className="w-full py-3 rounded-lg font-medium"
-          style={{ backgroundColor: colors.danger, color: colors.white }}
-        >
-          {abandonSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.abandon')}
-        </button>
-      </div>
+      <SessionLoadError
+        title={title}
+        fallbackRoute={fallbackRoute}
+        onRetry={() => refetch()}
+        abandon={abandonFlow}
+      />
     )
   }
 
@@ -155,11 +152,6 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
     })
   }
 
-  const handleAbandonWorkout = () => {
-    setShowCancelModal(false)
-    abandonSessionMutation.mutate()
-  }
-
   const handleReplaceExercise = (sessionExerciseId, newExercise, applyToRoutine) => {
     replaceSessionExerciseMutation.mutate({ sessionExerciseId, newExercise, applyToRoutine })
   }
@@ -190,7 +182,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
           fallbackTo={fallbackRoute}
           menuItems={[
             { icon: ArrowRightLeft, label: t('workout:set.weightConverter'), onClick: () => setShowConverter(true) },
-            { icon: X, label: t('workout:session.abandon'), onClick: () => setShowCancelModal(true), danger: true },
+            { icon: X, label: t('workout:session.abandon'), onClick: abandonFlow.open, danger: true },
           ]}
         >
           <ExerciseProgressBar
@@ -280,15 +272,7 @@ function WorkoutSessionLayout({ title, fallbackRoute = '/' }) {
         {endSessionMutation.isPending ? t('common:buttons.loading') : t('workout:session.finishWorkout')}
       </button>
 
-      <ConfirmModal
-        isOpen={showCancelModal}
-        title={t('workout:session.abandonConfirm')}
-        message={t('workout:session.abandonMessage')}
-        confirmText={t('workout:session.abandon')}
-        cancelText={t('common:buttons.continue')}
-        onConfirm={handleAbandonWorkout}
-        onCancel={() => setShowCancelModal(false)}
-      />
+      <AbandonSessionModal abandon={abandonFlow} />
 
       <AddExerciseModal
         isOpen={addFlow.isModalOpen}

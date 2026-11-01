@@ -4,7 +4,8 @@ import '../scripts/loadEnv.js'
 import { seedRoutine, findOrCreateExercise } from './supersetRoutines.js'
 
 // Slow and failed saves inside the modal the user is waiting in (issue #121): adding an exercise to
-// the session and ending it. Runs on its OWN user (`supabase/seed.sql`): only one session can be in
+// the session, ending it and abandoning it. Also the session screen when its exercises fail to load
+// (issue #228). Runs on its OWN user (`supabase/seed.sql`): only one session can be in
 // progress per user (migration 058), and with the shared user it would race the other session specs.
 const EMAIL = process.env.E2E_SLOW_TEST_EMAIL
 const PASSWORD = process.env.E2E_SLOW_TEST_PASSWORD
@@ -34,6 +35,11 @@ const SET_SYNC_SLOW = 'Sin guardar todavía'
 const SET_SYNC_REJECTED = 'No se pudo guardar'
 const CARD_SYNC_REJECTED = 'Hay series que no se pudieron guardar'
 const SCOPE_TITLE = '¿Solo hoy o también en la rutina?'
+const LOAD_FAILED = 'No se pudo cargar el entrenamiento. Comprueba la conexión e inténtalo de nuevo.'
+const ABANDON_TITLE = '¿Seguro que quieres abandonar el entrenamiento? Se perderá todo el progreso.'
+const ABANDON_FAILED = 'No se pudo abandonar el entrenamiento. Inténtalo de nuevo.'
+const SESSION_EXERCISES = '**/rest/v1/session_exercises*'
+const SESSIONS = '**/rest/v1/workout_sessions*'
 const ADD_TITLE = 'Añadir ejercicio'
 // Playwright's default `expect` timeout is 5 s, the same as the slow threshold.
 const SLOW_TIMEOUT = { timeout: 10_000 }
@@ -43,12 +49,17 @@ test.use({ storageState: { cookies: [], origins: [] } })
 // Every test starts a session of the same user: in parallel they would abandon each other's.
 test.describe.configure({ mode: 'serial' })
 
-/** Seeds the routine and the extra exercise (once) and removes any session a previous test left. */
-async function prepare() {
+/** Supabase client signed in as this spec's user, from Node. */
+async function signedInClient() {
   const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY)
   const { data, error } = await supabase.auth.signInWithPassword({ email: EMAIL, password: PASSWORD })
   expect(error).toBeNull()
-  const userId = data.user.id
+  return { supabase, userId: data.user.id }
+}
+
+/** Seeds the routine and the extra exercise (once) and removes any session a previous test left. */
+async function prepare() {
+  const { supabase, userId } = await signedInClient()
 
   await seedRoutine(supabase, userId, ROUTINE)
   const { data: muscleGroups } = await supabase.from('muscle_groups').select('id').limit(1)
@@ -422,5 +433,137 @@ test.describe('Per-set sync state', () => {
 
     upserts.release()
     await expect(slow).toBeHidden()
+  })
+})
+
+/** How many sessions the user has, read from the database: what tells an abandon that went through. */
+async function countSessions() {
+  const { supabase, userId } = await signedInClient()
+  const { count, error } = await supabase
+    .from('workout_sessions').select('id', { count: 'exact', head: true }).eq('user_id', userId)
+  if (error) throw error
+  return count
+}
+
+/**
+ * The session screen's read of its exercises fails as if there were no network. Only that read:
+ * its select is the one that names `routine_exercise_id`. Returns how many were sent.
+ */
+async function failSessionExercisesRead(page) {
+  const calls = { count: 0 }
+  const handler = route => {
+    const request = route.request()
+    if (request.method() !== 'GET' || !request.url().includes('routine_exercise_id')) return route.continue()
+    calls.count++
+    return route.abort()
+  }
+  await page.route(SESSION_EXERCISES, handler)
+  return { calls, restore: () => page.unroute(SESSION_EXERCISES, handler) }
+}
+
+/** Reloads the workout with its exercises failing to load: nothing loaded is left to show. */
+async function reloadWithFailedLoad(page) {
+  const read = await failSessionExercisesRead(page)
+  await page.reload()
+  // The query retries once (after 1 s) before it fails.
+  await expect(page.getByText(LOAD_FAILED)).toBeVisible({ timeout: 10000 })
+  return read
+}
+
+function abandonModal(page) {
+  return modal(page, ABANDON_TITLE)
+}
+
+test.describe('The session screen when its exercises fail to load', () => {
+  test('with nothing loaded it offers Retry, Back and Abandon, and Retry opens the workout with its sets', async ({ page }) => {
+    await startRoutineSession(page)
+    const saved = setSaved(page)
+    await completeSet(page, 0)
+    await saved
+
+    const read = await reloadWithFailedLoad(page)
+    for (const name of ['Reintentar', 'Volver', 'Abandonar']) {
+      await expect(page.getByRole('button', { name, exact: true })).toBeVisible()
+    }
+    // The raw error of an aborted request is "TypeError: Failed to fetch".
+    await expect(page.getByText(/Failed to fetch/)).toHaveCount(0)
+
+    await read.restore()
+    await page.getByRole('button', { name: 'Reintentar', exact: true }).click()
+    await expect(sessionExercise(page, BASE_EXERCISE)).toHaveCount(1, { timeout: 10000 })
+    await expect(page.getByRole('button', { name: 'Desmarcar serie' })).toHaveCount(1)
+  })
+
+  test('a failed refetch keeps the loaded workout on screen', async ({ page }) => {
+    await startRoutineSession(page)
+    const read = await failSessionExercisesRead(page)
+
+    // Adding an exercise refetches the session's exercises: the refetch and its retry fail.
+    await submitAddForm(page)
+    const dialog = modal(page, SCOPE_TITLE)
+    await dialog.getByRole('button', { name: 'Solo hoy' }).click()
+    await expect(dialog).toBeHidden()
+    await expect.poll(() => read.calls.count, { timeout: 10000 }).toBeGreaterThanOrEqual(2)
+
+    // Proving that the error screen does not take over takes waiting for it not to.
+    await page.waitForTimeout(1000)
+    await expect(page.getByText(LOAD_FAILED)).toHaveCount(0)
+    await expect(sessionExercise(page, BASE_EXERCISE)).toHaveCount(1)
+  })
+
+  test('Abandon asks first, and cancelling deletes nothing', async ({ page }) => {
+    await startRoutineSession(page)
+    await reloadWithFailedLoad(page)
+
+    await page.getByRole('button', { name: 'Abandonar', exact: true }).click()
+    const confirm = abandonModal(page)
+    await expect(confirm).toBeVisible()
+    await confirm.getByRole('button', { name: 'Continuar' }).click()
+
+    await expect(confirm).toBeHidden()
+    await expect(page.getByText(LOAD_FAILED)).toBeVisible()
+    expect(await countSessions()).toBe(1)
+  })
+
+  // Offline for the browser, not just an aborted request: TanStack's default networkMode would
+  // pause the delete, leave the modal waiting, and delete the workout once the network returned.
+  test('offline, a confirmed Abandon fails at once in the modal, and nothing deletes the workout later', async ({ page, context }) => {
+    await startRoutineSession(page)
+    await reloadWithFailedLoad(page)
+    await context.setOffline(true)
+
+    await page.getByRole('button', { name: 'Abandonar', exact: true }).click()
+    const confirm = abandonModal(page)
+    await confirm.getByRole('button', { name: 'Abandonar' }).click()
+
+    await expect(confirm.getByText(ABANDON_FAILED)).toBeVisible()
+    await expectNoToast(page)
+
+    await context.setOffline(false)
+    // A paused delete would go out as soon as the network is back.
+    await page.waitForTimeout(1000)
+    expect(await countSessions()).toBe(1)
+  })
+})
+
+test.describe('Abandoning from the header menu', () => {
+  test('a failed abandon shows the error in the modal, and confirming again abandons the workout', async ({ page }) => {
+    await startRoutineSession(page)
+    const failDelete = route => (route.request().method() === 'DELETE' ? route.abort() : route.continue())
+    await page.route(SESSIONS, failDelete)
+
+    await page.locator('header').getByRole('button', { name: 'Más opciones' }).click()
+    await page.getByRole('button', { name: 'Abandonar' }).click()
+    const confirm = abandonModal(page)
+    await confirm.getByRole('button', { name: 'Abandonar' }).click()
+
+    await expect(confirm.getByText(ABANDON_FAILED)).toBeVisible()
+    await expectNoToast(page)
+    expect(await countSessions()).toBe(1)
+
+    await page.unroute(SESSIONS, failDelete)
+    await confirm.getByRole('button', { name: 'Abandonar' }).click()
+    await expect(page).toHaveURL(/\/routine\/\d+$/, { timeout: 10000 })
+    expect(await countSessions()).toBe(0)
   })
 })

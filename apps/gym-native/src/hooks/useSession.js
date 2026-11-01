@@ -5,11 +5,11 @@ import {
   useSyncPendingGymChange as _useSyncPendingGymChange,
   useStartSession as _useStartSession,
   useEndSession,
-  useAbandonSession,
+  useAbandonSessionFlow,
 } from '@gym/shared'
 import useWorkoutStore from '../stores/workoutStore.js'
 
-export { useEndSession, useAbandonSession }
+export { useEndSession, useAbandonSessionFlow }
 
 export function useRestoreActiveSession() {
   return _useRestoreActiveSession({

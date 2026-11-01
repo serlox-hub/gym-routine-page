@@ -37,6 +37,13 @@ export function useSessionExercises(sessionId) {
     queryFn: () => fetchSessionExercises(sessionId),
     select: localizeExercisesInList,
     enabled: !!sessionId,
+    // Offline, the default `networkMode: 'online'` pauses the fetch: not loading and no error, so
+    // with nothing loaded the session screen drew an empty workout instead of its load error
+    // (issue #228).
+    networkMode: 'always',
+    // 'always' turns this off by default. Kept on: the load error screen recovers by itself when
+    // the network returns.
+    refetchOnReconnect: true,
   })
 }
 
