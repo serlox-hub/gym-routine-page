@@ -1,5 +1,6 @@
 import { MutationObserver } from '@tanstack/react-query'
 import { upsertCompletedSet, deleteCompletedSet } from '../api/completedSetsApi.js'
+import { hasAuthSession } from '../api/workoutSessionApi.js'
 import { getWorkoutStore } from '../hooks/_stores.js'
 import { queryClient } from './queryClient.js'
 import { QUERY_KEYS, SLOW_PENDING_MS } from './constants.js'
@@ -23,7 +24,8 @@ const MAX_SENDS_PER_SET_PER_DRAIN = 3
 const FOREIGN_KEY_VIOLATION = '23503'
 
 export const UNSAVED_SETS_REASON = {
-  // The drain stopped on a network (or temporary server) error: the sets may still be saved later.
+  // The drain stopped on a network (or temporary server) error, or found no user token (#227): the
+  // sets may still be saved later.
   NETWORK: 'network',
   // The server answered with an error: retrying the same data will not help.
   REJECTED: 'rejected',
@@ -260,6 +262,21 @@ function runSetWrite(request) {
 
 const SEND_RESULT = { SAVED: 'saved', REJECTED: 'rejected', STOP: 'stop' }
 
+/**
+ * Whether a request would go out with the user's token. Without a session (a token refresh failing
+ * with a retryable error, #221) supabase-js sends the anon key: RLS refuses an upsert, and a delete
+ * matches no row without an error, which reads as saved (#227). A failed check counts as no token.
+ * Still open: a token lapsing between this check and the request sends a delete with the anon key,
+ * which reads as saved.
+ */
+async function hasUserToken() {
+  try {
+    return await hasAuthSession()
+  } catch {
+    return false
+  }
+}
+
 async function sendPendingSet(entry) {
   const store = getWorkoutStore()
   const { sessionId, sessionExerciseId, setNumber, token } = entry
@@ -277,6 +294,9 @@ async function sendPendingSet(entry) {
     return SEND_RESULT.SAVED
   } catch (error) {
     if (isRetryableError(error)) return SEND_RESULT.STOP
+    // The token can lapse between the check in runDrain and the request: then this is RLS refusing
+    // the anon key, not the server's answer about the set.
+    if (!(await hasUserToken())) return SEND_RESULT.STOP
     const state = store.getState()
     if (isUpsert && error?.code === FOREIGN_KEY_VIOLATION) state.clearPendingSetIfToken(sessionExerciseId, setNumber, token)
     else state.markPendingSetFailed(sessionExerciseId, setNumber, token)
@@ -290,8 +310,12 @@ async function runDrain() {
   let saved = 0
   try {
     const sendsByKey = new Map()
+    const pickNext = () => pickNextPendingSet(getWorkoutStore().getState().pendingSets, sendsByKey)
     for (;;) {
-      const entry = pickNextPendingSet(getWorkoutStore().getState().pendingSets, sendsByKey)
+      if (!pickNext()) break
+      if (!(await hasUserToken())) break
+      // Picked after the check, which can wait on auth for seconds: the set may have changed meanwhile.
+      const entry = pickNext()
       if (!entry) break
       sendsByKey.set(entry.key, (sendsByKey.get(entry.key) ?? 0) + 1)
       const result = await sendPendingSet(entry)
@@ -311,8 +335,9 @@ async function runDrain() {
 /**
  * Sends the queued sets one request at a time. Single flight: a call while a drain runs gets that
  * drain, which re-reads the queue after every request and so also sends what was marked meanwhile.
- * A retryable error stops the drain, keeping the queue as is; a rejection marks only that entry
- * `failed` (or drops it, see FOREIGN_KEY_VIOLATION) and the drain goes on. Never rejects.
+ * A retryable error, or no user token (`hasUserToken`), stops the drain, keeping the queue as is; a
+ * rejection marks only that entry `failed` (or drops it, see FOREIGN_KEY_VIOLATION) and the drain
+ * goes on. Never rejects.
  * @returns {Promise<void>}
  */
 export function drainPendingSets() {

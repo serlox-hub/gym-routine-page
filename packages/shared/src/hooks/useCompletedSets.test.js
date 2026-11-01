@@ -6,6 +6,7 @@ vi.mock('../api/completedSetsApi.js', () => ({
   upsertCompletedSet: vi.fn(),
   deleteCompletedSet: vi.fn(),
 }))
+vi.mock('../api/workoutSessionApi.js', () => ({ hasAuthSession: vi.fn() }))
 
 vi.mock('../haptics.js', () => {
   const onSetComplete = vi.fn()
@@ -13,6 +14,7 @@ vi.mock('../haptics.js', () => {
 })
 
 import { upsertCompletedSet, deleteCompletedSet } from '../api/completedSetsApi.js'
+import { hasAuthSession } from '../api/workoutSessionApi.js'
 import * as hapticsMock from '../haptics.js'
 import { createWorkoutStore } from '../stores/createWorkoutStore.js'
 import { initStores } from './_stores.js'
@@ -64,6 +66,7 @@ beforeEach(async () => {
   deleteCompletedSet.mockReset().mockImplementation(async () => {
     if (!online) throw networkError()
   })
+  hasAuthSession.mockReset().mockResolvedValue(true)
   store = createWorkoutStore(memStorage())
   initStores({ authStore: null, workoutStore: store })
   state().startSession(SESSION, null)
@@ -255,6 +258,22 @@ describe('useSyncPendingSets', () => {
 
     online = true
     upsertCompletedSet.mockClear()
+    await act(async () => { await vi.advanceTimersByTimeAsync(SYNC_RETRY_INTERVAL_MS) })
+    expect(upsertCompletedSet).toHaveBeenCalledTimes(1)
+    expect(state().pendingSets).toEqual({})
+  })
+
+  // Issue #227: without a user token the set is not sent and not rejected, so the interval keeps going.
+  it('keeps retrying while there is no user token, and sends the set once it is back', async () => {
+    hasAuthSession.mockResolvedValue(false)
+    mutateWith(useCompleteSet, { sessionExerciseId: SE, setNumber: 1, weight: 100 })
+    await drainPendingSets()
+    vi.useFakeTimers()
+    renderHook(() => useSyncPendingSets())
+    await act(async () => { await vi.advanceTimersByTimeAsync(SYNC_RETRY_INTERVAL_MS) })
+    expect(upsertCompletedSet).not.toHaveBeenCalled()
+
+    hasAuthSession.mockResolvedValue(true)
     await act(async () => { await vi.advanceTimersByTimeAsync(SYNC_RETRY_INTERVAL_MS) })
     expect(upsertCompletedSet).toHaveBeenCalledTimes(1)
     expect(state().pendingSets).toEqual({})
