@@ -21,9 +21,15 @@ export const design = {
   progressLabelSize: 28,
   progressBarHeight: 8,
   chartHeight: { web: 120, native: 90 },
-  // Room left above the tallest bar for its minutes (labelSize text). The bars get shorter by it
-  // (`getChartMaxWithLabelRoom`), the card keeps its height.
-  chartBarLabelHeight: 16,
+  // Room left above the tallest bar for its minutes (chartBarLabelSize text, plus its gap). The bars
+  // get shorter by it (`getChartMaxWithLabelRoom`), the card keeps its height.
+  chartBarLabelHeight: 22,
+  // Font size of the minutes above each bar
+  chartBarLabelSize: 12,
+  // Gap under the minutes above each bar, 5px visible on both. Web: from the bar's top to the digits'
+  // baseline (digits have no descender). Native: marginBottom of the text box, whose line box already
+  // leaves ~3px under the digits
+  chartBarLabelGap: { web: 5, native: 2 },
   barRadius: 6,
 
   // Icon backgrounds

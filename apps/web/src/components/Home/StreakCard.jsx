@@ -46,9 +46,6 @@ const TAP_MAX_DISTANCE_PX = 10
 // Recharts' default, set on the XAxis: the bars grow in the chart's height minus this, and the room
 // for their minutes is taken from that plot
 const X_AXIS_HEIGHT = 30
-// From a bar's top to its minutes' baseline (digits have no descender). Native lays the text box on
-// the bar, which leaves about the same gap below the digits
-const BAR_LABEL_GAP_PX = 3
 const PLOT_HEIGHT = design.chartHeight.web - X_AXIS_HEIGHT
 function PaginationDots({ current, min, max }) {
   return (
@@ -344,11 +341,11 @@ function StreakCard() {
                   content={({ viewBox, value }) => (value > 0 ? (
                     <text
                       x={viewBox.x + viewBox.width / 2}
-                      y={viewBox.y - BAR_LABEL_GAP_PX}
+                      y={viewBox.y - design.chartBarLabelGap.web}
                       textAnchor="middle"
-                      fill={colors.textMuted}
-                      fontSize={design.labelSize}
-                      fontWeight={500}
+                      fill={colors.textSecondary}
+                      fontSize={design.chartBarLabelSize}
+                      fontWeight={600}
                       pointerEvents="none"
                     >
                       {value}

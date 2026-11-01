@@ -15,6 +15,9 @@ import StreakErrorState from './StreakErrorState'
 
 const SWIPE_THRESHOLD = design.swipeThreshold
 const TAP_MAX_DISTANCE_PX = 10
+// Line box of the minutes above each bar (chartBarLabelSize text): fixed so its height does not
+// depend on the platform's font padding
+const CHART_BAR_LABEL_LINE_HEIGHT = 15
 
 function SetupBanner() {
   const { t } = useTranslation()
@@ -204,10 +207,20 @@ function StreakCard() {
         fontWeight: d.dateStr <= todayStr ? '600' : '500',
       },
       // An empty day's bar is a placeholder (`emptyBarValue`), not minutes: no label. The library
-      // stacks the label at the bottom of a box over the bar, so it sits right on top of it.
+      // stacks the label at the bottom of a box over the bar, so it sits chartBarLabelGap.native above
+      // the box's bottom. Its box is 15 + 2 = 17px tall, inside the chartBarLabelHeight of room.
       topLabelComponent: d.durationMinutes > 0
         ? () => (
-          <Text style={{ color: colors.textMuted, fontSize: design.labelSize, fontWeight: '500' }}>
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontSize: design.chartBarLabelSize,
+              lineHeight: CHART_BAR_LABEL_LINE_HEIGHT,
+              includeFontPadding: false,
+              fontWeight: '600',
+              marginBottom: design.chartBarLabelGap.native,
+            }}
+          >
             {d.durationMinutes}
           </Text>
         )

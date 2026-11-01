@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import '../scripts/loadEnv.js'
+import { colors } from '../src/lib/styles.js'
 
 // The streak card's minutes above each bar (issue #216). A day with a workout shows its minutes,
 // whole, inside the chart: the axis leaves room above the tallest bar (`getChartMaxWithLabelRoom`)
@@ -18,6 +19,9 @@ if (!EMAIL || !PASSWORD) {
 // week's tallest, the one whose label the plot's top would clip.
 const SESSION_MINUTES = 106
 const DAYS_IN_WEEK = 7
+// Free space between the plot's top and the tallest bar's label (issue #224). With the room above
+// the bars at 16px the label's box reaches the top; at 22px it clears it
+const MIN_LABEL_TOP_CLEARANCE_PX = 4
 
 test.use({
   storageState: { cookies: [], origins: [] },
@@ -71,6 +75,8 @@ test('a day with a workout shows its minutes whole above its bar, a day without 
   await expect(labels).toHaveCount(1)
   await expect(labels).toHaveText(String(SESSION_MINUTES))
   await expect(labels).toBeVisible()
+  // The attribute, not the computed style, which reads as rgb(...). The muted grey read as disabled
+  await expect(labels).toHaveAttribute('fill', colors.textSecondary)
 
   // The SVG clips whatever falls outside it: a label sticking out of its box is cut, not moved
   const labelBox = await labels.boundingBox()
@@ -79,6 +85,8 @@ test('a day with a workout shows its minutes whole above its bar, a day without 
   expect(labelBox.x).toBeGreaterThanOrEqual(chartBox.x)
   expect(labelBox.x + labelBox.width).toBeLessThanOrEqual(chartBox.x + chartBox.width)
   expect(labelBox.y + labelBox.height).toBeLessThanOrEqual(chartBox.y + chartBox.height)
+  // Inside is not enough: a label touching the plot's top looks cut
+  expect(labelBox.y - chartBox.y).toBeGreaterThanOrEqual(MIN_LABEL_TOP_CLEARANCE_PX)
 })
 
 // The recharts Tooltip that used to show the minutes is gone: the tap on a bar still opens its day
