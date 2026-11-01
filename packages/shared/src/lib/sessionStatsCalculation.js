@@ -674,64 +674,93 @@ export function computeExercisePRSetNumbers(completedSets, preSessionBests, trac
 // FIND PR SET IN HISTORY (for session detail view)
 // ============================================
 
+// The first set with the highest positive value, or null when no set has one.
+function findSetWithHighest(sets, valueOf) {
+  let best = null
+  let bestValue = 0
+  for (const set of sets) {
+    const value = valueOf(set) || 0
+    if (value > bestValue) { best = set; bestValue = value }
+  }
+  return best
+}
+
+// The heaviest set. On a tie the one with more reps, which dominates the other: with 100 × 3 and
+// 100 × 5 the record is 100 × 5.
+function findHeaviestSet(sets) {
+  let best = null
+  for (const set of sets) {
+    const weight = Number(set.weight)
+    if (!(weight > 0)) continue
+    const bestWeight = best == null ? 0 : Number(best.weight)
+    if (weight > bestWeight || (weight === bestWeight && (set.reps_completed || 0) > (best.reps_completed || 0))) {
+      best = set
+    }
+  }
+  return best
+}
+
+function findFastestPaceSet(sets) {
+  let best = null
+  for (const set of sets) {
+    if (set.pace_seconds > 0 && (best == null || set.pace_seconds < best.pace_seconds)) best = set
+  }
+  return best
+}
+
+/**
+ * Where each record of a finished session's `exercise_session_stats` row came from: one entry per
+ * `is_pr_*` column (a test reads them from schema.sql, so a new column without its entry fails).
+ * A finder takes the sets in `set_number` order and the exercise's fields, and returns the set or
+ * null. A null entry is a record of no single set (volume adds up all of them).
+ */
+export const PR_RECORD_SET_FINDERS = {
+  is_pr_weight: findHeaviestSet,
+  is_pr_reps: sets => findSetWithHighest(sets, s => s.reps_completed),
+  is_pr_1rm: sets => findSetWithHighest(sets, s => (s.weight && s.reps_completed ? calculateEpley1RM(s.weight, s.reps_completed) : 0)),
+  is_pr_volume: null,
+  is_pr_time: sets => findSetWithHighest(sets, s => s.time_seconds),
+  is_pr_distance: sets => findSetWithHighest(sets, s => s.distance_meters),
+  is_pr_pace: findFastestPaceSet,
+  // The least assistance, 0 included.
+  is_pr_assistance: findLeastAssistanceSet,
+}
+
+// A rep record at `repCount` is the first set with those reps and the stored best load at them.
+// A null load never matches, on either side: Number(null) is 0, a real assistance.
+// Known gap: a load typed with three decimals (82.555) is stored rounded in completed_sets
+// (numeric(6,2), 82.56) but whole in best_per_reps (jsonb), so its set gets no trophy here.
+function findRepRecordSet(sets, repCount, bestPerReps) {
+  const bestLoad = bestPerReps?.[repCount]
+  if (bestLoad == null) return null
+  return sets.find(s => s.reps_completed === repCount && s.weight != null && Number(s.weight) === Number(bestLoad)) ?? null
+}
+
+/**
+ * The sets of a finished session that get a trophy in History: the set each record stored in its
+ * `exercise_session_stats` row came from, the `is_pr_*` flags through PR_RECORD_SET_FINDERS and
+ * each rep count of `pr_rep_counts`. The only place that maps a stored record to a set.
+ *
+ * It can show fewer trophies than the live session: live (computeExercisePRSetNumbers) marks every
+ * set that was a record when it was done, so 100, 105 and 110 × 5 get three trophies there and
+ * only the 110 here, the one the stored record holds.
+ * @param {Array<{set_number: number}>} sets - completed_sets rows of one exercise
+ * @param {object|null} prData - its exercise_session_stats row
+ * @param {string[]} trackedFields
+ * @returns {Set<number>} set numbers
+ */
 export function findPRSetNumbers(sets, prData, trackedFields) {
   if (!sets || sets.length === 0 || !prData) return new Set()
 
+  const ordered = [...sets].sort((a, b) => a.set_number - b.set_number)
   const prSetNumbers = new Set()
+  const mark = (set) => { if (set) prSetNumbers.add(set.set_number) }
 
-  if (prData.is_pr_1rm) {
-    let best = 0
-    let bestSetNumber = null
-    for (const s of sets) {
-      if (s.weight && s.reps_completed) {
-        const e1rm = calculateEpley1RM(s.weight, s.reps_completed)
-        if (e1rm > best) { best = e1rm; bestSetNumber = s.set_number }
-      }
-    }
-    if (bestSetNumber) prSetNumbers.add(bestSetNumber)
+  for (const [flag, findSet] of Object.entries(PR_RECORD_SET_FINDERS)) {
+    if (prData[flag] && findSet) mark(findSet(ordered, trackedFields))
   }
-
-  if (prData.is_pr_reps) {
-    let best = 0
-    let bestSetNumber = null
-    for (const s of sets) {
-      const reps = s.reps_completed || 0
-      if (reps > best) { best = reps; bestSetNumber = s.set_number }
-    }
-    if (bestSetNumber) prSetNumbers.add(bestSetNumber)
-  }
-
-  if (prData.is_pr_time) {
-    let best = 0
-    let bestSetNumber = null
-    for (const s of sets) {
-      if (s.time_seconds && s.time_seconds > best) { best = s.time_seconds; bestSetNumber = s.set_number }
-    }
-    if (bestSetNumber) prSetNumbers.add(bestSetNumber)
-  }
-
-  if (prData.is_pr_distance) {
-    let best = 0
-    let bestSetNumber = null
-    for (const s of sets) {
-      if (s.distance_meters && s.distance_meters > best) { best = s.distance_meters; bestSetNumber = s.set_number }
-    }
-    if (bestSetNumber) prSetNumbers.add(bestSetNumber)
-  }
-
-  if (prData.is_pr_pace) {
-    let best = Infinity
-    let bestSetNumber = null
-    for (const s of sets) {
-      if (s.pace_seconds && s.pace_seconds > 0 && s.pace_seconds < best) { best = s.pace_seconds; bestSetNumber = s.set_number }
-    }
-    if (bestSetNumber) prSetNumbers.add(bestSetNumber)
-  }
-
-  // The set with the least assistance (0 included), the one the record came from.
-  if (prData.is_pr_assistance) {
-    const best = findLeastAssistanceSet(sets, trackedFields)
-    if (best) prSetNumbers.add(best.set_number)
+  for (const repCount of Array.isArray(prData.pr_rep_counts) ? prData.pr_rep_counts : []) {
+    mark(findRepRecordSet(ordered, repCount, prData.best_per_reps))
   }
 
   return prSetNumbers

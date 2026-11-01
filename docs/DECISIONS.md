@@ -69,6 +69,7 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 - **Sin spam:** cada serie celebra una vez por sesión (`notifiedKeysRef`) y el primer pase siembra en silencio, para que una sesión restaurada no repita PRs viejos.
 - **Los bests previos se piden en lote** (`prewarmPreSessionBests`) y el bucle solo lee caché (`readPreSessionBests`). Si leer pudiera pedir red, un fallo del lote volvería a N peticiones en serie en el mismo pase. Un fallo de red no se cachea: se reintenta en el siguiente recálculo.
 - **Los PRs son por gym:** cambiar de gym dispara `resetPRState`, y ese efecto va declarado antes que el de derivación para limpiar la caché antes de releerla.
+- **En Historial el trofeo sale de la fila guardada en `exercise_session_stats` (`findPRSetNumbers`), no de repetir la detección en vivo** (#225). Repetirla al abrir una sesión pasada pediría los bests previos en cada apertura, y sería un tercer cálculo que puede contradecir la fila guardada tras un `recalculate_exercise_prs`. Por eso en vivo 100, 105 y 110 × 5 llevan tres trofeos y en Historial solo el 110.
 
 ## 2026-07 · Progreso y filas de la sesión
 - **Nº de filas = `series` de la rutina, no las de la última sesión.** No reintroducir el efecto que igualaba las filas a la sesión anterior: parece "repetir lo de la última vez" y es lo contrario de lo planificado.

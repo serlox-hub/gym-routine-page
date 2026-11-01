@@ -316,6 +316,8 @@ A forgotten GRANT means 42501 for every logged-in user. `npm run db:check-grants
 
 **The PR rule lives twice** (issue #196): which records an exercise gets is `getPRMetrics` (`lib/sessionStatsCalculation.js`: end of session, live trophy) and its SQL mirror `pr_metrics` (`recalculate_exercise_prs_for_user`, behind the RPC `recalculate_exercise_prs`, after an edit). Change both together: `npm run db:check-pr-parity -w apps/web` (CI, after `supabase start`) compares them on every field combination. So does the 1RM formula (issue #194): `calculateEpley1RM` (a new set) and `epley_1rm` (`convert_user_weights` recomputes `best_1rm` from the converted sets with it, never scales it); the same check compares them on a grid of 6 million sets, and which exercises store `best_1rm` (`getTrackableMetrics` and `stores_best_1rm`).
 
+**Which set gets the trophy** (issue #225): live, `computeExercisePRSetNumbers` marks every set that was a record when it was done, so 100, 105 and 110 × 5 get three trophies. In History, `findPRSetNumbers` marks the set each record stored in `exercise_session_stats` came from (only the 110), and it is the only place that maps a stored record to a set. A new `is_pr_*` column needs its entry in `PR_RECORD_SET_FINDERS` (`null` if no single set holds it, like volume): a test reading `schema.sql` fails until it has one.
+
 ```
 muscle_groups ← exercises (muscle_group_id)
     ↓

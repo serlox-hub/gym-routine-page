@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 import {
   formatPRNotificationText,
   getTrackableMetrics,
@@ -14,8 +17,12 @@ import {
   findPreviousRepRecord,
   findPRSetNumbers,
   isRepPRLowerBetter,
+  PR_RECORD_SET_FINDERS,
   WEIGHT_PR_TYPES,
 } from './sessionStatsCalculation.js'
+
+// The committed schema snapshot, the source of truth for the columns that exist today.
+const SCHEMA_PATH = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../apps/web/supabase/schema.sql')
 
 // What fetchExerciseBests returns for a history of one session at 0 kg × 18.
 const ZERO_KG_ONLY_BESTS = {
@@ -1371,6 +1378,143 @@ describe('sessionStatsCalculation', () => {
       expect(result[0].records.map(r => r.type).sort()).toEqual(['best1rm', 'bestWeight', 'repPR'])
     })
   })
+
+  describe('findPRSetNumbers', () => {
+    const STRENGTH = ['weight', 'reps']
+    const set = (setNumber, weight, reps) => ({ set_number: setNumber, weight, reps_completed: reps })
+    const marked = (sets, prData, trackedFields = STRENGTH) =>
+      [...findPRSetNumbers(sets, prData, trackedFields)].sort((a, b) => a - b)
+
+    it('PR_RECORD_SET_FINDERS has exactly one entry per is_pr_* column of exercise_session_stats', () => {
+      const schema = readFileSync(SCHEMA_PATH, 'utf8')
+      const table = schema.match(/CREATE TABLE IF NOT EXISTS "public"\."exercise_session_stats" \(([\s\S]*?)\n\);/)
+      expect(table).not.toBeNull()
+      const columns = [...table[1].matchAll(/"(is_pr_\w+)"/g)].map(match => match[1]).sort()
+      expect(Object.keys(PR_RECORD_SET_FINDERS).sort()).toEqual(columns)
+    })
+
+    it('volume belongs to no single set', () => {
+      expect(PR_RECORD_SET_FINDERS.is_pr_volume).toBeNull()
+      expect(marked([set(1, 100, 5), set(2, 90, 8)], { is_pr_volume: true })).toEqual([])
+    })
+
+    it('nothing to mark without sets or without a row', () => {
+      expect(marked([], { is_pr_weight: true })).toEqual([])
+      expect(marked(null, { is_pr_weight: true })).toEqual([])
+      expect(marked([set(1, 100, 5)], null)).toEqual([])
+    })
+
+    it('a row with only rep records marks their sets', () => {
+      const sets = [set(1, 80, 10), set(2, 90, 8), set(3, 85, 8)]
+      expect(marked(sets, { pr_rep_counts: [10, 8], best_per_reps: { 8: 90, 10: 80 } })).toEqual([1, 2])
+    })
+
+    it('is_pr_weight on a weight-only exercise marks the heaviest set', () => {
+      const sets = [set(1, 20, null), set(2, 30, null), set(3, 25, null)]
+      expect(marked(sets, { is_pr_weight: true }, ['weight'])).toEqual([2])
+    })
+
+    it('is_pr_weight ignores sets without weight', () => {
+      expect(marked([set(1, null, 10), set(2, 0, 12)], { is_pr_weight: true })).toEqual([])
+    })
+
+    it('100 × 3 and 100 × 5 with is_pr_weight and a rep record at 5 mark only the second set', () => {
+      const sets = [set(1, 100, 3), set(2, 100, 5)]
+      const prData = { is_pr_weight: true, pr_rep_counts: [5], best_per_reps: { 3: 100, 5: 100 } }
+      expect(marked(sets, prData)).toEqual([2])
+    })
+
+    it('a rep record marks the first set in set_number order with the stored load', () => {
+      const sets = [set(3, 100, 5), set(2, 100, 5), set(1, 95, 5)]
+      expect(marked(sets, { pr_rep_counts: [5], best_per_reps: { 5: 100 } })).toEqual([2])
+    })
+
+    it('a rep record compares the loads as numbers', () => {
+      expect(marked([set(1, '82.5', 5)], { pr_rep_counts: [5], best_per_reps: { 5: 82.5 } })).toEqual([1])
+    })
+
+    it('a rep record without a matching set, or without best_per_reps, marks nothing', () => {
+      const sets = [set(1, 100, 5)]
+      expect(marked(sets, { pr_rep_counts: [12], best_per_reps: { 12: 100 } })).toEqual([])
+      expect(marked(sets, { pr_rep_counts: [5], best_per_reps: { 5: 105 } })).toEqual([])
+      expect(marked(sets, { pr_rep_counts: [5], best_per_reps: null })).toEqual([])
+      expect(marked(sets, { pr_rep_counts: [5] })).toEqual([])
+    })
+
+    it('is_pr_1rm marks the set with the best estimated 1RM', () => {
+      expect(marked([set(1, 100, 5), set(2, 110, 1)], { is_pr_1rm: true })).toEqual([1])
+    })
+
+    it('is_pr_reps marks the first set with the most reps', () => {
+      expect(marked([set(1, null, 10), set(2, null, 12), set(3, null, 12)], { is_pr_reps: true }, ['reps'])).toEqual([2])
+    })
+
+    it('is_pr_time and is_pr_distance mark the longest set', () => {
+      const sets = [
+        { set_number: 1, time_seconds: 60, distance_meters: 5000 },
+        { set_number: 2, time_seconds: 90, distance_meters: 4000 },
+      ]
+      expect(marked(sets, { is_pr_time: true }, ['time'])).toEqual([2])
+      expect(marked(sets, { is_pr_distance: true }, ['distance'])).toEqual([1])
+    })
+
+    it('is_pr_pace marks the fastest set, never one without pace', () => {
+      const sets = [
+        { set_number: 1, pace_seconds: 300 },
+        { set_number: 2, pace_seconds: 280 },
+        { set_number: 3, pace_seconds: 0 },
+      ]
+      expect(marked(sets, { is_pr_pace: true }, ['distance', 'pace'])).toEqual([2])
+    })
+
+    it('is_pr_pace keeps the first set on a tie', () => {
+      const sets = [
+        { set_number: 1, pace_seconds: 280 },
+        { set_number: 2, pace_seconds: 280 },
+      ]
+      expect(marked(sets, { is_pr_pace: true }, ['distance', 'pace'])).toEqual([1])
+    })
+
+    // Issue #225: live, every set that beat the previous ones gets a trophy. History marks only
+    // the set the stored record holds.
+    it('100, 105 and 110 × 5 with every record of the row mark only the 110', () => {
+      const sets = [set(1, 100, 5), set(2, 105, 5), set(3, 110, 5)]
+      const prData = {
+        is_pr_weight: true,
+        is_pr_1rm: true,
+        pr_rep_counts: [5],
+        best_per_reps: { 5: 110 },
+      }
+      expect(marked(sets, prData)).toEqual([3])
+    })
+
+    it('records held by different sets mark each of them', () => {
+      // 100 × 5 has the best estimated 1RM (117), 110 × 1 is the heaviest.
+      const sets = [set(1, 100, 5), set(2, 110, 1)]
+      expect(marked(sets, { is_pr_weight: true, is_pr_1rm: true })).toEqual([1, 2])
+    })
+
+    it('is_pr_weight on a tie marks the set with more reps, even when it comes later', () => {
+      expect(marked([set(1, 100, 3), set(2, 100, 5)], { is_pr_weight: true })).toEqual([2])
+    })
+
+    it('is_pr_weight on a tie keeps the first set when the later one has no more reps', () => {
+      expect(marked([set(1, 100, 5), set(2, 100, 3)], { is_pr_weight: true })).toEqual([1])
+      expect(marked([set(1, 100, 5), set(2, 100, 5)], { is_pr_weight: true })).toEqual([1])
+    })
+
+    it('a null load never matches a rep record, on either side', () => {
+      const sets = [set(1, null, 5)]
+      expect(marked(sets, { pr_rep_counts: [5], best_per_reps: { 5: null } })).toEqual([])
+      expect(marked(sets, { pr_rep_counts: [5], best_per_reps: { 5: 0 } })).toEqual([])
+    })
+
+    it('sets arriving out of order are ranked by set_number and the caller array is left alone', () => {
+      const sets = [set(3, 100, 5), set(1, 100, 5), set(2, 100, 5)]
+      expect(marked(sets, { is_pr_weight: true })).toEqual([1])
+      expect(sets.map(s => s.set_number)).toEqual([3, 1, 2])
+    })
+  })
 })
 
 // ============================================
@@ -1578,6 +1722,24 @@ describe('assistance × reps', () => {
         { set_number: 3, weight: 0, reps_completed: 0 },
       ]
       expect([...findPRSetNumbers(sets, { is_pr_assistance: true }, ASSISTED)]).toEqual([2])
+    })
+
+    it('the Machine Assisted Pull-Ups row of 2026-10-29 marks the 27.2 × 11 and the 20.4 × 3', () => {
+      const sets = [
+        { set_number: 1, weight: 27.2, reps_completed: 11 },
+        { set_number: 2, weight: 20.4, reps_completed: 3 },
+        { set_number: 3, weight: 27.2, reps_completed: 7 },
+      ]
+      const prData = { is_pr_assistance: true, pr_rep_counts: [3, 11], best_per_reps: { 3: 20.4, 7: 27.2, 11: 27.2 } }
+      expect([...findPRSetNumbers(sets, prData, ASSISTED)].sort((a, b) => a - b)).toEqual([1, 2])
+    })
+
+    it('a rep record at 0 kg marks the 0 kg set, never the one without assistance', () => {
+      const sets = [
+        { set_number: 1, weight: null, reps_completed: 5 },
+        { set_number: 2, weight: 0, reps_completed: 5 },
+      ]
+      expect([...findPRSetNumbers(sets, { pr_rep_counts: [5], best_per_reps: { 5: 0 } }, ASSISTED)]).toEqual([2])
     })
   })
 
