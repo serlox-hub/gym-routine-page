@@ -131,6 +131,11 @@ describe('assistance direction guard: 0 is the best, 40 the worst', () => {
       expect([...findPRSetNumbers(allSets, { is_pr_assistance: true }, ASSISTED)]).toEqual([4])
     })
 
+    it('findPRSetNumbers marks the 0 kg set for a rep record at 0', () => {
+      const prData = { pr_rep_counts: [REPS], best_per_reps: { [REPS]: BEST } }
+      expect([...findPRSetNumbers(allSets, prData, ASSISTED)]).toEqual([4])
+    })
+
     it('buildPRDetailsFromStats measures a rep PR against the least previous assistance', () => {
       const [detail] = buildPRDetailsFromStats(
         { pr_rep_counts: [REPS], best_per_reps: { [REPS]: BEST } },
