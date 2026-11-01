@@ -12,6 +12,9 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-10 · Arrancar sin red no cierra la sesión (#221)
+- **La sesión de arranque la fija `getSession()`, y el listener ignora `INITIAL_SESSION`:** la documentación de Supabase recomienda lo contrario, pero con un error de red auth-js emite `INITIAL_SESSION` con `null` aunque la sesión siga guardada, y puede llegar después de que `getSession` resuelva. Pasarse a `INITIAL_SESSION` devuelve el logout sin red y la pérdida de las series sin sincronizar.
+
 ## 2026-10 · Recarga automática tras un deploy (#217)
 - **La decide solo el `ErrorBoundary` raíz, sin listener de `vite:preloadError`:** es lo que recomienda la documentación de Vite, pero cancelar ese evento hace que el `import()` resuelva `undefined`. `React.lazy` lanza entonces "Expected the result of a dynamic import() call", que no se reconoce como error de chunk y sustituye al mensaje real cuando salta la guarda.
 - **Trampa:** un `ErrorBoundary` nuevo por debajo del raíz (p. ej. `Sentry.ErrorBoundary` en una ruta) se tragaría el error de chunk y la recarga dejaría de ocurrir sin aviso.

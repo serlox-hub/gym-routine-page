@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
@@ -18,6 +18,7 @@ vi.mock('./_stores.js', () => {
 })
 
 vi.mock('../api/workoutApi.js', () => ({
+  hasAuthSession: vi.fn(),
   fetchActiveSession: vi.fn(),
   fetchCompletedSetsForSession: vi.fn(),
   startWorkoutSession: vi.fn(),
@@ -57,14 +58,14 @@ vi.mock('../notifications.js', () => {
   return { getNotifier: () => ({ show }), initNotifications: vi.fn(), _notifierShow: show }
 })
 
-import { startWorkoutSession, fetchActiveSession, fetchExerciseIdsWithSets, completeWorkoutSession, fetchLastSetPerformedAt } from '../api/workoutApi.js'
+import { hasAuthSession, startWorkoutSession, fetchActiveSession, fetchCompletedSetsForSession, fetchExerciseIdsWithSets, completeWorkoutSession, fetchLastSetPerformedAt } from '../api/workoutApi.js'
 import { fetchSessionExercises } from '../api/sessionExercisesApi.js'
 import * as notificationsMock from '../notifications.js'
 import * as storesMock from './_stores.js'
 import * as authMock from './useAuth.js'
 import * as preferencesMock from './usePreferences.js'
 import * as exercisesMock from './useExercises.js'
-import { useStartSession, useRestoreActiveSession, useEndSession, useLastSetAt, useSessionWeightUnitByExercise } from './useSession.js'
+import { useStartSession, useRestoreActiveSession, syncActiveSessionState, useEndSession, useLastSetAt, useSessionWeightUnitByExercise } from './useSession.js'
 
 function wrapper() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -120,6 +121,7 @@ describe('useStartSession · rechazo por sesión ya en curso', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     authMock._authState.userId = 'user-1'
+    hasAuthSession.mockResolvedValue(true)
   })
 
   it('avisa con el mensaje específico y como info, no como error', async () => {
@@ -163,6 +165,7 @@ describe('useRestoreActiveSession', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     authMock._authState.userId = 'user-1'
+    hasAuthSession.mockResolvedValue(true)
     fetchActiveSession.mockResolvedValue(null)
   })
 
@@ -210,6 +213,67 @@ describe('useRestoreActiveSession', () => {
 
     await waitFor(() => expect(storesMock.useWorkoutStore._mockStore.setActiveSessionSynced)
       .toHaveBeenCalledWith(true))
+  })
+})
+
+// #221: al arrancar con el token caducado y el refresh sin red, el store de auth publica al
+// usuario pero auth-js no tiene sesión. Las peticiones salen con la anon key y RLS responde "cero
+// filas", que sin este guard se leía como "no hay sesión activa" y endSession() borraba las series
+// sin sincronizar del entrenamiento en curso.
+describe('syncActiveSessionState · sin sesión de auth', () => {
+  const mockStore = storesMock.useWorkoutStore._mockStore
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockStore.sessionId = 's-local'
+    hasAuthSession.mockResolvedValue(true)
+    fetchActiveSession.mockResolvedValue(null)
+  })
+
+  afterEach(() => {
+    mockStore.sessionId = null
+  })
+
+  it('con sesión de auth, si el servidor no tiene sesión activa, cierra la local (el caso que el guard NO debe tapar)', async () => {
+    await syncActiveSessionState()
+
+    expect(fetchActiveSession).toHaveBeenCalledTimes(1)
+    expect(mockStore.endSession).toHaveBeenCalledTimes(1)
+    expect(mockStore.setActiveSessionSynced).toHaveBeenCalledWith(true)
+  })
+
+  it('sin sesión de auth no cierra la sesión local ni pregunta al servidor', async () => {
+    hasAuthSession.mockResolvedValue(false)
+
+    await syncActiveSessionState()
+
+    expect(mockStore.endSession).not.toHaveBeenCalled()
+    expect(fetchActiveSession).not.toHaveBeenCalled()
+    expect(mockStore.setActiveSessionSynced).toHaveBeenCalledWith(true)
+  })
+
+  it('sin sesión de auth tampoco restaura nada cuando no hay sesión local', async () => {
+    hasAuthSession.mockResolvedValue(false)
+    mockStore.sessionId = null
+
+    await syncActiveSessionState()
+
+    expect(fetchActiveSession).not.toHaveBeenCalled()
+    expect(fetchCompletedSetsForSession).not.toHaveBeenCalled()
+    expect(mockStore.restoreSession).not.toHaveBeenCalled()
+    expect(mockStore.endSession).not.toHaveBeenCalled()
+    expect(mockStore.setActiveSessionSynced).toHaveBeenCalledWith(true)
+  })
+
+  it('si comprobar la sesión de auth falla, no toca el estado y marca sincronizado', async () => {
+    hasAuthSession.mockRejectedValue(new Error('sin red'))
+
+    await syncActiveSessionState()
+
+    expect(mockStore.endSession).not.toHaveBeenCalled()
+    expect(mockStore.restoreSession).not.toHaveBeenCalled()
+    expect(fetchActiveSession).not.toHaveBeenCalled()
+    expect(mockStore.setActiveSessionSynced).toHaveBeenCalledWith(true)
   })
 })
 

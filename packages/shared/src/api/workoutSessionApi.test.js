@@ -11,6 +11,7 @@ vi.mock('./exerciseStatsApi.js', () => ({
 import { recalculateSessionStats, recalculateExercisePRs } from './exerciseStatsApi.js'
 
 import {
+  hasAuthSession,
   fetchActiveSession,
   fetchCompletedSetsForSession,
   fetchLastSetPerformedAt,
@@ -29,6 +30,44 @@ import {
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+// ============================================
+// hasAuthSession
+// ============================================
+
+// El store de auth puede conocer al usuario sin que auth-js tenga sesión (token caducado y refresh
+// fallando, #221). Esta función es lo único que lo distingue de "no hay sesión activa".
+describe('hasAuthSession', () => {
+  const clientWithSession = (result) => ({
+    auth: { getSession: vi.fn().mockResolvedValue(result) },
+  })
+
+  it('devuelve true cuando el cliente tiene sesión', async () => {
+    getClient.mockReturnValue(clientWithSession({
+      data: { session: { access_token: 'token', user: { id: 'user-1' } } },
+      error: null,
+    }))
+    expect(await hasAuthSession()).toBe(true)
+  })
+
+  it('devuelve false cuando no hay sesión', async () => {
+    getClient.mockReturnValue(clientWithSession({ data: { session: null }, error: null }))
+    expect(await hasAuthSession()).toBe(false)
+  })
+
+  it('devuelve false cuando getSession responde con error y sin sesión', async () => {
+    getClient.mockReturnValue(clientWithSession({
+      data: { session: null },
+      error: new Error('Failed to fetch'),
+    }))
+    expect(await hasAuthSession()).toBe(false)
+  })
+
+  it('devuelve false si la respuesta no trae data', async () => {
+    getClient.mockReturnValue(clientWithSession({ data: null, error: new Error('boom') }))
+    expect(await hasAuthSession()).toBe(false)
+  })
 })
 
 // ============================================

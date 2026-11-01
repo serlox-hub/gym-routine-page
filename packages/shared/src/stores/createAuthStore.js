@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { isInconclusiveSessionError, parseStoredSession } from '../lib/authSession.js'
 
 /**
  * Factory that creates an auth Zustand store.
@@ -8,9 +9,18 @@ import { create } from 'zustand'
  * @param {function} [hooks.onBeforeInitialize] - Returns extra state to spread (e.g. { isPasswordRecovery })
  * @param {function} [hooks.onBeforeLogout] - Cleanup before sign-out (storage, session, cache)
  * @param {function} [hooks.onResetPasswordOptions] - Returns options for resetPasswordForEmail (e.g. { redirectTo })
+ * @param {function} [hooks.readStoredSession] - Returns (or resolves to) the raw session string the auth client keeps in storage
  * @returns {object} Zustand store instance
  */
-export function createAuthStore(supabase, { onBeforeInitialize, onBeforeLogout, onResetPasswordOptions } = {}) {
+export function createAuthStore(supabase, { onBeforeInitialize, onBeforeLogout, onResetPasswordOptions, readStoredSession } = {}) {
+  const loadStoredSession = async () => {
+    try {
+      return parseStoredSession(await readStoredSession?.())
+    } catch {
+      return null
+    }
+  }
+
   return create((set, get) => ({
     user: null,
     session: null,
@@ -19,12 +29,17 @@ export function createAuthStore(supabase, { onBeforeInitialize, onBeforeLogout, 
     isPasswordRecovery: false,
 
     initialize: async () => {
+      let platformState = {}
       try {
         // Pre-initialization hook (e.g. detect recovery hash)
-        const platformState = onBeforeInitialize?.() ?? {}
+        platformState = onBeforeInitialize?.() ?? {}
 
         // Registrar listener ANTES de getSession para capturar eventos
         supabase.auth.onAuthStateChange((event, session) => {
+          // The startup session is getSession's to set. INITIAL_SESSION carries the same result,
+          // except that on a network error it says null while the session is still stored, and it
+          // can land after getSession has resolved.
+          if (event === 'INITIAL_SESSION') return
           set({
             session,
             user: session?.user ?? null,
@@ -40,8 +55,23 @@ export function createAuthStore(supabase, { onBeforeInitialize, onBeforeLogout, 
           isLoading: false,
           ...platformState,
         })
-      } catch {
-        // Si falla (token corrupto), limpiar y continuar sin sesion
+      } catch (error) {
+        if (isInconclusiveSessionError(error)) {
+          // No network or a stolen lock (see isInconclusiveSessionError): the stored session is still
+          // there and auth-js refreshes it once the server answers (TOKEN_REFRESHED reaches the
+          // listener), so the user stays in with it. Cleaning up here logged them out offline and
+          // dropped the unsynced sets (#221).
+          const session = await loadStoredSession()
+          set({
+            session,
+            user: session?.user ?? null,
+            isLoading: false,
+            ...platformState,
+          })
+          return
+        }
+        // Any other error means the stored session is unusable (corrupt or revoked token): clean up
+        // and carry on logged out
         await onBeforeLogout?.({ isErrorCleanup: true })
         set({ session: null, user: null, isLoading: false })
       }

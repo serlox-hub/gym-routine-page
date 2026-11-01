@@ -23,6 +23,21 @@ function makeSupabaseMock() {
   }
 }
 
+// What auth-js keeps in storage: the session with its user
+const STORED_SESSION = {
+  access_token: 'stored-tok',
+  refresh_token: 'stored-refresh',
+  expires_at: 1,
+  user: { id: 'u1', email: 'user@test.com' },
+}
+
+// auth-js tells its errors apart by name (isAuthRetryableFetchError checks it)
+function makeAuthError(name, message) {
+  const error = new Error(message)
+  error.name = name
+  return error
+}
+
 let useAuthStore
 let supabaseMock
 
@@ -128,6 +143,154 @@ describe('createAuthStore', () => {
       })
 
       expect(onBeforeLogout).toHaveBeenCalledWith({ isErrorCleanup: true })
+    })
+
+    it('cleans up when the server rejects the refresh token, even with a session still readable', async () => {
+      const onBeforeLogout = vi.fn().mockResolvedValue(undefined)
+      const readStoredSession = vi.fn().mockReturnValue(JSON.stringify(STORED_SESSION))
+      useAuthStore = createAuthStore(supabaseMock, { onBeforeLogout, readStoredSession })
+      supabaseMock.auth.getSession.mockResolvedValueOnce({
+        data: { session: null },
+        error: makeAuthError('AuthApiError', 'Invalid Refresh Token: Refresh Token Not Found'),
+      })
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      expect(onBeforeLogout).toHaveBeenCalledWith({ isErrorCleanup: true })
+      expect(useAuthStore.getState()).toMatchObject({ session: null, user: null, isLoading: false })
+    })
+
+    it('cleans up when getSession throws an error that is neither a network nor a lock one', async () => {
+      const onBeforeLogout = vi.fn().mockResolvedValue(undefined)
+      useAuthStore = createAuthStore(supabaseMock, { onBeforeLogout })
+      supabaseMock.auth.getSession.mockRejectedValueOnce(new Error('Unexpected failure'))
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      expect(onBeforeLogout).toHaveBeenCalledWith({ isErrorCleanup: true })
+      expect(useAuthStore.getState()).toMatchObject({ session: null, user: null, isLoading: false })
+    })
+  })
+
+  // ============================================
+  // INITIALIZE WITHOUT NETWORK (issue #221)
+  // ============================================
+
+  describe('initialize() when the auth server cannot be reached', () => {
+    beforeEach(() => {
+      supabaseMock.auth.getSession.mockResolvedValueOnce({
+        data: { session: null },
+        error: makeAuthError('AuthRetryableFetchError', 'Failed to fetch'),
+      })
+    })
+
+    it('keeps the stored session and does not clean up', async () => {
+      const onBeforeLogout = vi.fn().mockResolvedValue(undefined)
+      const readStoredSession = vi.fn().mockReturnValue(JSON.stringify(STORED_SESSION))
+      useAuthStore = createAuthStore(supabaseMock, { onBeforeLogout, readStoredSession })
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      expect(onBeforeLogout).not.toHaveBeenCalled()
+      const state = useAuthStore.getState()
+      expect(state.session).toEqual(STORED_SESSION)
+      expect(state.user).toEqual(STORED_SESSION.user)
+      expect(state.isLoading).toBe(false)
+      expect(state.isAuthenticated()).toBe(true)
+    })
+
+    it('reads a stored session that resolves asynchronously (native storage)', async () => {
+      const readStoredSession = vi.fn().mockResolvedValue(JSON.stringify(STORED_SESSION))
+      useAuthStore = createAuthStore(supabaseMock, { readStoredSession })
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      expect(useAuthStore.getState().user).toEqual(STORED_SESSION.user)
+    })
+
+    it('spreads the onBeforeInitialize state as on success', async () => {
+      const readStoredSession = vi.fn().mockReturnValue(JSON.stringify(STORED_SESSION))
+      const onBeforeInitialize = vi.fn().mockReturnValue({ isPasswordRecovery: true })
+      useAuthStore = createAuthStore(supabaseMock, { onBeforeInitialize, readStoredSession })
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      expect(useAuthStore.getState().isPasswordRecovery).toBe(true)
+    })
+
+    it.each([
+      ['nothing is stored', () => null],
+      ['the stored value is not a session', () => '{not json'],
+      ['reading the storage fails', () => Promise.reject(new Error('storage unavailable'))],
+    ])('ends logged out without cleaning up when %s', async (_case, read) => {
+      const onBeforeLogout = vi.fn().mockResolvedValue(undefined)
+      useAuthStore = createAuthStore(supabaseMock, { onBeforeLogout, readStoredSession: vi.fn(read) })
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      expect(onBeforeLogout).not.toHaveBeenCalled()
+      expect(useAuthStore.getState()).toMatchObject({ session: null, user: null, isLoading: false })
+    })
+
+    it('ends logged out without cleaning up when the app reads no stored session', async () => {
+      const onBeforeLogout = vi.fn().mockResolvedValue(undefined)
+      useAuthStore = createAuthStore(supabaseMock, { onBeforeLogout })
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      expect(onBeforeLogout).not.toHaveBeenCalled()
+      expect(useAuthStore.getState()).toMatchObject({ session: null, user: null, isLoading: false })
+    })
+
+    it('keeps the stored session when another call stole the auth lock (web)', async () => {
+      const onBeforeLogout = vi.fn().mockResolvedValue(undefined)
+      const readStoredSession = vi.fn().mockReturnValue(JSON.stringify(STORED_SESSION))
+      useAuthStore = createAuthStore(supabaseMock, { onBeforeLogout, readStoredSession })
+      supabaseMock.auth.getSession.mockReset().mockRejectedValueOnce(
+        makeAuthError('AbortError', "Lock broken by another request with the 'steal' option.")
+      )
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      expect(onBeforeLogout).not.toHaveBeenCalled()
+      expect(useAuthStore.getState()).toMatchObject({ session: STORED_SESSION, isLoading: false })
+    })
+
+    it('takes the refreshed session once the server answers', async () => {
+      let authCallback
+      supabaseMock.auth.onAuthStateChange.mockImplementation((cb) => {
+        authCallback = cb
+        return { data: { subscription: { unsubscribe: vi.fn() } } }
+      })
+      const readStoredSession = vi.fn().mockReturnValue(JSON.stringify(STORED_SESSION))
+      useAuthStore = createAuthStore(supabaseMock, { readStoredSession })
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      const refreshed = { ...STORED_SESSION, access_token: 'fresh' }
+      act(() => {
+        authCallback('TOKEN_REFRESHED', refreshed)
+      })
+
+      expect(useAuthStore.getState().session).toEqual(refreshed)
     })
   })
 
@@ -381,6 +544,32 @@ describe('createAuthStore', () => {
       })
 
       expect(useAuthStore.getState().user).toMatchObject({ id: 'u2' })
+    })
+
+    it('ignores INITIAL_SESSION, which getSession already resolves', async () => {
+      let authCallback
+
+      supabaseMock.auth.onAuthStateChange.mockImplementation((cb) => {
+        authCallback = cb
+        return { data: { subscription: { unsubscribe: vi.fn() } } }
+      })
+      supabaseMock.auth.getSession.mockResolvedValueOnce({
+        data: { session: STORED_SESSION },
+        error: null,
+      })
+
+      useAuthStore = createAuthStore(supabaseMock)
+
+      await act(async () => {
+        await useAuthStore.getState().initialize()
+      })
+
+      // On a network error auth-js emits INITIAL_SESSION with null, and it can land after getSession
+      act(() => {
+        authCallback('INITIAL_SESSION', null)
+      })
+
+      expect(useAuthStore.getState().session).toEqual(STORED_SESSION)
     })
 
     it('clears user when auth state changes to SIGNED_OUT', async () => {

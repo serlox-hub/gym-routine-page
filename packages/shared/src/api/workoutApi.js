@@ -2,6 +2,7 @@
 // See: workoutSessionApi.js, completedSetsApi.js, sessionExercisesApi.js
 
 export {
+  hasAuthSession,
   fetchActiveSession,
   fetchCompletedSetsForSession,
   fetchLastSetPerformedAt,
