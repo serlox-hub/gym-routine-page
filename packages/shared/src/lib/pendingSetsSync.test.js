@@ -5,8 +5,10 @@ vi.mock('../api/completedSetsApi.js', () => ({
   upsertCompletedSet: vi.fn(),
   deleteCompletedSet: vi.fn(),
 }))
+vi.mock('../api/workoutSessionApi.js', () => ({ hasAuthSession: vi.fn() }))
 
 import { upsertCompletedSet, deleteCompletedSet } from '../api/completedSetsApi.js'
+import { hasAuthSession } from '../api/workoutSessionApi.js'
 import { createWorkoutStore } from '../stores/createWorkoutStore.js'
 import { initStores } from '../hooks/_stores.js'
 import { queryClient } from './queryClient.js'
@@ -108,6 +110,7 @@ beforeEach(async () => {
     calls.push(['delete', args])
     if (!online) throw networkError()
   })
+  hasAuthSession.mockReset().mockResolvedValue(true)
   store = createWorkoutStore(memStorage())
   initStores({ authStore: null, workoutStore: store })
   state().startSession(SESSION, null)
@@ -732,8 +735,109 @@ describe('drainPendingSets', () => {
     expect(state().pendingSets[KEY_1]).toBeDefined()
   })
 
-  it('does nothing with an empty queue', async () => {
+  it('does nothing with an empty queue, not even ask for the session', async () => {
     await drainPendingSets()
     expect(calls).toEqual([])
+    expect(hasAuthSession).not.toHaveBeenCalled()
+  })
+
+  // Without a session supabase-js sends the anon key: RLS refuses the upsert, and the delete
+  // matches no row and reads as saved.
+  describe('11. no user token (issue #227)', () => {
+    // Set 1 checked and set 2 unchecked, both queued: one upsert and one delete to send.
+    async function queueWithoutToken() {
+      await check(2)
+      hasAuthSession.mockResolvedValue(false)
+      await check(1)
+      await uncheck(2)
+      calls = []
+    }
+
+    it('a checked set and an unchecked set are not sent, not failed, and stay queued', async () => {
+      await queueWithoutToken()
+      await drainPendingSets()
+
+      expect(calls).toEqual([])
+      expect(Object.keys(state().pendingSets).sort()).toEqual([KEY_1, KEY_2])
+      expect(countPendingSets(state().pendingSets)).toEqual({ sendable: 2, failed: 0 })
+    })
+
+    it('a session check that throws counts as no token', async () => {
+      hasAuthSession.mockRejectedValue(new Error('lock timeout'))
+
+      await check(1)
+
+      expect(calls).toEqual([])
+      expect(countPendingSets(state().pendingSets)).toEqual({ sendable: 1, failed: 0 })
+    })
+
+    it('once the session returns, the next drain sends both', async () => {
+      await queueWithoutToken()
+
+      hasAuthSession.mockResolvedValue(true)
+      await drainPendingSets()
+
+      expect(calls).toEqual([
+        ['upsert', expect.objectContaining({ sessionExerciseId: SE, setNumber: 1 })],
+        ['delete', { sessionId: SESSION, sessionExerciseId: SE, setNumber: 2 }],
+      ])
+      expect(state().pendingSets).toEqual({})
+    })
+
+    it('a rejection with the session still there marks the set failed', async () => {
+      upsertCompletedSet.mockImplementationOnce(async () => { throw serverError('42501') })
+
+      await check(1)
+
+      expect(state().pendingSets[KEY_1].failed).toBe(true)
+    })
+
+    it('a rejection after the session went away does not mark it failed, and stops the drain', async () => {
+      upsertCompletedSet.mockImplementationOnce(async (payload) => {
+        calls.push(['upsert', payload])
+        throw serverError('42501')
+      })
+      // Present before the request, gone after the rejection.
+      hasAuthSession.mockResolvedValueOnce(true).mockResolvedValue(false)
+      state().completeSet(SE, 1, { weight: 100 })
+      state().completeSet(SE, 2, { weight: 100 })
+      state().markSetDirty(SE, 1)
+      state().markSetDirty(SE, 2)
+
+      await drainPendingSets()
+
+      expect(calls.map(([, payload]) => payload.setNumber)).toEqual([1])
+      expect(countPendingSets(state().pendingSets)).toEqual({ sendable: 2, failed: 0 })
+
+      hasAuthSession.mockResolvedValue(true)
+      await drainPendingSets()
+      expect(state().pendingSets).toEqual({})
+    })
+
+    it('reads the queue after the session check: a set unchecked while it waits gets one delete', async () => {
+      const sessionCheck = holdNext(hasAuthSession)
+
+      const drain = check(1)
+      await sessionCheck.started
+      uncheck(1)
+      sessionCheck.release()
+      await drain
+
+      expect(calls).toEqual([['delete', { sessionId: SESSION, sessionExerciseId: SE, setNumber: 1 }]])
+      expect(state().pendingSets).toEqual({})
+    })
+
+    it('sends nothing if the queue is emptied while the session check waits', async () => {
+      const sessionCheck = holdNext(hasAuthSession)
+
+      const drain = check(1)
+      await sessionCheck.started
+      state().endSession()
+      sessionCheck.release()
+      await drain
+
+      expect(calls).toEqual([])
+      expect(state().pendingSets).toEqual({})
+    })
   })
 })

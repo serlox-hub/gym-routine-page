@@ -11,6 +11,8 @@ vi.mock('../api/completedSetsApi.js', () => ({
   upsertCompletedSet: vi.fn(),
   deleteCompletedSet: vi.fn(),
 }))
+// The queue's own session check (lib/pendingSetsSync.js), apart from the workoutApi.js barrel.
+vi.mock('../api/workoutSessionApi.js', () => ({ hasAuthSession: vi.fn() }))
 vi.mock('../api/workoutApi.js', () => ({
   fetchActiveSession: vi.fn(),
   fetchCompletedSetsForSession: vi.fn(),
@@ -33,6 +35,7 @@ vi.mock('./useGyms.js', () => ({ useSetSelectedGym: () => ({ setSelectedGym: vi.
 vi.mock('./useExercises.js', () => ({ useAllUserExerciseGymUnits: () => ({ data: [] }) }))
 
 import { upsertCompletedSet, deleteCompletedSet } from '../api/completedSetsApi.js'
+import { hasAuthSession } from '../api/workoutSessionApi.js'
 import {
   fetchExerciseIdsWithSets,
   deleteSessionExercisesWithoutSets,
@@ -101,6 +104,7 @@ beforeEach(async () => {
     return { id: payload.setNumber }
   })
   deleteCompletedSet.mockReset().mockResolvedValue(undefined)
+  hasAuthSession.mockReset().mockResolvedValue(true)
   fetchExerciseIdsWithSets.mockImplementation(async () => { calls.push('fetchExerciseIdsWithSets'); return [SE] })
   completeWorkoutSession.mockResolvedValue({ id: SESSION })
   fetchSessionExercises.mockResolvedValue([{ id: SE, exercise_id: 100, exercise: { name: 'Press', tracked_fields: ['weight', 'reps'] } }])
@@ -228,6 +232,19 @@ describe('useEndSession with queued sets (issue 179)', () => {
     } finally {
       onlineManager.setOnline(true)
     }
+  })
+
+  // Issue #227: without a user token the set is never sent, so it is not rejected either.
+  it('without a user token, the set stays sendable, so it fails as network and touches nothing else', async () => {
+    hasAuthSession.mockResolvedValue(false)
+    queueSet(1, 100)
+
+    const error = await endWorkout()
+
+    expect(error).toEqual(expect.objectContaining({ reason: UNSAVED_SETS_REASON.NETWORK, count: 1 }))
+    expect(upsertCompletedSet).not.toHaveBeenCalled()
+    expect(state().pendingSets[`${SE}-1`].failed).toBeUndefined()
+    expect(endFlowCalls()).toEqual([])
   })
 
   it('a temporary server error leaves the set sendable, so it fails as network and not as rejected', async () => {
