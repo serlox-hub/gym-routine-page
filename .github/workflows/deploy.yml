@@ -117,3 +117,27 @@ jobs:
 
       - name: Deploy
         run: npx --yes vercel@60.1.3 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+      # An alarm, not a barrier: production is already live here, so a failure turns the job red
+      # and rolls nothing back. Broken routing (#220) is invisible to unit tests, e2e and anyone
+      # who has the service worker, which serves index.html itself. A deep link must get the app,
+      # and a missing chunk must stay a 404 (hence `assets/` excluded from the rewrite in
+      # vercel.json): as a 200 with index.html it would not fail as a network error, and the
+      # stale-chunk reload of #217 could miss it.
+      - name: Smoke check
+        env:
+          SITE_URL: https://www.diariogym.com
+        run: |
+          for attempt in 1 2 3; do
+            page=$(curl --silent --output /dev/null --max-time 10 --write-out '%{http_code} %{content_type}' "$SITE_URL/r/smoke-check" || true)
+            asset=$(curl --silent --output /dev/null --max-time 10 --write-out '%{http_code}' "$SITE_URL/assets/smoke-check.js" || true)
+            echo "Attempt $attempt: /r/smoke-check -> $page, /assets/smoke-check.js -> $asset"
+            if [[ "$page" == "200 text/html"* && "$asset" == "404" ]]; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep 10
+            fi
+          done
+          echo "::error::Production routing is broken: expected /r/smoke-check to be 200 text/html and /assets/smoke-check.js to be 404."
+          exit 1

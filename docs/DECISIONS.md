@@ -12,6 +12,10 @@ Formato: `## AAAA-MM · Título` y bullets `**Clave:** motivo/trampa`, cortos.
 
 ---
 
+## 2026-11 · Enrutado de la web en Vercel (#220)
+- **Solo cuenta el `vercel.json` de la raíz:** el proyecto de Vercel compila desde la raíz del repo, así que uno dentro de `apps/web` se ignora sin aviso. Así estuvo desde c8cadc6, que movió el fichero ahí: toda URL distinta de `/` daba 404 a quien no tenía el service worker. Descartado cambiar el Root Directory de Vercel a `apps/web`: cambio mayor sobre un deploy que funciona, para el mismo resultado.
+- **La reescritura a `index.html` excluye `/assets/`:** un chunk que ya no existe tras un deploy tiene que seguir dando 404. Servido como `index.html` con 200 deja de fallar como error de red y la recarga automática de #217 puede no reconocerlo. Descartada la regla estándar `/(.*)` por eso, y excluir toda ruta con extensión porque `/assets/` es la única cuyo fallo importa. El porqué va aquí porque el JSON no admite comentarios.
+
 ## 2026-10 · Arrancar sin red no cierra la sesión (#221)
 - **La sesión de arranque la fija `getSession()`, y el listener ignora `INITIAL_SESSION`:** la documentación de Supabase recomienda lo contrario, pero con un error de red auth-js emite `INITIAL_SESSION` con `null` aunque la sesión siga guardada, y puede llegar después de que `getSession` resuelva. Pasarse a `INITIAL_SESSION` devuelve el logout sin red y la pérdida de las series sin sincronizar.
 
