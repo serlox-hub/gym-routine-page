@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS, SYNC_RETRY_INTERVAL_MS } from '../lib/constants.js'
 import { resolveTrackedFields } from '../lib/measurementFields.js'
@@ -536,6 +536,10 @@ export function useAbandonSession() {
   const endSession = useWorkoutStore(state => state.endSession)
 
   return useMutation({
+    // Offline, the default `networkMode: 'online'` pauses the delete: the confirmation would wait
+    // with no answer, and the workout would be deleted on its own when the network returns, long
+    // after the user stopped expecting it (issue #228).
+    networkMode: 'always',
     mutationFn: async () => {
       await deleteWorkoutSession(sessionId)
     },
@@ -546,4 +550,36 @@ export function useAbandonSession() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SESSION_EXERCISES] })
     },
   })
+}
+
+/**
+ * The abandon confirmation of the session screen, the same in both apps and wherever it opens (the
+ * header menu, the load error screen). The modal cannot be closed while the delete is pending, so
+ * opening it resets the mutation: what it shows is this opening's call, never an earlier one's
+ * failure (issue #121).
+ *
+ * @returns {{
+ *   isOpen: boolean,
+ *   open: () => void,
+ *   close: () => void,
+ *   confirm: () => void,
+ *   isPending: boolean,
+ *   isFailed: boolean,
+ * }}
+ */
+export function useAbandonSessionFlow() {
+  const abandonSession = useAbandonSession()
+  const [isOpen, setIsOpen] = useState(false)
+
+  return {
+    isOpen,
+    open: () => {
+      abandonSession.reset()
+      setIsOpen(true)
+    },
+    close: () => setIsOpen(false),
+    confirm: () => abandonSession.mutate(undefined, { onSuccess: () => setIsOpen(false) }),
+    isPending: abandonSession.isPending,
+    isFailed: abandonSession.isError,
+  }
 }

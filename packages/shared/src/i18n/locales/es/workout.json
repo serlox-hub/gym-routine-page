@@ -26,6 +26,8 @@
     "abandon": "Abandonar",
     "abandonConfirm": "¿Seguro que quieres abandonar el entrenamiento? Se perderá todo el progreso.",
     "abandonMessage": "Se perderá todo el progreso del entrenamiento actual.",
+    "abandonFailed": "No se pudo abandonar el entrenamiento. Inténtalo de nuevo.",
+    "loadFailed": "No se pudo cargar el entrenamiento. Comprueba la conexión e inténtalo de nuevo.",
     "gymChangeConverted": "Pesos convertidos a la unidad de «{{gym}}».",
     "date": "Fecha",
     "time": "Hora",

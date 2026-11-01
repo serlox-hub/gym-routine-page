@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query'
 import React from 'react'
 
 // Mock _stores.js to avoid initStores() requirement
@@ -110,6 +110,40 @@ describe('useSessionExercises — queries', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(result.current.data).toEqual([])
+  })
+
+  // Paused, the query is neither loading nor failed: the session screen drew an empty workout
+  // instead of its load error (issue #228).
+  it('useSessionExercises: offline, it fails at once instead of pausing', async () => {
+    fetchSessionExercises.mockRejectedValue(new TypeError('Failed to fetch'))
+    onlineManager.setOnline(false)
+    try {
+      const { result } = renderHook(() => useSessionExercises('session-123'), { wrapper: createWrapper() })
+
+      await waitFor(() => expect(result.current.isError).toBe(true))
+      expect(fetchSessionExercises).toHaveBeenCalledWith('session-123')
+    } finally {
+      onlineManager.setOnline(true)
+    }
+  })
+
+  // `networkMode: 'always'` turns refetchOnReconnect off by default: the load error screen would
+  // stay up after the network returned.
+  it('useSessionExercises: when the network returns, it fetches again and the data arrives', async () => {
+    fetchSessionExercises.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    onlineManager.setOnline(false)
+    try {
+      const { result } = renderHook(() => useSessionExercises('session-123'), { wrapper: createWrapper() })
+      await waitFor(() => expect(result.current.isError).toBe(true))
+
+      fetchSessionExercises.mockResolvedValueOnce(FAKE_SESSION_EXERCISES)
+      act(() => onlineManager.setOnline(true))
+
+      await waitFor(() => expect(result.current.data).toEqual(FAKE_SESSION_EXERCISES))
+      expect(fetchSessionExercises).toHaveBeenCalledTimes(2)
+    } finally {
+      onlineManager.setOnline(true)
+    }
   })
 })
 

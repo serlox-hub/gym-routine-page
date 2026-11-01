@@ -375,6 +375,25 @@ test.describe('Touch targets: 44px tap controls at a phone size', () => {
     await expect(editModal).toBeHidden()
   })
 
+  test('session load error and its abandon modal', async ({ page }) => {
+    await prepare()
+    await login(page)
+    await startSession(page)
+    // The session's exercises fail to load: with nothing loaded, the screen offers Retry and Abandon.
+    await page.route('**/rest/v1/session_exercises*', route => (route.request().method() === 'GET'
+      ? route.abort()
+      : route.continue()))
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('button', { name: 'Volver' })).toBeVisible()
+    await expectTouchTargets(page.locator('body'))
+
+    await page.getByRole('button', { name: 'Abandonar' }).click()
+    const abandonModal = modal(page, page.getByRole('heading', { name: /abandonar el entrenamiento/ }))
+    await expect(abandonModal.getByRole('button', { name: 'Continuar' })).toBeVisible()
+    await expectTouchTargets(abandonModal)
+  })
+
   test('end session modal and workout summary', async ({ page }) => {
     await prepare()
     await login(page)

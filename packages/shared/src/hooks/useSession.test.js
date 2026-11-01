@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor, act } from '@testing-library/react'
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query'
 import React from 'react'
 
 vi.mock('./_stores.js', () => {
@@ -58,14 +58,14 @@ vi.mock('../notifications.js', () => {
   return { getNotifier: () => ({ show }), initNotifications: vi.fn(), _notifierShow: show }
 })
 
-import { hasAuthSession, startWorkoutSession, fetchActiveSession, fetchCompletedSetsForSession, fetchExerciseIdsWithSets, completeWorkoutSession, fetchLastSetPerformedAt } from '../api/workoutApi.js'
+import { hasAuthSession, startWorkoutSession, fetchActiveSession, fetchCompletedSetsForSession, fetchExerciseIdsWithSets, completeWorkoutSession, deleteWorkoutSession, fetchLastSetPerformedAt } from '../api/workoutApi.js'
 import { fetchSessionExercises } from '../api/sessionExercisesApi.js'
 import * as notificationsMock from '../notifications.js'
 import * as storesMock from './_stores.js'
 import * as authMock from './useAuth.js'
 import * as preferencesMock from './usePreferences.js'
 import * as exercisesMock from './useExercises.js'
-import { useStartSession, useRestoreActiveSession, syncActiveSessionState, useEndSession, useLastSetAt, useSessionWeightUnitByExercise } from './useSession.js'
+import { useStartSession, useRestoreActiveSession, syncActiveSessionState, useEndSession, useAbandonSessionFlow, useLastSetAt, useSessionWeightUnitByExercise } from './useSession.js'
 
 function wrapper() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -430,5 +430,113 @@ describe('useSessionWeightUnitByExercise', () => {
     rerender()
     expect(result.current).not.toBe(first)
     expect(result.current).toEqual({ 1: 'lb', 2: 'lb' })
+  })
+})
+
+// Issue #228: the abandon confirmation stays open while the delete is pending and shows its failure.
+describe('useAbandonSessionFlow', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    storesMock.useWorkoutStore._mockStore.sessionId = 's-1'
+  })
+
+  afterEach(() => {
+    onlineManager.setOnline(true)
+  })
+
+  function renderFlow() {
+    const { result } = renderHook(() => useAbandonSessionFlow(), { wrapper: wrapper() })
+    act(() => result.current.open())
+    return result
+  }
+
+  it('closing without confirming deletes nothing', () => {
+    const result = renderFlow()
+    expect(result.current.isOpen).toBe(true)
+
+    act(() => result.current.close())
+
+    expect(result.current.isOpen).toBe(false)
+    expect(deleteWorkoutSession).not.toHaveBeenCalled()
+  })
+
+  it('confirming deletes the session, ends it locally and closes once the delete lands', async () => {
+    deleteWorkoutSession.mockResolvedValue(undefined)
+    const result = renderFlow()
+
+    act(() => result.current.confirm())
+
+    await waitFor(() => expect(result.current.isOpen).toBe(false))
+    expect(deleteWorkoutSession).toHaveBeenCalledWith('s-1')
+    expect(storesMock.useWorkoutStore._mockStore.endSession).toHaveBeenCalled()
+  })
+
+  it('stays open and pending until the delete answers', async () => {
+    let finishDelete
+    deleteWorkoutSession.mockImplementation(() => new Promise(resolve => { finishDelete = resolve }))
+    const result = renderFlow()
+
+    act(() => result.current.confirm())
+
+    await waitFor(() => expect(result.current.isPending).toBe(true))
+    expect(result.current.isOpen).toBe(true)
+    await act(async () => finishDelete())
+    await waitFor(() => expect(result.current.isOpen).toBe(false))
+  })
+
+  it('a failed delete keeps it open with the failure, and leaves the session running', async () => {
+    deleteWorkoutSession.mockRejectedValue(new Error('network'))
+    const result = renderFlow()
+
+    act(() => result.current.confirm())
+
+    await waitFor(() => expect(result.current.isFailed).toBe(true))
+    expect(result.current.isOpen).toBe(true)
+    expect(result.current.isPending).toBe(false)
+    expect(storesMock.useWorkoutStore._mockStore.endSession).not.toHaveBeenCalled()
+  })
+
+  it('opening again does not show the previous failure', async () => {
+    deleteWorkoutSession.mockRejectedValue(new Error('network'))
+    const result = renderFlow()
+    act(() => result.current.confirm())
+    await waitFor(() => expect(result.current.isFailed).toBe(true))
+
+    act(() => result.current.close())
+    act(() => result.current.open())
+
+    expect(result.current.isOpen).toBe(true)
+    expect(result.current.isFailed).toBe(false)
+  })
+
+  it('confirming again after a failure deletes the session, ends it and closes', async () => {
+    deleteWorkoutSession.mockRejectedValueOnce(new Error('network'))
+    const result = renderFlow()
+    act(() => result.current.confirm())
+    await waitFor(() => expect(result.current.isFailed).toBe(true))
+
+    deleteWorkoutSession.mockResolvedValueOnce(undefined)
+    act(() => result.current.confirm())
+
+    await waitFor(() => expect(result.current.isOpen).toBe(false))
+    expect(result.current.isFailed).toBe(false)
+    expect(deleteWorkoutSession).toHaveBeenCalledTimes(2)
+    expect(storesMock.useWorkoutStore._mockStore.endSession).toHaveBeenCalledTimes(1)
+  })
+
+  // With the default networkMode the delete would pause offline, leave the modal waiting, and
+  // delete the workout on its own once the network returns.
+  it('offline, the delete fails at once and does not run again when the network returns', async () => {
+    deleteWorkoutSession.mockRejectedValue(new TypeError('Failed to fetch'))
+    onlineManager.setOnline(false)
+    const result = renderFlow()
+
+    act(() => result.current.confirm())
+    await waitFor(() => expect(result.current.isFailed).toBe(true))
+
+    act(() => onlineManager.setOnline(true))
+
+    expect(deleteWorkoutSession).toHaveBeenCalledTimes(1)
+    expect(result.current.isFailed).toBe(true)
   })
 })
