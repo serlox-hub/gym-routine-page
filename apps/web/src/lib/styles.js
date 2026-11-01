@@ -26,6 +26,9 @@ export const design = {
   progressLabelSize: 28,
   progressBarHeight: 8,
   chartHeight: { web: 120, native: 90 },
+  // Room left above the tallest bar for its minutes (labelSize text). The bars get shorter by it
+  // (`getChartMaxWithLabelRoom`), the card keeps its height.
+  chartBarLabelHeight: 16,
   barRadius: 6,
 
   // Icon backgrounds
