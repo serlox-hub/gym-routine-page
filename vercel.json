@@ -3,6 +3,9 @@
   "outputDirectory": "apps/web/dist",
   "installCommand": "npm install",
   "framework": "vite",
+  "rewrites": [
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+  ],
   "git": {
     "deploymentEnabled": {
       "main": false
