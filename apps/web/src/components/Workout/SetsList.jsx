@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { CircleMinus, CirclePlus, Clock } from 'lucide-react'
+import { ChevronRight, CircleMinus, CirclePlus, Clock } from 'lucide-react'
 import SetRow, { getSetGridTemplate, SET_ROW_GAP, SET_ROW_ACCENT } from './SetRow.jsx'
 import useWorkoutStore from '../../stores/workoutStore.js'
 import { usePreferences } from '../../hooks/usePreferences.js'
@@ -36,6 +36,7 @@ function SetsList({
   onUncompleteSet,
   onRemoveSet,
   onAddSet,
+  onShowHistory,
 }) {
   const { t } = useTranslation()
   const { data: preferences } = usePreferences()
@@ -55,19 +56,25 @@ function SetsList({
     <>
       {/* Recencia de la referencia (la sesión anterior ahora se muestra inline por fila; ver
           PreviousSetLine, dentro de SetRowMeta). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
-      <div className="mt-4 mb-3">
+      {/* With a previous session the line is the way into the exercise history: a 44px box
+          (touch target) whose margins are 14px smaller than the 16px-tall line's, so the text
+          stays where it was. */}
+      <div className={previousWorkout ? 'mt-0.5 -mb-0.5' : 'mt-4 mb-3'}>
         {previousWorkout === undefined ? (
           <div className="h-4 rounded w-40 animate-pulse" style={{ backgroundColor: colors.bgTertiary }} />
         ) : previousWorkout ? (
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: colors.textSecondary }}>
-            <Clock size={12} />
-            <span>{t('workout:set.lastSession', { when: formatRelativeDate(previousWorkout.date) })}</span>
+          <button type="button" onClick={onShowHistory}
+            className="min-h-11 max-w-full flex items-center gap-1.5 text-xs text-left hover:opacity-80"
+            style={{ color: colors.textSecondary }}>
+            <Clock size={12} className="shrink-0" />
+            <span className="shrink-0">{t('workout:set.lastSession', { when: formatRelativeDate(previousWorkout.date) })}</span>
             {previousWorkout.fromDifferentDay && previousWorkout.sourceDayName && (
               <span className="truncate" style={{ color: colors.textMuted, minWidth: 0 }}>
                 {t('workout:set.previousDay', { day: previousWorkout.sourceDayName })}
               </span>
             )}
-          </div>
+            <ChevronRight size={12} className="shrink-0" />
+          </button>
         ) : (
           <div className="text-xs" style={{ color: colors.textSecondary }}>{t('workout:set.firstTime')}</div>
         )}
