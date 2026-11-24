@@ -157,7 +157,7 @@ function WorkoutExerciseCard({ sessionExercise, onCompleteSet, onUncompleteSet, 
               <ExerciseCardNotes exercise={exercise} notes={notes} />
             </div>
           )}
-          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} previousLoaded={previousFetched} progressionEnabled={progressionEnabled} trackedFields={trackedFields} weightUnit={weightUnit} distanceUnit={distanceUnit} rest_seconds={rest_seconds} reps={reps} targetField={target_field} levelTarget={level} effortTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} />
+          <SetsList exerciseKey={exerciseKey} exercise={exercise} setsCount={setsCount} previousWorkout={previousWorkout} previousLoaded={previousFetched} progressionEnabled={progressionEnabled} trackedFields={trackedFields} weightUnit={weightUnit} distanceUnit={distanceUnit} rest_seconds={rest_seconds} reps={reps} targetField={target_field} levelTarget={level} effortTarget={rir} onCompleteSet={onCompleteSet} onUncompleteSet={onUncompleteSet} onRemoveSet={removeSet} onAddSet={addSet} onShowHistory={() => setShowHistory(true)} />
         </>
       )}
       {/* Mounted only while open: its whole-history download would otherwise run for every card

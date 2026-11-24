@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { CircleMinus, CirclePlus, Clock } from 'lucide-react-native'
+import { ChevronRight, CircleMinus, CirclePlus, Clock } from 'lucide-react-native'
 import SetRow, { COL_SET, COL_CHECK, SET_ROW_GAP, SET_ROW_ACCENT, getEffortColumnWidth } from './SetRow'
 import useWorkoutStore from '../../stores/workoutStore'
 import { usePreferences } from '../../hooks/usePreferences'
@@ -34,6 +34,7 @@ function SetsList({
   onUncompleteSet,
   onRemoveSet,
   onAddSet,
+  onShowHistory,
 }) {
   const { t } = useTranslation()
   const { data: preferences } = usePreferences()
@@ -54,11 +55,16 @@ function SetsList({
     <>
       {/* Recencia de la referencia (la sesión anterior ahora se muestra inline por fila; ver
           PreviousSetLine, dentro de SetRowMeta). undefined = cargando; null = primera vez; objeto = fecha relativa. */}
-      <View style={{ marginTop: 16, marginBottom: 12 }}>
+      {/* With a previous session the line is the way into the exercise history: a 44pt box
+          (touch target) whose margins are 14 smaller than the 16-tall line's, so the text stays
+          where it was. The box sits inside this View, so Android still gets its touches. */}
+      <View style={previousWorkout ? { marginTop: 2, marginBottom: -2 } : { marginTop: 16, marginBottom: 12 }}>
         {previousWorkout === undefined ? (
           <View style={{ height: 16, width: 160, borderRadius: 4, backgroundColor: colors.bgTertiary }} />
         ) : previousWorkout ? (
-          <View className="flex-row items-center" style={{ gap: 6 }}>
+          <Pressable onPress={onShowHistory} accessibilityRole="button"
+            className="flex-row items-center self-start active:opacity-70"
+            style={{ gap: 6, minHeight: design.minTouchTarget, maxWidth: '100%' }}>
             <Clock size={12} color={colors.textSecondary} />
             <Text className="text-xs" style={{ color: colors.textSecondary }}>
               {t('workout:set.lastSession', { when: formatRelativeDate(previousWorkout.date) })}
@@ -68,7 +74,8 @@ function SetsList({
                 {t('workout:set.previousDay', { day: previousWorkout.sourceDayName })}
               </Text>
             )}
-          </View>
+            <ChevronRight size={12} color={colors.textSecondary} />
+          </Pressable>
         ) : (
           <Text className="text-xs" style={{ color: colors.textSecondary }}>{t('workout:set.firstTime')}</Text>
         )}
