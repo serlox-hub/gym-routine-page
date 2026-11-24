@@ -9,7 +9,10 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Fijado, no `ubuntu-latest`: ese alias pasó a Ubuntu 26.04 y Playwright 1.58 no instala
+    # Chromium ahí («does not support chromium on ubuntu26.04-x64»). Subir Playwright antes de
+    # volver a `latest`.
+    runs-on: ubuntu-24.04
     # `supabase/config.toml` interpola el id y los puertos del stack (issue #63) y un `env()` de
     # puerto sin definir NO cae a un default: revienta con ProjectConfigParseError. En local salen
     # del `.env` de apps/web; aquí no hay ninguno, así que se declaran para todo el job — los
