@@ -25,11 +25,14 @@ const GYM_LINE_COLORS = [colors.success, colors.purple, colors.teal, colors.pink
 
 function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, trackedFields, weightUnit = 'kg', distanceUnit = 'm' }) {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState(TABS.WEIGHT)
-  const [range, setRange] = useState(CHART_RANGES.ONE_MONTH)
+  const [selectedTab, setSelectedTab] = useState(null)
+  const [range, setRange] = useState(CHART_RANGES.THREE_MONTHS)
   // Volumen y 1RM solo tienen sentido con peso Y reps (ver getTrackableMetrics): son las
   // derivadas del modelo de fuerza, no se calculan para ningún otro ejercicio.
   const showVolumeTabs = tracksWeight(trackedFields) && tracksReps(trackedFields)
+  // Sin elección del usuario, 1RM est. donde existe. Se resuelve en cada render, no en el
+  // useState: trackedFields puede llegar después del primer render.
+  const activeTab = selectedTab ?? (showVolumeTabs ? TABS.E1RM : TABS.WEIGHT)
 
   const isOverlay = Array.isArray(overlayGyms) && overlayGyms.length > 0
   const isStatRows = Array.isArray(chartRows)
@@ -105,7 +108,7 @@ function ExerciseProgressChart({ sessions, chartRows, overlayGyms, unitByGym, tr
           {Object.entries(TAB_CONFIG).map(([key, config]) => (
             <button
               key={key}
-              onClick={() => setActiveTab(key)}
+              onClick={() => setSelectedTab(key)}
               className="min-h-11 flex items-center"
             >
               <span
